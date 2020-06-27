@@ -43,6 +43,8 @@ class Config(object):
         model_name = self.run_args['model']
         model_arg_file_name = os.path.join(os.path.dirname(config_file_name), model_name + '.config')
         self.model_args = self._read_config_file(model_arg_file_name, 'model')
+        
+        self.device = None
 
     def _read_config_file(self, file_name, arg_section):
         """
@@ -82,6 +84,8 @@ class Config(object):
         init_seed = self['seed']
         gpu_id = self['gpu_id']
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")    #Get the device that run on.
+        
         random.seed(init_seed)
         np.random.seed(init_seed)
         torch.manual_seed(init_seed)
@@ -93,6 +97,12 @@ class Config(object):
 
         if not isinstance(item, str):
             raise TypeError("index must be a str")
+        # Get device or other parameters
+        if item == 'device':
+            if self.device is None:
+                raise KeyError("device can not be called before init.")
+            else:
+                return self.device
 
         if item in self.run_args:
             param = self.run_args[item]
@@ -142,7 +152,7 @@ class Config(object):
 
     def __repr__(self):
 
-        return self.__str__
+        return self.__str__()
 
     def dump_model_param(self, model_param_file):
         """
@@ -166,6 +176,7 @@ if __name__ == '__main__':
     print(config['process.by_time'])
     print(config['data.convert.separator'])
     print(config['reg_mf'])
+    print(config['device'])
     config['reg_mf'] = 0.6
     print(config['reg_mf'])
     config.dump_model_param('../properties/mf_new.config')
