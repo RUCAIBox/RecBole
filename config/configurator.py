@@ -43,7 +43,7 @@ class Config(object):
         model_name = self.run_args['model']
         model_arg_file_name = os.path.join(os.path.dirname(config_file_name), model_name + '.config')
         self.model_args = self._read_config_file(model_arg_file_name, 'model')
-
+        
         self.device = None
 
     def _read_config_file(self, file_name, arg_section):
