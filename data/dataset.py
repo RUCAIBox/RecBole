@@ -9,6 +9,7 @@ from .data import Data
 
 class AbstractDataset(object):
     def __init__(self, config):
+        self.config = config
         self.token = config['data.name']
         self.dataset_path = config['data.path']
         self.dataset = self._load_data(config)
@@ -37,14 +38,14 @@ class AbstractDataset(object):
         :param workflow List(List(str, *args))
         '''
         cur = self.dataset
-        for func, params in workflow:
+        for func in workflow:
             if func == 'split':
-                cur = cur.split(*params)
+                cur = cur.split(self.config['process.ratio'])
         return cur
 
-class ML100kDataset(AbstractDataset):
+class UIRTDataset(AbstractDataset):
     def __init__(self, config):
-        super(ML100kDataset, self).__init__(config)
+        super(UIRTDataset, self).__init__(config)
 
     def _load_data(self, config):
         if self.dataset_path:
@@ -70,4 +71,7 @@ class ML100kDataset(AbstractDataset):
                 'timestamp': timestamp
             }
         )
-        
+
+class ML100kDataset(UIRTDataset):
+    def __init__(self, config):
+        super(ML100kDataset, self).__init__(config)

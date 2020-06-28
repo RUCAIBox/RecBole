@@ -10,10 +10,12 @@ import torch.optim as optim
 
 from time import time
 from trainer.utils import early_stopping
+from evaluator import Evaluator
+
 
 
 class Trainer(object):
-    def __init__(self, model, config):
+    def __init__(self, config, model):
         self.config = config
         self.learner = config['learner']
         self.learning_rate = config['learning_rate']
@@ -64,7 +66,10 @@ class Trainer(object):
         # return total_loss
 
         total_loss = 0.
-        for batch_idx, (users, pos_items, neg_items) in enumerate(train_data):
+        for batch_idx, interaction in enumerate(train_data):
+            # (users, pos_items, neg_items)
+            users = interaction['user_id'].to(self.device)
+            # TODO
             self.optimizer.zero_grad()
             loss = self.model.train_model(users, pos_items, neg_items)
             loss.backward()
