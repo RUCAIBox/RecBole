@@ -1,24 +1,18 @@
 from config import Config
-from dataset import Dataset
-from model import Model
+from dataset import ML100kDataset
+from model.general_recommender.bprmf import BPRMF
 from trainer import Trainer
-from evaluator import Evaluator
 
 
-
-config = Config()
+config = Config('properties/overall.config')
 config.init()
 
+dataset = ML100kDataset(config)
+train_data, test_data = dataset.preprocessing(
+    workflow=['split']
+)
 
-dataset = Dataset(config)
-train_data, test_data = dataset.preprocessing()
-
-
-model = Model(config)
-trainer = Trainer(config)
-model = trainer.train(model, train_data)
-result = trainer.predict(model, test_data)
-
-
-evaluator = Evaluator(config)
-evaluator.evaluate(result, test_data)
+model = BPRMF(config, dataset)
+trainer = Trainer(config, model)
+trainer.train(train_data)
+trainer.predict(test_data)
