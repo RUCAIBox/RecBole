@@ -14,5 +14,8 @@ train_data, test_data = dataset.preprocessing(
 
 model = BPRMF(config, dataset)
 trainer = Trainer(config, model)
+trainer.resume_checkpoint('save/model_best.pth')
 trainer.train(train_data)
-trainer.predict(test_data)
+test_result = trainer.test(test_data)
+print(test_result)
+trainer.plot_train_loss(show=True)
