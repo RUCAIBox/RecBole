@@ -15,4 +15,4 @@ train_data, test_data = dataset.preprocessing(
 model = BPRMF(config, dataset)
 trainer = Trainer(config, model)
 trainer.train(train_data)
-trainer.predict(test_data)
+test_result = trainer.test(test_data)
