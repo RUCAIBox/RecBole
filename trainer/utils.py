@@ -46,6 +46,9 @@ def calculate_valid_score(valid_result):
     return valid_result['Recall@10']
 
 
-# todo: define this function
-def dict2str():
-    pass
+# todo: format adjustment
+def dict2str(result_dict):
+    result_str = ''
+    for metric, value in result_dict.items():
+        result_str += str(metric) + ' : ' + str(value) + '    '
+    return result_str
