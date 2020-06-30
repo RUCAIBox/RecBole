@@ -15,30 +15,36 @@ import sys
 
 # @profile
 def hit(data, k):
+    tmp_data = data.copy()
     def get_hit(x):
         return any(x > 0)
-    num_users = data['user_id'].nunique()
-    topk_df = data[data['rank'] <= k]
-    grouped = topk_df.groupby('user_id')['rank'].apply(get_hit)
+    num_users = tmp_data['user_id'].nunique()
+    mask = tmp_data['rank'] > k
+    tmp_data.loc[mask, 'rank'] = -1
+    grouped = tmp_data.groupby('user_id')['rank'].apply(get_hit)
     return grouped.sum() / num_users
 
 # @profile
 def mrr(data, k):
+    tmp_data = data.copy()
     def get_mrr(x):
         tmp_x = x[x > 0]
         if not tmp_x.empty:
             return (1 / tmp_x).sum() / x.shape[0]
         return 0
-    num_users = data['user_id'].nunique()
-    topk_df = data[data['rank'] <= k]
-    grouped = topk_df.groupby('user_id')['rank'].apply(get_mrr)
+    num_users = tmp_data['user_id'].nunique()
+    mask = tmp_data['rank'] > k
+    tmp_data.loc[mask, 'rank'] = -1
+    grouped = tmp_data.groupby('user_id')['rank'].apply(get_mrr)
     return grouped.sum() / num_users
 
 # @profile
 def recall(data, k):
+    tmp_data = data.copy()
     def get_recall(x):
         return (x > 0).sum() / x.shape[0]
-    num_users = data['user_id'].nunique()
-    topk_df = data[data['rank'] <= k]
-    grouped = topk_df.groupby('user_id')['rank'].apply(get_recall)
+    num_users = tmp_data['user_id'].nunique()
+    mask = tmp_data['rank'] > k
+    tmp_data.loc[mask, 'rank'] = -1
+    grouped = tmp_data.groupby('user_id')['rank'].apply(get_recall)
     return grouped.sum() / num_users
