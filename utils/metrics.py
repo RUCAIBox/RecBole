@@ -16,10 +16,10 @@ import sys
 # @profile
 def hit(data, k):
     def get_hit(x):
-        return any(~x.isnull())
+        return any(x > 0)
     num_users = data['user_id'].nunique()
     topk_df = data[data['rank'] <= k]
-    grouped = topk_df.groupby('user_id')['score'].apply(get_hit)
+    grouped = topk_df.groupby('user_id')['rank'].apply(get_hit)
     return grouped.sum() / num_users
 
 # @profile
@@ -37,8 +37,8 @@ def mrr(data, k):
 # @profile
 def recall(data, k):
     def get_recall(x):
-        return 1 - x.isnull().sum() / x.shape[0]
+        return (x > 0).sum() / x.shape[0]
     num_users = data['user_id'].nunique()
     topk_df = data[data['rank'] <= k]
-    grouped = topk_df.groupby('user_id')['score'].apply(get_recall)
+    grouped = topk_df.groupby('user_id')['rank'].apply(get_recall)
     return grouped.sum() / num_users

@@ -10,7 +10,10 @@
 # here put the import lib
 
 import pandas as pd
+import numpy as np
+from utils import Logger
 import utils
+
 
 
 # 'Precision', 'Hit', 'Recall', 'MAP', 'NDCG', 'MRR'
@@ -22,12 +25,36 @@ class BaseEvaluator(object):
     def __init__(self):
         pass
 
+    def merge_data(self, result, test_data):
+        """Merge result and test_data which can help our evaluation
+
+        Args:
+            result (tuple): a tuple of (users, items), both `users` and `items` are lists and they have the same length.
+            test_data ([type]): TODO [description]
+
+        Returns:
+            (pandas.core.frame.DataFrame): such as 
+        """
+        raise NotImplementedError        
+
     def metrics_info(self, merged_data):
         """Get all metrics information for the merged data.
 
         Returns:
             str: A string consist of all metrics information.
         """
+        raise NotImplementedError
+
+    def collect(self, result_list, batch_size_list):
+        """Add the results of all batches
+
+        Args:
+            result_list (list): list which contains 
+            batch_size_list (list): [description]
+
+        Raises:
+            NotImplementedError: [description]
+        """        
         raise NotImplementedError
 
     def evaluate(self, result, test_data):
@@ -38,16 +65,16 @@ class BaseEvaluator(object):
             test_data ([type]) : TODO
 
         Returns:
-            A string which consists of all information about the result on the test_data 
+            (dict) : A dict which consists of all information about the result on the test_data 
         """        
-        return NotImplementedError
+        raise NotImplementedError
 
 # TODO 这里应该是加速的重点
 class UnionEvaluator(BaseEvaluator):
     """`UnionEvaluator` evaluates results on ungrouped data.
      
     """
-    def __init__(self, eval_metric, topk, workers):
+    def __init__(self, logger, eval_metric, topk, workers):
         """[summary]
 
         Args:
@@ -56,6 +83,7 @@ class UnionEvaluator(BaseEvaluator):
             workers ([type]): [description]
         """        
         super(UnionEvaluator, self).__init__()
+        self.logger = logger
         self.topk = topk
         self.eval_metric = eval_metric
         self.workers = workers
@@ -119,13 +147,24 @@ class UnionEvaluator(BaseEvaluator):
             str: A string consist of all metrics information
         """
 
-        metric_info = []
+        metric_dict = {}
         for k in self.topk:
             for method in self.eval_metric:
                 eval_fuc = getattr(utils, method)
                 score = eval_fuc(merged_data, k)
-                metric_info.append('{:>5}@{} : {:5f}'.format(metric_name[method], k, score))
-        return '\t'.join(metric_info)
+                key, value = '{}@{}'.format(metric_name[method], k), score
+                metric_dict[key] = value
+        return metric_dict
+
+    def collect(self, result_list, batch_size_list):
+
+        result_matrix = np.array(result_list)
+        batch_size_matrix = np.array(batch_size_list).reshape(-1, 1)
+        assert result_matrix.shape[0] == batch_size_matrix.shape[0]
+
+        weighted_matrix = result_matrix * batch_size_matrix
+        
+        return (np.sum(weighted_matrix, axis=0) / np.sum(batch_size_matrix)).tolist()
 
     def evaluate(self, result, test_data):
         """Evaluate `model`.
@@ -139,8 +178,8 @@ class UnionEvaluator(BaseEvaluator):
                 Hit@5 : 0.484848      Recall@5 : 0.162734        Hit@7 : 0.727273      Recall@7 : 0.236760`.
         """ 
         merged_data = self.merge_data(result, test_data)
-        info_str = self.metric_info(merged_data)
-        return info_str
+        metric_dict = self.metric_info(merged_data)
+        return metric_dict
 
 class GroupEvaluator(UnionEvaluator):
     """`GroupedEvaluator` evaluates results in user groups.
@@ -152,7 +191,7 @@ class GroupEvaluator(UnionEvaluator):
     For example, if `group_view = [10, 30, 50, 100]`, users will be split into
     four groups: `(0, 10]`, `(10, 30]`, `(30, 50]`, `(50, 100], (100, -]`. 
     """
-    def __init__(self, group_view, eval_metric, topk, workers):
+    def __init__(self, logger, group_view, eval_metric, topk, workers):
         """[summary]
 
         Args:
@@ -162,7 +201,7 @@ class GroupEvaluator(UnionEvaluator):
                 performance. 
             workers (int): `workers` controls the number of threads.
         """        
-        super(GroupEvaluator, self).__init__(eval_metric, topk, workers)
+        super(GroupEvaluator, self).__init__(logger, eval_metric, topk, workers)
         self.group_view = group_view
         self.group_names = self.get_group_names()
         # print(self.group_names)
@@ -206,12 +245,15 @@ class GroupEvaluator(UnionEvaluator):
         Returns:
             str: A string consist of all results.
         """       
-
+        ### XXX 改成字符串有bug所有这里暂时没做
         info_list = []
         for index, group in groups:
             info_str = self.metric_info(group)
             info_list.append('{:<5}\t{}'.format(self.group_names[index], info_str))
         return '\n'.join(info_list)
+
+    def collect(self, result_list, batch_size_list):
+        raise NotImplementedError
 
     def evaluate(self, result, test_data):
         """Evaluate `model`.
@@ -229,8 +271,8 @@ class GroupEvaluator(UnionEvaluator):
         merged_data = self.merge_data(result, test_data)
         grouped_data = self.get_grouped_data(merged_data, test_data)
         groups = self.groupby(grouped_data, 'group_id')
-        info_str = self.evaluate_groups(groups)
-        return info_str
+        metric_dict = self.evaluate_groups(groups)
+        return metric_dict
         
 class Evaluator(BaseEvaluator):
     """`Evaluator` is the interface to evaluate models.
@@ -250,7 +292,7 @@ class Evaluator(BaseEvaluator):
       in `training data`. It is configurable via the argument `group_view`.
 
     """
-    def __init__(self, config):
+    def __init__(self, config, logger):
         """Initialize the evaluator by the global configuration file.
 
         Args:
@@ -266,15 +308,16 @@ class Evaluator(BaseEvaluator):
         self.group_view = config['group_view']
         self.eval_metric = config['metric']
         self.topk = config['topk']
-        self.workers = config['workers']  # TODO 多进程，但是windows可能有点难搞, 貌似要在__main__里
- 
+        self.workers = 0  # TODO 多进程，但是windows可能有点难搞, 貌似要在__main__里
+        self.logger = logger
+
         # XXX 这种类型检查应该放到哪呢?放在config部分一次判断，还是分散在各模块中呢？
         self._check_args()
 
         if self.group_view is not None:
-            self.evaluator = GroupEvaluator(self.group_view, self.eval_metric, self.topk, self.workers)
+            self.evaluator = GroupEvaluator(self.logger, self.group_view, self.eval_metric, self.topk, self.workers)
         else:
-            self.evaluator = UnionEvaluator(self.eval_metric, self.topk, self.workers)
+            self.evaluator = UnionEvaluator(self.logger, self.eval_metric, self.topk, self.workers)
 
     def _check_args(self):
 
@@ -323,8 +366,11 @@ class Evaluator(BaseEvaluator):
         Returns:
             str: A string consist of all results
         """
-        info_str = self.evaluator.evaluate(result, test_data)
-        print(info_str)
+        metric_dict = self.evaluator.evaluate(result, test_data)
+        return metric_dict
+
+    def collect(self, result_list, batch_size_list):
+        return self.evaluator.collect(result_list, batch_size_list)
 
     def __str__(self):
         return 'The evaluator will evaluate test_data on {} at {}'.format(', '.join(self.eval_metric), ', '.join(map(str, self.topk)))
@@ -333,8 +379,9 @@ class Evaluator(BaseEvaluator):
         return self.__str__()
 
     def __enter__(self):
-        print('Evaluate Start...')
+        self.logger.info('Evaluate Start...')
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.logger.info('Evaluate End...')
         pass
