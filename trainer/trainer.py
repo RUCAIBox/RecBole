@@ -15,8 +15,9 @@ from evaluator import Evaluator
 
 
 class Trainer(object):
-    def __init__(self, config, model):
+    def __init__(self, config, logger, model):
         self.config = config
+        self.logger = logger
         self.learner = config['learner']
         self.learning_rate = config['learning_rate']
         self.epochs = config['epochs']
@@ -31,7 +32,7 @@ class Trainer(object):
         self.train_loss_dict = dict()
         self.model = model
         self.optimizer = self._build_optimizer()
-        self.evaluator = Evaluator(config)
+        self.evaluator = Evaluator(config, logger)
 
     def _build_optimizer(self):
         if self.learner.lower() == 'adam':
