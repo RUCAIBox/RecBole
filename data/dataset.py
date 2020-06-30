@@ -6,13 +6,17 @@
 from os.path import isdir, isfile
 import torch
 from .data import Data
+from sampler import Sampler
 
 class AbstractDataset(object):
-    def __init__(self, config):
+    def __init__(self, config, padding=False, missing=False):
         self.config = config
         self.token = config['data.name']
         self.dataset_path = config['data.path']
-        self.dataset = self._load_data(config)
+        self.padding = padding
+        self.missing = missing
+
+        self.dataset, self.sampler, self.n_users, self.n_items = self._load_data(config)
 
     def __str__(self):
         return 'Dataset - {}'.format(self.token)
@@ -31,11 +35,54 @@ class AbstractDataset(object):
         :return: path of the downloaded dataset
         '''
         pass
+
+    def _get_n_users(self, user_id):
+        self.user_ori2idx = {}
+        self.user_idx2ori = []
+        if self.missing:
+            tot_users = 2
+            self.user_ori2idx['padding'] = 0
+            self.user_ori2idx['missing'] = 1
+            self.user_idx2ori = ['padding', 'missing']
+        elif self.padding:
+            tot_users = 1
+            self.user_ori2idx['padding'] = 0
+            self.user_idx2ori = ['padding']
+        else:
+            tot_users = 0
+
+        for uid in user_id:
+            if uid not in self.user_ori2idx:
+                self.user_ori2idx[uid] = tot_users
+                self.user_idx2ori.append(uid)
+                tot_users += 1
+        return tot_users
+
+    def _get_n_items(self, item_id):
+        self.item_ori2idx = {}
+        self.item_idx2ori = []
+        if self.missing:
+            tot_items = 2
+            self.item_ori2idx['padding'] = 0
+            self.item_ori2idx['missing'] = 1
+            self.item_idx2ori = ['padding', 'missing']
+        elif self.padding:
+            tot_items = 1
+            self.item_ori2idx['padding'] = 0
+            self.item_idx2ori = ['padding']
+        else:
+            tot_items = 0
+
+        for iid in item_id:
+            if iid not in self.item_ori2idx:
+                self.item_ori2idx[iid] = tot_items
+                self.item_idx2ori.append(iid)
+                tot_items += 1
+        return tot_items
     
     def preprocessing(self, workflow=None):
         '''
         Preprocessing of the dataset
-        :param workflow List(List(str, *args))
         '''
         cur = self.dataset
         for func in workflow:
@@ -61,16 +108,26 @@ class UIRTDataset(AbstractDataset):
             for line in file:
                 line = map(int, line.strip().split('\t'))
                 lines.append(line)
-        user_id, item_id, rating, timestamp = map(torch.LongTensor, zip(*lines))
+        user_id, item_id, rating, timestamp = map(list, zip(*lines))
+        n_users = self._get_n_users(user_id)
+        n_items = self._get_n_items(item_id)
+
+        new_user_id = torch.LongTensor([self.user_ori2idx[_] for _ in user_id])
+        new_item_id = torch.LongTensor([self.item_ori2idx[_] for _ in item_id])
+
+        sampler = Sampler(n_users, n_items,
+                          new_user_id, new_item_id, padding=self.padding, missing=self.missing)
+
         return Data(
             config=config,
             interaction={
-                'user_id': user_id,
-                'item_id': item_id,
-                'rating': rating,
-                'timestamp': timestamp
-            }
-        )
+                'user_id': new_user_id,
+                'item_id': new_item_id,
+                'rating': torch.LongTensor(rating),
+                'timestamp': torch.LongTensor(timestamp)
+            },
+            sampler=sampler
+        ), sampler, n_users, n_items
 
 class ML100kDataset(UIRTDataset):
     def __init__(self, config):
