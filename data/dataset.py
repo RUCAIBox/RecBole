@@ -85,10 +85,37 @@ class AbstractDataset(object):
         Preprocessing of the dataset
         '''
         cur = self.dataset
-        for func in workflow:
-            if func == 'split':
-                cur = cur.split(self.config['process.ratio'])
-        return cur
+        train_data = test_data = valid_data = None
+        for func in workflow['preprocessing']:
+            if func == 'remove_lower_value_by_key':
+                cur = cur.remove_lower_value_by_key(
+                    key=self.config['process.remove_lower_value_by_key.key'],
+                    min_remain_value=self.config['process.remove_lower_value_by_key.min_remain_value']
+                )
+            elif func == 'split_by_ratio':
+                train_data, test_data, valid_data = cur.split_by_ratio(
+                    train_ratio=self.config['process.split_by_ratio.train_ratio'],
+                    test_ratio=self.config['process.split_by_ratio.test_ratio'],
+                    valid_ratio=self.config['process.split_by_ratio.valid_ratio'],
+                    train_batch_size=self.config['train_batch_size'],
+                    test_batch_size=self.config['test_batch_size'],
+                    valid_batch_size=self.config['valid_batch_size']
+                )
+                break
+
+        for func in workflow['train']:
+            if func == 'neg_sample_1by1':
+                train_data = train_data.neg_sample_1by1()
+
+        for func in workflow['test']:
+            if func == 'neg_sample_to':
+                test_data = test_data.neg_sample_to(num=self.config['process.neg_sample_to.num'])
+
+        for func in workflow['valid']:
+            if func == 'neg_sample_to':
+                valid_data = valid_data.neg_sample_to(num=self.config['process.neg_sample_to.num'])
+        
+        return train_data, test_data, valid_data
 
 class UIRTDataset(AbstractDataset):
     def __init__(self, config):

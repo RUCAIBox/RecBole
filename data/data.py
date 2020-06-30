@@ -87,8 +87,8 @@ class Data(Dataset):
             train_inter[k] = self.interaction[k][:train_cnt]
             test_inter[k] = self.interaction[k][train_cnt : train_cnt+test_cnt]
             if valid_ratio > 0:
-                valid_inter = self.interaction[k][train_cnt+test_cnt:]
-        
+                valid_inter[k] = self.interaction[k][train_cnt+test_cnt:]
+
         if valid_ratio > 0:
             return Data(config=self.config, interaction=train_inter, batch_size=train_batch_size, sampler=self.sampler), \
                    Data(config=self.config, interaction=test_inter, batch_size=test_batch_size, sampler=self.sampler), \
@@ -123,3 +123,87 @@ class Data(Dataset):
 
         return Data(config=self.config, interaction=new_inter, batch_size=self.batch_size, sampler=new_sampler)
 
+    def neg_sample_1by1(self):
+        new_inter = {
+            'user_id': [],
+            'pos_item_id': [],
+            'neg_item_id': []
+        }
+        for i in range(self.__len__()):
+            uid = self.interaction['user_id'][i].item()
+            new_inter['user_id'].append(uid)
+            new_inter['pos_item_id'].append(self.interaction['item_id'][i].item())
+            new_inter['neg_item_id'].append(self.sampler.sample_by_user_id(uid)[0])
+        for k in new_inter:
+            new_inter[k] = torch.LongTensor(new_inter[k])
+        return Data(
+            config=self.config,
+            interaction=new_inter,
+            batch_size=self.batch_size,
+            sampler=self.sampler
+        )
+
+    # def neg_sample_to(self, num):
+    #     new_inter = {
+    #         'user_id': [],
+    #         'item_list': [],
+    #         'label': []
+    #     }
+
+    #     uid2itemlist = {}
+    #     for i in range(self.__len__()):
+    #         uid = self.interaction['user_id'][i].item()
+    #         iid = self.interaction['item_id'][i].item()
+    #         if uid not in uid2itemlist:
+    #             uid2itemlist[uid] = []
+    #         uid2itemlist[uid].append(iid)
+    #     for uid in uid2itemlist:
+    #         pos_num = len(uid2itemlist[uid])
+    #         if pos_num >= num:
+    #             uid2itemlist[uid] = uid2itemlist[uid][:num-1]
+    #             pos_num = num - 1
+    #         neg_item_id = self.sampler.sample_by_user_id(uid, num - pos_num)
+    #         uid2itemlist[uid] += neg_item_id
+    #         label = [1] * pos_num + [0] * (num - pos_num)
+    #         new_inter['user_id'].append(uid)
+    #         new_inter['item_list'].append(uid2itemlist[uid])
+    #         new_inter['label'].append(label)
+        
+    #     for k in new_inter:
+    #         new_inter[k] = torch.LongTensor(new_inter[k])
+
+    #     return Data(config=self.config, interaction=new_inter, batch_size=self.batch_size, sampler=self.sampler)
+
+    def neg_sample_to(self, num):
+        new_inter = {
+            'user_id': [],
+            'item_id': [],
+            'label': []
+        }
+
+        uid2itemlist = {}
+        for i in range(self.__len__()):
+            uid = self.interaction['user_id'][i].item()
+            iid = self.interaction['item_id'][i].item()
+            if uid not in uid2itemlist:
+                uid2itemlist[uid] = []
+            uid2itemlist[uid].append(iid)
+        for uid in uid2itemlist:
+            pos_num = len(uid2itemlist[uid])
+            if pos_num >= num:
+                uid2itemlist[uid] = uid2itemlist[uid][:num-1]
+                pos_num = num - 1
+            neg_item_id = self.sampler.sample_by_user_id(uid, num - pos_num)
+            for iid in uid2itemlist[uid]:
+                new_inter['user_id'].append(uid)
+                new_inter['item_id'].append(iid)
+                new_inter['label'].append(1)
+            for iid in neg_item_id:
+                new_inter['user_id'].append(uid)
+                new_inter['item_id'].append(iid)
+                new_inter['label'].append(0)
+        
+        for k in new_inter:
+            new_inter[k] = torch.LongTensor(new_inter[k])
+
+        return Data(config=self.config, interaction=new_inter, batch_size=self.batch_size, sampler=self.sampler)

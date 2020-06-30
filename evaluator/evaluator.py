@@ -100,8 +100,19 @@ class UnionEvaluator(BaseEvaluator):
             items (list): users' ground truth.
         """        
         # TODO 对接
-        users, items = test_data
-        return users, items
+        users = set(users)
+        users_lst = []
+        items_lst = []
+
+        for interaction in test_data:
+            for i in range(interaction['user_id'].shape[0]):
+                uid = interaction['user_id'][i].item()
+                iid = interaction['item_id'][i].item()
+                label = interaction['label'][i].item()
+                if label == 0 or uid not in users: continue
+                users_lst.append(uid)
+                items_lst.append(iid)
+        return users_lst, items_lst
     
     def get_result_pairs(self, result):
         """[summary]
@@ -157,14 +168,24 @@ class UnionEvaluator(BaseEvaluator):
         return metric_dict
 
     def collect(self, result_list, batch_size_list):
+        
+        tmp_result_list = []
+        keys = list(result_list[0].keys())
+        for result in result_list:
+            tmp_result_list.append(list(result.values()))
+            
 
-        result_matrix = np.array(result_list)
+        result_matrix = np.array(tmp_result_list)
         batch_size_matrix = np.array(batch_size_list).reshape(-1, 1)
         assert result_matrix.shape[0] == batch_size_matrix.shape[0]
 
         weighted_matrix = result_matrix * batch_size_matrix
         
-        return (np.sum(weighted_matrix, axis=0) / np.sum(batch_size_matrix)).tolist()
+        metric_list =  (np.sum(weighted_matrix, axis=0) / np.sum(batch_size_matrix)).tolist()
+        metric_dict = {}
+        for method, score in zip(keys, metric_list):
+            metric_dict[method] = score
+        return metric_dict
 
     def evaluate(self, result, test_data):
         """Evaluate `model`.
@@ -305,9 +326,9 @@ class Evaluator(BaseEvaluator):
         """        
         super(Evaluator, self).__init__()
 
-        self.group_view = config['group_view']
-        self.eval_metric = config['metric']
-        self.topk = config['topk']
+        self.group_view = config['eval.group_view']
+        self.eval_metric = config['eval.metric']
+        self.topk = config['eval.topk']
         self.workers = 0  # TODO 多进程，但是windows可能有点难搞, 貌似要在__main__里
         self.logger = logger
 
