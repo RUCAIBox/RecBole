@@ -18,7 +18,7 @@ class Logger(object):
 
         """
 
-        self.LOGROOT='./log'
+        self.LOGROOT='./log/'
         dir_name = os.path.dirname(self.LOGROOT)
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
