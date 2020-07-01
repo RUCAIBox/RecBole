@@ -139,7 +139,7 @@ class Trainer(object):
                     valid_score, self.best_eval_score, self.cur_step, max_step=self.stopping_step, order='asc')
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
-                                     (epoch_idx, valid_start_time - valid_end_time, valid_score)
+                                     (epoch_idx, valid_end_time - valid_start_time, valid_score)
                 valid_result_output = 'valid result: \n' + dict2str(valid_result)
                 print(valid_score_output)
                 print(valid_result_output)
