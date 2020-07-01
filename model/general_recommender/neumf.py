@@ -22,9 +22,9 @@ class NeuMF(AbstractRecommender):
     def __init__(self, config, dataset):
         super(NeuMF, self).__init__()
 
-        self.embedding_size = config['embedding_size']
-        self.layers = config['layers']
-        self.dropout = config['dropout']
+        self.embedding_size = config['model.embedding_size']
+        self.layers = config['model.layers']
+        self.dropout = config['model.dropout']
         self.n_users = dataset.n_users
         self.n_items = dataset.n_items
 

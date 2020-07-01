@@ -22,7 +22,7 @@ class BPRMF(AbstractRecommender):
     def __init__(self, config, dataset):
         super(BPRMF, self).__init__()
 
-        self.embedding_size = config['embedding_size']
+        self.embedding_size = config['model.embedding_size']
         self.n_users = dataset.n_users
         self.n_items = dataset.n_items
 
