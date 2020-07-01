@@ -64,7 +64,10 @@ class Config(object):
             if not arg.startswith("--"):
                 raise SyntaxError("Commend arg must start with '--', but '%s' is not!" % arg)
             arg_name, arg_value = arg[2:].split("=")
-            self.run_args[arg_name] = arg_value
+            if arg_name.startswith('model.'):
+                self.model_args[arg_name] = arg_value
+            else:
+                self.run_args[arg_name] = arg_value
 
     def _read_config_file(self, file_name, arg_section):
         """
