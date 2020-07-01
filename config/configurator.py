@@ -1,8 +1,10 @@
 import os
+import sys
 import torch
 import random
 import numpy as np
 from configparser import ConfigParser
+from config.parser import Parser
 
 
 class Config(object):
@@ -36,15 +38,33 @@ class Config(object):
                 ValueError: If `config_file` is not in correct format or
                         MUST parameter are not defined
         """
+        self.cmd_args = Parser().getargs()
         self.must_args = ['model', 'data.name', 'data.path']
 
         self.run_args = self._read_config_file(config_file_name, 'default')
+        self._read_cmd_line()
+        for default_args in self.cmd_args.keys():
+
+            if default_args not in self.run_args and not str(default_args).startswith('model.'):
+                print(default_args)
+                self.run_args[default_args] = str(self.cmd_args[default_args])
         self._check_args()
         model_name = self.run_args['model']
         model_arg_file_name = os.path.join(os.path.dirname(config_file_name), model_name + '.config')
         self.model_args = self._read_config_file(model_arg_file_name, 'model')
+        for default_args in self.cmd_args.keys():
+            if default_args not in self.model_args and str(default_args).startswith('model.'):
+                print(default_args)
+                self.model_args[str(default_args)] = str(self.cmd_args[default_args])
         
         self.device = None
+
+    def _read_cmd_line(self):
+        for arg in sys.argv[1:]:
+            if not arg.startswith("--"):
+                raise SyntaxError("Commend arg must start with '--', but '%s' is not!" % arg)
+            arg_name, arg_value = arg[2:].split("=")
+            self.run_args[arg_name] = arg_value
 
     def _read_config_file(self, file_name, arg_section):
         """
@@ -154,29 +174,28 @@ class Config(object):
 
         return self.__str__()
 
-    def dump_model_param(self, model_param_file):
+    def dump_config_file(self, config_file):
         """
         This function can dump the model's hyper parameters to a new config file
-        :param model_param_file: file name that write to.
+        :param config_file: file name that write to.
         """
         model_config = ConfigParser()
         model_config['model'] = self.model_args
-        with open(model_param_file, 'w') as configfile:
+        with open(config_file, 'w') as configfile:
             model_config.write(configfile)
 
 
 if __name__ == '__main__':
     config = Config('../properties/overall.config')
     config.init()
-    print(config)
-    print(config['process.ratio'])
+    #print(config)
+    print(config['process.split_by_ratio.train_ratio'])
     print(config['eval.metric'])
-    print(config['learner'])
+    print(config['model.learning_rate'])
     print(config['eval.group_view'])
-    print(config['process.by_time'])
-    print(config['data.convert.separator'])
-    print(config['reg_mf'])
+    print(config['data.separator'])
+    print(config['model.reg_mf'])
     print(config['device'])
-    config['reg_mf'] = 0.6
-    print(config['reg_mf'])
-    config.dump_model_param('../properties/mf_new.config')
+    config['model.reg_mf'] = 0.6
+    print(config['model.reg_mf'])
+    config.dump_config_file('../properties/mf_new.config')
