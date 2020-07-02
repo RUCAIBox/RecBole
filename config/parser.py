@@ -17,10 +17,10 @@ class Parser(object):
         parser.add_option('--process.neg_sample_to.num',
                           dest='process.neg_sample_to.num',
                           default=100, type='int', help='number of neg samples')
-        parser.add_option('--eval.metric', dest='eval.metric', default=["Recall", "Hit", "MRR"],
-                          type='complex', help='evaluation metric')
-        parser.add_option('--eval.topk', dest='eval.topk', default=[10, 20],
-                          type='complex', help='evaluation K')
+        parser.add_option('--eval.metric', dest='eval.metric', default='["Recall", "Hit", "MRR"]',
+                          type='str', help='evaluation metric')
+        parser.add_option('--eval.topk', dest='eval.topk', default='[10, 20]',
+                          type='str', help='evaluation K')
         parser.add_option('--eval.candidate_neg', dest='eval.candidate_neg', default=0,
                           type='int', help='number of candidate neg items when testing')
         parser.add_option('--eval.test_batch_size', dest='eval.test_batch_size', default=128,
