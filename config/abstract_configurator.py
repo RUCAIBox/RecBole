@@ -67,7 +67,7 @@ class AbstractConfig(object):
         # convert param from str to value, i.e. int, float or list etc.
         try:
             value = eval(param)
-            if not isinstance(value, (str, int, float, list, tuple, bool, None.__class__)):
+            if not isinstance(value, (str, int, float, list, tuple, dict, bool, None.__class__)):
                 value = param
         except NameError:
             if param.lower() == "true":

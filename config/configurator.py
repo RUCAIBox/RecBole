@@ -4,7 +4,7 @@ import random
 import numpy as np
 from config.running_configurator import RunningConfig
 from config.model_configurator import ModelConfig
-
+from config.data_configurator import DataConfig
 
 class Config(object):
     """
@@ -45,6 +45,10 @@ class Config(object):
         model_arg_file_name = os.path.join(os.path.dirname(config_file_name), model_name + '.config')
         self.model_args = ModelConfig(model_arg_file_name)
 
+        dataset_name = self.run_args['dataset']
+        dataset_arg_file_name = os.path.join(os.path.dirname(config_file_name), dataset_name + '.config')
+        self.dataset_args = DataConfig(dataset_arg_file_name)
+
         self.device = None
 
     def init(self):
@@ -80,6 +84,8 @@ class Config(object):
             return self.run_args[item]
         elif item in self.model_args:
             return self.model_args[item]
+        elif item in self.dataset_args:
+            return self.dataset_args[item]
         else:
             raise KeyError("There are no parameter named '%s'" % item)
 
@@ -93,14 +99,16 @@ class Config(object):
     def __contains__(self, o):
         if not isinstance(o, str):
             raise TypeError("index must be a str!")
-        return o in self.run_args or o in self.model_args
+        return o in self.run_args or o in self.model_args or o in self.dataset_args
 
     def __str__(self):
 
         run_args_info = str(self.run_args)
         model_args_info = str(self.model_args)
-        info = "\nRunning Hyper Parameters:\n%s\n\nRunning Model:%s\n\nModel Hyper Parameters:\n%s\n" % \
-               (run_args_info, self.run_args['model'], model_args_info)
+        dataset_args_info = str(self.dataset_args)
+        info = "\nRunning Hyper Parameters:\n%s\n\nRunning Model:%s\n\nDataset Hyper Parameters:%s\n\n" \
+               "Model Hyper Parameters:\n%s\n" % \
+               (run_args_info, self.run_args['model'], dataset_args_info, model_args_info)
         return info
 
     def __repr__(self):
@@ -112,6 +120,8 @@ if __name__ == '__main__':
     config = Config('../properties/overall.config')
     config.init()
     # print(config)
+    print(config['train.epochs'])
+    print(config['data.SEQ_LEN'])
     print(config['process.split_by_ratio.train_ratio'])
     print(config['eval.metric'])
     print(config['eval.topk'])
