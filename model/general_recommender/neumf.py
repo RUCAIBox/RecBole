@@ -60,9 +60,15 @@ class NeuMF(AbstractRecommender):
         output = self.predict_layer(torch.cat((mf_output, mlp_output), -1))
         return output
 
-    def train_model(self, user, item, label):
+    def train_model(self, interaction):
+        user = interaction[USER_ID]
+        item = interaction[ITEM_ID]
+        label = interaction[LABEL]
+
         output = self.forward(user, item)
         return self.loss(output, label)
 
-    def predict(self, user, item):
+    def predict(self, interaction):
+        user = interaction[USER_ID]
+        item = interaction[ITEM_ID]
         return self.forward(user, item)

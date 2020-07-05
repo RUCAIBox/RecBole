@@ -42,11 +42,17 @@ class BPRMF(AbstractRecommender):
         item_score = torch.mul(user_e, item_e).sum(dim=1)
         return item_score
 
-    def train_model(self, user, pos_item, neg_item):
+    def train_model(self, interaction):
+        user = interaction[USER_ID]
+        pos_item = interaction[ITEM_ID]
+        neg_item = interaction[NEG_ITEM_ID]
+
         pos_item_score = self.forward(user, pos_item)
         neg_item_score = self.forward(user, neg_item)
         loss = - self.loss(pos_item_score, neg_item_score)
         return loss
 
-    def predict(self, user, item):
+    def predict(self, interaction):
+        user = interaction[USER_ID]
+        item = interaction[ITEM_ID]
         return self.forward(user, item)
