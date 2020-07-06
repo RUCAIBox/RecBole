@@ -22,9 +22,9 @@ class NeuMF(AbstractRecommender):
     def __init__(self, config, dataset):
         super(NeuMF, self).__init__()
 
-        self.embedding_size = config['embedding_size']
-        self.layers = config['layers']
-        self.dropout = config['dropout']
+        self.embedding_size = config['model.embedding_size']
+        self.layers = config['model.layers']
+        self.dropout = config['model.dropout']
         self.n_users = dataset.n_users
         self.n_items = dataset.n_items
 
@@ -60,9 +60,15 @@ class NeuMF(AbstractRecommender):
         output = self.predict_layer(torch.cat((mf_output, mlp_output), -1))
         return output
 
-    def train_model(self, user, item, label):
+    def train_model(self, interaction):
+        user = interaction[USER_ID]
+        item = interaction[ITEM_ID]
+        label = interaction[LABEL]
+
         output = self.forward(user, item)
         return self.loss(output, label)
 
-    def predict(self, user, item):
+    def predict(self, interaction):
+        user = interaction[USER_ID]
+        item = interaction[ITEM_ID]
         return self.forward(user, item)

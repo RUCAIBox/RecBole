@@ -2,8 +2,9 @@ import os
 import torch
 import random
 import numpy as np
-from configparser import ConfigParser
-
+from config.running_configurator import RunningConfig
+from config.model_configurator import ModelConfig
+from config.data_configurator import DataConfig
 
 class Config(object):
     """
@@ -26,6 +27,7 @@ class Config(object):
 
     support parameter type: str, int, float, list, tuple, bool, None
     """
+
     def __init__(self, config_file_name):
         """
 
@@ -36,53 +38,25 @@ class Config(object):
                 ValueError: If `config_file` is not in correct format or
                         MUST parameter are not defined
         """
-        self.must_args = ['model', 'data.name', 'data.path']
 
-        self.run_args = self._read_config_file(config_file_name, 'default')
-        self._check_args()
+        self.run_args = RunningConfig(config_file_name)
+
         model_name = self.run_args['model']
         model_arg_file_name = os.path.join(os.path.dirname(config_file_name), model_name + '.config')
-        self.model_args = self._read_config_file(model_arg_file_name, 'model')
-        
+        self.model_args = ModelConfig(model_arg_file_name)
+
+        dataset_name = self.run_args['dataset']
+        dataset_arg_file_name = os.path.join(os.path.dirname(config_file_name), dataset_name + '.config')
+        self.dataset_args = DataConfig(dataset_arg_file_name)
+
         self.device = None
-
-    def _read_config_file(self, file_name, arg_section):
-        """
-        This function is a protected function that read the config file and convert it to a dict
-        :param file_name(str):  The path of ini-style configuration file.
-        :param arg_section(str):  section name that distinguish running config file and model config file
-        :return: A dict whose key and value are both str.
-        """
-        if not os.path.isfile(file_name):
-            raise FileNotFoundError("There is no config file named '%s'!" % file_name)
-        config = ConfigParser()
-        config.optionxform = str
-        config.read(file_name, encoding="utf-8")
-        sections = config.sections()
-
-        if len(sections) == 0:
-            raise ValueError("'%s' is not in correct format!" % file_name)
-        elif arg_section not in sections:
-            raise ValueError("'%s' is not in correct format!" % file_name)
-        else:
-            config_arg = dict(config[arg_section].items())
-
-        return config_arg
-
-    def _check_args(self):
-        """
-        This function is a protected function that check MUST parameters
-        """
-        for parameter in self.must_args:
-            if parameter not in self.run_args:
-                raise ValueError("'%s' must be specified in configuration file!" % parameter)
 
     def init(self):
         """
         This function is a global initialization function that fix random seed and gpu device.
         """
-        init_seed = self['seed']
-        gpu_id = self['gpu_id']
+        init_seed = self.run_args['seed']
+        gpu_id = self.run_args['gpu_id']
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # Get the device that run on.
 
@@ -93,90 +67,69 @@ class Config(object):
         torch.cuda.manual_seed_all(init_seed)
         torch.backends.cudnn.deterministic = True
 
-    def __getitem__(self, item):
+    def dump_config_file(self, config_file):
+        """
+        This function can dump the model's hyper parameters to a new config file
+        :param config_file: file name that write to.
+        """
+        self.model_args.dump_config_file(config_file)
 
-        if not isinstance(item, str):
-            raise TypeError("index must be a str")
-        # Get device or other parameters
-        if item == 'device':
+    def __getitem__(self, item):
+        if item == "device":
             if self.device is None:
-                raise KeyError("device can not be called before init.")
+                raise SyntaxError("device only can be get after init() !")
             else:
                 return self.device
-
-        if item in self.run_args:
-            param = self.run_args[item]
+        elif item in self.run_args:
+            return self.run_args[item]
         elif item in self.model_args:
-            param = self.model_args[item]
+            return self.model_args[item]
+        elif item in self.dataset_args:
+            return self.dataset_args[item]
         else:
             raise KeyError("There are no parameter named '%s'" % item)
 
-        # convert param from str to value, i.e. int, float or list etc.
-        try:
-            value = eval(param)
-            if not isinstance(value, (str, int, float, list, tuple, bool, None.__class__)):
-                value = param
-        except NameError:
-            if param.lower() == "true":
-                value = True
-            elif param.lower() == "false":
-                value = False
-            else:
-                value = param
-        return value
-
     def __setitem__(self, key, value):
-
         if not isinstance(key, str):
             raise TypeError("index must be a str")
         if key in self.run_args:
-            raise KeyError("Running parameter can't be changed")
-        elif key not in self.model_args:
-            raise KeyError("There are no model parameter named '%s'" % key)
-
-        self.model_args[key] = str(value)
+            raise SyntaxError("running args can not be changed when running!")
+        self.model_args[key] = value
 
     def __contains__(self, o):
         if not isinstance(o, str):
-            raise TypeError("index must be a str")
-        return o in self.run_args or o in self.model_args
+            raise TypeError("index must be a str!")
+        return o in self.run_args or o in self.model_args or o in self.dataset_args
 
     def __str__(self):
 
-        run_args_info = '\n'.join(
-            ["{}={}".format(arg, value) for arg, value in self.run_args.items() if arg != 'model'])
-        model_args_info = '\n'.join(["{}={}".format(arg, value) for arg, value in self.model_args.items()])
-        info = "\nRunning Hyper Parameters:\n%s\n\nRunning Model:%s\n\nModel Hyper Parameters:\n%s\n" % \
-               (run_args_info, self.run_args['model'], model_args_info)
+        run_args_info = str(self.run_args)
+        model_args_info = str(self.model_args)
+        dataset_args_info = str(self.dataset_args)
+        info = "\nRunning Hyper Parameters:\n%s\n\nRunning Model:%s\n\nDataset Hyper Parameters:%s\n\n" \
+               "Model Hyper Parameters:\n%s\n" % \
+               (run_args_info, self.run_args['model'], dataset_args_info, model_args_info)
         return info
 
     def __repr__(self):
 
         return self.__str__()
 
-    def dump_model_param(self, model_param_file):
-        """
-        This function can dump the model's hyper parameters to a new config file
-        :param model_param_file: file name that write to.
-        """
-        model_config = ConfigParser()
-        model_config['model'] = self.model_args
-        with open(model_param_file, 'w') as configfile:
-            model_config.write(configfile)
-
 
 if __name__ == '__main__':
     config = Config('../properties/overall.config')
     config.init()
-    print(config)
-    print(config['process.ratio'])
+    # print(config)
+    print(config['train.epochs'])
+    print(config['data.SEQ_LEN'])
+    print(config['process.split_by_ratio.train_ratio'])
     print(config['eval.metric'])
-    print(config['learner'])
+    print(config['eval.topk'])
+    print(config['model.learning_rate'])
     print(config['eval.group_view'])
-    print(config['process.by_time'])
-    print(config['data.convert.separator'])
-    print(config['reg_mf'])
+    print(config['data.separator'])
+    print(config['model.reg_mf'])
     print(config['device'])
-    config['reg_mf'] = 0.6
-    print(config['reg_mf'])
-    config.dump_model_param('../properties/mf_new.config')
+    config['model.reg_mf'] = 0.6
+    print(config['model.reg_mf'])
+    #config.dump_config_file('../properties/mf_new.config')

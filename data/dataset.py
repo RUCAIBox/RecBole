@@ -97,9 +97,9 @@ class AbstractDataset(object):
                     train_ratio=self.config['process.split_by_ratio.train_ratio'],
                     test_ratio=self.config['process.split_by_ratio.test_ratio'],
                     valid_ratio=self.config['process.split_by_ratio.valid_ratio'],
-                    train_batch_size=self.config['train_batch_size'],
-                    test_batch_size=self.config['test_batch_size'],
-                    valid_batch_size=self.config['valid_batch_size']
+                    train_batch_size=self.config['model.train_batch_size'],
+                    test_batch_size=self.config['model.test_batch_size'],
+                    valid_batch_size=self.config['model.valid_batch_size']
                 )
                 break
 
