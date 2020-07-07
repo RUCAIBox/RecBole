@@ -20,7 +20,7 @@ class Trainer(object):
         self.logger = logger
         self.learner = config['model.learner']
         self.learning_rate = config['model.learning_rate']
-        self.epochs = config['model.epochs']
+        self.epochs = config['epochs']
         self.eval_step = config['model.eval_step']
         self.stopping_step = config['model.stopping_step']
         self.device = config['device']
@@ -52,12 +52,9 @@ class Trainer(object):
         self.model.train()
         total_loss = 0.
         for batch_idx, interaction in enumerate(train_data):
-            # (users, pos_items, neg_items)
-            users = interaction['user_id'].to(self.device)
-            pos_items = interaction['pos_item_id'].to(self.device)
-            neg_items = interaction['neg_item_id'].to(self.device)
+            interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
-            loss = self.model.train_model(users, pos_items, neg_items)
+            loss = self.model.train_model(interaction)
             loss.backward()
             self.optimizer.step()
             total_loss += loss.item()
@@ -102,9 +99,10 @@ class Trainer(object):
     def evaluate(self, eval_data):
         batch_result_list, batch_size_list = [], []
         for batch_idx, interaction in enumerate(eval_data):
-            users = interaction['user_id'].to(self.device)
-            items = interaction['item_id'].to(self.device)
-            scores = self.model.predict(users, items)
+            interaction = interaction.to(self.device)
+            # todo:
+            users, items = interaction[USER_ID], interaction[ITEM_ID]
+            scores = self.model.predict(interaction)
             batch_size = users.size()[0]
             users = users.cpu().numpy()
             items = items.cpu().numpy()
