@@ -10,8 +10,8 @@ import numpy as np
 class Dataset(object):
     def __init__(self, config):
         self.config = config
-        self.token = config['data.name']
-        self.dataset_path = config['data.path']
+        self.token = config['dataset']
+        self.dataset_path = config['dataset.path']
 
         self.support_types = set(['token', 'token_seq', 'float', 'float_seq'])
         self.field2type = {}
@@ -27,10 +27,6 @@ class Dataset(object):
         self._filter_users()
         self._filter_inters()
         self._remap_ID_all()
-
-        # TODO
-        self.n_users = len(self.token2id[self.config['data.USER_ID_FIELD']])
-        self.n_items = len(self.token2id[self.config['data.ITEM_ID_FIELD']])
 
     def _load_data(self, token, dataset_path):
         user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
@@ -56,7 +52,7 @@ class Dataset(object):
 
     def _load_feat(self, filepath, source):
         with open(filepath, 'r', encoding='utf-8') as file:
-            head = file.readline().strip().split('\t')
+            head = file.readline().strip().split(self.config['data.field_separator'])
             field_names = []
             for field_type in head:
                 field, ftype = field_type.split(':')
@@ -72,7 +68,7 @@ class Dataset(object):
             # TODO checking num of col
             lines = []
             for line in file:
-                lines.append(line.strip().split('\t'))
+                lines.append(line.strip().split(self.config['data.field_separator']))
 
             ret = {}
             cols = map(list, zip(*lines))
@@ -83,9 +79,9 @@ class Dataset(object):
                 if ftype == 'float':
                     col = list(map(float, col))
                 elif ftype == 'token_seq':
-                    col = [_.split(' ') for _ in col]
+                    col = [_.split(self.config['data.seq_separator']) for _ in col]
                 elif ftype == 'float_seq':
-                    col = [list(map(float, _.split(' '))) for _ in col]
+                    col = [list(map(float, _.split(self.config['data.seq_separator']))) for _ in col]
                 ret[field] = col
 
         df =  pd.DataFrame(ret)
