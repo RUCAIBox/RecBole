@@ -20,7 +20,7 @@ class Trainer(object):
         self.logger = logger
         self.learner = config['model.learner']
         self.learning_rate = config['model.learning_rate']
-        self.epochs = config['epochs']
+        self.epochs = config['train.epochs']
         self.eval_step = config['model.eval_step']
         self.stopping_step = config['model.stopping_step']
         self.device = config['device']
