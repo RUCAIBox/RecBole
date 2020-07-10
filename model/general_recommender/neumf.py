@@ -34,7 +34,8 @@ class NeuMF(AbstractRecommender):
         self.item_mlp_embedding = nn.Embedding(self.n_items, self.layers[0] - self.layers[0] // 2)
         self.mlp_layers = MLPLayers(self.layers, self.dropout)
         self.predict_layer = nn.Linear(self.embedding_size + self.layers[-1], 1)
-        self.loss = nn.BCEWithLogitsLoss()
+        self.sigmoid = nn.Sigmoid()
+        self.loss = nn.BCELoss()
 
         self._init_weights()
 
@@ -57,7 +58,7 @@ class NeuMF(AbstractRecommender):
         mf_output = torch.mul(user_mf_e, item_mf_e)
         mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))
 
-        output = self.predict_layer(torch.cat((mf_output, mlp_output), -1))
+        output = self.sigmoid(self.predict_layer(torch.cat((mf_output, mlp_output), -1)))
         return output
 
     def train_model(self, interaction):
