@@ -9,6 +9,7 @@ Common Layers in recommender system
 """
 
 import warnings
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as fn
@@ -78,3 +79,57 @@ class MLPLayers(nn.Module):
 
     def forward(self, input_feature):
         return self.mlp_layers(input_feature)
+
+
+class FMEmbedding(nn.Module):
+
+    def __init__(self, field_dims, offsets, embed_dim):
+        super(FMEmbedding).__init__()
+        self.embedding = nn.Embedding(sum(field_dims), embed_dim)
+        self.offsets = offsets
+
+        self._init_weights()
+
+    def _init_weights(self):
+        xavier_normal_(self.embedding.weight)
+
+    def forward(self, input_x):
+        input_x = input_x + input_x.new_tensor(self.offsets).unsqueeze(0)
+        output = self.embedding(input_x)
+        return output
+
+
+class FMFirstOrderLinear(nn.Module):
+
+    def __init__(self, field_dims, offsets, output_dim=1):
+        super(FMFirstOrderLinear).__init__()
+
+        self.w = nn.Embedding(sum(field_dims), output_dim)
+        self.bias = nn.Parameter(torch.zeros((output_dim, )))
+        self.offsets = offsets
+
+        self._init_weights()
+
+    def _init_weights(self):
+        xavier_normal_(self.w.weight)
+
+    def forward(self, input_x):
+        input_x = input_x + input_x.new_tensor(self.offsets).unsqueeze(0)
+        output = torch.sum(self.w(input_x), dim=1) + self.bias
+        return output
+
+
+class BaseFactorizationMachine(nn.Module):
+
+    def __init__(self, reduce_sum=True):
+        super(BaseFactorizationMachine).__init__()
+        self.reduce_sum = reduce_sum
+
+    def forward(self, input_x):
+        square_of_sum = torch.sum(input_x, dim=1) ** 2
+        sum_of_square = torch.sum(input_x ** 2, dim=1)
+        output = square_of_sum - sum_of_square
+        if self.reduce_sum:
+            output = torch.sum(output, dim=1, keepdim=True)
+        output = 0.5 * output
+        return output
