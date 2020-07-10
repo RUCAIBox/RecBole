@@ -18,7 +18,7 @@ class AbstractDataLoader(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         raise NotImplementedError('Method [next] should be implemented.')
 
 class PairwiseDataLoader(AbstractDataLoader):
@@ -38,7 +38,7 @@ class PairwiseDataLoader(AbstractDataLoader):
         if not real_time_neg_sampling:
             self._pre_neg_sampling()
 
-    def next(self):
+    def __next__(self):
         if self.pr >= len(self.dataset):
             raise StopIteration()
         cur_data = self.dataset[self.pr : self.pr+self.batch_size]
@@ -64,7 +64,10 @@ class PairwiseDataLoader(AbstractDataLoader):
                 for uid in uids:
                     neg_iids.extend(self.sampler.sample_by_user_id(uid, self.neg_sample_by))
                 neg_prefix = self.config['data.NEG_PREFIX']
-                self.dataset.inter_feat.insert(len(self.dataset.inter_feat.columns), neg_prefix + self.config['data.ITEM_ID_FIELD'], neg_iids)
+                neg_item_id = neg_prefix + self.config['data.ITEM_ID_FIELD']
+                self.dataset.inter_feat.insert(len(self.dataset.inter_feat.columns), neg_item_id, neg_iids)
+                self.dataset.field2type[neg_item_id] = 'token'
+                self.dataset.field2source[neg_item_id] = 'item_id'
                 # TODO item_feat join
                 if self.dataset.item_feat is not None:
                     pass
@@ -75,6 +78,8 @@ class PairwiseDataLoader(AbstractDataLoader):
             uid_field = self.config['data.USER_ID_FIELD']
             iid_field = self.config['data.ITEM_ID_FIELD']
             label_field = self.config['data.LABEL_FIELD']
+            self.dataset.field2type[label_field] = 'float'
+            self.dataset.field2source[label_field] = 'inter'
             new_inter = {
                 uid_field: [],
                 iid_field: [],
