@@ -4,8 +4,10 @@
 # @File   : dataset.py
 
 import os
+import copy
 import pandas as pd
 import numpy as np
+from .dataloader import *
 
 class Dataset(object):
     def __init__(self, config):
@@ -47,6 +49,18 @@ class Dataset(object):
         if not os.path.isfile(inter_feat_path):
             raise ValueError('File {} not exist'.format(inter_feat_path))
         inter_feat = self._load_feat(inter_feat_path, 'inter')
+
+        uid_field = self.config['data.USER_ID_FIELD']
+        if uid_field not in self.field2source:
+            raise ValueError('user id field [{}] not exist in [{}]'.format(uid_field, self.token))
+        else:
+            self.field2source[uid_field] = 'user_id'
+
+        iid_field = self.config['data.ITEM_ID_FIELD']
+        if iid_field not in self.field2source:
+            raise ValueError('item id field [{}] not exist in [{}]'.format(iid_field, self.token))
+        else:
+            self.field2source[iid_field] = 'item_id'
 
         return inter_feat, user_feat, item_feat
 
@@ -113,14 +127,14 @@ class Dataset(object):
                 self._remap_ID_seq(fsource, field)
 
     def _remap_ID(self, source, field):
-        if source == 'inter':
+        if source == 'inter' or source == 'user_id' or source == 'item_id':
             df = self.inter_feat
             new_ids, mp = pd.factorize(df[field])
             self.inter_feat[field] = new_ids
             self.token2id[field] = mp
-        elif source == 'user':
+        elif source == 'user' or source == 'user_id':
             pass
-        elif source == 'item':
+        elif source == 'item' or source == 'item_id':
             pass
 
     # TODO
@@ -134,3 +148,84 @@ class Dataset(object):
 
     def __len__(self):
         return len(self.inter_feat)
+
+    # def __iter__(self):
+    #     return self
+
+    # TODO next func
+    # def next(self):
+        # pass
+
+    # TODO copy
+    def copy(self, new_inter_feat):
+        nxt = copy.copy(self)
+        nxt.inter_feat = new_inter_feat
+        return nxt
+
+    # TODO
+    def split(self):
+        train_ratio = self.config['process.split_by_ratio.train_ratio']
+        test_ratio = self.config['process.split_by_ratio.test_ratio']
+        valid_ratio = self.config['process.split_by_ratio.valid_ratio']
+
+        if train_ratio <= 0:
+            raise ValueError('train ratio [{}] should be possitive'.format(train_ratio))
+        if test_ratio <= 0:
+            raise ValueError('test ratio [{}] should be possitive'.format(test_ratio))
+        if valid_ratio < 0:
+            raise ValueError('valid ratio [{}] should be none negative'.format(valid_ratio))
+
+        tot_ratio = train_ratio + test_ratio + valid_ratio
+        train_ratio /= tot_ratio
+        test_ratio /= tot_ratio
+        # valid_ratio /= tot_ratio
+
+        train_cnt = int(train_ratio * self.__len__())
+        if valid_ratio == 0:
+            test_cnt = self.__len__() - train_cnt
+            # valid_cnt = 0
+        else:
+            test_cnt = int(test_ratio * self.__len__())
+            # valid_cnt = self.__len__() - train_cnt - test_cnt
+
+        train_batch_size = self.config['model.train_batch_size']
+        test_batch_size = self.config['model.test_batch_size']
+        valid_batch_size = self.config['model.valid_batch_size']
+
+        train_inter = self.inter_feat[:train_cnt]
+        test_inter = self.inter_feat[train_cnt:train_cnt+test_cnt]
+        valid_inter = self.inter_feat[train_cnt+test_cnt:]
+
+        # TODO
+        # NEED TO BE CHANGED A LOT
+        # SHOULD BE DISCUSSED
+        train_loader = PairwiseDataLoader(
+            config=self.config,
+            dataset=self.copy(train_inter),
+            batch_size=train_batch_size,
+            real_time_neg_sampling=False,
+            neg_sample_by=1
+        )
+
+        test_loader = PairwiseDataLoader(
+            config=self.config,
+            dataset=self.copy(test_inter),
+            batch_size=test_batch_size,
+            real_time_neg_sampling=False,
+            neg_sample_to=self.config['process.neg_sample_to.num']
+        )
+
+        valid_loader = PairwiseDataLoader(
+            config=self.config,
+            dataset=self.copy(valid_inter),
+            batch_size=valid_batch_size,
+            real_time_neg_sampling=False,
+            neg_sample_to=self.config['process.neg_sample_to.num']
+        )
+        # NEED TO BE CHANGED A LOT
+        # SHOULD BE DISCUSSED
+
+        if valid_ratio is not None:
+            return train_loader, test_loader, valid_loader
+        else:
+            return train_loader, test_loader
