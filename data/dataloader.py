@@ -40,8 +40,9 @@ class PairwiseDataLoader(AbstractDataLoader):
 
     def __next__(self):
         if self.pr >= len(self.dataset):
+            self.pr = 0
             raise StopIteration()
-        cur_data = self.dataset[self.pr : self.pr+self.batch_size]
+        cur_data = self.dataset[self.pr : self.pr+self.batch_size-1]
         self.pr += self.batch_size
         # TODO real time negative sampling
         if self.real_time_neg_sampling:
