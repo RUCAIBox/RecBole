@@ -1,3 +1,4 @@
+user_id:token	item_id:token	rating:float	timestamp:float
 196	242	3	881250949
 186	302	3	891717742
 22	377	1	878887116
