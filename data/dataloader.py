@@ -76,6 +76,9 @@ class PairwiseDataLoader(AbstractDataLoader):
                 raise NotImplementedError()
         # TODO
         elif self.neg_sample_to is not None:
+            user_num_in_one_batch = self.batch_size // self.neg_sample_to
+            self.batch_size = (user_num_in_one_batch + 1) * self.neg_sample_to
+
             uid_field = self.config['USER_ID_FIELD']
             iid_field = self.config['ITEM_ID_FIELD']
             label_field = self.config['LABEL_FIELD']
