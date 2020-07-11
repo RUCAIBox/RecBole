@@ -11,7 +11,7 @@ logger = Logger(config)
 
 dataset = Dataset(config)
 
-train_data, test_data, valid_data = dataset.split()
+train_data, test_data, valid_data = dataset.build()
 
 model = BPRMF(config, dataset).to(config['device'])
 
