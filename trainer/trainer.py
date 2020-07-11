@@ -101,13 +101,13 @@ class Trainer(object):
         batch_result_list, batch_size_list = [], []
         for batch_idx, interaction in enumerate(eval_data):
             # todo:
-            USER_ID = self.config['data.USER_ID_FIELD']
-            ITEM_ID = self.config['data.ITEM_ID_FIELD']
+            USER_ID = self.config['USER_ID_FIELD']
+            ITEM_ID = self.config['ITEM_ID_FIELD']
             users, items = interaction[USER_ID], interaction[ITEM_ID]
             scores = self.model.predict(interaction.to(self.device))
             batch_size = users.size()[0]
             scores = scores.detach().cpu().numpy()
-            batch_result = self.evaluator.evaluate(scores, interaction)
+            batch_result = self.evaluator.evaluate(scores, interaction.cpu().numpy())
             batch_result_list.append(batch_result)
             batch_size_list.append(batch_size)
         result = self.evaluator.collect(batch_result_list, batch_size_list)
