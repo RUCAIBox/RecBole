@@ -22,14 +22,12 @@ class BPRMF(AbstractRecommender):
     def __init__(self, config, dataset):
         super(BPRMF, self).__init__()
 
-        self.embedding_size = config['model.embedding_size']
-
-        self.USER_ID = config['data.USER_ID_FIELD']
-        self.ITEM_ID = config['data.ITEM_ID_FIELD']
-        self.NEG_ITEM_ID = config['data.NEG_PREFIX'] + self.ITEM_ID
-
+        self.USER_ID = config['USER_ID_FIELD']
+        self.ITEM_ID = config['ITEM_ID_FIELD']
+        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
         self.n_users = len(dataset.token2id[self.USER_ID])
         self.n_items = len(dataset.token2id[self.ITEM_ID])
+        self.embedding_size = config['embedding_size']
 
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
