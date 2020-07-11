@@ -58,14 +58,14 @@ class PairwiseDataLoader(AbstractDataLoader):
 
     def _pre_neg_sampling(self):
         if self.neg_sample_by is not None:
-            uids = self.dataset.inter_feat[self.config['data.USER_ID_FIELD']].to_list()
-            # iids = self.dataset.inter_feat[self.config['data.ITEM_ID_FIELD']].to_list()
+            uids = self.dataset.inter_feat[self.config['USER_ID_FIELD']].to_list()
+            # iids = self.dataset.inter_feat[self.config['ITEM_ID_FIELD']].to_list()
             if self.neg_sample_by == 1:
                 neg_iids = []
                 for uid in uids:
                     neg_iids.extend(self.sampler.sample_by_user_id(uid, self.neg_sample_by))
-                neg_prefix = self.config['data.NEG_PREFIX']
-                neg_item_id = neg_prefix + self.config['data.ITEM_ID_FIELD']
+                neg_prefix = self.config['NEG_PREFIX']
+                neg_item_id = neg_prefix + self.config['ITEM_ID_FIELD']
                 self.dataset.inter_feat.insert(len(self.dataset.inter_feat.columns), neg_item_id, neg_iids)
                 self.dataset.field2type[neg_item_id] = 'token'
                 self.dataset.field2source[neg_item_id] = 'item_id'
@@ -76,9 +76,9 @@ class PairwiseDataLoader(AbstractDataLoader):
                 raise NotImplementedError()
         # TODO
         elif self.neg_sample_to is not None:
-            uid_field = self.config['data.USER_ID_FIELD']
-            iid_field = self.config['data.ITEM_ID_FIELD']
-            label_field = self.config['data.LABEL_FIELD']
+            uid_field = self.config['USER_ID_FIELD']
+            iid_field = self.config['ITEM_ID_FIELD']
+            label_field = self.config['LABEL_FIELD']
             self.dataset.field2type[label_field] = 'float'
             self.dataset.field2source[label_field] = 'inter'
             new_inter = {

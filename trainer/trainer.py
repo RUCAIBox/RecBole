@@ -18,13 +18,13 @@ class Trainer(object):
     def __init__(self, config, logger, model):
         self.config = config
         self.logger = logger
-        self.learner = config['model.learner']
-        self.learning_rate = config['model.learning_rate']
-        self.epochs = config['train.epochs']
-        self.eval_step = config['model.eval_step']
-        self.stopping_step = config['model.stopping_step']
+        self.learner = config['learner']
+        self.learning_rate = config['learning_rate']
+        self.epochs = config['epochs']
+        self.eval_step = config['eval_step']
+        self.stopping_step = config['stopping_step']
         self.device = config['device']
-        self.checkpoint_dir = config['model.checkpoint_dir']
+        self.checkpoint_dir = config['checkpoint_dir']
 
         self.start_epoch = 0
         self.cur_step = 0
