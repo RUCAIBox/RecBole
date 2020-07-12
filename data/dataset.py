@@ -4,19 +4,21 @@
 # @File   : dataset.py
 
 import os
+import copy
 import pandas as pd
 import numpy as np
+from .dataloader import *
 
 class Dataset(object):
     def __init__(self, config):
         self.config = config
         self.token = config['dataset']
-        self.dataset_path = config['dataset.path']
+        self.dataset_path = config['data_path']
 
         self.support_types = set(['token', 'token_seq', 'float', 'float_seq'])
         self.field2type = {}
         self.field2source = {}
-        self.token2id = {}
+        self.field2id_token = {}
 
         self.inter_feat = None
         self.user_feat = None
@@ -24,8 +26,6 @@ class Dataset(object):
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.token, self.dataset_path)
 
-        self._filter_users()
-        self._filter_inters()
         self._remap_ID_all()
 
     def _load_data(self, token, dataset_path):
@@ -48,11 +48,23 @@ class Dataset(object):
             raise ValueError('File {} not exist'.format(inter_feat_path))
         inter_feat = self._load_feat(inter_feat_path, 'inter')
 
+        uid_field = self.config['USER_ID_FIELD']
+        if uid_field not in self.field2source:
+            raise ValueError('user id field [{}] not exist in [{}]'.format(uid_field, self.token))
+        else:
+            self.field2source[uid_field] = 'user_id'
+
+        iid_field = self.config['ITEM_ID_FIELD']
+        if iid_field not in self.field2source:
+            raise ValueError('item id field [{}] not exist in [{}]'.format(iid_field, self.token))
+        else:
+            self.field2source[iid_field] = 'item_id'
+
         return inter_feat, user_feat, item_feat
 
     def _load_feat(self, filepath, source):
         with open(filepath, 'r', encoding='utf-8') as file:
-            head = file.readline().strip().split(self.config['data.field_separator'])
+            head = file.readline().strip().split(self.config['field_separator'])
             field_names = []
             for field_type in head:
                 field, ftype = field_type.split(':')
@@ -68,7 +80,7 @@ class Dataset(object):
             # TODO checking num of col
             lines = []
             for line in file:
-                lines.append(line.strip().split(self.config['data.field_separator']))
+                lines.append(line.strip().split(self.config['field_separator']))
 
             ret = {}
             cols = map(list, zip(*lines))
@@ -79,9 +91,9 @@ class Dataset(object):
                 if ftype == 'float':
                     col = list(map(float, col))
                 elif ftype == 'token_seq':
-                    col = [_.split(self.config['data.seq_separator']) for _ in col]
+                    col = [_.split(self.config['seq_separator']) for _ in col]
                 elif ftype == 'float_seq':
-                    col = [list(map(float, _.split(self.config['data.seq_separator']))) for _ in col]
+                    col = [list(map(float, _.split(self.config['seq_separator']))) for _ in col]
                 ret[field] = col
 
         df =  pd.DataFrame(ret)
@@ -93,12 +105,12 @@ class Dataset(object):
 
     # TODO
     def _filter_inters(self):
-        if 'data.lowest_val' in self.config:
-            for field in self.config['data.lowest_val']:
+        if 'lowest_val' in self.config:
+            for field in self.config['lowest_val']:
                 if field not in self.field2type:
                     raise ValueError('field [{}] not defined in dataset'.format(field))
-                self.inter_feat = self.inter_feat[self.inter_feat[field] >= self.config['data.lowest_val'][field]]
-        if 'data.highest_val' in self.config:
+                self.inter_feat = self.inter_feat[self.inter_feat[field] >= self.config['lowest_val'][field]]
+        if 'highest_val' in self.config:
             pass
 
         self.inter_feat = self.inter_feat.reset_index(drop=True)
@@ -113,14 +125,14 @@ class Dataset(object):
                 self._remap_ID_seq(fsource, field)
 
     def _remap_ID(self, source, field):
-        if source == 'inter':
+        if source == 'inter' or source == 'user_id' or source == 'item_id':
             df = self.inter_feat
             new_ids, mp = pd.factorize(df[field])
             self.inter_feat[field] = new_ids
-            self.token2id[field] = mp
-        elif source == 'user':
+            self.field2id_token[field] = mp
+        elif source == 'user' or source == 'user_id':
             pass
-        elif source == 'item':
+        elif source == 'item' or source == 'item_id':
             pass
 
     # TODO
@@ -134,3 +146,87 @@ class Dataset(object):
 
     def __len__(self):
         return len(self.inter_feat)
+
+    # def __iter__(self):
+    #     return self
+
+    # TODO next func
+    # def next(self):
+        # pass
+
+    # TODO copy
+    def copy(self, new_inter_feat):
+        nxt = copy.copy(self)
+        nxt.inter_feat = new_inter_feat
+        return nxt
+
+    # TODO
+    def build(self):
+        self._filter_users()
+        self._filter_inters()
+
+        train_ratio = self.config['train_split_ratio']
+        test_ratio = self.config['test_split_ratio']
+        valid_ratio = self.config['valid_split_ratio']
+
+        if train_ratio <= 0:
+            raise ValueError('train ratio [{}] should be possitive'.format(train_ratio))
+        if test_ratio <= 0:
+            raise ValueError('test ratio [{}] should be possitive'.format(test_ratio))
+        if valid_ratio < 0:
+            raise ValueError('valid ratio [{}] should be none negative'.format(valid_ratio))
+
+        tot_ratio = train_ratio + test_ratio + valid_ratio
+        train_ratio /= tot_ratio
+        test_ratio /= tot_ratio
+        # valid_ratio /= tot_ratio
+
+        train_cnt = int(train_ratio * self.__len__())
+        if valid_ratio == 0:
+            test_cnt = self.__len__() - train_cnt
+            # valid_cnt = 0
+        else:
+            test_cnt = int(test_ratio * self.__len__())
+            # valid_cnt = self.__len__() - train_cnt - test_cnt
+
+        train_batch_size = self.config['train_batch_size']
+        test_batch_size = self.config['test_batch_size']
+        valid_batch_size = self.config['valid_batch_size']
+
+        train_inter = self.inter_feat[:train_cnt]
+        test_inter = self.inter_feat[train_cnt:train_cnt+test_cnt]
+        valid_inter = self.inter_feat[train_cnt+test_cnt:]
+
+        # TODO
+        # NEED TO BE CHANGED A LOT
+        # SHOULD BE DISCUSSED
+        train_loader = PairwiseDataLoader(
+            config=self.config,
+            dataset=self.copy(train_inter),
+            batch_size=train_batch_size,
+            real_time_neg_sampling=False,
+            neg_sample_by=1
+        )
+
+        test_loader = PairwiseDataLoader(
+            config=self.config,
+            dataset=self.copy(test_inter),
+            batch_size=test_batch_size,
+            real_time_neg_sampling=False,
+            neg_sample_to=self.config['test_neg_sample_num']
+        )
+
+        valid_loader = PairwiseDataLoader(
+            config=self.config,
+            dataset=self.copy(valid_inter),
+            batch_size=valid_batch_size,
+            real_time_neg_sampling=False,
+            neg_sample_to=self.config['test_neg_sample_num']
+        )
+        # NEED TO BE CHANGED A LOT
+        # SHOULD BE DISCUSSED
+
+        if valid_ratio is not None:
+            return train_loader, test_loader, valid_loader
+        else:
+            return train_loader, test_loader

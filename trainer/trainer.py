@@ -18,13 +18,13 @@ class Trainer(object):
     def __init__(self, config, logger, model):
         self.config = config
         self.logger = logger
-        self.learner = config['model.learner']
-        self.learning_rate = config['model.learning_rate']
-        self.epochs = config['train.epochs']
-        self.eval_step = config['model.eval_step']
-        self.stopping_step = config['model.stopping_step']
+        self.learner = config['learner']
+        self.learning_rate = config['learning_rate']
+        self.epochs = config['epochs']
+        self.eval_step = config['eval_step']
+        self.stopping_step = config['stopping_step']
         self.device = config['device']
-        self.checkpoint_dir = config['model.checkpoint_dir']
+        self.checkpoint_dir = config['checkpoint_dir']
 
         self.start_epoch = 0
         self.cur_step = 0
@@ -35,6 +35,7 @@ class Trainer(object):
         self.evaluator = Evaluator(config, logger)
 
     def _build_optimizer(self):
+        # todo: Avoid clear text strings
         if self.learner.lower() == 'adam':
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         elif self.learner.lower() == 'sgd':
@@ -99,15 +100,14 @@ class Trainer(object):
     def evaluate(self, eval_data):
         batch_result_list, batch_size_list = [], []
         for batch_idx, interaction in enumerate(eval_data):
-            interaction = interaction.to(self.device)
             # todo:
+            USER_ID = self.config['USER_ID_FIELD']
+            ITEM_ID = self.config['ITEM_ID_FIELD']
             users, items = interaction[USER_ID], interaction[ITEM_ID]
-            scores = self.model.predict(interaction)
+            scores = self.model.predict(interaction.to(self.device))
             batch_size = users.size()[0]
-            users = users.cpu().numpy()
-            items = items.cpu().numpy()
             scores = scores.detach().cpu().numpy()
-            batch_result = self.evaluator.evaluate([users, items, scores], eval_data)
+            batch_result = self.evaluator.evaluate(scores, interaction.cpu().numpy())
             batch_result_list.append(batch_result)
             batch_size_list.append(batch_size)
         result = self.evaluator.collect(batch_result_list, batch_size_list)

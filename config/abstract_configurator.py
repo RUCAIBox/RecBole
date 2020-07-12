@@ -1,15 +1,13 @@
 import os
 import sys
 from configparser import ConfigParser
-from config.parser import Parser
+
 
 class AbstractConfig(object):
     def __init__(self):
         self.cmd_args = dict()
-        self._read_cmd_line()
         self.args = dict()
         self.must_args = []
-        self.default_parser = Parser()
 
     def _read_config_file(self, file_name, arg_section):
         """
@@ -34,17 +32,6 @@ class AbstractConfig(object):
 
         return config_arg
 
-    def _read_cmd_line(self):
-
-        for arg in sys.argv[1:]:
-            if not arg.startswith("--"):
-                raise SyntaxError("Commend arg must start with '--', but '%s' is not!" % arg)
-            cmd_arg_name, cmd_arg_value = arg[2:].split("=")
-            if cmd_arg_name in self.cmd_args and cmd_arg_value != self.cmd_args[cmd_arg_name]:
-                raise SyntaxError("There are duplicate commend arg '%s' with different value!" % arg)
-            else:
-                self.cmd_args[cmd_arg_name] = cmd_arg_value
-
     def _check_args(self):
         """
         This function is a protected function that check MUST parameters
@@ -52,6 +39,11 @@ class AbstractConfig(object):
         for parameter in self.must_args:
             if parameter not in self.args:
                 raise ValueError("'%s' must be specified !" % parameter)
+
+    def _replace_args(self, cmd_args):
+        for arg_name in self.args.keys():
+            if arg_name in cmd_args:
+                self.args[arg_name] = cmd_args[arg_name]
 
     def __getitem__(self, item):
 
