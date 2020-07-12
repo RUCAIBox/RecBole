@@ -21,3 +21,16 @@ class Interaction(object):
         for k in self.interaction:
             ret[k] = self.interaction[k].to(device)
         return Interaction(ret)
+
+    def cpu(self):
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k].cpu()
+        return Interaction(ret)
+
+    def numpy(self):
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k].numpy()
+        return Interaction(ret)
+

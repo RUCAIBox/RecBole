@@ -10,14 +10,14 @@ class Sampler(object):
         self.config = config
         self.dataset = dataset
         self.used_item_id = {}
-        self.n_users = len(self.dataset.token2id[self.config['data.USER_ID_FIELD']])
-        self.n_items = len(self.dataset.token2id[self.config['data.ITEM_ID_FIELD']])
+        self.n_users = len(self.dataset.field2id_token[self.config['USER_ID_FIELD']])
+        self.n_items = len(self.dataset.field2id_token[self.config['ITEM_ID_FIELD']])
 
         for i in range(self.n_users):
             self.used_item_id[i] = set()
 
-        uids = dataset.inter_feat[self.config['data.USER_ID_FIELD']].to_numpy()
-        iids = dataset.inter_feat[self.config['data.ITEM_ID_FIELD']].to_numpy()
+        uids = dataset.inter_feat[self.config['USER_ID_FIELD']].to_numpy()
+        iids = dataset.inter_feat[self.config['ITEM_ID_FIELD']].to_numpy()
         assert len(uids) == len(iids)
         for i in range(len(uids)):
             uid = uids[i]

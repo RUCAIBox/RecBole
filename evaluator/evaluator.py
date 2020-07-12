@@ -4,12 +4,7 @@ import pandas as pd
 from collections import namedtuple
 import utils
 
-USER_FIELD = 'user_id'
-ITEM_FIELD = 'item_id'
 SCORE_FIELD = 'score'
-STAR_FIELD = 'review'
-GROUP_ID = 'group_id'
-
 
 # 'Precision', 'Hit', 'Recall', 'MAP', 'NDCG', 'MRR'
 metric_name = {metric.lower() : metric for metric in ['Hit', 'Recall', 'MRR']}
@@ -40,10 +35,13 @@ class TopKEvaluator(AbstractEvaluator):
     """Top k evaluator
 
     """    
-    def __init__(self, logger, metrics, topk):
+    def __init__(self, config, logger, metrics, topk):
         self.logger = logger
         self.metrics = metrics
         self.topk = topk
+
+        self.USER_FIELD = config['USER_ID_FIELD']
+        self.ITEM_FIELD = config['ITEM_ID_FIELD']
 
     def recommend(self, df, k):
         """Recommend the top k items for users
@@ -56,10 +54,10 @@ class TopKEvaluator(AbstractEvaluator):
             (list, list): (user_list, item_list)
         """
 
-        df['rank'] = df.groupby(USER_FIELD)[SCORE_FIELD].rank(method='first', ascending=False)
+        df['rank'] = df.groupby(self.USER_FIELD)[SCORE_FIELD].rank(method='first', ascending=False)
         mask = (df['rank'].values > 0) & (df['rank'].values <= k)
         topk_df = df[mask]
-        return topk_df[USER_FIELD].values.tolist(), topk_df[ITEM_FIELD].values.tolist()
+        return topk_df[self.USER_FIELD].values.tolist(), topk_df[self.ITEM_FIELD].values.tolist()
 
     def metric_info(self, df, metric):
         """Get the result of the metric on the data
@@ -73,7 +71,7 @@ class TopKEvaluator(AbstractEvaluator):
         """
 
         metric_fuc = getattr(utils, metric)
-        metric_result = df.groupby(USER_FIELD)['rank'].apply(metric_fuc)
+        metric_result = df.groupby(self.USER_FIELD)['rank'].apply(metric_fuc)
         return metric_result
 
 
@@ -90,7 +88,7 @@ class TopKEvaluator(AbstractEvaluator):
         """
 
         metric_dict = {}
-        num_users = df[USER_FIELD].nunique()
+        num_users = df[self.USER_FIELD].nunique()
         for k in sorted(self.topk)[::-1]:
             df['rank'] = np.where(df['rank'].values <= k, df['rank'].values, np.full_like(df['rank'].values, -1))
             for metric in self.metrics:
@@ -105,11 +103,14 @@ class LossEvaluator(AbstractEvaluator):
 
     """
 
-    def __init__(self, logger, metrics):
+    def __init__(self, config, logger, metrics):
         self.logger = logger
         self.metrics = metrics 
         self.cut_method = ['ceil', 'floor', 'around']
         self.metric_cols = [SCORE_FIELD, STAR_FIELD]
+
+        self.USER_FIELD = config['USER_ID_FIELD']
+        self.ITEM_FIELD = config['ITEM_ID_FIELD']
 
     def cutoff(self, df, col, method):
         """Cut off the col's values by using the method
@@ -176,19 +177,25 @@ class Evaluator(AbstractEvaluator):
 
         super(Evaluator, self).__init__()
 
-        self.group_view = config['eval.group_view']
-        self.eval_metric = config['eval.metric']
-        self.topk = config['eval.topk']
+        self.group_view = config['group_view']
+        self.eval_metric = config['eval_metric']
+        self.topk = config['topk']
         # TODO 这里的话应该就是topk为空的话就不是topk推荐了
         self.logger = logger
         self.verbose = True
 
+        self.USER_FIELD = config['USER_ID_FIELD']
+        self.ITEM_FIELD = config['ITEM_ID_FIELD']
+        self.LABEL_FIELD = config['LABEL_FIELD']
+        # STAR_FIELD = 'review'
+        # GROUP_ID = 'group_id'
+
         self._check_args()
 
         if self.topk is not None:
-            self.evaluator = TopKEvaluator(self.logger, self.eval_metric, self.topk)
+            self.evaluator = TopKEvaluator(config, self.logger, self.eval_metric, self.topk)
         else:
-            self.evaluator = LossEvaluator(self.logger, self.eval_metric)
+            self.evaluator = LossEvaluator(config, self.logger, self.eval_metric)
 
     def collect(self, result_list, batch_size_list):
         """when using minibatch in training phase, you need to call this function to summarize the results
@@ -315,20 +322,26 @@ class Evaluator(AbstractEvaluator):
         if self.verbose:
             self.logger.info(message)
 
-    def build_result_df(self, result):
-        # TODO
+    def build_result_df(self, rdata, result):
         # users, items, scores = self.get_result_pairs(result)
         # result_df = pd.DataFrame({USER_FIELD:users, ITEM_FIELD:items, SCORE_FIELD:scores})
         # return result_df
 
-        return result
+        return pd.DataFrame({
+            self.USER_FIELD: rdata[self.USER_FIELD],
+            self.ITEM_FIELD: rdata[self.ITEM_FIELD],
+            SCORE_FIELD: result
+        })
 
     def build_truth_df(self, rdata):
-        # TODO
+        truth_df = pd.DataFrame({
+            self.USER_FIELD: rdata[self.USER_FIELD],
+            self.ITEM_FIELD: rdata[self.ITEM_FIELD],
+            self.LABEL_FIELD: rdata[self.LABEL_FIELD]
+        })
+        return truth_df[truth_df[self.LABEL_FIELD] >= 1]
 
-        return rdata
-
-    def recommend(self, result, k):
+    def recommend(self, rdata, result, k):
         """Recommend the top k items for users
 
         Args:
@@ -339,7 +352,7 @@ class Evaluator(AbstractEvaluator):
             (list, list): (user_list, item_list)
         """
 
-        result_df = self.build_result_df(result)
+        result_df = self.build_result_df(rdata, result)
         return self.evaluator.recommend(result_df, k)
 
     def evaluate(self, result, rdata):
@@ -352,11 +365,11 @@ class Evaluator(AbstractEvaluator):
             dict: a dict
         """
 
-        result_df = self.build_result_df(result)
+        result_df = self.build_result_df(rdata, result)
         truth_df = self.build_truth_df(rdata)
         if self.topk is not None:
-            result_df['rank'] = result_df.groupby(USER_FIELD)[SCORE_FIELD].rank(method='first', ascending=False)
-        df = pd.merge(truth_df, result_df, on=[USER_FIELD, ITEM_FIELD], how='left')
+            result_df['rank'] = result_df.groupby(self.USER_FIELD)[SCORE_FIELD].rank(method='first', ascending=False)
+        df = pd.merge(truth_df, result_df, on=[self.USER_FIELD, self.ITEM_FIELD], how='left')
         df['rank'].fillna(-1, inplace=True)
         if self.group_view is not None:
             return self.group_evaluate(df)
