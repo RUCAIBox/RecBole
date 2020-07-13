@@ -20,7 +20,7 @@ class AbstractRecommender(nn.Module):
         """
         raise NotImplementedError
 
-    def train_model(self, *inputs):
+    def calculate_loss(self, *inputs):
         """
          Calculate Train loss
 

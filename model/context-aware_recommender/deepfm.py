@@ -60,7 +60,7 @@ class DeepFM(AbstractRecommender):
         y = self.sigmoid(y_fm + y_deep)
         return y
 
-    def train_model(self, interaction):
+    def calculate_loss(self, interaction):
         label = interaction[LABEL]
         output = self.forward(interaction)
         return self.loss(output, label)

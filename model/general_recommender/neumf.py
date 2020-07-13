@@ -64,7 +64,7 @@ class NeuMF(AbstractRecommender):
         output = self.sigmoid(self.predict_layer(torch.cat((mf_output, mlp_output), -1)))
         return output
 
-    def train_model(self, interaction):
+    def calculate_loss(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
         label = interaction[self.LABEL]

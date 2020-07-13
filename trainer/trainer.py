@@ -67,7 +67,7 @@ class Trainer(AbstractTrainer):
         for batch_idx, interaction in enumerate(train_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
-            loss = self.model.train_model(interaction)
+            loss = self.model.calculate_loss(interaction)
             loss.backward()
             self.optimizer.step()
             total_loss += loss.item()

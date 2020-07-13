@@ -50,7 +50,7 @@ class FM(AbstractRecommender):
         y = self.sigmoid(self.first_order_linear(x) + self.fm(self.embedding(x)))
         return y
 
-    def train_model(self, interaction):
+    def calculate_loss(self, interaction):
         label = interaction[LABEL]
         output = self.forward(interaction)
         return self.loss(output, label)
