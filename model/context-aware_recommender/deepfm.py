@@ -25,8 +25,8 @@ class DeepFM(AbstractRecommender):
         self.embedding_size = config['model.embedding_size']
         self.layers = config['model.layers']
         self.dropout = config['model.dropout']
-        self.field_names = list(dataset.token2id.keys())
-        self.field_dims = [len(dataset.token2id[v]) for v in self.field_names]
+        self.field_names = list(dataset.field2id_token.keys())
+        self.field_dims = [len(dataset.field2id_token[v]) for v in self.field_names]
         self.field_seqlen = [dataset.token2seqlen[v] for v in self.field_names]
         self.offsets = self._build_offsets()
         self.layers = [self.embedding_size * len(self.field_names)] + self.layers
@@ -60,7 +60,7 @@ class DeepFM(AbstractRecommender):
         y = self.sigmoid(y_fm + y_deep)
         return y
 
-    def train_model(self, interaction):
+    def calculate_loss(self, interaction):
         label = interaction[LABEL]
         output = self.forward(interaction)
         return self.loss(output, label)
