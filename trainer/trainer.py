@@ -14,9 +14,22 @@ from trainer.utils import early_stopping, calculate_valid_score, dict2str
 from evaluator import Evaluator
 
 
-class Trainer(object):
-    def __init__(self, config, logger, model):
+class AbstractTrainer(object):
+    def __init__(self, config, model):
         self.config = config
+        self.model = model
+
+    def fit(self, train_data):
+        raise NotImplementedError('Method [next] should be implemented.')
+
+    def evaluate(self, eval_data):
+        raise NotImplementedError('Method [next] should be implemented.')
+
+
+class Trainer(AbstractTrainer):
+    def __init__(self, config, model, logger):
+        super(Trainer, self).__init__(config, model)
+
         self.logger = logger
         self.learner = config['learner']
         self.learning_rate = config['learning_rate']
@@ -30,7 +43,6 @@ class Trainer(object):
         self.cur_step = 0
         self.best_eval_score = -1
         self.train_loss_dict = dict()
-        self.model = model
         self.optimizer = self._build_optimizer()
         self.evaluator = Evaluator(config, logger)
 
@@ -55,15 +67,14 @@ class Trainer(object):
         for batch_idx, interaction in enumerate(train_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
-            loss = self.model.train_model(interaction)
+            loss = self.model.calculate_loss(interaction)
             loss.backward()
             self.optimizer.step()
             total_loss += loss.item()
         return total_loss
 
     def _valid_epoch(self, valid_data):
-        self.model.eval()
-        valid_result = self.evaluate(valid_data)
+        valid_result = self.evaluate(valid_data, load_best_model=False)
         valid_score = calculate_valid_score(valid_result)
         return valid_score, valid_result
 
@@ -97,23 +108,7 @@ class Trainer(object):
         message_output = 'Checkpoint loaded. Resume training from epoch {}'.format(self.start_epoch)
         print(message_output)
 
-    def evaluate(self, eval_data):
-        batch_result_list, batch_size_list = [], []
-        for batch_idx, interaction in enumerate(eval_data):
-            # todo:
-            USER_ID = self.config['USER_ID_FIELD']
-            ITEM_ID = self.config['ITEM_ID_FIELD']
-            users, items = interaction[USER_ID], interaction[ITEM_ID]
-            scores = self.model.predict(interaction.to(self.device))
-            batch_size = users.size()[0]
-            scores = scores.detach().cpu().numpy()
-            batch_result = self.evaluator.evaluate(scores, interaction.cpu().numpy())
-            batch_result_list.append(batch_result)
-            batch_size_list.append(batch_size)
-        result = self.evaluator.collect(batch_result_list, batch_size_list)
-        return result
-
-    def train(self, train_data, valid_data):
+    def fit(self, train_data, valid_data=None):
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
@@ -125,7 +120,7 @@ class Trainer(object):
             print(train_loss_output)
 
             # eval
-            if self.eval_step <= 0:
+            if self.eval_step <= 0 or not valid_data:
                 self._save_checkpoint(epoch_idx)
                 update_output = 'Saving current: model_best.pth'
                 print(update_output)
@@ -151,7 +146,7 @@ class Trainer(object):
                     print(stop_output)
                     break
 
-    def test(self, test_data, load_best_model=True):
+    def evaluate(self, eval_data, load_best_model=True):
         if load_best_model:
             # todo: more flexible settings
             checkpoint_file = self.checkpoint_dir + '/model_best.pth'
@@ -159,9 +154,20 @@ class Trainer(object):
             self.model.load_state_dict(checkpoint['state_dict'])
             message_output = 'Loading model structure and parameters from {}'.format(checkpoint_file)
             print(message_output)
+
         self.model.eval()
-        test_result = self.evaluate(test_data)
-        return test_result
+        batch_result_list, batch_size_list = [], []
+        for batch_idx, interaction in enumerate(eval_data):
+            USER_ID = self.config['USER_ID_FIELD']
+            users = interaction[USER_ID]
+            scores = self.model.predict(interaction.to(self.device))
+            batch_size = users.size()[0]
+            batch_result = self.evaluator.evaluate(scores.detach().cpu().numpy(), interaction.cpu().numpy())
+            batch_result_list.append(batch_result)
+            batch_size_list.append(batch_size)
+        result = self.evaluator.collect(batch_result_list, batch_size_list)
+
+        return result
 
     def plot_train_loss(self, show=True, save_path=None):
         epochs = list(self.train_loss_dict.keys())
