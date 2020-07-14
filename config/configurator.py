@@ -1,10 +1,12 @@
 import os
 import torch
 import random
+import sys
 import numpy as np
 from config.running_configurator import RunningConfig
 from config.model_configurator import ModelConfig
 from config.data_configurator import DataConfig
+
 
 class Config(object):
     """
@@ -38,16 +40,18 @@ class Config(object):
                 ValueError: If `config_file` is not in correct format or
                         MUST parameter are not defined
         """
+        self.cmd_args = {}
+        self._read_cmd_line()
 
-        self.run_args = RunningConfig(config_file_name)
+        self.run_args = RunningConfig(config_file_name, self.cmd_args)
 
         model_name = self.run_args['model']
         model_arg_file_name = os.path.join(os.path.dirname(config_file_name), model_name + '.config')
-        self.model_args = ModelConfig(model_arg_file_name)
+        self.model_args = ModelConfig(model_arg_file_name, self.cmd_args)
 
         dataset_name = self.run_args['dataset']
         dataset_arg_file_name = os.path.join(os.path.dirname(config_file_name), dataset_name + '.config')
-        self.dataset_args = DataConfig(dataset_arg_file_name)
+        self.dataset_args = DataConfig(dataset_arg_file_name, self.cmd_args)
 
         self.device = None
 
@@ -73,6 +77,18 @@ class Config(object):
         :param config_file: file name that write to.
         """
         self.model_args.dump_config_file(config_file)
+
+    def _read_cmd_line(self):
+
+        if "ipykernel_launcher" not in sys.argv[0]:
+            for arg in sys.argv[1:]:
+                if not arg.startswith("--"):
+                    raise SyntaxError("Commend arg must start with '--', but '%s' is not!" % arg)
+                cmd_arg_name, cmd_arg_value = arg[2:].split("=")
+                if cmd_arg_name in self.cmd_args and cmd_arg_value != self.cmd_args[cmd_arg_name]:
+                    raise SyntaxError("There are duplicate commend arg '%s' with different value!" % arg)
+                else:
+                    self.cmd_args[cmd_arg_name] = cmd_arg_value
 
     def __getitem__(self, item):
         if item == "device":
@@ -120,16 +136,18 @@ if __name__ == '__main__':
     config = Config('../properties/overall.config')
     config.init()
     # print(config)
-    print(config['train.epochs'])
-    print(config['data.SEQ_LEN'])
-    print(config['process.split_by_ratio.train_ratio'])
-    print(config['eval.metric'])
-    print(config['eval.topk'])
-    print(config['model.learning_rate'])
-    print(config['eval.group_view'])
-    print(config['data.separator'])
-    print(config['model.reg_mf'])
+    print(config['epochs'])
+    print(config['LABEL_FIELD'])
+    print(config['train_spilt_ratio'])
+    print(config['eval_metric'])
+    print(config['topk'])
+    print(config['learning_rate'])
+    print(config['group_view'])
+    print(config['field_separator'])
+    print(config['reg_mf'])
     print(config['device'])
-    config['model.reg_mf'] = 0.6
-    print(config['model.reg_mf'])
+    config['reg_mf'] = 0.6
+    print(config['reg_mf'])
     #config.dump_config_file('../properties/mf_new.config')
+
+    #wide_crossed_cols = "[('education', 'age')]"

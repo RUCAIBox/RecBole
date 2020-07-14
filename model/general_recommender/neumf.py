@@ -22,11 +22,14 @@ class NeuMF(AbstractRecommender):
     def __init__(self, config, dataset):
         super(NeuMF, self).__init__()
 
-        self.embedding_size = config['model.embedding_size']
-        self.layers = config['model.layers']
-        self.dropout = config['model.dropout']
-        self.n_users = dataset.n_users
-        self.n_items = dataset.n_items
+        self.USER_ID = config['USER_ID_FIELD']
+        self.ITEM_ID = config['ITEM_ID_FIELD']
+        self.LABEL = config['LABEL_FIELD']
+        self.n_users = len(dataset.field2id_token[self.USER_ID])
+        self.n_items = len(dataset.field2id_token[self.ITEM_ID])
+        self.embedding_size = config['embedding_size']
+        self.layers = config['layers']
+        self.dropout = config['dropout']
 
         self.user_mf_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_mf_embedding = nn.Embedding(self.n_items, self.embedding_size)
@@ -34,7 +37,8 @@ class NeuMF(AbstractRecommender):
         self.item_mlp_embedding = nn.Embedding(self.n_items, self.layers[0] - self.layers[0] // 2)
         self.mlp_layers = MLPLayers(self.layers, self.dropout)
         self.predict_layer = nn.Linear(self.embedding_size + self.layers[-1], 1)
-        self.loss = nn.BCEWithLogitsLoss()
+        self.sigmoid = nn.Sigmoid()
+        self.loss = nn.BCELoss()
 
         self._init_weights()
 
@@ -57,18 +61,18 @@ class NeuMF(AbstractRecommender):
         mf_output = torch.mul(user_mf_e, item_mf_e)
         mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))
 
-        output = self.predict_layer(torch.cat((mf_output, mlp_output), -1))
-        return output
+        output = self.sigmoid(self.predict_layer(torch.cat((mf_output, mlp_output), -1)))
+        return output.squeeze()
 
-    def train_model(self, interaction):
-        user = interaction[USER_ID]
-        item = interaction[ITEM_ID]
-        label = interaction[LABEL]
+    def calculate_loss(self, interaction):
+        user = interaction[self.USER_ID]
+        item = interaction[self.ITEM_ID]
+        label = interaction[self.LABEL]
 
         output = self.forward(user, item)
         return self.loss(output, label)
 
     def predict(self, interaction):
-        user = interaction[USER_ID]
-        item = interaction[ITEM_ID]
+        user = interaction[self.USER_ID]
+        item = interaction[self.ITEM_ID]
         return self.forward(user, item)

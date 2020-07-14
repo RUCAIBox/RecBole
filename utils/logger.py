@@ -1,16 +1,17 @@
 import logging
 import os
+from .utils import get_local_time
 
 
 class Logger(object):
 
-    def __init__(self, logfilename):
+    def __init__(self, config):
         """
         A logger that can show a message on standard output and write it into the
         file named `filename` simultaneously.
         All the message that you want to log MUST be str.
 
-        :param logfilename: file name that log saved
+        :param config
         example:
             logger = Logger('train.log')
             logger.debug(train_state)
@@ -18,10 +19,13 @@ class Logger(object):
 
         """
 
+        self.config = config
         self.LOGROOT='./log/'
         dir_name = os.path.dirname(self.LOGROOT)
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
+
+        logfilename = '{}-{}.log'.format(self.config['model'], get_local_time())
 
         self.logger = logging.getLogger(logfilename)
         self.logger.setLevel(logging.DEBUG)

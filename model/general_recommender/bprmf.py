@@ -22,9 +22,12 @@ class BPRMF(AbstractRecommender):
     def __init__(self, config, dataset):
         super(BPRMF, self).__init__()
 
-        self.embedding_size = config['model.embedding_size']
-        self.n_users = dataset.n_users
-        self.n_items = dataset.n_items
+        self.USER_ID = config['USER_ID_FIELD']
+        self.ITEM_ID = config['ITEM_ID_FIELD']
+        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
+        self.n_users = len(dataset.field2id_token[self.USER_ID])
+        self.n_items = len(dataset.field2id_token[self.ITEM_ID])
+        self.embedding_size = config['embedding_size']
 
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
@@ -42,10 +45,10 @@ class BPRMF(AbstractRecommender):
         item_score = torch.mul(user_e, item_e).sum(dim=1)
         return item_score
 
-    def train_model(self, interaction):
-        user = interaction[USER_ID]
-        pos_item = interaction[ITEM_ID]
-        neg_item = interaction[NEG_ITEM_ID]
+    def calculate_loss(self, interaction):
+        user = interaction[self.USER_ID]
+        pos_item = interaction[self.ITEM_ID]
+        neg_item = interaction[self.NEG_ITEM_ID]
 
         pos_item_score = self.forward(user, pos_item)
         neg_item_score = self.forward(user, neg_item)
@@ -53,6 +56,6 @@ class BPRMF(AbstractRecommender):
         return loss
 
     def predict(self, interaction):
-        user = interaction[USER_ID]
-        item = interaction[ITEM_ID]
+        user = interaction[self.USER_ID]
+        item = interaction[self.ITEM_ID]
         return self.forward(user, item)

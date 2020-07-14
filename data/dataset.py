@@ -3,159 +3,230 @@
 # @Email  : houyupeng@ruc.edu.cn
 # @File   : dataset.py
 
-from os.path import isdir, isfile
-import torch
-from .data import Data
-from sampler import Sampler
+import os
+import copy
+import pandas as pd
+import numpy as np
+from .dataloader import *
 
-class AbstractDataset(object):
-    def __init__(self, config, padding=False, missing=False):
+class Dataset(object):
+    def __init__(self, config):
         self.config = config
-        self.token = config['data.name']
-        self.dataset_path = config['data.path']
-        self.padding = padding
-        self.missing = missing
+        self.token = config['dataset']
+        self.dataset_path = config['data_path']
 
-        self.dataset, self.sampler, self.n_users, self.n_items = self._load_data(config)
+        self.support_types = set(['token', 'token_seq', 'float', 'float_seq'])
+        self.field2type = {}
+        self.field2source = {}
+        self.field2id_token = {}
 
-    def __str__(self):
-        return 'Dataset - {}'.format(self.token)
+        self.inter_feat = None
+        self.user_feat = None
+        self.item_feat = None
 
-    def _load_data(self, config):
-        '''
-        :return: data.Data
-        '''
-        raise NotImplementedError('Func [_load_data] of [{}] has not been implemented'.format(
-            self.__str__()
-        ))
+        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.token, self.dataset_path)
 
-    def _download_dataset(self):
-        '''
-        Download dataset from url
-        :return: path of the downloaded dataset
-        '''
+        self._remap_ID_all()
+
+    def _load_data(self, token, dataset_path):
+        user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
+        if os.path.isfile(user_feat_path):
+            user_feat = self._load_feat(user_feat_path, 'user')
+        else:
+            # TODO logging user feat not exist
+            user_feat = None
+
+        item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
+        if os.path.isfile(item_feat_path):
+            item_feat = self._load_feat(item_feat_path, 'item')
+        else:
+            # TODO logging item feat not exist
+            item_feat = None
+
+        inter_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'inter'))
+        if not os.path.isfile(inter_feat_path):
+            raise ValueError('File {} not exist'.format(inter_feat_path))
+        inter_feat = self._load_feat(inter_feat_path, 'inter')
+
+        uid_field = self.config['USER_ID_FIELD']
+        if uid_field not in self.field2source:
+            raise ValueError('user id field [{}] not exist in [{}]'.format(uid_field, self.token))
+        else:
+            self.field2source[uid_field] = 'user_id'
+
+        iid_field = self.config['ITEM_ID_FIELD']
+        if iid_field not in self.field2source:
+            raise ValueError('item id field [{}] not exist in [{}]'.format(iid_field, self.token))
+        else:
+            self.field2source[iid_field] = 'item_id'
+
+        return inter_feat, user_feat, item_feat
+
+    def _load_feat(self, filepath, source):
+        with open(filepath, 'r', encoding='utf-8') as file:
+            head = file.readline().strip().split(self.config['field_separator'])
+            field_names = []
+            for field_type in head:
+                field, ftype = field_type.split(':')
+                # TODO user_id & item_id bridge check
+                # TODO user_id & item_id not be set in config
+                # TODO inter __iter__ loading
+                if ftype not in self.support_types:
+                    raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
+                self.field2source[field] = source
+                self.field2type[field] = ftype
+                field_names.append(field)
+
+            # TODO checking num of col
+            lines = []
+            for line in file:
+                lines.append(line.strip().split(self.config['field_separator']))
+
+            ret = {}
+            cols = map(list, zip(*lines))
+            for i, col in enumerate(cols):
+                field = field_names[i]
+                ftype = self.field2type[field]
+                # TODO not relying on str
+                if ftype == 'float':
+                    col = list(map(float, col))
+                elif ftype == 'token_seq':
+                    col = [_.split(self.config['seq_separator']) for _ in col]
+                elif ftype == 'float_seq':
+                    col = [list(map(float, _.split(self.config['seq_separator']))) for _ in col]
+                ret[field] = col
+
+        df =  pd.DataFrame(ret)
+        return df
+
+    # TODO
+    def _filter_users(self):
         pass
 
-    def _get_n_users(self, user_id):
-        self.user_ori2idx = {}
-        self.user_idx2ori = []
-        if self.missing:
-            tot_users = 2
-            self.user_ori2idx['padding'] = 0
-            self.user_ori2idx['missing'] = 1
-            self.user_idx2ori = ['padding', 'missing']
-        elif self.padding:
-            tot_users = 1
-            self.user_ori2idx['padding'] = 0
-            self.user_idx2ori = ['padding']
+    # TODO
+    def _filter_inters(self):
+        if 'lowest_val' in self.config:
+            for field in self.config['lowest_val']:
+                if field not in self.field2type:
+                    raise ValueError('field [{}] not defined in dataset'.format(field))
+                self.inter_feat = self.inter_feat[self.inter_feat[field] >= self.config['lowest_val'][field]]
+        if 'highest_val' in self.config:
+            pass
+
+        self.inter_feat = self.inter_feat.reset_index(drop=True)
+
+    def _remap_ID_all(self):
+        for field in self.field2type:
+            ftype = self.field2type[field]
+            fsource = self.field2source[field]
+            if ftype == 'token':
+                self._remap_ID(fsource, field)
+            elif ftype == 'token_seq':
+                self._remap_ID_seq(fsource, field)
+
+    def _remap_ID(self, source, field):
+        if source == 'inter' or source == 'user_id' or source == 'item_id':
+            df = self.inter_feat
+            new_ids, mp = pd.factorize(df[field])
+            self.inter_feat[field] = new_ids
+            self.field2id_token[field] = mp
+        elif source == 'user' or source == 'user_id':
+            pass
+        elif source == 'item' or source == 'item_id':
+            pass
+
+    # TODO
+    def _remap_ID_seq(self, source, field):
+        pass
+
+    def __getitem__(self, index):
+        df = self.inter_feat.loc[index]
+        # TODO join user/item
+        return df
+
+    def __len__(self):
+        return len(self.inter_feat)
+
+    # def __iter__(self):
+    #     return self
+
+    # TODO next func
+    # def next(self):
+        # pass
+
+    # TODO copy
+    def copy(self, new_inter_feat):
+        nxt = copy.copy(self)
+        nxt.inter_feat = new_inter_feat
+        return nxt
+
+    # TODO
+    def build(self):
+        self._filter_users()
+        self._filter_inters()
+
+        train_ratio = self.config['train_split_ratio']
+        test_ratio = self.config['test_split_ratio']
+        valid_ratio = self.config['valid_split_ratio']
+
+        if train_ratio <= 0:
+            raise ValueError('train ratio [{}] should be possitive'.format(train_ratio))
+        if test_ratio <= 0:
+            raise ValueError('test ratio [{}] should be possitive'.format(test_ratio))
+        if valid_ratio < 0:
+            raise ValueError('valid ratio [{}] should be none negative'.format(valid_ratio))
+
+        tot_ratio = train_ratio + test_ratio + valid_ratio
+        train_ratio /= tot_ratio
+        test_ratio /= tot_ratio
+        # valid_ratio /= tot_ratio
+
+        train_cnt = int(train_ratio * self.__len__())
+        if valid_ratio == 0:
+            test_cnt = self.__len__() - train_cnt
+            # valid_cnt = 0
         else:
-            tot_users = 0
+            test_cnt = int(test_ratio * self.__len__())
+            # valid_cnt = self.__len__() - train_cnt - test_cnt
 
-        for uid in user_id:
-            if uid not in self.user_ori2idx:
-                self.user_ori2idx[uid] = tot_users
-                self.user_idx2ori.append(uid)
-                tot_users += 1
-        return tot_users
+        train_batch_size = self.config['train_batch_size']
+        test_batch_size = self.config['test_batch_size']
+        valid_batch_size = self.config['valid_batch_size']
 
-    def _get_n_items(self, item_id):
-        self.item_ori2idx = {}
-        self.item_idx2ori = []
-        if self.missing:
-            tot_items = 2
-            self.item_ori2idx['padding'] = 0
-            self.item_ori2idx['missing'] = 1
-            self.item_idx2ori = ['padding', 'missing']
-        elif self.padding:
-            tot_items = 1
-            self.item_ori2idx['padding'] = 0
-            self.item_idx2ori = ['padding']
+        train_inter = self.inter_feat[:train_cnt]
+        test_inter = self.inter_feat[train_cnt:train_cnt+test_cnt]
+        valid_inter = self.inter_feat[train_cnt+test_cnt:]
+
+        # TODO
+        # NEED TO BE CHANGED A LOT
+        # SHOULD BE DISCUSSED
+        train_loader = PairwiseDataLoader(
+            config=self.config,
+            dataset=self.copy(train_inter),
+            batch_size=train_batch_size,
+            real_time_neg_sampling=False,
+            neg_sample_by=1
+        )
+
+        test_loader = PairwiseDataLoader(
+            config=self.config,
+            dataset=self.copy(test_inter),
+            batch_size=test_batch_size,
+            real_time_neg_sampling=False,
+            neg_sample_to=self.config['test_neg_sample_num']
+        )
+
+        valid_loader = PairwiseDataLoader(
+            config=self.config,
+            dataset=self.copy(valid_inter),
+            batch_size=valid_batch_size,
+            real_time_neg_sampling=False,
+            neg_sample_to=self.config['test_neg_sample_num']
+        )
+        # NEED TO BE CHANGED A LOT
+        # SHOULD BE DISCUSSED
+
+        if valid_ratio is not None:
+            return train_loader, test_loader, valid_loader
         else:
-            tot_items = 0
-
-        for iid in item_id:
-            if iid not in self.item_ori2idx:
-                self.item_ori2idx[iid] = tot_items
-                self.item_idx2ori.append(iid)
-                tot_items += 1
-        return tot_items
-    
-    def preprocessing(self, workflow=None):
-        '''
-        Preprocessing of the dataset
-        '''
-        cur = self.dataset
-        train_data = test_data = valid_data = None
-        for func in workflow['preprocessing']:
-            if func == 'remove_lower_value_by_key':
-                cur = cur.remove_lower_value_by_key(
-                    key=self.config['process.remove_lower_value_by_key.key'],
-                    min_remain_value=self.config['process.remove_lower_value_by_key.min_remain_value']
-                )
-            elif func == 'split_by_ratio':
-                train_data, test_data, valid_data = cur.split_by_ratio(
-                    train_ratio=self.config['process.split_by_ratio.train_ratio'],
-                    test_ratio=self.config['process.split_by_ratio.test_ratio'],
-                    valid_ratio=self.config['process.split_by_ratio.valid_ratio'],
-                    train_batch_size=self.config['model.train_batch_size'],
-                    test_batch_size=self.config['model.test_batch_size'],
-                    valid_batch_size=self.config['model.valid_batch_size']
-                )
-                break
-
-        for func in workflow['train']:
-            if func == 'neg_sample_1by1':
-                train_data = train_data.neg_sample_1by1()
-
-        for func in workflow['test']:
-            if func == 'neg_sample_to':
-                test_data = test_data.neg_sample_to(num=self.config['process.neg_sample_to.num'])
-
-        for func in workflow['valid']:
-            if func == 'neg_sample_to':
-                valid_data = valid_data.neg_sample_to(num=self.config['process.neg_sample_to.num'])
-        
-        return train_data, test_data, valid_data
-
-class UIRTDataset(AbstractDataset):
-    def __init__(self, config):
-        super(UIRTDataset, self).__init__(config)
-
-    def _load_data(self, config):
-        if self.dataset_path:
-            dataset_path = config['data.path']
-        else:
-            dataset_path = self._download_dataset(self.token)
-
-        if not isfile(dataset_path):
-            raise ValueError('[{}] is a illegal path.'.format(dataset_path))
-
-        lines = []
-        with open(dataset_path, 'r', encoding='utf-8') as file:
-            for line in file:
-                line = map(int, line.strip().split('\t'))
-                lines.append(line)
-        user_id, item_id, rating, timestamp = map(list, zip(*lines))
-        n_users = self._get_n_users(user_id)
-        n_items = self._get_n_items(item_id)
-
-        new_user_id = torch.LongTensor([self.user_ori2idx[_] for _ in user_id])
-        new_item_id = torch.LongTensor([self.item_ori2idx[_] for _ in item_id])
-
-        sampler = Sampler(n_users, n_items,
-                          new_user_id, new_item_id, padding=self.padding, missing=self.missing)
-
-        return Data(
-            config=config,
-            interaction={
-                'user_id': new_user_id,
-                'item_id': new_item_id,
-                'rating': torch.LongTensor(rating),
-                'timestamp': torch.LongTensor(timestamp)
-            },
-            sampler=sampler
-        ), sampler, n_users, n_items
-
-class ML100kDataset(UIRTDataset):
-    def __init__(self, config):
-        super(ML100kDataset, self).__init__(config)
+            return train_loader, test_loader
