@@ -17,7 +17,7 @@ class Pop(AbstractRecommender):
 
         self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))
 
-    def train_model(self, interaction):
+    def calculate_loss(self, interaction):
 
         item = interaction[self.ITEM_ID]
         item = item.cpu().numpy()
