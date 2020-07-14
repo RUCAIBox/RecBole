@@ -14,7 +14,6 @@ class Pop(AbstractRecommender):
 
         self.item_cnt = defaultdict(int)
         self.max_cnt = 0
-        self.item_score = None
 
         self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))
 

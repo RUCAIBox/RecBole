@@ -82,6 +82,13 @@ class MLPLayers(nn.Module):
 
 
 class FMEmbedding(nn.Module):
+    """
+        Input shape
+        - A 3D tensor with shape:``(batch_size,field_size)``.
+
+        Output shape
+        - 3D tensor with shape: ``(batch_size,field_size,embed_dim)``.
+    """
 
     def __init__(self, field_dims, offsets, embed_dim):
         super(FMEmbedding).__init__()
@@ -100,8 +107,15 @@ class FMEmbedding(nn.Module):
 
 
 class FMFirstOrderLinear(nn.Module):
+    """
+        Input shape
+        - A 3D tensor with shape:``(batch_size,field_size)``.
 
+        Output shape
+        - 3D tensor with shape: ``(batch_size,output_dim)``.
+    """
     def __init__(self, field_dims, offsets, output_dim=1):
+
         super(FMFirstOrderLinear).__init__()
 
         self.w = nn.Embedding(sum(field_dims), output_dim)
@@ -120,6 +134,13 @@ class FMFirstOrderLinear(nn.Module):
 
 
 class BaseFactorizationMachine(nn.Module):
+    """
+        Input shape
+        - A 3D tensor with shape:``(batch_size,field_size,embed_dim)``.
+
+        Output shape
+        - 3D tensor with shape: ``(batch_size,1)`` or (batch_size, embed_dim).
+    """
 
     def __init__(self, reduce_sum=True):
         super(BaseFactorizationMachine).__init__()
@@ -133,3 +154,5 @@ class BaseFactorizationMachine(nn.Module):
             output = torch.sum(output, dim=1, keepdim=True)
         output = 0.5 * output
         return output
+
+

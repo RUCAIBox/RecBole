@@ -22,9 +22,9 @@ class DeepFM(AbstractRecommender):
     def __init__(self, config, dataset):
         super(DeepFM).__init__()
 
-        self.embedding_size = config['model.embedding_size']
-        self.layers = config['model.layers']
-        self.dropout = config['model.dropout']
+        self.embedding_size = config['embedding_size']
+        self.layers = config['layers']
+        self.dropout = config['dropout']
         self.field_names = list(dataset.token2id.keys())
         self.field_dims = [len(dataset.token2id[v]) for v in self.field_names]
         self.field_seqlen = [dataset.token2seqlen[v] for v in self.field_names]

@@ -22,7 +22,7 @@ class FM(AbstractRecommender):
     def __init__(self, config, dataset):
         super(FM).__init__()
 
-        self.embedding_size = config['model.embedding_size']
+        self.embedding_size = config['embedding_size']
         self.field_names = list(dataset.token2id.keys())
         self.field_dims = [len(dataset.token2id[v]) for v in self.field_names]
         self.field_seqlen = [dataset.token2seqlen[v] for v in self.field_names]
@@ -51,7 +51,7 @@ class FM(AbstractRecommender):
         return y
 
     def train_model(self, interaction):
-        label = interaction[LABEL]
+        label = interaction['LABEL']
         output = self.forward(interaction)
         return self.loss(output, label)
 
