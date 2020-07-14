@@ -18,11 +18,18 @@ def recall(data):
 def ndcg(data):
     pass
 
-def precision(data):
-    pass
+def precision(data, k):
+    return (data > 0).sum() / k
 
-def auc(data):
-    pass
+def auc(data, neg_ratio):
+    if neg_ratio == 0:
+        return 1
+    pos_num = (data > 0).sum()
+    if pos_num == 0:
+        return 0
+    pos_ranksum = (pos_num * (neg_ratio + 1) + 1 - data[data > 0]).sum()
+    neg_num = pos_num * neg_ratio
+    return (pos_ranksum - pos_num * (pos_num + 1) / 2) / (pos_num * neg_num)
 
 ## Loss based Metrics ##
 
