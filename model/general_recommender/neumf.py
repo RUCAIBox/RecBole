@@ -25,8 +25,8 @@ class NeuMF(AbstractRecommender):
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.LABEL = config['LABEL_FIELD']
-        self.n_users = len(dataset.token2id[self.USER_ID])
-        self.n_items = len(dataset.token2id[self.ITEM_ID])
+        self.n_users = len(dataset.field2id_token[self.USER_ID])
+        self.n_items = len(dataset.field2id_token[self.ITEM_ID])
         self.embedding_size = config['embedding_size']
         self.layers = config['layers']
         self.dropout = config['dropout']
@@ -62,9 +62,9 @@ class NeuMF(AbstractRecommender):
         mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))
 
         output = self.sigmoid(self.predict_layer(torch.cat((mf_output, mlp_output), -1)))
-        return output
+        return output.squeeze()
 
-    def train_model(self, interaction):
+    def calculate_loss(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
         label = interaction[self.LABEL]

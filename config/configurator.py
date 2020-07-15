@@ -40,7 +40,7 @@ class Config(object):
                 ValueError: If `config_file` is not in correct format or
                         MUST parameter are not defined
         """
-        self.cmd_args = []
+        self.cmd_args = {}
         self._read_cmd_line()
 
         self.run_args = RunningConfig(config_file_name, self.cmd_args)

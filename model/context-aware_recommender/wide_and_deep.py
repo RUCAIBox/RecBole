@@ -81,7 +81,7 @@ class WideDeep(AbstractRecommender):
         output = self.linear(torch.cat([wide_vector, deep_vector], 1))
         return output
 
-    def train_model(self, interaction):
+    def calculate_loss(self, interaction):
         label = interaction[LABEL]
         output = self.forward(interaction)
         return self.loss(output, label)
