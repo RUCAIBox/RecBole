@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
 from evaluator import Evaluator
+from utils import ensure_dir
 
 
 class AbstractTrainer(object):
@@ -38,6 +39,7 @@ class Trainer(AbstractTrainer):
         self.stopping_step = config['stopping_step']
         self.device = config['device']
         self.checkpoint_dir = config['checkpoint_dir']
+        ensure_dir(self.checkpoint_dir)
 
         self.start_epoch = 0
         self.cur_step = 0
