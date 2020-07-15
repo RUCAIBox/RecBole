@@ -103,7 +103,7 @@ class Config(object):
         elif item in self.dataset_args:
             return self.dataset_args[item]
         else:
-            raise KeyError("There are no parameter named '%s'" % item)
+            return None
 
     def __setitem__(self, key, value):
         if not isinstance(key, str):
