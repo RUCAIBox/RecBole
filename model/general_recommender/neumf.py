@@ -11,7 +11,7 @@ Xiangnan He et al., "Neural Collaborative Filtering." in WWW 2017.
 
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_normal_
+from torch.nn.init import xavier_normal_, constant_
 
 from model.abstract_recommender import AbstractRecommender
 from model.layers import MLPLayers
@@ -40,17 +40,15 @@ class NeuMF(AbstractRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self._init_weights()
+        self.apply(self.init_weights)
 
-    def _init_weights(self):
-        xavier_normal_(self.user_mf_embedding.weight)
-        xavier_normal_(self.item_mf_embedding.weight)
-        xavier_normal_(self.user_mlp_embedding.weight)
-        xavier_normal_(self.item_mlp_embedding.weight)
-        xavier_normal_(self.predict_layer.weight)
-        for m in self.modules():
-            if isinstance(m, nn.Linear) and m.bias is not None:
-                m.bias.data.zero_()
+    def init_weights(self, module):
+        if isinstance(module, nn.Embedding):
+            xavier_normal_(module.weight.data)
+        elif isinstance(module, nn.Linear):
+            xavier_normal_(module.weight.data)
+            if module.bias is not None:
+                constant_(module.bias.data, 0)
 
     def forward(self, user, item):
         user_mf_e = self.user_mf_embedding(user)

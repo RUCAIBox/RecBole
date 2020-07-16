@@ -15,6 +15,7 @@ from torch.nn.init import xavier_normal_
 
 from model.abstract_recommender import AbstractRecommender
 from model.loss import BPRLoss
+from model.layers import MLPLayers
 
 
 class BPRMF(AbstractRecommender):
@@ -33,11 +34,11 @@ class BPRMF(AbstractRecommender):
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.loss = BPRLoss()
 
-        self._init_weights()
+        self.apply(self.init_weights)
 
-    def _init_weights(self):
-        xavier_normal_(self.user_embedding.weight)
-        xavier_normal_(self.item_embedding.weight)
+    def init_weights(self, module):
+        if isinstance(module, nn.Embedding):
+            xavier_normal_(module.weight.data)
 
     def forward(self, user, item):
         user_e = self.user_embedding(user)
