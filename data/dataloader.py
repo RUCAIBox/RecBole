@@ -111,6 +111,8 @@ class GeneralDataLoader(AbstractDataLoader):
                 self.dataset.inter_feat = new_df
         # TODO
         elif self.neg_sample_to is not None:
+            if self.neg_sample_to == -1:
+                self.neg_sample_to = len(self.dataset.field2id_token[iid_field])
             if self.pairwise:
                 raise ValueError('pairwise dataloader cannot neg sample to')
             user_num_in_one_batch = self.batch_size // self.neg_sample_to
