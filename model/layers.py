@@ -67,16 +67,6 @@ class MLPLayers(nn.Module):
 
         self.mlp_layers = nn.Sequential(*mlp_modules)
 
-        self._init_weights()
-
-    def _init_weights(self):
-        for m in self.mlp_layers:
-            if isinstance(m, nn.Linear):
-                xavier_normal_(m.weight)
-        for m in self.modules():
-            if isinstance(m, nn.Linear) and m.bias is not None:
-                m.bias.data.zero_()
-
     def forward(self, input_feature):
         return self.mlp_layers(input_feature)
 
