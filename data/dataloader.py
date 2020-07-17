@@ -17,12 +17,18 @@ class AbstractDataLoader(object):
         self.dataset = dataset
         self.batch_size = batch_size
         self.sampler = Sampler(config, dataset)
+        self.pr = 0
 
     def __iter__(self):
         return self
 
     def __next__(self):
         raise NotImplementedError('Method [next] should be implemented.')
+
+    def set_batch_size(self, batch_size):
+        if self.pr != 0:
+            raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
+        self.batch_size = batch_size
 
 class GeneralDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset, batch_size, pairwise=False, shuffle=False, real_time_neg_sampling=True, neg_sample_to=None, neg_sample_by=None):
@@ -31,7 +37,6 @@ class GeneralDataLoader(AbstractDataLoader):
         self.pairwise = pairwise
         self.shuffle = shuffle
         self.real_time_neg_sampling = real_time_neg_sampling
-        self.pr = 0
 
         self.neg_sample_to = neg_sample_to
         self.neg_sample_by = neg_sample_by
@@ -126,28 +131,19 @@ class GeneralDataLoader(AbstractDataLoader):
                 iid_field: [],
                 label_field: []
             }
-
-            uids = self.dataset.inter_feat[uid_field].to_list()
-            iids = self.dataset.inter_feat[iid_field].to_list()
             uid2itemlist = {}
-            for i in range(len(uids)):
-                uid = uids[i]
-                iid = iids[i]
-                if uid not in uid2itemlist:
-                    uid2itemlist[uid] = []
-                uid2itemlist[uid].append(iid)
+            grouped_uid_iid = self.dataset.inter_feat.groupby(uid_field)[iid_field]
+            for uid, iids in grouped_uid_iid:
+                uid2itemlist[uid] = iids.to_list()
             for uid in uid2itemlist:
                 pos_num = len(uid2itemlist[uid])
+                neg_num = self.neg_sample_to - pos_num
                 if pos_num >= self.neg_sample_to:
                     uid2itemlist[uid] = uid2itemlist[uid][:self.neg_sample_to-1]
                     pos_num = self.neg_sample_to - 1
                 neg_item_id = self.sampler.sample_by_user_id(uid, self.neg_sample_to - pos_num)
-                for iid in uid2itemlist[uid]:
-                    new_inter[uid_field].append(uid)
-                    new_inter[iid_field].append(iid)
-                    new_inter[label_field].append(1)
-                for iid in neg_item_id:
-                    new_inter[uid_field].append(uid)
-                    new_inter[iid_field].append(iid)
-                    new_inter[label_field].append(0)
+
+                new_inter[uid_field].extend([uid] * self.neg_sample_to)
+                new_inter[iid_field].extend(uid2itemlist[uid] + neg_item_id)
+                new_inter[label_field].extend([1] * pos_num + [0] * neg_num)
             self.dataset.inter_feat = pd.DataFrame(new_inter)
