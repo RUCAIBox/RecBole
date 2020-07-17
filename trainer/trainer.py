@@ -4,6 +4,7 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : trainer.py
 
+import os
 import warnings
 import torch
 import torch.optim as optim
@@ -12,7 +13,7 @@ import matplotlib.pyplot as plt
 from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
 from evaluator import Evaluator
-from utils import ensure_dir
+from utils import ensure_dir, get_local_time
 
 
 class AbstractTrainer(object):
@@ -37,9 +38,12 @@ class Trainer(AbstractTrainer):
         self.epochs = config['epochs']
         self.eval_step = config['eval_step']
         self.stopping_step = config['stopping_step']
+        self.valid_metric = config['valid_metric']
         self.device = config['device']
         self.checkpoint_dir = config['checkpoint_dir']
         ensure_dir(self.checkpoint_dir)
+        saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
+        self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
 
         self.start_epoch = 0
         self.cur_step = 0
@@ -77,7 +81,7 @@ class Trainer(AbstractTrainer):
 
     def _valid_epoch(self, valid_data):
         valid_result = self.evaluate(valid_data, load_best_model=False)
-        valid_score = calculate_valid_score(valid_result)
+        valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_score, valid_result
 
     def _save_checkpoint(self, epoch):
@@ -89,8 +93,7 @@ class Trainer(AbstractTrainer):
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
         }
-        filename = str(self.checkpoint_dir + '/model_best.pth')
-        torch.save(state, filename)
+        torch.save(state, self.saved_model_file)
 
     def resume_checkpoint(self, resume_file):
         resume_file = str(resume_file)
@@ -124,7 +127,7 @@ class Trainer(AbstractTrainer):
             # eval
             if self.eval_step <= 0 or not valid_data:
                 self._save_checkpoint(epoch_idx)
-                update_output = 'Saving current: model_best.pth'
+                update_output = 'Saving current: %s' % self.saved_model_file
                 print(update_output)
                 continue
             if (epoch_idx + 1) % self.eval_step == 0:
@@ -140,7 +143,7 @@ class Trainer(AbstractTrainer):
                 print(valid_result_output)
                 if update_flag:
                     self._save_checkpoint(epoch_idx)
-                    update_output = 'Saving current best: model_best.pth'
+                    update_output = 'Saving current best: %s' % self.saved_model_file
                     print(update_output)
                 if stop_flag:
                     stop_output = 'Finished training, best eval result in epoch %d' % \
@@ -148,10 +151,12 @@ class Trainer(AbstractTrainer):
                     print(stop_output)
                     break
 
-    def evaluate(self, eval_data, load_best_model=True):
+    def evaluate(self, eval_data, load_best_model=True, model_file=None):
         if load_best_model:
-            # todo: more flexible settings
-            checkpoint_file = self.checkpoint_dir + '/model_best.pth'
+            if model_file:
+                checkpoint_file = model_file
+            else:
+                checkpoint_file = self.saved_model_file
             checkpoint = torch.load(checkpoint_file)
             self.model.load_state_dict(checkpoint['state_dict'])
             message_output = 'Loading model structure and parameters from {}'.format(checkpoint_file)
