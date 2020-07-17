@@ -12,6 +12,7 @@ Huifeng Guo et al., "DeepFM: A Factorization-Machine based Neural Network for CT
 import torch
 import torch.nn as nn
 import numpy as np
+from torch.nn.init import xavier_normal_, constant_
 
 from model.abstract_recommender import AbstractRecommender
 from model.layers import FMEmbedding, FMFirstOrderLinear, BaseFactorizationMachine, MLPLayers
@@ -20,26 +21,38 @@ from model.layers import FMEmbedding, FMFirstOrderLinear, BaseFactorizationMachi
 class DeepFM(AbstractRecommender):
 
     def __init__(self, config, dataset):
-        super(DeepFM).__init__()
+        super(DeepFM, self).__init__()
 
-
+        self.LABEL = config['LABEL_FIELD']
         self.embedding_size = config['embedding_size']
-        self.layers = config['layers']
+        self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout = config['dropout']
-        self.field_names = list(dataset.token2id_token.keys())
-        self.field_dims = [len(dataset.token2id_token[v]) for v in self.field_names]
-
-        self.field_seqlen = [dataset.token2seqlen[v] for v in self.field_names]
+        self.field_names = list(dataset.field2id_token.keys())
+        self.field_dims = [len(dataset.field2id_token[v]) for v in self.field_names]
+        # todo: para: field2seqlen
+        # self.field_seqlen = [dataset.field2seqlen[v] for v in self.field_names]
+        self.field_seqlen = [1 for v in self.field_names]
         self.offsets = self._build_offsets()
-        self.layers = [self.embedding_size * len(self.field_names)] + self.layers
+        # todo: multi-hot len(field_names) or sum(field_seqlen)
 
-        self.first_order_linear = FMFirstOrderLinear(self.filed_dims, self.offsets)
-        self.embedding = FMEmbedding(self.filed_dims, self.offsets, self.embedding_size)
+        self.first_order_linear = FMFirstOrderLinear(self.field_dims, self.offsets)
+        self.embedding = FMEmbedding(self.field_dims, self.offsets, self.embedding_size)
         self.fm = BaseFactorizationMachine(reduce_sum=True)
-        self.mlp_layers = MLPLayers(self.layers, self.dropout)
-        self.deep_predict_layer = nn.Linear(self.layers[-1], 1)
+        size_list = [self.embedding_size * len(self.field_names)] + self.mlp_hidden_size
+        self.mlp_layers = MLPLayers(size_list, self.dropout)
+        self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
+
+        self.apply(self.init_weights)
+
+    def init_weights(self, module):
+        if isinstance(module, nn.Embedding):
+            xavier_normal_(module.weight.data)
+        elif isinstance(module, nn.Linear):
+            xavier_normal_(module.weight.data)
+            if module.bias is not None:
+                constant_(module.bias.data, 0)
 
     def _build_offsets(self):
         offsets = []
@@ -52,7 +65,8 @@ class DeepFM(AbstractRecommender):
     def forward(self, interaction):
         x = []
         for field in self.field_names:
-            x.append(interaction[field])
+            # todo: check (batch) or (batch, 1)
+            x.append(interaction[field].unsqueeze(1))
         x = torch.cat(x, dim=1)
         embed_x = self.embedding(x)
         y_fm = self.first_order_linear(x) + self.fm(embed_x)
@@ -60,10 +74,10 @@ class DeepFM(AbstractRecommender):
         y_deep = self.deep_predict_layer(
             self.mlp_layers(embed_x.view(-1, sum(self.field_seqlen) * self.embedding_size)))
         y = self.sigmoid(y_fm + y_deep)
-        return y
+        return y.squeeze()
 
     def calculate_loss(self, interaction):
-        label = interaction[LABEL]
+        label = interaction[self.LABEL]
         output = self.forward(interaction)
         return self.loss(output, label)
 

@@ -24,10 +24,10 @@ train_data, test_data, valid_data = dataset.build(
 )
 
 model = BPRMF(config, dataset).to(config['device'])
+print(model)
 
 trainer = Trainer(config, model, logger)
 # trainer.resume_checkpoint('saved/model_best.pth')
 trainer.fit(train_data, valid_data)
 result = trainer.evaluate(test_data)
 print(result)
-trainer.plot_train_loss(show=True)
