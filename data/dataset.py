@@ -180,6 +180,9 @@ class Dataset(object):
     def shuffle(self):
         self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
 
+    def sort(self, field_name):
+        self.inter_feat = self.inter_feat.sort_values(by=field_name)
+
     # TODO
     def build(self, 
               inter_filter_lowest_val=None, inter_filter_highest_val=None, 
