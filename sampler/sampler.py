@@ -10,19 +10,19 @@ class Sampler(object):
         self.config = config
         self.dataset = dataset
         self.used_item_id = {}
-        self.n_users = len(self.dataset.field2id_token[self.config['USER_ID_FIELD']])
-        self.n_items = len(self.dataset.field2id_token[self.config['ITEM_ID_FIELD']])
+
+        uid_field = self.config['USER_ID_FIELD']
+        iid_field = self.config['ITEM_ID_FIELD']
+
+        self.n_users = len(self.dataset.field2id_token[uid_field])
+        self.n_items = len(self.dataset.field2id_token[iid_field])
 
         for i in range(self.n_users):
             self.used_item_id[i] = set()
 
-        uids = dataset.inter_feat[self.config['USER_ID_FIELD']].to_numpy()
-        iids = dataset.inter_feat[self.config['ITEM_ID_FIELD']].to_numpy()
-        assert len(uids) == len(iids)
-        for i in range(len(uids)):
-            uid = uids[i]
-            iid = iids[i]
-            self.used_item_id[uid].add(iid)
+        grouped_uid_iid = self.dataset.inter_feat.groupby(uid_field)[iid_field]
+        for uid, iids in grouped_uid_iid:
+            self.used_item_id[uid] = set(iids.to_list())
 
     def sample_by_user_id(self, user_id, num=1):
         if user_id not in self.used_item_id:
@@ -40,7 +40,10 @@ class Sampler(object):
                 neg_item_id.append(cur)
         else:
             tot = set(range(st, self.n_items)) - self.used_item_id[user_id]
-            neg_item_id = random.sample(tot, num)
+            if len(tot) == num:
+                neg_item_id = list(tot)
+            else:
+                neg_item_id = random.sample(tot, num)
 
         return neg_item_id
 
