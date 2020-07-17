@@ -11,6 +11,7 @@ logger = Logger(config)
 
 dataset = Dataset(config)
 
+
 train_data, test_data, valid_data = dataset.build(
     inter_filter_lowest_val=config['lowest_val'],
     inter_filter_highest_val=config['highest_val'],
@@ -22,7 +23,6 @@ train_data, test_data, valid_data = dataset.build(
     neg_sample_by=1,
     neg_sample_to=config['test_neg_sample_num']
 )
-
 model = BPRMF(config, dataset).to(config['device'])
 print(model)
 
