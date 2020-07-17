@@ -81,14 +81,9 @@ class FMEmbedding(nn.Module):
     """
 
     def __init__(self, field_dims, offsets, embed_dim):
-        super(FMEmbedding).__init__()
+        super(FMEmbedding, self).__init__()
         self.embedding = nn.Embedding(sum(field_dims), embed_dim)
         self.offsets = offsets
-
-        self._init_weights()
-
-    def _init_weights(self):
-        xavier_normal_(self.embedding.weight)
 
     def forward(self, input_x):
         input_x = input_x + input_x.new_tensor(self.offsets).unsqueeze(0)
@@ -106,16 +101,11 @@ class FMFirstOrderLinear(nn.Module):
     """
     def __init__(self, field_dims, offsets, output_dim=1):
 
-        super(FMFirstOrderLinear).__init__()
+        super(FMFirstOrderLinear, self).__init__()
 
         self.w = nn.Embedding(sum(field_dims), output_dim)
         self.bias = nn.Parameter(torch.zeros((output_dim, )))
         self.offsets = offsets
-
-        self._init_weights()
-
-    def _init_weights(self):
-        xavier_normal_(self.w.weight)
 
     def forward(self, input_x):
         input_x = input_x + input_x.new_tensor(self.offsets).unsqueeze(0)
@@ -133,7 +123,7 @@ class BaseFactorizationMachine(nn.Module):
     """
 
     def __init__(self, reduce_sum=True):
-        super(BaseFactorizationMachine).__init__()
+        super(BaseFactorizationMachine, self).__init__()
         self.reduce_sum = reduce_sum
 
     def forward(self, input_x):

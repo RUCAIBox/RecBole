@@ -10,8 +10,9 @@ Steffen Rendle et al., "Factorization Machines." in ICDM 2010.
 """
 
 import torch
-import torch.nn as nn
 import numpy as np
+import torch.nn as nn
+from torch.nn.init import xavier_normal_
 
 from model.abstract_recommender import AbstractRecommender
 from model.layers import FMEmbedding, FMFirstOrderLinear, BaseFactorizationMachine
@@ -20,20 +21,26 @@ from model.layers import FMEmbedding, FMFirstOrderLinear, BaseFactorizationMachi
 class FM(AbstractRecommender):
 
     def __init__(self, config, dataset):
-        super(FM).__init__()
+        super(FM, self).__init__()
 
+        self.LABEL = config['LABEL_FIELD']
         self.embedding_size = config['embedding_size']
-        self.field_names = list(dataset.token2id_token.keys())
-        self.field_dims = [len(dataset.token2id_token[v]) for v in self.field_names]
-
-        self.field_seqlen = [dataset.token2seqlen[v] for v in self.field_names]
+        self.field_names = list(dataset.field2id_token.keys())
+        self.field_dims = [len(dataset.field2id_token[v]) for v in self.field_names]
+        # todo: para: field2seqlen
+        # self.field_seqlen = [dataset.field2seqlen[v] for v in self.field_names]
+        self.field_seqlen = [1 for v in self.field_names]
         self.offsets = self._build_offsets()
 
-        self.embedding = FMEmbedding(self.filed_dims, self.offsets, self.embedding_size)
-        self.first_order_linear = FMFirstOrderLinear(self.filed_dims, self.offsets)
+        self.embedding = FMEmbedding(self.field_dims, self.offsets, self.embedding_size)
+        self.first_order_linear = FMFirstOrderLinear(self.field_dims, self.offsets)
         self.fm = BaseFactorizationMachine(reduce_sum=True)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
+
+    def init_weights(self, module):
+        if isinstance(module, nn.Embedding):
+            xavier_normal_(module.weight.data)
 
     def _build_offsets(self):
         offsets = []
@@ -46,14 +53,14 @@ class FM(AbstractRecommender):
     def forward(self, interaction):
         x = []
         for field in self.field_names:
-            x.append(interaction[field])
+            # todo: check (batch) or (batch, 1)
+            x.append(interaction[field].unsqueeze(1))
         x = torch.cat(x, dim=1)
         y = self.sigmoid(self.first_order_linear(x) + self.fm(self.embedding(x)))
-        return y
-
+        return y.squeeze()
 
     def calculate_loss(self, interaction):
-        label = interaction['LABEL']
+        label = interaction[self.LABEL]
 
         output = self.forward(interaction)
         return self.loss(output, label)
