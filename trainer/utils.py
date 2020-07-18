@@ -6,14 +6,6 @@
 
 
 def early_stopping(value, best, cur_step, max_step, order='asc'):
-    """
-    early stopping
-    :param value: current value
-    :param best: best value
-    :param cur_step: current step
-    :param max_step: threshold
-    :param order: asc or desc
-    """
     stop_flag = False
     update_flag = False
     if order == 'asc':
@@ -37,18 +29,16 @@ def early_stopping(value, best, cur_step, max_step, order='asc'):
     return best, cur_step, stop_flag, update_flag
 
 
-def calculate_valid_score(valid_result):
-    """
-    todo:  Add some rules
-    :param valid_result:
-    :return: score(float)
-    """
-    return valid_result['Recall@10']
+def calculate_valid_score(valid_result, valid_metric=None):
+    if valid_metric:
+        return valid_result[valid_metric]
+    else:
+        return valid_result['Recall@10']
 
 
 # todo: format adjustment
 def dict2str(result_dict):
     result_str = ''
     for metric, value in result_dict.items():
-        result_str += str(metric) + ' : ' + str(value) + '    '
+        result_str += str(metric) + ' : ' + '%.04f' % value + '    '
     return result_str
