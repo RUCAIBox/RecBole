@@ -100,18 +100,21 @@ class Dataset(object):
         return df
 
     # TODO
-    def _filter_users(self):
+    def filter_users(self):
         pass
 
     # TODO
-    def _filter_inters(self):
-        if 'lowest_val' in self.config:
-            for field in self.config['lowest_val']:
+    def filter_inters(self, lowest_val=None, highest_val=None):
+        if lowest_val is not None:
+            for field in lowest_val:
                 if field not in self.field2type:
                     raise ValueError('field [{}] not defined in dataset'.format(field))
-                self.inter_feat = self.inter_feat[self.inter_feat[field] >= self.config['lowest_val'][field]]
-        if 'highest_val' in self.config:
-            pass
+                self.inter_feat = self.inter_feat[self.inter_feat[field] >= lowest_val[field]]
+        if highest_val is not None:
+            for field in highest_val:
+                if field not in self.field2type:
+                    raise ValueError('field [{}] not defined in dataset'.format(field))
+                self.inter_feat = self.inter_feat[self.inter_feat[field] <= highest_val[field]]
 
         self.inter_feat = self.inter_feat.reset_index(drop=True)
 
@@ -160,73 +163,69 @@ class Dataset(object):
         nxt.inter_feat = new_inter_feat
         return nxt
 
+    def split_by_ratio(self, ratio):
+        tot_ratio = sum(ratio)
+        ratio = [_ / tot_ratio for _ in ratio]
+
+        tot_cnt = self.__len__()
+        cnt = [int(ratio[i] * tot_cnt) for i in range(len(ratio))]
+        cnt[-1] = tot_cnt - sum(cnt[0:-1])
+
+        cur = 0
+        next_ds = []
+        for c in cnt:
+            next_ds.append(self.copy(self.inter_feat[cur:cur+c]))
+        return next_ds
+
+    def shuffle(self):
+        self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
+
+    def sort(self, field_name):
+        self.inter_feat = self.inter_feat.sort_values(by=field_name)
+
     # TODO
-    def build(self):
-        self._filter_users()
-        self._filter_inters()
+    def build(self, 
+              inter_filter_lowest_val=None, inter_filter_highest_val=None, 
+              split_by_ratio=None,
+              train_batch_size=None, valid_batch_size=None, test_batch_size=None,
+              pairwise=False,
+              neg_sample_by=None, neg_sample_to=None
+        ):
+        # TODO
+        self.filter_users()
 
-        train_ratio = self.config['train_split_ratio']
-        test_ratio = self.config['test_split_ratio']
-        valid_ratio = self.config['valid_split_ratio']
+        self.filter_inters(inter_filter_lowest_val, inter_filter_highest_val)
 
-        if train_ratio <= 0:
-            raise ValueError('train ratio [{}] should be possitive'.format(train_ratio))
-        if test_ratio <= 0:
-            raise ValueError('test ratio [{}] should be possitive'.format(test_ratio))
-        if valid_ratio < 0:
-            raise ValueError('valid ratio [{}] should be none negative'.format(valid_ratio))
+        assert len(split_by_ratio) == 3
 
-        tot_ratio = train_ratio + test_ratio + valid_ratio
-        train_ratio /= tot_ratio
-        test_ratio /= tot_ratio
-        # valid_ratio /= tot_ratio
-
-        train_cnt = int(train_ratio * self.__len__())
-        if valid_ratio == 0:
-            test_cnt = self.__len__() - train_cnt
-            # valid_cnt = 0
-        else:
-            test_cnt = int(test_ratio * self.__len__())
-            # valid_cnt = self.__len__() - train_cnt - test_cnt
-
-        train_batch_size = self.config['train_batch_size']
-        test_batch_size = self.config['test_batch_size']
-        valid_batch_size = self.config['valid_batch_size']
-
-        train_inter = self.inter_feat[:train_cnt]
-        test_inter = self.inter_feat[train_cnt:train_cnt+test_cnt]
-        valid_inter = self.inter_feat[train_cnt+test_cnt:]
+        if split_by_ratio is not None:
+            train_dataset, valid_dataset, test_dataset = self.split_by_ratio(split_by_ratio)
 
         # TODO
-        # NEED TO BE CHANGED A LOT
-        # SHOULD BE DISCUSSED
-        train_loader = PairwiseDataLoader(
+        train_loader = GeneralDataLoader(
             config=self.config,
-            dataset=self.copy(train_inter),
+            dataset=train_dataset,
             batch_size=train_batch_size,
             real_time_neg_sampling=False,
-            neg_sample_by=1
+            shuffle=True,
+            pairwise=pairwise,
+            neg_sample_by=neg_sample_by,
         )
 
-        test_loader = PairwiseDataLoader(
+        test_loader = GeneralDataLoader(
             config=self.config,
-            dataset=self.copy(test_inter),
+            dataset=test_dataset,
             batch_size=test_batch_size,
             real_time_neg_sampling=False,
-            neg_sample_to=self.config['test_neg_sample_num']
+            neg_sample_to=neg_sample_to
         )
 
-        valid_loader = PairwiseDataLoader(
+        valid_loader = GeneralDataLoader(
             config=self.config,
-            dataset=self.copy(valid_inter),
+            dataset=valid_dataset,
             batch_size=valid_batch_size,
             real_time_neg_sampling=False,
-            neg_sample_to=self.config['test_neg_sample_num']
+            neg_sample_to=neg_sample_to
         )
-        # NEED TO BE CHANGED A LOT
-        # SHOULD BE DISCUSSED
 
-        if valid_ratio is not None:
-            return train_loader, test_loader, valid_loader
-        else:
-            return train_loader, test_loader
+        return train_loader, test_loader, valid_loader

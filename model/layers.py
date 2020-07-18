@@ -67,16 +67,6 @@ class MLPLayers(nn.Module):
 
         self.mlp_layers = nn.Sequential(*mlp_modules)
 
-        self._init_weights()
-
-    def _init_weights(self):
-        for m in self.mlp_layers:
-            if isinstance(m, nn.Linear):
-                xavier_normal_(m.weight)
-        for m in self.modules():
-            if isinstance(m, nn.Linear) and m.bias is not None:
-                m.bias.data.zero_()
-
     def forward(self, input_feature):
         return self.mlp_layers(input_feature)
 
@@ -91,14 +81,9 @@ class FMEmbedding(nn.Module):
     """
 
     def __init__(self, field_dims, offsets, embed_dim):
-        super(FMEmbedding).__init__()
+        super(FMEmbedding, self).__init__()
         self.embedding = nn.Embedding(sum(field_dims), embed_dim)
         self.offsets = offsets
-
-        self._init_weights()
-
-    def _init_weights(self):
-        xavier_normal_(self.embedding.weight)
 
     def forward(self, input_x):
         input_x = input_x + input_x.new_tensor(self.offsets).unsqueeze(0)
@@ -116,16 +101,11 @@ class FMFirstOrderLinear(nn.Module):
     """
     def __init__(self, field_dims, offsets, output_dim=1):
 
-        super(FMFirstOrderLinear).__init__()
+        super(FMFirstOrderLinear, self).__init__()
 
         self.w = nn.Embedding(sum(field_dims), output_dim)
         self.bias = nn.Parameter(torch.zeros((output_dim, )))
         self.offsets = offsets
-
-        self._init_weights()
-
-    def _init_weights(self):
-        xavier_normal_(self.w.weight)
 
     def forward(self, input_x):
         input_x = input_x + input_x.new_tensor(self.offsets).unsqueeze(0)
@@ -143,7 +123,7 @@ class BaseFactorizationMachine(nn.Module):
     """
 
     def __init__(self, reduce_sum=True):
-        super(BaseFactorizationMachine).__init__()
+        super(BaseFactorizationMachine, self).__init__()
         self.reduce_sum = reduce_sum
 
     def forward(self, input_x):
@@ -154,5 +134,29 @@ class BaseFactorizationMachine(nn.Module):
             output = torch.sum(output, dim=1, keepdim=True)
         output = 0.5 * output
         return output
+
+
+class BiGNNLayer(nn.Module):
+
+    def __init__(self, in_dim, out_dim):
+
+        super(BiGNNLayer, self).__init__()
+        self.in_dim = in_dim
+        self.out_dim = out_dim
+        self.linear = torch.nn.Linear(in_features=in_dim, out_features=out_dim)
+        self.interActTransform = torch.nn.Linear(in_features=in_dim, out_features=out_dim)
+
+    def forward(self, lap_matrix, eye_matrix, features):
+        # for GCF ajdMat is a (N+M) by (N+M) mat
+        # lap_matrix L = D^-1(A)D^-1 # 拉普拉斯矩阵
+        L1 = lap_matrix + eye_matrix
+
+        inter_part1 = self.linear(torch.sparse.mm(L1, features))
+
+        inter_feature = torch.sparse.mm(lap_matrix, features)
+        inter_feature = torch.mul(inter_feature, features)
+        inter_part2 = self.interActTransform(inter_feature)
+
+        return inter_part1 + inter_part2
 
 
