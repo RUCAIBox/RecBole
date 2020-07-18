@@ -15,7 +15,6 @@ from torch.nn.init import xavier_normal_
 
 from model.abstract_recommender import AbstractRecommender
 from model.loss import BPRLoss
-from model.layers import MLPLayers
 
 
 class BPRMF(AbstractRecommender):
@@ -40,23 +39,30 @@ class BPRMF(AbstractRecommender):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
 
+    def get_user_embedding(self, user):
+        return self.user_embedding(user)
+
+    def get_item_embedding(self, item):
+        return self.item_embedding(item)
+
     def forward(self, user, item):
-        user_e = self.user_embedding(user)
-        item_e = self.item_embedding(item)
-        item_score = torch.mul(user_e, item_e).sum(dim=1)
-        return item_score
+        user_e = self.get_user_embedding(user)
+        item_e = self.get_item_embedding(item)
+        return user_e, item_e
 
     def calculate_loss(self, interaction):
         user = interaction[self.USER_ID]
         pos_item = interaction[self.ITEM_ID]
         neg_item = interaction[self.NEG_ITEM_ID]
 
-        pos_item_score = self.forward(user, pos_item)
-        neg_item_score = self.forward(user, neg_item)
+        user_e, pos_e = self.forward(user, pos_item)
+        neg_e = self.get_item_embedding(neg_item)
+        pos_item_score, neg_item_score = torch.mul(user_e, pos_e).sum(dim=1), torch.mul(user_e, neg_e).sum(dim=1)
         loss = - self.loss(pos_item_score, neg_item_score)
         return loss
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        return self.forward(user, item)
+        user_e, item_e = self.forward(user, item)
+        return torch.mul(user_e, item_e).sum(dim=1)
