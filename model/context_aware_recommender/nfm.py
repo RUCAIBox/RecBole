@@ -40,7 +40,7 @@ class NFM(AbstractRecommender):
         self.first_order_linear = FMFirstOrderLinear(self.field_dims, self.offsets)
         self.embedding = FMEmbedding(self.field_dims, self.offsets, self.embedding_size)
         self.fm = BaseFactorizationMachine(reduce_sum=False)
-        self.mlp_layers = MLPLayers(self.layers, self.dropout, activation='sigmoid')
+        self.mlp_layers = MLPLayers(size_list, self.dropout, activation='sigmoid')
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1, bias=False)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
@@ -69,7 +69,9 @@ class NFM(AbstractRecommender):
             # todo: check (batch) or (batch, 1)
             x.append(interaction[field].unsqueeze(1))
         x = torch.cat(x, dim=1)
-        y = self.predict_layer(self.mlp_layers(self.embedding(x)))+self.first_order_linear(x)
+        emb_x = self.fm(self.embedding(x))
+
+        y = self.predict_layer(self.mlp_layers(emb_x))+self.first_order_linear(x)
         y = self.sigmoid(y)
         return y.squeeze()
 
