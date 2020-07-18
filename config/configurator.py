@@ -45,12 +45,14 @@ class Config(object):
 
         self.run_args = RunningConfig(config_file_name, self.cmd_args)
 
-        model_name = 'model\\'+self.run_args['model']
-        model_arg_file_name = os.path.join(os.path.dirname(config_file_name), model_name + '.config')
+        model_name = self.run_args['model']
+        model_dir = os.path.join(os.path.dirname(config_file_name), 'model')
+        model_arg_file_name = os.path.join(model_dir, model_name + '.config')
         self.model_args = ModelConfig(model_arg_file_name, self.cmd_args)
 
-        dataset_name = 'dataset\\'+self.run_args['dataset']
-        dataset_arg_file_name = os.path.join(os.path.dirname(config_file_name), dataset_name + '.config')
+        dataset_name = self.run_args['dataset']
+        dataset_dir = os.path.join(os.path.dirname(config_file_name), 'dataset')
+        dataset_arg_file_name = os.path.join(dataset_dir, dataset_name + '.config')
         self.dataset_args = DataConfig(dataset_arg_file_name, self.cmd_args)
 
         self.device = None

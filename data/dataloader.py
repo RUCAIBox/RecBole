@@ -137,10 +137,10 @@ class GeneralDataLoader(AbstractDataLoader):
                 uid2itemlist[uid] = iids.to_list()
             for uid in uid2itemlist:
                 pos_num = len(uid2itemlist[uid])
-                neg_num = self.neg_sample_to - pos_num
                 if pos_num >= self.neg_sample_to:
                     uid2itemlist[uid] = uid2itemlist[uid][:self.neg_sample_to-1]
                     pos_num = self.neg_sample_to - 1
+                neg_num = self.neg_sample_to - pos_num
                 neg_item_id = self.sampler.sample_by_user_id(uid, self.neg_sample_to - pos_num)
 
                 new_inter[uid_field].extend([uid] * self.neg_sample_to)
