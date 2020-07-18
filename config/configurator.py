@@ -45,11 +45,11 @@ class Config(object):
 
         self.run_args = RunningConfig(config_file_name, self.cmd_args)
 
-        model_name = self.run_args['model']
+        model_name = 'model\\'+self.run_args['model']
         model_arg_file_name = os.path.join(os.path.dirname(config_file_name), model_name + '.config')
         self.model_args = ModelConfig(model_arg_file_name, self.cmd_args)
 
-        dataset_name = self.run_args['dataset']
+        dataset_name = 'dataset\\'+self.run_args['dataset']
         dataset_arg_file_name = os.path.join(os.path.dirname(config_file_name), dataset_name + '.config')
         self.dataset_args = DataConfig(dataset_arg_file_name, self.cmd_args)
 
@@ -61,8 +61,10 @@ class Config(object):
         """
         init_seed = self.run_args['seed']
         gpu_id = self.run_args['gpu_id']
+        use_gpu = self.run_args['use_gpu']
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # Get the device that run on.
+        # Get the device that run on.
+        self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
 
         random.seed(init_seed)
         np.random.seed(init_seed)
