@@ -8,7 +8,7 @@ def hit(data):
 
 def mrr(data):
     tmp_x = data[data > 0]
-    if not tmp_x.empty:
+    if tmp_x.all():
         return (1 / tmp_x).sum() / data.shape[0]
     return 0
 
