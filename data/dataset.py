@@ -96,7 +96,7 @@ class Dataset(object):
                     col = [list(map(float, _.split(self.config['seq_separator']))) for _ in col]
                 ret[field] = col
 
-        df =  pd.DataFrame(ret)
+        df = pd.DataFrame(ret)
         return df
 
     # TODO
@@ -129,19 +129,35 @@ class Dataset(object):
                 self._remap_ID_seq(fsource, field)
 
     def _remap_ID(self, source, field):
-        if source == 'inter' or source == 'user_id' or source == 'item_id':
-            df = self.inter_feat
-            new_ids, mp = pd.factorize(df[field])
-            self.inter_feat[field] = new_ids
+        feat_name = '{}_feat'.format(source.split('_')[0])
+        feat = getattr(self, feat_name, pd.DataFrame(columns=[field]))
+        if source in ['user_id', 'item_id']:
+            df = pd.concat([self.inter_feat[field], feat[field]])
+            new_ids, mp = pd.factorize(df)
+            split_point = [len(self.inter_feat[field])]
+            self.inter_feat[field], feat[field] = np.split(new_ids, split_point)
             self.field2id_token[field] = mp
-        elif source == 'user' or source == 'user_id':
-            pass
-        elif source == 'item' or source == 'item_id':
-            pass
+        elif source in ['inter', 'user', 'item']:
+            new_ids, mp = pd.factorize(feat[field])
+            feat[field] = new_ids
+            self.field2id_token[field] = mp
 
-    # TODO
     def _remap_ID_seq(self, source, field):
-        pass
+        if source in ['inter', 'user', 'item']:
+            feat_name = '{}_feat'.format(source)
+            df = getattr(self, feat_name)
+            split_point = np.cumsum(df[field].agg(len))[:-1]
+            new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
+            new_ids = np.split(new_ids, split_point)
+            df[field] = new_ids
+            self.field2id_token[field] = mp
+
+    def get_token_num(self, field):
+        if field not in self.field2type:
+            raise ValueError('field [{}] not defined in dataset'.format(field))
+        if self.field2type[field] != 'token' and self.field2type[field] != 'token_seq':
+            raise ValueError('field [{}] is not a token type nor token_seq type'.format(field))
+        return len(self.field2id_token[field])
 
     def __getitem__(self, index):
         df = self.inter_feat.loc[index]
