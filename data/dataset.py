@@ -119,8 +119,6 @@ class Dataset(object):
         self._filter_inters(equal_val, lambda x, y: x == y)
         self._filter_inters(not_equal_val, lambda x, y: x != y)
 
-        self.inter_feat = self.inter_feat.reset_index(drop=True)
-
     def _remap_ID_all(self):
         for field in self.field2type:
             ftype = self.field2type[field]
