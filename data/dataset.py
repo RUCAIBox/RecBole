@@ -103,18 +103,21 @@ class Dataset(object):
     def filter_users(self):
         pass
 
+    def _filter_inters(self, val, cmp):
+        if val is not None:
+            for field in val:
+                if field not in self.field2type:
+                    raise ValueError('field [{}] not defined in dataset'.format(field))
+                self.inter_feat = self.inter_feat[cmp(self.inter_feat[field], val[field])]
+
+        self.inter_feat = self.inter_feat.reset_index(drop=True)
+
     # TODO
-    def filter_inters(self, lowest_val=None, highest_val=None):
-        if lowest_val is not None:
-            for field in lowest_val:
-                if field not in self.field2type:
-                    raise ValueError('field [{}] not defined in dataset'.format(field))
-                self.inter_feat = self.inter_feat[self.inter_feat[field] >= lowest_val[field]]
-        if highest_val is not None:
-            for field in highest_val:
-                if field not in self.field2type:
-                    raise ValueError('field [{}] not defined in dataset'.format(field))
-                self.inter_feat = self.inter_feat[self.inter_feat[field] <= highest_val[field]]
+    def filter_inters(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None):
+        self._filter_inters(lowest_val, lambda x, y: x >= y)
+        self._filter_inters(highest_val, lambda x, y: x <= y)
+        self._filter_inters(equal_val, lambda x, y: x == y)
+        self._filter_inters(not_equal_val, lambda x, y: x != y)
 
         self.inter_feat = self.inter_feat.reset_index(drop=True)
 
