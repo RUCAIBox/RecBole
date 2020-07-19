@@ -28,6 +28,6 @@ print(model)
 
 trainer = Trainer(config, model, logger)
 # trainer.resume_checkpoint('saved/model_best.pth')
-trainer.fit(train_data, valid_data)
+best_valid_score, _ = trainer.fit(train_data, valid_data)
 result = trainer.evaluate(test_data)
-print(result)
+print(best_valid_score)

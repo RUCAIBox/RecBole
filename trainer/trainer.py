@@ -47,7 +47,8 @@ class Trainer(AbstractTrainer):
 
         self.start_epoch = 0
         self.cur_step = 0
-        self.best_eval_score = -1
+        self.best_valid_score = -1
+        self.best_valid_result = None
         self.train_loss_dict = dict()
         self.optimizer = self._build_optimizer()
         self.evaluator = Evaluator(config, logger)
@@ -89,7 +90,7 @@ class Trainer(AbstractTrainer):
             'config': self.config,
             'epoch': epoch,
             'cur_step': self.cur_step,
-            'best_eval_score': self.best_eval_score,
+            'best_valid_score': self.best_valid_score,
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
         }
@@ -100,7 +101,7 @@ class Trainer(AbstractTrainer):
         checkpoint = torch.load(resume_file)
         self.start_epoch = checkpoint['epoch'] + 1
         self.cur_step = checkpoint['cur_step']
-        self.best_eval_score = checkpoint['best_eval_score']
+        self.best_valid_score = checkpoint['best_valid_score']
 
         # load architecture params from checkpoint
         if checkpoint['config']['model'].lower() != self.config['model'].lower():
@@ -133,8 +134,8 @@ class Trainer(AbstractTrainer):
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
                 valid_score, valid_result = self._valid_epoch(valid_data)
-                self.best_eval_score, self.cur_step, stop_flag, update_flag = early_stopping(
-                    valid_score, self.best_eval_score, self.cur_step, max_step=self.stopping_step, order='asc')
+                self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
+                    valid_score, self.best_valid_score, self.cur_step, max_step=self.stopping_step, order='asc')
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
@@ -144,12 +145,14 @@ class Trainer(AbstractTrainer):
                 if update_flag:
                     self._save_checkpoint(epoch_idx)
                     update_output = 'Saving current best: %s' % self.saved_model_file
+                    self.best_valid_result = valid_result
                     print(update_output)
                 if stop_flag:
                     stop_output = 'Finished training, best eval result in epoch %d' % \
                                   (epoch_idx - self.cur_step * self.eval_step)
                     print(stop_output)
                     break
+        return self.best_valid_score, self.best_valid_result
 
     def evaluate(self, eval_data, load_best_model=True, model_file=None):
         if load_best_model:
