@@ -152,7 +152,7 @@ class Dataset(object):
             df[field] = new_ids
             self.field2id_token[field] = mp
 
-    def get_token_num(self, field):
+    def num(self, field):
         if field not in self.field2type:
             raise ValueError('field [{}] not defined in dataset'.format(field))
         if self.field2type[field] != 'token' and self.field2type[field] != 'token_seq':
