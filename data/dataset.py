@@ -96,27 +96,28 @@ class Dataset(object):
                     col = [list(map(float, _.split(self.config['seq_separator']))) for _ in col]
                 ret[field] = col
 
-        df =  pd.DataFrame(ret)
+        df = pd.DataFrame(ret)
         return df
 
     # TODO
     def filter_users(self):
         pass
 
-    # TODO
-    def filter_inters(self, lowest_val=None, highest_val=None):
-        if lowest_val is not None:
-            for field in lowest_val:
+    def _filter_inters(self, val, cmp):
+        if val is not None:
+            for field in val:
                 if field not in self.field2type:
                     raise ValueError('field [{}] not defined in dataset'.format(field))
-                self.inter_feat = self.inter_feat[self.inter_feat[field] >= lowest_val[field]]
-        if highest_val is not None:
-            for field in highest_val:
-                if field not in self.field2type:
-                    raise ValueError('field [{}] not defined in dataset'.format(field))
-                self.inter_feat = self.inter_feat[self.inter_feat[field] <= highest_val[field]]
+                self.inter_feat = self.inter_feat[cmp(self.inter_feat[field], val[field])]
 
         self.inter_feat = self.inter_feat.reset_index(drop=True)
+
+    # TODO
+    def filter_inters(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None):
+        self._filter_inters(lowest_val, lambda x, y: x >= y)
+        self._filter_inters(highest_val, lambda x, y: x <= y)
+        self._filter_inters(equal_val, lambda x, y: x == y)
+        self._filter_inters(not_equal_val, lambda x, y: x != y)
 
     def _remap_ID_all(self):
         for field in self.field2type:
@@ -128,19 +129,35 @@ class Dataset(object):
                 self._remap_ID_seq(fsource, field)
 
     def _remap_ID(self, source, field):
-        if source == 'inter' or source == 'user_id' or source == 'item_id':
-            df = self.inter_feat
-            new_ids, mp = pd.factorize(df[field])
-            self.inter_feat[field] = new_ids
+        feat_name = '{}_feat'.format(source.split('_')[0])
+        feat = getattr(self, feat_name, pd.DataFrame(columns=[field]))
+        if source in ['user_id', 'item_id']:
+            df = pd.concat([self.inter_feat[field], feat[field]])
+            new_ids, mp = pd.factorize(df)
+            split_point = [len(self.inter_feat[field])]
+            self.inter_feat[field], feat[field] = np.split(new_ids, split_point)
             self.field2id_token[field] = mp
-        elif source == 'user' or source == 'user_id':
-            pass
-        elif source == 'item' or source == 'item_id':
-            pass
+        elif source in ['inter', 'user', 'item']:
+            new_ids, mp = pd.factorize(feat[field])
+            feat[field] = new_ids
+            self.field2id_token[field] = mp
 
-    # TODO
     def _remap_ID_seq(self, source, field):
-        pass
+        if source in ['inter', 'user', 'item']:
+            feat_name = '{}_feat'.format(source)
+            df = getattr(self, feat_name)
+            split_point = np.cumsum(df[field].agg(len))[:-1]
+            new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
+            new_ids = np.split(new_ids, split_point)
+            df[field] = new_ids
+            self.field2id_token[field] = mp
+
+    def num(self, field):
+        if field not in self.field2type:
+            raise ValueError('field [{}] not defined in dataset'.format(field))
+        if self.field2type[field] != 'token' and self.field2type[field] != 'token_seq':
+            raise ValueError('field [{}] is not a token type nor token_seq type'.format(field))
+        return len(self.field2id_token[field])
 
     def __getitem__(self, index):
         df = self.inter_feat.loc[index]
