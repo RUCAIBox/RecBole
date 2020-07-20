@@ -9,13 +9,14 @@ import pandas as pd
 import numpy as np
 from .dataloader import *
 
+
 class Dataset(object):
     def __init__(self, config):
         self.config = config
         self.token = config['dataset']
         self.dataset_path = config['data_path']
 
-        self.support_types = set(['token', 'token_seq', 'float', 'float_seq'])
+        self.support_types = {'token', 'token_seq', 'float', 'float_seq'}
         self.field2type = {}
         self.field2source = {}
         self.field2id_token = {}

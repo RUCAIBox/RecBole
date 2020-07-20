@@ -11,6 +11,7 @@ import torch
 from sampler import Sampler
 from .interaction import Interaction
 
+
 class AbstractDataLoader(object):
     def __init__(self, config, dataset, batch_size):
         self.config = config
@@ -30,8 +31,10 @@ class AbstractDataLoader(object):
             raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
         self.batch_size = batch_size
 
+
 class GeneralDataLoader(AbstractDataLoader):
-    def __init__(self, config, dataset, batch_size, pairwise=False, shuffle=False, real_time_neg_sampling=True, neg_sample_to=None, neg_sample_by=None):
+    def __init__(self, config, dataset, batch_size, pairwise=False, shuffle=False, real_time_neg_sampling=True,
+                 neg_sample_to=None, neg_sample_by=None):
         super(GeneralDataLoader, self).__init__(config, dataset, batch_size)
 
         self.pairwise = pairwise
@@ -54,7 +57,7 @@ class GeneralDataLoader(AbstractDataLoader):
         if self.pr >= len(self.dataset):
             self.pr = 0
             raise StopIteration()
-        cur_data = self.dataset[self.pr : self.pr+self.batch_size-1]
+        cur_data = self.dataset[self.pr: self.pr + self.batch_size - 1]
         self.pr += self.batch_size
         # TODO real time negative sampling
         if self.real_time_neg_sampling:
@@ -99,7 +102,7 @@ class GeneralDataLoader(AbstractDataLoader):
                 # TODO item_feat join
                 if self.dataset.item_feat is not None:
                     pass
-            else:   # Point-Wise
+            else:  # Point-Wise
                 neg_iids = list(map(list, zip(*neg_iids)))
                 neg_iids = reduce(operator.add, neg_iids)
                 neg_iids = self.dataset.inter_feat[iid_field].to_list() + neg_iids
@@ -138,7 +141,7 @@ class GeneralDataLoader(AbstractDataLoader):
             for uid in uid2itemlist:
                 pos_num = len(uid2itemlist[uid])
                 if pos_num >= self.neg_sample_to:
-                    uid2itemlist[uid] = uid2itemlist[uid][:self.neg_sample_to-1]
+                    uid2itemlist[uid] = uid2itemlist[uid][:self.neg_sample_to - 1]
                     pos_num = self.neg_sample_to - 1
                 neg_num = self.neg_sample_to - pos_num
                 neg_item_id = self.sampler.sample_by_user_id(uid, self.neg_sample_to - pos_num)
