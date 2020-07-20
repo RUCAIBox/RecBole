@@ -1,4 +1,5 @@
 # 用户手册
+也许这个格式能变得再好看一点
 
 ## [Tutorial]()
 
@@ -35,8 +36,7 @@
     对输入的eval_data进行评测
     参数：train_data(DataLoader) -- 待验证数据
          load_best_model(bool) -- Trainer执行完fit方法后，当前model参数并不是最优，可以选择是否读取训练过程中最优的模型，默认True
-         model_file(file) -- 若已经训练好模型，希望只调用Trainer的evaluate方法，输入含有模型参数的文件，读取其中的参数信息，此项优先级最高。
-         
+         model_file(file) -- 若已经训练好模型，希望只调用Trainer的evaluate方法，输入含有模型参数的文件，读取其中的参数信息，此项优先级最高。       
     返回：result(dict) -- 评测结果
     
     4） trainer.resume_checkpoint(resume_file:file)
