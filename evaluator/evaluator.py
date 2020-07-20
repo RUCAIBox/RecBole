@@ -2,6 +2,9 @@ import abc
 import numpy as np
 import pandas as pd
 import utils
+# from joblib import Parallel, delayed
+# from pandarallel import pandarallel
+# pandarallel.initialize()
 
 # 'Precision', 'Hit', 'Recall', 'MAP', 'NDCG', 'MRR', 'AUC'
 metric_name = {metric.lower() : metric for metric in ['Hit', 'Recall', 'MRR', 'AUC']}
@@ -71,14 +74,19 @@ class TopKEvaluator(AbstractEvaluator):
 
         fuc = getattr(utils, metric)
         if metric == 'auc':
-            metric_fuc = lambda x: fuc(x, self.neg_ratio)
+            metric_fuc = lambda x: fuc(x.values, self.neg_ratio)
         elif metric == 'precision':
-            metric_fuc = lambda x: fuc(x, k)
+            metric_fuc = lambda x: fuc(x.values, k)
         else:
-            metric_fuc = fuc
+            metric_fuc = lambda x: fuc(x.values)
+
+        # groups = df.groupby(self.USER_FIELD)['rank']
+        # results = Parallel(n_jobs=10)(delayed(metric_fuc)(group) for _, group in groups)
+        # result = np.mean(results)
+        # df.parallel_apply()
+
         metric_result = df.groupby(self.USER_FIELD)['rank'].apply(metric_fuc)
         return metric_result
-
 
     def evaluate(self, df):
         """Generate metrics results on the dataset
