@@ -3,6 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 # @File   : interaction.py
 
+
 class Interaction(object):
     def __init__(self, interaction):
         self.interaction = interaction
