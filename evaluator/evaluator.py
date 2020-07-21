@@ -2,12 +2,17 @@ import abc
 import numpy as np
 import pandas as pd
 import utils
+import warnings
 # from joblib import Parallel, delayed
 # from pandarallel import pandarallel
 # pandarallel.initialize()
 
 # 'Precision', 'Hit', 'Recall', 'MAP', 'NDCG', 'MRR', 'AUC'
-metric_name = {metric.lower() : metric for metric in ['Hit', 'Recall', 'MRR', 'AUC']}
+metric_name = {metric.lower() : metric for metric in ['Hit', 'Recall', 'MRR', 'AUC', 'Precision', 'NDCG']}
+
+# These metrics are typical in topk recommendations
+topk_metric = {'hit', 'recall', 'precision', 'ndcg'}
+other_metric = {'auc', 'mrr'}
 
 class AbstractEvaluator(metaclass=abc.ABCMeta):
     """The abstract class of the evaluation module, its subclasses must implement their functions
@@ -31,7 +36,7 @@ class AbstractEvaluator(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-class TopKEvaluator(AbstractEvaluator):
+class RankEvaluator(AbstractEvaluator):
     """Top k evaluator
 
     """    
@@ -42,7 +47,7 @@ class TopKEvaluator(AbstractEvaluator):
 
         self.USER_FIELD = config['USER_ID_FIELD']
         self.ITEM_FIELD = config['ITEM_ID_FIELD']
-        self.neg_ratio = config['test_neg_sample_num']
+        self.LABEL_FIELD = config['LABEL_FIELD']
 
     def recommend(self, df, k):
         """Recommend the top k items for users
@@ -73,19 +78,13 @@ class TopKEvaluator(AbstractEvaluator):
         """
 
         fuc = getattr(utils, metric)
-        if metric == 'auc':
-            metric_fuc = lambda x: fuc(x.values, self.neg_ratio)
-        elif metric == 'precision':
-            metric_fuc = lambda x: fuc(x.values, k)
-        else:
-            metric_fuc = lambda x: fuc(x.values)
+        metric_fuc = lambda x: fuc(x['rank'].values, x[self.LABEL_FIELD].values.astype(bool), k)
 
         # groups = df.groupby(self.USER_FIELD)['rank']
         # results = Parallel(n_jobs=10)(delayed(metric_fuc)(group) for _, group in groups)
         # result = np.mean(results)
-        # df.parallel_apply()
 
-        metric_result = df.groupby(self.USER_FIELD)['rank'].apply(metric_fuc)
+        metric_result = df.groupby(self.USER_FIELD)[['rank', self.LABEL_FIELD]].apply(metric_fuc)
         return metric_result
 
     def evaluate(self, df):
@@ -102,13 +101,18 @@ class TopKEvaluator(AbstractEvaluator):
 
         metric_dict = {}
         num_users = df[self.USER_FIELD].nunique()
-        for k in sorted(self.topk)[::-1]:
-            df['rank'] = np.where(df['rank'].values <= k, df['rank'].values, np.full_like(df['rank'].values, -1))
-            for metric in self.metrics:
-                metric_result = self.metric_info(df, metric, k)
+        for metric in self.metrics:
+            if metric in topk_metric:
+                for k in self.topk:
+                    metric_result = self.metric_info(df, metric, k)
+                    key = '{}@{}'.format(metric_name[metric], k)
+                    score = metric_result.sum() / num_users
+                    metric_dict[key] = score
+            else:
+                key = metric_name[metric]
                 score = metric_result.sum() / num_users
-                key, value = '{}@{}'.format(metric_name[metric], k), score
-                metric_dict[key] = value
+                metric_dict[key] = score
+
         return metric_dict
 
 class LossEvaluator(AbstractEvaluator):
@@ -204,7 +208,7 @@ class Evaluator(AbstractEvaluator):
         self._check_args()
 
         if self.topk is not None:
-            self.evaluator = TopKEvaluator(config, self.logger, self.eval_metric, self.topk)
+            self.evaluator = RankEvaluator(config, self.logger, self.eval_metric, self.topk)
         else:
             self.evaluator = LossEvaluator(config, self.logger, self.eval_metric)
 
@@ -269,12 +273,22 @@ class Evaluator(AbstractEvaluator):
             if isinstance(self.topk, int):
                 assert self.topk > 0, 'topk must be a pistive integer or a list of postive integers'
                 self.topk = list(range(1, self.topk + 1))
+            elif self.topk is None:
+                for metric in self.eval_metric:
+                    if metric in topk_metric:
+                        warn_str = 'The {} is not calculated in topk evaluator. please confirm your purpose of using this metric.'.format(metric)
+                        warnings.warn(warn_str)
+
         else:
             raise TypeError('The topk muse be int or list')
         if self.topk is not None:
             for number in self.topk:
                 assert isinstance(number, int) and number > 0, '{} in topk is not a posttive integer'.format(number) 
             self.topk = sorted(self.topk)[::-1]
+            for metric in self.eval_metric:
+                if metric in other_metric:
+                    warn_str = 'The {} is calculated in topk evaluator. please confirm your purpose of using this metric.'.format(metric)
+                    warnings.warn(warn_str)
 
     def get_grouped_data(self, df):
         """ a interface which can split the users into groups.
@@ -377,12 +391,6 @@ class Evaluator(AbstractEvaluator):
         df = self.build_evaluate_df(rdata, result)
         if self.topk is not None:
             df['rank'] = df.groupby(self.USER_FIELD)['score'].rank(method='first', ascending=False)
-        mask = df[self.LABEL_FIELD] > 0
-        df = df[mask].copy()
-        # TODO 如果是CTR类的model，可能给的就是label为0,1的数据，那么neg_ratio可能是互不相同的，而算AUC的时候需要用到这些数据
-        # neg_df = df[~mask].copy()
-        # neg_df['neg_ratio'] = neg_df.groupby(self.USER_FIELD)[self.LABEL_FIELD].count()
-        # truth_df = truth_df.merge(neg_df[[self.USER_FIELD, self.]])
         if self.group_view is not None:
             return self.group_evaluate(df)
         return self.common_evaluate(df)
