@@ -101,13 +101,15 @@ class RankEvaluator(AbstractEvaluator):
 
         metric_dict = {}
         num_users = df[self.USER_FIELD].nunique()
-        for k in self.topk:
-            for metric in self.metrics:
-                metric_result = self.metric_info(df, metric, k)
-                if metric in topk_metric:
+        for metric in self.metrics:
+            if metric in topk_metric:
+                for k in self.topk:
+                    metric_result = self.metric_info(df, metric, k)
                     key = '{}@{}'.format(metric_name[metric], k)
-                else:
-                    key = metric_name[metric]
+                    score = metric_result.sum() / num_users
+                    metric_dict[key] = score
+            else:
+                key = metric_name[metric]
                 score = metric_result.sum() / num_users
                 metric_dict[key] = score
 
@@ -274,7 +276,8 @@ class Evaluator(AbstractEvaluator):
             elif self.topk is None:
                 for metric in self.eval_metric:
                     if metric in topk_metric:
-                        warnings.warn('The {} is not calculated in topk evaluator. please confirm your purpose of using this metric.'.format(metric))
+                        warn_str = 'The {} is not calculated in topk evaluator. please confirm your purpose of using this metric.'.format(metric)
+                        warnings.warn(warn_str)
 
         else:
             raise TypeError('The topk muse be int or list')
@@ -284,7 +287,8 @@ class Evaluator(AbstractEvaluator):
             self.topk = sorted(self.topk)[::-1]
             for metric in self.eval_metric:
                 if metric in other_metric:
-                    warnings.warn('The {} is calculated in topk evaluator. please confirm your purpose of using this metric.'.format(metric))
+                    warn_str = 'The {} is calculated in topk evaluator. please confirm your purpose of using this metric.'.format(metric)
+                    warnings.warn(warn_str)
 
     def get_grouped_data(self, df):
         """ a interface which can split the users into groups.
