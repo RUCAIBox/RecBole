@@ -19,8 +19,8 @@
         |  ---- | ----  | ----  | ----  | ----  |
         | 1  | Popularity | general | 开发中 | 林子涵 |
         | 2  | ItemKNN | general | 开发中 | 林子涵 |
-        | 3  | BPRMF | general | 测试中 | 牟善磊 |
-        | 4  | NCF | general | 测试中 | 牟善磊 |
+        | 3  | BPRMF | general | 测试中 | 林子涵 |
+        | 4  | NCF | general | 测试中 | 林子涵 |
         | 5  | NGCF | general | 开发中 | 林子涵 |
         | 6  | LightGCN | general | 未认领 |  |
         | 7  | FM | context-aware | 开发中 | 牟善磊 |
