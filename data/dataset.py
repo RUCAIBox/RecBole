@@ -151,7 +151,7 @@ class Dataset(object):
             new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
             new_ids = np.split(new_ids + 1, split_point)
             df[field] = new_ids
-            self.field2id_token[field] = mp.insert(0, None)
+            self.field2id_token[field] = np.insert(mp, 0, None)
 
     def num(self, field):
         if field not in self.field2type:

@@ -48,7 +48,8 @@ class GeneralDataLoader(AbstractDataLoader):
         if neg_sample_by is not None and neg_sample_to is not None:
             raise ValueError('neg_sample_to and neg_sample_by cannot be given value the same time')
 
-        self._neg_sampling()
+        if not real_time_neg_sampling:
+            self._neg_sampling()
 
         if self.shuffle:
             self.dataset.shuffle()
@@ -56,13 +57,15 @@ class GeneralDataLoader(AbstractDataLoader):
     def __next__(self):
         if self.pr >= len(self.dataset):
             self.pr = 0
-            if self.real_time_neg_sampling:
-                if not self.pairwise:
-                    raise ValueError('real time neg sampling only support pairwise dataloader')
-                self._neg_sampling()
             raise StopIteration()
         cur_data = self.dataset[self.pr: self.pr + self.batch_size - 1]
         self.pr += self.batch_size
+        if self.real_time_neg_sampling:
+            if not self.pairwise:
+                raise ValueError('real time neg sampling only support pairwise dataloader')
+            uid_field = self.config['USER_ID_FIELD']
+            iid_field = self.config['ITEM_ID_FIELD']
+            cur_data = self._neg_sampling_by(uid_field, iid_field, cur_data)
         cur_data = cur_data.to_dict(orient='list')
         seqlen = self.config.get('field2seqlen')
         for k in cur_data:
@@ -85,71 +88,85 @@ class GeneralDataLoader(AbstractDataLoader):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         if self.neg_sample_by is not None:
-            uids = self.dataset.inter_feat[uid_field].to_list()
-            # iids = self.dataset.inter_feat[iid_field].to_list()
-            # if self.neg_sample_by == 1:
-            neg_iids = []
-            for uid in uids:
-                neg_iids.append(self.sampler.sample_by_user_id(uid, self.neg_sample_by))
-            if self.pairwise:
-                if self.neg_sample_by != 1:
-                    raise ValueError('Pairwise dataloader can only neg sample by 1')
-                neg_prefix = self.config['NEG_PREFIX']
-                neg_item_id = neg_prefix + iid_field
-                neg_iids = [_[0] for _ in neg_iids]
-                self.dataset.inter_feat[neg_item_id] = neg_iids
-                self.dataset.field2type[neg_item_id] = 'token'
-                self.dataset.field2source[neg_item_id] = 'item_id'
-                if self.dataset.item_feat is not None:
-                    item_feat = self.dataset.item_feat.add_prefix(neg_prefix)
-                    self.dataset.inter_feat = pd.merge(self.dataset.inter_feat, item_feat,
-                                                       on=neg_item_id, how='left', suffixes=('_inter', '_item'))
-            else:  # Point-Wise
-                neg_iids = list(map(list, zip(*neg_iids)))
-                neg_iids = reduce(operator.add, neg_iids)
-                neg_iids = self.dataset.inter_feat[iid_field].to_list() + neg_iids
-
-                pos_inter_num = len(self.dataset.inter_feat)
-
-                new_df = pd.concat([self.dataset.inter_feat] * (1 + self.neg_sample_by), ignore_index=True)
-                new_df[iid_field] = neg_iids
-
-                label_field = self.config['LABEL_FIELD']
-                labels = pos_inter_num * [1] + self.neg_sample_by * pos_inter_num * [0]
-                new_df[label_field] = labels
-
-                self.dataset.inter_feat = new_df
-        # TODO
+            sampling_func = self._neg_sampling_by
         elif self.neg_sample_to is not None:
-            if self.neg_sample_to == -1:
-                self.neg_sample_to = len(self.dataset.num(iid_field))
-            if self.pairwise:
-                raise ValueError('pairwise dataloader cannot neg sample to')
-            user_num_in_one_batch = self.batch_size // self.neg_sample_to
-            self.batch_size = (user_num_in_one_batch + 1) * self.neg_sample_to
-            # TODO  batch size is changed
+            sampling_func = self._neg_sampling_to
+        else:
+            return
+        self.dataset.inter_feat = sampling_func(uid_field, iid_field, self.dataset.inter_feat)
 
-            label_field = self.config['LABEL_FIELD']
-            self.dataset.field2type[label_field] = 'float'
-            self.dataset.field2source[label_field] = 'inter'
-            new_inter = {
-                uid_field: [],
-                iid_field: [],
-                label_field: []
-            }
-            uid2itemlist = {}
-            grouped_uid_iid = self.dataset.inter_feat.groupby(uid_field)[iid_field]
-            for uid, iids in grouped_uid_iid:
-                uid2itemlist[uid] = iids.to_list()
-            for uid in uid2itemlist:
-                pos_num = len(uid2itemlist[uid])
-                if pos_num >= self.neg_sample_to:
-                    uid2itemlist[uid] = uid2itemlist[uid][:self.neg_sample_to - 1]
-                    pos_num = self.neg_sample_to - 1
-                neg_num = self.neg_sample_to - pos_num
-                neg_item_id = self.sampler.sample_by_user_id(uid, self.neg_sample_to - pos_num)
+    def _neg_sampling_by(self, uid_field, iid_field, inter_feat):
+        uids = inter_feat[uid_field].to_list()
+        # iids = inter_feat[iid_field].to_list()
+        # if self.neg_sample_by == 1:
+        neg_iids = [self.sampler.sample_by_user_id(uid, self.neg_sample_by) for uid in uids]
+        sampling_func = self._pair_wise_sampling if self.pairwise else self._point_wise_sampling
+        return sampling_func(uid_field, iid_field, neg_iids, inter_feat)
 
-                new_inter[uid_field].extend([uid] * self.neg_sample_to)
-                new_inter[iid_field].extend(uid2itemlist[uid] + neg_item_id)
-                new_inter[label_field].extend([1] * pos_num + [0] * neg_num)
-            self.dataset.inter_feat = pd.DataFrame(new_inter)
+    def _pair_wise_sampling(self, uid_field, iid_field, neg_iids, inter_feat):
+        if self.neg_sample_by != 1:
+            raise ValueError('Pairwise dataloader can only neg sample by 1')
+        neg_prefix = self.config['NEG_PREFIX']
+        neg_item_id = neg_prefix + iid_field
+        neg_iids = np.array(neg_iids).ravel()
+
+        inter_feat.insert(len(inter_feat.columns), neg_item_id, neg_iids)
+        self.dataset.field2type[neg_item_id] = 'token'
+        self.dataset.field2source[neg_item_id] = 'item_id'
+
+        if self.dataset.item_feat is not None:
+            item_feat = self.dataset.item_feat.add_prefix(neg_prefix)
+            inter_feat = pd.merge(inter_feat, item_feat, on=neg_item_id, how='left', suffixes=('_inter', '_item'))
+
+        return inter_feat
+
+    def _point_wise_sampling(self, uid_field, iid_field, neg_iids, inter_feat):
+        neg_iids = list(np.array(neg_iids).T.ravel())
+        neg_iids = inter_feat[iid_field].to_list() + neg_iids
+
+        pos_inter_num = len(inter_feat)
+
+        new_df = pd.concat([inter_feat] * (1 + self.neg_sample_by), ignore_index=True)
+        new_df[iid_field] = neg_iids
+
+        label_field = self.config['LABEL_FIELD']
+        labels = pos_inter_num * [1] + self.neg_sample_by * pos_inter_num * [0]
+        new_df[label_field] = labels
+
+        return new_df
+
+    # TODO
+    def _neg_sampling_to(self, uid_field, iid_field, inter_feat):
+        if self.neg_sample_to == -1:
+            self.neg_sample_to = self.dataset.num(iid_field)
+        if self.pairwise:
+            raise ValueError('pairwise dataloader cannot neg sample to')
+        user_num_in_one_batch = self.batch_size // self.neg_sample_to
+        self.batch_size = (user_num_in_one_batch + 1) * self.neg_sample_to
+        # TODO  batch size is changed
+
+        label_field = self.config['LABEL_FIELD']
+        self.dataset.field2type[label_field] = 'float'
+        self.dataset.field2source[label_field] = 'inter'
+        new_inter = {
+            uid_field: [],
+            iid_field: [],
+            label_field: []
+        }
+        uid2itemlist = {}
+        grouped_uid_iid = inter_feat.groupby(uid_field)[iid_field]
+        for uid, iids in grouped_uid_iid:
+            uid2itemlist[uid] = iids.to_list()
+        for uid in uid2itemlist:
+            pos_num = len(uid2itemlist[uid])
+            if pos_num >= self.neg_sample_to:
+                uid2itemlist[uid] = uid2itemlist[uid][:self.neg_sample_to - 1]
+                pos_num = self.neg_sample_to - 1
+            neg_num = self.neg_sample_to - pos_num
+            neg_item_id = self.sampler.sample_by_user_id(uid, self.neg_sample_to - pos_num)
+
+            new_inter[uid_field].extend([uid] * self.neg_sample_to)
+            new_inter[iid_field].extend(uid2itemlist[uid] + neg_item_id)
+            new_inter[label_field].extend([1] * pos_num + [0] * neg_num)
+
+        return pd.DataFrame(new_inter)
