@@ -11,8 +11,8 @@ from hyperopt import fmin, tpe, hp
 
 
 class HyperTuning(object):
-    def __init__(self, procudure_filename, params_file=None, space=None, interpreter='python', algo=tpe.suggest, max_evals=100, bigger=True):
-        self.filename = procudure_filename
+    def __init__(self, procedure_file, space=None, params_file=None, interpreter='python', algo=tpe.suggest, max_evals=100, bigger=True):
+        self.filename = procedure_file
         self.interpreter = interpreter
         self.algo = algo
         self.max_evals = max_evals
