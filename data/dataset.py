@@ -49,17 +49,17 @@ class Dataset(object):
             raise ValueError('File {} not exist'.format(inter_feat_path))
         inter_feat = self._load_feat(inter_feat_path, 'inter')
 
-        uid_field = self.config['USER_ID_FIELD']
-        if uid_field not in self.field2source:
-            raise ValueError('user id field [{}] not exist in [{}]'.format(uid_field, self.token))
+        self.uid_field = self.config['USER_ID_FIELD']
+        if self.uid_field not in self.field2source:
+            raise ValueError('user id field [{}] not exist in [{}]'.format(self.uid_field, self.token))
         else:
-            self.field2source[uid_field] = 'user_id'
+            self.field2source[self.uid_field] = 'user_id'
 
-        iid_field = self.config['ITEM_ID_FIELD']
-        if iid_field not in self.field2source:
-            raise ValueError('item id field [{}] not exist in [{}]'.format(iid_field, self.token))
+        self.iid_field = self.config['ITEM_ID_FIELD']
+        if self.iid_field not in self.field2source:
+            raise ValueError('item id field [{}] not exist in [{}]'.format(self.iid_field, self.token))
         else:
-            self.field2source[iid_field] = 'item_id'
+            self.field2source[self.iid_field] = 'item_id'
 
         return inter_feat, user_feat, item_feat
 
@@ -163,9 +163,9 @@ class Dataset(object):
     def __getitem__(self, index):
         df = self.inter_feat.loc[index]
         if self.user_feat:
-            df = pd.merge(df, self.user_feat, on=self.config['USER_ID_FIELD'], how='left')
+            df = pd.merge(df, self.user_feat, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
         if self.item_feat:
-            df = pd.merge(df, self.item_feat, on=self.config['ITEM_ID_FIELD'], how='left')
+            df = pd.merge(df, self.item_feat, on=self.iid_field, how='left', suffixes=('_inter', '_item'))
         return df
 
     def __len__(self):

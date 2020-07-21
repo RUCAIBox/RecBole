@@ -85,8 +85,8 @@ class GeneralDataLoader(AbstractDataLoader):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         if self.neg_sample_by is not None:
-            uids = self.dataset.inter_feat[self.config['USER_ID_FIELD']].to_list()
-            # iids = self.dataset.inter_feat[self.config['ITEM_ID_FIELD']].to_list()
+            uids = self.dataset.inter_feat[uid_field].to_list()
+            # iids = self.dataset.inter_feat[iid_field].to_list()
             # if self.neg_sample_by == 1:
             neg_iids = []
             for uid in uids:
