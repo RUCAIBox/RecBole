@@ -8,6 +8,7 @@ from functools import reduce
 import pandas as pd
 import numpy as np
 import torch
+import torch.nn.utils.rnn as rnn_utils
 from sampler import Sampler
 from .interaction import Interaction
 
@@ -63,17 +64,19 @@ class GeneralDataLoader(AbstractDataLoader):
         cur_data = self.dataset[self.pr: self.pr + self.batch_size - 1]
         self.pr += self.batch_size
         cur_data = cur_data.to_dict(orient='list')
+        seqlen = self.config.get('field2seqlen')
         for k in cur_data:
             ftype = self.dataset.field2type[k]
-            # TODO seq support
             if ftype == 'token':
                 cur_data[k] = torch.LongTensor(cur_data[k])
             elif ftype == 'float':
                 cur_data[k] = torch.FloatTensor(cur_data[k])
             elif ftype == 'token_seq':
-                raise NotImplementedError()
+                data = [torch.LongTensor(d[:seqlen]) for d in cur_data[k]]  # TODO  cutting strategy?
+                cur_data[k] = rnn_utils.pad_sequence(data, batch_first=True)
             elif ftype == 'float_seq':
-                raise NotImplementedError()
+                data = [torch.FloatTensor(d[:seqlen]) for d in cur_data[k]]  # TODO  cutting strategy?
+                cur_data[k] = rnn_utils.pad_sequence(data, batch_first=True)
             else:
                 raise ValueError('Illegal ftype [{}]'.format(ftype))
         return Interaction(cur_data)
