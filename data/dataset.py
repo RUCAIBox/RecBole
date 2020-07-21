@@ -162,9 +162,9 @@ class Dataset(object):
 
     def __getitem__(self, index):
         df = self.inter_feat.loc[index]
-        if self.user_feat:
+        if self.user_feat is not None:
             df = pd.merge(df, self.user_feat, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
-        if self.item_feat:
+        if self.item_feat is not None:
             df = pd.merge(df, self.item_feat, on=self.iid_field, how='left', suffixes=('_inter', '_item'))
         return df
 

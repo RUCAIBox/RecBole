@@ -67,7 +67,7 @@ class GeneralDataLoader(AbstractDataLoader):
             iid_field = self.config['ITEM_ID_FIELD']
             cur_data = self._neg_sampling_by(uid_field, iid_field, cur_data)
         cur_data = cur_data.to_dict(orient='list')
-        seqlen = self.config.get('field2seqlen')
+        seqlen = self.config['field2seqlen']
         for k in cur_data:
             ftype = self.dataset.field2type[k]
             if ftype == 'token':
@@ -115,8 +115,12 @@ class GeneralDataLoader(AbstractDataLoader):
         self.dataset.field2source[neg_item_id] = 'item_id'
 
         if self.dataset.item_feat is not None:
-            item_feat = self.dataset.item_feat.add_prefix(neg_prefix)
-            inter_feat = pd.merge(inter_feat, item_feat, on=neg_item_id, how='left', suffixes=('_inter', '_item'))
+            neg_item_feat = self.dataset.item_feat.add_prefix(neg_prefix)
+            inter_feat = pd.merge(inter_feat, neg_item_feat,
+                                  on=neg_item_id, how='left', suffixes=('_inter', '_item'))
+            for neg_item_feat_col, item_feat_col in zip(neg_item_feat.columns, self.dataset.item_feat.columns):
+                self.dataset.field2type[neg_item_feat_col] = self.dataset.field2type[item_feat_col]
+                self.dataset.field2source[neg_item_feat_col] = self.dataset.field2source[item_feat_col]
 
         return inter_feat
 
