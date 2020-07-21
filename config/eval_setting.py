@@ -65,7 +65,7 @@ class EvalSetting(object):
         >>> es.sort_by(field=['timestamp', 'price'], ascending=[True, False])
     """
     def set_ordering(self, strategy='none', **kwargs):
-        legal_strategy = set(['none', 'shuffle', 'by'])
+        legal_strategy = {'none', 'shuffle', 'by'}
         if strategy not in legal_strategy:
             raise ValueError('Ordering Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
         self.ordering_args = {'strategy': strategy}
@@ -99,7 +99,7 @@ class EvalSetting(object):
 
     """
     def set_splitting(self, strategy='none', **kwargs):
-        legal_strategy = set(['none', 'by_ratio', 'by_value', 'loo'])
+        legal_strategy = {'none', 'by_ratio', 'by_value', 'loo'}
         if strategy not in legal_strategy:
             raise ValueError('Split Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
         if strategy == 'loo' and self.group_by is None:
@@ -132,23 +132,22 @@ class EvalSetting(object):
 
     Example:
         >>> es = EvalSetting(config)
-        >>> es.neg_sample_to(100)
+        >>> es.neg_sample_to(100, real_time=True)
         >>> es.neg_sample_by(1)
-        >>> es.full_sort()  # the same with `es.neg_sample_to(-1)`
-
+        >>> es.full_sort()  # the same with `es.neg_sample_to(-1, real_time=True)`
     """
     def set_neg_sampling(self, strategy='none', **kwargs):
-        legal_strategy = set(['none', 'to', 'by'])
+        legal_strategy = {'none', 'to', 'by'}
         if strategy not in legal_strategy:
             raise ValueError('Negative Sampling Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
         self.neg_sample_args = {'strategy': strategy}
         self.neg_sample_args.update(kwargs)
 
-    def neg_sample_to(self, to):
-        self.set_neg_sampling(strategy='to', to=to)
+    def neg_sample_to(self, to, real_time=False):
+        self.set_neg_sampling(strategy='to', to=to, real_time=real_time)
 
-    def full_sort(self):
-        self.neg_sample_to(-1)
+    def full_sort(self, real_time=True):
+        self.neg_sample_to(to=-1, real_time=real_time)
 
-    def neg_sample_by(self, by):
-        self.set_neg_sampling(strategy='by', by=by)
+    def neg_sample_by(self, by, real_time=False):
+        self.set_neg_sampling(strategy='by', by=by, real_time=real_time)
