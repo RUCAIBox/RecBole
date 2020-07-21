@@ -62,8 +62,7 @@ class MLPLayers(nn.Module):
             elif self.activation.lower() == 'none':
                 pass
             else:
-                warnings.warn('Received unrecognized activation function, set default activation function'
-                              , UserWarning)
+                warnings.warn('Received unrecognized activation function, set default activation function', UserWarning)
 
         self.mlp_layers = nn.Sequential(*mlp_modules)
 
@@ -104,7 +103,7 @@ class FMFirstOrderLinear(nn.Module):
         super(FMFirstOrderLinear, self).__init__()
 
         self.w = nn.Embedding(sum(field_dims), output_dim)
-        self.bias = nn.Parameter(torch.zeros((output_dim, )))
+        self.bias = nn.Parameter(torch.zeros((output_dim, )), requires_grad=True)
         self.offsets = offsets
 
     def forward(self, input_x):
@@ -158,5 +157,33 @@ class BiGNNLayer(nn.Module):
         inter_part2 = self.interActTransform(inter_feature)
 
         return inter_part1 + inter_part2
+
+
+class AttLayer(nn.Module):
+    """
+        Input shape
+        - A 3D tensor with shape:``(batch_size, M, embed_dim)``.
+
+        Output shape
+        - 3D tensor with shape: ``(batch_size, M)`` .
+    """
+
+    def __init__(self, in_dim, att_dim):
+
+        super(AttLayer, self).__init__()
+        self.in_dim = in_dim
+        self.att_dim = att_dim
+        self.w = torch.nn.Linear(in_features=in_dim, out_features=att_dim)
+        self.h = nn.Parameter(torch.randn(att_dim), requires_grad=True)
+
+    def forward(self, infeatures):
+        att_singal = self.w(infeatures)  # [batch_size, M, att_dim]
+        att_singal = fn.relu(att_singal)  # [batch_size, M, att_dim]
+
+        att_singal = torch.mul(att_singal, self.h)  # [batch_size, M, att_dim]
+        att_singal = torch.sum(att_singal, dim=2)  # [batch_size, M]
+        att_singal = fn.softmax(att_singal, dim=1)  # [batch_size, M]
+
+        return att_singal
 
 
