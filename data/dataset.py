@@ -149,9 +149,9 @@ class Dataset(object):
             df = getattr(self, feat_name)
             split_point = np.cumsum(df[field].agg(len))[:-1]
             new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
-            new_ids = np.split(new_ids, split_point)
+            new_ids = np.split(new_ids + 1, split_point)
             df[field] = new_ids
-            self.field2id_token[field] = mp
+            self.field2id_token[field] = mp.insert(0, None)
 
     def num(self, field):
         if field not in self.field2type:
