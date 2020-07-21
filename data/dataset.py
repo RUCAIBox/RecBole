@@ -9,13 +9,14 @@ import pandas as pd
 import numpy as np
 from .dataloader import *
 
+
 class Dataset(object):
     def __init__(self, config):
         self.config = config
         self.token = config['dataset']
         self.dataset_path = config['data_path']
 
-        self.support_types = set(['token', 'token_seq', 'float', 'float_seq'])
+        self.support_types = {'token', 'token_seq', 'float', 'float_seq'}
         self.field2type = {}
         self.field2source = {}
         self.field2id_token = {}
@@ -48,17 +49,17 @@ class Dataset(object):
             raise ValueError('File {} not exist'.format(inter_feat_path))
         inter_feat = self._load_feat(inter_feat_path, 'inter')
 
-        uid_field = self.config['USER_ID_FIELD']
-        if uid_field not in self.field2source:
-            raise ValueError('user id field [{}] not exist in [{}]'.format(uid_field, self.token))
+        self.uid_field = self.config['USER_ID_FIELD']
+        if self.uid_field not in self.field2source:
+            raise ValueError('user id field [{}] not exist in [{}]'.format(self.uid_field, self.token))
         else:
-            self.field2source[uid_field] = 'user_id'
+            self.field2source[self.uid_field] = 'user_id'
 
-        iid_field = self.config['ITEM_ID_FIELD']
-        if iid_field not in self.field2source:
-            raise ValueError('item id field [{}] not exist in [{}]'.format(iid_field, self.token))
+        self.iid_field = self.config['ITEM_ID_FIELD']
+        if self.iid_field not in self.field2source:
+            raise ValueError('item id field [{}] not exist in [{}]'.format(self.iid_field, self.token))
         else:
-            self.field2source[iid_field] = 'item_id'
+            self.field2source[self.iid_field] = 'item_id'
 
         return inter_feat, user_feat, item_feat
 
@@ -148,9 +149,9 @@ class Dataset(object):
             df = getattr(self, feat_name)
             split_point = np.cumsum(df[field].agg(len))[:-1]
             new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
-            new_ids = np.split(new_ids, split_point)
+            new_ids = np.split(new_ids + 1, split_point)
             df[field] = new_ids
-            self.field2id_token[field] = mp
+            self.field2id_token[field] = np.insert(mp, 0, None)
 
     def num(self, field):
         if field not in self.field2type:
@@ -161,7 +162,10 @@ class Dataset(object):
 
     def __getitem__(self, index):
         df = self.inter_feat.loc[index]
-        # TODO join user/item
+        if self.user_feat is not None:
+            df = pd.merge(df, self.user_feat, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
+        if self.item_feat is not None:
+            df = pd.merge(df, self.item_feat, on=self.iid_field, how='left', suffixes=('_inter', '_item'))
         return df
 
     def __len__(self):
