@@ -47,8 +47,7 @@ class GeneralDataLoader(AbstractDataLoader):
         if neg_sample_by is not None and neg_sample_to is not None:
             raise ValueError('neg_sample_to and neg_sample_by cannot be given value the same time')
 
-        if not real_time_neg_sampling:
-            self._pre_neg_sampling()
+        self._neg_sampling()
 
         if self.shuffle:
             self.dataset.shuffle()
@@ -56,14 +55,13 @@ class GeneralDataLoader(AbstractDataLoader):
     def __next__(self):
         if self.pr >= len(self.dataset):
             self.pr = 0
+            if self.real_time_neg_sampling:
+                if not self.pairwise:
+                    raise ValueError('real time neg sampling only support pairwise dataloader')
+                self._neg_sampling()
             raise StopIteration()
         cur_data = self.dataset[self.pr: self.pr + self.batch_size - 1]
         self.pr += self.batch_size
-        # TODO real time negative sampling
-        if self.real_time_neg_sampling:
-            if not self.pairwise:
-                raise ValueError('real time neg sampling only support pairwise dataloader')
-            pass
         cur_data = cur_data.to_dict(orient='list')
         for k in cur_data:
             ftype = self.dataset.field2type[k]
@@ -80,7 +78,7 @@ class GeneralDataLoader(AbstractDataLoader):
                 raise ValueError('Illegal ftype [{}]'.format(ftype))
         return Interaction(cur_data)
 
-    def _pre_neg_sampling(self):
+    def _neg_sampling(self):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         if self.neg_sample_by is not None:
@@ -96,7 +94,7 @@ class GeneralDataLoader(AbstractDataLoader):
                 neg_prefix = self.config['NEG_PREFIX']
                 neg_item_id = neg_prefix + iid_field
                 neg_iids = [_[0] for _ in neg_iids]
-                self.dataset.inter_feat.insert(len(self.dataset.inter_feat.columns), neg_item_id, neg_iids)
+                self.dataset.inter_feat[neg_item_id] = neg_iids
                 self.dataset.field2type[neg_item_id] = 'token'
                 self.dataset.field2source[neg_item_id] = 'item_id'
                 # TODO item_feat join
@@ -120,11 +118,12 @@ class GeneralDataLoader(AbstractDataLoader):
         # TODO
         elif self.neg_sample_to is not None:
             if self.neg_sample_to == -1:
-                self.neg_sample_to = len(self.dataset.field2id_token[iid_field])
+                self.neg_sample_to = len(self.dataset.num(iid_field))
             if self.pairwise:
                 raise ValueError('pairwise dataloader cannot neg sample to')
             user_num_in_one_batch = self.batch_size // self.neg_sample_to
             self.batch_size = (user_num_in_one_batch + 1) * self.neg_sample_to
+            # TODO  batch size is changed
 
             label_field = self.config['LABEL_FIELD']
             self.dataset.field2type[label_field] = 'float'
