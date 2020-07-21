@@ -1,4 +1,4 @@
-movie_id:token	movie_title:token_seq	release_year:token	class:token_seq
+item_id:token	movie_title:token_seq	release_year:token	class:token_seq
 1	Toy Story	1995	Animation Children's Comedy
 2	GoldenEye	1995	Action Adventure Thriller
 3	Four Rooms	1995	Thriller
