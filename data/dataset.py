@@ -162,7 +162,10 @@ class Dataset(object):
 
     def __getitem__(self, index):
         df = self.inter_feat.loc[index]
-        # TODO join user/item
+        if self.user_feat:
+            df = pd.merge(df, self.user_feat, on=self.config['USER_ID_FIELD'], how='left')
+        if self.item_feat:
+            df = pd.merge(df, self.item_feat, on=self.config['ITEM_ID_FIELD'], how='left')
         return df
 
     def __len__(self):
