@@ -100,9 +100,10 @@ class GeneralDataLoader(AbstractDataLoader):
                 self.dataset.inter_feat[neg_item_id] = neg_iids
                 self.dataset.field2type[neg_item_id] = 'token'
                 self.dataset.field2source[neg_item_id] = 'item_id'
-                # TODO item_feat join
                 if self.dataset.item_feat is not None:
-                    pass
+                    item_feat = self.dataset.item_feat.add_prefix(neg_prefix)
+                    self.dataset.inter_feat = pd.merge(self.dataset.inter_feat, item_feat,
+                                                       on=neg_item_id, how='left', suffixes=('_inter', '_item'))
             else:  # Point-Wise
                 neg_iids = list(map(list, zip(*neg_iids)))
                 neg_iids = reduce(operator.add, neg_iids)
