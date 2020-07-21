@@ -7,10 +7,26 @@ class EvalSetting(object):
     def __init__(self, config):
         self.config = config
 
-        self.group_field = False
+        self.group_field = None
         self.ordering_args = None
         self.split_args = None
         self.neg_sample_args = None
+
+        presetting_args = ['group_field', 'ordering_args', 'split_args', 'neg_sample_args']
+        for args in presetting_args:
+            if config[args] is not None:
+                setattr(self, args, config[args])
+
+    def __str__(self):
+        info = 'Evaluation Setting:\n'
+        info += ('\tGroup by {}\n'.format(self.group_field) if self.group_field is not None else '\tNo Grouping\n')
+        info += ('\tOrdering: {}\n'.format(self.ordering_args) if (self.ordering_args is not None and self.ordering_args['strategy'] != 'none') else '\tNo Ordering\n')
+        info += ('\tSplitting: {}\n'.format(self.split_args) if (self.split_args is not None and self.split_args['strategy'] != 'none') else '\tNo Splitting\n')
+        info += ('\tNegative Sampling: {}\n'.format(self.neg_sample_args) if (self.neg_sample_args is not None and self.neg_sample_args['strategy'] != 'none') else '\tNo Negative Sampling\n')
+        return info
+
+    def __repr__(self):
+        return self.__str__()
 
     r"""Setting about group
 
@@ -45,19 +61,20 @@ class EvalSetting(object):
     or
         >>> es = EvalSetting(config)
         >>> es.shuffle()
-        >>> es.order_by('timestamp')    # ascending default
-        >>> es.order_by(field=['timestamp', 'price'], ascending=[True, False])
+        >>> es.sort_by('timestamp') # ascending default
+        >>> es.sort_by(field=['timestamp', 'price'], ascending=[True, False])
     """
     def set_ordering(self, strategy='none', **kwargs):
-        legal_strategy = set('none', 'shuffle', 'by')
+        legal_strategy = set(['none', 'shuffle', 'by'])
         if strategy not in legal_strategy:
             raise ValueError('Ordering Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
-        self.ordering_args = {'strategy': strategy}.update(**kwargs)
+        self.ordering_args = {'strategy': strategy}
+        self.ordering_args.update(kwargs)
 
     def shuffle(self):
         self.set_ordering('shuffle')
 
-    def order_by(self, field, ascending=None):
+    def sort_by(self, field, ascending=None):
         if ascending is None:
             ascending = [True] * len(field)
             if len(ascending) == 1:
@@ -81,21 +98,22 @@ class EvalSetting(object):
         >>> es.split_by_value(field='month', values=[6, 7], ascending=False)    # (*, 7], (7, 6], (6, *)
 
     """
-    def set_split(self, strategy='none', **kwargs):
-        legal_strategy = set('none', 'by_ratio', 'by_value', 'loo')
+    def set_splitting(self, strategy='none', **kwargs):
+        legal_strategy = set(['none', 'by_ratio', 'by_value', 'loo'])
         if strategy not in legal_strategy:
             raise ValueError('Split Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
         if strategy == 'loo' and self.group_by is None:
             raise ValueError('Leave-One-Out request group firstly')
-        self.split_args = {'strategy': strategy}.update(**kwargs)
+        self.split_args = {'strategy': strategy}
+        self.split_args.update(kwargs)
 
     def leave_one_out(self):
-        self.set_split(strategy='loo')
+        self.set_splitting(strategy='loo')
 
     def split_by_ratio(self, ratios):
         if not isinstance(ratios, list):
             raise ValueError('ratios [{}] should be list'.format(ratios))
-        self.set_split(strategy='by_ratio', ratios=ratios)
+        self.set_splitting(strategy='by_ratio', ratios=ratios)
 
     def split_by_value(self, field, values, ascending=True):
         if not isinstance(field, str):
@@ -103,7 +121,7 @@ class EvalSetting(object):
         if not isinstance(values, list):
             values = [values]
         values.sort(reverse=(not ascending))
-        self.set_split(strategy='by_value', values=values, ascending=ascending)
+        self.set_splitting(strategy='by_value', values=values, ascending=ascending)
 
     r"""Setting about negative sampling
 
@@ -120,11 +138,12 @@ class EvalSetting(object):
 
     """
     def set_neg_sampling(self, strategy='none', **kwargs):
-        legal_strategy = set('none', 'to', 'by')
+        legal_strategy = set(['none', 'to', 'by'])
         if strategy not in legal_strategy:
             raise ValueError('Negative Sampling Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
-        self.neg_sample_args = {'strategy': strategy}.update(**kwargs)
-        
+        self.neg_sample_args = {'strategy': strategy}
+        self.neg_sample_args.update(kwargs)
+
     def neg_sample_to(self, to):
         self.set_neg_sampling(strategy='to', to=to)
 
