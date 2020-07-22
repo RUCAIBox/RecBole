@@ -4,7 +4,7 @@ from config import EvalSetting
 def data_preparation(config, model, dataset):
     es = EvalSetting(config)
 
-    es.group_by_user()
+    # es.group_by_user()
     es.shuffle()
     es.split_by_ratio(config['split_ratio'])
 
