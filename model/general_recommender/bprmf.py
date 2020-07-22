@@ -25,8 +25,8 @@ class BPRMF(AbstractRecommender):
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
-        self.n_users = len(dataset.field2id_token[self.USER_ID])
-        self.n_items = len(dataset.field2id_token[self.ITEM_ID])
+        self.n_users = dataset.num(self.USER_ID)
+        self.n_items = dataset.num(self.ITEM_ID)
         self.embedding_size = config['embedding_size']
 
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
