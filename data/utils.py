@@ -10,7 +10,7 @@ def data_preparation(config, model, dataset):
 
     train_dataset, test_dataset, valid_dataset = dataset.build(es)
 
-    es.neg_sample_by(1)
+    es.neg_sample_by(1, real_time=True)
     train_data = dataloader_construct(
         name='train',
         config=config,

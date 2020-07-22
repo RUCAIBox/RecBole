@@ -151,5 +151,5 @@ class EvalSetting(object):
     def full_sort(self, real_time=True):
         self.neg_sample_to(to=-1, real_time=real_time)
 
-    def neg_sample_by(self, by):
-        self.set_neg_sampling(strategy='by', by=by, real_time=False)
+    def neg_sample_by(self, by, real_time=False):
+        self.set_neg_sampling(strategy='by', by=by, real_time=real_time)
