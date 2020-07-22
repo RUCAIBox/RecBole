@@ -20,6 +20,10 @@ class Dataset(object):
         self.field2type = {}
         self.field2source = {}
         self.field2id_token = {}
+        if config['seq_len'] is not None:
+            self.field2seqlen = config['seq_len']
+        else:
+            self.field2seqlen = {}
 
         self.inter_feat = None
         self.user_feat = None
@@ -76,6 +80,8 @@ class Dataset(object):
                     raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
                 self.field2source[field] = source
                 self.field2type[field] = ftype
+                if not ftype.endswith('seq'):
+                    self.field2seqlen[field] = 1
                 field_names.append(field)
 
             # TODO checking num of col
@@ -98,6 +104,12 @@ class Dataset(object):
                 ret[field] = col
 
         df = pd.DataFrame(ret)
+
+        for field in field_names:
+            ftype = self.field2type[field]
+            if field not in self.field2seqlen:
+                self.field2seqlen[field] = df[field].apply(len).max()
+
         return df
 
     # TODO
@@ -109,9 +121,7 @@ class Dataset(object):
             for field in val:
                 if field not in self.field2type:
                     raise ValueError('field [{}] not defined in dataset'.format(field))
-                self.inter_feat = self.inter_feat[cmp(self.inter_feat[field], val[field])]
-
-        self.inter_feat = self.inter_feat.reset_index(drop=True)
+                self.inter_feat = self.inter_feat[cmp(self.inter_feat[field].values, val[field])]
 
     # TODO
     def filter_inters(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None):
@@ -119,6 +129,7 @@ class Dataset(object):
         self._filter_inters(highest_val, lambda x, y: x <= y)
         self._filter_inters(equal_val, lambda x, y: x == y)
         self._filter_inters(not_equal_val, lambda x, y: x != y)
+        self.inter_feat.reset_index(drop=True, inplace=True)
 
     def _remap_ID_all(self):
         for field in self.field2type:
