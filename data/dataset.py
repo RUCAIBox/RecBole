@@ -20,6 +20,7 @@ class Dataset(object):
         self.field2type = {}
         self.field2source = {}
         self.field2id_token = {}
+        self.field2seqlen = config['seq_len']
 
         self.inter_feat = None
         self.user_feat = None
@@ -76,6 +77,8 @@ class Dataset(object):
                     raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
                 self.field2source[field] = source
                 self.field2type[field] = ftype
+                if not ftype.endswith('seq'):
+                    self.field2seqlen[field] = 1
                 field_names.append(field)
 
             # TODO checking num of col
