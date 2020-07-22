@@ -10,7 +10,7 @@ config.init()
 logger = Logger(config)
 
 dataset = Dataset(config)
-
+print(dataset)
 
 train_data, test_data, valid_data = dataset.build(
     inter_filter_lowest_val=config['lowest_val'],
