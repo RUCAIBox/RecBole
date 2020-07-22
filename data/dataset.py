@@ -142,7 +142,9 @@ class Dataset(object):
 
     def _remap_ID(self, source, field):
         feat_name = '{}_feat'.format(source.split('_')[0])
-        feat = getattr(self, feat_name, pd.DataFrame(columns=[field]))
+        feat = getattr(self, feat_name)
+        if feat is None:
+            feat = pd.DataFrame(columns=[field])
         if source in ['user_id', 'item_id']:
             df = pd.concat([self.inter_feat[field], feat[field]])
             new_ids, mp = pd.factorize(df)
