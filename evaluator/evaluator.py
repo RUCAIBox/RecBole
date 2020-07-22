@@ -110,6 +110,7 @@ class RankEvaluator(AbstractEvaluator):
                     metric_dict[key] = score
             else:
                 key = metric_name[metric]
+                metric_result = self.metric_info(df, metric, k)
                 score = metric_result.sum() / num_users
                 metric_dict[key] = score
 
