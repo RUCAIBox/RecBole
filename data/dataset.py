@@ -123,14 +123,13 @@ class Dataset(object):
                     raise ValueError('field [{}] not defined in dataset'.format(field))
                 self.inter_feat = self.inter_feat[cmp(self.inter_feat[field].values, val[field])]
 
-        self.inter_feat = self.inter_feat.reset_index(drop=True)
-
     # TODO
     def filter_inters(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None):
-        if lowest_val: self._filter_inters(lowest_val, lambda x, y: x >= y)
-        if highest_val: self._filter_inters(highest_val, lambda x, y: x <= y)
-        if equal_val: self._filter_inters(equal_val, lambda x, y: x == y)
-        if not_equal_val: self._filter_inters(not_equal_val, lambda x, y: x != y)
+        self._filter_inters(lowest_val, lambda x, y: x >= y)
+        self._filter_inters(highest_val, lambda x, y: x <= y)
+        self._filter_inters(equal_val, lambda x, y: x == y)
+        self._filter_inters(not_equal_val, lambda x, y: x != y)
+        self.inter_feat.reset_index(drop=True, inplace=True)
 
     def _remap_ID_all(self):
         for field in self.field2type:
