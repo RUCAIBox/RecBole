@@ -79,10 +79,24 @@ class Dataset(object):
 
     def _load_feat(self, filepath, source):
         with open(filepath, 'r', encoding='utf-8') as file:
+            if self.config['load_col'] is None:
+                load_col = None
+            elif source not in self.config['load_col']:
+                load_col = set()
+            else:
+                load_col = set(self.config['load_col'][source])
+            unload_col = set(self.config['unload_col'][source]) if (self.config['unload_col'] is not None and source in self.config['unload_col']) else None
+            if load_col is not None and unload_col is not None:
+                raise ValueError('load_col [{}] and unload_col [{}] can not be setted the same time'.format(load_col, unload_col))
+
             head = file.readline().strip().split(self.config['field_separator'])
             field_names = []
+            remain_field = set()
             for field_type in head:
                 field, ftype = field_type.split(':')
+                field_names.append(field)
+                if load_col is not None and field not in load_col: continue
+                if unload_col is not None and field in unload_col: continue
                 # TODO user_id & item_id bridge check
                 # TODO user_id & item_id not be set in config
                 # TODO inter __iter__ loading
@@ -92,7 +106,7 @@ class Dataset(object):
                 self.field2type[field] = ftype
                 if not ftype.endswith('seq'):
                     self.field2seqlen[field] = 1
-                field_names.append(field)
+                remain_field.add(field)
 
             # TODO checking num of col
             lines = []
@@ -103,6 +117,7 @@ class Dataset(object):
             cols = map(list, zip(*lines))
             for i, col in enumerate(cols):
                 field = field_names[i]
+                if field not in remain_field: continue
                 ftype = self.field2type[field]
                 # TODO not relying on str
                 if ftype == 'float':
@@ -113,9 +128,9 @@ class Dataset(object):
                     col = [list(map(float, _.split(self.config['seq_separator']))) for _ in col]
                 ret[field] = col
 
-        df = pd.DataFrame(ret)
+            df = pd.DataFrame(ret) if len(ret) > 0 else None
 
-        for field in field_names:
+        for field in remain_field:
             ftype = self.field2type[field]
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = df[field].apply(len).max()
@@ -225,6 +240,7 @@ class Dataset(object):
                 'Average actions of users: {}'.format(self.avg_actions_of_users),
                 'Average actions of items: {}'.format(self.avg_actions_of_items),
                 'The sparsity of the dataset: {}%'.format(self.sparsity * 100),
+                'Remain Fields: {}'.format(list(self.field2type))
                 ]
         return '\n'.join(info)
 
