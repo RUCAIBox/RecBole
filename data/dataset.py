@@ -20,7 +20,10 @@ class Dataset(object):
         self.field2type = {}
         self.field2source = {}
         self.field2id_token = {}
-        self.field2seqlen = config['seq_len']
+        if config['seq_len'] is not None:
+            self.field2seqlen = config['seq_len']
+        else:
+            self.field2seqlen = {}
 
         self.inter_feat = None
         self.user_feat = None
@@ -101,6 +104,12 @@ class Dataset(object):
                 ret[field] = col
 
         df = pd.DataFrame(ret)
+
+        for field in field_names:
+            ftype = self.field2type[field]
+            if field not in self.field2seqlen:
+                self.field2seqlen[field] = df[field].apply(len).max()
+
         return df
 
     # TODO
