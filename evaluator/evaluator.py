@@ -110,6 +110,7 @@ class RankEvaluator(AbstractEvaluator):
                     metric_dict[key] = score
             else:
                 key = metric_name[metric]
+                metric_result = self.metric_info(df, metric, None)
                 score = metric_result.sum() / num_users
                 metric_dict[key] = score
 
@@ -207,7 +208,7 @@ class Evaluator(AbstractEvaluator):
 
         self._check_args()
 
-        if self.topk is not None:
+        if (topk_metric | other_metric) & set(self.eval_metric):
             self.evaluator = RankEvaluator(config, self.logger, self.eval_metric, self.topk)
         else:
             self.evaluator = LossEvaluator(config, self.logger, self.eval_metric)
@@ -277,7 +278,7 @@ class Evaluator(AbstractEvaluator):
                 for metric in self.eval_metric:
                     if metric in topk_metric:
                         warn_str = 'The {} is not calculated in topk evaluator. please confirm your purpose of using this metric.'.format(metric)
-                        warnings.warn(warn_str)
+                        self.logger.warning(warn_str)
 
         else:
             raise TypeError('The topk muse be int or list')
@@ -288,7 +289,7 @@ class Evaluator(AbstractEvaluator):
             for metric in self.eval_metric:
                 if metric in other_metric:
                     warn_str = 'The {} is calculated in topk evaluator. please confirm your purpose of using this metric.'.format(metric)
-                    warnings.warn(warn_str)
+                    self.logger.warning(warn_str)
 
     def get_grouped_data(self, df):
         """ a interface which can split the users into groups.
@@ -389,7 +390,7 @@ class Evaluator(AbstractEvaluator):
         """
 
         df = self.build_evaluate_df(rdata, result)
-        if self.topk is not None:
+        if (topk_metric | other_metric) & set(self.eval_metric):
             df['rank'] = df.groupby(self.USER_FIELD)['score'].rank(method='first', ascending=False)
         if self.group_view is not None:
             return self.group_evaluate(df)
