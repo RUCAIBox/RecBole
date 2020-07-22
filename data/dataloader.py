@@ -67,7 +67,7 @@ class GeneralDataLoader(AbstractDataLoader):
             iid_field = self.config['ITEM_ID_FIELD']
             cur_data = self._neg_sampling_by(uid_field, iid_field, cur_data)
         cur_data = cur_data.to_dict(orient='list')
-        seqlen = self.config['field2seqlen']
+        seqlen = self.dataset.field2seqlen
         for k in cur_data:
             ftype = self.dataset.field2type[k]
             if ftype == 'token':
@@ -75,10 +75,10 @@ class GeneralDataLoader(AbstractDataLoader):
             elif ftype == 'float':
                 cur_data[k] = torch.FloatTensor(cur_data[k])
             elif ftype == 'token_seq':
-                data = [torch.LongTensor(d[:seqlen]) for d in cur_data[k]]  # TODO  cutting strategy?
+                data = [torch.LongTensor(d[:seqlen[k]]) for d in cur_data[k]]  # TODO  cutting strategy?
                 cur_data[k] = rnn_utils.pad_sequence(data, batch_first=True)
             elif ftype == 'float_seq':
-                data = [torch.FloatTensor(d[:seqlen]) for d in cur_data[k]]  # TODO  cutting strategy?
+                data = [torch.FloatTensor(d[:seqlen[k]]) for d in cur_data[k]]  # TODO  cutting strategy?
                 cur_data[k] = rnn_utils.pad_sequence(data, batch_first=True)
             else:
                 raise ValueError('Illegal ftype [{}]'.format(ftype))
@@ -113,6 +113,7 @@ class GeneralDataLoader(AbstractDataLoader):
         inter_feat.insert(len(inter_feat.columns), neg_item_id, neg_iids)
         self.dataset.field2type[neg_item_id] = 'token'
         self.dataset.field2source[neg_item_id] = 'item_id'
+        self.dataset.field2seqlen[neg_item_id] = self.dataset.field2seqlen[iid_field]
 
         if self.dataset.item_feat is not None:
             neg_item_feat = self.dataset.item_feat.add_prefix(neg_prefix)
@@ -121,6 +122,7 @@ class GeneralDataLoader(AbstractDataLoader):
             for neg_item_feat_col, item_feat_col in zip(neg_item_feat.columns, self.dataset.item_feat.columns):
                 self.dataset.field2type[neg_item_feat_col] = self.dataset.field2type[item_feat_col]
                 self.dataset.field2source[neg_item_feat_col] = self.dataset.field2source[item_feat_col]
+                self.dataset.field2seqlen[neg_item_feat_col] = self.dataset.field2seqlen[item_feat_col]
 
         return inter_feat
 
@@ -152,6 +154,7 @@ class GeneralDataLoader(AbstractDataLoader):
         label_field = self.config['LABEL_FIELD']
         self.dataset.field2type[label_field] = 'float'
         self.dataset.field2source[label_field] = 'inter'
+        self.dataset.field2seqlen[label_field] = 1
         new_inter = {
             uid_field: [],
             iid_field: [],
