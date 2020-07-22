@@ -61,7 +61,7 @@ class AbstractConfig(object):
             value = eval(param)
             if not isinstance(value, (str, int, float, list, tuple, dict, bool, None.__class__)):
                 value = param
-        except NameError:
+        except (NameError, SyntaxError):
             if param.lower() == "true":
                 value = True
             elif param.lower() == "false":
