@@ -38,7 +38,7 @@ def run_test():
         train_batch_size=config['train_batch_size'],
         test_batch_size=config['test_batch_size'],
         valid_batch_size=config['valid_batch_size'],
-        pairwise=True,
+        pairwise=config['pair_wise'],
         neg_sample_by=1,
         neg_sample_to=config['test_neg_sample_num']
     )

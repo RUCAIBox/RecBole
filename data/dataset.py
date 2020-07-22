@@ -152,7 +152,9 @@ class Dataset(object):
 
     def _remap_ID(self, source, field):
         feat_name = '{}_feat'.format(source.split('_')[0])
-        feat = getattr(self, feat_name, pd.DataFrame(columns=[field]))
+        feat = getattr(self, feat_name)
+        if feat is None:
+            feat = pd.DataFrame(columns=[field])
         if source in ['user_id', 'item_id']:
             df = pd.concat([self.inter_feat[field], feat[field]])
             new_ids, mp = pd.factorize(df)
@@ -181,6 +183,30 @@ class Dataset(object):
             raise ValueError('field [{}] is not a token type nor token_seq type'.format(field))
         return len(self.field2id_token[field])
 
+    @property
+    def user_num(self):
+        return self.num(self.uid_field)
+
+    @property
+    def item_num(self):
+        return self.num(self.iid_field)
+
+    @property
+    def inter_num(self):
+        return len(self.inter_feat)
+
+    @property
+    def avg_actions_of_users(self):
+        return np.mean(self.inter_feat.groupby(self.uid_field).size())
+
+    @property
+    def avg_actions_of_items(self):
+        return np.mean(self.inter_feat.groupby(self.iid_field).size())
+
+    @property
+    def sparsity(self):
+        return 1 - self.inter_num / self.user_num / self.item_num
+
     def __getitem__(self, index):
         df = self.inter_feat.loc[index]
         if self.user_feat is not None:
@@ -192,12 +218,22 @@ class Dataset(object):
     def __len__(self):
         return len(self.inter_feat)
 
+    def __str__(self):
+        info = ['The number of users: {}'.format(self.user_num),
+                'The number of items: {}'.format(self.item_num),
+                'The number of inters: {}'.format(self.inter_num),
+                'Average actions of users: {}'.format(self.avg_actions_of_users),
+                'Average actions of items: {}'.format(self.avg_actions_of_items),
+                'The sparsity of the dataset: {}%'.format(self.sparsity * 100),
+                ]
+        return '\n'.join(info)
+
     # def __iter__(self):
     #     return self
 
     # TODO next func
     # def next(self):
-        # pass
+    #     pass
 
     # TODO copy
     def copy(self, new_inter_feat):
@@ -218,7 +254,7 @@ class Dataset(object):
 
             cur = 0
             for c in cnt:
-                next_ds.append(self.copy(self.inter_feat[cur:cur+c]))
+                next_ds.append(self.copy(self.inter_feat[cur:cur + c]))
         else:
             raise NotImplementedError('split by ratio with grouped data')
         return next_ds

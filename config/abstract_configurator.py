@@ -61,7 +61,7 @@ class AbstractConfig(object):
             value = eval(param)
             if not isinstance(value, (str, int, float, list, tuple, dict, bool, None.__class__)):
                 value = param
-        except NameError:
+        except (NameError, SyntaxError):
             if param.lower() == "true":
                 value = True
             elif param.lower() == "false":
@@ -74,10 +74,10 @@ class AbstractConfig(object):
 
         if not isinstance(key, str):
             raise TypeError("index must be a str")
-        if key not in self.args:
-            raise KeyError("There are no model parameter named '%s'" % key)
-
-        self.args[key] = str(value)
+        if isinstance(value, str):
+            self.args[key] = '\''+value+'\''
+        else:
+            self.args[key] = str(value)
 
     def __contains__(self, o):
         if not isinstance(o, str):

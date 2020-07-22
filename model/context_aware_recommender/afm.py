@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/7/8 10:09
-# @Author : Shanlei Mu
-# @Email  : slmu@ruc.edu.cn
-# @File   : fm.py
+# @Time   : 2020/7/21 9:23
+# @Author : Zihan Lin
+# @Email  : linzihan.super@foxmail.com
+# @File   : afm.py
 
 """
 Reference:
-Steffen Rendle et al., "Factorization Machines." in ICDM 2010.
+"Attentional Factorization Machines: Learning the Weight of Feature Interactions via Attention Networks" in IJCAI 2017.
 """
 
 import torch

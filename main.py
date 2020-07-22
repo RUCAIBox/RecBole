@@ -9,6 +9,7 @@ config.init()
 logger = Logger(config)
 
 dataset = Dataset(config)
+print(dataset)
 
 model = BPRMF(config, dataset).to(config['device'])
 print(model)
