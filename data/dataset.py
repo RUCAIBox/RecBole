@@ -201,15 +201,13 @@ class Dataset(object):
         if source in ['user_id', 'item_id']:
             df = pd.concat([self.inter_feat[field], feat[field]])
             new_ids, mp = pd.factorize(df)
-            if isinstance(mp, pd.Index):
-                mp = mp.to_list()
+            if not isinstance(mp, list): mp = list(mp)
             split_point = [len(self.inter_feat[field])]
             self.inter_feat[field], feat[field] = np.split(new_ids, split_point)
             self.field2id_token[field] = mp
         elif source in ['inter', 'user', 'item']:
             new_ids, mp = pd.factorize(feat[field])
-            if isinstance(mp, pd.Index):
-                mp = mp.to_list()
+            if not isinstance(mp, list): mp = list(mp)
             feat[field] = new_ids
             self.field2id_token[field] = mp
 
@@ -219,8 +217,7 @@ class Dataset(object):
             df = getattr(self, feat_name)
             split_point = np.cumsum(df[field].agg(len))[:-1]
             new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
-            if isinstance(mp, pd.Index):
-                mp = mp.to_list()
+            if not isinstance(mp, list): mp = list(mp)
             new_ids = np.split(new_ids + 1, split_point)
             df[field] = new_ids
             self.field2id_token[field] = np.insert(mp, 0, None)
