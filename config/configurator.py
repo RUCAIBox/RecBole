@@ -30,7 +30,7 @@ class Config(object):
     support parameter type: str, int, float, list, tuple, bool, None
     """
 
-    def __init__(self, config_file_name):
+    def __init__(self, config_file_name, config_dict=None):
         """
 
         :param config_file_name(str): The path of ini-style configuration file.
@@ -40,8 +40,11 @@ class Config(object):
                 ValueError: If `config_file` is not in correct format or
                         MUST parameter are not defined
         """
+        self.config_dict = config_dict
         self.cmd_args = {}
         self._read_cmd_line()
+        if self.config_dict:
+            self._read_config_dict()
 
         self.run_args = RunningConfig(config_file_name, self.cmd_args)
 
@@ -93,6 +96,11 @@ class Config(object):
                     raise SyntaxError("There are duplicate commend arg '%s' with different value!" % arg)
                 else:
                     self.cmd_args[cmd_arg_name] = cmd_arg_value
+
+    def _read_config_dict(self):
+        for dict_arg_name in self.config_dict:
+            if dict_arg_name not in self.cmd_args:
+                self.cmd_args[dict_arg_name] = self.config_dict[dict_arg_name]
 
     def __getitem__(self, item):
         if item == "device":
