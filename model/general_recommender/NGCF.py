@@ -15,13 +15,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.init import xavier_normal_, constant_
 
-from model.abstract_recommender import AbstractRecommender
+from model.abstract_recommender import GeneralRecommender
 from model.layers import BiGNNLayer
 import numpy as np
 import scipy.sparse as sp
 
 
-class NgCf(AbstractRecommender):
+class NgCf(GeneralRecommender):
 
     def __init__(self, config, dataset):
         super(NgCf, self).__init__()

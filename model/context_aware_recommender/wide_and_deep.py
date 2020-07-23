@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.functional as fn
 
-from model.abstract_recommender import AbstractRecommender
+from model.abstract_recommender import ContextRecommender
 from model.layers import MLPLayers
 
 # wide_cols = ['education', 'age']
@@ -19,7 +19,7 @@ from model.layers import MLPLayers
 
 
 # todo: (wide optimizer: FTRL) (deep optimizer: AdaGrad)
-class WideDeep(AbstractRecommender):
+class WideDeep(ContextRecommender):
 
     def __init__(self, config, dataset):
         super(WideDeep, self).__init__()
