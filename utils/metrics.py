@@ -12,7 +12,7 @@ def hit(rank, label, k):
     """
     return int(any(rank[label] <= k))
 
-def mrr(rank, label, k=None):
+def mrr(rank, label, k):
     """The MRR (also known as mean reciprocal rank) is a statistic measure for evaluating any process that produces a list
     of possible responses to a sample of queries, ordered by probability of correctness. 
 
@@ -20,8 +20,9 @@ def mrr(rank, label, k=None):
 
     """
     ground_truth_ranks = rank[label]
-    if ground_truth_ranks.all():
-        return (1 / ground_truth_ranks.min())
+    ground_truth_at_k = ground_truth_ranks[ground_truth_ranks <= k]
+    if ground_truth_at_k.shape[0] > 0:
+        return (1 / ground_truth_at_k.min())
     return 0
 
 def recall(rank, label, k):

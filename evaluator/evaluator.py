@@ -11,8 +11,8 @@ import warnings
 metric_name = {metric.lower() : metric for metric in ['Hit', 'Recall', 'MRR', 'AUC', 'Precision', 'NDCG']}
 
 # These metrics are typical in topk recommendations
-topk_metric = {'hit', 'recall', 'precision', 'ndcg'}
-other_metric = {'auc', 'mrr'}
+topk_metric = {'hit', 'recall', 'precision', 'ndcg', 'mrr'}
+other_metric = {'auc'}
 
 class AbstractEvaluator(metaclass=abc.ABCMeta):
     """The abstract class of the evaluation module, its subclasses must implement their functions
