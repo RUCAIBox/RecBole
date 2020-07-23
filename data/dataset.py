@@ -4,6 +4,7 @@
 # @File   : dataset.py
 
 import os
+import json
 import copy
 import pandas as pd
 import numpy as np
@@ -11,12 +12,19 @@ from .dataloader import *
 
 
 class Dataset(object):
-    def __init__(self, config):
+    def __init__(self, config, saved_dataset=None):
         self.config = config
-        self.token = config['dataset']
+        self.dataset_name = config['dataset']
+        self.support_types = {'token', 'token_seq', 'float', 'float_seq'}
+
+        if saved_dataset is None:
+            self._from_scratch(config)
+        else:
+            self._restore_saved_dataset(saved_dataset)
+
+    def _from_scratch(self, config):
         self.dataset_path = config['data_path']
 
-        self.support_types = {'token', 'token_seq', 'float', 'float_seq'}
         self.field2type = {}
         self.field2source = {}
         self.field2id_token = {}
@@ -29,7 +37,7 @@ class Dataset(object):
         self.user_feat = None
         self.item_feat = None
 
-        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.token, self.dataset_path)
+        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
 
         # TODO
         self.filter_users()
@@ -42,6 +50,26 @@ class Dataset(object):
         )
 
         self._remap_ID_all()
+
+    def _restore_saved_dataset(self, saved_dataset):
+        if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
+            raise ValueError('filepath [{}] need to be a dir'.format(saved_dataset))
+
+        with open(os.path.join(saved_dataset, 'basic-info.json')) as file:
+            basic_info = json.load(file)
+
+        for k in basic_info:
+            setattr(self, k, basic_info[k])
+        
+        feats = ['inter', 'user', 'item']
+        for name in feats:
+            cur_file_name = os.path.join(saved_dataset, '{}.csv'.format(name))
+            if os.path.isfile(cur_file_name):
+                df = pd.read_csv(cur_file_name)
+                setattr(self, '{}_feat'.format(name), df)
+
+        self.uid_field = self.config['USER_ID_FIELD']
+        self.iid_field = self.config['ITEM_ID_FIELD']
 
     def _load_data(self, token, dataset_path):
         user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
@@ -65,13 +93,13 @@ class Dataset(object):
 
         self.uid_field = self.config['USER_ID_FIELD']
         if self.uid_field not in self.field2source:
-            raise ValueError('user id field [{}] not exist in [{}]'.format(self.uid_field, self.token))
+            raise ValueError('user id field [{}] not exist in [{}]'.format(self.uid_field, self.dataset_name))
         else:
             self.field2source[self.uid_field] = 'user_id'
 
         self.iid_field = self.config['ITEM_ID_FIELD']
         if self.iid_field not in self.field2source:
-            raise ValueError('item id field [{}] not exist in [{}]'.format(self.iid_field, self.token))
+            raise ValueError('item id field [{}] not exist in [{}]'.format(self.iid_field, self.dataset_name))
         else:
             self.field2source[self.iid_field] = 'item_id'
 
@@ -175,11 +203,11 @@ class Dataset(object):
             new_ids, mp = pd.factorize(df)
             split_point = [len(self.inter_feat[field])]
             self.inter_feat[field], feat[field] = np.split(new_ids, split_point)
-            self.field2id_token[field] = mp
+            self.field2id_token[field] = list(mp)
         elif source in ['inter', 'user', 'item']:
             new_ids, mp = pd.factorize(feat[field])
             feat[field] = new_ids
-            self.field2id_token[field] = mp
+            self.field2id_token[field] = list(mp)
 
     def _remap_ID_seq(self, source, field):
         if source in ['inter', 'user', 'item']:
@@ -189,7 +217,7 @@ class Dataset(object):
             new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
             new_ids = np.split(new_ids + 1, split_point)
             df[field] = new_ids
-            self.field2id_token[field] = np.insert(mp, 0, None)
+            self.field2id_token[field] = [None] + list(mp)
 
     def num(self, field):
         if field not in self.field2type:
@@ -232,6 +260,9 @@ class Dataset(object):
 
     def __len__(self):
         return len(self.inter_feat)
+
+    def __repr__(self):
+        return self.__str__()
 
     def __str__(self):
         info = ['The number of users: {}'.format(self.user_num),
@@ -306,3 +337,22 @@ class Dataset(object):
 
         return datasets
 
+    def save(self, filepath):
+        if (filepath is None) or (not os.path.isdir(filepath)):
+            raise ValueError('filepath [{}] need to be a dir'.format(filepath))
+
+        basic_info = {
+            'field2type': self.field2type,
+            'field2source': self.field2source,
+            'field2id_token': self.field2id_token,
+            'field2seqlen': self.field2seqlen
+        }
+
+        with open(os.path.join(filepath, 'basic-info.json'), 'w', encoding='utf-8') as file:
+            json.dump(basic_info, file)
+
+        feats = ['inter', 'user', 'item']
+        for name in feats:
+            df = getattr(self, '{}_feat'.format(name))
+            if df is not None:
+                df.to_csv(os.path.join(filepath, '{}.csv'.format(name)))
