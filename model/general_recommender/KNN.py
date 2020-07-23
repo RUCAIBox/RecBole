@@ -1,5 +1,5 @@
 import numpy as np
-from model.abstract_recommender import AbstractRecommender
+from model.abstract_recommender import GeneralRecommender
 import scipy.sparse as sp
 import torch
 
@@ -115,8 +115,10 @@ class ComputeSimilarity:
         return W_sparse.tocsc()
 
 
-class ItemKNN(AbstractRecommender):
+class ItemKNN(GeneralRecommender):
     def __init__(self, config, dataset):
+        super(ItemKNN, self).__init__()
+
         self.device = config['device']
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']

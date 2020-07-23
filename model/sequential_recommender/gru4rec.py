@@ -13,10 +13,10 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_
 
-from model.abstract_recommender import AbstractRecommender
+from model.abstract_recommender import SequentialRecommender
 
 
-class GRU4Rec(AbstractRecommender):
+class GRU4Rec(SequentialRecommender):
     def __init__(self, config, dataset):
         super(GRU4Rec, self).__init__()
 
