@@ -13,11 +13,11 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from model.abstract_recommender import AbstractRecommender
+from model.abstract_recommender import GeneralRecommender
 from model.layers import MLPLayers
 
 
-class NeuMF(AbstractRecommender):
+class NeuMF(GeneralRecommender):
 
     def __init__(self, config, dataset):
         super(NeuMF, self).__init__()

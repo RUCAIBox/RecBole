@@ -14,11 +14,11 @@ import numpy as np
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from model.abstract_recommender import AbstractRecommender
+from model.abstract_recommender import ContextRecommender
 from model.layers import FMEmbedding, FMFirstOrderLinear, AttLayer
 
 
-class AFM(AbstractRecommender):
+class AFM(ContextRecommender):
 
     def __init__(self, config, dataset):
         super(AFM, self).__init__()
