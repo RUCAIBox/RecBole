@@ -1,5 +1,6 @@
 from .dataloader import *
 from config import EvalSetting
+from utils import ModelType
 
 def data_preparation(config, model, dataset):
     es = EvalSetting(config)
@@ -35,7 +36,7 @@ def data_preparation(config, model, dataset):
     return train_data, test_data, valid_data
 
 def dataloader_construct(name, config, eval_setting, dataset,
-                         dl_type='general', dl_format='pointwise',
+                         dl_type=ModelType.GENERAL, dl_format='pointwise',
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
         dataset = [dataset]
@@ -50,7 +51,7 @@ def dataloader_construct(name, config, eval_setting, dataset,
     print(eval_setting)
     print('batch_size = {}, shuffle = {}\n'.format(batch_size, shuffle))
 
-    if dl_type == 'general':
+    if dl_type == ModelType.GENERAL:
         DataLoader = GeneralDataLoader
     else:
         raise NotImplementedError('dl_type [{}] has not been implemented'.format(dl_type))
