@@ -52,7 +52,7 @@ class Dataset(object):
         self._remap_ID_all()
 
     def _restore_saved_dataset(self, saved_dataset):
-        if not os.path.isdir(saved_dataset):
+        if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
             raise ValueError('filepath [{}] need to be a dir'.format(saved_dataset))
 
         with open(os.path.join(saved_dataset, 'basic-info.json')) as file:
