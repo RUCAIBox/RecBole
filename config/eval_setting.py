@@ -108,6 +108,8 @@ class EvalSetting(object):
         self.split_args.update(kwargs)
 
     def leave_one_out(self):
+        if self.group_field is None:
+            raise ValueError('Leave one out request grouped dataset, please set group field.')
         self.set_splitting(strategy='loo')
 
     def split_by_ratio(self, ratios):

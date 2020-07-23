@@ -4,13 +4,13 @@ from config import EvalSetting
 def data_preparation(config, model, dataset):
     es = EvalSetting(config)
 
-    es.group_by_user()
+    # es.group_by_user()
     es.shuffle()
     es.split_by_ratio(config['split_ratio'])
 
     train_dataset, test_dataset, valid_dataset = dataset.build(es)
 
-    es.neg_sample_by(1)
+    es.neg_sample_by(1, real_time=True)
     train_data = dataloader_construct(
         name='train',
         config=config,
@@ -22,7 +22,7 @@ def data_preparation(config, model, dataset):
         shuffle=True
     )
 
-    es.neg_sample_to(config['neg_sample_num'])
+    es.neg_sample_to(config['test_neg_sample_num'])
     test_data, valid_data = dataloader_construct(
         name='evaluation',
         config=config,
@@ -39,10 +39,12 @@ def dataloader_construct(name, config, eval_setting, dataset,
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
         dataset = [dataset]
-        batch_size = [batch_size]
+
+    if not isinstance(batch_size, list):
+        batch_size = [batch_size] * len(dataset)
 
     if len(dataset) != len(batch_size):
-        raise ValueError('dataset [{}] and batch_size [{}] should have the same length'.format(dataset, batch_size))
+        raise ValueError('dataset {} and batch_size {} should have the same length'.format(dataset, batch_size))
 
     print('Build [{}] DataLoader for [{}] with format [{}]\n'.format(dl_type, name, dl_format))
     print(eval_setting)
@@ -59,8 +61,8 @@ def dataloader_construct(name, config, eval_setting, dataset,
         dl = DataLoader(
             config=config,
             dataset=ds,
-            neg_sampling_strategy=eval_setting.neg_sample_args,
-            batch_size=batch_size,
+            neg_sample_args=eval_setting.neg_sample_args,
+            batch_size=batch_size[i],
             dl_format=dl_format,
             shuffle=shuffle
         )
