@@ -58,11 +58,6 @@ class Dataset(object):
         with open(os.path.join(saved_dataset, 'basic-info.json')) as file:
             basic_info = json.load(file)
 
-        my_field2id_token = {}
-        for k in basic_info['field2id_token']:
-            my_field2id_token[k] = pd.Index(basic_info['field2id_token'][k])
-        basic_info['field2id_token'] = my_field2id_token
-
         for k in basic_info:
             setattr(self, k, basic_info[k])
         
@@ -206,11 +201,15 @@ class Dataset(object):
         if source in ['user_id', 'item_id']:
             df = pd.concat([self.inter_feat[field], feat[field]])
             new_ids, mp = pd.factorize(df)
+            if isinstance(mp, pd.Index):
+                mp = mp.to_list()
             split_point = [len(self.inter_feat[field])]
             self.inter_feat[field], feat[field] = np.split(new_ids, split_point)
             self.field2id_token[field] = mp
         elif source in ['inter', 'user', 'item']:
             new_ids, mp = pd.factorize(feat[field])
+            if isinstance(mp, pd.Index):
+                mp = mp.to_list()
             feat[field] = new_ids
             self.field2id_token[field] = mp
 
@@ -220,6 +219,8 @@ class Dataset(object):
             df = getattr(self, feat_name)
             split_point = np.cumsum(df[field].agg(len))[:-1]
             new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
+            if isinstance(mp, pd.Index):
+                mp = mp.to_list()
             new_ids = np.split(new_ids + 1, split_point)
             df[field] = new_ids
             self.field2id_token[field] = np.insert(mp, 0, None)
@@ -343,17 +344,13 @@ class Dataset(object):
         return datasets
 
     def save(self, filepath):
-        if not os.path.isdir(filepath):
+        if (filepath is None) or (not os.path.isdir(filepath)):
             raise ValueError('filepath [{}] need to be a dir'.format(filepath))
-
-        my_field2id_token = {}
-        for k in self.field2id_token:
-            my_field2id_token[k] = self.field2id_token[k].to_list()
 
         basic_info = {
             'field2type': self.field2type,
             'field2source': self.field2source,
-            'field2id_token': my_field2id_token,
+            'field2id_token': self.field2id_token,
             'field2seqlen': self.field2seqlen
         }
 
