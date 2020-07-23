@@ -69,9 +69,6 @@ test_examples = {
 
 def run_test_examples():
 
-    """
-    初始化 config
-    """
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
     for idx, example in enumerate(test_examples.keys()):
@@ -80,15 +77,9 @@ def run_test_examples():
         config.init()
 
         try:
-            """
-            初始化 dataset
-            """
             dataset = Dataset(config)
             print(dataset)
 
-            """
-            初始化 model
-            """
             model_name = config['model']
             model_file_name = model_name.lower()
             if importlib.util.find_spec("model.general_recommender." + model_file_name) is not None:
@@ -103,14 +94,8 @@ def run_test_examples():
             model = model_class(config, dataset).to(config['device'])
             print(model)
 
-            """
-            生成 训练/验证/测试 数据
-            """
             train_data, test_data, valid_data = data_preparation(config, model, dataset)
 
-            """
-            Model Test
-            """
             mt = ModelTest(config, model)
             valid_score, _, _ = mt.run(train_data, test_data, valid_data)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
