@@ -4,6 +4,7 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : run_test_example.py
 
+import traceback
 import importlib
 from config import Config
 from data import Dataset, data_preparation
@@ -101,10 +102,11 @@ def run_test_examples():
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:
+            print(traceback.format_exc())
             fail_examples.append(example)
-        print('success examples: ', success_examples)
-        print('fail examples: ', fail_examples)
-        print('\n')
+    print('success examples: ', success_examples)
+    print('fail examples: ', fail_examples)
+    print('\n')
 
 
 if __name__ == '__main__':
