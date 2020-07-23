@@ -31,6 +31,16 @@ class Dataset(object):
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.token, self.dataset_path)
 
+        # TODO
+        self.filter_users()
+
+        self.filter_inters(
+            lowest_val=config['lowest_val'],
+            highest_val=config['highest_val'],
+            equal_val=config['equal_val'],
+            not_equal_val=config['not_equal_val']
+        )
+
         self._remap_ID_all()
 
     def _load_data(self, token, dataset_path):
@@ -69,10 +79,24 @@ class Dataset(object):
 
     def _load_feat(self, filepath, source):
         with open(filepath, 'r', encoding='utf-8') as file:
+            if self.config['load_col'] is None:
+                load_col = None
+            elif source not in self.config['load_col']:
+                load_col = set()
+            else:
+                load_col = set(self.config['load_col'][source])
+            unload_col = set(self.config['unload_col'][source]) if (self.config['unload_col'] is not None and source in self.config['unload_col']) else None
+            if load_col is not None and unload_col is not None:
+                raise ValueError('load_col [{}] and unload_col [{}] can not be setted the same time'.format(load_col, unload_col))
+
             head = file.readline().strip().split(self.config['field_separator'])
             field_names = []
+            remain_field = set()
             for field_type in head:
                 field, ftype = field_type.split(':')
+                field_names.append(field)
+                if load_col is not None and field not in load_col: continue
+                if unload_col is not None and field in unload_col: continue
                 # TODO user_id & item_id bridge check
                 # TODO user_id & item_id not be set in config
                 # TODO inter __iter__ loading
@@ -82,7 +106,7 @@ class Dataset(object):
                 self.field2type[field] = ftype
                 if not ftype.endswith('seq'):
                     self.field2seqlen[field] = 1
-                field_names.append(field)
+                remain_field.add(field)
 
             # TODO checking num of col
             lines = []
@@ -93,6 +117,7 @@ class Dataset(object):
             cols = map(list, zip(*lines))
             for i, col in enumerate(cols):
                 field = field_names[i]
+                if field not in remain_field: continue
                 ftype = self.field2type[field]
                 # TODO not relying on str
                 if ftype == 'float':
@@ -103,9 +128,9 @@ class Dataset(object):
                     col = [list(map(float, _.split(self.config['seq_separator']))) for _ in col]
                 ret[field] = col
 
-        df = pd.DataFrame(ret)
+            df = pd.DataFrame(ret) if len(ret) > 0 else None
 
-        for field in field_names:
+        for field in remain_field:
             ftype = self.field2type[field]
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = df[field].apply(len).max()
@@ -215,6 +240,7 @@ class Dataset(object):
                 'Average actions of users: {}'.format(self.avg_actions_of_users),
                 'Average actions of items: {}'.format(self.avg_actions_of_items),
                 'The sparsity of the dataset: {}%'.format(self.sparsity * 100),
+                'Remain Fields: {}'.format(list(self.field2type))
                 ]
         return '\n'.join(info)
 
@@ -231,69 +257,52 @@ class Dataset(object):
         nxt.inter_feat = new_inter_feat
         return nxt
 
-    def split_by_ratio(self, ratio):
-        tot_ratio = sum(ratio)
-        ratio = [_ / tot_ratio for _ in ratio]
-
-        tot_cnt = self.__len__()
-        cnt = [int(ratio[i] * tot_cnt) for i in range(len(ratio))]
-        cnt[-1] = tot_cnt - sum(cnt[0:-1])
-
-        cur = 0
+    def split_by_ratio(self, ratio, group_by=None):
+        # TODO
         next_ds = []
-        for c in cnt:
-            next_ds.append(self.copy(self.inter_feat[cur:cur + c]))
+        if group_by is None:
+            tot_ratio = sum(ratio)
+            ratio = [_ / tot_ratio for _ in ratio]
+
+            tot_cnt = self.__len__()
+            cnt = [int(ratio[i] * tot_cnt) for i in range(len(ratio))]
+            cnt[-1] = tot_cnt - sum(cnt[0:-1])
+
+            cur = 0
+            for c in cnt:
+                next_ds.append(self.copy(self.inter_feat[cur:cur + c]))
+        else:
+            raise NotImplementedError('split by ratio with grouped data')
         return next_ds
 
     def shuffle(self):
         self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
 
-    def sort(self, field_name):
-        self.inter_feat = self.inter_feat.sort_values(by=field_name)
+    def sort(self, by, ascending):
+        self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True)
 
     # TODO
-    def build(self,
-              inter_filter_lowest_val=None, inter_filter_highest_val=None,
-              split_by_ratio=None,
-              train_batch_size=None, valid_batch_size=None, test_batch_size=None,
-              pairwise=False,
-              neg_sample_by=None, neg_sample_to=None
-              ):
-        # TODO
-        self.filter_users()
-
-        self.filter_inters(inter_filter_lowest_val, inter_filter_highest_val)
-
-        assert len(split_by_ratio) == 3
-
-        if split_by_ratio is not None:
-            train_dataset, valid_dataset, test_dataset = self.split_by_ratio(split_by_ratio)
+    def build(self, eval_setting):
+        ordering_args = eval_setting.ordering_args
+        if ordering_args['strategy'] == 'shuffle':
+            self.shuffle()
+        elif ordering_args['strategy'] == 'by':
+            self.sort(by=ordering_args['field'], ascending=ordering_args['ascending'])
 
         # TODO
-        train_loader = GeneralDataLoader(
-            config=self.config,
-            dataset=train_dataset,
-            batch_size=train_batch_size,
-            real_time_neg_sampling=False,
-            shuffle=True,
-            pairwise=pairwise,
-            neg_sample_by=neg_sample_by,
-        )
+        group_field = eval_setting.group_field
+        if group_field is not None:
+            raise NotImplementedError('Group by has not been implemented')
 
-        test_loader = GeneralDataLoader(
-            config=self.config,
-            dataset=test_dataset,
-            batch_size=test_batch_size,
-            real_time_neg_sampling=False,
-            neg_sample_to=neg_sample_to
-        )
+        split_args = eval_setting.split_args
+        if split_args['strategy'] == 'by_ratio':
+            datasets = self.split_by_ratio(split_args['ratios'], group_by=group_field)
+        elif split_args['strategy'] == 'by_value':
+            raise NotImplementedError()
+        elif split_args['strategy'] == 'loo':
+            raise NotImplementedError()
+        else:
+            datasets = self
 
-        valid_loader = GeneralDataLoader(
-            config=self.config,
-            dataset=valid_dataset,
-            batch_size=valid_batch_size,
-            real_time_neg_sampling=False,
-            neg_sample_to=neg_sample_to
-        )
+        return datasets
 
-        return train_loader, test_loader, valid_loader
