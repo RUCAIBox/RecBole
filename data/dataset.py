@@ -226,6 +226,15 @@ class Dataset(object):
             raise ValueError('field [{}] is not a token type nor token_seq type'.format(field))
         return len(self.field2id_token[field])
 
+    def fields(self, ftype=None):
+        ftype = set(ftype) if ftype is not None else set(['token', 'token_seq', 'float', 'float_seq'])
+        ret = []
+        for field in self.field2type:
+            tp = self.field2type[field]
+            if tp in ftype:
+                ret.append(field)
+        return ret
+
     @property
     def user_num(self):
         return self.num(self.uid_field)
