@@ -2,10 +2,10 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 from collections import defaultdict
-from model.abstract_recommender import AbstractRecommender
+from model.abstract_recommender import GeneralRecommender
 
 
-class Pop(AbstractRecommender):
+class Pop(GeneralRecommender):
     def __init__(self, config, dataset):
         super(Pop, self).__init__()
         self.USER_ID = config['USER_ID_FIELD']

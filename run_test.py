@@ -8,7 +8,7 @@ import importlib
 from trainer import Trainer
 from utils import Logger
 from config import Config
-from data import Dataset
+from data import Dataset, data_preparation
 
 
 class ModelTest(object):
@@ -26,25 +26,19 @@ class ModelTest(object):
 def run_test():
 
     """
-    这部分可能随着开发会有所改变，可能需要自行进行改变
+    初始化 config
     """
     config = Config('properties/overall.config')
     config.init()
-    dataset = Dataset(config)
-    train_data, test_data, valid_data = dataset.build(
-        inter_filter_lowest_val=config['lowest_val'],
-        inter_filter_highest_val=config['highest_val'],
-        split_by_ratio=[config['train_split_ratio'], config['valid_split_ratio'], config['test_split_ratio']],
-        train_batch_size=config['train_batch_size'],
-        test_batch_size=config['test_batch_size'],
-        valid_batch_size=config['valid_batch_size'],
-        pairwise=config['pair_wise'],
-        neg_sample_by=1,
-        neg_sample_to=config['test_neg_sample_num']
-    )
 
     """
-    调用模型并进行测试
+    初始化 dataset
+    """
+    dataset = Dataset(config)
+    print(dataset)
+
+    """
+    初始化 model
     """
     model_name = config['model']
     model_file_name = model_name.lower()
@@ -59,6 +53,15 @@ def run_test():
     model_class = getattr(model_module, model_name)
     model = model_class(config, dataset).to(config['device'])
     print(model)
+
+    """
+    生成 训练/验证/测试 数据
+    """
+    train_data, test_data, valid_data = data_preparation(config, model, dataset)
+
+    """
+    Model Test
+    """
     mt = ModelTest(config, model)
     valid_score, _, _ = mt.run(train_data, test_data, valid_data)
     print(valid_score)

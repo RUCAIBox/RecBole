@@ -1,15 +1,20 @@
+import os
 from .dataloader import *
 from config import EvalSetting
 from utils import ModelType
 
-def data_preparation(config, model, dataset):
+def data_preparation(config, model, dataset, save=False):
     es = EvalSetting(config)
 
     # es.group_by_user()
     es.shuffle()
     es.split_by_ratio(config['split_ratio'])
 
-    train_dataset, test_dataset, valid_dataset = dataset.build(es)
+    builded_datasets = dataset.build(es)
+    train_dataset, test_dataset, valid_dataset = builded_datasets
+
+    if save:
+        save_datasets(config['checkpoint_dir'], name=['train', 'test', 'valid'], dataset=builded_datasets)
 
     es.neg_sample_by(1, real_time=True)
     train_data = dataloader_construct(
@@ -74,3 +79,14 @@ def dataloader_construct(name, config, eval_setting, dataset,
     else:
         return ret
 
+def save_datasets(save_path, name, dataset):
+    if (not isinstance(name, list)) and (not isinstance(dataset, list)):
+        name = [name]
+        dataset = [dataset]
+    if len(name) != len(dataset):
+        raise ValueError('len of name {} should equal to len of dataset'.format(name, dataset))
+    for i, d in enumerate(dataset):
+        cur_path = os.path.join(save_path, name[i])
+        if not os.path.isdir(cur_path):
+            os.makedirs(cur_path)
+        d.save(cur_path)
