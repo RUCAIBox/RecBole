@@ -13,17 +13,15 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_
 
-from model.abstract_recommender import AbstractRecommender
+from model.abstract_recommender import GeneralRecommender
 from model.loss import BPRLoss
 from utils import ModelType
 
 
-class BPRMF(AbstractRecommender):
+class BPRMF(GeneralRecommender):
 
     def __init__(self, config, dataset):
         super(BPRMF, self).__init__()
-
-        self.type = ModelType.GENERAL
 
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
