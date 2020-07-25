@@ -11,25 +11,17 @@ from config import Config
 from data import Dataset, data_preparation
 
 
-class ModelTest(object):
-
-    def __init__(self, config, model):
-        self.logger = Logger(config)
-        self.trainer = Trainer(config, model, self.logger)
-
-    def run(self, train_data, valid_data, test_data):
-        best_valid_score, best_valid_result = self.trainer.fit(train_data, valid_data)
-        test_result = self.trainer.evaluate(test_data)
-        return best_valid_score, best_valid_result, test_result
-
-
-def run_test():
-
+def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 config
     """
-    config = Config('properties/overall.config')
+    config = Config(config_file, config_dict)
     config.init()
+
+    """
+    初始化 logger
+    """
+    logger = Logger(config)
 
     """
     初始化 dataset
@@ -60,11 +52,24 @@ def run_test():
     train_data, test_data, valid_data = data_preparation(config, model, dataset)
 
     """
-    Model Test
+    初始化 trainer
     """
-    mt = ModelTest(config, model)
-    valid_score, _, _ = mt.run(train_data, test_data, valid_data)
-    print(valid_score)
+    trainer = Trainer(config, model, logger)
+
+    """
+    训练
+    """
+    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data)
+
+    """
+    测试
+    """
+    test_result = trainer.evaluate(test_data)
+    print('test result: ', test_result)
+
+
+def run_test():
+    whole_process()
 
 
 if __name__ == '__main__':
