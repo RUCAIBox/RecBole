@@ -223,7 +223,7 @@ class Dataset(object):
         if field not in self.field2type:
             raise ValueError('field [{}] not defined in dataset'.format(field))
         if self.field2type[field] not in {'token', 'token_seq'}:
-            return self.field2seqlen(field)
+            return self.field2seqlen[field]
         else:
             return len(self.field2id_token[field])
 
