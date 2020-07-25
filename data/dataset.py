@@ -60,7 +60,7 @@ class Dataset(object):
 
         for k in basic_info:
             setattr(self, k, basic_info[k])
-        
+
         feats = ['inter', 'user', 'item']
         for name in feats:
             cur_file_name = os.path.join(saved_dataset, '{}.csv'.format(name))
@@ -222,9 +222,19 @@ class Dataset(object):
     def num(self, field):
         if field not in self.field2type:
             raise ValueError('field [{}] not defined in dataset'.format(field))
-        if self.field2type[field] != 'token' and self.field2type[field] != 'token_seq':
-            raise ValueError('field [{}] is not a token type nor token_seq type'.format(field))
-        return len(self.field2id_token[field])
+        if self.field2type[field] not in {'token', 'token_seq'}:
+            return self.field2seqlen(field)
+        else:
+            return len(self.field2id_token[field])
+
+    def fields(self, ftype=None):
+        ftype = set(ftype) if ftype is not None else {'token', 'token_seq', 'float', 'float_seq'}
+        ret = []
+        for field in self.field2type:
+            tp = self.field2type[field]
+            if tp in ftype:
+                ret.append(field)
+        return ret
 
     @property
     def user_num(self):
