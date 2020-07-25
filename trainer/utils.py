@@ -5,10 +5,10 @@
 # @File   : utils.py
 
 
-def early_stopping(value, best, cur_step, max_step, order='asc'):
+def early_stopping(value, best, cur_step, max_step, bigger=True):
     stop_flag = False
     update_flag = False
-    if order == 'asc':
+    if bigger:
         if value > best:
             cur_step = 0
             best = value
