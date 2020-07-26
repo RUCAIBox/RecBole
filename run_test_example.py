@@ -5,10 +5,7 @@
 # @File   : run_test_example.py
 
 import traceback
-import importlib
-from config import Config
-from data import Dataset, data_preparation
-from run_test import ModelTest
+from run_test import whole_process
 
 
 """
@@ -74,31 +71,8 @@ def run_test_examples():
     n_examples = len(test_examples.keys())
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
-        config = Config('properties/overall.config', test_examples[example])
-        config.init()
-
         try:
-            dataset = Dataset(config)
-            print(dataset)
-
-            model_name = config['model']
-            model_file_name = model_name.lower()
-            if importlib.util.find_spec("model.general_recommender." + model_file_name) is not None:
-                model_module = importlib.import_module("model.general_recommender." + model_file_name)
-            elif importlib.util.find_spec("model.context_aware_recommender." + model_file_name) is not None:
-
-                model_module = importlib.import_module("model.context_aware_recommender." + model_file_name)
-            else:
-                model_module = importlib.import_module("model.sequential_recommender." + model_file_name)
-
-            model_class = getattr(model_module, model_name)
-            model = model_class(config, dataset).to(config['device'])
-            print(model)
-
-            train_data, test_data, valid_data = data_preparation(config, model, dataset)
-
-            mt = ModelTest(config, model)
-            valid_score, _, _ = mt.run(train_data, test_data, valid_data)
+            whole_process(config_file='properties/overall.config', config_dict=test_examples[example])
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:
