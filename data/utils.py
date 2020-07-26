@@ -3,6 +3,7 @@ from .dataloader import *
 from config import EvalSetting
 from utils import ModelType
 
+
 def data_preparation(config, model, dataset, save=False):
     es = EvalSetting(config)
 
@@ -40,6 +41,7 @@ def data_preparation(config, model, dataset, save=False):
 
     return train_data, test_data, valid_data
 
+
 def dataloader_construct(name, config, eval_setting, dataset,
                          dl_type=ModelType.GENERAL, dl_format='pointwise',
                          batch_size=1, shuffle=False):
@@ -73,11 +75,12 @@ def dataloader_construct(name, config, eval_setting, dataset,
             shuffle=shuffle
         )
         ret.append(dl)
-    
+
     if len(ret) == 1:
         return ret[0]
     else:
         return ret
+
 
 def save_datasets(save_path, name, dataset):
     if (not isinstance(name, list)) and (not isinstance(dataset, list)):
