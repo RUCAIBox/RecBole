@@ -23,6 +23,9 @@ class AbstractDataLoader(object):
         self.sampler = Sampler(config, dataset)
         self.pr = 0
 
+        if self.shuffle:
+            self.dataset.shuffle()
+
     def __iter__(self):
         return self
 
@@ -32,67 +35,94 @@ class AbstractDataLoader(object):
     def set_batch_size(self, batch_size):
         if self.pr != 0:
             raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
-        self.batch_size = batch_size
+        if self.batch_size != batch_size:
+            self.batch_size = batch_size
+            # TODO  batch size is changed
 
 
 class GeneralDataLoader(AbstractDataLoader):
-    def __init__(self, config, dataset, neg_sample_args,
+    def __init__(self, config, dataset, neg_sample_args, phase,
                  batch_size=1, dl_format='pointwise', shuffle=False):
+        if dl_format not in ['pointwise', 'pairwise']:
+            raise ValueError('dl_format [{}] has not been implemented'.format(dl_format))
+        if neg_sample_args['strategy'] not in ['by', 'to']:
+            raise ValueError('neg_sample strategy [{}] has not been implemented'.format(neg_sample_args['strategy']))
+
         super(GeneralDataLoader, self).__init__(config, dataset, batch_size, shuffle)
 
         self.neg_sample_args = neg_sample_args
+        self.phase = phase
         self.dl_format = dl_format
-
         self.real_time_neg_sampling = self.neg_sample_args['real_time']
 
+        self._batch_size_adaptation()
         if not self.real_time_neg_sampling:
-            self._neg_sampling()
+            self._pre_neg_sampling()
 
-        if self.shuffle:
-            self.dataset.shuffle()
+    def _batch_size_adaptation(self):
+        raise NotImplementedError('Method [batch_size_adaptation] should be implemented.')
+
+    def _pre_neg_sampling(self):
+        raise NotImplementedError('Method [pre_neg_sampling] should be implemented.')
+
+    def _neg_sampling(self, inter_feat):
+        raise NotImplementedError('Method [neg_sampling] should be implemented.')
+
+    def _dataframe_to_interaction(self, data):
+        data = data.to_dict(orient='list')
+        seqlen = self.dataset.field2seqlen
+        for k in data:
+            ftype = self.dataset.field2type[k]
+            if ftype == 'token':
+                data[k] = torch.LongTensor(data[k])
+            elif ftype == 'float':
+                data[k] = torch.FloatTensor(data[k])
+            elif ftype == 'token_seq':
+                data = [torch.LongTensor(d[:seqlen[k]]) for d in data[k]]  # TODO  cutting strategy?
+                data[k] = rnn_utils.pad_sequence(data, batch_first=True)
+            elif ftype == 'float_seq':
+                data = [torch.FloatTensor(d[:seqlen[k]]) for d in data[k]]  # TODO  cutting strategy?
+                data[k] = rnn_utils.pad_sequence(data, batch_first=True)
+            else:
+                raise ValueError('Illegal ftype [{}]'.format(ftype))
+        return Interaction(data)
+
+
+class InteractionBasedDataLoader(GeneralDataLoader):
+    def __init__(self, config, dataset, neg_sample_args, phase,
+                 batch_size=1, dl_format='pointwise', shuffle=False):
+        if neg_sample_args['strategy'] != 'by':
+            raise ValueError('neg_sample strategy in InteractionBasedDataLoader() should be `by`')
+        super(InteractionBasedDataLoader, self).__init__(config, dataset, neg_sample_args, phase,
+                                                         batch_size, dl_format, shuffle)
+
+    def _batch_size_adaptation(self):
+        if self.dl_format == 'pairwise':
+            self.step = self.batch_size
+            return
+        batch_num = self.batch_size // self.neg_sample_args['by']
+        new_batch_size = (batch_num + 1) * self.neg_sample_args['by']
+        self.step = batch_num + 1 if self.real_time_neg_sampling else new_batch_size
+        self.set_batch_size(new_batch_size)
 
     def __next__(self):
         if self.pr >= len(self.dataset):
             self.pr = 0
             raise StopIteration()
-        cur_data = self.dataset[self.pr: self.pr + self.batch_size - 1]
-        self.pr += self.batch_size
+        cur_data = self.dataset[self.pr: self.pr + self.step - 1]
+        self.pr += self.step
         if self.real_time_neg_sampling:
-            uid_field = self.config['USER_ID_FIELD']
-            iid_field = self.config['ITEM_ID_FIELD']
-            cur_data = self._neg_sampling_by(uid_field, iid_field, cur_data)
-        cur_data = cur_data.to_dict(orient='list')
-        seqlen = self.dataset.field2seqlen
-        for k in cur_data:
-            ftype = self.dataset.field2type[k]
-            if ftype == 'token':
-                cur_data[k] = torch.LongTensor(cur_data[k])
-            elif ftype == 'float':
-                cur_data[k] = torch.FloatTensor(cur_data[k])
-            elif ftype == 'token_seq':
-                data = [torch.LongTensor(d[:seqlen[k]]) for d in cur_data[k]]  # TODO  cutting strategy?
-                cur_data[k] = rnn_utils.pad_sequence(data, batch_first=True)
-            elif ftype == 'float_seq':
-                data = [torch.FloatTensor(d[:seqlen[k]]) for d in cur_data[k]]  # TODO  cutting strategy?
-                cur_data[k] = rnn_utils.pad_sequence(data, batch_first=True)
-            else:
-                raise ValueError('Illegal ftype [{}]'.format(ftype))
-        return Interaction(cur_data)
+            cur_data = self._neg_sampling(cur_data)
+        return self._dataframe_to_interaction(cur_data)
 
-    def _neg_sampling(self):
+    def _pre_neg_sampling(self):
+        self.dataset.inter_feat = self._neg_sampling(self.dataset.inter_feat)
+
+    def _neg_sampling(self, inter_feat):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
-        if self.neg_sample_args['strategy'] == 'by':
-            sampling_func = self._neg_sampling_by
-        elif self.neg_sample_args['strategy'] == 'to':
-            sampling_func = self._neg_sampling_to
-        else:
-            return
-        self.dataset.inter_feat = sampling_func(uid_field, iid_field, self.dataset.inter_feat)
-
-    def _neg_sampling_by(self, uid_field, iid_field, inter_feat):
         uids = inter_feat[uid_field].to_list()
-        neg_iids = [self.sampler.sample_by_user_id(uid, self.neg_sample_args['by']) for uid in uids]
+        neg_iids = [self.sampler.sample_by_user_id(self.phase, uid, self.neg_sample_args['by']) for uid in uids]
         if self.dl_format == 'pointwise':
             sampling_func = self._neg_sample_by_point_wise_sampling
         elif self.dl_format == 'pairwise':
@@ -137,18 +167,50 @@ class GeneralDataLoader(AbstractDataLoader):
         labels = pos_inter_num * [1] + self.neg_sample_args['by'] * pos_inter_num * [0]
         new_df[label_field] = labels
 
-        return new_df
+        return self.dataset.join(new_df) if self.real_time_neg_sampling else new_df
 
-    # TODO
-    def _neg_sampling_to(self, uid_field, iid_field, inter_feat):
-        if self.neg_sample_args['to'] == -1:
-            self.neg_sample_args['to'] = self.dataset.num(iid_field)
-        if self.dl_format == 'pairwise':
+
+class GroupedDataLoader(GeneralDataLoader):
+    def __init__(self, config, dataset, neg_sample_args, phase,
+                 batch_size=1, dl_format='pointwise', shuffle=False):
+        if neg_sample_args['strategy'] != 'to':
+            raise ValueError('neg_sample strategy in GroupedDataLoader() should be `to`')
+        if dl_format == 'pairwise':
             raise ValueError('pairwise dataloader cannot neg sample to')
-        user_num_in_one_batch = self.batch_size // self.neg_sample_args['to']
-        self.batch_size = (user_num_in_one_batch + 1) * self.neg_sample_args['to']
-        # TODO  batch size is changed
 
+        self.uid2items = dataset.uid2items
+        super(GroupedDataLoader, self).__init__(config, dataset, neg_sample_args, phase,
+                                                batch_size, dl_format, shuffle)
+
+    def _batch_size_adaptation(self):
+        if self.neg_sample_args['to'] == -1:
+            self.neg_sample_args['to'] = self.dataset.item_num
+        user_num_in_one_batch = self.batch_size // self.neg_sample_args['to']
+        new_batch_size = (user_num_in_one_batch + 1) * self.neg_sample_args['to']
+        self.step = user_num_in_one_batch + 1 if self.real_time_neg_sampling else new_batch_size
+
+    @property
+    def next_pr(self):
+        return self.next[self.pr]
+
+    def __next__(self):
+        if self.pr >= len(self.dataset):
+            self.pr = 0
+            raise StopIteration()
+        if self.real_time_neg_sampling:
+            cur_data = self._neg_sampling(self.uid2items[self.pr: self.pr + self.step - 1])
+            self.pr += self.step
+        else:
+            cur_data = self.dataset[self.pr: self.next_pr - 1]
+            self.pr = self.next_pr
+        return self._dataframe_to_interaction(cur_data)
+
+    def _pre_neg_sampling(self):
+        self.dataset.inter_feat = self._neg_sampling(self.uid2items)
+
+    def _neg_sampling(self, uid2items):
+        uid_field = self.config['USER_ID_FIELD']
+        iid_field = self.config['ITEM_ID_FIELD']
         label_field = self.config['LABEL_FIELD']
         self.dataset.field2type[label_field] = 'float'
         self.dataset.field2source[label_field] = 'inter'
@@ -158,20 +220,30 @@ class GeneralDataLoader(AbstractDataLoader):
             iid_field: [],
             label_field: []
         }
-        uid2itemlist = {}
-        grouped_uid_iid = inter_feat.groupby(uid_field)[iid_field]
-        for uid, iids in grouped_uid_iid:
-            uid2itemlist[uid] = iids.to_list()
-        for uid in uid2itemlist:
-            pos_num = len(uid2itemlist[uid])
-            if pos_num >= self.neg_sample_args['to']:
-                uid2itemlist[uid] = uid2itemlist[uid][:self.neg_sample_args['to'] - 1]
-                pos_num = self.neg_sample_args['to'] - 1
-            neg_num = self.neg_sample_args['to'] - pos_num
-            neg_item_id = self.sampler.sample_by_user_id(uid, self.neg_sample_args['to'] - pos_num)
 
-            new_inter[uid_field].extend([uid] * self.neg_sample_args['to'])
-            new_inter[iid_field].extend(uid2itemlist[uid] + neg_item_id)
+        for i, uid in enumerate(uid2items):
+            pos_num = len(uid2items[uid])
+            if pos_num >= self.neg_sample_args['to']:
+                uid2items[uid] = uid2items[uid][:self.neg_sample_args['to'] - 1]
+                pos_num = self.neg_sample_args['to'] - 1
+            neg_item_id = self.sampler.sample_by_user_id(self.phase, uid, self.neg_sample_args['to'] - pos_num)
+            neg_num = len(neg_item_id)
+
+            new_inter[uid_field].extend([uid] * (pos_num + neg_num))
+            new_inter[iid_field].extend(uid2items[uid] + neg_item_id)
             new_inter[label_field].extend([1] * pos_num + [0] * neg_num)
 
-        return pd.DataFrame(new_inter)
+            if not self.real_time_neg_sampling and i % self.step == 0:
+                if i == 0:
+                    self.next = dict()
+                    last_pr = 0
+                else:
+                    self.next[last_pr] = len(new_inter[uid_field])
+                    last_pr = len(new_inter[uid_field])
+
+        new_inter = pd.DataFrame(new_inter)
+        if not self.real_time_neg_sampling:
+            self.next[last_pr] = len(new_inter)
+            return new_inter
+        else:
+            return self.dataset.join(new_inter)

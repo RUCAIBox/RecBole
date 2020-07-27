@@ -8,36 +8,34 @@ import copy
 
 
 class Sampler(object):
-    def __init__(self, config, name, dataset):
-        if not isinstance(name, list):
-            name = [name]
-        if not isinstance(dataset, list):
-            dataset = [dataset]
-        if len(name) != len(dataset):
-            raise ValueError('name {} and dataset {} should have the same length'.format(name, dataset))
+    def __init__(self, config, phases, datasets):
+        if not isinstance(phases, list):
+            phases = [phases]
+        if not isinstance(datasets, list):
+            datasets = [datasets]
+        if len(phases) != len(datasets):
+            raise ValueError('phases {} and datasets {} should have the same length'.format(phases, datasets))
 
         self.config = config
-        self.name = name
-        self.dataset = dataset
+        self.phases = phases
+        self.datasets = datasets
 
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
 
-        self.n_users = len(self.dataset[0].field2id_token[uid_field])
-        self.n_items = len(self.dataset[0].field2id_token[iid_field])
+        self.n_users = len(self.datasets[0].user_num)
+        self.n_items = len(self.datasets[0].item_num)
 
         self.used_item_id = dict()
         last = [set() for i in range(self.n_users)]
-        for name, dataset in zip(self.name, self.dataset):
-            self.used_item_id[name] = copy.deepcopy(last)
-            grouped_uid_iid = dataset.inter_feat.groupby(uid_field)[iid_field]
-            for uid, iids in grouped_uid_iid:
-                self.used_item_id[name][uid].update(iids.to_list())
-            last = self.used_item_id[name]
+        for phase, dataset in zip(self.phases, self.datasets):
+            cur = copy.deepcopy(last)
+            dataset.inter_feat.apply(lambda row: cur[row[uid_field]].add(row[iid_field]), axis=1)
+            last = self.used_item_id[phase] = cur
 
-    def sample_by_user_id(self, name, user_id, num=1):
-        if name not in self.name:
-            raise ValueError('name [{}] not exist'.format(name))
+    def sample_by_user_id(self, phase, user_id, num=1):
+        if phase not in self.phases:
+            raise ValueError('phase [{}] not exist'.format(phase))
         if user_id not in range(self.n_users):
             raise ValueError('user_id [{}] not exist'.format(user_id))
 
@@ -48,12 +46,12 @@ class Sampler(object):
         if num < 10:
             for i in range(num):
                 cur = random.randint(st, self.n_items - 1)
-                while cur in self.used_item_id[name][user_id]:
+                while cur in self.used_item_id[phase][user_id]:
                     cur = random.randint(st, self.n_items - 1)
                 neg_item_id.append(cur)
         else:
-            tot = set(range(st, self.n_items)) - self.used_item_id[name][user_id]
-            if len(tot) == num:
+            tot = set(range(st, self.n_items)) - self.used_item_id[phase][user_id]
+            if len(tot) <= num:
                 neg_item_id = list(tot)
             else:
                 neg_item_id = random.sample(tot, num)

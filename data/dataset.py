@@ -260,13 +260,20 @@ class Dataset(object):
     def sparsity(self):
         return 1 - self.inter_num / self.user_num / self.item_num
 
-    def __getitem__(self, index):
-        df = self.inter_feat.loc[index]
+    @property
+    def uid2items(self):
+        return self.inter_feat.groupby(self.uid_field)[self.iid_field].agg(lambda x: list(x.array)).reset_index()
+
+    def join(self, df):
         if self.user_feat is not None:
             df = pd.merge(df, self.user_feat, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
         if self.item_feat is not None:
             df = pd.merge(df, self.item_feat, on=self.iid_field, how='left', suffixes=('_inter', '_item'))
         return df
+
+    def __getitem__(self, index, join=True):
+        df = self.inter_feat.loc[index]
+        return self.join(df) if join else df
 
     def __len__(self):
         return len(self.inter_feat)
