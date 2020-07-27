@@ -26,6 +26,7 @@ def data_preparation(config, model, dataset, save=False):
         eval_setting=es,
         dataset=train_dataset,
         sampler=sampler,
+        phase='train',
         dl_type=model.type,
         dl_format=config['input_format'],
         batch_size=config['train_batch_size'],
@@ -39,6 +40,7 @@ def data_preparation(config, model, dataset, save=False):
         eval_setting=es,
         dataset=[valid_dataset, test_dataset],
         sampler=sampler,
+        phase=['valid', 'test'],
         dl_type=model.type,
         batch_size=config['eval_batch_size']
     )
@@ -46,17 +48,21 @@ def data_preparation(config, model, dataset, save=False):
     return train_data, valid_data, test_data
 
 
-def dataloader_construct(name, config, eval_setting, dataset, sampler,
+def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
                          dl_type=ModelType.GENERAL, dl_format='pointwise',
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
         dataset = [dataset]
+    if not isinstance(phase, list):
+        phase = [phase]
 
     if not isinstance(batch_size, list):
         batch_size = [batch_size] * len(dataset)
 
     if len(dataset) != len(batch_size):
         raise ValueError('dataset {} and batch_size {} should have the same length'.format(dataset, batch_size))
+    if len(dataset) != len(phase):
+        raise ValueError('dataset {} and phase {} should have the same length'.format(dataset, phase))
 
     print('Build [{}] DataLoader for [{}] with format [{}]\n'.format(dl_type, name, dl_format))
     print(eval_setting)
@@ -69,11 +75,12 @@ def dataloader_construct(name, config, eval_setting, dataset, sampler,
 
     ret = []
 
-    for i, ds in enumerate(dataset):
+    for i, (ds, ph) in enumerate(zip(dataset, phase)):
         dl = DataLoader(
             config=config,
             dataset=ds,
             sampler=sampler,
+            phase=ph,
             neg_sample_args=eval_setting.neg_sample_args,
             batch_size=batch_size[i],
             dl_format=dl_format,

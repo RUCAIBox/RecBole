@@ -23,14 +23,15 @@ class Sampler(object):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
 
-        self.n_users = len(self.datasets[0].user_num)
-        self.n_items = len(self.datasets[0].item_num)
+        self.n_users = self.datasets[0].user_num
+        self.n_items = self.datasets[0].item_num
 
         self.used_item_id = dict()
         last = [set() for i in range(self.n_users)]
         for phase, dataset in zip(self.phases, self.datasets):
             cur = copy.deepcopy(last)
-            dataset.inter_feat.apply(lambda row: cur[row[uid_field]].add(row[iid_field]), axis=1)
+            for row in dataset.inter_feat.itertuples():
+                cur[getattr(row, uid_field)].add(getattr(row, iid_field))
             last = self.used_item_id[phase] = cur
 
     def sample_by_user_id(self, phase, user_id, num=1):
