@@ -140,7 +140,10 @@ class EvalSetting(object):
         legal_strategy = {'none', 'to', 'by'}
         if strategy not in legal_strategy:
             raise ValueError('Negative Sampling Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
-        self.neg_sample_args = {'strategy': strategy, 'real_time': real_time, 'distribution': 'uniform'}
+        if self.neg_sample_args is not None:
+            self.neg_sample_args.update({'strategy': strategy, 'real_time': real_time})
+        else:
+            self.neg_sample_args = {'strategy': strategy, 'real_time': real_time, 'distribution': 'uniform'}
         self.neg_sample_args.update(kwargs)
 
     def neg_sample_to(self, to, real_time=False):
