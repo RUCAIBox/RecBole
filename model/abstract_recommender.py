@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from utils import ModelType
-from model.layers import FMEmbedding, FMFirstOrderLinear
+
 
 
 class AbstractRecommender(nn.Module):
