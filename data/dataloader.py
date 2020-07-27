@@ -14,14 +14,13 @@ from .interaction import Interaction
 
 
 class AbstractDataLoader(object):
-    def __init__(self, config, dataset, sampler, phase,
+    def __init__(self, config, dataset, sampler,
                  batch_size=1, shuffle=False):
         self.config = config
         self.dataset = dataset
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.sampler = sampler
-        self.phase = phase
         self.pr = 0
 
         if self.shuffle:
@@ -77,8 +76,8 @@ class GeneralDataLoader(AbstractDataLoader):
 
         super(GeneralDataLoader, self).__init__(config, dataset, sampler, phase, batch_size, shuffle)
 
-        self.neg_sample_args = neg_sample_args
         self.phase = phase
+        self.neg_sample_args = neg_sample_args
         self.dl_format = dl_format
         self.real_time_neg_sampling = self.neg_sample_args['real_time']
 
