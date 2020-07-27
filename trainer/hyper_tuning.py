@@ -4,50 +4,98 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : hyper_tuning.py
 
-import sys
-import subprocess
+import numpy as np
+
 import hyperopt
-from hyperopt import fmin, tpe, hp
+from functools import partial
+from hyperopt import fmin, tpe, hp, pyll
+from hyperopt.base import miscs_update_idxs_vals
+from hyperopt.pyll.base import dfs, as_apply
+from hyperopt.pyll.stochastic import implicit_stochastic_symbols
+
+
+"""
+Thanks to sbrodeur for the exhaustive search code.
+https://github.com/hyperopt/hyperopt/issues/200
+"""
+
+
+class ExhaustiveSearchError(Exception):
+    pass
+
+
+def validate_space_exhaustive_search(space):
+    supported_stochastic_symbols = ['randint', 'quniform', 'qloguniform', 'qnormal', 'qlognormal', 'categorical']
+    for node in dfs(as_apply(space)):
+        if node.name in implicit_stochastic_symbols:
+            if node.name not in supported_stochastic_symbols:
+                raise ExhaustiveSearchError('Exhaustive search is only possible with the following stochastic symbols: '
+                                            '' + ', '.join(supported_stochastic_symbols))
+
+
+def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000):
+    # Build a hash set for previous trials
+    hashset = set([hash(frozenset([(key, value[0]) if len(value) > 0 else ((key, None))
+                                   for key, value in trial['misc']['vals'].items()])) for trial in trials.trials])
+
+    rng = np.random.RandomState(seed)
+    rval = []
+    for _, new_id in enumerate(new_ids):
+        newSample = False
+        nbSucessiveFailures = 0
+        while not newSample:
+            # -- sample new specs, idxs, vals
+            idxs, vals = pyll.rec_eval(
+                domain.s_idxs_vals,
+                memo={
+                    domain.s_new_ids: [new_id],
+                    domain.s_rng: rng,
+                })
+            new_result = domain.new_result()
+            new_misc = dict(tid=new_id, cmd=domain.cmd, workdir=domain.workdir)
+            miscs_update_idxs_vals([new_misc], idxs, vals)
+
+            # Compare with previous hashes
+            h = hash(frozenset([(key, value[0]) if len(value) > 0 else (
+                (key, None)) for key, value in vals.items()]))
+            if h not in hashset:
+                newSample = True
+            else:
+                # Duplicated sample, ignore
+                nbSucessiveFailures += 1
+
+            if nbSucessiveFailures > nbMaxSucessiveFailures:
+                # No more samples to produce
+                return []
+
+        rval.extend(trials.new_trial_docs([new_id],
+                                          [None], [new_result], [new_misc]))
+    return rval
 
 
 class HyperTuning(object):
-    def __init__(self, procedure_file, space=None, params_file=None, interpreter='python', algo=tpe.suggest, max_evals=100, bigger=True):
-        self.filename = procedure_file
-        self.interpreter = interpreter
-        self.algo = algo
-        self.max_evals = max_evals
-        self.bigger = bigger
-        if self.bigger:
-            self.init_score = - float('inf')
-        else:
-            self.init_score = float('inf')
-        self.best_score = self.init_score
+    def __init__(self, objective_function, space=None, params_file=None, algo=tpe.suggest, max_evals=100):
+        self.best_score = None
         self.best_params = None
+        self.best_test_result = None
+        self.params2result = {}
+
+        self.objective_function = objective_function
+        self.max_evals = max_evals
         if space:
             self.space = space
         elif params_file:
             self.space = self._build_space_from_file(params_file)
         else:
             raise ValueError('at least one of `space` and `params_file` is provided')
-
-    @staticmethod
-    def flush():
-        sys.stdout.flush()
-        sys.stderr.flush()
-
-    @staticmethod
-    def params2cmd(interpreter, filename, params):
-        cmd = interpreter + ' ' + filename
-        for param_name in params:
-            param_value = params[param_name]
-            cmd += ' --' + param_name
-            if isinstance(param_value, str):
-                cmd += '=%s' % param_value
-            elif int(param_value) == param_value:
-                cmd += '=%d' % int(param_value)
+        if isinstance(algo, str):
+            if algo == 'exhaustive':
+                self.algo = partial(exhaustive_search, nbMaxSucessiveFailures=1000)
+                self.max_evals = np.inf
             else:
-                cmd += '=%g' % float('%.1e' % float(param_value))
-        return cmd
+                raise ValueError('Illegal algo [{}]'.format(algo))
+        else:
+            self.algo = algo
 
     @staticmethod
     def _build_space_from_file(file):
@@ -68,28 +116,38 @@ class HyperTuning(object):
                     low, high = para_value.strip().split(',')
                     space[para_name] = hp.loguniform(para_name, float(low), float(high))
                 else:
-                    raise ValueError('Illegal para type [{}]'.format(para_type))
+                    raise ValueError('Illegal param type [{}]'.format(para_type))
         return space
 
+    @staticmethod
+    def params2str(params):
+        params_str = ''
+        for param_name in params:
+            params_str += param_name + ':' + str(params[param_name]) + ', '
+        return params_str[:-2]
+
     def trial(self, params):
-        cmd = self.params2cmd(self.interpreter, self.filename, params)
-        try:
-            print('\n\n running command: @ %s' % cmd, file=sys.stderr)
-            self.flush()
-            output = subprocess.check_output(cmd, shell=True)
-        except subprocess.CalledProcessError:
-            return {'loss': self.init_score, 'status': hyperopt.STATUS_FAIL}
-        output = output.decode(encoding='UTF-8')
-        score = float(output.strip().split('\n')[-1])
-        if self.bigger:
-            if score > self.best_score:
-                self.best_score = score
-                self.best_params = params
-            score = - score
+        config_dict = params
+        params_str = self.params2str(params)
+        result_dict = self.objective_function(config_dict)
+        self.params2result[params_str] = result_dict
+        score, bigger = result_dict['best_valid_score'], result_dict['valid_score_bigger']
+
+        if not self.best_score:
+            self.best_score = score
+            self.best_params = params
         else:
-            if score < self.best_score:
-                self.best_score = score
-                self.best_params = params
+            if bigger:
+                if score > self.best_score:
+                    self.best_score = score
+                    self.best_params = params
+            else:
+                if score < self.best_score:
+                    self.best_score = score
+                    self.best_params = params
+
+        if bigger:
+            score = - score
         return {'loss': score, 'status': hyperopt.STATUS_OK}
 
     def run(self):

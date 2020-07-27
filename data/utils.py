@@ -6,10 +6,7 @@ from utils import ModelType
 
 def data_preparation(config, model, dataset, save=False):
     es = EvalSetting(config)
-
-    # es.group_by_user()
-    es.shuffle()
-    es.split_by_ratio(config['split_ratio'])
+    es.RO_RS_uni()
 
     builded_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = builded_datasets

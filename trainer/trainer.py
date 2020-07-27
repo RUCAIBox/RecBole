@@ -39,6 +39,7 @@ class Trainer(AbstractTrainer):
         self.eval_step = config['eval_step']
         self.stopping_step = config['stopping_step']
         self.valid_metric = config['valid_metric']
+        self.valid_metric_bigger = config['valid_metric_bigger']
         self.device = config['device']
         self.checkpoint_dir = config['checkpoint_dir']
         ensure_dir(self.checkpoint_dir)
@@ -135,7 +136,8 @@ class Trainer(AbstractTrainer):
                 valid_start_time = time()
                 valid_score, valid_result = self._valid_epoch(valid_data)
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
-                    valid_score, self.best_valid_score, self.cur_step, max_step=self.stopping_step, order='asc')
+                    valid_score, self.best_valid_score, self.cur_step,
+                    max_step=self.stopping_step, bigger=self.valid_metric_bigger)
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)

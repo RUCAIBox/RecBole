@@ -223,7 +223,7 @@ class Dataset(object):
         if field not in self.field2type:
             raise ValueError('field [{}] not defined in dataset'.format(field))
         if self.field2type[field] not in {'token', 'token_seq'}:
-            return self.field2seqlen(field)
+            return self.field2seqlen[field]
         else:
             return len(self.field2id_token[field])
 
@@ -305,22 +305,32 @@ class Dataset(object):
         nxt.inter_feat = new_inter_feat
         return nxt
 
-    def split_by_ratio(self, ratio, group_by=None):
-        # TODO
-        next_ds = []
+    def _calcu_split_ids(self, tot, ratios):
+        cnt = [int(ratios[i] * tot) for i in range(len(ratios))]
+        cnt[-1] = tot - sum(cnt[0:-1])
+        split_ids = np.cumsum(cnt)[:-1]
+        return split_ids
+
+    def split_by_ratio(self, ratios, group_by=None):
+        tot_ratio = sum(ratios)
+        ratios = [_ / tot_ratio for _ in ratios]
+
         if group_by is None:
-            tot_ratio = sum(ratio)
-            ratio = [_ / tot_ratio for _ in ratio]
-
             tot_cnt = self.__len__()
-            cnt = [int(ratio[i] * tot_cnt) for i in range(len(ratio))]
-            cnt[-1] = tot_cnt - sum(cnt[0:-1])
-
-            cur = 0
-            for c in cnt:
-                next_ds.append(self.copy(self.inter_feat[cur:cur + c]))
+            split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
+            next_df = [_.reset_index(drop=True) for _ in np.split(self.inter_feat, split_ids)]
         else:
-            raise NotImplementedError('split by ratio with grouped data')
+            grouped_inter_feat = self.inter_feat.groupby(by=group_by)
+            next_df = []
+            for uid, grouped_feats in grouped_inter_feat:
+                tot_cnt = len(grouped_feats)
+                split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
+                splited_grouped_df = np.split(grouped_feats, split_ids)
+                next_df.append(splited_grouped_df)
+            next_df = zip(*next_df)
+            next_df = [pd.concat(_).reset_index(drop=True) for _ in next_df]
+
+        next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
     def shuffle(self):
@@ -337,10 +347,7 @@ class Dataset(object):
         elif ordering_args['strategy'] == 'by':
             self.sort(by=ordering_args['field'], ascending=ordering_args['ascending'])
 
-        # TODO
         group_field = eval_setting.group_field
-        if group_field is not None:
-            raise NotImplementedError('Group by has not been implemented')
 
         split_args = eval_setting.split_args
         if split_args['strategy'] == 'by_ratio':
