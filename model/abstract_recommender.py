@@ -5,14 +5,17 @@
 # @File   : abstract_recommender.py
 
 import numpy as np
+import torch
 import torch.nn as nn
 from utils import ModelType
+from model.layers import FMEmbedding, FMFirstOrderLinear
 
 
 class AbstractRecommender(nn.Module):
     """
     Base class for all models
     """
+
     def forward(self, *inputs):
         """
         Forward pass logic
@@ -58,7 +61,4 @@ class SequentialRecommender(AbstractRecommender):
         self.type = ModelType.SEQUENTIAL
 
 
-class ContextRecommender(AbstractRecommender):
-    def __init__(self):
-        super(ContextRecommender, self).__init__()
-        self.type = ModelType.CONTEXT
+

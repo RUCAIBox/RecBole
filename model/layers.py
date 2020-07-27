@@ -90,28 +90,6 @@ class FMEmbedding(nn.Module):
         return output
 
 
-class FMFirstOrderLinear(nn.Module):
-    """
-        Input shape
-        - A 3D tensor with shape:``(batch_size,field_size)``.
-
-        Output shape
-        - 3D tensor with shape: ``(batch_size,output_dim)``.
-    """
-    def __init__(self, field_dims, offsets, output_dim=1):
-
-        super(FMFirstOrderLinear, self).__init__()
-
-        self.w = nn.Embedding(sum(field_dims), output_dim)
-        self.bias = nn.Parameter(torch.zeros((output_dim, )), requires_grad=True)
-        self.offsets = offsets
-
-    def forward(self, input_x):
-        input_x = input_x + input_x.new_tensor(self.offsets).unsqueeze(0)
-        output = torch.sum(self.w(input_x), dim=1) + self.bias
-        return output
-
-
 class BaseFactorizationMachine(nn.Module):
     """
         Input shape
