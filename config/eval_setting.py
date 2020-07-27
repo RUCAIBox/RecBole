@@ -34,7 +34,6 @@ class EvalSetting(object):
         field (str): The field of dataset grouped by, default None (Not Grouping)
 
     Example:
-        >>> es = EvalSetting(config)
         >>> es.group_by('month')
         >>> es.group_by_user()
     """
@@ -53,14 +52,12 @@ class EvalSetting(object):
             If this is a list of bools, must match the length of the field
 
     Example:
-        >>> es = EvalSetting(config)
         >>> es.set_ordering('shuffle')
         >>> es.set_ordering('by', field='timestamp')
         >>> es.set_ordering('by', field=['timestamp', 'price'], ascending=[True, False])
 
     or
-        >>> es = EvalSetting(config)
-        >>> es.shuffle()
+        >>> es.random_ordering()
         >>> es.sort_by('timestamp') # ascending default
         >>> es.sort_by(field=['timestamp', 'price'], ascending=[True, False])
     """
@@ -71,7 +68,7 @@ class EvalSetting(object):
         self.ordering_args = {'strategy': strategy}
         self.ordering_args.update(kwargs)
 
-    def shuffle(self):
+    def random_ordering(self):
         self.set_ordering('shuffle')
 
     def sort_by(self, field, ascending=None):
@@ -80,6 +77,9 @@ class EvalSetting(object):
             if len(ascending) == 1:
                 ascending = True
         self.set_ordering('by', field=field, ascending=ascending)
+
+    def temporal_ordering(self):
+        self.sort_by(field=self.config['TIMESTAMP_FIELD'])
 
     r"""Setting about split method
 
@@ -92,11 +92,9 @@ class EvalSetting(object):
         ascending (bool): Order of values after splitting.
 
     Example:
-        >>> es = EvalSetting(config)
         >>> es.leave_one_out()
         >>> es.split_by_ratio(ratios=[0.8, 0.1, 0.1])
         >>> es.split_by_value(field='month', values=[6, 7], ascending=False)    # (*, 7], (7, 6], (6, *)
-
     """
     def set_splitting(self, strategy='none', **kwargs):
         legal_strategy = {'none', 'by_ratio', 'by_value', 'loo'}
@@ -131,18 +129,18 @@ class EvalSetting(object):
         strategy (str): Either 'none', 'to' or 'by'.
         to (int): Negative Sampling Until `pos + num == to`.
         by (int): Negative Sampling `by` neg cases for one pos case.
+        real_time (bool): real time negative sampling if True, else negative cases will be pre-sampled and stored.
 
     Example:
-        >>> es = EvalSetting(config)
         >>> es.neg_sample_to(100, real_time=True)
         >>> es.neg_sample_by(1)
         >>> es.full_sort()  # the same with `es.neg_sample_to(-1, real_time=True)`
     """
-    def set_neg_sampling(self, strategy='none', **kwargs):
+    def set_neg_sampling(self, strategy='none', real_time=False, **kwargs):
         legal_strategy = {'none', 'to', 'by'}
         if strategy not in legal_strategy:
             raise ValueError('Negative Sampling Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
-        self.neg_sample_args = {'strategy': strategy}
+        self.neg_sample_args = {'strategy': strategy, 'real_time': real_time, 'distribution': 'uniform'}
         self.neg_sample_args.update(kwargs)
 
     def neg_sample_to(self, to, real_time=False):
@@ -153,3 +151,66 @@ class EvalSetting(object):
 
     def neg_sample_by(self, by, real_time=False):
         self.set_neg_sampling(strategy='by', by=by, real_time=real_time)
+
+    r"""Setting about sampling distribution
+
+    Args:
+        distribution (str): Either 'uniform' or 'popularity'.
+
+    Example:
+        >>> es.neg_sample_to(100, real_time=True)
+        >>> es.neg_sample_by(1)
+        >>> es.full_sort()  # the same with `es.neg_sample_to(-1, real_time=True)`
+    """
+    def set_sampling_distribution(self, distribution='uniform'):
+        legal_distribution = {'uniform', 'popularity'}
+        if distribution not in legal_distribution:
+            raise ValueError('Sampling Distribution [{}] should in {}'.format(distribution, list(legal_distribution)))
+        self.neg_sample_args.update({'distribution': distribution})
+
+    def popularity_based_sampling(self):
+        self.set_sampling_distribution(distribution='popularity')
+
+    r"""Presets
+
+    RO: Random Ordering         TO: Temporal Ordering
+    RS: Ratio-based Splitting   LS: Leave-one-out Splitting     split_by 8:1:1 bu default if RS is setted.
+    full: all non-ground-truth items
+    uni: uniform sampling       pop: popularity sampling        neg_sample_by 100 by default.
+    """
+    def RO_RS_full(self, ratios=[0.8, 0.1, 0.1]):
+        self.group_by_user()
+        self.random_ordering()
+        self.split_by_ratio(ratios)
+        self.full_sort()
+
+    def TO_RS_full(self, ratios=[0.8, 0.1, 0.1]):
+        self.group_by_user()
+        self.temporal_ordering()
+        self.split_by_ratio(ratios)
+        self.full_sort()
+
+    def RO_LS_full(self):
+        self.group_by_user()
+        self.random_ordering()
+        self.leave_one_out()
+        self.full_sort()
+
+    def TO_LS_full(self):
+        self.group_by_user()
+        self.temporal_ordering()
+        self.leave_one_out()
+        self.full_sort()
+
+    def RO_RS_uni(self, ratios=[0.8, 0.1, 0.1], by=100):
+        self.group_by_user()
+        self.random_ordering()
+        self.split_by_ratio(ratios)
+        self.neg_sample_by(by)
+
+    def RO_RS_pop(self, ratios=[0.8, 0.1, 0.1], by=100):
+        self.group_by_user()
+        self.random_ordering()
+        self.split_by_ratio(ratios)
+        self.neg_sample_by(by)
+        self.popularity_based_sampling()
