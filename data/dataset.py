@@ -262,7 +262,7 @@ class Dataset(object):
 
     @property
     def uid2items(self):
-        return self.inter_feat.groupby(self.uid_field)[self.iid_field].agg(lambda x: list(x.array)).reset_index()
+        return self.inter_feat.groupby(self.uid_field)[self.iid_field].agg(lambda x: list(x.array)).to_dict()
 
     def join(self, df):
         if self.user_feat is not None:

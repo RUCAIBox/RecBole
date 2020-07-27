@@ -12,10 +12,12 @@ def data_preparation(config, model, dataset, save=False):
     es.split_by_ratio(config['split_ratio'])
 
     builded_datasets = dataset.build(es)
-    train_dataset, test_dataset, valid_dataset = builded_datasets
+    train_dataset, valid_dataset, test_dataset = builded_datasets
+    names = ['train', 'valid', 'test']
+    sampler = Sampler(config, names, builded_datasets)
 
     if save:
-        save_datasets(config['checkpoint_dir'], name=['train', 'test', 'valid'], dataset=builded_datasets)
+        save_datasets(config['checkpoint_dir'], name=names, dataset=builded_datasets)
 
     es.neg_sample_by(1, real_time=True)
     train_data = dataloader_construct(
@@ -23,6 +25,7 @@ def data_preparation(config, model, dataset, save=False):
         config=config,
         eval_setting=es,
         dataset=train_dataset,
+        sampler=sampler,
         dl_type=model.type,
         dl_format=config['input_format'],
         batch_size=config['train_batch_size'],
@@ -30,19 +33,20 @@ def data_preparation(config, model, dataset, save=False):
     )
 
     es.neg_sample_to(config['test_neg_sample_num'])
-    test_data, valid_data = dataloader_construct(
+    valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
         eval_setting=es,
-        dataset=[test_dataset, valid_dataset],
+        dataset=[valid_dataset, test_dataset],
+        sampler=sampler,
         dl_type=model.type,
         batch_size=config['eval_batch_size']
     )
 
-    return train_data, test_data, valid_data
+    return train_data, valid_data, test_data
 
 
-def dataloader_construct(name, config, eval_setting, dataset,
+def dataloader_construct(name, config, eval_setting, dataset, sampler,
                          dl_type=ModelType.GENERAL, dl_format='pointwise',
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
@@ -59,7 +63,7 @@ def dataloader_construct(name, config, eval_setting, dataset,
     print('batch_size = {}, shuffle = {}\n'.format(batch_size, shuffle))
 
     if dl_type == ModelType.GENERAL:
-        DataLoader = GeneralDataLoader
+        DataLoader = get_data_loader(eval_setting.neg_sample_args)
     else:
         raise NotImplementedError('dl_type [{}] has not been implemented'.format(dl_type))
 
@@ -69,6 +73,7 @@ def dataloader_construct(name, config, eval_setting, dataset,
         dl = DataLoader(
             config=config,
             dataset=ds,
+            sampler=sampler,
             neg_sample_args=eval_setting.neg_sample_args,
             batch_size=batch_size[i],
             dl_format=dl_format,
