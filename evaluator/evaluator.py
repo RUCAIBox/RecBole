@@ -2,10 +2,12 @@ import abc
 import numpy as np
 import pandas as pd
 import utils
+import swifter
 import warnings
-# from joblib import Parallel, delayed
-# from pandarallel import pandarallel
-# pandarallel.initialize()
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+from collections import defaultdict
+from itertools import groupby
+
 
 # 'Precision', 'Hit', 'Recall', 'MAP', 'NDCG', 'MRR', 'AUC'
 metric_name = {metric.lower() : metric for metric in ['Hit', 'Recall', 'MRR', 'AUC', 'Precision', 'NDCG']}
@@ -65,7 +67,21 @@ class RankEvaluator(AbstractEvaluator):
         topk_df = df[mask]
         return topk_df[self.USER_FIELD].values.tolist(), topk_df[self.ITEM_FIELD].values.tolist()
 
-    def metric_info(self, df, metric, k):
+    def get_metric_fuc(self, metric, k):
+        fuc = getattr(utils, metric)
+        if metric == 'ndcg':
+            metric_fuc = lambda x: fuc(x['rank'].values, k, x['pos_num'].values[0])
+        elif metric == 'recall':
+            metric_fuc = lambda x: fuc(x['rank'].values, k, x['pos_num'].values[0])
+        elif metric == 'precision':
+            metric_fuc = lambda x: fuc(x['rank'].values, k)
+        # elif metric =='auc':
+        #     metric_fuc = lambda x, y: fuc(x x[self.LABEL_FIELD].values.astype(bool))
+        else:
+            metric_fuc = lambda x: fuc(x['rank'].values, k)
+        return metric_fuc
+
+    def metric_info(self, groups, num_users):
         """Get the result of the metric on the data
 
         Args:
@@ -76,16 +92,22 @@ class RankEvaluator(AbstractEvaluator):
         Returns:
             float: metric result
         """
+        topk = self.topk
+        metrics = self.metrics
 
-        fuc = getattr(utils, metric)
-        metric_fuc = lambda x: fuc(x['rank'].values, x[self.LABEL_FIELD].values.astype(bool), k)
+        def metrics_fuc(data):
+            for k in topk:
+                for metric in metrics:
+                    key = '{}@{}'.format(metric_name[metric], k)
+                    score = self.get_metric_fuc(metric, k)(data)
+                    metric_dict[key].append(score)
 
-        # groups = df.groupby(self.USER_FIELD)['rank']
-        # results = Parallel(n_jobs=10)(delayed(metric_fuc)(group) for _, group in groups)
-        # result = np.mean(results)
+        metric_dict = defaultdict(list)
 
-        metric_result = df.groupby(self.USER_FIELD)[['rank', self.LABEL_FIELD]].apply(metric_fuc)
-        return metric_result
+        groups.apply(metrics_fuc)
+        for key in metric_dict:
+            metric_dict[key] = np.sum(metric_dict[key]) / num_users
+        return metric_dict
 
     def evaluate(self, df):
         """Generate metrics results on the dataset
@@ -101,18 +123,12 @@ class RankEvaluator(AbstractEvaluator):
 
         metric_dict = {}
         num_users = df[self.USER_FIELD].nunique()
-        for metric in self.metrics:
-            if metric in topk_metric:
-                for k in self.topk:
-                    metric_result = self.metric_info(df, metric, k)
-                    key = '{}@{}'.format(metric_name[metric], k)
-                    score = metric_result.sum() / num_users
-                    metric_dict[key] = score
-            else:
-                key = metric_name[metric]
-                metric_result = self.metric_info(df, metric, None)
-                score = metric_result.sum() / num_users
-                metric_dict[key] = score
+        truth_ranks = df[df[self.LABEL_FIELD].values].copy()    
+        truth_ranks['pos_num'] = truth_ranks.groupby(self.USER_FIELD)[self.LABEL_FIELD].transform('size')
+        if self.topk is not None:
+            truth_ranks_at_max_k = truth_ranks[truth_ranks['rank'].values <= max(self.topk)]
+            groups = truth_ranks_at_max_k.groupby(self.USER_FIELD)
+            metric_dict = self.metric_info(groups, num_users)
 
         return metric_dict
 
@@ -353,9 +369,10 @@ class Evaluator(AbstractEvaluator):
             self.USER_FIELD: rdata[self.USER_FIELD],
             self.ITEM_FIELD: rdata[self.ITEM_FIELD],
             'score': result,
-            self.LABEL_FIELD: rdata[self.LABEL_FIELD]
+            self.LABEL_FIELD: rdata[self.LABEL_FIELD].astype(bool)
         })
         return df
+
 
     def build_recommend_df(self, rdata, result):
         df = pd.DataFrame({
