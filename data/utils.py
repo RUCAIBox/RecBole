@@ -1,14 +1,17 @@
+import os
 from .dataloader import *
 from config import EvalSetting
+from utils import ModelType
 
-def data_preparation(config, model, dataset):
+def data_preparation(config, model, dataset, save=False):
     es = EvalSetting(config)
+    es.RO_RS_uni()
 
-    # es.group_by_user()
-    es.shuffle()
-    es.split_by_ratio(config['split_ratio'])
+    builded_datasets = dataset.build(es)
+    train_dataset, test_dataset, valid_dataset = builded_datasets
 
-    train_dataset, test_dataset, valid_dataset = dataset.build(es)
+    if save:
+        save_datasets(config['checkpoint_dir'], name=['train', 'test', 'valid'], dataset=builded_datasets)
 
     es.neg_sample_by(1, real_time=True)
     train_data = dataloader_construct(
@@ -35,7 +38,7 @@ def data_preparation(config, model, dataset):
     return train_data, test_data, valid_data
 
 def dataloader_construct(name, config, eval_setting, dataset,
-                         dl_type='general', dl_format='pointwise',
+                         dl_type=ModelType.GENERAL, dl_format='pointwise',
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
         dataset = [dataset]
@@ -50,7 +53,7 @@ def dataloader_construct(name, config, eval_setting, dataset,
     print(eval_setting)
     print('batch_size = {}, shuffle = {}\n'.format(batch_size, shuffle))
 
-    if dl_type == 'general':
+    if dl_type == ModelType.GENERAL:
         DataLoader = GeneralDataLoader
     else:
         raise NotImplementedError('dl_type [{}] has not been implemented'.format(dl_type))
@@ -73,3 +76,14 @@ def dataloader_construct(name, config, eval_setting, dataset,
     else:
         return ret
 
+def save_datasets(save_path, name, dataset):
+    if (not isinstance(name, list)) and (not isinstance(dataset, list)):
+        name = [name]
+        dataset = [dataset]
+    if len(name) != len(dataset):
+        raise ValueError('len of name {} should equal to len of dataset'.format(name, dataset))
+    for i, d in enumerate(dataset):
+        cur_path = os.path.join(save_path, name[i])
+        if not os.path.isdir(cur_path):
+            os.makedirs(cur_path)
+        d.save(cur_path)

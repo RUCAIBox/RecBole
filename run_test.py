@@ -8,43 +8,29 @@ import importlib
 from trainer import Trainer
 from utils import Logger
 from config import Config
-from data import Dataset
+from data import Dataset, data_preparation
 
 
-class ModelTest(object):
-
-    def __init__(self, config, model):
-        self.logger = Logger(config)
-        self.trainer = Trainer(config, model, self.logger)
-
-    def run(self, train_data, valid_data, test_data):
-        best_valid_score, best_valid_result = self.trainer.fit(train_data, valid_data)
-        test_result = self.trainer.evaluate(test_data)
-        return best_valid_score, best_valid_result, test_result
-
-
-def run_test():
-
+def whole_process(config_file='properties/overall.config', config_dict=None):
     """
-    这部分可能随着开发会有所改变，可能需要自行进行改变
+    初始化 config
     """
-    config = Config('properties/overall.config')
+    config = Config(config_file, config_dict)
     config.init()
-    dataset = Dataset(config)
-    train_data, test_data, valid_data = dataset.build(
-        inter_filter_lowest_val=config['lowest_val'],
-        inter_filter_highest_val=config['highest_val'],
-        split_by_ratio=[config['train_split_ratio'], config['valid_split_ratio'], config['test_split_ratio']],
-        train_batch_size=config['train_batch_size'],
-        test_batch_size=config['test_batch_size'],
-        valid_batch_size=config['valid_batch_size'],
-        pairwise=config['pair_wise'],
-        neg_sample_by=1,
-        neg_sample_to=config['test_neg_sample_num']
-    )
 
     """
-    调用模型并进行测试
+    初始化 logger
+    """
+    logger = Logger(config)
+
+    """
+    初始化 dataset
+    """
+    dataset = Dataset(config)
+    print(dataset)
+
+    """
+    初始化 model
     """
     model_name = config['model']
     model_file_name = model_name.lower()
@@ -59,9 +45,31 @@ def run_test():
     model_class = getattr(model_module, model_name)
     model = model_class(config, dataset).to(config['device'])
     print(model)
-    mt = ModelTest(config, model)
-    valid_score, _, _ = mt.run(train_data, test_data, valid_data)
-    print(valid_score)
+
+    """
+    生成 训练/验证/测试 数据
+    """
+    train_data, test_data, valid_data = data_preparation(config, model, dataset)
+
+    """
+    初始化 trainer
+    """
+    trainer = Trainer(config, model, logger)
+
+    """
+    训练
+    """
+    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data)
+
+    """
+    测试
+    """
+    test_result = trainer.evaluate(test_data)
+    print('test result: ', test_result)
+
+
+def run_test():
+    whole_process()
 
 
 if __name__ == '__main__':
