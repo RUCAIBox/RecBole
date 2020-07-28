@@ -59,7 +59,7 @@ def precision(truth_ranks, k):
     """
     return (truth_ranks <= k).sum() / k
 
-def auc(rank, label, k=None):
+def auc(rank, label):
     """AUC (also known as Area Under Curve) is used to evaluate the two-class model, referring to the area under the ROC curve
 
     url:https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve

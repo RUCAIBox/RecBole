@@ -75,13 +75,13 @@ class RankEvaluator(AbstractEvaluator):
             metric_fuc = lambda x: fuc(x['rank'].values, k, x['pos_num'].values[0])
         elif metric == 'precision':
             metric_fuc = lambda x: fuc(x['rank'].values, k)
-        # elif metric =='auc':
-        #     metric_fuc = lambda x, y: fuc(x x[self.LABEL_FIELD].values.astype(bool))
+        elif metric =='auc':
+            metric_fuc = lambda x: fuc(x['rank'].values, x[self.LABEL_FIELD].values.astype(bool))
         else:
             metric_fuc = lambda x: fuc(x['rank'].values, k)
         return metric_fuc
 
-    def metric_info(self, groups, num_users):
+    def metric_info(self, groups, num_users, method='topk'):
         """Get the result of the metric on the data
 
         Args:
@@ -95,19 +95,28 @@ class RankEvaluator(AbstractEvaluator):
         topk = self.topk
         metrics = self.metrics
 
-        def metrics_fuc(data):
+        def topk_metrics_fuc(data):
             for k in topk:
                 for metric in metrics:
                     key = '{}@{}'.format(metric_name[metric], k)
                     score = self.get_metric_fuc(metric, k)(data)
                     metric_dict[key].append(score)
 
-        metric_dict = defaultdict(list)
+        def auc_metric_fuc(data):
+            key = '{}'.format('AUC')
+            score = self.get_metric_fuc('auc', None)(data)
+            metric_dict[key].append(score)
 
-        groups.apply(metrics_fuc)
+        metric_dict = defaultdict(list)
+        if method == 'topk':
+            groups.apply(topk_metrics_fuc)
+        elif method == 'auc':
+            groups.apply(auc_metric_fuc)
+
         for key in metric_dict:
             metric_dict[key] = np.sum(metric_dict[key]) / num_users
         return metric_dict
+
 
     def evaluate(self, df):
         """Generate metrics results on the dataset
@@ -123,12 +132,15 @@ class RankEvaluator(AbstractEvaluator):
 
         metric_dict = {}
         num_users = df[self.USER_FIELD].nunique()
-        truth_ranks = df[df[self.LABEL_FIELD].values].copy()    
-        truth_ranks['pos_num'] = truth_ranks.groupby(self.USER_FIELD)[self.LABEL_FIELD].transform('size')
         if self.topk is not None:
+            truth_ranks = df[df[self.LABEL_FIELD].values].copy()    
+            truth_ranks['pos_num'] = truth_ranks.groupby(self.USER_FIELD)[self.LABEL_FIELD].transform('size')
             truth_ranks_at_max_k = truth_ranks[truth_ranks['rank'].values <= max(self.topk)]
             groups = truth_ranks_at_max_k.groupby(self.USER_FIELD)
-            metric_dict = self.metric_info(groups, num_users)
+            metric_dict = self.metric_info(groups, num_users, 'topk')
+        else:
+            groups = df.groupby(self.USER_FIELD)
+            metric_dict = self.metric_info(groups, num_users, 'auc')
 
         return metric_dict
 
