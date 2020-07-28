@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class ModelType(Enum):
     GENERAL = 1
     SEQUENTIAL = 2
