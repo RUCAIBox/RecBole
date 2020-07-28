@@ -204,7 +204,8 @@ class GroupedDataLoader(NegSampleBasedDataLoader):
             self.neg_sample_args['to'] = self.dataset.item_num
         batch_num = self.batch_size // self.neg_sample_args['to']
         new_batch_size = (batch_num + 1) * self.neg_sample_args['to']
-        self.step = batch_num + 1 if self.real_time_neg_sampling else new_batch_size
+        self.step = batch_num + 1
+        self.set_batch_size(new_batch_size)
 
     @property
     def pr_end(self):
