@@ -82,7 +82,7 @@ class RankEvaluator(AbstractEvaluator):
         """Get the result of the metric on the data
 
         Args:
-            df (pandas.core.frame.DataFrame): merged data which contains user id, item id, score, rank
+            groups (pandas.core.frame.DataFrame): merged data which contains user id, item id, score, rank
             metric (str): one of the metrics
             k (int): top k
 
@@ -97,21 +97,20 @@ class RankEvaluator(AbstractEvaluator):
                 for metric in metrics:
                     key = '{}@{}'.format(metric_name[metric], k)
                     score = self.get_metric_fuc(metric, k)(data)
-                    metric_dict[key].append(score)
+                    metric_dict[key] += score
 
         def auc_metric_fuc(data):
             key = '{}'.format('AUC')
             score = self.get_metric_fuc('auc', None)(data)
             metric_dict[key].append(score)
 
-        metric_dict = defaultdict(list)
+        metric_dict = defaultdict(int)
         if method == 'topk':
             groups.apply(topk_metrics_fuc)
         elif method == 'auc':
             groups.apply(auc_metric_fuc)
-
         for key in metric_dict:
-            metric_dict[key] = np.sum(metric_dict[key]) / num_users
+            metric_dict[key] = metric_dict[key] / num_users
         return metric_dict
 
 
@@ -133,12 +132,19 @@ class RankEvaluator(AbstractEvaluator):
             truth_ranks = df[df[self.LABEL_FIELD].values].copy()    
             truth_ranks['pos_num'] = truth_ranks.groupby(self.USER_FIELD)[self.LABEL_FIELD].transform('size')
             truth_ranks_at_max_k = truth_ranks[truth_ranks['rank'].values <= max(self.topk)]
-            groups = truth_ranks_at_max_k.groupby(self.USER_FIELD)
-            metric_dict = self.metric_info(groups, num_users, 'topk')
-        else:
-            groups = df.groupby(self.USER_FIELD)
-            metric_dict = self.metric_info(groups, num_users, 'auc')
+            if truth_ranks_at_max_k.empty:
+                metric_dict = {}
+                for k in self.topk:
+                    for metric in self.metrics:
+                        key = '{}@{}'.format(metric_name[metric], k)
+                        metric_dict[key] = 0
+                return metric_dict
 
+            groups = truth_ranks_at_max_k.groupby(self.USER_FIELD)
+            return self.metric_info(groups, num_users, 'topk')
+
+        groups = df.groupby(self.USER_FIELD)
+        metric_dict = self.metric_info(groups, num_users, 'auc')
         return metric_dict
 
 class LossEvaluator(AbstractEvaluator):
