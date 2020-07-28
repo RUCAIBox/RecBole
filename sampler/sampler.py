@@ -31,7 +31,6 @@ class Sampler(object):
         self.random_pr = 0
 
         self.used_item_id = dict()
-        self.fullset = set(range(self.n_items))
         last = [set() for i in range(self.n_users)]
         for phase, dataset in zip(self.phases, self.datasets):
             cur = copy.deepcopy(last)
