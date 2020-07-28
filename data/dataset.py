@@ -182,7 +182,7 @@ class Dataset(object):
     def _del_col(self, field):
         for feat in [self.inter_feat, self.user_feat, self.item_feat]:
             if feat is not None and field in feat:
-                self.inter_feat.drop(columns=field, inplace=True)
+                feat.drop(columns=field, inplace=True)
         for dct in [self.field2id_token, self.field2seqlen, self.field2source, self.field2type]:
             if field in dct:
                 del dct[field]
