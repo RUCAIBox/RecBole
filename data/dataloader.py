@@ -14,13 +14,12 @@ from .interaction import Interaction
 
 
 class AbstractDataLoader(object):
-    def __init__(self, config, dataset, sampler,
+    def __init__(self, config, dataset,
                  batch_size=1, shuffle=False):
         self.config = config
         self.dataset = dataset
         self.batch_size = batch_size
         self.shuffle = shuffle
-        self.sampler = sampler
         self.pr = 0
 
         if self.shuffle:
@@ -66,7 +65,7 @@ class AbstractDataLoader(object):
             # TODO  batch size is changed
 
 
-class GeneralDataLoader(AbstractDataLoader):
+class NegSampleBasedDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format='pointwise', shuffle=False):
         if dl_format not in ['pointwise', 'pairwise']:
@@ -74,8 +73,9 @@ class GeneralDataLoader(AbstractDataLoader):
         if neg_sample_args['strategy'] not in ['by', 'to']:
             raise ValueError('neg_sample strategy [{}] has not been implemented'.format(neg_sample_args['strategy']))
 
-        super(GeneralDataLoader, self).__init__(config, dataset, sampler, phase, batch_size, shuffle)
+        super(NegSampleBasedDataLoader, self).__init__(config, dataset, batch_size, shuffle)
 
+        self.sampler = sampler
         self.phase = phase
         self.neg_sample_args = neg_sample_args
         self.dl_format = dl_format
@@ -95,7 +95,7 @@ class GeneralDataLoader(AbstractDataLoader):
         raise NotImplementedError('Method [neg_sampling] should be implemented.')
 
 
-class InteractionBasedDataLoader(GeneralDataLoader):
+class InteractionBasedDataLoader(NegSampleBasedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format='pointwise', shuffle=False):
         if neg_sample_args['strategy'] != 'by':
@@ -174,7 +174,7 @@ class InteractionBasedDataLoader(GeneralDataLoader):
         return self.dataset.join(new_df) if self.real_time_neg_sampling else new_df
 
 
-class GroupedDataLoader(GeneralDataLoader):
+class GroupedDataLoader(NegSampleBasedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format='pointwise', shuffle=False):
         if neg_sample_args['strategy'] != 'to':
@@ -189,9 +189,9 @@ class GroupedDataLoader(GeneralDataLoader):
     def _batch_size_adaptation(self):
         if self.neg_sample_args['to'] == -1:
             self.neg_sample_args['to'] = self.dataset.item_num
-        user_num_in_one_batch = self.batch_size // self.neg_sample_args['to']
-        new_batch_size = (user_num_in_one_batch + 1) * self.neg_sample_args['to']
-        self.step = user_num_in_one_batch + 1 if self.real_time_neg_sampling else new_batch_size
+        batch_num = self.batch_size // self.neg_sample_args['to']
+        new_batch_size = (batch_num + 1) * self.neg_sample_args['to']
+        self.step = batch_num + 1 if self.real_time_neg_sampling else new_batch_size
 
     @property
     def next_pr(self):
