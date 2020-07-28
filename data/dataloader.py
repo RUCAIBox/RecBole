@@ -22,18 +22,24 @@ class AbstractDataLoader(object):
         self.shuffle = shuffle
         self.pr = 0
 
-        if self.shuffle:
-            self.dataset.shuffle()
-
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.pr >= len(self.dataset):
+        if self.pr >= self.pr_end:
             self.pr = 0
+            if self.shuffle:
+                self._shuffle()
             raise StopIteration()
         cur_data = self._next_dataframe()
         return self._dataframe_to_interaction(cur_data)
+
+    @property
+    def pr_end(self):
+        raise NotImplementedError('Method [pr_end] should be implemented')
+
+    def _shuffle(self):
+        raise NotImplementedError('Method [shuffle] should be implemented.')
 
     def _next_dataframe(self):
         raise NotImplementedError('Method [next_dataframe] should be implemented.')
@@ -112,8 +118,15 @@ class InteractionBasedDataLoader(NegSampleBasedDataLoader):
         self.step = batch_num + 1 if self.real_time_neg_sampling else new_batch_size
         self.set_batch_size(new_batch_size)
 
+    @property
+    def pr_end(self):
+        return len(self.dataset)
+
+    def _shuffle(self):
+        self.dataset.shuffle()
+
     def _next_dataframe(self):
-        cur_data = self.dataset[self.pr: self.pr + self.step - 1]
+        cur_data = self.dataset[self.pr: self.pr + self.step]
         self.pr += self.step
         if self.real_time_neg_sampling:
             cur_data = self._neg_sampling(cur_data)
@@ -194,15 +207,28 @@ class GroupedDataLoader(NegSampleBasedDataLoader):
         self.step = batch_num + 1 if self.real_time_neg_sampling else new_batch_size
 
     @property
+    def pr_end(self):
+        if self.real_time_neg_sampling:
+            return len(self.uid2items)
+        else:
+            return len(self.dataset)
+
+    def _shuffle(self):
+        if self.real_time_neg_sampling:
+            self.uid2items = self.uid2items.sample(frac=1).reset_index(drop=True)
+        else:
+            self.dataset.shuffle()
+
+    @property
     def next_pr(self):
         return self.next[self.pr]
 
     def _next_dataframe(self):
         if self.real_time_neg_sampling:
-            cur_data = self._neg_sampling(self.uid2items[self.pr: self.pr + self.step - 1])
+            cur_data = self._neg_sampling(self.uid2items[self.pr: self.pr + self.step])
             self.pr += self.step
         else:
-            cur_data = self.dataset[self.pr: self.next_pr - 1]
+            cur_data = self.dataset[self.pr: self.next_pr]
             self.pr = self.next_pr
         return cur_data
 
@@ -222,8 +248,9 @@ class GroupedDataLoader(NegSampleBasedDataLoader):
             label_field: []
         }
 
-        for i, uid in enumerate(uid2items):
-            pos_item_id = uid2items[uid][:self.neg_sample_args['to'] - 1]
+        for i, row in enumerate(uid2items.itertuples()):
+            uid = getattr(row, uid_field)
+            pos_item_id = getattr(row, iid_field)[:self.neg_sample_args['to'] - 1]
             pos_num = len(pos_item_id)
             neg_item_id = self.sampler.sample_by_user_id(self.phase, uid, self.neg_sample_args['to'] - pos_num)
             neg_num = len(neg_item_id)

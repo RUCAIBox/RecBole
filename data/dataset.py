@@ -262,7 +262,7 @@ class Dataset(object):
 
     @property
     def uid2items(self):
-        return self.inter_feat.groupby(self.uid_field)[self.iid_field].agg(lambda x: list(x.array)).to_dict()
+        return self.inter_feat.groupby(self.uid_field)[self.iid_field].agg(lambda x: list(x.array)).reset_index()
 
     def join(self, df):
         if self.user_feat is not None:
@@ -272,7 +272,7 @@ class Dataset(object):
         return df
 
     def __getitem__(self, index, join=True):
-        df = self.inter_feat.loc[index]
+        df = self.inter_feat[index]
         return self.join(df) if join else df
 
     def __len__(self):
