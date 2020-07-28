@@ -106,8 +106,22 @@ class InteractionBasedDataLoader(NegSampleBasedDataLoader):
                  batch_size=1, dl_format='pointwise', shuffle=False):
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in InteractionBasedDataLoader() should be `by`')
+        if dl_format == 'pairwise' and neg_sample_args['by'] != 1:
+            raise ValueError('Pairwise dataloader can only neg sample by 1')
+
         super(InteractionBasedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                          batch_size, dl_format, shuffle)
+
+        if self.dl_format == 'pairwise':
+            neg_prefix = self.config['NEG_PREFIX']
+            iid_field = self.config['ITEM_ID_FIELD']
+
+            columns = [iid_field] if self.dataset.item_feat is None else self.dataset.item_feat.columns
+            for item_feat_col in columns:
+                neg_item_feat_col = neg_prefix + item_feat_col
+                self.dataset.field2type[neg_item_feat_col] = self.dataset.field2type[item_feat_col]
+                self.dataset.field2source[neg_item_feat_col] = self.dataset.field2source[item_feat_col]
+                self.dataset.field2seqlen[neg_item_feat_col] = self.dataset.field2seqlen[item_feat_col]
 
     def _batch_size_adaptation(self):
         if self.dl_format == 'pairwise':
@@ -139,7 +153,9 @@ class InteractionBasedDataLoader(NegSampleBasedDataLoader):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         uids = inter_feat[uid_field].to_list()
-        neg_iids = [self.sampler.sample_by_user_id(self.phase, uid, self.neg_sample_args['by']) for uid in uids]
+        neg_iids = [self.sampler.sample_one_by_user_id(self.phase, uid)
+                    for i in range(self.neg_sample_args['by'])
+                    for uid in uids]
         if self.dl_format == 'pointwise':
             sampling_func = self._neg_sample_by_point_wise_sampling
         elif self.dl_format == 'pairwise':
@@ -149,30 +165,18 @@ class InteractionBasedDataLoader(NegSampleBasedDataLoader):
         return sampling_func(uid_field, iid_field, neg_iids, inter_feat)
 
     def _neg_sample_by_pair_wise_sampling(self, uid_field, iid_field, neg_iids, inter_feat):
-        if self.neg_sample_args['by'] != 1:
-            raise ValueError('Pairwise dataloader can only neg sample by 1')
         neg_prefix = self.config['NEG_PREFIX']
         neg_item_id = neg_prefix + iid_field
-        neg_iids = np.array(neg_iids).ravel()
-
         inter_feat.insert(len(inter_feat.columns), neg_item_id, neg_iids)
-        self.dataset.field2type[neg_item_id] = 'token'
-        self.dataset.field2source[neg_item_id] = 'item_id'
-        self.dataset.field2seqlen[neg_item_id] = self.dataset.field2seqlen[iid_field]
 
         if self.dataset.item_feat is not None:
             neg_item_feat = self.dataset.item_feat.add_prefix(neg_prefix)
             inter_feat = pd.merge(inter_feat, neg_item_feat,
                                   on=neg_item_id, how='left', suffixes=('_inter', '_item'))
-            for neg_item_feat_col, item_feat_col in zip(neg_item_feat.columns, self.dataset.item_feat.columns):
-                self.dataset.field2type[neg_item_feat_col] = self.dataset.field2type[item_feat_col]
-                self.dataset.field2source[neg_item_feat_col] = self.dataset.field2source[item_feat_col]
-                self.dataset.field2seqlen[neg_item_feat_col] = self.dataset.field2seqlen[item_feat_col]
 
         return inter_feat
 
     def _neg_sample_by_point_wise_sampling(self, uid_field, iid_field, neg_iids, inter_feat):
-        neg_iids = list(np.array(neg_iids).T.ravel())
         neg_iids = inter_feat[iid_field].to_list() + neg_iids
 
         pos_inter_num = len(inter_feat)
@@ -198,6 +202,11 @@ class GroupedDataLoader(NegSampleBasedDataLoader):
         self.uid2items = dataset.uid2items
         super(GroupedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                 batch_size, dl_format, shuffle)
+
+        label_field = self.config['LABEL_FIELD']
+        self.dataset.field2type[label_field] = 'float'
+        self.dataset.field2source[label_field] = 'inter'
+        self.dataset.field2seqlen[label_field] = 1
 
     def _batch_size_adaptation(self):
         if self.neg_sample_args['to'] == -1:
@@ -240,9 +249,6 @@ class GroupedDataLoader(NegSampleBasedDataLoader):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         label_field = self.config['LABEL_FIELD']
-        self.dataset.field2type[label_field] = 'float'
-        self.dataset.field2source[label_field] = 'inter'
-        self.dataset.field2seqlen[label_field] = 1
         new_inter = {
             uid_field: [],
             iid_field: [],
