@@ -139,7 +139,9 @@ class InteractionBasedDataLoader(NegSampleBasedDataLoader):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         uids = inter_feat[uid_field].to_list()
-        neg_iids = [self.sampler.sample_by_user_id(self.phase, uid, self.neg_sample_args['by']) for uid in uids]
+        neg_iids = [self.sampler.sample_one_by_user_id(self.phase, uid)
+                    for i in range(self.neg_sample_args['by'])
+                    for uid in uids]
         if self.dl_format == 'pointwise':
             sampling_func = self._neg_sample_by_point_wise_sampling
         elif self.dl_format == 'pairwise':
@@ -153,7 +155,6 @@ class InteractionBasedDataLoader(NegSampleBasedDataLoader):
             raise ValueError('Pairwise dataloader can only neg sample by 1')
         neg_prefix = self.config['NEG_PREFIX']
         neg_item_id = neg_prefix + iid_field
-        neg_iids = np.array(neg_iids).ravel()
 
         inter_feat.insert(len(inter_feat.columns), neg_item_id, neg_iids)
         self.dataset.field2type[neg_item_id] = 'token'
@@ -172,7 +173,6 @@ class InteractionBasedDataLoader(NegSampleBasedDataLoader):
         return inter_feat
 
     def _neg_sample_by_point_wise_sampling(self, uid_field, iid_field, neg_iids, inter_feat):
-        neg_iids = list(np.array(neg_iids).T.ravel())
         neg_iids = inter_feat[iid_field].to_list() + neg_iids
 
         pos_inter_num = len(inter_feat)
