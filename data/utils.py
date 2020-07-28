@@ -3,15 +3,18 @@ from .dataloader import *
 from config import EvalSetting
 from utils import ModelType
 
+
 def data_preparation(config, model, dataset, save=False):
     es = EvalSetting(config)
     es.RO_RS_uni()
 
     builded_datasets = dataset.build(es)
-    train_dataset, test_dataset, valid_dataset = builded_datasets
+    train_dataset, valid_dataset, test_dataset = builded_datasets
+    names = ['train', 'valid', 'test']
+    sampler = Sampler(config, names, builded_datasets)
 
     if save:
-        save_datasets(config['checkpoint_dir'], name=['train', 'test', 'valid'], dataset=builded_datasets)
+        save_datasets(config['checkpoint_dir'], name=names, dataset=builded_datasets)
 
     es.neg_sample_by(1, real_time=True)
     train_data = dataloader_construct(
@@ -19,6 +22,8 @@ def data_preparation(config, model, dataset, save=False):
         config=config,
         eval_setting=es,
         dataset=train_dataset,
+        sampler=sampler,
+        phase='train',
         dl_type=model.type,
         dl_format=config['input_format'],
         batch_size=config['train_batch_size'],
@@ -26,55 +31,65 @@ def data_preparation(config, model, dataset, save=False):
     )
 
     es.neg_sample_to(config['test_neg_sample_num'])
-    test_data, valid_data = dataloader_construct(
+    valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
         eval_setting=es,
-        dataset=[test_dataset, valid_dataset],
+        dataset=[valid_dataset, test_dataset],
+        sampler=sampler,
+        phase=['valid', 'test'],
         dl_type=model.type,
         batch_size=config['eval_batch_size']
     )
 
-    return train_data, test_data, valid_data
+    return train_data, valid_data, test_data
 
-def dataloader_construct(name, config, eval_setting, dataset,
+
+def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
                          dl_type=ModelType.GENERAL, dl_format='pointwise',
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
         dataset = [dataset]
+    if not isinstance(phase, list):
+        phase = [phase]
 
     if not isinstance(batch_size, list):
         batch_size = [batch_size] * len(dataset)
 
     if len(dataset) != len(batch_size):
         raise ValueError('dataset {} and batch_size {} should have the same length'.format(dataset, batch_size))
+    if len(dataset) != len(phase):
+        raise ValueError('dataset {} and phase {} should have the same length'.format(dataset, phase))
 
     print('Build [{}] DataLoader for [{}] with format [{}]\n'.format(dl_type, name, dl_format))
     print(eval_setting)
     print('batch_size = {}, shuffle = {}\n'.format(batch_size, shuffle))
 
     if dl_type == ModelType.GENERAL:
-        DataLoader = GeneralDataLoader
+        DataLoader = get_data_loader(eval_setting.neg_sample_args)
     else:
         raise NotImplementedError('dl_type [{}] has not been implemented'.format(dl_type))
 
     ret = []
 
-    for i, ds in enumerate(dataset):
+    for i, (ds, ph) in enumerate(zip(dataset, phase)):
         dl = DataLoader(
             config=config,
             dataset=ds,
+            sampler=sampler,
+            phase=ph,
             neg_sample_args=eval_setting.neg_sample_args,
             batch_size=batch_size[i],
             dl_format=dl_format,
             shuffle=shuffle
         )
         ret.append(dl)
-    
+
     if len(ret) == 1:
         return ret[0]
     else:
         return ret
+
 
 def save_datasets(save_path, name, dataset):
     if (not isinstance(name, list)) and (not isinstance(dataset, list)):
