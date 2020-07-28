@@ -46,7 +46,8 @@ class Dataset(object):
             lowest_val=config['lowest_val'],
             highest_val=config['highest_val'],
             equal_val=config['equal_val'],
-            not_equal_val=config['not_equal_val']
+            not_equal_val=config['not_equal_val'],
+            drop=config['drop_filter_field']
         )
 
         self._remap_ID_all()
@@ -169,19 +170,29 @@ class Dataset(object):
     def filter_users(self):
         pass
 
-    def _filter_inters(self, val, cmp):
+    def _filter_inters(self, val, cmp, drop=False):
         if val is not None:
             for field in val:
                 if field not in self.field2type:
                     raise ValueError('field [{}] not defined in dataset'.format(field))
                 self.inter_feat = self.inter_feat[cmp(self.inter_feat[field].values, val[field])]
+                if drop:
+                    self._del_col(field)
+
+    def _del_col(self, field):
+        for feat in [self.inter_feat, self.user_feat, self.item_feat]:
+            if feat is not None and field in feat:
+                feat.drop(columns=field, inplace=True)
+        for dct in [self.field2id_token, self.field2seqlen, self.field2source, self.field2type]:
+            if field in dct:
+                del dct[field]
 
     # TODO
-    def filter_inters(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None):
-        self._filter_inters(lowest_val, lambda x, y: x >= y)
-        self._filter_inters(highest_val, lambda x, y: x <= y)
-        self._filter_inters(equal_val, lambda x, y: x == y)
-        self._filter_inters(not_equal_val, lambda x, y: x != y)
+    def filter_inters(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None, drop=False):
+        self._filter_inters(lowest_val, lambda x, y: x >= y, drop)
+        self._filter_inters(highest_val, lambda x, y: x <= y, drop)
+        self._filter_inters(equal_val, lambda x, y: x == y, drop)
+        self._filter_inters(not_equal_val, lambda x, y: x != y, drop)
         self.inter_feat.reset_index(drop=True, inplace=True)
 
     def _remap_ID_all(self):
@@ -260,13 +271,20 @@ class Dataset(object):
     def sparsity(self):
         return 1 - self.inter_num / self.user_num / self.item_num
 
-    def __getitem__(self, index):
-        df = self.inter_feat.loc[index]
+    @property
+    def uid2items(self):
+        return self.inter_feat.groupby(self.uid_field)[self.iid_field].agg(lambda x: list(x.array)).reset_index()
+
+    def join(self, df):
         if self.user_feat is not None:
             df = pd.merge(df, self.user_feat, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
         if self.item_feat is not None:
             df = pd.merge(df, self.item_feat, on=self.iid_field, how='left', suffixes=('_inter', '_item'))
         return df
+
+    def __getitem__(self, index, join=True):
+        df = self.inter_feat[index]
+        return self.join(df) if join else df
 
     def __len__(self):
         return len(self.inter_feat)
