@@ -2,11 +2,8 @@ import abc
 import numpy as np
 import pandas as pd
 import utils
-import swifter
 import warnings
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 from collections import defaultdict
-from itertools import groupby
 
 
 # 'Precision', 'Hit', 'Recall', 'MAP', 'NDCG', 'MRR', 'AUC'
