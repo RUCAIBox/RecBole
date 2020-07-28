@@ -61,3 +61,15 @@ class Sampler(object):
             if user_id < 0 or user_id >= self.n_users:
                 raise ValueError('user_id [{}] not exist'.format(user_id))
 
+    def sample_one_by_user_id(self, phase, user_id):
+        try:
+            for step in range(self.n_items):
+                cur = self.random_item()
+                if cur not in self.used_item_id[phase][user_id]:
+                    return cur
+        except KeyError:
+            if phase not in self.phases:
+                raise ValueError('phase [{}] not exist'.format(phase))
+        except IndexError:
+            if user_id < 0 or user_id >= self.n_users:
+                raise ValueError('user_id [{}] not exist'.format(user_id))
