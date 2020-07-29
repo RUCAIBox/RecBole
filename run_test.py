@@ -49,7 +49,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     生成 训练/验证/测试 数据
     """
-    train_data, test_data, valid_data = data_preparation(config, model, dataset)
+    train_data, test_data, valid_data = data_preparation(config, logger, model, dataset)
 
     """
     初始化 trainer
