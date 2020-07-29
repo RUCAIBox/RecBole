@@ -320,7 +320,7 @@ class Dataset(object):
         cnt = [int(ratios[i] * tot) for i in range(len(ratios))]
         cnt[-1] = tot - sum(cnt[0:-1])
         split_ids = np.cumsum(cnt)[:-1]
-        return split_ids
+        return list(split_ids)
 
     def split_by_ratio(self, ratios, group_by=None):
         tot_ratio = sum(ratios)
@@ -329,18 +329,17 @@ class Dataset(object):
         if group_by is None:
             tot_cnt = self.__len__()
             split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
-            next_df = [_.reset_index(drop=True) for _ in np.split(self.inter_feat, split_ids)]
+            next_index = [range(start, end) for start, end in zip([0] + split_ids, split_ids + [tot_cnt])]
         else:
-            grouped_inter_feat = self.inter_feat.groupby(by=group_by)
-            next_df = []
-            for uid, grouped_feats in grouped_inter_feat:
-                tot_cnt = len(grouped_feats)
+            grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
+            next_index = [[] for i in range(len(ratios))]
+            for grouped_index in grouped_inter_feat_index:
+                tot_cnt = len(grouped_index)
                 split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
-                splited_grouped_df = np.split(grouped_feats, split_ids)
-                next_df.append(splited_grouped_df)
-            next_df = zip(*next_df)
-            next_df = [pd.concat(_).reset_index(drop=True) for _ in next_df]
+                for index, start, end in zip(next_index, [0] + split_ids, split_ids + [tot_cnt]):
+                    index.extend(grouped_index[start: end])
 
+        next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
