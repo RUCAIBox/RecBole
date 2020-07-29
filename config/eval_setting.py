@@ -22,7 +22,7 @@ class EvalSetting(object):
         info += ('\tGroup by {}\n'.format(self.group_field) if self.group_field is not None else '\tNo Grouping\n')
         info += ('\tOrdering: {}\n'.format(self.ordering_args) if (self.ordering_args is not None and self.ordering_args['strategy'] != 'none') else '\tNo Ordering\n')
         info += ('\tSplitting: {}\n'.format(self.split_args) if (self.split_args is not None and self.split_args['strategy'] != 'none') else '\tNo Splitting\n')
-        info += ('\tNegative Sampling: {}\n'.format(self.neg_sample_args) if (self.neg_sample_args is not None and self.neg_sample_args['strategy'] != 'none') else '\tNo Negative Sampling\n')
+        info += ('\tNegative Sampling: {}'.format(self.neg_sample_args) if (self.neg_sample_args is not None and self.neg_sample_args['strategy'] != 'none') else '\tNo Negative Sampling\n')
         return info
 
     def __repr__(self):
