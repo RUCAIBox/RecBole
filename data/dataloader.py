@@ -122,6 +122,11 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
                 self.dataset.field2type[neg_item_feat_col] = self.dataset.field2type[item_feat_col]
                 self.dataset.field2source[neg_item_feat_col] = self.dataset.field2source[item_feat_col]
                 self.dataset.field2seqlen[neg_item_feat_col] = self.dataset.field2seqlen[item_feat_col]
+        else:
+            label_field = self.config['LABEL_FIELD']
+            self.dataset.field2type[label_field] = 'float'
+            self.dataset.field2source[label_field] = 'inter'
+            self.dataset.field2seqlen[label_field] = 1
 
     def _batch_size_adaptation(self):
         if self.dl_format == 'pairwise':
