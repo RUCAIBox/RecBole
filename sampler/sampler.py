@@ -4,10 +4,10 @@
 # @File   : sampler.py
 
 import random
-import copy
 
 
 class Sampler(object):
+    @profile
     def __init__(self, config, phases, datasets):
         if not isinstance(phases, list):
             phases = [phases]
@@ -34,9 +34,9 @@ class Sampler(object):
         self.used_item_id = dict()
         last = [set() for i in range(self.n_users)]
         for phase, dataset in zip(self.phases, self.datasets):
-            cur = copy.deepcopy(last)
-            for row in dataset.inter_feat.itertuples():
-                cur[getattr(row, uid_field)].add(getattr(row, iid_field))
+            cur = [set(s) for s in last]
+            for uid, iid in dataset.inter_feat[[uid_field, iid_field]].values:
+                cur[uid].add(iid)
             last = self.used_item_id[phase] = cur
 
     def random_item(self):
