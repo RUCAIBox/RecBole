@@ -115,7 +115,7 @@ class Trainer(AbstractTrainer):
         message_output = 'Checkpoint loaded. Resume training from epoch {}'.format(self.start_epoch)
         print(message_output)
 
-    def fit(self, train_data, valid_data=None):
+    def fit(self, train_data, valid_data=None, verbose=True):
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
@@ -124,13 +124,15 @@ class Trainer(AbstractTrainer):
             training_end_time = time()
             train_loss_output = "epoch %d training [time: %.2fs, train loss: %.4f]" % \
                                 (epoch_idx, training_end_time - training_start_time, train_loss)
-            print(train_loss_output)
+            if verbose:
+                self.logger.info(train_loss_output)
 
             # eval
             if self.eval_step <= 0 or not valid_data:
                 self._save_checkpoint(epoch_idx)
                 update_output = 'Saving current: %s' % self.saved_model_file
-                print(update_output)
+                if verbose:
+                    self.logger.info(update_output)
                 continue
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
@@ -142,17 +144,21 @@ class Trainer(AbstractTrainer):
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
                 valid_result_output = 'valid result: \n' + dict2str(valid_result)
-                print(valid_score_output)
-                print(valid_result_output)
+                if verbose:
+                    self.logger.info(valid_score_output)
+                    self.logger.info(valid_result_output)
                 if update_flag:
                     self._save_checkpoint(epoch_idx)
                     update_output = 'Saving current best: %s' % self.saved_model_file
                     self.best_valid_result = valid_result
-                    print(update_output)
+                    if verbose:
+                        self.logger.info(update_output)
+
                 if stop_flag:
                     stop_output = 'Finished training, best eval result in epoch %d' % \
                                   (epoch_idx - self.cur_step * self.eval_step)
-                    print(stop_output)
+                    if verbose:
+                        self.logger.info(stop_output)
                     break
         return self.best_valid_score, self.best_valid_result
 
@@ -165,7 +171,7 @@ class Trainer(AbstractTrainer):
             checkpoint = torch.load(checkpoint_file)
             self.model.load_state_dict(checkpoint['state_dict'])
             message_output = 'Loading model structure and parameters from {}'.format(checkpoint_file)
-            print(message_output)
+            #print(message_output)
 
         self.model.eval()
         batch_result_list, batch_size_list = [], []

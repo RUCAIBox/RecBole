@@ -130,6 +130,7 @@ class EvalSetting(object):
         to (int): Negative Sampling Until `pos + num == to`.
         by (int): Negative Sampling `by` neg cases for one pos case.
         real_time (bool): real time negative sampling if True, else negative cases will be pre-sampled and stored.
+        distribution (str): distribution of sampler, either 'uniform' or 'popularity'.
 
     Example:
         >>> es.neg_sample_to(100, real_time=True)
@@ -140,10 +141,8 @@ class EvalSetting(object):
         legal_strategy = {'none', 'to', 'by'}
         if strategy not in legal_strategy:
             raise ValueError('Negative Sampling Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
-        if self.neg_sample_args is not None:
-            self.neg_sample_args.update({'strategy': strategy, 'real_time': real_time})
-        else:
-            self.neg_sample_args = {'strategy': strategy, 'real_time': real_time, 'distribution': 'uniform'}
+        distrib = self.neg_sample_args['distribution'] if self.neg_sample_args is not None else 'uniform'
+        self.neg_sample_args = {'strategy': strategy, 'real_time': real_time, 'distribution': distrib}
         self.neg_sample_args.update(kwargs)
 
     def neg_sample_to(self, to, real_time=False):
@@ -181,39 +180,39 @@ class EvalSetting(object):
     full: all non-ground-truth items
     uni: uniform sampling       pop: popularity sampling        neg_sample_by 100 by default.
     """
-    def RO_RS_full(self, ratios=[0.8, 0.1, 0.1]):
+    def RO_RS(self, ratios=[0.8, 0.1, 0.1]):
         self.group_by_user()
         self.random_ordering()
         self.split_by_ratio(ratios)
-        self.full_sort()
 
-    def TO_RS_full(self, ratios=[0.8, 0.1, 0.1]):
+    def TO_RS(self, ratios=[0.8, 0.1, 0.1]):
         self.group_by_user()
         self.temporal_ordering()
         self.split_by_ratio(ratios)
-        self.full_sort()
 
-    def RO_LS_full(self):
+    def RO_LS(self):
         self.group_by_user()
         self.random_ordering()
         self.leave_one_out()
-        self.full_sort()
 
-    def TO_LS_full(self):
+    def TO_LS(self):
         self.group_by_user()
         self.temporal_ordering()
         self.leave_one_out()
-        self.full_sort()
 
-    def RO_RS_uni(self, ratios=[0.8, 0.1, 0.1], by=100):
-        self.group_by_user()
-        self.random_ordering()
-        self.split_by_ratio(ratios)
-        self.neg_sample_by(by)
+    def uni100(self):
+        self.neg_sample_by(100)
 
-    def RO_RS_pop(self, ratios=[0.8, 0.1, 0.1], by=100):
-        self.group_by_user()
-        self.random_ordering()
-        self.split_by_ratio(ratios)
-        self.neg_sample_by(by)
+    def pop100(self):
+        self.neg_sample_by(100)
         self.popularity_based_sampling()
+
+    def uni1000(self):
+        self.neg_sample_by(1000)
+
+    def pop1000(self):
+        self.neg_sample_by(1000)
+        self.popularity_based_sampling()
+
+    def full(self):
+        self.full_sort(real_time=True)
