@@ -110,7 +110,7 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
             raise ValueError('Pairwise dataloader can only neg sample by 1')
 
         super(GeneralInteractionBasedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
-                                                         batch_size, dl_format, shuffle)
+                                                                batch_size, dl_format, shuffle)
 
         if self.dl_format == 'pairwise':
             neg_prefix = self.config['NEG_PREFIX']
@@ -205,8 +205,10 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
             raise ValueError('pairwise dataloader cannot neg sample to')
 
         self.uid2items = dataset.uid2items
+        self.full = (neg_sample_args['to'] == -1)
+
         super(GeneralGroupedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
-                                                batch_size, dl_format, shuffle)
+                                                       batch_size, dl_format, shuffle)
 
         label_field = self.config['LABEL_FIELD']
         self.dataset.field2type[label_field] = 'float'
@@ -262,10 +264,17 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
 
         for i, row in enumerate(uid2items.itertuples()):
             uid = getattr(row, uid_field)
-            pos_item_id = getattr(row, iid_field)[:self.neg_sample_args['to'] - 1]
-            pos_num = len(pos_item_id)
-            neg_item_id = self.sampler.sample_by_user_id(self.phase, uid, self.neg_sample_args['to'] - pos_num)
-            neg_num = len(neg_item_id)
+            if self.full:
+                pos_item_id = getattr(row, iid_field)
+                pos_num = len(pos_item_id)
+                neg_item_id = self.sampler.sample_full_by_user_id(self.phase, uid)
+                neg_num = len(neg_item_id)
+            else:
+                neg_sample_to = self.neg_sample_args['to']
+                pos_item_id = getattr(row, iid_field)[:neg_sample_to - 1]
+                pos_num = len(pos_item_id)
+                neg_item_id = self.sampler.sample_by_user_id(self.phase, uid, neg_sample_to - pos_num)
+                neg_num = len(neg_item_id)
 
             new_inter[uid_field].extend([uid] * (pos_num + neg_num))
             new_inter[iid_field].extend(pos_item_id + neg_item_id)
