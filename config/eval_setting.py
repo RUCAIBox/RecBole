@@ -213,7 +213,6 @@ class EvalSetting(object):
     def pop1000(self):
         self.neg_sample_by(1000)
         self.popularity_based_sampling()
-        self.popularity_based_sampling()
 
     def full(self):
         self.full_sort(real_time=True)
