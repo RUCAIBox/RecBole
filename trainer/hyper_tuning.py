@@ -173,6 +173,15 @@ class HyperTuning(object):
             params_str += param_name + ':' + str(params[param_name]) + ', '
         return params_str[:-2]
 
+    @staticmethod
+    def print_result(result_dict: dict):
+        print('current best valid score: %.4f' % result_dict['best_valid_score'])
+        print('current best valid result:')
+        print(result_dict['best_valid_result'])
+        print('current test result:')
+        print(result_dict['test_result'])
+        print()
+
     def trial(self, params):
         config_dict = params
         params_str = self.params2str(params)
@@ -184,15 +193,18 @@ class HyperTuning(object):
         if not self.best_score:
             self.best_score = score
             self.best_params = params
+            self.print_result(result_dict)
         else:
             if bigger:
                 if score > self.best_score:
                     self.best_score = score
                     self.best_params = params
+                    self.print_result(result_dict)
             else:
                 if score < self.best_score:
                     self.best_score = score
                     self.best_params = params
+                    self.print_result(result_dict)
 
         if bigger:
             score = - score
