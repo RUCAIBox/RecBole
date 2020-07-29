@@ -135,7 +135,6 @@ class EvalSetting(object):
     Example:
         >>> es.neg_sample_to(100, real_time=True)
         >>> es.neg_sample_by(1)
-        >>> es.full_sort()  # the same with `es.neg_sample_to(-1, real_time=True)`
     """
     def set_neg_sampling(self, strategy='none', real_time=False, **kwargs):
         legal_strategy = {'none', 'to', 'by'}
@@ -148,9 +147,6 @@ class EvalSetting(object):
     def neg_sample_to(self, to, real_time=False):
         self.set_neg_sampling(strategy='to', to=to, real_time=real_time)
 
-    def full_sort(self, real_time=True):
-        self.neg_sample_to(to=-1, real_time=real_time)
-
     def neg_sample_by(self, by, real_time=False):
         self.set_neg_sampling(strategy='by', by=by, real_time=real_time)
 
@@ -160,9 +156,7 @@ class EvalSetting(object):
         distribution (str): Either 'uniform' or 'popularity'.
 
     Example:
-        >>> es.neg_sample_to(100, real_time=True)
-        >>> es.neg_sample_by(1)
-        >>> es.full_sort()  # the same with `es.neg_sample_to(-1, real_time=True)`
+        >>> es.popularity_based_sampling()
     """
     def set_sampling_distribution(self, distribution='uniform'):
         legal_distribution = {'uniform', 'popularity'}
@@ -214,5 +208,5 @@ class EvalSetting(object):
         self.neg_sample_by(1000)
         self.popularity_based_sampling()
 
-    def full(self):
-        self.full_sort(real_time=True)
+    def full(self, real_time=True):
+        self.neg_sample_to(to=-1, real_time=real_time)
