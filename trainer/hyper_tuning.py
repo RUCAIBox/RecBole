@@ -12,12 +12,58 @@ from hyperopt import fmin, tpe, hp, pyll
 from hyperopt.base import miscs_update_idxs_vals
 from hyperopt.pyll.base import dfs, as_apply
 from hyperopt.pyll.stochastic import implicit_stochastic_symbols
+from hyperopt.pyll.base import Apply
 
 
 """
 Thanks to sbrodeur for the exhaustive search code.
 https://github.com/hyperopt/hyperopt/issues/200
 """
+
+
+def recursiveFindNodes(root, node_type='switch'):
+    nodes = []
+    if isinstance(root, (list, tuple)):
+        for node in root:
+            nodes.extend(recursiveFindNodes(node, node_type))
+    elif isinstance(root, dict):
+        for node in root.values():
+            nodes.extend(recursiveFindNodes(node, node_type))
+    elif isinstance(root, (Apply)):
+        if root.name == node_type:
+            nodes.append(root)
+
+        for node in root.pos_args:
+            if node.name == node_type:
+                nodes.append(node)
+        for _, node in root.named_args:
+            if node.name == node_type:
+                nodes.append(node)
+    return nodes
+
+
+def parameters(space):
+    # Analyze the domain instance to find parameters
+    parameters = {}
+    if isinstance(space, dict):
+        space = list(space.values())
+    for node in recursiveFindNodes(space, 'switch'):
+
+        # Find the name of this parameter
+        paramNode = node.pos_args[0]
+        assert paramNode.name == 'hyperopt_param'
+        paramName = paramNode.pos_args[0].obj
+
+        # Find all possible choices for this parameter
+        values = [literal.obj for literal in node.pos_args[1:]]
+        parameters[paramName] = np.array(range(len(values)))
+    return parameters
+
+
+def spacesize(space):
+    # Compute the number of possible combinations
+    params = parameters(space)
+    return np.prod([len(values) for values in params.values()])
 
 
 class ExhaustiveSearchError(Exception):
@@ -74,12 +120,13 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
 
 
 class HyperTuning(object):
-    def __init__(self, objective_function, space=None, params_file=None, algo=tpe.suggest, max_evals=100):
+    def __init__(self, data_generation_function, objective_function, space=None, params_file=None, algo=tpe.suggest, max_evals=100):
         self.best_score = None
         self.best_params = None
         self.best_test_result = None
         self.params2result = {}
 
+        self.dataset, self.dataloader = data_generation_function()
         self.objective_function = objective_function
         self.max_evals = max_evals
         if space:
@@ -91,7 +138,7 @@ class HyperTuning(object):
         if isinstance(algo, str):
             if algo == 'exhaustive':
                 self.algo = partial(exhaustive_search, nbMaxSucessiveFailures=1000)
-                self.max_evals = np.inf
+                self.max_evals = spacesize(self.space)
             else:
                 raise ValueError('Illegal algo [{}]'.format(algo))
         else:
@@ -129,7 +176,8 @@ class HyperTuning(object):
     def trial(self, params):
         config_dict = params
         params_str = self.params2str(params)
-        result_dict = self.objective_function(config_dict)
+        print('running parameters:', config_dict)
+        result_dict = self.objective_function(self.dataset, self.dataloader, config_dict)
         self.params2result[params_str] = result_dict
         score, bigger = result_dict['best_valid_score'], result_dict['valid_score_bigger']
 
