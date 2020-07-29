@@ -35,6 +35,7 @@ def data_preparation_function():
     print(model)
 
     train_data, test_data, valid_data = data_preparation(config, logger, model, dataset)
+
     dataloader = {
         'train_data': train_data,
         'test_data': test_data,

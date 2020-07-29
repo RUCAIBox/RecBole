@@ -101,16 +101,16 @@ class NegSampleBasedDataLoader(AbstractDataLoader):
         raise NotImplementedError('Method [neg_sampling] should be implemented.')
 
 
-class InteractionBasedDataLoader(NegSampleBasedDataLoader):
+class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format='pointwise', shuffle=False):
         if neg_sample_args['strategy'] != 'by':
-            raise ValueError('neg_sample strategy in InteractionBasedDataLoader() should be `by`')
+            raise ValueError('neg_sample strategy in GeneralInteractionBasedDataLoader() should be `by`')
         if dl_format == 'pairwise' and neg_sample_args['by'] != 1:
             raise ValueError('Pairwise dataloader can only neg sample by 1')
 
-        super(InteractionBasedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
-                                                         batch_size, dl_format, shuffle)
+        super(GeneralInteractionBasedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
+                                                                batch_size, dl_format, shuffle)
 
         if self.dl_format == 'pairwise':
             neg_prefix = self.config['NEG_PREFIX']
@@ -122,6 +122,11 @@ class InteractionBasedDataLoader(NegSampleBasedDataLoader):
                 self.dataset.field2type[neg_item_feat_col] = self.dataset.field2type[item_feat_col]
                 self.dataset.field2source[neg_item_feat_col] = self.dataset.field2source[item_feat_col]
                 self.dataset.field2seqlen[neg_item_feat_col] = self.dataset.field2seqlen[item_feat_col]
+        else:
+            label_field = self.config['LABEL_FIELD']
+            self.dataset.field2type[label_field] = 'float'
+            self.dataset.field2source[label_field] = 'inter'
+            self.dataset.field2seqlen[label_field] = 1
 
     def _batch_size_adaptation(self):
         if self.dl_format == 'pairwise':
@@ -191,17 +196,19 @@ class InteractionBasedDataLoader(NegSampleBasedDataLoader):
         return self.dataset.join(new_df) if self.real_time_neg_sampling else new_df
 
 
-class GroupedDataLoader(NegSampleBasedDataLoader):
+class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format='pointwise', shuffle=False):
         if neg_sample_args['strategy'] != 'to':
-            raise ValueError('neg_sample strategy in GroupedDataLoader() should be `to`')
+            raise ValueError('neg_sample strategy in GeneralGroupedDataLoader() should be `to`')
         if dl_format == 'pairwise':
             raise ValueError('pairwise dataloader cannot neg sample to')
 
         self.uid2items = dataset.uid2items
-        super(GroupedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
-                                                batch_size, dl_format, shuffle)
+        self.full = (neg_sample_args['to'] == -1)
+
+        super(GeneralGroupedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
+                                                       batch_size, dl_format, shuffle)
 
         label_field = self.config['LABEL_FIELD']
         self.dataset.field2type[label_field] = 'float'
@@ -257,10 +264,17 @@ class GroupedDataLoader(NegSampleBasedDataLoader):
 
         for i, row in enumerate(uid2items.itertuples()):
             uid = getattr(row, uid_field)
-            pos_item_id = getattr(row, iid_field)[:self.neg_sample_args['to'] - 1]
-            pos_num = len(pos_item_id)
-            neg_item_id = self.sampler.sample_by_user_id(self.phase, uid, self.neg_sample_args['to'] - pos_num)
-            neg_num = len(neg_item_id)
+            if self.full:
+                pos_item_id = getattr(row, iid_field)
+                pos_num = len(pos_item_id)
+                neg_item_id = self.sampler.sample_full_by_user_id(self.phase, uid)
+                neg_num = len(neg_item_id)
+            else:
+                neg_sample_to = self.neg_sample_args['to']
+                pos_item_id = getattr(row, iid_field)[:neg_sample_to - 1]
+                pos_num = len(pos_item_id)
+                neg_item_id = self.sampler.sample_by_user_id(self.phase, uid, neg_sample_to - pos_num)
+                neg_num = len(neg_item_id)
 
             new_inter[uid_field].extend([uid] * (pos_num + neg_num))
             new_inter[iid_field].extend(pos_item_id + neg_item_id)
@@ -280,12 +294,3 @@ class GroupedDataLoader(NegSampleBasedDataLoader):
             return new_inter
         else:
             return self.dataset.join(new_inter)
-
-
-def get_data_loader(neg_sample_args):
-    if neg_sample_args['strategy'] == 'by':
-        return InteractionBasedDataLoader
-    elif neg_sample_args['strategy'] == 'to':
-        return GroupedDataLoader
-    else:
-        raise ValueError('neg_sample strategy [{}] has not been implemented'.format(neg_sample_args['strategy']))
