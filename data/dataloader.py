@@ -101,15 +101,15 @@ class NegSampleBasedDataLoader(AbstractDataLoader):
         raise NotImplementedError('Method [neg_sampling] should be implemented.')
 
 
-class InteractionBasedDataLoader(NegSampleBasedDataLoader):
+class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format='pointwise', shuffle=False):
         if neg_sample_args['strategy'] != 'by':
-            raise ValueError('neg_sample strategy in InteractionBasedDataLoader() should be `by`')
+            raise ValueError('neg_sample strategy in GeneralInteractionBasedDataLoader() should be `by`')
         if dl_format == 'pairwise' and neg_sample_args['by'] != 1:
             raise ValueError('Pairwise dataloader can only neg sample by 1')
 
-        super(InteractionBasedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
+        super(GeneralInteractionBasedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                          batch_size, dl_format, shuffle)
 
         if self.dl_format == 'pairwise':
@@ -191,16 +191,16 @@ class InteractionBasedDataLoader(NegSampleBasedDataLoader):
         return self.dataset.join(new_df) if self.real_time_neg_sampling else new_df
 
 
-class GroupedDataLoader(NegSampleBasedDataLoader):
+class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format='pointwise', shuffle=False):
         if neg_sample_args['strategy'] != 'to':
-            raise ValueError('neg_sample strategy in GroupedDataLoader() should be `to`')
+            raise ValueError('neg_sample strategy in GeneralGroupedDataLoader() should be `to`')
         if dl_format == 'pairwise':
             raise ValueError('pairwise dataloader cannot neg sample to')
 
         self.uid2items = dataset.uid2items
-        super(GroupedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
+        super(GeneralGroupedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                 batch_size, dl_format, shuffle)
 
         label_field = self.config['LABEL_FIELD']
@@ -280,12 +280,3 @@ class GroupedDataLoader(NegSampleBasedDataLoader):
             return new_inter
         else:
             return self.dataset.join(new_inter)
-
-
-def get_data_loader(neg_sample_args):
-    if neg_sample_args['strategy'] == 'by':
-        return InteractionBasedDataLoader
-    elif neg_sample_args['strategy'] == 'to':
-        return GroupedDataLoader
-    else:
-        raise ValueError('neg_sample strategy [{}] has not been implemented'.format(neg_sample_args['strategy']))
