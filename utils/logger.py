@@ -32,18 +32,22 @@ class Logger(object):
 
         logfilepath = os.path.join(self.LOGROOT, logfilename)
 
-        fmt = "%(asctime)-15s %(levelname)s %(filename)s %(lineno)d %(process)d %(message)s"
-        datefmt = "%a %d %b %Y %H:%M:%S"
-        formatter = logging.Formatter(fmt, datefmt)
+        filefmt = "%(asctime)-15s %(levelname)s %(message)s"
+        filedatefmt = "%a %d %b %Y %H:%M:%S"
+        fileformatter = logging.Formatter(filefmt, filedatefmt)
+
+        sfmt = "%(asctime)-15s %(levelname)s %(message)s"
+        sdatefmt = "%d %b %H:%M"
+        sformatter = logging.Formatter(sfmt, sdatefmt)
 
         fh = logging.FileHandler(logfilepath)
         fh.setLevel(logging.DEBUG)
-        fh.setFormatter(formatter)
+        fh.setFormatter(fileformatter)
         self.logger.addHandler(fh)
 
         sh = logging.StreamHandler()
         sh.setLevel(logging.DEBUG)
-        sh.setFormatter(formatter)
+        sh.setFormatter(sformatter)
         self.logger.addHandler(sh)
 
     def debug(self, message):
