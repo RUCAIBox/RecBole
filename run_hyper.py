@@ -34,7 +34,7 @@ def objective_function(config_dict=None):
     model = model_class(config, dataset).to(config['device'])
     print(model)
 
-    train_data, test_data, valid_data = data_preparation(config, model, dataset)
+    train_data, test_data, valid_data = data_preparation(config, logger, model, dataset)
 
     trainer = Trainer(config, model, logger)
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data)
