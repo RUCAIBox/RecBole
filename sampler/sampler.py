@@ -7,7 +7,6 @@ import random
 
 
 class Sampler(object):
-    @profile
     def __init__(self, config, phases, datasets):
         if not isinstance(phases, list):
             phases = [phases]
