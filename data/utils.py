@@ -6,8 +6,12 @@ from utils import ModelType
 
 
 def data_preparation(config, model, dataset, save=False):
+    es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
-    es.RO_RS()
+    if 'RS' in es_str[0]:
+        getattr(es, es_str[0])(ratios=config['split_ratio'])
+    else:
+        getattr(es, es_str[0])()
 
     builded_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = builded_datasets
@@ -31,7 +35,7 @@ def data_preparation(config, model, dataset, save=False):
         shuffle=True
     )
 
-    es.full()
+    getattr(es, es_str[1])()
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
