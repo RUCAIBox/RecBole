@@ -256,12 +256,14 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         label_field = self.config['LABEL_FIELD']
+        neg_sample_to = self.neg_sample_args['to']
         new_inter = {
-            uid_field: [],
-            iid_field: [],
-            label_field: []
+            uid_field: np.zeros(len(uid2items) * neg_sample_to, dtype=np.int64),
+            iid_field: np.zeros(len(uid2items) * neg_sample_to, dtype=np.int64),
+            label_field: np.zeros(len(uid2items) * neg_sample_to, dtype=np.int64),
         }
 
+        new_inter_num = 0
         for i, row in enumerate(uid2items.itertuples()):
             uid = getattr(row, uid_field)
             if self.full:
@@ -270,24 +272,29 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
                 neg_item_id = self.sampler.sample_full_by_user_id(self.phase, uid)
                 neg_num = len(neg_item_id)
             else:
-                neg_sample_to = self.neg_sample_args['to']
                 pos_item_id = getattr(row, iid_field)[:neg_sample_to - 1]
                 pos_num = len(pos_item_id)
                 neg_item_id = self.sampler.sample_by_user_id(self.phase, uid, neg_sample_to - pos_num)
                 neg_num = len(neg_item_id)
 
-            new_inter[uid_field].extend([uid] * (pos_num + neg_num))
-            new_inter[iid_field].extend(pos_item_id + neg_item_id)
-            new_inter[label_field].extend([1] * pos_num + [0] * neg_num)
+            neg_start = new_inter_num + pos_num
+            neg_end = new_inter_num + pos_num + neg_num
+            new_inter[uid_field][new_inter_num: neg_end] = uid
+            new_inter[iid_field][new_inter_num: neg_start] = pos_item_id
+            new_inter[iid_field][neg_start: neg_end] = neg_item_id
+            new_inter[label_field][new_inter_num: neg_start] = 1
+            new_inter_num += pos_num + neg_num
 
             if not self.real_time_neg_sampling and i % self.step == 0:
                 if i == 0:
                     self.next = dict()
                     last_pr = 0
                 else:
-                    self.next[last_pr] = len(new_inter[uid_field])
-                    last_pr = len(new_inter[uid_field])
+                    self.next[last_pr] = new_inter_num
+                    last_pr = new_inter_num
 
+        for field in [uid_field, iid_field, label_field]:
+            new_inter[field] = new_inter[field][: new_inter_num]
         new_inter = pd.DataFrame(new_inter)
         if not self.real_time_neg_sampling:
             self.next[last_pr] = len(new_inter)
