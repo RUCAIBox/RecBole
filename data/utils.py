@@ -5,7 +5,7 @@ from config import EvalSetting
 from utils import ModelType
 
 
-def data_preparation(config, model, dataset, save=False):
+def data_preparation(config, logger, model, dataset, save=False):
     es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
     if 'RS' in es_str[0]:
@@ -25,6 +25,7 @@ def data_preparation(config, model, dataset, save=False):
     train_data = dataloader_construct(
         name='train',
         config=config,
+        logger=logger,
         eval_setting=es,
         dataset=train_dataset,
         sampler=sampler,
@@ -35,10 +36,14 @@ def data_preparation(config, model, dataset, save=False):
         shuffle=True
     )
 
-    getattr(es, es_str[1])()
+    if 'full' == es_str[1]:
+        getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
+    else:
+        getattr(es, es_str[1])()
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
+        logger=logger,
         eval_setting=es,
         dataset=[valid_dataset, test_dataset],
         sampler=sampler,
@@ -50,7 +55,7 @@ def data_preparation(config, model, dataset, save=False):
     return train_data, valid_data, test_data
 
 
-def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
+def dataloader_construct(name, config, logger, eval_setting, dataset, sampler, phase,
                          dl_type=ModelType.GENERAL, dl_format='pointwise',
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
@@ -66,9 +71,9 @@ def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
     if len(dataset) != len(phase):
         raise ValueError('dataset {} and phase {} should have the same length'.format(dataset, phase))
 
-    print('Build [{}] DataLoader for [{}] with format [{}]\n'.format(dl_type, name, dl_format))
-    print(eval_setting)
-    print('batch_size = {}, shuffle = {}\n'.format(batch_size, shuffle))
+    logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(dl_type, name, dl_format))
+    logger.info(eval_setting)
+    logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
 
     DataLoader = get_data_loader(dl_type, eval_setting)
 
