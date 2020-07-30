@@ -4,7 +4,6 @@
 # @File   : sampler.py
 
 import random
-import copy
 
 
 class Sampler(object):
@@ -30,12 +29,13 @@ class Sampler(object):
         random.shuffle(self.random_item_list)
         self.random_pr = 0
 
+        self.full_set = set(range(self.n_items))
         self.used_item_id = dict()
         last = [set() for i in range(self.n_users)]
         for phase, dataset in zip(self.phases, self.datasets):
-            cur = copy.deepcopy(last)
-            for row in dataset.inter_feat.itertuples():
-                cur[getattr(row, uid_field)].add(getattr(row, iid_field))
+            cur = [set(s) for s in last]
+            for uid, iid in dataset.inter_feat[[uid_field, iid_field]].values:
+                cur[uid].add(iid)
             last = self.used_item_id[phase] = cur
 
     def random_item(self):
@@ -67,6 +67,16 @@ class Sampler(object):
                 cur = self.random_item()
                 if cur not in self.used_item_id[phase][user_id]:
                     return cur
+        except KeyError:
+            if phase not in self.phases:
+                raise ValueError('phase [{}] not exist'.format(phase))
+        except IndexError:
+            if user_id < 0 or user_id >= self.n_users:
+                raise ValueError('user_id [{}] not exist'.format(user_id))
+
+    def sample_full_by_user_id(self, phase, user_id):
+        try:
+            return list(self.full_set - self.used_item_id[phase][user_id])
         except KeyError:
             if phase not in self.phases:
                 raise ValueError('phase [{}] not exist'.format(phase))

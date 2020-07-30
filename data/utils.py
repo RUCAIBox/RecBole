@@ -1,12 +1,17 @@
 import os
+import copy
 from .dataloader import *
 from config import EvalSetting
 from utils import ModelType
 
 
-def data_preparation(config, model, dataset, save=False):
+def data_preparation(config, logger, model, dataset, save=False):
+    es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
-    es.RO_RS_uni()
+    if 'RS' in es_str[0]:
+        getattr(es, es_str[0])(ratios=config['split_ratio'])
+    else:
+        getattr(es, es_str[0])()
 
     builded_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = builded_datasets
@@ -20,6 +25,7 @@ def data_preparation(config, model, dataset, save=False):
     train_data = dataloader_construct(
         name='train',
         config=config,
+        logger=logger,
         eval_setting=es,
         dataset=train_dataset,
         sampler=sampler,
@@ -30,10 +36,11 @@ def data_preparation(config, model, dataset, save=False):
         shuffle=True
     )
 
-    es.neg_sample_to(config['test_neg_sample_num'])
+    getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
+        logger=logger,
         eval_setting=es,
         dataset=[valid_dataset, test_dataset],
         sampler=sampler,
@@ -45,7 +52,7 @@ def data_preparation(config, model, dataset, save=False):
     return train_data, valid_data, test_data
 
 
-def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
+def dataloader_construct(name, config, logger, eval_setting, dataset, sampler, phase,
                          dl_type=ModelType.GENERAL, dl_format='pointwise',
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
@@ -61,14 +68,11 @@ def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
     if len(dataset) != len(phase):
         raise ValueError('dataset {} and phase {} should have the same length'.format(dataset, phase))
 
-    print('Build [{}] DataLoader for [{}] with format [{}]\n'.format(dl_type, name, dl_format))
-    print(eval_setting)
-    print('batch_size = {}, shuffle = {}\n'.format(batch_size, shuffle))
+    logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(dl_type, name, dl_format))
+    logger.info(eval_setting)
+    logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
 
-    if dl_type == ModelType.GENERAL:
-        DataLoader = get_data_loader(eval_setting.neg_sample_args)
-    else:
-        raise NotImplementedError('dl_type [{}] has not been implemented'.format(dl_type))
+    DataLoader = get_data_loader(dl_type, eval_setting)
 
     ret = []
 
@@ -78,7 +82,7 @@ def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
             dataset=ds,
             sampler=sampler,
             phase=ph,
-            neg_sample_args=eval_setting.neg_sample_args,
+            neg_sample_args=copy.deepcopy(eval_setting.neg_sample_args),
             batch_size=batch_size[i],
             dl_format=dl_format,
             shuffle=shuffle
@@ -102,3 +106,14 @@ def save_datasets(save_path, name, dataset):
         if not os.path.isdir(cur_path):
             os.makedirs(cur_path)
         d.save(cur_path)
+
+
+def get_data_loader(dl_type, eval_setting):
+    if dl_type == ModelType.GENERAL:
+        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+        if neg_sample_strategy == 'by':
+            return GeneralInteractionBasedDataLoader
+        elif neg_sample_strategy == 'to':
+            return GeneralGroupedDataLoader
+    else:
+        raise NotImplementedError('dl_type [{}] has not been implemented'.format(dl_type))

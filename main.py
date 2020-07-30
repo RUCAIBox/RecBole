@@ -9,17 +9,17 @@ config.init()
 logger = Logger(config)
 
 dataset = Dataset(config)
-print(dataset)
+logger.info(dataset)
 
 model = BPRMF(config, dataset).to(config['device'])
-print(model)
+logger.info(model)
 
 # If you want to customize the evaluation setting,
 # please refer to `data_preparation()` in `data/utils.py`.
-train_data, test_data, valid_data = data_preparation(config, model, dataset)
+train_data, test_data, valid_data = data_preparation(config, logger, model, dataset)
 
 trainer = Trainer(config, model, logger)
 # trainer.resume_checkpoint('saved/model_best.pth')
 best_valid_score, _ = trainer.fit(train_data, valid_data)
 result = trainer.evaluate(test_data)
-print(best_valid_score)
+logger.info(best_valid_score)

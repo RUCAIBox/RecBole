@@ -107,62 +107,70 @@ class Dataset(object):
         return inter_feat, user_feat, item_feat
 
     def _load_feat(self, filepath, source):
-        with open(filepath, 'r', encoding='utf-8') as file:
-            if self.config['load_col'] is None:
-                load_col = None
-            elif source not in self.config['load_col']:
-                load_col = set()
-            else:
-                load_col = set(self.config['load_col'][source])
-            unload_col = set(self.config['unload_col'][source]) if (self.config['unload_col'] is not None and source in self.config['unload_col']) else None
-            if load_col is not None and unload_col is not None:
-                raise ValueError('load_col [{}] and unload_col [{}] can not be setted the same time'.format(load_col, unload_col))
+        if self.config['load_col'] is None:
+            load_col = None
+        elif source not in self.config['load_col']:
+            return None
+        else:
+            load_col = set(self.config['load_col'][source])
 
-            head = file.readline().strip().split(self.config['field_separator'])
-            field_names = []
-            remain_field = set()
-            for field_type in head:
-                field, ftype = field_type.split(':')
-                field_names.append(field)
-                if load_col is not None and field not in load_col: continue
-                if unload_col is not None and field in unload_col: continue
-                # TODO user_id & item_id bridge check
-                # TODO user_id & item_id not be set in config
-                # TODO inter __iter__ loading
-                if ftype not in self.support_types:
-                    raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
-                self.field2source[field] = source
-                self.field2type[field] = ftype
-                if not ftype.endswith('seq'):
-                    self.field2seqlen[field] = 1
-                remain_field.add(field)
+        if self.config['unload_col'] is not None and source in self.config['unload_col']:
+            unload_col = set(self.config['unload_col'][source])
+        else:
+            unload_col = None
 
-            # TODO checking num of col
-            lines = []
-            for line in file:
-                lines.append(line.strip().split(self.config['field_separator']))
+        if load_col is not None and unload_col is not None:
+            raise ValueError('load_col [{}] and unload_col [{}] can not be setted the same time'.format(
+                load_col, unload_col))
 
-            ret = {}
-            cols = map(list, zip(*lines))
-            for i, col in enumerate(cols):
-                field = field_names[i]
-                if field not in remain_field: continue
-                ftype = self.field2type[field]
-                # TODO not relying on str
-                if ftype == 'float':
-                    col = list(map(float, col))
-                elif ftype == 'token_seq':
-                    col = [_.split(self.config['seq_separator']) for _ in col]
-                elif ftype == 'float_seq':
-                    col = [list(map(float, _.split(self.config['seq_separator']))) for _ in col]
-                ret[field] = col
+        df = pd.read_csv(filepath, delimiter=self.config['field_separator'])
+        field_names = []
+        columns = []
+        remain_field = set()
+        for field_type in df.columns:
+            field, ftype = field_type.split(':')
+            field_names.append(field)
+            if load_col is not None and field not in load_col:
+                continue
+            if unload_col is not None and field in unload_col:
+                continue
+            # TODO user_id & item_id bridge check
+            # TODO user_id & item_id not be set in config
+            # TODO inter __iter__ loading
+            if ftype not in self.support_types:
+                raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
+            self.field2source[field] = source
+            self.field2type[field] = ftype
+            if not ftype.endswith('seq'):
+                self.field2seqlen[field] = 1
+            columns.append(field)
+            remain_field.add(field)
 
-            df = pd.DataFrame(ret) if len(ret) > 0 else None
+        if len(columns) == 0:
+            print('source', source)
+            return None
+        df.columns = field_names
+        df = df[columns]
+
+        # TODO  fill nan in df
+
+        seq_separator = self.config['seq_separator']
+        def _token(col): pass
+        def _float(col): pass
+        def _token_seq(col): col = [_.split(seq_separator) for _ in col.values]
+        def _float_seq(col): col = [list(map(float, _.split(seq_separator))) for _ in col.values]
+        ftype2func = {
+            'token': _token,
+            'float': _float,
+            'token_seq': _token_seq,
+            'float_seq': _float_seq,
+        }
 
         for field in remain_field:
             ftype = self.field2type[field]
+            ftype2func[ftype](df[field])
             if field not in self.field2seqlen:
-                self.field2seqlen[field] = df[field].apply(len).max()
+                self.field2seqlen[field] = max(map(len, df[field].values))
 
         return df
 
@@ -273,7 +281,13 @@ class Dataset(object):
 
     @property
     def uid2items(self):
-        return self.inter_feat.groupby(self.uid_field)[self.iid_field].agg(lambda x: list(x.array)).reset_index()
+        uid2items = dict()
+        columns = [self.uid_field, self.iid_field]
+        for uid, iid in self.inter_feat[columns].values:
+            if uid not in uid2items:
+                uid2items[uid] = []
+            uid2items[uid].append(iid)
+        return pd.DataFrame(list(uid2items.items()), columns=columns)
 
     def join(self, df):
         if self.user_feat is not None:
@@ -320,7 +334,7 @@ class Dataset(object):
         cnt = [int(ratios[i] * tot) for i in range(len(ratios))]
         cnt[-1] = tot - sum(cnt[0:-1])
         split_ids = np.cumsum(cnt)[:-1]
-        return split_ids
+        return list(split_ids)
 
     def split_by_ratio(self, ratios, group_by=None):
         tot_ratio = sum(ratios)
@@ -329,18 +343,17 @@ class Dataset(object):
         if group_by is None:
             tot_cnt = self.__len__()
             split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
-            next_df = [_.reset_index(drop=True) for _ in np.split(self.inter_feat, split_ids)]
+            next_index = [range(start, end) for start, end in zip([0] + split_ids, split_ids + [tot_cnt])]
         else:
-            grouped_inter_feat = self.inter_feat.groupby(by=group_by)
-            next_df = []
-            for uid, grouped_feats in grouped_inter_feat:
-                tot_cnt = len(grouped_feats)
+            grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
+            next_index = [[] for i in range(len(ratios))]
+            for grouped_index in grouped_inter_feat_index:
+                tot_cnt = len(grouped_index)
                 split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
-                splited_grouped_df = np.split(grouped_feats, split_ids)
-                next_df.append(splited_grouped_df)
-            next_df = zip(*next_df)
-            next_df = [pd.concat(_).reset_index(drop=True) for _ in next_df]
+                for index, start, end in zip(next_index, [0] + split_ids, split_ids + [tot_cnt]):
+                    index.extend(grouped_index[start: end])
 
+        next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
