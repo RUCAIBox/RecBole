@@ -36,10 +36,7 @@ def data_preparation(config, logger, model, dataset, save=False):
         shuffle=True
     )
 
-    if 'full' == es_str[1]:
-        getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
-    else:
-        getattr(es, es_str[1])()
+    getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
