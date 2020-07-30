@@ -4,6 +4,7 @@
 # @File   : sampler.py
 
 import random
+import numpy as np
 
 
 class Sampler(object):
@@ -33,7 +34,7 @@ class Sampler(object):
         self.used_item_id = dict()
         last = [set() for i in range(self.n_users)]
         for phase, dataset in zip(self.phases, self.datasets):
-            cur = [set(s) for s in last]
+            cur = np.array([set(s) for s in last])
             for uid, iid in dataset.inter_feat[[uid_field, iid_field]].values:
                 cur[uid].add(iid)
             last = self.used_item_id[phase] = cur
@@ -73,6 +74,26 @@ class Sampler(object):
         except IndexError:
             if user_id < 0 or user_id >= self.n_users:
                 raise ValueError('user_id [{}] not exist'.format(user_id))
+
+    def sample_by_user_ids(self, phase, user_ids, num):
+        try:
+            user_num = len(user_ids)
+            total_num = user_num * num
+            neg_item_id = np.zeros(total_num, dtype=np.int64)
+            used_item_id_list = np.repeat(self.used_item_id[phase][user_ids], num)
+            for i, used_item_id in enumerate(used_item_id_list):
+                cur = self.random_item()
+                while cur in used_item_id:
+                    cur = self.random_item()
+                neg_item_id[i] = cur
+            return neg_item_id
+        except KeyError:
+            if phase not in self.phases:
+                raise ValueError('phase [{}] not exist'.format(phase))
+        except IndexError:
+            for user_id in user_ids:
+                if user_id < 0 or user_id >= self.n_users:
+                    raise ValueError('user_id [{}] not exist'.format(user_id))
 
     def sample_full_by_user_id(self, phase, user_id):
         try:
