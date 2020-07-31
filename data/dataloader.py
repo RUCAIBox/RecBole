@@ -109,6 +109,7 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
         if dl_format == 'pairwise' and neg_sample_args['by'] != 1:
             raise ValueError('Pairwise dataloader can only neg sample by 1')
 
+        self.neg_sample_by = neg_sample_args['by']
         super(GeneralInteractionBasedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                                 batch_size, dl_format, shuffle)
 
@@ -123,17 +124,18 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
                 self.dataset.field2source[neg_item_feat_col] = self.dataset.field2source[item_feat_col]
                 self.dataset.field2seqlen[neg_item_feat_col] = self.dataset.field2seqlen[item_feat_col]
         else:
-            label_field = self.config['LABEL_FIELD']
-            self.dataset.field2type[label_field] = 'float'
-            self.dataset.field2source[label_field] = 'inter'
-            self.dataset.field2seqlen[label_field] = 1
+            self.label_field = self.config['LABEL_FIELD']
+            self.dataset.field2type[self.label_field] = 'float'
+            self.dataset.field2source[self.label_field] = 'inter'
+            self.dataset.field2seqlen[self.label_field] = 1
 
     def _batch_size_adaptation(self):
         if self.dl_format == 'pairwise':
             self.step = self.batch_size
             return
-        batch_num = self.batch_size // self.neg_sample_args['by']
-        new_batch_size = (batch_num + 1) * self.neg_sample_args['by']
+        self.times = 1 + self.neg_sample_by
+        batch_num = self.batch_size // self.times
+        new_batch_size = (batch_num + 1) * self.times
         self.step = batch_num + 1 if self.real_time_neg_sampling else new_batch_size
         self.set_batch_size(new_batch_size)
 
@@ -158,9 +160,7 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         uids = inter_feat[uid_field].to_list()
-        neg_iids = [self.sampler.sample_one_by_user_id(self.phase, uid)
-                    for i in range(self.neg_sample_args['by'])
-                    for uid in uids]
+        neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
         if self.dl_format == 'pointwise':
             sampling_func = self._neg_sample_by_point_wise_sampling
         elif self.dl_format == 'pairwise':
@@ -182,16 +182,14 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
         return inter_feat
 
     def _neg_sample_by_point_wise_sampling(self, uid_field, iid_field, neg_iids, inter_feat):
-        neg_iids = inter_feat[iid_field].to_list() + neg_iids
-
         pos_inter_num = len(inter_feat)
 
-        new_df = pd.concat([inter_feat] * (1 + self.neg_sample_args['by']), ignore_index=True)
-        new_df[iid_field] = neg_iids
+        new_df = pd.concat([inter_feat] * self.times, ignore_index=True)
+        new_df[iid_field].values[pos_inter_num:] = neg_iids
 
-        label_field = self.config['LABEL_FIELD']
-        labels = pos_inter_num * [1] + self.neg_sample_args['by'] * pos_inter_num * [0]
-        new_df[label_field] = labels
+        labels = np.zeros(pos_inter_num * self.times, dtype=np.int64)
+        labels[: pos_inter_num] = 1
+        new_df[self.label_field] = labels
 
         return self.dataset.join(new_df) if self.real_time_neg_sampling else new_df
 
