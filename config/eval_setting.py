@@ -194,18 +194,18 @@ class EvalSetting(object):
         self.temporal_ordering()
         self.leave_one_out()
 
-    def uni100(self):
-        self.neg_sample_by(100)
+    def uni100(self, real_time=False):
+        self.neg_sample_by(100, real_time=real_time)
 
-    def pop100(self):
-        self.neg_sample_by(100)
+    def pop100(self, real_time=False):
+        self.neg_sample_by(100, real_time=real_time)
         self.popularity_based_sampling()
 
-    def uni1000(self):
-        self.neg_sample_by(1000)
+    def uni1000(self, real_time=False):
+        self.neg_sample_by(1000, real_time=real_time)
 
-    def pop1000(self):
-        self.neg_sample_by(1000)
+    def pop1000(self, real_time=False):
+        self.neg_sample_by(1000, real_time=real_time)
         self.popularity_based_sampling()
 
     def full(self, real_time=True):

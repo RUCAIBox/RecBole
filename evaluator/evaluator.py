@@ -268,7 +268,7 @@ class Evaluator(AbstractEvaluator):
 
         weighted_matrix = result_matrix * batch_size_matrix
         
-        metric_list =  (np.sum(weighted_matrix, axis=0) / np.sum(batch_size_matrix)).tolist()
+        metric_list =  (np.sum(weighted_matrix, axis=0) / np.sum(batch_size_matrix.astype(np.int64))).tolist()
         metric_dict = {}
         for method, score in zip(keys, metric_list):
             metric_dict[method] = score
