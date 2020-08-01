@@ -357,6 +357,26 @@ class Dataset(object):
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
+    def leave_one_out(self, group_by, leave_one_num=1):
+        if group_by is None:
+            raise ValueError('leave one out strategy require a group field')
+
+        grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
+        next_index = [[] for i in range(leave_one_num + 1)]
+        for grouped_index in grouped_inter_feat_index:
+            grouped_index = list(grouped_index)
+            tot_cnt = len(grouped_index)
+            legal_leave_one_num = min(leave_one_num, tot_cnt - 1)
+            pr = tot_cnt - legal_leave_one_num
+            next_index[0].extend(grouped_index[:pr])
+            for i in range(legal_leave_one_num):
+                next_index[i + 1].append(grouped_index[pr])
+                pr += 1
+
+        next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
+        next_ds = [self.copy(_) for _ in next_df]
+        return next_ds
+
     def shuffle(self):
         self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
 
@@ -379,7 +399,7 @@ class Dataset(object):
         elif split_args['strategy'] == 'by_value':
             raise NotImplementedError()
         elif split_args['strategy'] == 'loo':
-            raise NotImplementedError()
+            datasets = self.leave_one_out(group_by=group_field, leave_one_num=split_args['leave_one_num'])
         else:
             datasets = self
 
