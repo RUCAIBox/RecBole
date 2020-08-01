@@ -110,6 +110,13 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
             raise ValueError('Pairwise dataloader can only neg sample by 1')
 
         self.neg_sample_by = neg_sample_args['by']
+
+        if dl_format == 'pointwise':
+            self.label_field = config['LABEL_FIELD']
+            dataset.field2type[self.label_field] = 'float'
+            dataset.field2source[self.label_field] = 'inter'
+            dataset.field2seqlen[self.label_field] = 1
+
         super(GeneralInteractionBasedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                                 batch_size, dl_format, shuffle)
 
@@ -123,11 +130,6 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
                 self.dataset.field2type[neg_item_feat_col] = self.dataset.field2type[item_feat_col]
                 self.dataset.field2source[neg_item_feat_col] = self.dataset.field2source[item_feat_col]
                 self.dataset.field2seqlen[neg_item_feat_col] = self.dataset.field2seqlen[item_feat_col]
-        else:
-            self.label_field = self.config['LABEL_FIELD']
-            self.dataset.field2type[self.label_field] = 'float'
-            self.dataset.field2source[self.label_field] = 'inter'
-            self.dataset.field2seqlen[self.label_field] = 1
 
     def _batch_size_adaptation(self):
         if self.dl_format == 'pairwise':
