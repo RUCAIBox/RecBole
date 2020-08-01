@@ -67,6 +67,16 @@ test_examples = {
         'eval_setting': 'RO_RS, uni100',
         'real_time_neg_sampling': False
     },
+    'Test Leave One Out': {
+        'model': 'BPRMF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'eval_metric:': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_LS, full',
+        'real_time_neg_sampling': True
+    },
     'Test BPRMF': {
         'model': 'BPRMF',
         'dataset': 'ml-100k',

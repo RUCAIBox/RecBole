@@ -105,10 +105,10 @@ class EvalSetting(object):
         self.split_args = {'strategy': strategy}
         self.split_args.update(kwargs)
 
-    def leave_one_out(self):
+    def leave_one_out(self, leave_one_num=1):
         if self.group_field is None:
             raise ValueError('Leave one out request grouped dataset, please set group field.')
-        self.set_splitting(strategy='loo')
+        self.set_splitting(strategy='loo', leave_one_num=leave_one_num)
 
     def split_by_ratio(self, ratios):
         if not isinstance(ratios, list):
@@ -184,15 +184,15 @@ class EvalSetting(object):
         self.temporal_ordering()
         self.split_by_ratio(ratios)
 
-    def RO_LS(self):
+    def RO_LS(self, leave_one_num=1):
         self.group_by_user()
         self.random_ordering()
-        self.leave_one_out()
+        self.leave_one_out(leave_one_num=leave_one_num)
 
-    def TO_LS(self):
+    def TO_LS(self, leave_one_num=1):
         self.group_by_user()
         self.temporal_ordering()
-        self.leave_one_out()
+        self.leave_one_out(leave_one_num=leave_one_num)
 
     def uni100(self, real_time=False):
         self.neg_sample_by(100, real_time=real_time)
