@@ -2,19 +2,21 @@ from enum import Enum
 import numpy as np
 
 class TOPK_ARGS(Enum):
-    POS_INDEX = 1
-    POS_LEN = 2  
-    
-    NDCG = [POS_INDEX, POS_LEN]
-    MAP = [POS_INDEX, POS_LEN]
-    RECALL = [POS_INDEX, POS_LEN]
-    MRR = [POS_INDEX]
-    HIT = [POS_INDEX]
-    PRECISION = [POS_INDEX]
+    POS_INDEX = 0
+    POS_LEN = 1
+
+    NDCG = (POS_INDEX, POS_LEN)
+    MAP = (POS_INDEX, POS_LEN)
+    RECALL = (POS_INDEX, POS_LEN)
+    MRR = (POS_INDEX)
+    HIT = (POS_INDEX)
+    PRECISION = (POS_INDEX)
+
 
 class CTR_METRICS(Enum):
     LOGLOSS = 'logloss'
     AUC = 'auc'
+
 
 class TOPK_METRICS(Enum):
     NDCG = 'ndcg'
@@ -24,12 +26,24 @@ class TOPK_METRICS(Enum):
     RECALL = 'recall'
     PRECISION = 'precision'
 
+
 class LOSS_METRICS(Enum):
     MAE = 'mae'
     RMSE = 'rmse'
 
+
 class ITEM_METRIC(Enum):
     pass
+
+
+class ArrayIndex(list):
+    def __getitem__(self, key):
+        if isinstance(key, tuple):
+            res = [self[i] for i in key]
+            return res
+        else:
+            return super(ArrayIndex, self).__getitem__(key)
+
 
 def trunc(scores, method):
     """Round the scores by using the given method
@@ -43,7 +57,7 @@ def trunc(scores, method):
 
     Returns:
         (np.ndarray): processed scores
-    """   
+    """
 
     try:
         cut_method = getattr(np, method)
@@ -51,6 +65,7 @@ def trunc(scores, method):
         raise NotImplementedError("module 'numpy' has no fuction named '{}'".format(method))
     scores = cut_method(scores)
     return scores
+
 
 def cutoff(scores, threshold):
     """cut of the scores based on threshold

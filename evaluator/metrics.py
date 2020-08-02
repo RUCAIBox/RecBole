@@ -14,7 +14,7 @@ and call the functions based on deserialized names
 #    TopK Metrics    #
 
 
-def hit(pos_index):
+def hit(pos_index, pos_len):
     """Hit(also known as hit ratio at N) is a way of calculating how many “hits” you have in an n-sized list of ranked items.
 
     url:https://medium.com/@rishabhbhatia315/recommendation-system-evaluation-metrics-3f6739288870
@@ -31,14 +31,18 @@ def mrr(pos_index, pos_len):
     url:https://en.wikipedia.org/wiki/Mean_reciprocal_ranks
 
     """
+
     idxs = pos_index.argmax(axis=1)
     result = np.zeros_like(pos_index, dtype=np.float)
     for row, idx in enumerate(idxs):
-        result[row, idx:] = 1 / idx
+        if pos_index[row, idx] > 0:
+            result[row, idx:] = 1 / (idx + 1)
+        else:
+            result[row, idx:] = 0
     return result
 
 
-def map_(truth_ranks):
+def map_(truth_ranks, pos_len):
     raise NotImplementedError
 
 
@@ -78,7 +82,7 @@ def ndcg(pos_index, pos_len):
     return result
 
 
-def precision(pos_index):
+def precision(pos_index, pos_len):
     """precision (also called positive predictive value) is the fraction of
     relevant instances among the retrieved instances
 

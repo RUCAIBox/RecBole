@@ -1,12 +1,12 @@
 from ..metrics import metrics_dict
-from ..utils import TOPK_ARGS
+from ..utils import TOPK_ARGS, ArrayIndex
 import numpy as np
 
 
 class BaseTopKEvaluator(object):
 
     def __init__(self, config, logger):
-        self.metrics = config['eval_metric']
+        self.metrics = config['metrics']
         self.topk = config['topk']
 
     def metrics_info(self, pos_idx, pos_len):
@@ -21,12 +21,10 @@ class BaseTopKEvaluator(object):
             list: a list of metrics result
         """
         result_list = []
-        para_list = np.array([pos_idx, pos_len])
         for metric in self.metrics:
-            args = getattr(TOPK_ARGS, metric.upper())
+            # args = getattr(TOPK_ARGS, metric.upper())
             metric_fuc = metrics_dict[metric.lower()]
-            args = para_list[args.value]
-            result = metric_fuc(*args)
+            result = metric_fuc(pos_idx, pos_len)
             result_list.append(result)
         return result_list
 
@@ -41,14 +39,12 @@ class BaseTopKEvaluator(object):
             np.ndarray: a matrix which contains the metrics result
         """
 
-        result_list = []
-        pos_idx_matrix = np.zeros(topk_index)
+        pos_idx_matrix = np.zeros_like(topk_index)
         for idx, (pos_len, topk) in enumerate(zip(pos_len_list, topk_index)):
             _, _, pos_idx = np.intersect1d(np.arange(pos_len), topk, return_indices=True)
             pos_idx_matrix[idx, pos_idx] = 1
-        result = self.metrics_info(pos_idx_matrix.astype(bool), np.array(pos_len_list))  # n_users x len(metrics) x len(ranks)
-        result_list.append(result)  # nusers x len(metrics) x len(ranks)
-        result = np.stack(result_list, axis=0).mean(axis=0)  # len(metrics) x len(ranks)
+        result_list = self.metrics_info(pos_idx_matrix.astype(bool), np.array(pos_len_list))  # n_users x len(metrics) x len(ranks)
+        result = np.stack(result_list, axis=0).mean(axis=1)  # len(metrics) x len(ranks)
         return result
 
 

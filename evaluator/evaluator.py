@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from torch.nn.utils.rnn import pad_sequence
 
 from .python import BaseLossEvaluator, BaseTopKEvaluator
@@ -39,6 +40,7 @@ class TopKEvaluator(BaseTopKEvaluator):
         self.topk = config['topk']
         self.metrics = config['metrics']
 
+
     def evaluate(self, pos_len_list, score_tensor, user_idx_list):
         """ evalaute the topk metrics
 
@@ -53,8 +55,9 @@ class TopKEvaluator(BaseTopKEvaluator):
         """
         # intermediate variables
         score_list = []
-        for begin, end in user_idx_list:
-            score_list.append(score_tensor[begin:end])
+
+        for slc in user_idx_list:
+            score_list.append(score_tensor[slc])
         scores_matrix = pad_sequence(score_list, batch_first=True, padding_value=-np.inf)  # nusers x items
 
         # get topk
@@ -82,7 +85,6 @@ class TopKEvaluator(BaseTopKEvaluator):
                             'Hit@3': 0.6666666666666666, 'MRR@3': 0.22685185185185186, 'Recall@3': 0.47222222222222215,
                             'Hit@1': 0.16666666666666666, 'MRR@1': 0.08333333333333333, 'Recall@1': 0.08333333333333333 }
         """
-
         tmp_result_list = []
         keys = list(metric_dict_list[0].keys())
         for result in metric_dict_list:

@@ -1,1 +1,1 @@
-from  .python_evaluator import BaseLossEvaluator, BaseCTREvaluator, BaseTopKEvaluator
+from  .python_evaluator import BaseLossEvaluator, BaseTopKEvaluator

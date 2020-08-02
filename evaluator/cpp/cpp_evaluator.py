@@ -9,6 +9,7 @@ class CTREvaluator(object):
         '''
         pass
 
+
 class TOPKEvaluator(object):
 
     def __init__(self):
@@ -19,6 +20,7 @@ class TOPKEvaluator(object):
             cython的形式？
         '''
         pass
+
 
 class LossEvaluator(object):
 
