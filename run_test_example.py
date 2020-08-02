@@ -27,14 +27,55 @@ test_examples = {
         'eval_metric:': ['Recall', 'MRR', 'NDCG'],
         'topk': [5, 10, 20],
     },
-    'Test Full Sort': {
+    'Test Real Time Full Sort': {
         'model': 'BPRMF',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
         'eval_metric:': ['Recall'],
         'topk': [10],
-        'test_neg_sample_num': -1
+        'eval_setting': 'RO_RS, full',
+        'real_time_neg_sampling': True
+    },
+    'Test Pre Full Sort': {
+        'model': 'BPRMF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'eval_metric:': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_RS, full',
+        'real_time_neg_sampling': False
+    },
+    'Test Real Time Neg Sample By': {
+        'model': 'BPRMF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'eval_metric:': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_RS, uni100',
+        'real_time_neg_sampling': True
+    },
+    'Test Pre Neg Sample By': {
+        'model': 'BPRMF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'eval_metric:': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_RS, uni100',
+        'real_time_neg_sampling': False
+    },
+    'Test Leave One Out': {
+        'model': 'BPRMF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'eval_metric:': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_LS, full',
+        'real_time_neg_sampling': True
     },
     'Test BPRMF': {
         'model': 'BPRMF',
