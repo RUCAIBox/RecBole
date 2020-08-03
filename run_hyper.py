@@ -4,11 +4,11 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : run_hyper.py
 
-import importlib
+
 from config import Config
 from data import Dataset, data_preparation
 from trainer import Trainer, HyperTuning
-from utils import Logger
+from utils import Logger, get_model
 
 
 def data_preparation_function():
@@ -20,18 +20,7 @@ def data_preparation_function():
     dataset = Dataset(config)
     print(dataset)
 
-    model_name = config['model']
-    model_file_name = model_name.lower()
-    if importlib.util.find_spec("model.general_recommender." + model_file_name) is not None:
-        model_module = importlib.import_module("model.general_recommender." + model_file_name)
-    elif importlib.util.find_spec("model.context_aware_recommender." + model_file_name) is not None:
-
-        model_module = importlib.import_module("model.context_aware_recommender." + model_file_name)
-    else:
-        model_module = importlib.import_module("model.sequential_recommender." + model_file_name)
-
-    model_class = getattr(model_module, model_name)
-    model = model_class(config, dataset).to(config['device'])
+    model = get_model(config)(config, dataset).to(config['device'])
     print(model)
 
     train_data, test_data, valid_data = data_preparation(config, logger, model, dataset)
@@ -53,18 +42,7 @@ def objective_function(dataset, dataloader, config_dict=None):
 
     logger = Logger(config)
 
-    model_name = config['model']
-    model_file_name = model_name.lower()
-    if importlib.util.find_spec("model.general_recommender." + model_file_name) is not None:
-        model_module = importlib.import_module("model.general_recommender." + model_file_name)
-    elif importlib.util.find_spec("model.context_aware_recommender." + model_file_name) is not None:
-
-        model_module = importlib.import_module("model.context_aware_recommender." + model_file_name)
-    else:
-        model_module = importlib.import_module("model.sequential_recommender." + model_file_name)
-
-    model_class = getattr(model_module, model_name)
-    model = model_class(config, dataset).to(config['device'])
+    model = get_model(config)(config, dataset).to(config['device'])
 
     train_data, test_data, valid_data = dataloader['train_data'], dataloader['test_data'], dataloader['valid_data']
 
@@ -82,10 +60,11 @@ def objective_function(dataset, dataloader, config_dict=None):
 
 def main():
     # plz set algo='exhaustive' to use exhaustive search, in this case, max_evals is auto set
-    hp = HyperTuning(data_preparation_function, objective_function, params_file='hyper.test', max_evals=5)
+    hp = HyperTuning(data_preparation_function, objective_function, algo='exhaustive', params_file='hyper.test', max_evals=5)
     hp.run()
     print('best params: ', hp.best_params)
-    print(hp.params2result)
+    print('best result: ')
+    print(hp.params2result[hp.params2str(hp.best_params)])
 
 
 if __name__ == '__main__':
