@@ -143,9 +143,9 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
             self.step = self.batch_size
             return
         self.times = 1 + self.neg_sample_by
-        batch_num = self.batch_size // self.times
-        new_batch_size = (batch_num + 1) * self.times
-        self.step = batch_num + 1 if self.real_time_neg_sampling else new_batch_size
+        batch_num = max(self.batch_size // self.times, 1)
+        new_batch_size = batch_num * self.times
+        self.step = batch_num if self.real_time_neg_sampling else new_batch_size
         self.set_batch_size(new_batch_size)
 
     @property
@@ -225,17 +225,14 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
     def _batch_size_adaptation(self):
         if self.neg_sample_args['to'] == -1:
             self.neg_sample_args['to'] = self.dataset.item_num
-        batch_num = self.batch_size // self.neg_sample_args['to']
-        new_batch_size = (batch_num + 1) * self.neg_sample_args['to']
-        self.step = batch_num + 1
+        batch_num = max(self.batch_size // self.neg_sample_args['to'], 1)
+        new_batch_size = batch_num * self.neg_sample_args['to']
+        self.step = batch_num
         self.set_batch_size(new_batch_size)
 
     @property
     def pr_end(self):
-        if self.real_time_neg_sampling:
-            return len(self.uid2items)
-        else:
-            return len(self.dataset)
+        return len(self.uid2items)
 
     def _shuffle(self):
         if self.real_time_neg_sampling:
@@ -243,32 +240,27 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
         else:
             self.dataset.shuffle()
 
-    @property
-    def next_pr(self):
-        return self.next[self.pr]
-
     def _next_dataframe(self):
         if self.real_time_neg_sampling:
-            cur_data, self.cur_pos_len_list, self.cur_all_len_list, self.cur_user_idx_list = \
+            cur_data, self.cur_pos_len_list, self.cur_user_idx_list = \
                 self._neg_sampling(self.uid2items[self.pr: self.pr + self.step])
-            self.pr += self.step
         else:
-            cur_data = self.dataset[self.pr: self.next_pr]
-            self.cur_pos_len_list = self.pos_len_list[self.pr: self.next_pr]
-            self.cur_all_len_list = self.all_len_list[self.pr: self.next_pr]
-            self.cur_user_idx_list = self.user_idx_list[self.pr: self.next_pr]
-            self.pr = self.next_pr
+            start = self.start_point[self.pr]
+            end = self.start_point[min(self.pr + self.step, self.pr_end)]
+            cur_data = self.dataset[start: end]
+            self.cur_pos_len_list = self.pos_len_list[self.pr: self.pr + self.step]
+            self.cur_user_idx_list = self.user_idx_list[self.pr: self.pr + self.step]
+        self.pr += self.step
         return cur_data
 
     def _dataframe_to_interaction(self, data):
         interaction = super(GeneralGroupedDataLoader, self)._dataframe_to_interaction(data)
         setattr(interaction, 'pos_len_list', self.cur_pos_len_list)
-        setattr(interaction, 'all_len_list', self.cur_all_len_list)
         setattr(interaction, 'user_idx_list', self.cur_user_idx_list)
         return interaction
 
     def _pre_neg_sampling(self):
-        self.dataset.inter_feat, self.pos_len_list, self.all_len_list, self.user_idx_list = \
+        self.dataset.inter_feat, self.pos_len_list, self.user_idx_list = \
             self._neg_sampling(self.uid2items)
 
     def _neg_sampling(self, uid2items):
@@ -283,9 +275,11 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
         }
 
         new_inter_num = 0
+        base_idx = 0
         pos_len_list = []
-        all_len_list = []
         user_idx_list = []
+        if not self.real_time_neg_sampling:
+            self.start_point = [0]
         for i, row in enumerate(uid2items.itertuples()):
             uid = getattr(row, uid_field)
             if self.full:
@@ -306,26 +300,21 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
             new_inter[iid_field][neg_start: neg_end] = neg_item_id
             new_inter[label_field][new_inter_num: neg_start] = 1
             pos_len_list.append(pos_num)
-            all_len_list.append(pos_num + neg_num)
-            user_idx_list.append(slice(new_inter_num, neg_end))
+            user_idx_list.append(slice(new_inter_num - base_idx, neg_end - base_idx))
             new_inter_num += pos_num + neg_num
 
-            if not self.real_time_neg_sampling and i % self.step == 0:
-                if i == 0:
-                    self.next = dict()
-                    last_pr = 0
-                else:
-                    self.next[last_pr] = new_inter_num
-                    last_pr = new_inter_num
+            if not self.real_time_neg_sampling:
+                self.start_point.append(new_inter_num)
+            if i % self.step == 0:
+                base_idx = new_inter_num
 
         for field in [uid_field, iid_field, label_field]:
             new_inter[field] = new_inter[field][: new_inter_num]
         new_inter = pd.DataFrame(new_inter)
         if not self.real_time_neg_sampling:
-            self.next[last_pr] = len(new_inter)
-            return new_inter, pos_len_list, all_len_list, user_idx_list
+            return new_inter, pos_len_list, user_idx_list
         else:
-            return self.join(new_inter), pos_len_list, all_len_list, user_idx_list
+            return self.join(new_inter), pos_len_list, user_idx_list
 
 
 class GeneralFullDataLoader(GeneralGroupedDataLoader):

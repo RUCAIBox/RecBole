@@ -149,7 +149,10 @@ class HyperTuning(object):
         space = {}
         with open(file, 'r') as fp:
             for line in fp:
-                para_name, para_type, para_value = line.strip().split(' ')
+                para_list = line.strip().split(' ')
+                if len(para_list) != 3:
+                    continue
+                para_name, para_type, para_value = para_list
                 if para_type == 'choice':
                     para_value = eval(para_value)
                     space[para_name] = hp.choice(para_name, para_value)
