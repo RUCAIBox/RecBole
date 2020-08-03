@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
-from evaluator import Evaluator
+from evaluator import TopKEvaluator, LossEvaluator
 from data.interaction import Interaction
 from utils import ensure_dir, get_local_time
 
@@ -54,7 +54,7 @@ class Trainer(AbstractTrainer):
         self.best_valid_result = None
         self.train_loss_dict = dict()
         self.optimizer = self._build_optimizer()
-        self.evaluator = Evaluator(config, logger)
+        self.evaluator = TopKEvaluator(config, logger)
 
     def _build_optimizer(self):
         # todo: Avoid clear text strings
@@ -163,6 +163,7 @@ class Trainer(AbstractTrainer):
                         self.logger.info(stop_output)
                     break
         return self.best_valid_score, self.best_valid_result
+
 
     def evaluate(self, eval_data, load_best_model=True, model_file=None):
         if load_best_model:
