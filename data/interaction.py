@@ -17,10 +17,18 @@ class Interaction(object):
     def __len__(self):
         return self.length
 
-    def to(self, device):
+    def to(self, device, selected_field=None):
         ret = {}
-        for k in self.interaction:
-            ret[k] = self.interaction[k].to(device)
+        try:
+            selected_field = set(selected_field)
+            for k in self.interaction:
+                if k in selected_field:
+                    ret[k] = self.interaction[k].to(device)
+                else:
+                    ret[k] = self.interaction[k]
+        except:
+            for k in self.interaction:
+                ret[k] = self.interaction[k].to(device)
         return Interaction(ret)
 
     def cpu(self):
