@@ -347,7 +347,6 @@ class GeneralFullDataLoader(GeneralGroupedDataLoader):
 
         new_inter_num = 0
         pos_len_list = []
-        all_len_list = []
         user_idx_list = []
         for i, row in enumerate(uid2items.itertuples()):
             uid = getattr(row, uid_field)
@@ -363,11 +362,10 @@ class GeneralFullDataLoader(GeneralGroupedDataLoader):
             neg_num = tot_item_num - used_num
             neg_end = new_inter_num + pos_num + neg_num
             pos_len_list.append(pos_num)
-            all_len_list.append(pos_num + neg_num)
             user_idx_list.append(slice(new_inter_num, neg_end))
             new_inter_num += pos_num + neg_num
 
-        return new_inter, uid2items, used_item_id, pos_len_list, all_len_list, user_idx_list
+        return new_inter, uid2items, used_item_id, pos_len_list, user_idx_list
 
     def __next__(self):
         if self.pr >= self.pr_end:
