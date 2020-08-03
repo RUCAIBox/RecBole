@@ -122,9 +122,9 @@ class TopKEvaluator(BaseTopKEvaluator):
         # Check topk:
         if isinstance(self.topk, (int, list)):
             if isinstance(self.topk, int):
-                assert self.topk > 0, 'topk must be a pistive integer or a list of postive integers'
+                assert self.topk > 0, 'topk must be a positive integer or a list of positive integers'
                 self.topk = [self.topk]
             for topk in self.topk:
-                assert topk > 0, 'topk must be a pistive integer or a list of postive integers'
+                assert topk > 0, 'topk must be a positive integer or a list of positive integers'
         else:
             raise TypeError('The topk must be a integer, list or None')
