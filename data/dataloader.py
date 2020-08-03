@@ -10,6 +10,7 @@ import numpy as np
 import torch
 import torch.nn.utils.rnn as rnn_utils
 from sampler import Sampler
+from utils import *
 from .interaction import Interaction
 
 
@@ -21,6 +22,7 @@ class AbstractDataLoader(object):
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.pr = 0
+        self.dl_type = None
 
     def __iter__(self):
         return self
@@ -70,6 +72,9 @@ class AbstractDataLoader(object):
             self.batch_size = batch_size
             # TODO  batch size is changed
 
+    def join(self, df):
+        return self.dataset.join(df)
+
 
 class NegSampleBasedDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
@@ -80,6 +85,8 @@ class NegSampleBasedDataLoader(AbstractDataLoader):
             raise ValueError('neg_sample strategy [{}] has not been implemented'.format(neg_sample_args['strategy']))
 
         super(NegSampleBasedDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+
+        self.dl_type = DataLoaderType.NEGSAMPLE
 
         self.sampler = sampler
         self.phase = phase
@@ -193,7 +200,7 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
         labels[: pos_inter_num] = 1
         new_df[self.label_field] = labels
 
-        return self.dataset.join(new_df) if self.real_time_neg_sampling else new_df
+        return self.join(new_df) if self.real_time_neg_sampling else new_df
 
 
 class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
@@ -318,4 +325,70 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
             self.next[last_pr] = len(new_inter)
             return new_inter, pos_len_list, all_len_list, user_idx_list
         else:
-            return self.dataset.join(new_inter), pos_len_list, all_len_list, user_idx_list
+            return self.join(new_inter), pos_len_list, all_len_list, user_idx_list
+
+
+class GeneralFullDataLoader(GeneralGroupedDataLoader):
+    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+                 batch_size=1, dl_format='pointwise', shuffle=False):
+
+        neg_sample_args['real_time'] = True
+
+        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+
+        self.dl_type = DataLoaderType.FULL
+
+    def _pre_neg_sampling(self):
+        raise ValueError('Full DataLoader can not pre neg sample, pls check')
+
+    def _neg_sampling(self, uid2items):
+        uid_field = self.config['USER_ID_FIELD']
+        iid_field = self.config['ITEM_ID_FIELD']
+        label_field = self.config['LABEL_FIELD']
+
+        tot_item_num = self.dataset.num(iid_field)
+
+        new_inter = {
+            uid_field: np.zeros(len(uid2items) * tot_item_num, dtype=np.int64),
+            label_field: np.zeros(len(uid2items) * tot_item_num, dtype=np.int64),
+        }
+
+        used_item_id = {}
+
+        new_inter_num = 0
+        pos_len_list = []
+        all_len_list = []
+        user_idx_list = []
+        for i, row in enumerate(uid2items.itertuples()):
+            uid = getattr(row, uid_field)
+            pos_item_id = getattr(row, iid_field)
+            pos_num = len(pos_item_id)
+
+            act_inter_num = i * tot_item_num
+            new_inter[uid_field][act_inter_num: act_inter_num + tot_item_num] = uid
+            new_inter[label_field][act_inter_num: act_inter_num + pos_num] = 1
+
+            used_item_id[uid] = self.sampler.used_item_id[self.phase][uid]
+            used_num = len(used_item_id[uid])
+            neg_num = tot_item_num - used_num
+            neg_end = new_inter_num + pos_num + neg_num
+            pos_len_list.append(pos_num)
+            all_len_list.append(pos_num + neg_num)
+            user_idx_list.append(slice(new_inter_num, neg_end))
+            new_inter_num += pos_num + neg_num
+
+        return new_inter, uid2items, used_item_id, pos_len_list, all_len_list, user_idx_list
+
+    def __next__(self):
+        if self.pr >= self.pr_end:
+            self.pr = 0
+            if self.shuffle:
+                self._shuffle()
+            raise StopIteration()
+        return self._next_dataframe()
+
+    def _next_dataframe(self):
+        cur_data = self._neg_sampling(self.uid2items[self.pr: self.pr + self.step])
+        self.pr += self.step
+        return cur_data
