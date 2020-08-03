@@ -24,7 +24,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'eval_metric:': ['Recall', 'MRR', 'NDCG'],
+        'metrics:': ['Recall', 'MRR', 'NDCG'],
         'topk': [5, 10, 20],
     },
     'Test Real Time Full Sort': {
@@ -32,7 +32,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'eval_metric:': ['Recall'],
+        'metrics:': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, full',
         'real_time_neg_sampling': True
@@ -42,7 +42,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'eval_metric:': ['Recall'],
+        'metrics:': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, full',
         'real_time_neg_sampling': False
@@ -52,7 +52,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'eval_metric:': ['Recall'],
+        'metrics:': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, uni100',
         'real_time_neg_sampling': True
@@ -62,17 +62,27 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'eval_metric:': ['Recall'],
+        'metrics:': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, uni100',
         'real_time_neg_sampling': False
+    },
+    'Test Leave One Out': {
+        'model': 'BPRMF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics:': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_LS, full',
+        'real_time_neg_sampling': True
     },
     'Test BPRMF': {
         'model': 'BPRMF',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'eval_metric:': ['Recall'],
+        'metrics:': ['Recall'],
         'topk': [10]
     },
     'Test NeuMF': {
@@ -81,7 +91,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'eval_metric:': ['Recall'],
+        'metrics:': ['Recall'],
         'topk': [10]
     },
     'Test POP': {
@@ -89,7 +99,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'eval_metric:': ['Recall'],
+        'metrics:': ['Recall'],
         'topk': [10]
     }
 
