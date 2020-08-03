@@ -6,7 +6,7 @@
 
 import importlib
 from trainer import Trainer
-from utils import Logger
+from utils import Logger, get_model
 from config import Config
 from data import Dataset, data_preparation
 
@@ -32,23 +32,13 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 model
     """
-    model_name = config['model']
-    model_file_name = model_name.lower()
-    if importlib.util.find_spec("model.general_recommender." + model_file_name) is not None:
-        model_module = importlib.import_module("model.general_recommender." + model_file_name)
-    elif importlib.util.find_spec("model.context_aware_recommender." + model_file_name) is not None:
-
-        model_module = importlib.import_module("model.context_aware_recommender." + model_file_name)
-    else:
-        model_module = importlib.import_module("model.sequential_recommender." + model_file_name)
-
-    model_class = getattr(model_module, model_name)
-    model = model_class(config, dataset).to(config['device'])
+    model = get_model(config)(config, dataset).to(config['device'])
     print(model)
 
     """
     生成 训练/验证/测试 数据
     """
+
     train_data, test_data, valid_data = data_preparation(config, logger, model, dataset)
 
     """
@@ -65,6 +55,8 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     测试
     """
     test_result = trainer.evaluate(test_data)
+
+    print('best valid result:', best_valid_result)
     print('test result: ', test_result)
 
 
