@@ -136,9 +136,9 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
             self.step = self.batch_size
             return
         self.times = 1 + self.neg_sample_by
-        batch_num = self.batch_size // self.times
-        new_batch_size = (batch_num + 1) * self.times
-        self.step = batch_num + 1 if self.real_time_neg_sampling else new_batch_size
+        batch_num = max(self.batch_size // self.times, 1)
+        new_batch_size = batch_num * self.times
+        self.step = batch_num if self.real_time_neg_sampling else new_batch_size
         self.set_batch_size(new_batch_size)
 
     @property
@@ -218,9 +218,9 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
     def _batch_size_adaptation(self):
         if self.neg_sample_args['to'] == -1:
             self.neg_sample_args['to'] = self.dataset.item_num
-        batch_num = self.batch_size // self.neg_sample_args['to']
-        new_batch_size = (batch_num + 1) * self.neg_sample_args['to']
-        self.step = batch_num + 1
+        batch_num = max(self.batch_size // self.neg_sample_args['to'], 1)
+        new_batch_size = batch_num * self.neg_sample_args['to']
+        self.step = batch_num
         self.set_batch_size(new_batch_size)
 
     @property
