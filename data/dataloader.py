@@ -274,6 +274,9 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
         if not self.real_time_neg_sampling:
             self.start_point = [0]
         for i, row in enumerate(uid2items.itertuples()):
+            if i % self.step == 0:
+                base_idx = new_inter_num
+
             uid = getattr(row, uid_field)
             if self.full:
                 pos_item_id = getattr(row, iid_field)
@@ -298,8 +301,6 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
 
             if not self.real_time_neg_sampling:
                 self.start_point.append(new_inter_num)
-            if i % self.step == 0:
-                base_idx = new_inter_num
 
         for field in [uid_field, iid_field, label_field]:
             new_inter[field] = new_inter[field][: new_inter_num]
