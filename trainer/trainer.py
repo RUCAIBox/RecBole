@@ -4,6 +4,11 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : trainer.py
 
+# UPDATE:
+# @Time   : 2020/8/4 17:36
+# @Author : Zihan Lin
+# @Email  : linzihan.super@foxmail.com
+
 import os
 import warnings
 import torch
@@ -63,6 +68,10 @@ class Trainer(AbstractTrainer):
             self.evaluator = LossEvaluator(config, logger)
         else:
             self.evaluator = TopKEvaluator(config, logger)
+
+        self.item_tensor = None
+        self.tot_item_num = None
+        self.iid_field = config['ITEM_ID_FIELD']
 
     def _build_optimizer(self):
         # todo: Avoid clear text strings
@@ -172,6 +181,36 @@ class Trainer(AbstractTrainer):
                     break
         return self.best_valid_score, self.best_valid_result
 
+    def _full_sort_batch_eval(self, batched_data):
+        user_tensor, pos_idx, used_idx, pos_len_list, user_idx_list = batched_data
+        interaction = user_tensor.to(self.device).repeat_interleave(self.tot_item_num)
+
+        user_num_cur_batch = interaction.length // self.tot_item_num
+
+        interaction.update(self.item_tensor[:interaction.length])
+
+        scores = self.model.predict(interaction)
+        scores = scores.chunk(user_num_cur_batch, dim=0)
+
+        score_list = []
+
+        used_mask = torch.ones(self.tot_item_num, dtype=torch.bool, device=self.device)
+        for cur_pos_idx, cur_used_idx, cur_scores in zip(pos_idx, used_idx, scores):
+            cur_pos_idx = cur_pos_idx.to(self.device)
+            cur_used_idx = cur_used_idx.to(self.device)
+            cur_used_mask = used_mask.index_fill(dim=0, index=cur_used_idx, value=0)
+            pos_scores = cur_scores.index_select(dim=0, index=cur_pos_idx)
+            neg_scores = cur_scores.masked_select(cur_used_mask)
+            score_list.append(pos_scores)
+            score_list.append(neg_scores)
+
+        scores = torch.cat(score_list)
+
+        setattr(interaction, 'pos_len_list', pos_len_list)
+        setattr(interaction, 'user_idx_list', user_idx_list)
+
+        return interaction, scores
+
     def evaluate(self, eval_data, load_best_model=True, model_file=None):
         if load_best_model:
             if model_file:
@@ -186,42 +225,15 @@ class Trainer(AbstractTrainer):
         self.model.eval()
 
         if eval_data.dl_type == DataLoaderType.FULL:
-            uid_field = self.config['USER_ID_FIELD']
-            iid_field = self.config['ITEM_ID_FIELD']
-            item_tensor = eval_data.get_item_tensor().to(self.device).repeat(eval_data.step)
-            tot_item_num = eval_data.dataset.num(iid_field)
+
+            self.item_tensor = eval_data.get_item_tensor().to(self.device).repeat(eval_data.step)
+            self.tot_item_num = eval_data.dataset.num(self.iid_field)
 
         batch_matrix_list, batch_pos_len_matrix = [], []
         for batch_idx, batched_data in enumerate(eval_data):
             if eval_data.dl_type == DataLoaderType.FULL:
-                user_tensor, pos_idx, used_idx, pos_len_list, user_idx_list = batched_data
-                interaction = user_tensor.to(self.device).repeat_interleave(tot_item_num)
-                if item_tensor[iid_field].shape[0] > interaction.length:
-                    user_num_cur_batch = interaction.length // tot_item_num
-                    interaction.update(item_tensor[:interaction.length])
-                else:
-                    user_num_cur_batch = eval_data.step
-                    interaction.update(item_tensor)
-
-                scores = self.model.predict(interaction)
-                scores = scores.chunk(user_num_cur_batch, dim=0)
-
-                score_list = []
-
-                used_mask = torch.ones(tot_item_num, dtype=torch.uint8, device=self.device)
-                for cur_pos_idx, cur_used_idx, cur_scores in zip(pos_idx, used_idx, scores):
-                    cur_pos_idx = cur_pos_idx.to(self.device)
-                    cur_used_idx = cur_used_idx.to(self.device)
-                    cur_used_mask = used_mask.index_fill(dim=0, index=cur_used_idx, value=0)
-                    pos_scores = cur_scores.index_select(dim=0, index=cur_pos_idx)
-                    neg_scores = cur_scores.masked_select(cur_used_mask)
-                    score_list.append(pos_scores)
-                    score_list.append(neg_scores)
-
-                scores = torch.cat(score_list)
-
-                setattr(interaction, 'pos_len_list', pos_len_list)
-                setattr(interaction, 'user_idx_list', user_idx_list)
+                interaction, scores = self._full_sort_batch_eval(batched_data)
+                pos_len_list = interaction.pos_len_list
             else:
                 interaction = batched_data
                 batch_size = interaction.length
