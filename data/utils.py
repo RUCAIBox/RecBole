@@ -115,6 +115,9 @@ def get_data_loader(dl_type, eval_setting):
         if neg_sample_strategy == 'by':
             return GeneralInteractionBasedDataLoader
         elif neg_sample_strategy == 'to':
-            return GeneralGroupedDataLoader
+            if eval_setting.neg_sample_args['to'] == -1:
+                return GeneralFullDataLoader
+            else:
+                return GeneralGroupedDataLoader
     else:
         raise NotImplementedError('dl_type [{}] has not been implemented'.format(dl_type))
