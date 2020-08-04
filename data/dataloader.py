@@ -255,8 +255,8 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
 
     def _dataframe_to_interaction(self, data):
         interaction = super(GeneralGroupedDataLoader, self)._dataframe_to_interaction(data)
-        setattr(interaction, 'pos_len_list', self.cur_pos_len_list)
-        setattr(interaction, 'user_idx_list', self.cur_user_idx_list)
+        if hasattr(self, 'cur_pos_len_list'): setattr(interaction, 'pos_len_list', self.cur_pos_len_list)
+        if hasattr(self, 'cur_user_idx_list'): setattr(interaction, 'user_idx_list', self.cur_user_idx_list)
         return interaction
 
     def _pre_neg_sampling(self):
@@ -334,38 +334,39 @@ class GeneralFullDataLoader(GeneralGroupedDataLoader):
     def _neg_sampling(self, uid2items):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
-        label_field = self.config['LABEL_FIELD']
 
         tot_item_num = self.dataset.num(iid_field)
 
-        new_inter = {
-            uid_field: np.zeros(len(uid2items) * tot_item_num, dtype=np.int64),
-            label_field: np.zeros(len(uid2items) * tot_item_num, dtype=np.int64),
-        }
-
-        used_item_id = {}
+        users = np.zeros(len(uid2items), dtype=np.int64)
 
         new_inter_num = 0
         pos_len_list = []
         user_idx_list = []
+
+        pos_idx = []
+        used_idx = []
         for i, row in enumerate(uid2items.itertuples()):
             uid = getattr(row, uid_field)
             pos_item_id = getattr(row, iid_field)
+            start_idx = i * tot_item_num
+            pos_idx.append(torch.LongTensor(pos_item_id))
             pos_num = len(pos_item_id)
 
-            act_inter_num = i * tot_item_num
-            new_inter[uid_field][act_inter_num: act_inter_num + tot_item_num] = uid
-            new_inter[label_field][act_inter_num: act_inter_num + pos_num] = 1
+            users[i] = uid
 
-            used_item_id[uid] = self.sampler.used_item_id[self.phase][uid]
-            used_num = len(used_item_id[uid])
+            used_item_id = self.sampler.used_item_id[self.phase][uid]
+            used_idx.append(torch.LongTensor(list(used_item_id)))
+            used_num = len(used_item_id)
             neg_num = tot_item_num - used_num
             neg_end = new_inter_num + pos_num + neg_num
             pos_len_list.append(pos_num)
             user_idx_list.append(slice(new_inter_num, neg_end))
             new_inter_num += pos_num + neg_num
 
-        return new_inter, uid2items, used_item_id, pos_len_list, user_idx_list
+        users = pd.DataFrame({uid_field: users})
+        users = self._dataframe_to_interaction(self.join(users))
+
+        return users, pos_idx, used_idx, pos_len_list, user_idx_list
 
     def __next__(self):
         if self.pr >= self.pr_end:
@@ -379,3 +380,7 @@ class GeneralFullDataLoader(GeneralGroupedDataLoader):
         cur_data = self._neg_sampling(self.uid2items[self.pr: self.pr + self.step])
         self.pr += self.step
         return cur_data
+
+    def get_item_tensor(self):
+        item_df = self.dataset.get_item_feature()
+        return self._dataframe_to_interaction(item_df)

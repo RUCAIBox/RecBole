@@ -12,7 +12,13 @@ class Interaction(object):
             break
 
     def __getitem__(self, index):
-        return self.interaction[index]
+        if isinstance(index, str):
+            return self.interaction[index]
+        else:
+            ret = {}
+            for k in self.interaction:
+                ret[k] = self.interaction[k][index]
+            return Interaction(ret)
 
     def __len__(self):
         return self.length
@@ -43,3 +49,18 @@ class Interaction(object):
             ret[k] = self.interaction[k].numpy()
         return Interaction(ret)
 
+    def repeat(self, *sizes):
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k].repeat(sizes)
+        return Interaction(ret)
+
+    def repeat_interleave(self, repeats):
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k].unsqueeze(-1).expand(-1, repeats).flatten()
+        return Interaction(ret)
+
+    def update(self, new_inter):
+        for k in new_inter.interaction:
+            self.interaction[k] = new_inter.interaction[k]
