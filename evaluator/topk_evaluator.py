@@ -105,7 +105,8 @@ class TopKEvaluator(object):
             np.ndarray: a matrix which contains the metrics result
         """
 
-        pos_idx_matrix = (topk_index <= pos_len_list.reshape(-1, 1))
+        pos_idx_matrix = (topk_index < pos_len_list.reshape(-1, 1))
+        
         result_list = self.metrics_info(pos_idx_matrix, pos_len_list)  # n_users x len(metrics) x len(ranks)
         result = np.stack(result_list, axis=0).mean(axis=1)  # len(metrics) x len(ranks)
         return result
