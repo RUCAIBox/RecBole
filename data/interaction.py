@@ -58,7 +58,7 @@ class Interaction(object):
     def repeat_interleave(self, repeats):
         ret = {}
         for k in self.interaction:
-            ret[k] = self.interaction[k].unsqueeze(-1).expand(-1, repeats).flatten()
+            ret[k] = self.interaction[k].repeat_interleave(repeats)
         return Interaction(ret)
 
     def update(self, new_inter):
