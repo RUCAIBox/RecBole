@@ -290,9 +290,9 @@ class Dataset(object):
         return pd.DataFrame(list(uid2items.items()), columns=columns)
 
     def join(self, df):
-        if self.user_feat is not None:
+        if self.user_feat is not None and self.uid_field in df:
             df = pd.merge(df, self.user_feat, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
-        if self.item_feat is not None:
+        if self.item_feat is not None and self.iid_field in df:
             df = pd.merge(df, self.item_feat, on=self.iid_field, how='left', suffixes=('_inter', '_item'))
         return df
 
@@ -424,3 +424,10 @@ class Dataset(object):
             df = getattr(self, '{}_feat'.format(name))
             if df is not None:
                 df.to_csv(os.path.join(filepath, '{}.csv'.format(name)))
+
+    def get_item_feature(self):
+        if self.item_feat is None:
+            tot_item_cnt = self.num(self.iid_field)
+            return pd.DataFrame({self.iid_field: np.arange(tot_item_cnt)})
+        else:
+            return self.item_feat

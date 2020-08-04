@@ -14,7 +14,7 @@ from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
 from evaluator import TopKEvaluator, LossEvaluator, loss_metrics
 from data.interaction import Interaction
-from utils import ensure_dir, get_local_time
+from utils import ensure_dir, get_local_time, DataLoaderType
 
 
 class AbstractTrainer(object):
@@ -184,16 +184,53 @@ class Trainer(AbstractTrainer):
             #print(message_output)
 
         self.model.eval()
+
+        if eval_data.dl_type == DataLoaderType.FULL:
+            uid_field = self.config['USER_ID_FIELD']
+            iid_field = self.config['ITEM_ID_FIELD']
+            item_tensor = eval_data.get_item_tensor().to(self.device).repeat(eval_data.step)
+            tot_item_num = eval_data.dataset.num(iid_field)
+
         batch_matrix_list, batch_pos_len_matrix = [], []
-        for batch_idx, interaction in enumerate(eval_data):
+        for batch_idx, batched_data in enumerate(eval_data):
+            if eval_data.dl_type == DataLoaderType.FULL:
+                user_tensor, pos_idx, used_idx, pos_len_list, user_idx_list = batched_data
+                interaction = user_tensor.to(self.device).repeat_interleave(tot_item_num)
+                if item_tensor[iid_field].shape[0] > interaction.length:
+                    user_num_cur_batch = interaction.length // tot_item_num
+                    interaction.update(item_tensor[:interaction.length])
+                else:
+                    user_num_cur_batch = eval_data.step
+                    interaction.update(item_tensor)
 
-            batch_size = interaction.length
-            pos_len_list = interaction.pos_len_list   # type :list  number of positive item for each user in this batch
+                scores = self.model.predict(interaction)
+                scores = scores.chunk(user_num_cur_batch, dim=0)
 
-            if batch_size <= self.test_batch_size:
-                scores = self.model.predict(interaction.to(self.device))
+                score_list = []
+
+                used_mask = torch.ones(tot_item_num, dtype=torch.uint8, device=self.device)
+                for cur_pos_idx, cur_used_idx, cur_scores in zip(pos_idx, used_idx, scores):
+                    cur_pos_idx = cur_pos_idx.to(self.device)
+                    cur_used_idx = cur_used_idx.to(self.device)
+                    cur_used_mask = used_mask.index_fill(dim=0, index=cur_used_idx, value=0)
+                    pos_scores = cur_scores.index_select(dim=0, index=cur_pos_idx)
+                    neg_scores = cur_scores.masked_select(cur_used_mask)
+                    score_list.append(pos_scores)
+                    score_list.append(neg_scores)
+
+                scores = torch.cat(score_list)
+
+                setattr(interaction, 'pos_len_list', pos_len_list)
+                setattr(interaction, 'user_idx_list', user_idx_list)
             else:
-                scores = self.spilt_predict(interaction, batch_size)
+                interaction = batched_data
+                batch_size = interaction.length
+                pos_len_list = interaction.pos_len_list   # type :list  number of positive item for each user in this batch
+
+                if batch_size <= self.test_batch_size:
+                    scores = self.model.predict(interaction.to(self.device))
+                else:
+                    scores = self.spilt_predict(interaction, batch_size)
 
             batch_matrix = self.evaluator.evaluate(interaction, scores)
             batch_matrix_list.append(batch_matrix)
