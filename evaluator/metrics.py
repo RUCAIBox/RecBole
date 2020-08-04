@@ -6,10 +6,6 @@ from sklearn.metrics import (
     mean_squared_error
 )
 
-"""Function name and function mapper.
-Useful when we have to serialize evaluation metric names
-and call the functions based on deserialized names
-"""
 
 #    TopK Metrics    #
 
@@ -114,40 +110,52 @@ def auc(trues, preds):
 
 
 def mae(trues, preds):
-    """[summary]
+    """Mean absolute error regression loss
 
-    url:
+    url:https://en.wikipedia.org/wiki/Mean_absolute_error
     """
     return mean_absolute_error(trues, preds)
 
 
 def rmse(trues, preds):
-    """[summary]
+    """Mean std error regression loss
 
-    url:
+    url:https://en.wikipedia.org/wiki/Root-mean-square_deviation
     """
     return np.sqrt(mean_squared_error(trues, preds))
 
+
+def log_loss_(trues, preds):
+    """Log loss, aka logistic loss or cross-entropy loss
+
+    url:http://wiki.fast.ai/index.php/Log_Loss
+    """    
+    # XXX something wrong
+    return log_loss(trues, preds)
 
 # Item based Metrics #
 
 
 def coverage(n_items, ):
-    pass
+    raise NotImplementedError
 
 
 def gini_index():
-    pass
+    raise NotImplementedError
 
 
 def shannon_entropy():
-    pass
+    raise NotImplementedError
 
 
 def diversity():
-    pass
+    raise NotImplementedError
 
 
+"""Function name and function mapper.
+Useful when we have to serialize evaluation metric names
+and call the functions based on deserialized names
+"""
 metrics_dict = {
     'ndcg': ndcg,
     'hit': hit,
@@ -156,5 +164,7 @@ metrics_dict = {
     'recall': recall,
     'mrr': mrr,
     'rmse': rmse,
-    'mae': mae
+    'mae': mae,
+    'logloss': log_loss_,
+    'auc': auc
 }
