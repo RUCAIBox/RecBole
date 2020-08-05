@@ -3,6 +3,10 @@
 # @Email  : houyupeng@ruc.edu.cn
 # @File   : interaction.py
 
+# UPDATE
+# @Time    : 2020/08/05
+# @Author  : Yupeng Hou
+# @email   : houyupeng@ruc.edu.cn
 
 class Interaction(object):
     def __init__(self, interaction):
@@ -55,10 +59,10 @@ class Interaction(object):
             ret[k] = self.interaction[k].repeat(sizes)
         return Interaction(ret)
 
-    def repeat_interleave(self, repeats):
+    def to_device_repeat_interleave(self, device, repeats):
         ret = {}
         for k in self.interaction:
-            ret[k] = self.interaction[k].repeat_interleave(repeats)
+            ret[k] = self.interaction[k].to(device).repeat_interleave(repeats)
         return Interaction(ret)
 
     def update(self, new_inter):
