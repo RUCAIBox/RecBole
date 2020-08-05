@@ -2,7 +2,7 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 # @File   : dataset.py
-
+             
 import os
 import json
 import copy
@@ -41,37 +41,39 @@ class Dataset(object):
 
         # TODO
         #self.filter_users()
-        self.filter_users_base_inter(max_count=config['max_user_inter_count'], min_count=config['min_user_inter_count'])
-        self.filter_items_base_inter(max_count=config['max_item_inter_count'], min_count=config['min_item_inter_count'])
-        self.filter_items(
-            lowest_val=config['lowest_val'],
-            highest_val=config['highest_val'],
-            equal_val=config['equal_val'],
-            not_equal_val=config['not_equal_val'],
-            drop=config['drop_filter_field']
-        )
+        if self.user_feat is not None and self.inter_feat is not None:
+            self.filter_users_base_inter(max_count=config['max_user_inter_count'], min_count=config['min_user_inter_count'])
+        if self.item_feat is not None and self.inter_feat is not None:
+            self.filter_items_base_inter(max_count=config['max_item_inter_count'], min_count=config['min_item_inter_count'])
+        if self.item_feat is not None:
+            self.filter_items(
+                lowest_val=config['lowest_val'],
+                highest_val=config['highest_val'],
+                equal_val=config['equal_val'],
+                not_equal_val=config['not_equal_val'],
+                drop=config['drop_filter_field']
+            )
         
-
-
-        self.filter_users(
-            lowest_val=config['lowest_val'],
-            highest_val=config['highest_val'],
-            equal_val=config['equal_val'],
-            not_equal_val=config['not_equal_val'],
-            drop=config['drop_filter_field']
-        )
-
-        self.filter_inters(
-            lowest_val=config['lowest_val'],
-            highest_val=config['highest_val'],
-            equal_val=config['equal_val'],
-            not_equal_val=config['not_equal_val'],
-            drop=config['drop_filter_field']
-        )
+        if self.user_feat is not None:
+            self.filter_users(
+                lowest_val=config['lowest_val'],
+                highest_val=config['highest_val'],
+                equal_val=config['equal_val'],
+                not_equal_val=config['not_equal_val'],
+                drop=config['drop_filter_field']
+            )
+        if self.inter_feat is not None:
+            self.filter_inters(
+                lowest_val=config['lowest_val'],
+                highest_val=config['highest_val'],
+                equal_val=config['equal_val'],
+                not_equal_val=config['not_equal_val'],
+                drop=config['drop_filter_field']
+            )
     
         self._remap_ID_all()
 
-    def filter_users_base_inter(self, max_count,  min_count=None):
+    def filter_users_base_inter(self, max_count,  min_count=None):# 基于用户交互数量进行筛选
         temp_dict={}
         if min_count is None:
             min_count=0
@@ -100,7 +102,7 @@ class Dataset(object):
             self.inter_feat = self.inter_feat[ban_inter_list]
             self.inter_feat.reset_index(drop=True, inplace=True)
 
-    def filter_items_base_inter(self, max_count,  min_count=0):
+    def filter_items_base_inter(self, max_count,  min_count=0):#基于物品交互数量进行筛选
         temp_dict={}
         if max_count is not None:
             for item in self.item_feat['item_id']:

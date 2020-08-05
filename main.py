@@ -9,7 +9,7 @@ config.init()
 logger = Logger(config)
 
 dataset = Dataset(config)
-'''logger.info(dataset)
+logger.info(dataset)
 
 model = BPRMF(config, dataset).to(config['device'])
 logger.info(model)
@@ -24,4 +24,3 @@ trainer = Trainer(config, model, logger)
 best_valid_score, _ = trainer.fit(train_data, valid_data)
 result = trainer.evaluate(test_data)
 logger.info(best_valid_score)
-'''
