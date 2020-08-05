@@ -1,3 +1,14 @@
+# -*- encoding: utf-8 -*-
+# @Time    :   2020/08/04
+# @Author  :   Kaiyuan Li
+# @email   :   tsotfsk@outlook.com
+
+# UPDATE
+# @Time    :   2020/08/04
+# @Author  :   Kaiyuan Li
+# @email   :   tsotfsk@outlook.com
+
+
 from enum import Enum
 import numpy as np
 
@@ -67,9 +78,3 @@ def cutoff(scores, threshold):
         (np.ndarray): processed scores
     """    
     return np.where(scores > threshold, 1, 0)
-
-
-
-
-
-

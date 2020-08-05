@@ -1,3 +1,13 @@
+# -*- encoding: utf-8 -*-
+# @Time    :   2020/08/04
+# @Author  :   Kaiyuan Li
+# @email   :   tsotfsk@outlook.com
+
+# UPDATE
+# @Time    :   2020/08/04
+# @Author  :   Kaiyuan Li
+# @email   :   tsotfsk@outlook.com
+
 from .metrics import metrics_dict
 import numpy as np
 import torch
@@ -34,7 +44,7 @@ class LossEvaluator(object):
 
         # get metrics
         metric_dict = {}
-        result_list = self.eval_metrics(trues, preds)
+        result_list = self._calculate_metrics(trues, preds)
         for metric, value in zip(self.metrics, result_list):
             key = '{}'.format(metric)
             metric_dict[key] = value
@@ -63,5 +73,5 @@ class LossEvaluator(object):
             result_list.append(result)
         return result_list
 
-    def eval_metrics(self, trues, preds):
+    def _calculate_metrics(self, trues, preds):
         return self.metrics_info(trues, preds)
