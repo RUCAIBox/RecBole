@@ -2,6 +2,11 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 # @File   : dataset.py
+
+#UPDATE:
+#@TIME   : 2020/8/5
+#@Author : Xingyu Pan
+#@Email  : panxy@ruc.edu.cn 
              
 import os
 import json
