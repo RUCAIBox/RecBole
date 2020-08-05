@@ -23,7 +23,7 @@ class Dataset(object):
             self._restore_saved_dataset(saved_dataset)
 
     def _from_scratch(self, config):
-        self.dataset_path = config['data_path']
+        self.dataset_path = config['data_path'] #没有data path
 
         self.field2type = {}
         self.field2source = {}
@@ -40,7 +40,26 @@ class Dataset(object):
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
 
         # TODO
-        self.filter_users()
+        #self.filter_users()
+        self.filter_users_base_inter(max_count=config['max_user_inter_count'], min_count=config['min_user_inter_count'])
+        self.filter_items_base_inter(max_count=config['max_item_inter_count'], min_count=config['min_item_inter_count'])
+        self.filter_items(
+            lowest_val=config['lowest_val'],
+            highest_val=config['highest_val'],
+            equal_val=config['equal_val'],
+            not_equal_val=config['not_equal_val'],
+            drop=config['drop_filter_field']
+        )
+        
+
+
+        self.filter_users(
+            lowest_val=config['lowest_val'],
+            highest_val=config['highest_val'],
+            equal_val=config['equal_val'],
+            not_equal_val=config['not_equal_val'],
+            drop=config['drop_filter_field']
+        )
 
         self.filter_inters(
             lowest_val=config['lowest_val'],
@@ -49,8 +68,63 @@ class Dataset(object):
             not_equal_val=config['not_equal_val'],
             drop=config['drop_filter_field']
         )
-
+    
         self._remap_ID_all()
+
+    def filter_users_base_inter(self, max_count,  min_count=None):
+        temp_dict={}
+        if min_count is None:
+            min_count=0
+        if max_count is not None:
+            for user in self.user_feat['user_id']:
+                temp_dict[user]=0
+            for user in self.inter_feat['user_id']:
+                temp_dict[user]+=1
+            ban_user_list=[]
+            ban_user=[]
+            for user in temp_dict:
+                if temp_dict[user]<min_count or temp_dict[user]>max_count:
+                    ban_user_list.append(False)
+                    ban_user.append(user)
+                    
+                else:
+                    ban_user_list.append(True)
+            self.user_feat = self.user_feat[ban_user_list]
+            self.user_feat.reset_index(drop=True, inplace=True)
+            ban_inter_list=[]
+            for user in self.inter_feat['user_id']:
+                if user in ban_user:
+                    ban_inter_list.append(False)
+                else:
+                    ban_inter_list.append(True)
+            self.inter_feat = self.inter_feat[ban_inter_list]
+            self.inter_feat.reset_index(drop=True, inplace=True)
+
+    def filter_items_base_inter(self, max_count,  min_count=0):
+        temp_dict={}
+        if max_count is not None:
+            for item in self.item_feat['item_id']:
+                temp_dict[item]=0
+            for item in self.inter_feat['item_id']:
+                temp_dict[item]+=1
+            ban_item_list=[]
+            ban_item=[]
+            for item in temp_dict:
+                if temp_dict[item]<min_count or temp_dict[item]>max_count:
+                    ban_item_list.append(False)
+                    ban_item.append(item)
+                else:
+                    ban_item_list.append(True)
+            self.item_feat = self.item_feat[ban_item_list]
+            self.item_feat.reset_index(drop=True, inplace=True)
+            ban_inter_list=[]
+            for item in self.inter_feat['item_id']:
+                if item in ban_item:
+                    ban_inter_list.append(False)
+                else:
+                    ban_inter_list.append(True)
+            self.inter_feat = self.inter_feat[ban_inter_list]
+            self.inter_feat.reset_index(drop=True, inplace=True)
 
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
@@ -82,6 +156,7 @@ class Dataset(object):
 
         item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
         if os.path.isfile(item_feat_path):
+           
             item_feat = self._load_feat(item_feat_path, 'item')
         else:
             # TODO logging item feat not exist
@@ -90,6 +165,7 @@ class Dataset(object):
         inter_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'inter'))
         if not os.path.isfile(inter_feat_path):
             raise ValueError('File {} not exist'.format(inter_feat_path))
+
         inter_feat = self._load_feat(inter_feat_path, 'inter')
 
         self.uid_field = self.config['USER_ID_FIELD']
@@ -114,7 +190,7 @@ class Dataset(object):
         else:
             load_col = set(self.config['load_col'][source])
 
-        if self.config['unload_col'] is not None and source in self.config['unload_col']:
+        if self.config['unload_col'] is not None and source in self.config['unload_col']: #不加载？
             unload_col = set(self.config['unload_col'][source])
         else:
             unload_col = None
@@ -127,6 +203,7 @@ class Dataset(object):
         field_names = []
         columns = []
         remain_field = set()
+
         for field_type in df.columns:
             field, ftype = field_type.split(':')
             field_names.append(field)
@@ -147,7 +224,6 @@ class Dataset(object):
             remain_field.add(field)
 
         if len(columns) == 0:
-            print('source', source)
             return None
         df.columns = field_names
         df = df[columns]
@@ -171,21 +247,58 @@ class Dataset(object):
             ftype2func[ftype](df[field])
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = max(map(len, df[field].values))
-
+       
         return df
 
     # TODO
-    def filter_users(self):
-        pass
+    
+    def filter_users(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None, drop=False):
+        self._filter_users(lowest_val, lambda x, y: x >= y, drop)
+        self._filter_users(highest_val, lambda x, y: x <= y, drop)
+        self._filter_users(equal_val, lambda x, y: x == y, drop)
+        self._filter_users(not_equal_val, lambda x, y: x != y, drop)
+        self.user_feat.reset_index(drop=True, inplace=True)
+
+    def _filter_users(self, val, cmp, drop=False):
+        if val is not None:
+            if 'user' in val:
+                val=val['user']
+                for field in val:
+                    if field not in self.field2type:
+                        raise ValueError('field [{}] not defined in dataset'.format(field))
+                    self.user_feat = self.user_feat[cmp(self.user_feat[field].values, val[field])]
+                    if drop:
+                        self._del_col(field)
+
+    def filter_items(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None, drop=False):
+        self._filter_items(lowest_val, lambda x, y: x >= y, drop)
+        self._filter_items(highest_val, lambda x, y: x <= y, drop)
+        self._filter_items(equal_val, lambda x, y: x == y, drop)
+        self._filter_items(not_equal_val, lambda x, y: x != y, drop)
+        self.item_feat.reset_index(drop=True, inplace=True)
+
+    def _filter_items(self, val, cmp, drop=False):
+        if val is not None:
+            if 'item' in val:
+                val = val['item']
+                for field in val:
+                    if field not in self.field2type:
+                        raise ValueError('field [{}] not defined in dataset'.format(field))
+                    self.item_feat = self.item_feat[cmp(self.item_feat[field].values, val[field])]
+                    if drop:
+                        self._del_col(field)
 
     def _filter_inters(self, val, cmp, drop=False):
         if val is not None:
-            for field in val:
-                if field not in self.field2type:
-                    raise ValueError('field [{}] not defined in dataset'.format(field))
-                self.inter_feat = self.inter_feat[cmp(self.inter_feat[field].values, val[field])]
-                if drop:
-                    self._del_col(field)
+            if 'inter' in val:
+                val = val['inter']
+                for field in val:
+                    if field not in self.field2type:
+                        raise ValueError('field [{}] not defined in dataset'.format(field))
+                    self.inter_feat = self.inter_feat[cmp(self.inter_feat[field].values, val[field])]
+                    if drop:
+                        self._del_col(field)
+    
 
     def _del_col(self, field):
         for feat in [self.inter_feat, self.user_feat, self.item_feat]:
