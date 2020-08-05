@@ -1,3 +1,13 @@
+# -*- encoding: utf-8 -*-
+# @Time    :   2020/08/04
+# @Author  :   Kaiyuan Li
+# @email   :   tsotfsk@outlook.com
+
+# UPDATE
+# @Time    :   2020/08/04
+# @Author  :   Kaiyuan Li
+# @email   :   tsotfsk@outlook.com
+
 import numpy as np
 import torch
 from .metrics import metrics_dict
@@ -42,9 +52,10 @@ class TopKEvaluator(object):
         pos_len_list = np.concatenate(batch_pos_list)
         topk_index = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
 
+        assert len(pos_len_list) == len(topk_index)
         # get metrics
         metric_dict = {}
-        result_list = self.eval_metrics(pos_len_list, topk_index)
+        result_list = self._calculate_metrics(pos_len_list, topk_index)
         for metric, value in zip(self.metrics, result_list):
             for k in self.topk:
                 key = '{}@{}'.format(metric, k)
@@ -94,7 +105,7 @@ class TopKEvaluator(object):
             result_list.append(result)
         return result_list
 
-    def eval_metrics(self, pos_len_list, topk_index):
+    def _calculate_metrics(self, pos_len_list, topk_index):
         """ to evaluate the metrics by users
 
         Args:
@@ -106,7 +117,6 @@ class TopKEvaluator(object):
         """
 
         pos_idx_matrix = (topk_index < pos_len_list.reshape(-1, 1))
-        
         result_list = self.metrics_info(pos_idx_matrix, pos_len_list)  # n_users x len(metrics) x len(ranks)
         result = np.stack(result_list, axis=0).mean(axis=1)  # len(metrics) x len(ranks)
         return result
