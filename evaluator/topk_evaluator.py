@@ -4,7 +4,7 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/04           2020/08/05
+# @Time    :   2020/08/04           2020/08/06
 # @Author  :   Kaiyuan Li           Yupeng Hou
 # @email   :   tsotfsk@outlook.com  houyupeng@ruc.edu.cn
 
@@ -27,10 +27,9 @@ class TopKEvaluator(object):
         """ evalaute the topk metrics
 
         Args:
-            pos_len_list (list): a list of the positive items' length
             score_tensor (tensor): a tensor of scores
+            pos_len_list (list): a list of the positive items' length
             user_len_list (list): a list of users' length
-            pos_len_list (list): a list of positive items' length
 
         Returns:
             dict: such as { 'Hit@20': 0.3824, 'Recall@20': 0.0527

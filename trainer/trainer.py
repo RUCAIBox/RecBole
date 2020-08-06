@@ -5,7 +5,7 @@
 # @File   : trainer.py
 
 # UPDATE:
-# @Time   : 2020/8/4 17:36              2020/8/5
+# @Time   : 2020/8/4 17:36              2020/8/6
 # @Author : Zihan Lin                   Yupeng Hou
 # @Email  : linzihan.super@foxmail.com  houyupeng@ruc.edu.cn
 
@@ -182,7 +182,6 @@ class Trainer(AbstractTrainer):
                     break
         return self.best_valid_score, self.best_valid_result
 
-    @profile
     def _full_sort_batch_eval(self, batched_data):
         user_tensor, pos_idx, used_idx, pos_len_list, user_len_list, neg_len_list = batched_data
         interaction = user_tensor.to_device_repeat_interleave(self.device, self.tot_item_num)
@@ -245,7 +244,7 @@ class Trainer(AbstractTrainer):
 
             batch_matrix = self.evaluator.evaluate(interaction, scores)
             batch_matrix_list.append(batch_matrix)
-            batch_pos_len_matrix.append(pos_len_list)
+            batch_pos_len_matrix.append([_ for _ in pos_len_list if _ > 0])
         result = self.evaluator.collect(batch_matrix_list, batch_pos_len_matrix)
 
         return result
