@@ -339,7 +339,7 @@ class Dataset(object):
 
     def _calcu_split_ids(self, tot, ratios):
         cnt = [int(ratios[i] * tot) for i in range(len(ratios))]
-        cnt[-1] = tot - sum(cnt[0:-1])
+        cnt[0] = tot - sum(cnt[1:])
         split_ids = np.cumsum(cnt)[:-1]
         return list(split_ids)
 
@@ -377,7 +377,7 @@ class Dataset(object):
             pr = tot_cnt - legal_leave_one_num
             next_index[0].extend(grouped_index[:pr])
             for i in range(legal_leave_one_num):
-                next_index[i + 1].append(grouped_index[pr])
+                next_index[-legal_leave_one_num + i].append(grouped_index[pr])
                 pr += 1
 
         next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]

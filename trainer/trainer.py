@@ -5,9 +5,9 @@
 # @File   : trainer.py
 
 # UPDATE:
-# @Time   : 2020/8/4 17:36              2020/8/6
-# @Author : Zihan Lin                   Yupeng Hou
-# @Email  : linzihan.super@foxmail.com  houyupeng@ruc.edu.cn
+# @Time   : 2020/8/4 17:36, 2020/8/6
+# @Author : Zihan Lin, Yupeng Hou
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
 
 import os
 import warnings
