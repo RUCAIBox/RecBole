@@ -19,7 +19,7 @@ topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'P
 
 class TopKEvaluator(object):
 
-    def __init__(self, config, logger):
+    def __init__(self, config):
         self.topk = config['topk']
         self.metrics = config['metrics']
 
