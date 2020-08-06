@@ -18,7 +18,7 @@ loss_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOG
 
 class LossEvaluator(object):
 
-    def __init__(self, config, logger):
+    def __init__(self, config):
         self.metrics = config['metrics']
         self.label_field = config['LABEL_FIELD']
 
