@@ -60,11 +60,11 @@ class AbstractDataLoader(object):
             elif ftype == 'float':
                 data[k] = torch.FloatTensor(data[k])
             elif ftype == 'token_seq':
-                data = [torch.LongTensor(d[:seqlen[k]]) for d in data[k]]  # TODO  cutting strategy?
-                data[k] = rnn_utils.pad_sequence(data, batch_first=True)
+                seq_data = [torch.LongTensor(d[:seqlen[k]]) for d in data[k]]  # TODO  cutting strategy?
+                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == 'float_seq':
-                data = [torch.FloatTensor(d[:seqlen[k]]) for d in data[k]]  # TODO  cutting strategy?
-                data[k] = rnn_utils.pad_sequence(data, batch_first=True)
+                seq_data = [torch.FloatTensor(d[:seqlen[k]]) for d in data[k]]  # TODO  cutting strategy?
+                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             else:
                 raise ValueError('Illegal ftype [{}]'.format(ftype))
         return Interaction(data)
