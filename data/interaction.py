@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
+# @Time   : 2020/7/10
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
-# @File   : interaction.py
 
 # UPDATE
-# @Time    : 2020/08/05
+# @Time    : 2020/8/5
 # @Author  : Yupeng Hou
 # @email   : houyupeng@ruc.edu.cn
 
