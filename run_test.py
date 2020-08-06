@@ -6,7 +6,7 @@
 
 
 from trainer import Trainer
-from utils import get_logger, get_model
+from utils import init_logger, get_model
 from config import Config
 from data import Dataset, data_preparation
 
@@ -22,13 +22,14 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 logger
     """
-    logger = get_logger(config)
+    init_logger(config)
 
     """
     初始化 dataset
     """
     dataset = Dataset(config)
     print(dataset)
+
 
     """
     初始化 model

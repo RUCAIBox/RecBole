@@ -8,14 +8,14 @@
 from config import Config
 from data import Dataset, data_preparation
 from trainer import Trainer, HyperTuning
-from utils import get_logger, get_model
+from utils import init_logger, get_model
 
 
 def data_preparation_function():
     config = Config('properties/overall.config')
     config.init()
 
-    logger = get_logger(config)
+    init_logger(config)
 
     dataset = Dataset(config)
     print(dataset)

@@ -2,7 +2,8 @@ import os
 import copy
 from .dataloader import *
 from config import EvalSetting
-from utils import ModelType, get_logger
+from utils import ModelType
+from logging import getLogger
 
 
 def data_preparation(config, model, dataset, save=False):
@@ -66,7 +67,7 @@ def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
         raise ValueError('dataset {} and batch_size {} should have the same length'.format(dataset, batch_size))
     if len(dataset) != len(phase):
         raise ValueError('dataset {} and phase {} should have the same length'.format(dataset, phase))
-    logger = get_logger()
+    logger = getLogger()
     logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(dl_type, name, dl_format))
     logger.info(eval_setting)
     logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))

@@ -2,12 +2,13 @@ from config import Config
 from data import Dataset, data_preparation
 from model.general_recommender.bprmf import BPRMF
 from trainer import Trainer
-from utils import get_logger
+from utils import init_logger
+from logging import getLogger
 
 config = Config('properties/overall.config')
 config.init()
-logger = get_logger(config)
-
+init_logger(config)
+logger = getLogger()
 dataset = Dataset(config)
 logger.info(dataset)
 

@@ -20,7 +20,8 @@ from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
 from evaluator import TopKEvaluator, LossEvaluator, loss_metrics
 from data.interaction import Interaction
-from utils import ensure_dir, get_local_time, DataLoaderType, get_logger
+from utils import ensure_dir, get_local_time, DataLoaderType
+from logging import getLogger
 
 
 class AbstractTrainer(object):
@@ -39,7 +40,7 @@ class Trainer(AbstractTrainer):
     def __init__(self, config, model):
         super(Trainer, self).__init__(config, model)
 
-        self.logger = get_logger()
+        self.logger = getLogger()
         self.learner = config['learner']
         self.learning_rate = config['learning_rate']
         self.epochs = config['epochs']
