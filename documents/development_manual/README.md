@@ -18,7 +18,6 @@
 最上方为创建者的信息，下方为更新者的信息，如果有多次更新，只需要保持最新的时间在上面即可。
 其中`@` 和`:`之间为7个字符的间距.
 
-
 ## 如何开发一个新模型？
 
 ### 1.确定要开发的模型
@@ -35,21 +34,21 @@
 
    现负责人：保证每一个模型都有专门的负责人，负责开源之后的模型维护工作。当不处于这个项目后，需要把自己负责的模型进行转交，更新最新的负责人。
 
-|  序号  | 模型名称 | 模型类别 | 模型状态 | 现负责人 |
-|  ---- | ----  | ----  | ----  | ----  |
-| 1  | Popularity | general | 开发中 | 林子涵 |
-| 2  | ItemKNN | general | 开发中 | 林子涵 |
-| 3  | BPRMF | general | 测试中 | 林子涵 |
-| 4  | NCF | general | 测试中 | 林子涵 |
-| 5  | NGCF | general | 开发中 | 林子涵 |
-| 6  | LightGCN | general | 未认领 |  |
-| 7  | FM | context-aware | 开发中 | 牟善磊 |
-| 8  | DeepFM | context-aware | 开发中 | 牟善磊 |
-| 9  | NFM | context-aware | 开发中 | 林子涵 |
-| 10 | Wide&Deep | context-aware | 开发中 | 牟善磊 |
-| 11 | GRU4Rec | sequential | 开发中 | 牟善磊 |
-| 12 | SASRec | sequential | 未认领 |  |
-| 13 | FPMC | sequential | 未认领 |  |
+| 序号 | 模型名称   | 模型类别      | 模型状态 | 现负责人 |
+| ---- | ---------- | ------------- | -------- | -------- |
+| 1    | Popularity | general       | 开发中   | 林子涵   |
+| 2    | ItemKNN    | general       | 开发中   | 林子涵   |
+| 3    | BPRMF      | general       | 测试中   | 林子涵   |
+| 4    | NCF        | general       | 测试中   | 林子涵   |
+| 5    | NGCF       | general       | 开发中   | 林子涵   |
+| 6    | LightGCN   | general       | 未认领   |          |
+| 7    | FM         | context-aware | 开发中   | 牟善磊   |
+| 8    | DeepFM     | context-aware | 开发中   | 牟善磊   |
+| 9    | NFM        | context-aware | 开发中   | 林子涵   |
+| 10   | Wide&Deep  | context-aware | 开发中   | 牟善磊   |
+| 11   | GRU4Rec    | sequential    | 开发中   | 牟善磊   |
+| 12   | SASRec     | sequential    | 未认领   |          |
+| 13   | FPMC       | sequential    | 未认领   |          |
 
 ### 2.代码编写
 
@@ -70,7 +69,7 @@ predict() 为评测时用到的方法，输出要为score或者其他任务适�
 2) 保证模型顺利运行后，需要逐字检查模型文件，看是否有逻辑错误或其他错误。
 3) 在上线测试数据集上，进行训练评测。一种方式（推荐）：利用RecBox自动调参工具，按照模型类别找到相应的数据集及评测方式，设置好相应的配置文件，
 保证要测试的设置在run_test.py中能够无误跑通，随后在hyper.test 中按照要求设置要调整的超参范围，调整好后执行`run_hyper.py --max_evals 'eval_nums'`，
-`max_evals`控制搜索次数，返回得到最优的超参和测试集结果，将结果填入对应模型的配置文件中。另一种方式：自行调参。
+`max_evals`控制搜索次数，返回得到最优的超参和测试集结果，将结果填入对应模型的配置文件中以及下表。另一种方式：自行调参。
 4) 检查3）得到的结果是否异常（是否与其他模型相差过大以及其他判断方式），正常无误模型可以顺利上线，结果异常需进一步检查代码，若还未发现问题，请及时与同学和老师进行沟通。
 
 ## **测试使用的数据集及评价指标**
@@ -83,27 +82,34 @@ predict() 为评测时用到的方法，输出要为score或者其他任务适�
 
 评价指标 ：Recall@20、NGCG@20、MRR
 
-|             | ml-1m     | ml-1m   | ml-1m |
-| ----------- | --------- | ------- | :---- |
-| Method      | Recall@20 | NDCG@20 | MRR   |
-| **Pop**     |           |         |       |
-| **ItemKNN** |           |         |       |
-| **BPRMF**   |           |         |       |
-| **NCF**     |           |         |       |
-| **NGCF**    |           |         |       |
+|             | ml-1m     | ml-1m   | ml-1m  |
+| ----------- | --------- | ------- | :----- |
+| Method      | Recall@10 | NDCG@10 | MRR@10 |
+| **Pop**     | 0.0706    | 0.1008  | 0.2045 |
+| **ItemKNN** |           |         |        |
+| **BPRMF**   | 0.1667    | 0.2043  | 0.3620 |
+| **NCF**     | 0.1591    | 0.1936  | 0.3459 |
+| **NCF**-pre | 0.1545    | 0.1944  | 0.3479 |
+| **NGCF**    |           |         |        |
 
-|             | yelp      | yelp    | yelp |
-| ----------- | --------- | ------- | :--- |
-| Method      | Recall@20 | NDCG@20 | MRR  |
-| **Pop**     |           |         |      |
-| **ItemKNN** |           |         |      |
-| **BPRMF**   |           |         |      |
-| **NCF**     |           |         |      |
-| **NGCF**    |           |         |      |
+BPRMF：{learning_rate=0.0001,embedding_size=512}
+
+NeuMF：{dropout=0.1,learning_rate=0.0001,mf_embedding_size=512,mlp_embedding_size=128,mlp_hidden_size:[128,64,32]}
+
+|             | yelp      | yelp    | yelp   |
+| ----------- | --------- | ------- | :----- |
+| Method      | Recall@10 | NDCG@10 | MRR@10 |
+| **Pop**     | 0.0066    | 0.0069  | 0.0095 |
+| **ItemKNN** |           |         |        |
+| **BPRMF**   | 0.0984    | 0.0962  | 0.1653 |
+| **NCF**     |           |         |        |
+| **NGCF**    |           |         |        |
+
+BPRMF：{learning_rate=0.0005,embedding_size=512}
 
 |             | Amazon-game | Amazon-game | Amazon-game |
 | ----------- | ----------- | ----------- | :---------- |
-| Method      | Recall@20   | NDCG@20     | MRR         |
+| Method      | Recall@10   | NDCG@10     | MRR@10      |
 | **Pop**     |             |             |             |
 | **ItemKNN** |             |             |             |
 | **BPRMF**   |             |             |             |
