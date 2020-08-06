@@ -1,8 +1,11 @@
-# -*- coding: utf-8 -*-
-# @Time   : 2020/6/28 15:55
+# @Time   : 2020/6/28
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-# @File   : gru4rec.py
+
+# UPDATE:
+# @Time   : 2020/8/5
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
 
 """
 Reference:
@@ -36,11 +39,12 @@ class GRU4Rec(SequentialRecommender):
         self.apply(self.init_weights)
 
     def init_weights(self, module):
-        if isinstance(module, (nn.Embedding, nn.GRU)):
+        # todo: GRU unit weights initialization
+        if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight)
 
     def get_item_embedding(self, item):
-        return self.item_embedding[item]
+        return self.item_embedding(item)
 
     def get_history_embedding(self, history_seq):
         output, hn = self.gru_layers(self.item_embedding(history_seq))
@@ -52,12 +56,12 @@ class GRU4Rec(SequentialRecommender):
         return history_embedding, item_embedding
 
     def calculate_loss(self, interaction):
-        history_seq = interaction['history_seq']
-        pos_item = interaction[self.ITEM_ID]
-        neg_item = interaction[self.NEG_ITEM_ID]
+        history_seq = interaction['history_seq']    # (batch, seq_len)
+        pos_item = interaction[self.ITEM_ID]        # (batch, seq_len)
+        neg_item = interaction[self.NEG_ITEM_ID]    # (batch, seq_len)
         seq_emb, pos_emb = self.forward(history_seq, pos_item)
         neg_emb = self.get_history_embedding(neg_item)
-        seq_emb = seq_emb.view(-1, self.embedding_size)     # (batch * seq_len, hidden_size)
+        seq_emb = seq_emb.contiguous().view(-1, self.embedding_size)     # (batch * seq_len, hidden_size)
         pos_emb, neg_emb = pos_emb.view(-1, pos_emb.size(2)), neg_emb.view(-1, neg_emb.size(2))
         pos_logits, neg_logits = torch.sum(pos_emb * seq_emb, -1), torch.sum(neg_emb * seq_emb, -1)  # (batch * seq_len)
         istarget = (pos_item > 0).view(pos_item.size(0) * self.seq_len).float()  # [batch * seq_len]
@@ -68,9 +72,9 @@ class GRU4Rec(SequentialRecommender):
         return loss
 
     def predict(self, interaction):
-        history_seq = interaction['history_seq']
-        item = interaction[self.ITEM_ID]
+        history_seq = interaction['history_seq']    # (batch, seq_len)
+        item = interaction[self.ITEM_ID]            # (batch, 1 + neg_sample_num)
         seq_emb, item_emb = self.forward(history_seq, item)
-        scores = torch.matmul(seq_emb, item_emb.transpos(1, 2))     # (batch, seq_len, 1 + num_neg_sample)
-        scores = scores[:, -1, :]   # (batch, 1 + num_neg_sample)
+        scores = torch.matmul(seq_emb, item_emb.transpose(1, 2))     # (batch, seq_len, 1 + neg_sample_num)
+        scores = scores[:, -1, :]   # (batch, 1 + neg_sample_num)
         return scores
