@@ -67,9 +67,9 @@ class Trainer(AbstractTrainer):
             if metric.lower() in loss_metrics:
                 self.eval_type = 'loss'
         if self.eval_type == 'loss':
-            self.evaluator = LossEvaluator(config, self.logger)
+            self.evaluator = LossEvaluator(config)
         else:
-            self.evaluator = TopKEvaluator(config, self.logger)
+            self.evaluator = TopKEvaluator(config)
 
         self.item_tensor = None
         self.tot_item_num = None
