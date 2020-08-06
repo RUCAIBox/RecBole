@@ -1,14 +1,16 @@
-# -*- coding: utf-8 -*-
-# @Time   : 2020/6/25 15:47
+# @Time   : 2020/6/25
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-# @File   : abstract_recommender.py
+
+# UPDATE:
+# @Time   : 2020/8/6
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
 
 import numpy as np
 import torch
 import torch.nn as nn
 from utils import ModelType
-
 
 
 class AbstractRecommender(nn.Module):
@@ -61,4 +63,7 @@ class SequentialRecommender(AbstractRecommender):
         self.type = ModelType.SEQUENTIAL
 
 
-
+class KnowledgeRecommender(AbstractRecommender):
+    def __init__(self):
+        super(KnowledgeRecommender, self).__init__()
+        self.type = ModelType.KNOWLEDGE
