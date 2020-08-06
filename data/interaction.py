@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time    : 2020/8/5, 2020/8/6
+# @Time    : 2020/8/6, 2020/8/6
 # @Author  : Yupeng Hou, Yushuo Chen
 # @email   : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -55,16 +55,19 @@ class Interaction(object):
             ret[k] = self.interaction[k].numpy()
         return Interaction(ret)
 
-    def repeat(self, *sizes):
+    def repeat(self, sizes):
         ret = {}
         for k in self.interaction:
-            ret[k] = self.interaction[k].repeat(sizes)
+            if len(self.interaction[k].shape) == 1:
+                ret[k] = self.interaction[k].repeat(sizes)
+            else:
+                ret[k] = self.interaction[k].repeat([sizes, 1])
         return Interaction(ret)
 
-    def to_device_repeat_interleave(self, device, repeats):
+    def to_device_repeat_interleave(self, device, repeats, dim=0):
         ret = {}
         for k in self.interaction:
-            ret[k] = self.interaction[k].to(device).repeat_interleave(repeats)
+            ret[k] = self.interaction[k].to(device).repeat_interleave(repeats, dim=dim)
         return Interaction(ret)
 
     def update(self, new_inter):
