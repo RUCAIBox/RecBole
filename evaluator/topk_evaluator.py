@@ -4,9 +4,9 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/04
-# @Author  :   Kaiyuan Li
-# @email   :   tsotfsk@outlook.com
+# @Time    :   2020/08/04           2020/08/06
+# @Author  :   Kaiyuan Li           Yupeng Hou
+# @email   :   tsotfsk@outlook.com  houyupeng@ruc.edu.cn
 
 import numpy as np
 import torch
@@ -27,19 +27,24 @@ class TopKEvaluator(object):
         """ evalaute the topk metrics
 
         Args:
-            pos_len_list (list): a list of the positive items' length
             score_tensor (tensor): a tensor of scores
-            user_idx_list (list): a list of users' slice
+            pos_len_list (list): a list of the positive items' length
+            user_len_list (list): a list of users' length
 
         Returns:
             dict: such as { 'Hit@20': 0.3824, 'Recall@20': 0.0527
                             'Hit@10': 0.3153, 'Recall@10': 0.0329}
         """
         # intermediate variables
+        user_len_list = intercation.user_len_list
+        pos_len_list = intercation.pos_len_list
+
+        all_score_list = torch.split(score_tensor, user_len_list, dim=0)
+
         score_list = []
-        user_idx_list = intercation.user_idx_list
-        for slc in user_idx_list:
-            score_list.append(score_tensor[slc])
+        for i, score in enumerate(all_score_list):
+            if pos_len_list[i] > 0:
+                score_list.append(score)
         scores_matrix = pad_sequence(score_list, batch_first=True, padding_value=-np.inf)  # nusers x items
 
         # get topk
