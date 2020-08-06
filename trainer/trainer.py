@@ -20,7 +20,7 @@ from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
 from evaluator import TopKEvaluator, LossEvaluator, loss_metrics
 from data.interaction import Interaction
-from utils import ensure_dir, get_local_time, DataLoaderType, get_logger
+from utils import ensure_dir, get_local_time, DataLoaderType
 
 
 class AbstractTrainer(object):
@@ -36,14 +36,14 @@ class AbstractTrainer(object):
 
 
 class Trainer(AbstractTrainer):
-    def __init__(self, config, model):
+    def __init__(self, config, model, logger):
         super(Trainer, self).__init__(config, model)
 
-        self.logger = get_logger()
+        self.logger = logger
         self.learner = config['learner']
         self.learning_rate = config['learning_rate']
         self.epochs = config['epochs']
-        self.eval_step = min(config['eval_step'], self.epochs)
+        self.eval_step = config['eval_step']
         self.stopping_step = config['stopping_step']
         self.valid_metric = config['valid_metric']
         self.valid_metric_bigger = config['valid_metric_bigger']
@@ -66,9 +66,9 @@ class Trainer(AbstractTrainer):
             if metric.lower() in loss_metrics:
                 self.eval_type = 'loss'
         if self.eval_type == 'loss':
-            self.evaluator = LossEvaluator(config, self.logger)
+            self.evaluator = LossEvaluator(config, logger)
         else:
-            self.evaluator = TopKEvaluator(config, self.logger)
+            self.evaluator = TopKEvaluator(config, logger)
 
         self.item_tensor = None
         self.tot_item_num = None

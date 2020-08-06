@@ -8,14 +8,14 @@
 from config import Config
 from data import Dataset, data_preparation
 from trainer import Trainer, HyperTuning
-from utils import get_logger, get_model
+from utils import Logger, get_model
 
 
 def data_preparation_function():
     config = Config('properties/overall.config')
     config.init()
 
-    logger = get_logger(config)
+    logger = Logger(config)
 
     dataset = Dataset(config)
     print(dataset)
@@ -23,7 +23,7 @@ def data_preparation_function():
     model = get_model(config)(config, dataset).to(config['device'])
     print(model)
 
-    train_data, test_data, valid_data = data_preparation(config, model, dataset)
+    train_data, test_data, valid_data = data_preparation(config, logger, model, dataset)
 
     dataloader = {
         'train_data': train_data,
@@ -40,13 +40,13 @@ def objective_function(dataset, dataloader, config_dict=None):
     assert(config['dataset'] == dataset.dataset_name)
     # todo: 判断eval_setting是否一致
 
-    logger = get_logger()
+    logger = Logger(config)
 
     model = get_model(config)(config, dataset).to(config['device'])
 
     train_data, test_data, valid_data = dataloader['train_data'], dataloader['test_data'], dataloader['valid_data']
 
-    trainer = Trainer(config, model)
+    trainer = Trainer(config, model, logger)
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False)
     test_result = trainer.evaluate(test_data)
 
