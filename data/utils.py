@@ -8,10 +8,11 @@ from utils import ModelType
 def data_preparation(config, logger, model, dataset, save=False):
     es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
-    if 'RS' in es_str[0]:
-        getattr(es, es_str[0])(ratios=config['split_ratio'])
-    else:
-        getattr(es, es_str[0])()
+
+    kargs = {}
+    if 'RS' in es_str[0]: kargs['ratios'] = config['split_ratio']
+    if 'LS' in es_str[0]: kargs['leave_one_num'] = config['leave_one_num']
+    getattr(es, es_str[0])(**kargs)
 
     builded_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = builded_datasets
@@ -114,6 +115,9 @@ def get_data_loader(dl_type, eval_setting):
         if neg_sample_strategy == 'by':
             return GeneralInteractionBasedDataLoader
         elif neg_sample_strategy == 'to':
-            return GeneralGroupedDataLoader
+            if eval_setting.neg_sample_args['to'] == -1:
+                return GeneralFullDataLoader
+            else:
+                return GeneralGroupedDataLoader
     else:
         raise NotImplementedError('dl_type [{}] has not been implemented'.format(dl_type))

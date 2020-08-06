@@ -3,6 +3,10 @@
 # @Email  : houyupeng@ruc.edu.cn
 # @File   : interaction.py
 
+# UPDATE
+# @Time    : 2020/08/05
+# @Author  : Yupeng Hou
+# @email   : houyupeng@ruc.edu.cn
 
 class Interaction(object):
     def __init__(self, interaction):
@@ -12,15 +16,29 @@ class Interaction(object):
             break
 
     def __getitem__(self, index):
-        return self.interaction[index]
+        if isinstance(index, str):
+            return self.interaction[index]
+        else:
+            ret = {}
+            for k in self.interaction:
+                ret[k] = self.interaction[k][index]
+            return Interaction(ret)
 
     def __len__(self):
         return self.length
 
-    def to(self, device):
+    def to(self, device, selected_field=None):
         ret = {}
-        for k in self.interaction:
-            ret[k] = self.interaction[k].to(device)
+        try:
+            selected_field = set(selected_field)
+            for k in self.interaction:
+                if k in selected_field:
+                    ret[k] = self.interaction[k].to(device)
+                else:
+                    ret[k] = self.interaction[k]
+        except:
+            for k in self.interaction:
+                ret[k] = self.interaction[k].to(device)
         return Interaction(ret)
 
     def cpu(self):
@@ -35,3 +53,18 @@ class Interaction(object):
             ret[k] = self.interaction[k].numpy()
         return Interaction(ret)
 
+    def repeat(self, *sizes):
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k].repeat(sizes)
+        return Interaction(ret)
+
+    def to_device_repeat_interleave(self, device, repeats):
+        ret = {}
+        for k in self.interaction:
+            ret[k] = self.interaction[k].to(device).repeat_interleave(repeats)
+        return Interaction(ret)
+
+    def update(self, new_inter):
+        for k in new_inter.interaction:
+            self.interaction[k] = new_inter.interaction[k]

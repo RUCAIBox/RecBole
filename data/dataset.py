@@ -410,9 +410,9 @@ class Dataset(object):
         return pd.DataFrame(list(uid2items.items()), columns=columns)
 
     def join(self, df):
-        if self.user_feat is not None:
+        if self.user_feat is not None and self.uid_field in df:
             df = pd.merge(df, self.user_feat, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
-        if self.item_feat is not None:
+        if self.item_feat is not None and self.iid_field in df:
             df = pd.merge(df, self.item_feat, on=self.iid_field, how='left', suffixes=('_inter', '_item'))
         return df
 
@@ -477,6 +477,26 @@ class Dataset(object):
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
+    def leave_one_out(self, group_by, leave_one_num=1):
+        if group_by is None:
+            raise ValueError('leave one out strategy require a group field')
+
+        grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
+        next_index = [[] for i in range(leave_one_num + 1)]
+        for grouped_index in grouped_inter_feat_index:
+            grouped_index = list(grouped_index)
+            tot_cnt = len(grouped_index)
+            legal_leave_one_num = min(leave_one_num, tot_cnt - 1)
+            pr = tot_cnt - legal_leave_one_num
+            next_index[0].extend(grouped_index[:pr])
+            for i in range(legal_leave_one_num):
+                next_index[i + 1].append(grouped_index[pr])
+                pr += 1
+
+        next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
+        next_ds = [self.copy(_) for _ in next_df]
+        return next_ds
+
     def shuffle(self):
         self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
 
@@ -499,7 +519,7 @@ class Dataset(object):
         elif split_args['strategy'] == 'by_value':
             raise NotImplementedError()
         elif split_args['strategy'] == 'loo':
-            raise NotImplementedError()
+            datasets = self.leave_one_out(group_by=group_field, leave_one_num=split_args['leave_one_num'])
         else:
             datasets = self
 
@@ -524,3 +544,10 @@ class Dataset(object):
             df = getattr(self, '{}_feat'.format(name))
             if df is not None:
                 df.to_csv(os.path.join(filepath, '{}.csv'.format(name)))
+
+    def get_item_feature(self):
+        if self.item_feat is None:
+            tot_item_cnt = self.num(self.iid_field)
+            return pd.DataFrame({self.iid_field: np.arange(tot_item_cnt)})
+        else:
+            return self.item_feat
