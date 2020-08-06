@@ -225,7 +225,7 @@ class Trainer(AbstractTrainer):
         if eval_data.dl_type == DataLoaderType.FULL:
 
             self.item_tensor = eval_data.get_item_tensor().to(self.device).repeat(eval_data.step)
-            self.tot_item_num = eval_data.dataset.num(self.iid_field)
+            self.tot_item_num = eval_data.dataset.item_num
 
         batch_matrix_list, batch_pos_len_matrix = [], []
         for batch_idx, batched_data in enumerate(eval_data):
