@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
+# @Time   : 2020/07/07
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
-# @File   : dataloader.py
 
 # UPDATE
-# @Time    : 2020/08/05
-# @Author  : Yupeng Hou
-# @email   : houyupeng@ruc.edu.cn
+# @Time   : 2020/08/06
+# @Author : Yupeng Hou
+# @email  : houyupeng@ruc.edu.cn
 
 import operator
 from functools import reduce
@@ -308,7 +307,7 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
             new_inter[iid_field][neg_start: neg_end] = neg_item_id
             new_inter[label_field][new_inter_num: neg_start] = 1
             pos_len_list.append(pos_num)
-            user_len_list.append(slice(new_inter_num - base_idx, neg_end - base_idx))
+            user_len_list.append(pos_num + neg_num)
             new_inter_num += pos_num + neg_num
 
             if not self.real_time_neg_sampling:

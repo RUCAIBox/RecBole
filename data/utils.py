@@ -1,3 +1,12 @@
+# @Time   : 2020/7/21
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
+
+# UPDATE:
+# @Time   : 2020/8/6
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
+
 import os
 import copy
 from .dataloader import *
@@ -115,7 +124,7 @@ def get_data_loader(dl_type, eval_setting):
         if neg_sample_strategy == 'by':
             return GeneralInteractionBasedDataLoader
         elif neg_sample_strategy == 'to':
-            if eval_setting.neg_sample_args['to'] == -1:
+            if eval_setting.neg_sample_args['to'] == -1 and eval_setting.neg_sample_args['real_time']:
                 return GeneralFullDataLoader
             else:
                 return GeneralGroupedDataLoader
