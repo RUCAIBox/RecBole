@@ -4,9 +4,9 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/04           2020/08/06
-# @Author  :   Kaiyuan Li           Yupeng Hou
-# @email   :   tsotfsk@outlook.com  houyupeng@ruc.edu.cn
+# @Time    :   2020/08/04, 2020/08/06
+# @Author  :   Kaiyuan Li, Yupeng Hou
+# @email   :   tsotfsk@outlook.com, houyupeng@ruc.edu.cn
 
 import numpy as np
 import torch

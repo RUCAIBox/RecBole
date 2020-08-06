@@ -1,7 +1,11 @@
-# -*- coding: utf-8 -*-
+# @Time   : 2020/6/28
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
-# @File   : dataset.py
+
+# UPDATE:
+# @Time   : 2020/8/6
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
 
 import os
 import json
