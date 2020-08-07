@@ -64,6 +64,21 @@ class SequentialRecommender(AbstractRecommender):
 
 
 class KnowledgeRecommender(AbstractRecommender):
-    def __init__(self):
+    def __init__(self, config, dataset):
         super(KnowledgeRecommender, self).__init__()
         self.type = ModelType.KNOWLEDGE
+
+        self.USER_ID = config['USER_ID_FIELD']
+        self.ITEM_ID = config['ITEM_ID_FIELD']
+        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
+        # todo: 和data部分对接
+        self.ENTITY_ID = config['ENTITY_ID_FIELD']
+        self.RELATION_ID = config['RELATION_ID_FIELD']
+        self.HEAD_ENTITY_ID = config['HEAD_ENTITY_ID_FIELD']
+        self.TAIL_ENTITY_ID = config['TAIL_ENTITY_ID_FIELD']
+        self.NEG_TAIL_ENTITY_ID = config['NEG_PREFIX'] + self.TAIL_ENTITY_ID
+
+        self.n_users = dataset.num(self.USER_ID)
+        self.n_items = dataset.num(self.ITEM_ID)
+        self.n_entities = dataset.num(self.ENTITY_ID)
+        self.n_relations = dataset.num(self.RELATION_ID)
