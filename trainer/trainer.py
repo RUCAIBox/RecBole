@@ -5,7 +5,7 @@
 # @File   : trainer.py
 
 # UPDATE:
-# @Time   : 2020/8/4 17:36, 2020/8/6
+# @Time   : 2020/8/7 18:38, 2020/8/6
 # @Author : Zihan Lin, Yupeng Hou
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
 
@@ -188,6 +188,9 @@ class Trainer(AbstractTrainer):
         interaction = user_tensor.to_device_repeat_interleave(self.device, self.tot_item_num)
 
         batch_size = interaction.length
+        # if 'full_sort_predict' in dir(self.model):
+        #     scores = self.model.full_sort_predict(user_tensor.to(self.device))
+        # else:
         interaction.update(self.item_tensor[:batch_size])
 
         scores = self.model.predict(interaction)
