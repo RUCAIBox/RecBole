@@ -188,12 +188,12 @@ class Trainer(AbstractTrainer):
         interaction = user_tensor.to_device_repeat_interleave(self.device, self.tot_item_num)
 
         batch_size = interaction.length
-        # if 'full_sort_predict' in dir(self.model):
-        #     scores = self.model.full_sort_predict(user_tensor.to(self.device))
-        # else:
-        interaction.update(self.item_tensor[:batch_size])
-
-        scores = self.model.predict(interaction)
+        if 'full_sort_predict' in dir(self.model):
+            scores = self.model.full_sort_predict(user_tensor.to(self.device))
+        else:
+            interaction.update(self.item_tensor[:batch_size])
+    
+            scores = self.model.predict(interaction)
         pos_idx = pos_idx.to(self.device)
         used_idx = used_idx.to(self.device)
 
