@@ -67,3 +67,11 @@ class BPRMF(GeneralRecommender):
         item = interaction[self.ITEM_ID]
         user_e, item_e = self.forward(user, item)
         return torch.mul(user_e, item_e).sum(dim=1)
+
+    def full_sort_predict(self, interaction):
+        user = interaction[self.USER_ID]
+        user_e = self.get_user_embedding(user)
+        all_item_e = self.item_embedding.weight
+        score = torch.matmul(user_e, all_item_e.transpose(0, 1))
+        return score.view(-1)
+
