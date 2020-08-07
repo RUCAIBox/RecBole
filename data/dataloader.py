@@ -126,20 +126,19 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
             dataset.field2type[self.label_field] = 'float'
             dataset.field2source[self.label_field] = 'inter'
             dataset.field2seqlen[self.label_field] = 1
+        elif dl_format == 'pairwise':
+            neg_prefix = config['NEG_PREFIX']
+            iid_field = config['ITEM_ID_FIELD']
+
+            columns = [iid_field] if dataset.item_feat is None else dataset.item_feat.columns
+            for item_feat_col in columns:
+                neg_item_feat_col = neg_prefix + item_feat_col
+                dataset.field2type[neg_item_feat_col] = dataset.field2type[item_feat_col]
+                dataset.field2source[neg_item_feat_col] = dataset.field2source[item_feat_col]
+                dataset.field2seqlen[neg_item_feat_col] = dataset.field2seqlen[item_feat_col]
 
         super(GeneralInteractionBasedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                                 batch_size, dl_format, shuffle)
-
-        if self.dl_format == 'pairwise':
-            neg_prefix = self.config['NEG_PREFIX']
-            iid_field = self.config['ITEM_ID_FIELD']
-
-            columns = [iid_field] if self.dataset.item_feat is None else self.dataset.item_feat.columns
-            for item_feat_col in columns:
-                neg_item_feat_col = neg_prefix + item_feat_col
-                self.dataset.field2type[neg_item_feat_col] = self.dataset.field2type[item_feat_col]
-                self.dataset.field2source[neg_item_feat_col] = self.dataset.field2source[item_feat_col]
-                self.dataset.field2seqlen[neg_item_feat_col] = self.dataset.field2seqlen[item_feat_col]
 
     def _batch_size_adaptation(self):
         if self.dl_format == 'pairwise':
