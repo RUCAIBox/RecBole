@@ -186,7 +186,6 @@ class Dataset(object):
 
         item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
         if os.path.isfile(item_feat_path):
-           
             item_feat = self._load_feat(item_feat_path, 'item')
         else:
             # TODO logging item feat not exist
@@ -220,7 +219,7 @@ class Dataset(object):
         else:
             load_col = set(self.config['load_col'][source])
 
-        if self.config['unload_col'] is not None and source in self.config['unload_col']: 
+        if self.config['unload_col'] is not None and source in self.config['unload_col']:
             unload_col = set(self.config['unload_col'][source])
         else:
             unload_col = None
@@ -233,7 +232,6 @@ class Dataset(object):
         field_names = []
         columns = []
         remain_field = set()
-
         for field_type in df.columns:
             field, ftype = field_type.split(':')
             field_names.append(field)
@@ -254,6 +252,7 @@ class Dataset(object):
             remain_field.add(field)
 
         if len(columns) == 0:
+            print('source', source)
             return None
         df.columns = field_names
         df = df[columns]
@@ -276,7 +275,6 @@ class Dataset(object):
             ftype2func[ftype](df[field])
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = max(map(len, df[field].values))
-       
         return df
 
     # TODO
