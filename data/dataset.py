@@ -28,7 +28,7 @@ class Dataset(object):
             self._restore_saved_dataset(saved_dataset)
 
     def _from_scratch(self, config):
-        self.dataset_path = config['data_path'] 
+        self.dataset_path = config['data_path']
 
         self.field2type = {}
         self.field2source = {}
@@ -58,7 +58,7 @@ class Dataset(object):
         self._remap_ID_all()
 
     def filter_all(self, max_user_inter_count = None, min_user_inter_count = None,max_item_inter_count = None, min_item_inter_count = None,
-    lowest_val = None, highest_val = None, equal_val = None, not_equal_val = None, drop = False):
+                   lowest_val = None, highest_val = None, equal_val = None, not_equal_val = None, drop = False):
         self.filter_users_base_inter(max_count = max_user_inter_count, min_count = min_user_inter_count)
         self.filter_items_base_inter(max_count = max_item_inter_count, min_count = min_item_inter_count)
         if self.item_feat is not None:
@@ -113,7 +113,6 @@ class Dataset(object):
 
     def filter_items_base_inter(self, max_count = None,  min_count = None):
         if max_count is not None or min_count is not None:
-            print('enter item base')
             temp_dict = {}
             ban_list = []
             ban_item = []
