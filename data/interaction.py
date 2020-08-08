@@ -3,13 +3,16 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time    : 2020/8/6
-# @Author  : Yupeng Hou
-# @email   : houyupeng@ruc.edu.cn
+# @Time    : 2020/8/6, 2020/8/6
+# @Author  : Yupeng Hou, Yushuo Chen
+# @email   : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+
 
 class Interaction(object):
-    def __init__(self, interaction):
+    def __init__(self, interaction, pos_len_list=None, user_len_list=None):
         self.interaction = interaction
+        self.pos_len_list = pos_len_list
+        self.user_len_list = user_len_list
         for k in self.interaction:
             self.length = self.interaction[k].shape[0]
             break
