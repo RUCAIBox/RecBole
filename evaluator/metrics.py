@@ -8,14 +8,19 @@
 # @Author  :   Kaiyuan Li
 # @email   :   tsotfsk@outlook.com
 
+# UPDATE
+# @Time    :   2020/08/09
+# @Author  :   Zhichao Feng
+# @email   :   fzcbupt@gmail.com
 
 import numpy as np
 from sklearn.metrics import (
-    roc_auc_score,
+    auc as sk_auc,
     log_loss,
     mean_absolute_error,
-    mean_squared_error
+    mean_squared_error,
 )
+from .utils import _binary_clf_curve
 
 
 #    TopK Metrics    #
@@ -26,6 +31,11 @@ def hit(pos_index, pos_len):
 
     url:https://medium.com/@rishabhbhatia315/recommendation-system-evaluation-metrics-3f6739288870
 
+    $$
+    \mathrm {HR@K} =\frac{Number of Hits @K}{|GT|}
+    $$
+
+    HR is the number of users with a positive sample in the recommendation list.GT is the total number of samples in the test set.
     """
     result = np.cumsum(pos_index, axis=1)
     return (result > 0).astype(int)
@@ -37,6 +47,12 @@ def mrr(pos_index, pos_len):
 
     url:https://en.wikipedia.org/wiki/Mean_reciprocal_ranks
 
+    $$
+    \mathrm {MRR} = \frac{1}{|{U}|} \sum_{i=1}^{|{U}|} \frac{1}{rank_i}
+    $$
+
+    ${U}$ is the number of users, $rank_i$ is the rank of the first item in the recommendation list
+    in the test set results for user ${i}$.
     """
 
     idxs = pos_index.argmax(axis=1)
@@ -59,6 +75,12 @@ def recall(pos_index, pos_len):
 
     url:https://en.wikipedia.org/wiki/Precision_and_recall#Recall
 
+    $$
+    \mathrm {Recall@K} = \frac{|Rel_u\cap Rec_u|}{Rel_u}
+    $$
+
+    ${Rel_u}$ is the set of items relavent to user ${U}$, ${Rec_u}$ is the top K items recommended to users.
+    We obtain the result by calculating the average ${Recall@K}$ of each user.
     """
     return np.cumsum(pos_index, axis=1) / pos_len.reshape(-1, 1)
 
@@ -69,19 +91,29 @@ def ndcg(pos_index, pos_len):
 
     url:https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG
 
+
+    \begin{gather}
+    \mathrm {DCG@K}=\sum_{i=1}^{K} \frac{2^{rel_i}-1}{\log_{2}{(i+1)}}\\
+    \mathrm {IDCG@K}=\sum_{i=1}^{K}\frac{1}{\log_{2}{(i+1)}}\\
+    \mathrm {NDCG_u@K}=\frac{DCG_u@K}{IDCG_u@K}\\
+    \mathrm {NDCG@K}=\frac{\sum \nolimits_{u \in u^{te}NDCG_u@K}}{|u^{te}|}
+    \end{gather}
+
+    ${K}$ stands for recommending ${K}$ items.And the ${rel_i}$ is the relevance of the item in position ${i}$ in the
+    recommendation list.$2^{rel_i}$ equals to 1 if the item hits otherwise 0.${U^{te}}$ is for all users in the test set.
     """
 
     len_rank = np.full_like(pos_len, pos_index.shape[1])
     idcg_len = np.where(pos_len > len_rank, len_rank, pos_len)
 
     iranks = np.zeros_like(pos_index, dtype=np.float)
-    iranks[:, :] = np.arange(1, pos_index.shape[1]+1)
+    iranks[:, :] = np.arange(1, pos_index.shape[1] + 1)
     idcg = np.cumsum(1.0 / np.log2(iranks + 1), axis=1)
     for row, idx in enumerate(idcg_len):
         idcg[row, idx:] = idcg[row, idx - 1]
 
     ranks = np.zeros_like(pos_index, dtype=np.float)
-    ranks[:, :] = np.arange(1, pos_index.shape[1]+1)
+    ranks[:, :] = np.arange(1, pos_index.shape[1] + 1)
     dcg = 1.0 / np.log2(ranks + 1)
     dcg = np.cumsum(np.where(pos_index, dcg, 0), axis=1)
 
@@ -95,12 +127,19 @@ def precision(pos_index, pos_len):
 
     url:https://en.wikipedia.org/wiki/Precision_and_recall#Precision
 
+
+    $$
+    \mathrm {Precision@K} = \frac{|Rel_u \cap Rec_u|}{Rec_u}
+    $$
+
+    ${Rel_u}$ is the set of items relavent to user ${U}$, ${Rec_u}$ is the top K items recommended to users.
+    We obtain the result by calculating the average ${Precision@K}$ of each user.
+
     """
-    return pos_index.cumsum(axis=1) / np.arange(1, pos_index.shape[1]+1)
+    return pos_index.cumsum(axis=1) / np.arange(1, pos_index.shape[1] + 1)
 
 
 #    CTR Metrics    #
-
 
 def auc(trues, preds):
     """AUC (also known as Area Under Curve) is used to evaluate the two-class model,
@@ -113,18 +152,38 @@ def auc(trues, preds):
         averaged across users. It is also not limited to k. Instead, it calculates the
         scores on the entire prediction results regardless the users.
 
+    $$
+    \mathrm {AUC} = \frac{\sum\limits_{i=1}^M rank_{i}
+    - {{M} \times {(M+1)}}} {{M} \times {N}}
+    $$
+
+    M is the number of positive samples.N is the number of negative samples.${rank_i}$ is the rank of the ith positive sample.
     """
-    return roc_auc_score(trues, preds)
+    fps, tps = _binary_clf_curve(trues, preds)
+    optimal_idxs = np.where(np.r_[True, np.logical_or(np.diff(fps, 2), np.diff(tps, 2)), True])[0]
+    fps = np.r_[0, fps[optimal_idxs]]
+    tps = np.r_[0, tps[optimal_idxs]]
+
+    fpr = fps / fps[-1]
+    tpr = tps / tps[-1]
+    return sk_auc(fpr, tpr)
 
 
 # Loss based Metrics #
-
 
 def mae(trues, preds):
     """Mean absolute error regression loss
 
     url:https://en.wikipedia.org/wiki/Mean_absolute_error
+
+    $$
+    \mathrm {AUC} = \frac{\sum\limits_{i=1}^M rank_{i} - {{M} \times {(M+1)}}} {{M} \times {N}}
+    $$
+
+    M is the number of positive samples.N is the number of negative samples.${rank_i}$ is the rank of the ith positive sample.
+
     """
+
     return mean_absolute_error(trues, preds)
 
 
@@ -132,17 +191,33 @@ def rmse(trues, preds):
     """Mean std error regression loss
 
     url:https://en.wikipedia.org/wiki/Root-mean-square_deviation
+
+    $$
+    \mathrm{RMSE} = \sqrt{\frac{1}{|{T}|} \sum_{(u, i) \in {T}}(\hat{r}_{u i}-r_{u i})^{2}}
+    $$
+
+    ${T}$ is the test set, $\hat{r}_{u i}$ is the score predicted by the model, and $r_{u i}$ the actual score of the test set.
+
     """
     return np.sqrt(mean_squared_error(trues, preds))
-
 
 def log_loss_(trues, preds):
     """Log loss, aka logistic loss or cross-entropy loss
 
     url:http://wiki.fast.ai/index.php/Log_Loss
-    """    
+
+    $$
+    -\log {P(yt|yp)} = -(({yt}\ \log{yp}) + {(1-yt)}\ \log{(1 - yp)})
+    $$
+
+    For a single sample, yt is true label in {0,1}.
+    yp is the estimated probability that yt = 1.
+
+    """
     # XXX something wrong
+    preds = expit(preds)
     return log_loss(trues, preds)
+
 
 # Item based Metrics #
 

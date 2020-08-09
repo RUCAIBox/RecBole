@@ -8,6 +8,11 @@
 # @Author  :   Kaiyuan Li
 # @email   :   tsotfsk@outlook.com
 
+# UPDATE
+# @Time    :   2020/08/09
+# @Author  :   Zhichao Feng
+# @email   :   fzcbupt@gmail.com
+
 from .metrics import metrics_dict
 import numpy as np
 import torch
@@ -32,7 +37,13 @@ class LossEvaluator(object):
         Returns:
             dict: such as {'AUC': 0.83}
         """
-        true_scores = interaction[self.label_field].cuda()
+        user_idx_list = interaction.user_idx_list
+        pos_len_list = interaction.pos_len_list
+        true_scores = []
+        for pos_len, user_idx in zip(pos_len_list, user_idx_list):
+            label = torch.tensor(pos_len * [1] + (user_idx.stop - user_idx.start - pos_len) * [0], dtype=torch.float)
+            true_scores.append(label)
+        true_scores = torch.cat(true_scores, 0).cuda()
         return torch.stack((true_scores, pred_scores.detach()), dim=1)
 
     def collect(self, batch_matrix_list, *args):
