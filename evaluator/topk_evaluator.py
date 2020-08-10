@@ -4,9 +4,9 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/04           2020/08/06
-# @Author  :   Kaiyuan Li           Yupeng Hou
-# @email   :   tsotfsk@outlook.com  houyupeng@ruc.edu.cn
+# @Time    :   2020/08/04, 2020/08/06
+# @Author  :   Kaiyuan Li, Yupeng Hou
+# @email   :   tsotfsk@outlook.com, houyupeng@ruc.edu.cn
 
 import numpy as np
 import torch
@@ -19,7 +19,7 @@ topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'P
 
 class TopKEvaluator(object):
 
-    def __init__(self, config, logger):
+    def __init__(self, config):
         self.topk = config['topk']
         self.metrics = config['metrics']
 

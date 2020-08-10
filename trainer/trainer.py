@@ -5,9 +5,9 @@
 # @File   : trainer.py
 
 # UPDATE:
-# @Time   : 2020/8/4 17:36              2020/8/6
-# @Author : Zihan Lin                   Yupeng Hou
-# @Email  : linzihan.super@foxmail.com  houyupeng@ruc.edu.cn
+# @Time   : 2020/8/7 18:38, 2020/8/8
+# @Author : Zihan Lin, Yupeng Hou
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
 
 import os
 import warnings
@@ -21,6 +21,7 @@ from trainer.utils import early_stopping, calculate_valid_score, dict2str
 from evaluator import TopKEvaluator, LossEvaluator, loss_metrics
 from data.interaction import Interaction
 from utils import ensure_dir, get_local_time, DataLoaderType
+from logging import getLogger
 
 
 class AbstractTrainer(object):
@@ -36,14 +37,14 @@ class AbstractTrainer(object):
 
 
 class Trainer(AbstractTrainer):
-    def __init__(self, config, model, logger):
+    def __init__(self, config, model):
         super(Trainer, self).__init__(config, model)
 
-        self.logger = logger
+        self.logger = getLogger()
         self.learner = config['learner']
         self.learning_rate = config['learning_rate']
         self.epochs = config['epochs']
-        self.eval_step = config['eval_step']
+        self.eval_step = min(config['eval_step'], self.epochs)
         self.stopping_step = config['stopping_step']
         self.valid_metric = config['valid_metric']
         self.valid_metric_bigger = config['valid_metric_bigger']
@@ -66,9 +67,9 @@ class Trainer(AbstractTrainer):
             if metric.lower() in loss_metrics:
                 self.eval_type = 'loss'
         if self.eval_type == 'loss':
-            self.evaluator = LossEvaluator(config, logger)
+            self.evaluator = LossEvaluator(config)
         else:
-            self.evaluator = TopKEvaluator(config, logger)
+            self.evaluator = TopKEvaluator(config)
 
         self.item_tensor = None
         self.tot_item_num = None
@@ -187,9 +188,11 @@ class Trainer(AbstractTrainer):
         interaction = user_tensor.to_device_repeat_interleave(self.device, self.tot_item_num)
 
         batch_size = interaction.length
-        interaction.update(self.item_tensor[:batch_size])
-
-        scores = self.model.predict(interaction)
+        if 'full_sort_predict' in dir(self.model):
+            scores = self.model.full_sort_predict(user_tensor.to(self.device))
+        else:
+            interaction.update(self.item_tensor[:batch_size])
+            scores = self.model.predict(interaction)
         pos_idx = pos_idx.to(self.device)
         used_idx = used_idx.to(self.device)
 
@@ -225,7 +228,7 @@ class Trainer(AbstractTrainer):
         if eval_data.dl_type == DataLoaderType.FULL:
 
             self.item_tensor = eval_data.get_item_tensor().to(self.device).repeat(eval_data.step)
-            self.tot_item_num = eval_data.dataset.num(self.iid_field)
+            self.tot_item_num = eval_data.dataset.item_num
 
         batch_matrix_list, batch_pos_len_matrix = [], []
         for batch_idx, batched_data in enumerate(eval_data):

@@ -1,7 +1,11 @@
-# -*- coding: utf-8 -*-
+# @Time   : 2020/6/28
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
-# @File   : dataset.py
+
+# UPDATE:
+# @Time   : 2020/8/6
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
 
 #UPDATE:
 #@TIME   : 2020/8/5
@@ -41,6 +45,9 @@ class Dataset(object):
         self.inter_feat = None
         self.user_feat = None
         self.item_feat = None
+
+        self.uid_field = self.config['USER_ID_FIELD']
+        self.iid_field = self.config['ITEM_ID_FIELD']
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
 
@@ -197,13 +204,11 @@ class Dataset(object):
 
         inter_feat = self._load_feat(inter_feat_path, 'inter')
 
-        self.uid_field = self.config['USER_ID_FIELD']
         if self.uid_field not in self.field2source:
             raise ValueError('user id field [{}] not exist in [{}]'.format(self.uid_field, self.dataset_name))
         else:
             self.field2source[self.uid_field] = 'user_id'
 
-        self.iid_field = self.config['ITEM_ID_FIELD']
         if self.iid_field not in self.field2source:
             raise ValueError('item id field [{}] not exist in [{}]'.format(self.iid_field, self.dataset_name))
         else:
@@ -218,6 +223,8 @@ class Dataset(object):
             return None
         else:
             load_col = set(self.config['load_col'][source])
+            if source in {'inter', 'user'}: load_col.add(self.uid_field)
+            if source in {'inter', 'item'}: load_col.add(self.iid_field)
 
         if self.config['unload_col'] is not None and source in self.config['unload_col']:
             unload_col = set(self.config['unload_col'][source])
@@ -260,10 +267,10 @@ class Dataset(object):
         # TODO  fill nan in df
 
         seq_separator = self.config['seq_separator']
-        def _token(col): pass
-        def _float(col): pass
-        def _token_seq(col): col = [_.split(seq_separator) for _ in col.values]
-        def _float_seq(col): col = [list(map(float, _.split(seq_separator))) for _ in col.values]
+        def _token(df, field): pass
+        def _float(df, field): pass
+        def _token_seq(df, field): df[field] = [_.split(seq_separator) for _ in df[field].values]
+        def _float_seq(df, field): df[field] = [list(map(float, _.split(seq_separator))) for _ in df[field].values]
         ftype2func = {
             'token': _token,
             'float': _float,
@@ -272,7 +279,7 @@ class Dataset(object):
         }
         for field in remain_field:
             ftype = self.field2type[field]
-            ftype2func[ftype](df[field])
+            ftype2func[ftype](df, field)
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = max(map(len, df[field].values))
         return df
@@ -490,7 +497,7 @@ class Dataset(object):
 
     def _calcu_split_ids(self, tot, ratios):
         cnt = [int(ratios[i] * tot) for i in range(len(ratios))]
-        cnt[-1] = tot - sum(cnt[0:-1])
+        cnt[0] = tot - sum(cnt[1:])
         split_ids = np.cumsum(cnt)[:-1]
         return list(split_ids)
 
@@ -528,7 +535,7 @@ class Dataset(object):
             pr = tot_cnt - legal_leave_one_num
             next_index[0].extend(grouped_index[:pr])
             for i in range(legal_leave_one_num):
-                next_index[i + 1].append(grouped_index[pr])
+                next_index[-legal_leave_one_num + i].append(grouped_index[pr])
                 pr += 1
 
         next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]

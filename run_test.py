@@ -4,9 +4,9 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : run_test.py
 
-import importlib
+
 from trainer import Trainer
-from utils import Logger, get_model
+from utils import init_logger, get_model
 from config import Config
 from data import Dataset, data_preparation
 
@@ -15,19 +15,21 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 config
     """
+
     config = Config(config_file, config_dict)
     config.init()
 
     """
     初始化 logger
     """
-    logger = Logger(config)
+    init_logger(config)
 
     """
     初始化 dataset
     """
     dataset = Dataset(config)
     print(dataset)
+
 
     """
     初始化 model
@@ -39,12 +41,12 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     生成 训练/验证/测试 数据
     """
 
-    train_data, test_data, valid_data = data_preparation(config, logger, model, dataset)
+    train_data, test_data, valid_data = data_preparation(config, model, dataset)
 
     """
     初始化 trainer
     """
-    trainer = Trainer(config, model, logger)
+    trainer = Trainer(config, model)
 
     """
     训练
@@ -58,6 +60,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
 
     print('best valid result:', best_valid_result)
     print('test result: ', test_result)
+    #model.dump_paramaters()
 
 
 def run_test():

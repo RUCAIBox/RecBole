@@ -1,11 +1,21 @@
+# @Time   : 2020/7/21
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
+
+# UPDATE:
+# @Time   : 2020/8/7
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
+
 import os
 import copy
 from .dataloader import *
 from config import EvalSetting
 from utils import ModelType
+from logging import getLogger
 
 
-def data_preparation(config, logger, model, dataset, save=False):
+def data_preparation(config, model, dataset, save=False):
     es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
 
@@ -26,7 +36,6 @@ def data_preparation(config, logger, model, dataset, save=False):
     train_data = dataloader_construct(
         name='train',
         config=config,
-        logger=logger,
         eval_setting=es,
         dataset=train_dataset,
         sampler=sampler,
@@ -41,7 +50,6 @@ def data_preparation(config, logger, model, dataset, save=False):
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
-        logger=logger,
         eval_setting=es,
         dataset=[valid_dataset, test_dataset],
         sampler=sampler,
@@ -53,7 +61,7 @@ def data_preparation(config, logger, model, dataset, save=False):
     return train_data, valid_data, test_data
 
 
-def dataloader_construct(name, config, logger, eval_setting, dataset, sampler, phase,
+def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
                          dl_type=ModelType.GENERAL, dl_format='pointwise',
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
@@ -68,7 +76,7 @@ def dataloader_construct(name, config, logger, eval_setting, dataset, sampler, p
         raise ValueError('dataset {} and batch_size {} should have the same length'.format(dataset, batch_size))
     if len(dataset) != len(phase):
         raise ValueError('dataset {} and phase {} should have the same length'.format(dataset, phase))
-
+    logger = getLogger()
     logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(dl_type, name, dl_format))
     logger.info(eval_setting)
     logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
