@@ -18,9 +18,9 @@ import matplotlib.pyplot as plt
 
 from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
-from evaluator import TopKEvaluator, LossEvaluator, loss_metrics
+from evaluator import TopKEvaluator, LossEvaluator
 from data.interaction import Interaction
-from utils import ensure_dir, get_local_time, DataLoaderType
+from utils import ensure_dir, get_local_time, DataLoaderType, EvaluatorType
 from logging import getLogger
 
 
@@ -62,7 +62,7 @@ class Trainer(AbstractTrainer):
         self.train_loss_dict = dict()
         self.optimizer = self._build_optimizer()
         self.eval_type = config['eval_type']
-        if self.eval_type == 'loss':
+        if self.eval_type == EvaluatorType.INDIVIDUAL:
             self.evaluator = LossEvaluator(config)
         else:
             self.evaluator = TopKEvaluator(config)

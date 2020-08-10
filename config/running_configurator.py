@@ -1,6 +1,7 @@
 from config.abstract_configurator import AbstractConfig
 import os
 from evaluator import loss_metrics, topk_metrics
+from utils import EvaluatorType
 
 
 class RunningConfig(AbstractConfig):
@@ -19,14 +20,14 @@ class RunningConfig(AbstractConfig):
         eval_type = None
         for metric in self['metrics']:
             if metric.lower() in loss_metrics:
-                if eval_type is not None and eval_type == 'topk':
+                if eval_type is not None and eval_type == EvaluatorType.RANKING:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
                 else:
-                    eval_type = 'loss'
+                    eval_type = EvaluatorType.INDIVIDUAL
             if metric.lower() in topk_metrics:
-                if eval_type is not None and eval_type == 'loss':
+                if eval_type is not None and eval_type == EvaluatorType.INDIVIDUAL:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
                 else:
-                    eval_type = 'topk'
+                    eval_type = EvaluatorType.RANKING
         self['eval_type'] = eval_type
 
