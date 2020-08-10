@@ -5,7 +5,7 @@
 # @File   : trainer.py
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/8/6
+# @Time   : 2020/8/7 18:38, 2020/8/8
 # @Author : Zihan Lin, Yupeng Hou
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
 
@@ -188,7 +188,6 @@ class Trainer(AbstractTrainer):
             scores = self.model.full_sort_predict(user_tensor.to(self.device))
         else:
             interaction.update(self.item_tensor[:batch_size])
-
             scores = self.model.predict(interaction)
         pos_idx = pos_idx.to(self.device)
         used_idx = used_idx.to(self.device)

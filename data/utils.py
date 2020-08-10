@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/6
+# @Time   : 2020/8/7
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
@@ -123,7 +123,7 @@ def get_data_loader(dl_type, eval_setting):
         if neg_sample_strategy == 'by':
             return GeneralInteractionBasedDataLoader
         elif neg_sample_strategy == 'to':
-            if eval_setting.neg_sample_args['to'] == -1 and eval_setting.neg_sample_args['real_time']:
+            if eval_setting.neg_sample_args['to'] == -1:
                 return GeneralFullDataLoader
             else:
                 return GeneralGroupedDataLoader
