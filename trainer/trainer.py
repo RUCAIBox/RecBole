@@ -48,7 +48,6 @@ class Trainer(AbstractTrainer):
         self.stopping_step = config['stopping_step']
         self.valid_metric = config['valid_metric']
         self.valid_metric_bigger = config['valid_metric_bigger']
-        self.metrics = config['metrics']
         self.test_batch_size = config['eval_batch_size']
         self.device = config['device']
         self.checkpoint_dir = config['checkpoint_dir']
@@ -62,10 +61,7 @@ class Trainer(AbstractTrainer):
         self.best_valid_result = None
         self.train_loss_dict = dict()
         self.optimizer = self._build_optimizer()
-        self.eval_type = 'Topk'
-        for metric in self.metrics:
-            if metric.lower() in loss_metrics:
-                self.eval_type = 'loss'
+        self.eval_type = config['eval_type']
         if self.eval_type == 'loss':
             self.evaluator = LossEvaluator(config)
         else:
