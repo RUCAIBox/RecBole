@@ -3,11 +3,13 @@ import torch
 from torch.autograd import Variable
 from collections import defaultdict
 from model.abstract_recommender import GeneralRecommender
+from utils import InputType
 
 
 class Pop(GeneralRecommender):
     def __init__(self, config, dataset):
         super(Pop, self).__init__()
+        self.input_type = InputType.POINTWISE
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.device = config['device']

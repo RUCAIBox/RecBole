@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7
+# @Time   : 2020/8/10
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
@@ -11,7 +11,7 @@ import os
 import copy
 from .dataloader import *
 from config import EvalSetting
-from utils import ModelType
+from utils import ModelType, InputType
 from logging import getLogger
 
 
@@ -40,8 +40,8 @@ def data_preparation(config, model, dataset, save=False):
         dataset=train_dataset,
         sampler=sampler,
         phase='train',
-        dl_type=model.type,
-        dl_format=config['input_format'],
+        model_type=model.type,
+        dl_format=model.input_type,
         batch_size=config['train_batch_size'],
         shuffle=True
     )
@@ -54,7 +54,7 @@ def data_preparation(config, model, dataset, save=False):
         dataset=[valid_dataset, test_dataset],
         sampler=sampler,
         phase=['valid', 'test'],
-        dl_type=model.type,
+        model_type=model.type,
         batch_size=config['eval_batch_size']
     )
 
@@ -62,7 +62,7 @@ def data_preparation(config, model, dataset, save=False):
 
 
 def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
-                         dl_type=ModelType.GENERAL, dl_format='pointwise',
+                         model_type=ModelType.GENERAL, dl_format=InputType.POINTWISE,
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
         dataset = [dataset]
@@ -77,11 +77,11 @@ def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
     if len(dataset) != len(phase):
         raise ValueError('dataset {} and phase {} should have the same length'.format(dataset, phase))
     logger = getLogger()
-    logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(dl_type, name, dl_format))
+    logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(model_type, name, dl_format))
     logger.info(eval_setting)
     logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
 
-    DataLoader = get_data_loader(dl_type, eval_setting)
+    DataLoader = get_data_loader(model_type, eval_setting)
 
     ret = []
 
@@ -117,8 +117,8 @@ def save_datasets(save_path, name, dataset):
         d.save(cur_path)
 
 
-def get_data_loader(dl_type, eval_setting):
-    if dl_type == ModelType.GENERAL:
+def get_data_loader(model_type, eval_setting):
+    if model_type == ModelType.GENERAL:
         neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'by':
             return GeneralInteractionBasedDataLoader
@@ -128,4 +128,4 @@ def get_data_loader(dl_type, eval_setting):
             else:
                 return GeneralGroupedDataLoader
     else:
-        raise NotImplementedError('dl_type [{}] has not been implemented'.format(dl_type))
+        raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))

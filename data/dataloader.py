@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/7, 2020/8/6
+# @Time   : 2020/8/10, 2020/8/6
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn.utils.rnn as rnn_utils
+from tqdm import tqdm
 from sampler import Sampler
 from utils import *
 from .interaction import Interaction
@@ -81,9 +82,7 @@ class AbstractDataLoader(object):
 
 class NegSampleBasedDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
-                 batch_size=1, dl_format='pointwise', shuffle=False):
-        if dl_format not in ['pointwise', 'pairwise']:
-            raise ValueError('dl_format [{}] has not been implemented'.format(dl_format))
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] not in ['by', 'to']:
             raise ValueError('neg_sample strategy [{}] has not been implemented'.format(neg_sample_args['strategy']))
 
@@ -113,20 +112,20 @@ class NegSampleBasedDataLoader(AbstractDataLoader):
 
 class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
-                 batch_size=1, dl_format='pointwise', shuffle=False):
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in GeneralInteractionBasedDataLoader() should be `by`')
-        if dl_format == 'pairwise' and neg_sample_args['by'] != 1:
+        if dl_format == InputType.PAIRWISE and neg_sample_args['by'] != 1:
             raise ValueError('Pairwise dataloader can only neg sample by 1')
 
         self.neg_sample_by = neg_sample_args['by']
 
-        if dl_format == 'pointwise':
+        if dl_format == InputType.POINTWISE:
             self.label_field = config['LABEL_FIELD']
             dataset.field2type[self.label_field] = 'float'
             dataset.field2source[self.label_field] = 'inter'
             dataset.field2seqlen[self.label_field] = 1
-        elif dl_format == 'pairwise':
+        elif dl_format == InputType.PAIRWISE:
             neg_prefix = config['NEG_PREFIX']
             iid_field = config['ITEM_ID_FIELD']
 
@@ -141,7 +140,7 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
                                                                 batch_size, dl_format, shuffle)
 
     def _batch_size_adaptation(self):
-        if self.dl_format == 'pairwise':
+        if self.dl_format == InputType.PAIRWISE:
             self.step = self.batch_size
             return
         self.times = 1 + self.neg_sample_by
@@ -172,9 +171,9 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
         iid_field = self.config['ITEM_ID_FIELD']
         uids = inter_feat[uid_field].to_list()
         neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
-        if self.dl_format == 'pointwise':
+        if self.dl_format == InputType.POINTWISE:
             sampling_func = self._neg_sample_by_point_wise_sampling
-        elif self.dl_format == 'pairwise':
+        elif self.dl_format == InputType.PAIRWISE:
             sampling_func = self._neg_sample_by_pair_wise_sampling
         else:
             raise ValueError('`neg sampling by` with dl_format [{}] not been implemented'.format(self.dl_format))
@@ -207,10 +206,10 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
 
 class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
-                 batch_size=1, dl_format='pointwise', shuffle=False):
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'to':
             raise ValueError('neg_sample strategy in GeneralGroupedDataLoader() should be `to`')
-        if dl_format == 'pairwise':
+        if dl_format == InputType.PAIRWISE:
             raise ValueError('pairwise dataloader cannot neg sample to')
 
         self.uid2items = dataset.uid2items
@@ -256,9 +255,9 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
         return self._dataframe_to_interaction(cur_data, cur_pos_len_list, cur_user_len_list)
 
     def _pre_neg_sampling(self):
-        self.dataset.inter_feat, self.pos_len_list, self.user_len_list = self._neg_sampling(self.uid2items)
+        self.dataset.inter_feat, self.pos_len_list, self.user_len_list = self._neg_sampling(self.uid2items, show_progress=True)
 
-    def _neg_sampling(self, uid2items):
+    def _neg_sampling(self, uid2items, show_progress=False):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         label_field = self.config['LABEL_FIELD']
@@ -274,7 +273,8 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
         user_len_list = []
         if not self.real_time_neg_sampling:
             self.start_point = [0]
-        for i, row in enumerate(uid2items.itertuples()):
+        iter_data = tqdm(uid2items.itertuples()) if show_progress else uid2items.itertuples()
+        for i, row in enumerate(iter_data):
             uid = getattr(row, uid_field)
             if self.full:
                 pos_item_id = getattr(row, iid_field)
@@ -311,14 +311,14 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
 
 class GeneralFullDataLoader(GeneralGroupedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
-                 batch_size=1, dl_format='pointwise', shuffle=False):
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
 
         super().__init__(config, dataset, sampler, phase, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
         self.dl_type = DataLoaderType.FULL
 
-    def _neg_sampling(self, uid2items):
+    def _neg_sampling(self, uid2items, show_progress=False):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
 
@@ -333,7 +333,8 @@ class GeneralFullDataLoader(GeneralGroupedDataLoader):
         used_idx = []
 
         users = list(uid2items[uid_field])
-        for i, row in enumerate(uid2items.itertuples()):
+        iter_data = tqdm(uid2items.itertuples()) if show_progress else uid2items.itertuples()
+        for i, row in enumerate(iter_data):
             uid = users[i]
             pos_item_id = getattr(row, iid_field)
             pos_idx.extend([_ + start_idx for _ in pos_item_id])
@@ -360,7 +361,7 @@ class GeneralFullDataLoader(GeneralGroupedDataLoader):
     def _pre_neg_sampling(self):
         self.user_tensor, tmp_pos_idx, tmp_used_idx,\
         self.pos_len_list, self.user_len_list, self.neg_len_list = \
-            self._neg_sampling(self.uid2items)
+            self._neg_sampling(self.uid2items, show_progress=True)
         tmp_pos_len_list = [sum(self.pos_len_list[_: _ + self.step]) for _ in range(0, self.pr_end, self.step)]
         tot_item_num = self.dataset.item_num
         tmp_used_len_list = [sum(

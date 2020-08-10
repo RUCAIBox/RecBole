@@ -20,6 +20,6 @@ class EvaluatorType(Enum):
 
 
 class InputType(Enum):
-    PAIRWISE = 1
-    POINTWISE = 2
+    POINTWISE = 1
+    PAIRWISE = 2
     LISTWISE = 3
