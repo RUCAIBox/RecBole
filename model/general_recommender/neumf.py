@@ -15,13 +15,14 @@ from torch.nn.init import xavier_normal_, constant_
 
 from model.abstract_recommender import GeneralRecommender
 from model.layers import MLPLayers
+from utils import InputType
 
 
 class NeuMF(GeneralRecommender):
 
     def __init__(self, config, dataset):
         super(NeuMF, self).__init__()
-
+        self.input_type = InputType.POINTWISE
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.LABEL = config['LABEL_FIELD']
