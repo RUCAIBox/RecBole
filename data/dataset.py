@@ -3,18 +3,14 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/6
-# @Author : Yupeng Hou
-# @Email  : houyupeng@ruc.edu.cn
+# @Time   : 2020/8/10, 2020/8/5
+# @Author : Yupeng Hou, Xingyu Pan
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn 
 
-#UPDATE:
-#@TIME   : 2020/8/5
-#@Author : Xingyu Pan
-#@Email  : panxy@ruc.edu.cn 
-             
 import os
 import json
 import copy
+from collections import Counter
 import pandas as pd
 import numpy as np
 from .dataloader import *
@@ -51,117 +47,14 @@ class Dataset(object):
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
 
-        self.filter_all(
-            max_user_inter_count = config['max_user_inter_count'],
-            min_user_inter_count = config['min_user_inter_count'],
-            max_item_inter_count = config['max_item_inter_count'],
-            min_item_inter_count = config['min_item_inter_count'],
-            lowest_val=config['lowest_val'],
-            highest_val=config['highest_val'],
-            equal_val=config['equal_val'],
-            not_equal_val=config['not_equal_val'],
-            drop=config['drop_filter_field']
-        )
+        self.filter_by_inter_num(max_user_inter_num=config['max_user_inter_num'], min_user_inter_num=config['min_user_inter_num'],
+                                 max_item_inter_num=config['max_item_inter_num'], min_item_inter_num=config['min_item_inter_num'])
+
+        self.filter_by_field_value(lowest_val=config['lowest_val'], highest_val=config['highest_val'],
+                                   equal_val=config['equal_val'], not_equal_val=config['not_equal_val'],
+                                   drop=config['drop_filter_field'])
+
         self._remap_ID_all()
-
-    def filter_all(self, max_user_inter_count = None, min_user_inter_count = None,max_item_inter_count = None, min_item_inter_count = None,
-                   lowest_val = None, highest_val = None, equal_val = None, not_equal_val = None, drop = False):
-        self.filter_users_base_inter(max_count = max_user_inter_count, min_count = min_user_inter_count)
-        self.filter_items_base_inter(max_count = max_item_inter_count, min_count = min_item_inter_count)
-        if self.item_feat is not None:
-            self.filter_items(lowest_val, highest_val, equal_val, not_equal_val, drop)
-        if self.user_feat is not None:
-            self.filter_users(lowest_val, highest_val, equal_val, not_equal_val, drop)
-        self.filter_inters(lowest_val, highest_val, equal_val, not_equal_val, drop)
-
-    def filter_users_base_inter(self, max_count = None,  min_count = None):
-        if max_count is not None or min_count is not None:
-            temp_dict = {}
-            ban_list = []
-            ban_user = []
-            for user in self.inter_feat["user_id"]:
-                    if user in temp_dict:
-                        temp_dict[user] += 1
-                    else:
-                        temp_dict[user] = 1
-
-            if min_count is None:
-                for user in self.inter_feat['user_id']:
-                    if temp_dict[user] > max_count:
-                        ban_list.append(False)
-                        ban_user.append(user)
-                    else:
-                        ban_list.append(True)
-            elif max_count is None:
-                for user in self.inter_feat['user_id']:
-                    if temp_dict[user] < min_count:
-                        ban_list.append(False)
-                        ban_user.append(user)
-                    else:
-                        ban_list.append(True)
-            else:
-                for user in self.inter_feat['user_id']:
-                    if temp_dict[user] < min_count or temp_dict[user] > max_count:
-                        ban_list.append(False)
-                        ban_user.append(user)
-                    else:
-                        ban_list.append(True)
-            self.inter_feat = self.inter_feat[ban_list]
-            self.inter_feat.reset_index(drop=True, inplace=True)    
-            if self.user_feat is not None:
-                ban_list_user = []
-                for user in self.user_feat['user_id']:
-                    if user in ban_user:
-                        ban_list_user.append(False)
-                    else:
-                        ban_list_user.append(True)
-                self.user_feat = self.user_feat[ban_list_user]
-                self.user_feat.reset_index(drop=True, inplace=True)    
-
-    def filter_items_base_inter(self, max_count = None,  min_count = None):
-        if max_count is not None or min_count is not None:
-            temp_dict = {}
-            ban_list = []
-            ban_item = []
-            for item in self.inter_feat["item_id"]:
-                    if item in temp_dict:
-                        temp_dict[item] += 1
-                    else:
-                        temp_dict[item] = 1
-
-            if min_count is None:
-                for item in self.inter_feat['item_id']:
-                    if temp_dict[item] > max_count:
-                        ban_list.append(False)
-                        ban_item.append(item)
-                    else:
-                        ban_list.append(True)
-            elif max_count is None:
-                for item in self.inter_feat['item_id']:
-                    if temp_dict[item] < min_count:
-                        ban_list.append(False)
-                        ban_item.append(item)
-                    else:
-                        ban_list.append(True)
-            else:
-                for item in self.inter_feat['item_id']:
-                    if temp_dict[item] < min_count or temp_dict[item] > max_count:
-                        ban_list.append(False)
-                        ban_item.append(item)
-                    else:
-                        ban_list.append(True)
-            self.inter_feat = self.inter_feat[ban_list]
-            self.inter_feat.reset_index(drop=True, inplace=True)    
-            if self.item_feat is not None:
-                ban_list_item = []
-                for item in self.item_feat['item_id']:
-                    if item in ban_item:
-                        ban_list_item.append(False)
-                    else:
-                        ban_list_item.append(True)
-                self.item_feat = self.item_feat[ban_list_item]
-                self.item_feat.reset_index(drop=True, inplace=True)    
-
 
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
@@ -284,55 +177,65 @@ class Dataset(object):
                 self.field2seqlen[field] = max(map(len, df[field].values))
         return df
 
-    # TODO
-    
-    def filter_users(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None, drop=False):
-        self._filter_users(lowest_val, lambda x, y: x >= y, drop)
-        self._filter_users(highest_val, lambda x, y: x <= y, drop)
-        self._filter_users(equal_val, lambda x, y: x == y, drop)
-        self._filter_users(not_equal_val, lambda x, y: x != y, drop)
-        self.user_feat.reset_index(drop=True, inplace=True)
+    def filter_by_inter_num(self, max_user_inter_num=None, min_user_inter_num=None, max_item_inter_num=None, min_item_inter_num=None):
+        ban_users = self._get_illegal_idxs_by_inter_num(source='user', max_num=max_user_inter_num, min_num=min_user_inter_num)
+        ban_items = self._get_illegal_idxs_by_inter_num(source='item', max_num=max_item_inter_num, min_num=min_item_inter_num)
 
-    def _filter_users(self, val, cmp, drop=False):
+        if self.user_feat is not None:
+            user_ban_list = [uid not in ban_users for uid in self.user_feat[self.uid_field].values]
+            self.user_feat = self.user_feat[user_ban_list].reset_index(drop=True)
+
+        if self.item_feat is not None:
+            item_ban_list = [iid not in ban_items for iid in self.item_feat[self.iid_field].values]
+            self.item_feat = self.item_feat[item_ban_list].reset_index(drop=True)
+
+        inter_ban_list = [(uid not in ban_users and iid not in ban_items) for uid, iid in self.inter_feat[[self.uid_field, self.iid_field]].values]
+        self.inter_feat = self.inter_feat[inter_ban_list].reset_index(drop=True)
+
+    def _get_illegal_idxs_by_inter_num(self, source, max_num=None,  min_num=None):
+        if source not in {'user', 'item'}:
+            raise ValueError('source [{}] should be user or item'.format(source))
+        if max_num is None and min_num is None: return set()
+
+        max_num = np.inf if max_num is None else max_num
+        min_num = -1 if min_num is None else min_num
+
+        field_name = self.uid_field if source == 'user' else self.iid_field
+        idxs = self.inter_feat[field_name].values
+        inter_num = Counter(idxs)
+        ban_idxs = {idx for idx in inter_num if inter_num[idx] < min_num or inter_num[idx] > max_num}
+        return ban_idxs
+
+    def filter_by_field_value(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None, drop=False):
+        self._filter_by_field_value(lowest_val, lambda x, y: x >= y, drop)
+        self._filter_by_field_value(highest_val, lambda x, y: x <= y, drop)
+        self._filter_by_field_value(equal_val, lambda x, y: x == y, drop)
+        self._filter_by_field_value(not_equal_val, lambda x, y: x != y, drop)
+
+        remain_uids = set(self.user_feat[self.uid_field].values) if self.user_feat is not None else set(self.inter_feat[self.uid_field].values)
+        remain_iids = set(self.item_feat[self.iid_field].values) if self.item_feat is not None else set(self.inter_feat[self.iid_field].values)
+
+        inter_ban_list = [(uid in remain_uids and iid in remain_iids) for uid, iid in self.inter_feat[[self.uid_field, self.iid_field]].values]
+        self.inter_feat = self.inter_feat[inter_ban_list]
+
+        for source in {'user', 'item', 'inter'}:
+            feat = getattr(self, '{}_feat'.format(source))
+            if feat is not None:
+                feat.reset_index(drop=True, inplace=True)
+
+    def _filter_by_field_value(self, val, cmp, drop=False):
         if val is not None:
-            if 'user' in val:
-                val=val['user']
-                for field in val:
+            for source in val:
+                if source not in {'user', 'item', 'inter'}:
+                    raise ValueError('source of val must be user, item or inter, found [{}]'.format(source))
+                cur_feat = getattr(self, '{}_feat'.format(source))
+                for field in val[source]:
                     if field not in self.field2type:
                         raise ValueError('field [{}] not defined in dataset'.format(field))
-                    self.user_feat = self.user_feat[cmp(self.user_feat[field].values, val[field])]
+                    new_feat = cur_feat[cmp(cur_feat[field].values, val[source][field])]
+                    setattr(self, '{}_feat'.format(source), new_feat)
                     if drop:
                         self._del_col(field)
-
-    def filter_items(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None, drop=False):
-        self._filter_items(lowest_val, lambda x, y: x >= y, drop)
-        self._filter_items(highest_val, lambda x, y: x <= y, drop)
-        self._filter_items(equal_val, lambda x, y: x == y, drop)
-        self._filter_items(not_equal_val, lambda x, y: x != y, drop)
-        self.item_feat.reset_index(drop=True, inplace=True)
-
-    def _filter_items(self, val, cmp, drop=False):
-        if val is not None:
-            if 'item' in val:
-                val = val['item']
-                for field in val:
-                    if field not in self.field2type:
-                        raise ValueError('field [{}] not defined in dataset'.format(field))
-                    self.item_feat = self.item_feat[cmp(self.item_feat[field].values, val[field])]
-                    if drop:
-                        self._del_col(field)
-
-    def _filter_inters(self, val, cmp, drop=False):
-        if val is not None:
-            if 'inter' in val:
-                val = val['inter']
-                for field in val:
-                    if field not in self.field2type:
-                        raise ValueError('field [{}] not defined in dataset'.format(field))
-                    self.inter_feat = self.inter_feat[cmp(self.inter_feat[field].values, val[field])]
-                    if drop:
-                        self._del_col(field)
-    
 
     def _del_col(self, field):
         for feat in [self.inter_feat, self.user_feat, self.item_feat]:
@@ -341,32 +244,6 @@ class Dataset(object):
         for dct in [self.field2id_token, self.field2seqlen, self.field2source, self.field2type]:
             if field in dct:
                 del dct[field]
-
-    # TODO
-    def filter_inters(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None, drop=False):
-        self._filter_inters(lowest_val, lambda x, y: x >= y, drop)
-        self._filter_inters(highest_val, lambda x, y: x <= y, drop)
-        self._filter_inters(equal_val, lambda x, y: x == y, drop)
-        self._filter_inters(not_equal_val, lambda x, y: x != y, drop)
-
-        
-        if self.user_feat is not None:
-            ban_inter_list=[]
-            for user in self.inter_feat['user_id']:
-                if user in self.user_feat['user_id']:
-                    ban_inter_list.append(True)
-                else:
-                    ban_inter_list.append(False)
-            self.inter_feat = self.inter_feat[ban_inter_list]
-        if self.item_feat is not None:
-            ban_inter_list=[]
-            for user in self.inter_feat['user_id']:
-                if user in self.user_feat['user_id']:
-                    ban_inter_list.append(True)
-                else:
-                    ban_inter_list.append(False)
-            self.inter_feat = self.inter_feat[ban_inter_list]
-        self.inter_feat.reset_index(drop=True, inplace=True)
 
     def _remap_ID_all(self):
         for field in self.field2type:
