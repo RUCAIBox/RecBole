@@ -203,7 +203,7 @@ class Dataset(object):
         field_name = self.uid_field if source == 'user' else self.iid_field
         idxs = self.inter_feat[field_name].values
         inter_num = Counter(idxs)
-        ban_idxs = {idx for idx in inter_num if inter_num[idx] < min_num or inter_num[idx] < max_num}
+        ban_idxs = {idx for idx in inter_num if inter_num[idx] < min_num or inter_num[idx] > max_num}
         return ban_idxs
 
     def filter_by_field_value(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None, drop=False):
