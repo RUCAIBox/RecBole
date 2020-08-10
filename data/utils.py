@@ -11,7 +11,7 @@ import os
 import copy
 from .dataloader import *
 from config import EvalSetting
-from utils import ModelType
+from utils import ModelType, InputType
 from logging import getLogger
 
 
@@ -41,7 +41,7 @@ def data_preparation(config, model, dataset, save=False):
         sampler=sampler,
         phase='train',
         model_type=model.type,
-        dl_format=config['input_format'],
+        dl_format=model.input_type,
         batch_size=config['train_batch_size'],
         shuffle=True
     )
@@ -62,7 +62,7 @@ def data_preparation(config, model, dataset, save=False):
 
 
 def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
-                         model_type=ModelType.GENERAL, dl_format='pointwise',
+                         model_type=ModelType.GENERAL, dl_format=InputType.POINTWISE,
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
         dataset = [dataset]
