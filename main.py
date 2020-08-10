@@ -20,6 +20,7 @@ logger.info(model)
 train_data, test_data, valid_data = data_preparation(config, model, dataset)
 
 trainer = Trainer(config, model)
+
 # trainer.resume_checkpoint('saved/model_best.pth')
 best_valid_score, _ = trainer.fit(train_data, valid_data)
 result = trainer.evaluate(test_data)
