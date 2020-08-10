@@ -18,7 +18,7 @@ from sklearn.metrics import (
     auc as sk_auc,
     log_loss,
     mean_absolute_error,
-    mean_squared_error,
+    mean_squared_error
 )
 from .utils import _binary_clf_curve
 
@@ -215,7 +215,6 @@ def log_loss_(trues, preds):
 
     """
     # XXX something wrong
-    preds = expit(preds)
     return log_loss(trues, preds)
 
 
