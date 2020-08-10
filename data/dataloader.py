@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/7, 2020/8/6
+# @Time   : 2020/8/10, 2020/8/6
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn.utils.rnn as rnn_utils
+from tqdm import tqdm
 from sampler import Sampler
 from utils import *
 from .interaction import Interaction
@@ -256,9 +257,9 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
         return self._dataframe_to_interaction(cur_data, cur_pos_len_list, cur_user_len_list)
 
     def _pre_neg_sampling(self):
-        self.dataset.inter_feat, self.pos_len_list, self.user_len_list = self._neg_sampling(self.uid2items)
+        self.dataset.inter_feat, self.pos_len_list, self.user_len_list = self._neg_sampling(self.uid2items, show_progress=True)
 
-    def _neg_sampling(self, uid2items):
+    def _neg_sampling(self, uid2items, show_progress=False):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         label_field = self.config['LABEL_FIELD']
@@ -274,7 +275,8 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
         user_len_list = []
         if not self.real_time_neg_sampling:
             self.start_point = [0]
-        for i, row in enumerate(uid2items.itertuples()):
+        iter_data = tqdm(uid2items.itertuples()) if show_progress else uid2items.itertuples()
+        for i, row in enumerate(iter_data):
             uid = getattr(row, uid_field)
             if self.full:
                 pos_item_id = getattr(row, iid_field)
@@ -318,7 +320,7 @@ class GeneralFullDataLoader(GeneralGroupedDataLoader):
 
         self.dl_type = DataLoaderType.FULL
 
-    def _neg_sampling(self, uid2items):
+    def _neg_sampling(self, uid2items, show_progress=False):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
 
@@ -333,7 +335,8 @@ class GeneralFullDataLoader(GeneralGroupedDataLoader):
         used_idx = []
 
         users = list(uid2items[uid_field])
-        for i, row in enumerate(uid2items.itertuples()):
+        iter_data = tqdm(uid2items.itertuples()) if show_progress else uid2items.itertuples()
+        for i, row in enumerate(iter_data):
             uid = users[i]
             pos_item_id = getattr(row, iid_field)
             pos_idx.extend([_ + start_idx for _ in pos_item_id])
@@ -360,7 +363,7 @@ class GeneralFullDataLoader(GeneralGroupedDataLoader):
     def _pre_neg_sampling(self):
         self.user_tensor, tmp_pos_idx, tmp_used_idx,\
         self.pos_len_list, self.user_len_list, self.neg_len_list = \
-            self._neg_sampling(self.uid2items)
+            self._neg_sampling(self.uid2items, show_progress=True)
         tmp_pos_len_list = [sum(self.pos_len_list[_: _ + self.step]) for _ in range(0, self.pr_end, self.step)]
         tot_item_num = self.dataset.item_num
         tmp_used_len_list = [sum(
