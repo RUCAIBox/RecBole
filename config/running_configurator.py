@@ -1,5 +1,6 @@
 from config.abstract_configurator import AbstractConfig
 import os
+from evaluator import loss_metrics, topk_metrics
 
 
 class RunningConfig(AbstractConfig):
@@ -14,4 +15,18 @@ class RunningConfig(AbstractConfig):
         if 'data_path' not in self:
             data_path = os.path.join('dataset', self['dataset'])
             self['data_path'] = data_path
+
+        eval_type = None
+        for metric in self['metrics']:
+            if metric.lower() in loss_metrics:
+                if eval_type is not None and eval_type == 'topk':
+                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
+                else:
+                    eval_type = 'loss'
+            if metric.lower() in topk_metrics:
+                if eval_type is not None and eval_type == 'loss':
+                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
+                else:
+                    eval_type = 'topk'
+        self['eval_type'] = eval_type
 
