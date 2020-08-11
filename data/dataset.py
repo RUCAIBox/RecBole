@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/10, 2020/8/5
+# @Time   : 2020/8/11, 2020/8/5
 # @Author : Yupeng Hou, Xingyu Pan
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn 
 
@@ -181,6 +181,8 @@ class Dataset(object):
         ban_users = self._get_illegal_idxs_by_inter_num(source='user', max_num=max_user_inter_num, min_num=min_user_inter_num)
         ban_items = self._get_illegal_idxs_by_inter_num(source='item', max_num=max_item_inter_num, min_num=min_item_inter_num)
 
+        if len(ban_users) == 0 and len(ban_items) == 0: return
+
         if self.user_feat is not None:
             user_ban_list = [uid not in ban_users for uid in self.user_feat[self.uid_field].values]
             self.user_feat = self.user_feat[user_ban_list].reset_index(drop=True)
@@ -189,7 +191,7 @@ class Dataset(object):
             item_ban_list = [iid not in ban_items for iid in self.item_feat[self.iid_field].values]
             self.item_feat = self.item_feat[item_ban_list].reset_index(drop=True)
 
-        inter_ban_list = [(uid not in ban_users and iid not in ban_items) for uid, iid in self.inter_feat[[self.uid_field, self.iid_field]].values]
+        inter_ban_list = ~(self.inter_feat[self.uid_field].isin(ban_users) & self.inter_feat[self.iid_field].isin(ban_items))
         self.inter_feat = self.inter_feat[inter_ban_list].reset_index(drop=True)
 
     def _get_illegal_idxs_by_inter_num(self, source, max_num=None,  min_num=None):
@@ -215,7 +217,7 @@ class Dataset(object):
         remain_uids = set(self.user_feat[self.uid_field].values) if self.user_feat is not None else set(self.inter_feat[self.uid_field].values)
         remain_iids = set(self.item_feat[self.iid_field].values) if self.item_feat is not None else set(self.inter_feat[self.iid_field].values)
 
-        inter_ban_list = [(uid in remain_uids and iid in remain_iids) for uid, iid in self.inter_feat[[self.uid_field, self.iid_field]].values]
+        inter_ban_list = self.inter_feat[self.uid_field].isin(remain_uids) & self.inter_feat[self.iid_field].isin(remain_iids)
         self.inter_feat = self.inter_feat[inter_ban_list]
 
         for source in {'user', 'item', 'inter'}:
@@ -224,23 +226,27 @@ class Dataset(object):
                 feat.reset_index(drop=True, inplace=True)
 
     def _filter_by_field_value(self, val, cmp, drop=False):
-        if val is not None:
-            for source in val:
-                if source not in {'user', 'item', 'inter'}:
-                    raise ValueError('source of val must be user, item or inter, found [{}]'.format(source))
-                cur_feat = getattr(self, '{}_feat'.format(source))
-                for field in val[source]:
-                    if field not in self.field2type:
-                        raise ValueError('field [{}] not defined in dataset'.format(field))
-                    new_feat = cur_feat[cmp(cur_feat[field].values, val[source][field])]
+        if val is None: return
+        all_feats = []
+        for source in ['inter', 'user', 'item']:
+            cur_feat = getattr(self, '{}_feat'.format(source))
+            if cur_feat is not None:
+                all_feats.append([source, cur_feat])
+        for field in val:
+            if field not in self.field2type:
+                raise ValueError('field [{}] not defined in dataset'.format(field))
+            for source, cur_feat in all_feats:
+                if field in cur_feat:
+                    new_feat = cur_feat[cmp(cur_feat[field].values, val[field])]
                     setattr(self, '{}_feat'.format(source), new_feat)
-                    if drop:
-                        self._del_col(field)
+            if drop:
+                self._del_col(field)
 
     def _del_col(self, field):
-        for feat in [self.inter_feat, self.user_feat, self.item_feat]:
-            if feat is not None and field in feat:
-                feat.drop(columns=field, inplace=True)
+        for source in ['inter', 'user', 'item']:
+            cur_feat = getattr(self, '{}_feat'.format(source))
+            if cur_feat is not None and field in cur_feat:
+                setattr(self, '{}_feat'.format(source), cur_feat.drop(columns=field))
         for dct in [self.field2id_token, self.field2seqlen, self.field2source, self.field2type]:
             if field in dct:
                 del dct[field]
