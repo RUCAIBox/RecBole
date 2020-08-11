@@ -110,7 +110,7 @@ class NegSampleBasedDataLoader(AbstractDataLoader):
         raise NotImplementedError('Method [neg_sampling] should be implemented.')
 
 
-class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
+class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'by':
@@ -140,8 +140,8 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
                 dataset.field2source[neg_item_feat_col] = dataset.field2source[item_feat_col]
                 dataset.field2seqlen[neg_item_feat_col] = dataset.field2seqlen[item_feat_col]
 
-        super(GeneralInteractionBasedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
-                                                                batch_size, dl_format, shuffle)
+        super(GeneralIndividualDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
+                                                          batch_size, dl_format, shuffle)
 
     def _batch_size_adaptation(self):
         if self.dl_format == InputType.PAIRWISE:
@@ -207,7 +207,7 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
         return new_df
 
 
-class GeneralGroupedDataLoader(GeneralInteractionBasedDataLoader):
+class GeneralGroupedDataLoader(GeneralIndividualDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.uid2index, self.uid2items_num = dataset.uid2index
@@ -353,3 +353,40 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
     def get_item_tensor(self):
         item_df = self.dataset.get_item_feature()
         return self._dataframe_to_interaction(item_df)
+
+
+class ContextMixin(object):
+    def set_label(self, label_fields, label_func):
+        self.label_field = self.config['LABEL_FIELD']
+        self.dataset.field2type[self.label_field] = 'float'
+        self.dataset.field2source[self.label_field] = 'inter'
+        self.dataset.field2seqlen[self.label_field] = 1
+        self.dataset.inter_feat[self.label_field] = label_func(self.dataset.inter_feat[label_fields].values)
+
+
+class ContextDataLoader(AbstractDataLoader, ContextMixin):
+    def __init__(self, config, dataset,
+                 batch_size=1, shuffle=False):
+        self.step = batch_size
+
+        super(ContextDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+
+    @property
+    def pr_end(self):
+        return len(self.dataset)
+
+    def _shuffle(self):
+        self.dataset.shuffle()
+
+    def _next_batch_data(self):
+        cur_data = self.dataset[self.pr: self.pr + self.step]
+        self.pr += self.step
+        return self._dataframe_to_interaction(cur_data)
+
+
+class ContextIndividualDataLoader(GeneralIndividualDataLoader, ContextMixin):
+    pass
+
+
+class ContextGroupedDataLoader(GeneralGroupedDataLoader, ContextMixin):
+    pass
