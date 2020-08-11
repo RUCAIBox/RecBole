@@ -87,7 +87,6 @@ test_examples = {
     },
     'Test NeuMF': {
         'model': 'NeuMF',
-        'input_format': 'pointwise',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
