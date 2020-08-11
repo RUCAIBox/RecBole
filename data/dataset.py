@@ -191,7 +191,7 @@ class Dataset(object):
             item_ban_list = [iid not in ban_items for iid in self.item_feat[self.iid_field].values]
             self.item_feat = self.item_feat[item_ban_list].reset_index(drop=True)
 
-        inter_ban_list = ~(self.inter_feat[self.uid_field].isin(ban_users) & self.inter_feat[self.iid_field].isin(ban_items))
+        inter_ban_list = ~(self.inter_feat[self.uid_field].isin(ban_users) | self.inter_feat[self.iid_field].isin(ban_items))
         self.inter_feat = self.inter_feat[inter_ban_list].reset_index(drop=True)
 
     def _get_illegal_idxs_by_inter_num(self, source, max_num=None,  min_num=None):
