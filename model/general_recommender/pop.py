@@ -1,7 +1,10 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+# @Time   : 2020/8/11 9:57
+# @Author : Zihan Lin
+# @Email  : linzihan.super@foxmail.con
+# @File   : pop.py
+
 import torch
-from torch.autograd import Variable
-from collections import defaultdict
 from model.abstract_recommender import GeneralRecommender
 from utils import InputType
 
@@ -13,36 +16,32 @@ class Pop(GeneralRecommender):
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.device = config['device']
-
-        self.item_cnt = defaultdict(int)
-        self.max_cnt = 0
+        self.n_items = dataset.num(self.ITEM_ID)
+        self.item_cnt = torch.zeros(self.n_items, 1, dtype=torch.long, device=self.device, requires_grad=False)
+        self.max_cnt = None
 
         self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))
+
+    def forward(self):
+        pass
 
     def calculate_loss(self, interaction):
 
         item = interaction[self.ITEM_ID]
-        item = item.cpu().numpy()
-        for i in item:
-            self.item_cnt[int(i)] += 1
-            self.max_cnt = max(self.max_cnt, self.item_cnt[(int(i))])
+        self.item_cnt[item, :] = self.item_cnt[item, :] + 1
+
+        self.max_cnt = torch.max(self.item_cnt, dim=0)[0]
 
         return self.fake_loss
 
     def predict(self, interaction):
 
         item = interaction[self.ITEM_ID]
-        item = item.cpu().numpy()
-        result_score = []
-        for i in item:
-            i = int(i)
-            if i not in self.item_cnt:
-                # todo: how to deal with item that not be seen in train_data
-                # raise RuntimeError('New item can not get popularity score!')
-                score = 0.0
-            else:
-                score = self.item_cnt[i]/self.max_cnt
-            result_score.append(score)
-        result = torch.from_numpy(np.array(result_score)).to(self.device)
-
+        result = self.item_cnt[item, :] / self.max_cnt
         return result
+
+    def full_sort_predict(self, interaction):
+        batch_user_num = interaction[self.USER_ID].shape[0]
+        result = self.item_cnt.to(torch.float64) / self.max_cnt.to(torch.float64)
+        result = torch.repeat_interleave(result.unsqueeze(0), batch_user_num, dim=0)
+        return result.view(-1)
