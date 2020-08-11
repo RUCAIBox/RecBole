@@ -1,8 +1,12 @@
-# -*- coding: utf-8 -*-
-# @Time   : 2020/6/26 16:41
+# @Time   : 2020/6/26
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-# @File   : loss.py
+
+# UPDATE:
+# @Time   : 2020/8/7
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
+
 
 """
 Common Loss in recommender system
@@ -55,3 +59,18 @@ class RegLoss(nn.Module):
             else:
                 reg_loss = reg_loss + W.norm(2)
         return reg_loss
+
+
+# todo: wait to be test
+class MarginLoss(nn.Module):
+
+    def __init__(self, margin=1.0):
+        super(MarginLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, pos_score, neg_score):
+        dev = pos_score.device
+        cache_zeros = torch.zeros_like(pos_score).to(dev)
+
+        loss = torch.sum(torch.max(pos_score - neg_score + self.margin, cache_zeros))
+        return loss

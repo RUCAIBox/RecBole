@@ -78,7 +78,7 @@ class AbstractConfig(object):
         if not isinstance(key, str):
             raise TypeError("index must be a str")
         if isinstance(value, str):
-            self.args[key] = '\''+value+'\''
+            self.args[key] = value
         else:
             self.args[key] = str(value)
 

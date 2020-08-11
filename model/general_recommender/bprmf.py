@@ -15,14 +15,14 @@ from torch.nn.init import xavier_normal_
 
 from model.abstract_recommender import GeneralRecommender
 from model.loss import BPRLoss
-from utils import ModelType
+from utils import InputType
 
 
 class BPRMF(GeneralRecommender):
 
     def __init__(self, config, dataset):
         super(BPRMF, self).__init__()
-
+        self.input_type = InputType.PAIRWISE
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
@@ -67,3 +67,11 @@ class BPRMF(GeneralRecommender):
         item = interaction[self.ITEM_ID]
         user_e, item_e = self.forward(user, item)
         return torch.mul(user_e, item_e).sum(dim=1)
+
+    def full_sort_predict(self, interaction):
+        user = interaction[self.USER_ID]
+        user_e = self.get_user_embedding(user)
+        all_item_e = self.item_embedding.weight
+        score = torch.matmul(user_e, all_item_e.transpose(0, 1))
+        return score.view(-1)
+

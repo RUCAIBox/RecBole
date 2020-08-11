@@ -1,12 +1,18 @@
-# -*- coding: utf-8 -*-
+# @Time   : 2020/7/10
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
-# @File   : interaction.py
+
+# UPDATE
+# @Time    : 2020/8/6, 2020/8/6
+# @Author  : Yupeng Hou, Yushuo Chen
+# @email   : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 
 class Interaction(object):
-    def __init__(self, interaction):
+    def __init__(self, interaction, pos_len_list=None, user_len_list=None):
         self.interaction = interaction
+        self.pos_len_list = pos_len_list
+        self.user_len_list = user_len_list
         for k in self.interaction:
             self.length = self.interaction[k].shape[0]
             break
@@ -49,16 +55,19 @@ class Interaction(object):
             ret[k] = self.interaction[k].numpy()
         return Interaction(ret)
 
-    def repeat(self, *sizes):
+    def repeat(self, sizes):
         ret = {}
         for k in self.interaction:
-            ret[k] = self.interaction[k].repeat(sizes)
+            if len(self.interaction[k].shape) == 1:
+                ret[k] = self.interaction[k].repeat(sizes)
+            else:
+                ret[k] = self.interaction[k].repeat([sizes, 1])
         return Interaction(ret)
 
-    def repeat_interleave(self, repeats):
+    def to_device_repeat_interleave(self, device, repeats, dim=0):
         ret = {}
         for k in self.interaction:
-            ret[k] = self.interaction[k].unsqueeze(-1).expand(-1, repeats).flatten()
+            ret[k] = self.interaction[k].to(device).repeat_interleave(repeats, dim=dim)
         return Interaction(ret)
 
     def update(self, new_inter):

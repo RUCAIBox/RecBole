@@ -1,11 +1,16 @@
-# -*- coding: utf-8 -*-
+# @Time   : 2020/6/28
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
-# @File   : dataset.py
+
+# UPDATE:
+# @Time   : 2020/8/10, 2020/8/5
+# @Author : Yupeng Hou, Xingyu Pan
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn 
 
 import os
 import json
 import copy
+from collections import Counter
 import pandas as pd
 import numpy as np
 from .dataloader import *
@@ -37,18 +42,17 @@ class Dataset(object):
         self.user_feat = None
         self.item_feat = None
 
+        self.uid_field = self.config['USER_ID_FIELD']
+        self.iid_field = self.config['ITEM_ID_FIELD']
+
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
 
-        # TODO
-        self.filter_users()
+        self.filter_by_inter_num(max_user_inter_num=config['max_user_inter_num'], min_user_inter_num=config['min_user_inter_num'],
+                                 max_item_inter_num=config['max_item_inter_num'], min_item_inter_num=config['min_item_inter_num'])
 
-        self.filter_inters(
-            lowest_val=config['lowest_val'],
-            highest_val=config['highest_val'],
-            equal_val=config['equal_val'],
-            not_equal_val=config['not_equal_val'],
-            drop=config['drop_filter_field']
-        )
+        self.filter_by_field_value(lowest_val=config['lowest_val'], highest_val=config['highest_val'],
+                                   equal_val=config['equal_val'], not_equal_val=config['not_equal_val'],
+                                   drop=config['drop_filter_field'])
 
         self._remap_ID_all()
 
@@ -90,15 +94,14 @@ class Dataset(object):
         inter_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'inter'))
         if not os.path.isfile(inter_feat_path):
             raise ValueError('File {} not exist'.format(inter_feat_path))
+
         inter_feat = self._load_feat(inter_feat_path, 'inter')
 
-        self.uid_field = self.config['USER_ID_FIELD']
         if self.uid_field not in self.field2source:
             raise ValueError('user id field [{}] not exist in [{}]'.format(self.uid_field, self.dataset_name))
         else:
             self.field2source[self.uid_field] = 'user_id'
 
-        self.iid_field = self.config['ITEM_ID_FIELD']
         if self.iid_field not in self.field2source:
             raise ValueError('item id field [{}] not exist in [{}]'.format(self.iid_field, self.dataset_name))
         else:
@@ -113,6 +116,8 @@ class Dataset(object):
             return None
         else:
             load_col = set(self.config['load_col'][source])
+            if source in {'inter', 'user'}: load_col.add(self.uid_field)
+            if source in {'inter', 'item'}: load_col.add(self.iid_field)
 
         if self.config['unload_col'] is not None and source in self.config['unload_col']:
             unload_col = set(self.config['unload_col'][source])
@@ -155,37 +160,82 @@ class Dataset(object):
         # TODO  fill nan in df
 
         seq_separator = self.config['seq_separator']
-        def _token(col): pass
-        def _float(col): pass
-        def _token_seq(col): col = [_.split(seq_separator) for _ in col.values]
-        def _float_seq(col): col = [list(map(float, _.split(seq_separator))) for _ in col.values]
+        def _token(df, field): pass
+        def _float(df, field): pass
+        def _token_seq(df, field): df[field] = [_.split(seq_separator) for _ in df[field].values]
+        def _float_seq(df, field): df[field] = [list(map(float, _.split(seq_separator))) for _ in df[field].values]
         ftype2func = {
             'token': _token,
             'float': _float,
             'token_seq': _token_seq,
             'float_seq': _float_seq,
         }
-
         for field in remain_field:
             ftype = self.field2type[field]
-            ftype2func[ftype](df[field])
+            ftype2func[ftype](df, field)
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = max(map(len, df[field].values))
-
         return df
 
-    # TODO
-    def filter_users(self):
-        pass
+    def filter_by_inter_num(self, max_user_inter_num=None, min_user_inter_num=None, max_item_inter_num=None, min_item_inter_num=None):
+        ban_users = self._get_illegal_idxs_by_inter_num(source='user', max_num=max_user_inter_num, min_num=min_user_inter_num)
+        ban_items = self._get_illegal_idxs_by_inter_num(source='item', max_num=max_item_inter_num, min_num=min_item_inter_num)
 
-    def _filter_inters(self, val, cmp, drop=False):
+        if self.user_feat is not None:
+            user_ban_list = [uid not in ban_users for uid in self.user_feat[self.uid_field].values]
+            self.user_feat = self.user_feat[user_ban_list].reset_index(drop=True)
+
+        if self.item_feat is not None:
+            item_ban_list = [iid not in ban_items for iid in self.item_feat[self.iid_field].values]
+            self.item_feat = self.item_feat[item_ban_list].reset_index(drop=True)
+
+        inter_ban_list = [(uid not in ban_users and iid not in ban_items) for uid, iid in self.inter_feat[[self.uid_field, self.iid_field]].values]
+        self.inter_feat = self.inter_feat[inter_ban_list].reset_index(drop=True)
+
+    def _get_illegal_idxs_by_inter_num(self, source, max_num=None,  min_num=None):
+        if source not in {'user', 'item'}:
+            raise ValueError('source [{}] should be user or item'.format(source))
+        if max_num is None and min_num is None: return set()
+
+        max_num = np.inf if max_num is None else max_num
+        min_num = -1 if min_num is None else min_num
+
+        field_name = self.uid_field if source == 'user' else self.iid_field
+        idxs = self.inter_feat[field_name].values
+        inter_num = Counter(idxs)
+        ban_idxs = {idx for idx in inter_num if inter_num[idx] < min_num or inter_num[idx] > max_num}
+        return ban_idxs
+
+    def filter_by_field_value(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None, drop=False):
+        self._filter_by_field_value(lowest_val, lambda x, y: x >= y, drop)
+        self._filter_by_field_value(highest_val, lambda x, y: x <= y, drop)
+        self._filter_by_field_value(equal_val, lambda x, y: x == y, drop)
+        self._filter_by_field_value(not_equal_val, lambda x, y: x != y, drop)
+
+        remain_uids = set(self.user_feat[self.uid_field].values) if self.user_feat is not None else set(self.inter_feat[self.uid_field].values)
+        remain_iids = set(self.item_feat[self.iid_field].values) if self.item_feat is not None else set(self.inter_feat[self.iid_field].values)
+
+        inter_ban_list = [(uid in remain_uids and iid in remain_iids) for uid, iid in self.inter_feat[[self.uid_field, self.iid_field]].values]
+        self.inter_feat = self.inter_feat[inter_ban_list]
+
+        for source in {'user', 'item', 'inter'}:
+            feat = getattr(self, '{}_feat'.format(source))
+            if feat is not None:
+                feat.reset_index(drop=True, inplace=True)
+
+    def _filter_by_field_value(self, val, cmp, drop=False):
         if val is not None:
-            for field in val:
-                if field not in self.field2type:
-                    raise ValueError('field [{}] not defined in dataset'.format(field))
-                self.inter_feat = self.inter_feat[cmp(self.inter_feat[field].values, val[field])]
-                if drop:
-                    self._del_col(field)
+            for source in val:
+                if source not in {'user', 'item', 'inter'}:
+                    raise ValueError('source of val must be user, item or inter, found [{}]'.format(source))
+                cur_feat = getattr(self, '{}_feat'.format(source))
+                for field in val[source]:
+                    if field not in self.field2type:
+                        raise ValueError('field [{}] not defined in dataset'.format(field))
+                    new_feat = cur_feat[cmp(cur_feat[field].values, val[source][field])]
+                    setattr(self, '{}_feat'.format(source), new_feat)
+                    if drop:
+                        self._del_col(field)
 
     def _del_col(self, field):
         for feat in [self.inter_feat, self.user_feat, self.item_feat]:
@@ -194,14 +244,6 @@ class Dataset(object):
         for dct in [self.field2id_token, self.field2seqlen, self.field2source, self.field2type]:
             if field in dct:
                 del dct[field]
-
-    # TODO
-    def filter_inters(self, lowest_val=None, highest_val=None, equal_val=None, not_equal_val=None, drop=False):
-        self._filter_inters(lowest_val, lambda x, y: x >= y, drop)
-        self._filter_inters(highest_val, lambda x, y: x <= y, drop)
-        self._filter_inters(equal_val, lambda x, y: x == y, drop)
-        self._filter_inters(not_equal_val, lambda x, y: x != y, drop)
-        self.inter_feat.reset_index(drop=True, inplace=True)
 
     def _remap_ID_all(self):
         for field in self.field2type:
@@ -332,7 +374,7 @@ class Dataset(object):
 
     def _calcu_split_ids(self, tot, ratios):
         cnt = [int(ratios[i] * tot) for i in range(len(ratios))]
-        cnt[-1] = tot - sum(cnt[0:-1])
+        cnt[0] = tot - sum(cnt[1:])
         split_ids = np.cumsum(cnt)[:-1]
         return list(split_ids)
 
@@ -370,7 +412,7 @@ class Dataset(object):
             pr = tot_cnt - legal_leave_one_num
             next_index[0].extend(grouped_index[:pr])
             for i in range(legal_leave_one_num):
-                next_index[i + 1].append(grouped_index[pr])
+                next_index[-legal_leave_one_num + i].append(grouped_index[pr])
                 pr += 1
 
         next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
