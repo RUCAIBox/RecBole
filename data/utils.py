@@ -81,7 +81,7 @@ def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
     logger.info(eval_setting)
     logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
 
-    DataLoader = get_data_loader(model_type, eval_setting)
+    DataLoader = get_data_loader(model_type, eval_setting, config)
 
     ret = []
 
@@ -117,11 +117,14 @@ def save_datasets(save_path, name, dataset):
         d.save(cur_path)
 
 
-def get_data_loader(model_type, eval_setting):
+def get_data_loader(model_type, eval_setting, config):
     if model_type == ModelType.GENERAL:
         neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'by':
-            return GeneralInteractionBasedDataLoader
+            if config['eval_type'] == EvaluatorType.INDIVIDUAL:
+                return GeneralInteractionBasedDataLoader
+            else:
+                return GeneralGroupedDataLoader
         elif neg_sample_strategy == 'full':
             return GeneralFullDataLoader
     else:
