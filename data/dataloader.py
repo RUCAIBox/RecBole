@@ -227,7 +227,9 @@ class GeneralGroupedDataLoader(GeneralInteractionBasedDataLoader):
         return len(self.uid2index)
 
     def _shuffle(self):
-        raise NotImplementedError('GeneralGroupedDataLoader can\'t shuffle')
+        new_index = np.random.permutation(len(self.uid2index))
+        self.uid2index = self.uid2index[new_index]
+        self.uid2items_num = self.uid2items_num[new_index]
 
     def _next_batch_data(self):
         sampling_func = self._neg_sampling if self.real_time_neg_sampling else (lambda x: x)
@@ -247,7 +249,7 @@ class GeneralGroupedDataLoader(GeneralInteractionBasedDataLoader):
         for uid, index in self.uid2index:
             new_inter_feat.append(self._neg_sampling(self.dataset.inter_feat[index]))
             new_num = len(new_inter_feat[-1])
-            new_uid2index.append(slice(new_inter_num, new_inter_num + new_num))
+            new_uid2index.append((uid, slice(new_inter_num, new_inter_num + new_num)))
             new_inter_num += new_num
         self.dataset.inter_feat = pd.concat(new_inter_feat, ignore_index=True)
         self.uid2index = np.array(new_uid2index)
