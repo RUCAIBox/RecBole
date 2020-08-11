@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/10
+# @Time   : 2020/8/11
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
@@ -122,10 +122,7 @@ def get_data_loader(model_type, eval_setting):
         neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'by':
             return GeneralInteractionBasedDataLoader
-        elif neg_sample_strategy == 'to':
-            if eval_setting.neg_sample_args['to'] == -1:
-                return GeneralFullDataLoader
-            else:
-                return GeneralGroupedDataLoader
+        elif neg_sample_strategy == 'full':
+            return GeneralFullDataLoader
     else:
         raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
