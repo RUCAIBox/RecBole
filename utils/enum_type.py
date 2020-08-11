@@ -8,6 +8,18 @@ class ModelType(Enum):
     KNOWLEDGE = 4
     SOCIAL = 5
 
+
 class DataLoaderType(Enum):
     NEGSAMPLE = 1
     FULL = 2
+
+
+class EvaluatorType(Enum):
+    RANKING = 1
+    INDIVIDUAL = 2
+
+
+class InputType(Enum):
+    POINTWISE = 1
+    PAIRWISE = 2
+    LISTWISE = 3
