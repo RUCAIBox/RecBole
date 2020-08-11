@@ -83,7 +83,7 @@ class AbstractDataLoader(object):
 class NegSampleBasedDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        if neg_sample_args['strategy'] not in ['by', 'to', 'full']:
+        if neg_sample_args['strategy'] not in ['by', 'to']:
             raise ValueError('neg_sample strategy [{}] has not been implemented'.format(neg_sample_args['strategy']))
 
         super(NegSampleBasedDataLoader, self).__init__(config, dataset, batch_size, shuffle)
@@ -207,13 +207,13 @@ class GeneralInteractionBasedDataLoader(NegSampleBasedDataLoader):
 class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        if neg_sample_args['strategy'] not in ['to', 'full']:
+        if neg_sample_args['strategy'] != 'to':
             raise ValueError('neg_sample strategy in GeneralGroupedDataLoader() should be `to`')
         if dl_format == InputType.PAIRWISE:
             raise ValueError('pairwise dataloader cannot neg sample to')
 
         self.uid2items = dataset.uid2items
-        # self.full = (neg_sample_args['to'] == -1)
+        self.full = (neg_sample_args['to'] == -1)
 
         super(GeneralGroupedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                        batch_size, dl_format, shuffle)
@@ -224,10 +224,10 @@ class GeneralGroupedDataLoader(NegSampleBasedDataLoader):
         self.dataset.field2seqlen[label_field] = 1
 
     def _batch_size_adaptation(self):
-        # if self.neg_sample_args['to'] == -1:
-            # self.neg_sample_args['to'] = self.dataset.item_num
-        batch_num = max(self.batch_size // self.dataset.item_num, 1)
-        new_batch_size = batch_num * self.dataset.item_num
+        if self.neg_sample_args['to'] == -1:
+            self.neg_sample_args['to'] = self.dataset.item_num
+        batch_num = max(self.batch_size // self.neg_sample_args['to'], 1)
+        new_batch_size = batch_num * self.neg_sample_args['to']
         self.step = batch_num
         self.set_batch_size(new_batch_size)
 
