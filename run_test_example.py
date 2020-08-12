@@ -1,8 +1,11 @@
-# -*- coding: utf-8 -*-
 # @Time   : 2020/7/23 20:34
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-# @File   : run_test_example.py
+
+# UPDATE:
+# @Time   : 2020/8/11 20:28
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
 
 import traceback
 from run_test import whole_process
@@ -75,6 +78,7 @@ test_examples = {
         'metrics:': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_LS, full',
+        'leave_one_num': 2,
         'real_time_neg_sampling': True
     },
     'Test BPRMF': {
@@ -87,7 +91,6 @@ test_examples = {
     },
     'Test NeuMF': {
         'model': 'NeuMF',
-        'input_format': 'pointwise',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',

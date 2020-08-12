@@ -5,7 +5,7 @@
 # @File   : trainer.py
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/8/8
+# @Time   : 2020/8/7 18:38, 2020/8/11 10:33
 # @Author : Zihan Lin, Yupeng Hou
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
 
@@ -18,9 +18,9 @@ import matplotlib.pyplot as plt
 
 from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
-from evaluator import TopKEvaluator, LossEvaluator, loss_metrics
+from evaluator import TopKEvaluator, LossEvaluator
 from data.interaction import Interaction
-from utils import ensure_dir, get_local_time, DataLoaderType
+from utils import ensure_dir, get_local_time, DataLoaderType, EvaluatorType
 from logging import getLogger
 
 
@@ -48,7 +48,6 @@ class Trainer(AbstractTrainer):
         self.stopping_step = config['stopping_step']
         self.valid_metric = config['valid_metric']
         self.valid_metric_bigger = config['valid_metric_bigger']
-        self.metrics = config['metrics']
         self.test_batch_size = config['eval_batch_size']
         self.device = config['device']
         self.checkpoint_dir = config['checkpoint_dir']
@@ -62,11 +61,8 @@ class Trainer(AbstractTrainer):
         self.best_valid_result = None
         self.train_loss_dict = dict()
         self.optimizer = self._build_optimizer()
-        self.eval_type = 'Topk'
-        for metric in self.metrics:
-            if metric.lower() in loss_metrics:
-                self.eval_type = 'loss'
-        if self.eval_type == 'loss':
+        self.eval_type = config['eval_type']
+        if self.eval_type == EvaluatorType.INDIVIDUAL:
             self.evaluator = LossEvaluator(config)
         else:
             self.evaluator = TopKEvaluator(config)
@@ -230,15 +226,13 @@ class Trainer(AbstractTrainer):
             self.item_tensor = eval_data.get_item_tensor().to(self.device).repeat(eval_data.step)
             self.tot_item_num = eval_data.dataset.item_num
 
-        batch_matrix_list, batch_pos_len_matrix = [], []
+        batch_matrix_list = []
         for batch_idx, batched_data in enumerate(eval_data):
             if eval_data.dl_type == DataLoaderType.FULL:
                 interaction, scores = self._full_sort_batch_eval(batched_data)
-                pos_len_list = interaction.pos_len_list
             else:
                 interaction = batched_data
                 batch_size = interaction.length
-                pos_len_list = interaction.pos_len_list   # type :list  number of positive item for each user in this batch
 
                 if batch_size <= self.test_batch_size:
                     scores = self.model.predict(interaction.to(self.device))
@@ -247,8 +241,7 @@ class Trainer(AbstractTrainer):
 
             batch_matrix = self.evaluator.evaluate(interaction, scores)
             batch_matrix_list.append(batch_matrix)
-            batch_pos_len_matrix.append([_ for _ in pos_len_list if _ > 0])
-        result = self.evaluator.collect(batch_matrix_list, batch_pos_len_matrix)
+        result = self.evaluator.collect(batch_matrix_list, eval_data)
 
         return result
 

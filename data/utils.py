@@ -3,15 +3,15 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7
-# @Author : Yupeng Hou
-# @Email  : houyupeng@ruc.edu.cn
+# @Time   : 2020/8/12, 2020/8/12
+# @Author : Yupeng Hou, Yushuo Chen
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import os
 import copy
 from .dataloader import *
 from config import EvalSetting
-from utils import ModelType
+from utils import ModelType, InputType
 from logging import getLogger
 
 
@@ -32,7 +32,8 @@ def data_preparation(config, model, dataset, save=False):
     if save:
         save_datasets(config['checkpoint_dir'], name=names, dataset=builded_datasets)
 
-    es.neg_sample_by(1, real_time=True)
+    if model.type == ModelType.GENERAL:
+        es.neg_sample_by(1, real_time=True)
     train_data = dataloader_construct(
         name='train',
         config=config,
@@ -40,13 +41,14 @@ def data_preparation(config, model, dataset, save=False):
         dataset=train_dataset,
         sampler=sampler,
         phase='train',
-        dl_type=model.type,
-        dl_format=config['input_format'],
+        model_type=model.type,
+        dl_format=model.input_type,
         batch_size=config['train_batch_size'],
         shuffle=True
     )
 
-    getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
+    if model.type == ModelType.GENERAL:
+        getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
@@ -54,7 +56,7 @@ def data_preparation(config, model, dataset, save=False):
         dataset=[valid_dataset, test_dataset],
         sampler=sampler,
         phase=['valid', 'test'],
-        dl_type=model.type,
+        model_type=model.type,
         batch_size=config['eval_batch_size']
     )
 
@@ -62,7 +64,7 @@ def data_preparation(config, model, dataset, save=False):
 
 
 def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
-                         dl_type=ModelType.GENERAL, dl_format='pointwise',
+                         model_type=ModelType.GENERAL, dl_format=InputType.POINTWISE,
                          batch_size=1, shuffle=False):
     if not isinstance(dataset, list):
         dataset = [dataset]
@@ -77,11 +79,11 @@ def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
     if len(dataset) != len(phase):
         raise ValueError('dataset {} and phase {} should have the same length'.format(dataset, phase))
     logger = getLogger()
-    logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(dl_type, name, dl_format))
+    logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(model_type, name, dl_format))
     logger.info(eval_setting)
     logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
 
-    DataLoader = get_data_loader(dl_type, eval_setting)
+    DataLoader = get_data_loader(name, config, eval_setting, model_type)
 
     ret = []
 
@@ -117,15 +119,26 @@ def save_datasets(save_path, name, dataset):
         d.save(cur_path)
 
 
-def get_data_loader(dl_type, eval_setting):
-    if dl_type == ModelType.GENERAL:
+def get_data_loader(name, config, eval_setting, model_type):
+    if model_type == ModelType.GENERAL:
         neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'by':
-            return GeneralInteractionBasedDataLoader
-        elif neg_sample_strategy == 'to':
-            if eval_setting.neg_sample_args['to'] == -1:
-                return GeneralFullDataLoader
+            if name == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
+                return GeneralIndividualDataLoader
             else:
                 return GeneralGroupedDataLoader
+        elif neg_sample_strategy == 'full':
+            return GeneralFullDataLoader
+    elif model_type == ModelType.CONTEXT:
+        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+        if neg_sample_strategy == 'none':
+            return ContextDataLoader
+        elif neg_sample_strategy == 'by':
+            if name == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
+                return ContextIndividualDataLoader
+            else:
+                return ContextGroupedDataLoader
+        elif neg_sample_strategy == 'full':
+            raise NotImplementedError('context model\'s full_sort has not been implemented')
     else:
-        raise NotImplementedError('dl_type [{}] has not been implemented'.format(dl_type))
+        raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
