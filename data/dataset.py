@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/11, 2020/8/5
-# @Author : Yupeng Hou, Xingyu Pan
-# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn 
+# @Time   : 2020/8/11, 2020/8/5, 2020/8/12
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import os
 import json
@@ -337,6 +337,20 @@ class Dataset(object):
             uid2items[uid].append(iid)
         return pd.DataFrame(list(uid2items.items()), columns=columns)
 
+    @property
+    def uid2index(self):
+        self.sort(by=self.uid_field, ascending=True)
+        uid_list = []
+        start, end = dict(), dict()
+        for i, uid in enumerate(self.inter_feat[self.uid_field].values):
+            if uid not in start:
+                uid_list.append(uid)
+                start[uid] = i
+            end[uid] = i
+        index = [(uid, slice(start[uid], end[uid] + 1)) for uid in uid_list]
+        uid2items_num = [end[uid] - start[uid] + 1 for uid in uid_list]
+        return np.array(index), np.array(uid2items_num)
+
     def join(self, df):
         if self.user_feat is not None and self.uid_field in df:
             df = pd.merge(df, self.user_feat, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
@@ -429,7 +443,7 @@ class Dataset(object):
         self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
 
     def sort(self, by, ascending):
-        self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True)
+        self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True, ignore_index=True)
 
     # TODO
     def build(self, eval_setting):

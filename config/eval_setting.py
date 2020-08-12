@@ -1,7 +1,11 @@
-# -*- coding: utf-8 -*-
+# @Time   : 2020/7/20
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
-# @File   : eval_setting.py
+
+# UPDATE:
+# @Time   : 2020/8/11 21:03
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
 
 class EvalSetting(object):
     def __init__(self, config):
@@ -126,8 +130,7 @@ class EvalSetting(object):
     r"""Setting about negative sampling
 
     Args:
-        strategy (str): Either 'none', 'to' or 'by'.
-        to (int): Negative Sampling Until `pos + num == to`.
+        strategy (str): Either 'none', 'full' or 'by'.
         by (int): Negative Sampling `by` neg cases for one pos case.
         real_time (bool): real time negative sampling if True, else negative cases will be pre-sampled and stored.
         distribution (str): distribution of sampler, either 'uniform' or 'popularity'.
@@ -136,36 +139,17 @@ class EvalSetting(object):
         >>> es.neg_sample_to(100, real_time=True)
         >>> es.neg_sample_by(1)
     """
-    def set_neg_sampling(self, strategy='none', real_time=False, **kwargs):
-        legal_strategy = {'none', 'to', 'by'}
+    def set_neg_sampling(self, strategy='none', real_time=False, distribution='uniform', **kwargs):
+        legal_strategy = {'none', 'full', 'by'}
         if strategy not in legal_strategy:
             raise ValueError('Negative Sampling Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
-        distrib = self.neg_sample_args['distribution'] if self.neg_sample_args is not None else 'uniform'
-        self.neg_sample_args = {'strategy': strategy, 'real_time': real_time, 'distribution': distrib}
+        if strategy == 'full' and distribution != 'uniform':
+            raise ValueError('Full Sort can not be sampled by distribution [{}]'.format(distribution))
+        self.neg_sample_args = {'strategy': strategy, 'real_time': real_time, 'distribution': distribution}
         self.neg_sample_args.update(kwargs)
 
-    def neg_sample_to(self, to, real_time=False):
-        self.set_neg_sampling(strategy='to', to=to, real_time=real_time)
-
-    def neg_sample_by(self, by, real_time=False):
-        self.set_neg_sampling(strategy='by', by=by, real_time=real_time)
-
-    r"""Setting about sampling distribution
-
-    Args:
-        distribution (str): Either 'uniform' or 'popularity'.
-
-    Example:
-        >>> es.popularity_based_sampling()
-    """
-    def set_sampling_distribution(self, distribution='uniform'):
-        legal_distribution = {'uniform', 'popularity'}
-        if distribution not in legal_distribution:
-            raise ValueError('Sampling Distribution [{}] should in {}'.format(distribution, list(legal_distribution)))
-        self.neg_sample_args.update({'distribution': distribution})
-
-    def popularity_based_sampling(self):
-        self.set_sampling_distribution(distribution='popularity')
+    def neg_sample_by(self, by, real_time=False, distribution='uniform'):
+        self.set_neg_sampling(strategy='by', by=by, real_time=real_time, distribution=distribution)
 
     r"""Presets
 
@@ -198,15 +182,13 @@ class EvalSetting(object):
         self.neg_sample_by(100, real_time=real_time)
 
     def pop100(self, real_time=False):
-        self.neg_sample_by(100, real_time=real_time)
-        self.popularity_based_sampling()
+        self.neg_sample_by(100, real_time=real_time, distribution='popularity')
 
     def uni1000(self, real_time=False):
         self.neg_sample_by(1000, real_time=real_time)
 
     def pop1000(self, real_time=False):
-        self.neg_sample_by(1000, real_time=real_time)
-        self.popularity_based_sampling()
+        self.neg_sample_by(1000, real_time=real_time, distribution='popularity')
 
     def full(self, real_time=True):
-        self.neg_sample_to(to=-1, real_time=real_time)
+        self.set_neg_sampling(strategy='full', real_time=real_time)

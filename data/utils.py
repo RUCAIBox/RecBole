@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/10
-# @Author : Yupeng Hou
-# @Email  : houyupeng@ruc.edu.cn
+# @Time   : 2020/8/11, 2020/8/12
+# @Author : Yupeng Hou, Yushuo Chen
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import os
 import copy
@@ -81,7 +81,7 @@ def dataloader_construct(name, config, eval_setting, dataset, sampler, phase,
     logger.info(eval_setting)
     logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
 
-    DataLoader = get_data_loader(model_type, eval_setting)
+    DataLoader = get_data_loader(model_type, eval_setting, config, phase)
 
     ret = []
 
@@ -117,15 +117,26 @@ def save_datasets(save_path, name, dataset):
         d.save(cur_path)
 
 
-def get_data_loader(model_type, eval_setting):
+def get_data_loader(model_type, eval_setting, config, phase):
     if model_type == ModelType.GENERAL:
         neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'by':
-            return GeneralInteractionBasedDataLoader
-        elif neg_sample_strategy == 'to':
-            if eval_setting.neg_sample_args['to'] == -1:
-                return GeneralFullDataLoader
+            if phase == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
+                return GeneralIndividualDataLoader
             else:
                 return GeneralGroupedDataLoader
+        elif neg_sample_strategy == 'full':
+            return GeneralFullDataLoader
+    elif model_type == ModelType.CONTEXT:
+        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+        if neg_sample_strategy == 'none':
+            return ContextDataLoader
+        elif neg_sample_strategy == 'by':
+            if phase == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
+                return ContextIndividualDataLoader
+            else:
+                return ContextGroupedDataLoader
+        elif neg_sample_strategy == 'full':
+            raise NotImplementedError('context model\'s full_sort has not been implemented')
     else:
         raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
