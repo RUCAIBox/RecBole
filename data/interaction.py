@@ -29,6 +29,16 @@ class Interaction(object):
     def __len__(self):
         return self.length
 
+    def __str__(self):
+        dict_temp = {}
+        for k in self.interaction:
+            dict_temp[self.interaction[k].shape] = self.interaction[k].device.type
+        info = ['The lenth of interaction: {}'.format(self.length),
+                'Shape---device {}'.format(dict_temp)                
+                ]
+        return '\n'.join(info)
+
+
     def to(self, device, selected_field=None):
         ret = {}
         try:
