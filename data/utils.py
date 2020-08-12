@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/11, 2020/8/12
+# @Time   : 2020/8/12, 2020/8/12
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -32,7 +32,8 @@ def data_preparation(config, model, dataset, save=False):
     if save:
         save_datasets(config['checkpoint_dir'], name=names, dataset=builded_datasets)
 
-    es.neg_sample_by(1, real_time=True)
+    if model.type == ModelType.GENERAL:
+        es.neg_sample_by(1, real_time=True)
     train_data = dataloader_construct(
         name='train',
         config=config,
@@ -46,7 +47,8 @@ def data_preparation(config, model, dataset, save=False):
         shuffle=True
     )
 
-    getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
+    if model.type == ModelType.GENERAL:
+        getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
