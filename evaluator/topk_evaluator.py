@@ -4,7 +4,7 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/04, 2020/08/06
+# @Time    :   2020/08/04, 2020/08/11
 # @Author  :   Kaiyuan Li, Yupeng Hou
 # @email   :   tsotfsk@outlook.com, houyupeng@ruc.edu.cn
 
@@ -28,7 +28,6 @@ class TopKEvaluator(object):
 
         Args:
             score_tensor (tensor): a tensor of scores
-            pos_len_list (list): a list of the positive items' length
             user_len_list (list): a list of users' length
 
         Returns:
@@ -37,14 +36,8 @@ class TopKEvaluator(object):
         """
         # intermediate variables
         user_len_list = intercation.user_len_list
-        pos_len_list = intercation.pos_len_list
 
-        all_score_list = torch.split(score_tensor, user_len_list, dim=0)
-
-        score_list = []
-        for i, score in enumerate(all_score_list):
-            if pos_len_list[i] > 0:
-                score_list.append(score)
+        score_list = torch.split(score_tensor, user_len_list, dim=0)
         scores_matrix = pad_sequence(score_list, batch_first=True, padding_value=-np.inf)  # nusers x items
 
         # get topk
@@ -52,9 +45,9 @@ class TopKEvaluator(object):
 
         return topk_index
 
-    def collect(self, batch_matrix_list, batch_pos_list):
+    def collect(self, batch_matrix_list, eval_data):
 
-        pos_len_list = np.concatenate(batch_pos_list)
+        pos_len_list = eval_data.get_pos_len_list()
         topk_index = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
 
         assert len(pos_len_list) == len(topk_index)

@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/11 21:03
+# @Time   : 2020/8/12 11:11
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
@@ -14,7 +14,7 @@ class EvalSetting(object):
         self.group_field = None
         self.ordering_args = None
         self.split_args = None
-        self.neg_sample_args = None
+        self.neg_sample_args = {'strategy': 'none'}
 
         presetting_args = ['group_field', 'ordering_args', 'split_args', 'neg_sample_args']
         for args in presetting_args:
