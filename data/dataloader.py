@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/10, 2020/8/11
+# @Time   : 2020/8/11, 2020/8/11
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -268,6 +268,7 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
         super().__init__(config, dataset, sampler, phase, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
+        self.uid2items_num = self._get_uid2items_num()
         self.dl_type = DataLoaderType.FULL
 
     def _batch_size_adaptation(self):
@@ -353,6 +354,18 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
     def get_item_tensor(self):
         item_df = self.dataset.get_item_feature()
         return self._dataframe_to_interaction(item_df)
+
+    def _get_uid2items_num(self):
+        uid2items_num = []
+        uid_field = self.config['USER_ID_FIELD']
+        iid_field = self.config['ITEM_ID_FIELD']
+        for i, row in enumerate(self.uid2items.itertuples()):
+            user_id = getattr(row, uid_field)
+            uid2items_num.append(len(getattr(row, iid_field)))
+        return np.array(uid2items_num)
+
+    def get_pos_len_list(self):
+        return self.uid2items_num
 
 
 class ContextMixin(object):
