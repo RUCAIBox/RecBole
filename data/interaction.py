@@ -30,12 +30,11 @@ class Interaction(object):
         return self.length
 
     def __str__(self):
-        dict_temp = {}
+        info = ['The batch_size of interaction: {}'.format(self.length)]
         for k in self.interaction:
-            dict_temp[self.interaction[k].shape] = self.interaction[k].device.type
-        info = ['The lenth of interaction: {}'.format(self.length),
-                'Shape---device {}'.format(dict_temp)                
-                ]
+            temp_str = "    {}, {}, {}".format(k, self.interaction[k].shape, self.interaction[k].device.type)
+            info.append(temp_str)
+        info.append('\n')
         return '\n'.join(info)
 
 
