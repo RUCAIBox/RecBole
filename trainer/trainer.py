@@ -90,10 +90,7 @@ class Trainer(AbstractTrainer):
         self.model.train()
         total_loss = 0.
         for batch_idx, interaction in enumerate(train_data):
-            print(interaction)
             interaction = interaction.to(self.device)
-            print(interaction)
-            exit(0)
             self.optimizer.zero_grad()
             loss = self.model.calculate_loss(interaction)
             loss.backward()
