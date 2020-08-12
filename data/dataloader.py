@@ -355,16 +355,7 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
         return self._dataframe_to_interaction(item_df)
 
 
-class ContextMixin(object):
-    def set_label(self, label_fields, label_func):
-        self.label_field = self.config['LABEL_FIELD']
-        self.dataset.field2type[self.label_field] = 'float'
-        self.dataset.field2source[self.label_field] = 'inter'
-        self.dataset.field2seqlen[self.label_field] = 1
-        self.dataset.inter_feat[self.label_field] = label_func(self.dataset.inter_feat[label_fields].values)
-
-
-class ContextDataLoader(AbstractDataLoader, ContextMixin):
+class ContextDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset,
                  batch_size=1, shuffle=False):
         self.step = batch_size
@@ -384,9 +375,9 @@ class ContextDataLoader(AbstractDataLoader, ContextMixin):
         return self._dataframe_to_interaction(cur_data)
 
 
-class ContextIndividualDataLoader(GeneralIndividualDataLoader, ContextMixin):
+class ContextIndividualDataLoader(GeneralIndividualDataLoader):
     pass
 
 
-class ContextGroupedDataLoader(GeneralGroupedDataLoader, ContextMixin):
+class ContextGroupedDataLoader(GeneralGroupedDataLoader):
     pass
