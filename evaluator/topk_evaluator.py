@@ -14,7 +14,7 @@ from .metrics import metrics_dict
 from torch.nn.utils.rnn import pad_sequence
 
 # These metrics are typical in topk recommendations
-topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG']}
+topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP']}
 
 
 class TopKEvaluator(object):

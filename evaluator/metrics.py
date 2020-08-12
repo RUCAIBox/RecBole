@@ -4,35 +4,26 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/04
-# @Author  :   Kaiyuan Li
-# @email   :   tsotfsk@outlook.com
-
-# UPDATE
-# @Time    :   2020/08/09
-# @Author  :   Zhichao Feng
-# @email   :   fzcbupt@gmail.com
+# @Time    :   2020/08/12   2020/08/09
+# @Author  :   Kaiyuan Li   Zhichao Feng
+# @email   :   tsotfsk@outlook.com  fzcbupt@gmail.com
 
 import numpy as np
-from sklearn.metrics import (
-    auc as sk_auc,
-    log_loss,
-    mean_absolute_error,
-    mean_squared_error
-)
-from .utils import _binary_clf_curve
+from sklearn.metrics import auc as sk_auc
+from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error
 
+from .utils import _binary_clf_curve
 
 #    TopK Metrics    #
 
 
 def hit(pos_index, pos_len):
-    """Hit(also known as hit ratio at N) is a way of calculating how many “hits” you have in an n-sized list of ranked items.
+    r"""Hit(also known as hit ratio at N) is a way of calculating how many 'hits' you have in an n-sized list of ranked items.
 
     url:https://medium.com/@rishabhbhatia315/recommendation-system-evaluation-metrics-3f6739288870
 
     $$
-    \mathrm {HR@K} =\frac{Number of Hits @K}{|GT|}
+        \mathrm {HR@K} =\frac{Number of Hits @K}{|GT|}
     $$
 
     HR is the number of users with a positive sample in the recommendation list.GT is the total number of samples in the test set.
@@ -42,13 +33,13 @@ def hit(pos_index, pos_len):
 
 
 def mrr(pos_index, pos_len):
-    """The MRR (also known as mean reciprocal rank) is a statistic measure for evaluating any process that produces a list
+    r"""The MRR (also known as mean reciprocal rank) is a statistic measure for evaluating any process that produces a list
     of possible responses to a sample of queries, ordered by probability of correctness.
 
     url:https://en.wikipedia.org/wiki/Mean_reciprocal_ranks
 
     $$
-    \mathrm {MRR} = \frac{1}{|{U}|} \sum_{i=1}^{|{U}|} \frac{1}{rank_i}
+        \mathrm {MRR} = \frac{1}{|{U}|} \sum_{i=1}^{|{U}|} \frac{1}{rank_i}
     $$
 
     ${U}$ is the number of users, $rank_i$ is the rank of the first item in the recommendation list
@@ -64,19 +55,55 @@ def mrr(pos_index, pos_len):
             result[row, idx:] = 0
     return result
 
+def map(rank, ground_truth):
+    pre = precision(rank, ground_truth)
+    pre = [pre[idx] if item in ground_truth else 0 for idx, item in enumerate(rank)]
+    sum_pre = np.cumsum(pre, dtype=np.float32)
+    # relevant_num = np.cumsum([1 if item in ground_truth else 0 for item in rank])
+    relevant_num = np.cumsum([min(idx+1, len(ground_truth)) for idx, _ in enumerate(rank)])
+    result = [p/r_num if r_num!=0 else 0 for p, r_num in zip(sum_pre, relevant_num)]
+    return result
 
-def map_(truth_ranks, pos_len):
+def map_(pos_index, pos_len):
+    r"""map (also known as Mean Average Precision) The MAP is meant to calculate Avg. Precision for the relevant items.
+
+    Note:
+
+            In this case the normalization factor used is $ \frac{1}{\min (m,N)} $, which prevents your AP score from
+            being unfairly suppressed when your number of recommendations couldn't possibly capture all the correct ones.
+
+    url:http://sdsawtelle.github.io/blog/output/mean-average-precision-MAP-for-recommender-systems.html#MAP-for-Recommender-Algorithms
+
+    $$
+        \begin{align*}
+        \mathrm{AP@N} &= \frac{1}{\mathrm{min}(m,N)}\sum_{k=1}^N P(k) \cdot rel(k) \\
+        \mathrm{MAP@N}& = \frac{1}{|U|}\sum_{u=1}^{|U|}(\mathrm{AP@N})_u
+        \end{align*}
+    $$
+    """
+    import pdb; pdb.set_trace()
+    pre = precision(pos_index, pos_len)
+    sum_pre = np.cumsum(pre * pos_index.astype(np.float), axis=1) * pos_index
+    len_rank = np.full_like(pos_len, pos_index.shape[1])
+    actual_len = np.where(pos_len > len_rank, len_rank, pos_len)
+    result = np.zeros_like(pos_index, dtype=np.float)
+    for row, lens in enumerate(actual_len):
+        ranges = np.arange(1, pos_index.shape[1]+1)
+        ranges[lens:] = ranges[lens - 1]
+        result[row] = sum_pre[row] / ranges
+    return result
+
     raise NotImplementedError
 
 
 def recall(pos_index, pos_len):
-    """recall (also known as sensitivity) is the fraction of the total amount of relevant instances that were actually
+    r"""recall (also known as sensitivity) is the fraction of the total amount of relevant instances that were actually
     retrieved
 
     url:https://en.wikipedia.org/wiki/Precision_and_recall#Recall
 
     $$
-    \mathrm {Recall@K} = \frac{|Rel_u\cap Rec_u|}{Rel_u}
+        \mathrm {Recall@K} = \frac{|Rel_u\cap Rec_u|}{Rel_u}
     $$
 
     ${Rel_u}$ is the set of items relavent to user ${U}$, ${Rec_u}$ is the top K items recommended to users.
@@ -86,17 +113,17 @@ def recall(pos_index, pos_len):
 
 
 def ndcg(pos_index, pos_len):
-    """NDCG (also known as normalized discounted cumulative gain) is a measure of ranking quality. Through normalizing the
+    r"""NDCG (also known as normalized discounted cumulative gain) is a measure of ranking quality. Through normalizing the
     score, users and their recommendation list results in the whole test set can be evaluated.
 
     url:https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG
 
 
     \begin{gather}
-    \mathrm {DCG@K}=\sum_{i=1}^{K} \frac{2^{rel_i}-1}{\log_{2}{(i+1)}}\\
-    \mathrm {IDCG@K}=\sum_{i=1}^{K}\frac{1}{\log_{2}{(i+1)}}\\
-    \mathrm {NDCG_u@K}=\frac{DCG_u@K}{IDCG_u@K}\\
-    \mathrm {NDCG@K}=\frac{\sum \nolimits_{u \in u^{te}NDCG_u@K}}{|u^{te}|}
+        \mathrm {DCG@K}=\sum_{i=1}^{K} \frac{2^{rel_i}-1}{\log_{2}{(i+1)}}\\
+        \mathrm {IDCG@K}=\sum_{i=1}^{K}\frac{1}{\log_{2}{(i+1)}}\\
+        \mathrm {NDCG_u@K}=\frac{DCG_u@K}{IDCG_u@K}\\
+        \mathrm {NDCG@K}=\frac{\sum \nolimits_{u \in u^{te}NDCG_u@K}}{|u^{te}|}
     \end{gather}
 
     ${K}$ stands for recommending ${K}$ items.And the ${rel_i}$ is the relevance of the item in position ${i}$ in the
@@ -122,14 +149,14 @@ def ndcg(pos_index, pos_len):
 
 
 def precision(pos_index, pos_len):
-    """precision (also called positive predictive value) is the fraction of
+    r"""precision (also called positive predictive value) is the fraction of
     relevant instances among the retrieved instances
 
     url:https://en.wikipedia.org/wiki/Precision_and_recall#Precision
 
 
     $$
-    \mathrm {Precision@K} = \frac{|Rel_u \cap Rec_u|}{Rec_u}
+        \mathrm {Precision@K} = \frac{|Rel_u \cap Rec_u|}{Rec_u}
     $$
 
     ${Rel_u}$ is the set of items relavent to user ${U}$, ${Rec_u}$ is the top K items recommended to users.
@@ -142,7 +169,7 @@ def precision(pos_index, pos_len):
 #    CTR Metrics    #
 
 def auc(trues, preds):
-    """AUC (also known as Area Under Curve) is used to evaluate the two-class model,
+    r"""AUC (also known as Area Under Curve) is used to evaluate the two-class model,
      referring to the area under the ROC curve
 
     url:https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve
@@ -153,8 +180,8 @@ def auc(trues, preds):
         scores on the entire prediction results regardless the users.
 
     $$
-    \mathrm {AUC} = \frac{\sum\limits_{i=1}^M rank_{i}
-    - {{M} \times {(M+1)}}} {{M} \times {N}}
+        \mathrm {AUC} = \frac{\sum\limits_{i=1}^M rank_{i}
+        - {{M} \times {(M+1)}}} {{M} \times {N}}
     $$
 
     M is the number of positive samples.N is the number of negative samples.${rank_i}$ is the rank of the ith positive sample.
@@ -172,15 +199,15 @@ def auc(trues, preds):
 # Loss based Metrics #
 
 def mae(trues, preds):
-    """Mean absolute error regression loss
+    r"""Mean absolute error regression loss
 
     url:https://en.wikipedia.org/wiki/Mean_absolute_error
 
     $$
-    \mathrm {AUC} = \frac{\sum\limits_{i=1}^M rank_{i} - {{M} \times {(M+1)}}} {{M} \times {N}}
+        \mathrm{MAE}=\frac{1}{|{T}|} \sum_{(u, i) \in {T}}\left|\hat{r}_{u i}-r_{u i}\right|
     $$
 
-    M is the number of positive samples.N is the number of negative samples.${rank_i}$ is the rank of the ith positive sample.
+    ${T}$ is the test set, $\hat{r}_{u i}$ is the score predicted by the model, and $r_{u i}$ the actual score of the test set.
 
     """
 
@@ -188,12 +215,12 @@ def mae(trues, preds):
 
 
 def rmse(trues, preds):
-    """Mean std error regression loss
+    r"""Mean std error regression loss
 
     url:https://en.wikipedia.org/wiki/Root-mean-square_deviation
 
     $$
-    \mathrm{RMSE} = \sqrt{\frac{1}{|{T}|} \sum_{(u, i) \in {T}}(\hat{r}_{u i}-r_{u i})^{2}}
+        \mathrm{RMSE} = \sqrt{\frac{1}{|{T}|} \sum_{(u, i) \in {T}}(\hat{r}_{u i}-r_{u i})^{2}}
     $$
 
     ${T}$ is the test set, $\hat{r}_{u i}$ is the score predicted by the model, and $r_{u i}$ the actual score of the test set.
@@ -201,27 +228,28 @@ def rmse(trues, preds):
     """
     return np.sqrt(mean_squared_error(trues, preds))
 
+
 def log_loss_(trues, preds):
-    """Log loss, aka logistic loss or cross-entropy loss
+    r"""Log loss, aka logistic loss or cross-entropy loss
 
     url:http://wiki.fast.ai/index.php/Log_Loss
 
     $$
-    -\log {P(yt|yp)} = -(({yt}\ \log{yp}) + {(1-yt)}\ \log{(1 - yp)})
+        -\log {P(yt|yp)} = -(({yt}\ \log{yp}) + {(1-yt)}\ \log{(1 - yp)})
     $$
 
     For a single sample, yt is true label in {0,1}.
     yp is the estimated probability that yt = 1.
 
     """
-    # XXX something wrong
+
     return log_loss(trues, preds)
 
 
 # Item based Metrics #
 
 
-def coverage(n_items, ):
+def coverage():
     raise NotImplementedError
 
 
@@ -251,5 +279,6 @@ metrics_dict = {
     'rmse': rmse,
     'mae': mae,
     'logloss': log_loss_,
-    'auc': auc
+    'auc': auc,
+    'map': map_
 }
