@@ -226,15 +226,13 @@ class Trainer(AbstractTrainer):
             self.item_tensor = eval_data.get_item_tensor().to(self.device).repeat(eval_data.step)
             self.tot_item_num = eval_data.dataset.item_num
 
-        batch_matrix_list, batch_pos_len_matrix = [], []
+        batch_matrix_list = []
         for batch_idx, batched_data in enumerate(eval_data):
             if eval_data.dl_type == DataLoaderType.FULL:
                 interaction, scores = self._full_sort_batch_eval(batched_data)
-                pos_len_list = interaction.pos_len_list
             else:
                 interaction = batched_data
                 batch_size = interaction.length
-                pos_len_list = interaction.pos_len_list   # type :list  number of positive item for each user in this batch
 
                 if batch_size <= self.test_batch_size:
                     scores = self.model.predict(interaction.to(self.device))
@@ -243,8 +241,7 @@ class Trainer(AbstractTrainer):
 
             batch_matrix = self.evaluator.evaluate(interaction, scores)
             batch_matrix_list.append(batch_matrix)
-            batch_pos_len_matrix.append([_ for _ in pos_len_list if _ > 0])
-        result = self.evaluator.collect(batch_matrix_list, batch_pos_len_matrix)
+        result = self.evaluator.collect(batch_matrix_list, eval_data)
 
         return result
 
