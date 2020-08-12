@@ -44,6 +44,7 @@ class Dataset(object):
 
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
+        self.label_field = self.config['LABEL_FIELD']
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
 
@@ -53,6 +54,8 @@ class Dataset(object):
         self.filter_by_field_value(lowest_val=config['lowest_val'], highest_val=config['highest_val'],
                                    equal_val=config['equal_val'], not_equal_val=config['not_equal_val'],
                                    drop=config['drop_filter_field'])
+
+        self._set_label_by_threshold(self.config['threshold'])
 
         self._remap_ID_all()
 
@@ -75,6 +78,7 @@ class Dataset(object):
 
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
+        self.label_field = self.config['LABEL_FIELD']
 
     def _load_data(self, token, dataset_path):
         user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
@@ -250,6 +254,20 @@ class Dataset(object):
         for dct in [self.field2id_token, self.field2seqlen, self.field2source, self.field2type]:
             if field in dct:
                 del dct[field]
+
+    def _set_label_by_threshold(self, threshold):
+        if threshold is None:
+            return
+
+        if len(threshold) != 1:
+            raise ValueError('threshold length should be 1')
+
+        for field, value in threshold.items():
+            if field in self.inter_feat:
+                self.inter_feat[self.label_field] = (self.inter_feat[field] >= value).astype(int)
+            else:
+                raise ValueError('field [{}] not in inter_feat'.format(field))
+            self._del_col(field)
 
     def _remap_ID_all(self):
         for field in self.field2type:
