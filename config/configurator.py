@@ -6,6 +6,7 @@ import numpy as np
 from config.running_configurator import RunningConfig
 from config.model_configurator import ModelConfig
 from config.data_configurator import DataConfig
+from config.cmd_configurator import CmdConfig
 
 
 class Config(object):
@@ -41,22 +42,23 @@ class Config(object):
                         MUST parameter are not defined
         """
         self.config_dict = config_dict
-        self.cmd_args = {}
+        self.cmd_args_dict = {}
         self._read_cmd_line()
         if self.config_dict:
             self._read_config_dict()
+        self.cmd_args = CmdConfig(self.cmd_args_dict)
 
-        self.run_args = RunningConfig(config_file_name, self.cmd_args)
+        self.run_args = RunningConfig(config_file_name)
 
         model_name = self.run_args['model']
         model_dir = os.path.join(os.path.dirname(config_file_name), 'model')
         model_arg_file_name = os.path.join(model_dir, model_name + '.config')
-        self.model_args = ModelConfig(model_arg_file_name, self.cmd_args)
+        self.model_args = ModelConfig(model_arg_file_name)
 
         dataset_name = self.run_args['dataset']
         dataset_dir = os.path.join(os.path.dirname(config_file_name), 'dataset')
         dataset_arg_file_name = os.path.join(dataset_dir, dataset_name + '.config')
-        self.dataset_args = DataConfig(dataset_arg_file_name, self.cmd_args)
+        self.dataset_args = DataConfig(dataset_arg_file_name)
 
         self.device = None
 
@@ -78,13 +80,6 @@ class Config(object):
         torch.cuda.manual_seed_all(init_seed)
         torch.backends.cudnn.deterministic = True
 
-    def dump_config_file(self, config_file):
-        """
-        This function can dump the model's hyper parameters to a new config file
-        :param config_file: file name that write to.
-        """
-        self.model_args.dump_config_file(config_file)
-
     def _read_cmd_line(self):
 
         if "ipykernel_launcher" not in sys.argv[0]:
@@ -92,15 +87,15 @@ class Config(object):
                 if not arg.startswith("--"):
                     raise SyntaxError("Commend arg must start with '--', but '%s' is not!" % arg)
                 cmd_arg_name, cmd_arg_value = arg[2:].split("=")
-                if cmd_arg_name in self.cmd_args and cmd_arg_value != self.cmd_args[cmd_arg_name]:
+                if cmd_arg_name in self.cmd_args_dict and cmd_arg_value != self.cmd_args_dict[cmd_arg_name]:
                     raise SyntaxError("There are duplicate commend arg '%s' with different value!" % arg)
                 else:
-                    self.cmd_args[cmd_arg_name] = cmd_arg_value
+                    self.cmd_args_dict[cmd_arg_name] = cmd_arg_value
 
     def _read_config_dict(self):
         for dict_arg_name in self.config_dict:
-            if dict_arg_name not in self.cmd_args:
-                self.cmd_args[dict_arg_name] = self.config_dict[dict_arg_name]
+            if dict_arg_name not in self.cmd_args_dict:
+                self.cmd_args_dict[dict_arg_name] = self.config_dict[dict_arg_name]
 
     def __getitem__(self, item):
         if item == "device":
@@ -108,6 +103,8 @@ class Config(object):
                 raise SyntaxError("device only can be get after init() !")
             else:
                 return self.device
+        elif item in self.cmd_args:
+            return self.cmd_args[item]
         elif item in self.run_args:
             return self.run_args[item]
         elif item in self.model_args:
@@ -116,13 +113,6 @@ class Config(object):
             return self.dataset_args[item]
         else:
             return None
-
-    def __setitem__(self, key, value):
-        if not isinstance(key, str):
-            raise TypeError("index must be a str")
-        if key in self.run_args:
-            raise SyntaxError("running args can not be changed when running!")
-        self.model_args[key] = value
 
     def __contains__(self, o):
         if not isinstance(o, str):
@@ -158,8 +148,4 @@ if __name__ == '__main__':
     print(config['field_separator'])
     print(config['reg_mf'])
     print(config['device'])
-    config['reg_mf'] = 0.6
     print(config['reg_mf'])
-    #config.dump_config_file('../properties/mf_new.config')
-
-    #wide_crossed_cols = "[('education', 'age')]"
