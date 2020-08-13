@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/12, 2020/8/12
+# @Time   : 2020/8/13, 2020/8/12
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -22,6 +22,7 @@ def data_preparation(config, model, dataset, save=False):
     kargs = {}
     if 'RS' in es_str[0]: kargs['ratios'] = config['split_ratio']
     if 'LS' in es_str[0]: kargs['leave_one_num'] = config['leave_one_num']
+    kargs['group_by_user'] = config['group_by_user']
     getattr(es, es_str[0])(**kargs)
 
     builded_datasets = dataset.build(es)
