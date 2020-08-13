@@ -40,10 +40,10 @@ class AbstractConfig(object):
             if parameter not in self.args:
                 raise ValueError("'%s' must be specified !" % parameter)
 
-    def _replace_args(self, cmd_args):
-        for arg_name in self.args.keys():
-            if arg_name in cmd_args:
-                self.args[arg_name] = cmd_args[arg_name]
+    # def _replace_args(self, cmd_args):
+    #     for arg_name in self.args.keys():
+    #         if arg_name in cmd_args:
+    #             self.args[arg_name] = cmd_args[arg_name]
 
     def __getitem__(self, item):
 
