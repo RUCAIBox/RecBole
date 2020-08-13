@@ -29,6 +29,15 @@ class Interaction(object):
     def __len__(self):
         return self.length
 
+    def __str__(self):
+        info = ['The batch_size of interaction: {}'.format(self.length)]
+        for k in self.interaction:
+            temp_str = "    {}, {}, {}".format(k, self.interaction[k].shape, self.interaction[k].device.type)
+            info.append(temp_str)
+        info.append('\n')
+        return '\n'.join(info)
+
+
     def to(self, device, selected_field=None):
         ret = {}
         try:
