@@ -27,12 +27,9 @@ class TopKEvaluator(object):
         """ evalaute the topk metrics
 
         Args:
+            interaction (Interaction): Interaction class of the batch
             score_tensor (tensor): a tensor of scores
-            user_len_list (list): a list of users' length
 
-        Returns:
-            dict: such as { 'Hit@20': 0.3824, 'Recall@20': 0.0527
-                            'Hit@10': 0.3153, 'Recall@10': 0.0329}
         """
         # intermediate variables
         user_len_list = intercation.user_len_list
@@ -46,7 +43,16 @@ class TopKEvaluator(object):
         return topk_index
 
     def collect(self, batch_matrix_list, eval_data):
+        """calculate the metrics of all batches
 
+        Args:
+            batch_matrix_list (list): the matrixs of all batches
+            eval_data (Dataset): the class of test data
+
+        Returns:
+            dict: such as { 'Hit@20': 0.3824, 'Recall@20': 0.0527
+                            'Hit@10': 0.3153, 'Recall@10': 0.0329}
+        """
         pos_len_list = eval_data.get_pos_len_list()
         topk_index = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
 
@@ -89,8 +95,7 @@ class TopKEvaluator(object):
         """get one users's metrics result
 
         Args:
-            topk_idx (np.ndarray): the int index of topk items
-            pos_idx (np.ndarray): the bool index of postivite items
+            pos_idx (np.ndarray): the int index of topk items
             pos_len (int): the length of postivite items
 
         Returns:
@@ -118,3 +123,8 @@ class TopKEvaluator(object):
         result_list = self.metrics_info(pos_idx_matrix, pos_len_list)  # n_users x len(metrics) x len(ranks)
         result = np.stack(result_list, axis=0).mean(axis=1)  # len(metrics) x len(ranks)
         return result
+
+    def __str__(self):
+        mesg = 'The TopK Evaluator Info:\n' + '\tMetrics' + ','.join([topk_metrics[metric.lower()] for metric in self.metrics]) \
+                + '\tTopK:' + ','.join(map(str, self.topk))
+        return mesg
