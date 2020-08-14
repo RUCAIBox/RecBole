@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/11, 2020/8/5, 2020/8/12
+# @Time   : 2020/8/11, 2020/8/5, 2020/8/14
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -282,6 +282,9 @@ class Dataset(object):
         if len(threshold) != 1:
             raise ValueError('threshold length should be 1')
 
+        self.field2type[self.label_field] = 'float'
+        self.field2source[self.label_field] = 'inter'
+        self.field2seqlen[self.label_field] = 1
         for field, value in threshold.items():
             if field in self.inter_feat:
                 self.inter_feat[self.label_field] = (self.inter_feat[field] >= value).astype(int)
