@@ -55,15 +55,6 @@ def mrr(pos_index, pos_len):
             result[row, idx:] = 0
     return result
 
-# def map(rank, ground_truth):
-#     pre = precision(rank, ground_truth)
-#     pre = [pre[idx] if item in ground_truth else 0 for idx, item in enumerate(rank)]
-#     sum_pre = np.cumsum(pre, dtype=np.float32)
-#     # relevant_num = np.cumsum([1 if item in ground_truth else 0 for item in rank])
-#     relevant_num = np.cumsum([min(idx+1, len(ground_truth)) for idx, _ in enumerate(rank)])
-#     result = [p/r_num if r_num!=0 else 0 for p, r_num in zip(sum_pre, relevant_num)]
-#     return result
-
 
 def map_(pos_index, pos_len):
     r"""map (also known as Mean Average Precision) The MAP is meant to calculate Avg. Precision for the relevant items.
@@ -82,7 +73,6 @@ def map_(pos_index, pos_len):
         \end{align*}
     $$
     """
-    import pdb; pdb.set_trace()
     pre = precision(pos_index, pos_len)
     sum_pre = np.cumsum(pre * pos_index.astype(np.float), axis=1) * pos_index
     len_rank = np.full_like(pos_len, pos_index.shape[1])
