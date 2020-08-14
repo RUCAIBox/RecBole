@@ -74,7 +74,7 @@ def map_(pos_index, pos_len):
     $$
     """
     pre = precision(pos_index, pos_len)
-    sum_pre = np.cumsum(pre * pos_index.astype(np.float), axis=1) * pos_index
+    sum_pre = np.cumsum(pre * pos_index.astype(np.float), axis=1)
     len_rank = np.full_like(pos_len, pos_index.shape[1])
     actual_len = np.where(pos_len > len_rank, len_rank, pos_len)
     result = np.zeros_like(pos_index, dtype=np.float)
