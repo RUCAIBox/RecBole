@@ -208,6 +208,7 @@ class Trainer(AbstractTrainer):
 
         return interaction, final_scores
 
+    @torch.no_grad()
     def evaluate(self, eval_data, load_best_model=True, model_file=None):
         if load_best_model:
             if model_file:
