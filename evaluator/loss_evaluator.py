@@ -61,17 +61,17 @@ class LossEvaluator(object):
 
     def _check_args(self):
 
-        # Check eval_metric
+        # Check metrics
         if isinstance(self.metrics, (str, list)):
             if isinstance(self.metrics, str):
                 self.metrics = [self.metrics]
         else:
-            raise TypeError('eval_metric must be str or list')
+            raise TypeError('metrics must be str or list')
 
         # Convert metric to lowercase
         for m in self.metrics:
             if m.lower() not in loss_metrics:
-                raise ValueError("There is no user grouped topk metric named {}!".format(m))
+                raise ValueError("There is no loss metric named {}!".format(m))
         self.metrics = [metric.lower() for metric in self.metrics]
 
     def metrics_info(self, trues, preds):
@@ -86,5 +86,5 @@ class LossEvaluator(object):
         return self.metrics_info(trues, preds)
 
     def __str__(self):
-        mesg = 'The TopK Evaluator Info:\n' + '\tMetrics' + ','.join([loss_metrics[metric.lower()] for metric in self.metrics])
+        mesg = 'The Loss Evaluator Info:\n' + '\tMetrics' + ','.join([loss_metrics[metric.lower()] for metric in self.metrics])
         return mesg
