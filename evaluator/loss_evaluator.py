@@ -4,14 +4,9 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/04
-# @Author  :   Kaiyuan Li
-# @email   :   tsotfsk@outlook.com
-
-# UPDATE
-# @Time    :   2020/08/09
-# @Author  :   Zhichao Feng
-# @email   :   fzcbupt@gmail.com
+# @Time    :   2020/08/04   2020/08/09
+# @Author  :   Kaiyuan Li   Zhichao Feng
+# @email   :   tsotfsk@outlook.com  fzcbupt@gmail.com
 
 from .metrics import metrics_dict
 import numpy as np
@@ -31,24 +26,26 @@ class LossEvaluator(object):
         """evalaute the loss metrics
 
         Args:
-            true_scores (tensor): the true scores' list
+            interaction (Interaction): Interaction class of the batch
             pred_scores (tensor): the predict scores' list
+
+        Returns:
+            tensor : a batch of socres
+        """
+
+        true_scores = interaction[self.label_field].to(pred_scores.device)
+        assert len(true_scores) == len(pred_scores)
+        return torch.stack((true_scores, pred_scores.detach()), dim=1)
+
+    def collect(self, batch_matrix_list, *args):
+        """calculate the metrics of all batches
+
+        Args:
+            batch_matrix_list (list): scores for all batches
 
         Returns:
             dict: such as {'AUC': 0.83}
         """
-        user_len_list = interaction.user_len_list
-        pos_len_list = interaction.pos_len_list
-        true_scores = []
-        for pos_len, user_len in zip(pos_len_list, user_len_list):
-            label = torch.tensor(pos_len * [1] + (user_len - pos_len) * [0], dtype=torch.float)
-            true_scores.append(label)
-        device = pred_scores.device
-        true_scores = torch.cat(true_scores, dim=0).to(device)
-        return torch.stack((true_scores, pred_scores.detach()), dim=1)
-
-    def collect(self, batch_matrix_list, *args):
-
         concat = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
 
         trues = concat[:, 0]
@@ -87,3 +84,7 @@ class LossEvaluator(object):
 
     def _calculate_metrics(self, trues, preds):
         return self.metrics_info(trues, preds)
+
+    def __str__(self):
+        mesg = 'The TopK Evaluator Info:\n' + '\tMetrics' + ','.join([loss_metrics[metric.lower()] for metric in self.metrics])
+        return mesg
