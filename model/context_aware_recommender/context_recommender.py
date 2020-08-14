@@ -28,6 +28,7 @@ class ContextRecommender(AbstractRecommender):
         self.float_field_dims = []
         self.token_seq_field_names = []
         self.token_seq_field_dims = []
+        self.num_feature_field = 0
         for field_name in self.field_names:
             if field_name == self.LABEL:
                 continue
@@ -40,6 +41,7 @@ class ContextRecommender(AbstractRecommender):
             else:
                 self.float_field_names.append(field_name)
                 self.float_field_dims.append(dataset.num(field_name))
+            self.num_feature_field += 1
         if len(self.token_field_dims) > 0:
             self.token_field_offsets = np.array((0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long)
             self.token_embedding_table = FMEmbedding(self.token_field_dims, self.token_field_offsets, self.embedding_size)
