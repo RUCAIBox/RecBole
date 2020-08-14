@@ -15,9 +15,10 @@ class DataLoaderType(Enum):
     NEGSAMPLE = 3
 
 
-class EvaluatorType(Enum):
-    RANKING = 1
-    INDIVIDUAL = 2
+# can not use Enum Type , Enum Type can't be store in config object
+class EvaluatorType:
+    RANKING = 'ranking'
+    INDIVIDUAL = 'loss'
 
 
 class InputType(Enum):
