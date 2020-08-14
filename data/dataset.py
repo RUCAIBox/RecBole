@@ -205,7 +205,7 @@ class Dataset(object):
             selected_item = ~self.item_feat[self.iid_field].isin(ban_users)
             self.item_feat = self.item_feat[selected_item].reset_index(drop=True)
 
-        selected_inter = True
+        selected_inter = pd.Series(True, index=self.inter_feat.index)
         if self.uid_field:
             selected_inter &= ~self.inter_feat[self.uid_field].isin(ban_users)
         if self.iid_field:
@@ -247,7 +247,7 @@ class Dataset(object):
         elif self.iid_field is not None:
             remained_iids = set(self.inter_feat[self.iid_field].values)
 
-        remained_inter = pd.Series([True] * len(self.inter_feat))
+        remained_inter = pd.Series(True, index=self.inter_feat.index)
         if self.uid_field is not None:
             remained_inter &= self.inter_feat[self.uid_field].isin(remained_uids)
         if self.iid_field is not None:
