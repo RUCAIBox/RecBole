@@ -103,14 +103,16 @@ class Dataset(object):
 
         inter_feat = self._load_feat(inter_feat_path, 'inter')
 
-        if self.uid_field not in self.field2source:
-            raise ValueError('user id field [{}] not exist in [{}]'.format(self.uid_field, self.dataset_name))
-        else:
+        if user_feat is not None and self.uid_field is None:
+            raise ValueError('uid_field must be exist if user_feat exist')
+
+        if item_feat is not None and self.iid_field is None:
+            raise ValueError('iid_field must be exist if item_feat exist')
+
+        if self.uid_field in self.field2source:
             self.field2source[self.uid_field] = 'user_id'
 
-        if self.iid_field not in self.field2source:
-            raise ValueError('item id field [{}] not exist in [{}]'.format(self.iid_field, self.dataset_name))
-        else:
+        if self.iid_field in self.field2source:
             self.field2source[self.iid_field] = 'item_id'
 
         return inter_feat, user_feat, item_feat
@@ -122,9 +124,9 @@ class Dataset(object):
             return None
         else:
             load_col = set(self.config['load_col'][source])
-            if source in {'inter', 'user'}:
+            if source in {'inter', 'user'} and self.uid_field is not None:
                 load_col.add(self.uid_field)
-            if source in {'inter', 'item'}:
+            if source in {'inter', 'item'} and self.iid_field is not None:
                 load_col.add(self.iid_field)
 
         if self.config['unload_col'] is not None and source in self.config['unload_col']:
@@ -187,40 +189,46 @@ class Dataset(object):
 
     def filter_by_inter_num(self, max_user_inter_num=None, min_user_inter_num=None,
                             max_item_inter_num=None, min_item_inter_num=None):
-        ban_users = self._get_illegal_idxs_by_inter_num(source='user', max_num=max_user_inter_num,
-                                                        min_num=min_user_inter_num)
-        ban_items = self._get_illegal_idxs_by_inter_num(source='item', max_num=max_item_inter_num,
-                                                        min_num=min_item_inter_num)
+        ban_users = self._get_illegal_ids_by_inter_num(source='user', max_num=max_user_inter_num,
+                                                       min_num=min_user_inter_num)
+        ban_items = self._get_illegal_ids_by_inter_num(source='item', max_num=max_item_inter_num,
+                                                       min_num=min_item_inter_num)
 
         if len(ban_users) == 0 and len(ban_items) == 0:
             return
 
         if self.user_feat is not None:
-            user_ban_list = [uid not in ban_users for uid in self.user_feat[self.uid_field].values]
-            self.user_feat = self.user_feat[user_ban_list].reset_index(drop=True)
+            selected_user = ~self.user_feat[self.uid_field].isin(ban_users)
+            self.user_feat = self.user_feat[selected_user].reset_index(drop=True)
 
         if self.item_feat is not None:
-            item_ban_list = [iid not in ban_items for iid in self.item_feat[self.iid_field].values]
-            self.item_feat = self.item_feat[item_ban_list].reset_index(drop=True)
+            selected_item = ~self.item_feat[self.iid_field].isin(ban_users)
+            self.item_feat = self.item_feat[selected_item].reset_index(drop=True)
 
-        inter_ban_list = ~(self.inter_feat[self.uid_field].isin(ban_users)
-                           | self.inter_feat[self.iid_field].isin(ban_items))
-        self.inter_feat = self.inter_feat[inter_ban_list].reset_index(drop=True)
+        selected_inter = True
+        if self.uid_field:
+            selected_inter &= ~self.inter_feat[self.uid_field].isin(ban_users)
+        if self.iid_field:
+            selected_inter &= ~self.inter_feat[self.iid_field].isin(ban_items)
+        self.inter_feat = self.inter_feat[selected_inter].reset_index(drop=True)
 
-    def _get_illegal_idxs_by_inter_num(self, source, max_num=None, min_num=None):
+    def _get_illegal_ids_by_inter_num(self, source, max_num=None, min_num=None):
         if source not in {'user', 'item'}:
             raise ValueError('source [{}] should be user or item'.format(source))
         if max_num is None and min_num is None:
             return set()
 
-        max_num = np.inf if max_num is None else max_num
-        min_num = -1 if min_num is None else min_num
+        max_num = max_num or np.inf
+        min_num = min_num or -1
 
         field_name = self.uid_field if source == 'user' else self.iid_field
-        idxs = self.inter_feat[field_name].values
-        inter_num = Counter(idxs)
-        ban_idxs = {idx for idx in inter_num if inter_num[idx] < min_num or inter_num[idx] > max_num}
-        return ban_idxs
+        if field_name is None:
+            return set()
+
+        ids = self.inter_feat[field_name].values
+        inter_num = Counter(ids)
+        ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
+        return ids
 
     def filter_by_field_value(self, lowest_val=None, highest_val=None,
                               equal_val=None, not_equal_val=None, drop=False):
@@ -230,18 +238,21 @@ class Dataset(object):
         self._filter_by_field_value(not_equal_val, lambda x, y: x != y, drop)
 
         if self.user_feat is not None:
-            remain_uids = set(self.user_feat[self.uid_field].values)
-        else:
-            remain_uids = set(self.inter_feat[self.uid_field].values)
+            remained_uids = set(self.user_feat[self.uid_field].values)
+        elif self.uid_field is not None:
+            remained_uids = set(self.inter_feat[self.uid_field].values)
 
         if self.item_feat is not None:
-            remain_iids = set(self.item_feat[self.iid_field].values)
-        else:
-            remain_iids = set(self.inter_feat[self.iid_field].values)
+            remained_iids = set(self.item_feat[self.iid_field].values)
+        elif self.iid_field is not None:
+            remained_iids = set(self.inter_feat[self.iid_field].values)
 
-        inter_ban_list = self.inter_feat[self.uid_field].isin(remain_uids)
-        inter_ban_list &= self.inter_feat[self.iid_field].isin(remain_iids)
-        self.inter_feat = self.inter_feat[inter_ban_list]
+        remained_inter = pd.Series([True] * len(self.inter_feat))
+        if self.uid_field is not None:
+            remained_inter &= self.inter_feat[self.uid_field].isin(remained_uids)
+        if self.iid_field is not None:
+            remained_inter &= self.inter_feat[self.iid_field].isin(remained_iids)
+        self.inter_feat = self.inter_feat[remained_inter]
 
         for source in {'user', 'item', 'inter'}:
             feat = getattr(self, '{}_feat'.format(source))
@@ -370,6 +381,8 @@ class Dataset(object):
 
     @property
     def uid2items(self):
+        if self.uid_field is None or self.iid_field is None:
+            raise ValueError('uid_field or iid_field isn\'t set')
         uid2items = dict()
         columns = [self.uid_field, self.iid_field]
         for uid, iid in self.inter_feat[columns].values:
@@ -380,6 +393,8 @@ class Dataset(object):
 
     @property
     def uid2index(self):
+        if self.uid_field is None:
+            raise ValueError('uid_field isn\'t set')
         self.sort(by=self.uid_field, ascending=True)
         uid_list = []
         start, end = dict(), dict()
@@ -530,6 +545,8 @@ class Dataset(object):
 
     def get_item_feature(self):
         if self.item_feat is None:
+            if self.iid_field is None:
+                raise ValueError('iid_field isn\'t set')
             tot_item_cnt = self.num(self.iid_field)
             return pd.DataFrame({self.iid_field: np.arange(tot_item_cnt)})
         else:
