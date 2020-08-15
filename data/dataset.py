@@ -200,7 +200,6 @@ class Dataset(object):
                 for field in self.field2type:
                     if field not in feat:
                         continue
-                    print(field)
                     ftype = self.field2type[field]
                     if ftype == 'token':
                         feat.loc[:,field] = most_freq.fit_transform(feat.loc[:,field].values.reshape(-1, 1))
