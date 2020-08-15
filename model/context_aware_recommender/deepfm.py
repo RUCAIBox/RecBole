@@ -4,6 +4,10 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : deepfm.py
 
+# UPDATE:
+# @Time   : 2020/8/14,
+# @Author : Zihan Lin
+# @Email  : linzihan.super@foxmain.com
 """
 Reference:
 Huifeng Guo et al., "DeepFM: A Factorization-Machine based Neural Network for CTR Prediction." in IJCAI 2017.
@@ -11,11 +15,10 @@ Huifeng Guo et al., "DeepFM: A Factorization-Machine based Neural Network for CT
 
 import torch
 import torch.nn as nn
-import numpy as np
 from torch.nn.init import xavier_normal_, constant_
 
-from model.abstract_recommender import ContextRecommender
-from model.layers import FMEmbedding, FMFirstOrderLinear, BaseFactorizationMachine, MLPLayers
+from .context_recommender import ContextRecommender
+from model.layers import BaseFactorizationMachine, MLPLayers
 
 
 class DeepFM(ContextRecommender):
@@ -28,7 +31,7 @@ class DeepFM(ContextRecommender):
         self.dropout = config['dropout']
 
         self.fm = BaseFactorizationMachine(reduce_sum=True)
-        size_list = [self.embedding_size * len(self.field_names)] + self.mlp_hidden_size
+        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, self.dropout)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
