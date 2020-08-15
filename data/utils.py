@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/13, 2020/8/14
+# @Time   : 2020/8/15, 2020/8/14
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -26,6 +26,9 @@ def data_preparation(config, model, dataset, save=False):
         kwargs['leave_one_num'] = config['leave_one_num']
     kwargs['group_by_user'] = config['group_by_user']
     getattr(es, es_str[0])(**kwargs)
+
+    if es.split_args['strategy'] != 'loo' and model.type == ModelType.SEQUENTIAL:
+        raise ValueError('Sequential models require "loo" split strategy.')
 
     builded_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = builded_datasets
