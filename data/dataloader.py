@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/11, 2020/8/11
+# @Time   : 2020/8/11, 2020/8/14
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -78,6 +78,29 @@ class AbstractDataLoader(object):
 
     def join(self, df):
         return self.dataset.join(df)
+
+
+class GeneralDataLoader(AbstractDataLoader):
+    def __init__(self, config, dataset,
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+        self.dl_type = DataLoaderType.ORIGIN
+        self.step = batch_size
+
+        self.dl_format = dl_format
+
+        super(GeneralDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+
+    @property
+    def pr_end(self):
+        return len(self.dataset)
+
+    def _shuffle(self):
+        self.dataset.shuffle()
+
+    def _next_batch_data(self):
+        cur_data = self.dataset[self.pr: self.pr + self.step]
+        self.pr += self.step
+        return self._dataframe_to_interaction(cur_data)
 
 
 class NegSampleBasedDataLoader(AbstractDataLoader):
@@ -368,24 +391,8 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
         return self.uid2items_num
 
 
-class ContextDataLoader(AbstractDataLoader):
-    def __init__(self, config, dataset,
-                 batch_size=1, shuffle=False):
-        self.step = batch_size
-
-        super(ContextDataLoader, self).__init__(config, dataset, batch_size, shuffle)
-
-    @property
-    def pr_end(self):
-        return len(self.dataset)
-
-    def _shuffle(self):
-        self.dataset.shuffle()
-
-    def _next_batch_data(self):
-        cur_data = self.dataset[self.pr: self.pr + self.step]
-        self.pr += self.step
-        return self._dataframe_to_interaction(cur_data)
+class ContextDataLoader(GeneralDataLoader):
+    pass
 
 
 class ContextIndividualDataLoader(GeneralIndividualDataLoader):

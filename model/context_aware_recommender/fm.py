@@ -47,7 +47,7 @@ class FM(ContextRecommender):
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             x.append(dense_embedding)
         x = torch.cat(x, dim=1)
-        y = self.sigmoid(self.first_order_linear(interaction) + self.fm(self.embedding(x)))
+        y = self.sigmoid(self.first_order_linear(interaction) + self.fm(x))
         return y.squeeze()
 
     def calculate_loss(self, interaction):
