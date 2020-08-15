@@ -425,14 +425,17 @@ class Dataset(object):
         return self.__str__()
 
     def __str__(self):
-        info = ['The number of users: {}'.format(self.user_num),
-                'The number of items: {}'.format(self.item_num),
-                'The number of inters: {}'.format(self.inter_num),
-                'Average actions of users: {}'.format(self.avg_actions_of_users),
-                'Average actions of items: {}'.format(self.avg_actions_of_items),
-                'The sparsity of the dataset: {}%'.format(self.sparsity * 100),
-                'Remain Fields: {}'.format(list(self.field2type))
-                ]
+        info = []
+        if self.uid_field:
+            info.extend(['The number of users: {}'.format(self.user_num),
+                         'Average actions of users: {}'.format(self.avg_actions_of_users)])
+        if self.iid_field:
+            info.extend(['The number of items: {}'.format(self.item_num),
+                         'Average actions of items: {}'.format(self.avg_actions_of_items)])
+        info.append('The number of inters: {}'.format(self.inter_num))
+        if self.uid_field and self.iid_field:
+            info.append('The sparsity of the dataset: {}%'.format(self.sparsity * 100))
+        info.append('Remain Fields: {}'.format(list(self.field2type)))
         return '\n'.join(info)
 
     # def __iter__(self):
