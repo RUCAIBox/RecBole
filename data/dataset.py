@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/11, 2020/8/5, 2020/8/14
+# @Time   : 2020/8/15, 2020/8/5, 2020/8/14
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -321,12 +321,12 @@ class Dataset(object):
             df = pd.concat([self.inter_feat[field], feat[field]])
             new_ids, mp = pd.factorize(df)
             split_point = [len(self.inter_feat[field])]
-            self.inter_feat[field], feat[field] = np.split(new_ids, split_point)
-            self.field2id_token[field] = list(mp)
+            self.inter_feat[field], feat[field] = np.split(new_ids + 1, split_point)
+            self.field2id_token[field] = [None] + list(mp)
         elif source in ['inter', 'user', 'item']:
             new_ids, mp = pd.factorize(feat[field])
-            feat[field] = new_ids
-            self.field2id_token[field] = list(mp)
+            feat[field] = new_ids + 1
+            self.field2id_token[field] = [None] + list(mp)
 
     def _remap_ID_seq(self, source, field):
         if source in ['inter', 'user', 'item']:
