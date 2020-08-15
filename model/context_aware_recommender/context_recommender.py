@@ -61,7 +61,7 @@ class ContextRecommender(AbstractRecommender):
 
         num_float_field = float_fields.shape[1]
         # [batch_size, num_float_field]
-        index = torch.arange(1, num_float_field).unsqueeze(0).expand_as(float_fields).long().to(self.device)
+        index = torch.arange(1, num_float_field + 1).unsqueeze(0).expand_as(float_fields).long().to(self.device)
 
         # [batch_size, num_float_field, embed_dim]
         float_embedding = self.float_embedding_table(index)
