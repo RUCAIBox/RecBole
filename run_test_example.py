@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/11 20:28
+# @Time   : 2020/8/15 20:28
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
@@ -104,8 +104,17 @@ test_examples = {
         'valid_metric': 'Recall@10',
         'metrics:': ['Recall'],
         'topk': [10]
+    },
+    'Test FM': {
+        'model': 'FM',
+        'dataset': 'ml-100k',
+        'lowest_val': None,
+        'threshold': {'rating':3},
+        'group_by_user': False,
+        'epochs': 1,
+        'valid_metric': 'AUC',
+        'metrics': ['AUC']
     }
-
 }
 
 
