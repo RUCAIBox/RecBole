@@ -10,13 +10,3 @@ class ModelConfig(AbstractConfig):
         self._check_args()
         self._replace_args(cmd_args)
 
-    def dump_config_file(self, config_file):
-        """
-        This function can dump the model's hyper parameters to a new config file
-        :param config_file: file name that write to.
-        """
-        # model_config = ConfigParser()
-        # model_config['model'] = self.args
-        # with open(config_file, 'w') as configfile:
-        #     model_config.write(configfile)
-        raise NotImplementedError

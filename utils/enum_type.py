@@ -10,8 +10,9 @@ class ModelType(Enum):
 
 
 class DataLoaderType(Enum):
-    NEGSAMPLE = 1
+    ORIGIN = 1
     FULL = 2
+    NEGSAMPLE = 3
 
 
 class EvaluatorType(Enum):

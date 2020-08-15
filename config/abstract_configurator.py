@@ -1,11 +1,10 @@
 import os
-import sys
+from utils.enum_type import *
 from configparser import ConfigParser
 
 
 class AbstractConfig(object):
-    def __init__(self):
-        self.cmd_args = dict()
+    def __init__(self, ):
         self.args = dict()
         self.must_args = []
 
@@ -59,7 +58,7 @@ class AbstractConfig(object):
         # convert param from str to value, i.e. int, float or list etc.
         try:
             value = eval(param)
-            if not isinstance(value, (str, int, float, list, tuple, dict, bool, None.__class__)):
+            if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum, None.__class__)):
                 value = param
         except (NameError, SyntaxError, TypeError):
             if isinstance(param, str):

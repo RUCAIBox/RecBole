@@ -4,17 +4,20 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : fm.py
 
+# UPDATE:
+# @Time   : 2020/8/13,
+# @Author : Zihan Lin
+# @Email  : linzihan.super@foxmain.com
 """
 Reference:
 Steffen Rendle et al., "Factorization Machines." in ICDM 2010.
 """
 
 import torch
-import numpy as np
 import torch.nn as nn
 from torch.nn.init import xavier_normal_
 
-from model.abstract_recommender import ContextRecommender
+from .context_recommender import ContextRecommender
 from model.layers import BaseFactorizationMachine
 
 
@@ -44,7 +47,7 @@ class FM(ContextRecommender):
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             x.append(dense_embedding)
         x = torch.cat(x, dim=1)
-        y = self.sigmoid(self.first_order_linear(interaction) + self.fm(self.embedding(x)))
+        y = self.sigmoid(self.first_order_linear(interaction) + self.fm(x))
         return y.squeeze()
 
     def calculate_loss(self, interaction):

@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/12 11:11
+# @Time   : 2020/8/13 11:11
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
@@ -158,23 +158,27 @@ class EvalSetting(object):
     full: all non-ground-truth items
     uni: uniform sampling       pop: popularity sampling        neg_sample_by 100 by default.
     """
-    def RO_RS(self, ratios=[0.8, 0.1, 0.1]):
-        self.group_by_user()
+    def RO_RS(self, ratios=[0.8, 0.1, 0.1], group_by_user=True):
+        if group_by_user:
+            self.group_by_user()
         self.random_ordering()
         self.split_by_ratio(ratios)
 
-    def TO_RS(self, ratios=[0.8, 0.1, 0.1]):
-        self.group_by_user()
+    def TO_RS(self, ratios=[0.8, 0.1, 0.1], group_by_user=True):
+        if group_by_user:
+            self.group_by_user()
         self.temporal_ordering()
         self.split_by_ratio(ratios)
 
-    def RO_LS(self, leave_one_num=1):
-        self.group_by_user()
+    def RO_LS(self, leave_one_num=1, group_by_user=True):
+        if group_by_user:
+            self.group_by_user()
         self.random_ordering()
         self.leave_one_out(leave_one_num=leave_one_num)
 
-    def TO_LS(self, leave_one_num=1):
-        self.group_by_user()
+    def TO_LS(self, leave_one_num=1, group_by_user=True):
+        if group_by_user:
+            self.group_by_user()
         self.temporal_ordering()
         self.leave_one_out(leave_one_num=leave_one_num)
 

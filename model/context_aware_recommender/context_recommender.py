@@ -9,12 +9,14 @@ import torch.nn as nn
 from utils import ModelType
 from model.layers import FMEmbedding
 from model.abstract_recommender import AbstractRecommender
+from utils import InputType
 
 
 class ContextRecommender(AbstractRecommender):
     def __init__(self, config, dataset):
         super(ContextRecommender, self).__init__()
         self.type = ModelType.CONTEXT
+        self.input_type = InputType.POINTWISE
 
         self.field_names = dataset.fields()
         self.LABEL = config['LABEL_FIELD']
@@ -26,10 +28,10 @@ class ContextRecommender(AbstractRecommender):
         self.float_field_dims = []
         self.token_seq_field_names = []
         self.token_seq_field_dims = []
+        self.num_feature_field = 0
         for field_name in self.field_names:
             if field_name == self.LABEL:
                 continue
-
             if dataset.field2type[field_name] == 'token':
                 self.token_field_names.append(field_name)
                 self.token_field_dims.append(dataset.num(field_name))
@@ -39,13 +41,16 @@ class ContextRecommender(AbstractRecommender):
             else:
                 self.float_field_names.append(field_name)
                 self.float_field_dims.append(dataset.num(field_name))
-
-        self.token_field_offsets = np.array((0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long)
-        self.token_embedding_table = FMEmbedding(self.token_field_dims, self.token_field_offsets, self.embedding_size)
-        self.float_embedding_table = nn.Embedding(np.sum(self.float_field_dims, axis=None), self.embedding_size)
-        self.token_seq_embedding_table = nn.ModuleList()
-        for token_seq_field_dim in self.token_seq_field_dims:
-            self.token_seq_embedding_table.append(nn.Embedding(token_seq_field_dim, self.embedding_size))
+            self.num_feature_field += 1
+        if len(self.token_field_dims) > 0:
+            self.token_field_offsets = np.array((0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long)
+            self.token_embedding_table = FMEmbedding(self.token_field_dims, self.token_field_offsets, self.embedding_size)
+        if len(self.float_field_dims) > 0:
+            self.float_embedding_table = nn.Embedding(np.sum(self.float_field_dims, dtype=np.int32), self.embedding_size)
+        if len(self.token_seq_field_dims) > 0:
+            self.token_seq_embedding_table = nn.ModuleList()
+            for token_seq_field_dim in self.token_seq_field_dims:
+                self.token_seq_embedding_table.append(nn.Embedding(token_seq_field_dim, self.embedding_size))
 
         self.first_order_linear = FMFirstOrderLinear(config, dataset)
 
@@ -155,7 +160,7 @@ class FMFirstOrderLinear(nn.Module):
 
         super(FMFirstOrderLinear, self).__init__()
         self.field_names = dataset.fields()
-
+        self.LABEL = config['LABEL_FIELD']
         self.device = config['device']
         self.token_field_names = []
         self.token_field_dims = []
@@ -175,13 +180,15 @@ class FMFirstOrderLinear(nn.Module):
             else:
                 self.float_field_names.append(field_name)
                 self.float_field_dims.append(dataset.num(field_name))
-
-        self.token_field_offsets = np.array((0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long)
-        self.token_embedding_table = FMEmbedding(self.token_field_dims, self.token_field_offsets, output_dim)
-        self.float_embedding_table = nn.Embedding(np.sum(self.float_field_dims, axis=None), output_dim)
-        self.token_seq_embedding_table = nn.ModuleList()
-        for token_seq_field_dim in self.token_seq_field_dims:
-            self.token_seq_embedding_table.append(nn.Embedding(token_seq_field_dim, output_dim))
+        if len(self.token_field_dims) > 0:
+            self.token_field_offsets = np.array((0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long)
+            self.token_embedding_table = FMEmbedding(self.token_field_dims, self.token_field_offsets, output_dim)
+        if len(self.float_field_dims) > 0:
+            self.float_embedding_table = nn.Embedding(np.sum(self.float_field_dims, dtype=np.int32), output_dim)
+        if len(self.token_seq_field_dims) > 0:
+            self.token_seq_embedding_table = nn.ModuleList()
+            for token_seq_field_dim in self.token_seq_field_dims:
+                self.token_seq_embedding_table.append(nn.Embedding(token_seq_field_dim, output_dim))
 
         self.bias = nn.Parameter(torch.zeros((output_dim,)), requires_grad=True)
 
