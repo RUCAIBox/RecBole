@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/15, 2020/8/5, 2020/8/14
+# @Time   : 2020/8/15, 2020/8/5, 2020/8/16
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -45,6 +45,7 @@ class Dataset(object):
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
+        self.time_field = self.config['TIME_FIELD']
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
 
@@ -81,6 +82,7 @@ class Dataset(object):
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
+        self.time_field = self.config['TIME_FIELD']
 
     def _load_data(self, token, dataset_path):
         user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
@@ -128,6 +130,8 @@ class Dataset(object):
                 load_col.add(self.uid_field)
             if source in {'inter', 'item'} and self.iid_field is not None:
                 load_col.add(self.iid_field)
+            if source == 'inter' and self.time_field is not None:
+                load_col.add(self.time_field)
 
         if self.config['unload_col'] is not None and source in self.config['unload_col']:
             unload_col = set(self.config['unload_col'][source])
@@ -355,6 +359,16 @@ class Dataset(object):
                 ret.append(field)
         return ret
 
+    def set_field_property(self, field, field2type, field2source, field2seqlen):
+        self.field2type[field] = field2type
+        self.field2source[field] = field2source
+        self.field2seqlen[field] = field2seqlen
+
+    def copy_field_property(self, dest_field, source_field):
+        self.field2type[dest_field] = self.field2type[source_field]
+        self.field2source[dest_field] = self.field2source[source_field]
+        self.field2seqlen[dest_field] = self.field2seqlen[source_field]
+
     @property
     def user_num(self):
         return self.num(self.uid_field)
@@ -381,8 +395,7 @@ class Dataset(object):
 
     @property
     def uid2items(self):
-        if self.uid_field is None or self.iid_field is None:
-            raise ValueError('uid_field or iid_field isn\'t set')
+        self._check_field('uid_field', 'iid_field')
         uid2items = dict()
         columns = [self.uid_field, self.iid_field]
         for uid, iid in self.inter_feat[columns].values:
@@ -393,8 +406,7 @@ class Dataset(object):
 
     @property
     def uid2index(self):
-        if self.uid_field is None:
-            raise ValueError('uid_field isn\'t set')
+        self._check_field('uid_field')
         self.sort(by=self.uid_field, ascending=True)
         uid_list = []
         start, end = dict(), dict()
@@ -406,6 +418,32 @@ class Dataset(object):
         index = [(uid, slice(start[uid], end[uid] + 1)) for uid in uid_list]
         uid2items_num = [end[uid] - start[uid] + 1 for uid in uid_list]
         return np.array(index), np.array(uid2items_num)
+
+    def prepare_data_augmentation(self, max_item_list_len=None):
+        self._check_field('uid_field', 'time_field')
+        if max_item_list_len is None:
+            max_item_list_len = np.inf
+        self.sort(by=[self.uid_field, self.time_field], ascending=True)
+        last_uid = None
+        uid_list, item_list_index, target_index, item_list_length = [], [], [], []
+        seq_start = 0
+        for i, uid in enumerate(self.inter_feat[self.uid_field].values):
+            if last_uid != uid:
+                last_uid = uid
+                seq_start = i
+            else:
+                if i - seq_start > max_item_list_len:
+                    seq_start += 1
+                uid_list.append(uid)
+                item_list_index.append(slice(seq_start, i))
+                target_index.append(i)
+                item_list_length.append(i - seq_start)
+        return np.array(uid_list), np.array(item_list_index), np.array(target_index), np.array(item_list_length)
+
+    def _check_field(self, *field_names):
+        for field_name in field_names:
+            if getattr(self, field_name, None) is None:
+                raise ValueError('{} isn\'t set'.format(field_name))
 
     def join(self, df):
         if self.user_feat is not None and self.uid_field in df:
@@ -545,8 +583,7 @@ class Dataset(object):
 
     def get_item_feature(self):
         if self.item_feat is None:
-            if self.iid_field is None:
-                raise ValueError('iid_field isn\'t set')
+            self._check_field('iid_field')
             tot_item_cnt = self.num(self.iid_field)
             return pd.DataFrame({self.iid_field: np.arange(tot_item_cnt)})
         else:
