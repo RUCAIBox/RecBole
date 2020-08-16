@@ -11,34 +11,22 @@ He X, Chua T S. "Neural factorization machines for sparse predictive analytics" 
 
 import torch
 import torch.nn as nn
-import numpy as np
 from torch.nn.init import xavier_normal_, constant_
 
-from model.abstract_recommender import ContextRecommender
-from model.layers import FMEmbedding, FMFirstOrderLinear, BaseFactorizationMachine, MLPLayers
+from .context_recommender import ContextRecommender
+from model.layers import BaseFactorizationMachine, MLPLayers
 
 
 class NFM(ContextRecommender):
 
     def __init__(self, config, dataset):
-        super(NFM, self).__init__()
+        super(NFM, self).__init__(config, dataset)
 
         self.LABEL = config['LABEL_FIELD']
-        self.embedding_size = config['embedding_size']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout = config['dropout']
-        self.field_names = list(dataset.field2id_token.keys())
-        self.field_dims = [len(dataset.field2id_token[v]) for v in self.field_names]
-        # todo: para: field2seqlen
-        # self.field_seqlen = [dataset.field2seqlen[v] for v in self.field_names]
-        self.field_seqlen = [1 for v in self.field_names]
-        self.offsets = self._build_offsets()
-        # todo: multi-hot len(field_names) or sum(field_seqlen)
 
         size_list = [self.embedding_size] + self.mlp_hidden_size
-
-        self.first_order_linear = FMFirstOrderLinear(self.field_dims, self.offsets)
-        self.embedding = FMEmbedding(self.field_dims, self.offsets, self.embedding_size)
         self.fm = BaseFactorizationMachine(reduce_sum=False)
         self.mlp_layers = MLPLayers(size_list, self.dropout, activation='sigmoid')
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1, bias=False)
@@ -55,23 +43,19 @@ class NFM(ContextRecommender):
             if module.bias is not None:
                 constant_(module.bias.data, 0)
 
-    def _build_offsets(self):
-        offsets = []
-        for i in range(len(self.field_names)):
-            offsets += [self.field_dims[i]]
-            offsets += [0] * (self.field_seqlen[i] - 1)
-        offsets = np.array((0, *np.cumsum(offsets)[:-1]), dtype=np.long)
-        return offsets
-
     def forward(self, interaction):
+        # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
+        # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
+        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
         x = []
-        for field in self.field_names:
-            # todo: check (batch) or (batch, 1)
-            x.append(interaction[field].unsqueeze(1))
-        x = torch.cat(x, dim=1)
-        emb_x = self.fm(self.embedding(x))
+        if sparse_embedding is not None:
+            x.append(sparse_embedding)
+        if dense_embedding is not None and len(dense_embedding.shape) == 3:
+            x.append(dense_embedding)
+        x = torch.cat(x, dim=1)  # [batch_size, num_field, embed_dim]
+        emb_x = self.fm(x)
 
-        y = self.predict_layer(self.mlp_layers(emb_x))+self.first_order_linear(x)
+        y = self.predict_layer(self.mlp_layers(emb_x)) + self.first_order_linear(interaction)
         y = self.sigmoid(y)
         return y.squeeze()
 
