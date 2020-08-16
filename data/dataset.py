@@ -13,6 +13,7 @@ import copy
 from collections import Counter
 import pandas as pd
 import numpy as np
+from sklearn.impute import SimpleImputer
 from .dataloader import *
 
 
@@ -60,6 +61,9 @@ class Dataset(object):
         self._set_label_by_threshold(self.config['threshold'])
 
         self._remap_ID_all()
+
+        if self.config['fill_nan']:
+            self._fill_nan()
 
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
@@ -186,6 +190,23 @@ class Dataset(object):
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = max(map(len, df[field].values))
         return df
+
+    def _fill_nan(self):
+        most_freq = SimpleImputer(missing_values=np.nan, strategy='most_frequent', copy=False)
+        aveg = SimpleImputer(missing_values=np.nan, strategy='mean', copy=False)
+
+        for feat in [self.inter_feat, self.user_feat, self.item_feat]:
+            if feat is not None:
+                for field in self.field2type:
+                    if field not in feat:
+                        continue
+                    ftype = self.field2type[field]
+                    if ftype == 'token':
+                        feat.loc[:,field] = most_freq.fit_transform(feat.loc[:,field].values.reshape(-1, 1))
+                    elif ftype == 'float':
+                        feat.loc[:,field] = aveg.fit_transform(feat.loc[:,field].values.reshape(-1, 1))
+                    elif ftype.endswith('seq'):
+                        raise NotImplementedError('seq feature fill nan has not been implemented')
 
     def filter_by_inter_num(self, max_user_inter_num=None, min_user_inter_num=None,
                             max_item_inter_num=None, min_item_inter_num=None):
@@ -425,14 +446,17 @@ class Dataset(object):
         return self.__str__()
 
     def __str__(self):
-        info = ['The number of users: {}'.format(self.user_num),
-                'The number of items: {}'.format(self.item_num),
-                'The number of inters: {}'.format(self.inter_num),
-                'Average actions of users: {}'.format(self.avg_actions_of_users),
-                'Average actions of items: {}'.format(self.avg_actions_of_items),
-                'The sparsity of the dataset: {}%'.format(self.sparsity * 100),
-                'Remain Fields: {}'.format(list(self.field2type))
-                ]
+        info = []
+        if self.uid_field:
+            info.extend(['The number of users: {}'.format(self.user_num),
+                         'Average actions of users: {}'.format(self.avg_actions_of_users)])
+        if self.iid_field:
+            info.extend(['The number of items: {}'.format(self.item_num),
+                         'Average actions of items: {}'.format(self.avg_actions_of_items)])
+        info.append('The number of inters: {}'.format(self.inter_num))
+        if self.uid_field and self.iid_field:
+            info.append('The sparsity of the dataset: {}%'.format(self.sparsity * 100))
+        info.append('Remain Fields: {}'.format(list(self.field2type)))
         return '\n'.join(info)
 
     # def __iter__(self):

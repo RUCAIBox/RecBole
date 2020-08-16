@@ -67,9 +67,10 @@ class Config(object):
         This function is a global initialization function that fix random seed and gpu device.
         """
         init_seed = self.run_args['seed']
-        gpu_id = self.run_args['gpu_id']
         use_gpu = self.run_args['use_gpu']
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+        if use_gpu:
+            gpu_id = self.run_args['gpu_id']
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
         # Get the device that run on.
         self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
 
