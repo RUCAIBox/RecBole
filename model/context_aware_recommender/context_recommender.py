@@ -61,7 +61,7 @@ class ContextRecommender(AbstractRecommender):
 
         num_float_field = float_fields.shape[1]
         # [batch_size, num_float_field]
-        index = torch.arange(1, num_float_field).unsqueeze(0).expand_as(float_fields).long().to(self.device)
+        index = torch.arange(0, num_float_field).unsqueeze(0).expand_as(float_fields).long().to(self.device)
 
         # [batch_size, num_float_field, embed_dim]
         float_embedding = self.float_embedding_table(index)
@@ -199,15 +199,17 @@ class FMFirstOrderLinear(nn.Module):
 
         num_float_field = float_fields.shape[1]
         # [batch_size, num_float_field]
-        index = torch.arange(1, num_float_field).unsqueeze(0).expand_as(float_fields).long().to(self.device)
+        index = torch.arange(0, num_float_field).unsqueeze(0).expand_as(float_fields).long().to(self.device)
 
         # [batch_size, num_float_field, output_dim]
         float_embedding = self.float_embedding_table(index)
         float_embedding = torch.mul(float_embedding, float_fields.unsqueeze(2))
+
         # [batch_size, 1, output_dim]
         float_embedding = torch.sum(float_embedding, dim=1, keepdim=True)
 
         return float_embedding
+
 
     def embed_token_fields(self, token_fields):
         # input Tensor shape : [batch_size, num_token_field]
@@ -247,12 +249,15 @@ class FMFirstOrderLinear(nn.Module):
         for field_name in self.float_field_names:
             float_fields.append(interaction[field_name]
                                 if len(interaction[field_name].shape) == 2 else interaction[field_name].unsqueeze(1))
+
         if len(float_fields) > 0:
             float_fields = torch.cat(float_fields, dim=1)  # [batch_size, num_float_field]
         else:
             float_fields = None
+
         # [batch_size, 1, output_dim] or None
         float_fields_embedding = self.embed_float_fields(float_fields, embed=True)
+
         if float_fields_embedding is not None:
             total_fields_embedding.append(float_fields_embedding)
 
