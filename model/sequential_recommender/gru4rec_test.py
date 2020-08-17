@@ -3,7 +3,7 @@
 # @Email  : yujielu1998@gmail.com
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn.init import xavier_uniform_
 from torch.nn import functional as F
 from model.abstract_recommender import SequentialRecommender
