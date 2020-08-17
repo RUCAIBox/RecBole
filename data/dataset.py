@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/15, 2020/8/5, 2020/8/16
+# @Time   : 2020/8/17, 2020/8/5, 2020/8/16
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -14,6 +14,7 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 from sklearn.impute import SimpleImputer
+from logging import getLogger
 from .dataloader import *
 
 
@@ -21,7 +22,7 @@ class Dataset(object):
     def __init__(self, config, saved_dataset=None):
         self.config = config
         self.dataset_name = config['dataset']
-        self.support_types = {'token', 'token_seq', 'float', 'float_seq'}
+        self.logger = getLogger()
 
         if saved_dataset is None:
             self._from_scratch(config)
@@ -91,14 +92,14 @@ class Dataset(object):
     def _load_data(self, token, dataset_path):
         user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
         if os.path.isfile(user_feat_path):
-            user_feat = self._load_feat(user_feat_path, 'user')
+            user_feat = self._load_feat(user_feat_path, FeatureSource.USER)
         else:
             # TODO logging user feat not exist
             user_feat = None
 
         item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
         if os.path.isfile(item_feat_path):
-            item_feat = self._load_feat(item_feat_path, 'item')
+            item_feat = self._load_feat(item_feat_path, FeatureSource.ITEM)
         else:
             # TODO logging item feat not exist
             item_feat = None
@@ -107,7 +108,7 @@ class Dataset(object):
         if not os.path.isfile(inter_feat_path):
             raise ValueError('File {} not exist'.format(inter_feat_path))
 
-        inter_feat = self._load_feat(inter_feat_path, 'inter')
+        inter_feat = self._load_feat(inter_feat_path, FeatureSource.INTERACTION)
 
         if user_feat is not None and self.uid_field is None:
             raise ValueError('uid_field must be exist if user_feat exist')
@@ -116,29 +117,36 @@ class Dataset(object):
             raise ValueError('iid_field must be exist if item_feat exist')
 
         if self.uid_field in self.field2source:
-            self.field2source[self.uid_field] = 'user_id'
+            self.field2source[self.uid_field] = FeatureSource.USER_ID
 
         if self.iid_field in self.field2source:
-            self.field2source[self.iid_field] = 'item_id'
+            self.field2source[self.iid_field] = FeatureSource.ITEM_ID
 
         return inter_feat, user_feat, item_feat
 
     def _load_feat(self, filepath, source):
+        str2ftype = {
+            'token': FeatureType.TOKEN,
+            'float': FeatureType.FLOAT,
+            'token_seq': FeatureType.TOKEN_SEQ,
+            'float_seq': FeatureType.FLOAT_SEQ
+        }
+
         if self.config['load_col'] is None:
             load_col = None
-        elif source not in self.config['load_col']:
+        elif source.value not in self.config['load_col']:
             return None
         else:
-            load_col = set(self.config['load_col'][source])
-            if source in {'inter', 'user'} and self.uid_field is not None:
+            load_col = set(self.config['load_col'][source.value])
+            if source in {FeatureSource.USER, FeatureSource.INTERACTION} and self.uid_field is not None:
                 load_col.add(self.uid_field)
-            if source in {'inter', 'item'} and self.iid_field is not None:
+            if source in {FeatureSource.ITEM, FeatureSource.INTERACTION} and self.iid_field is not None:
                 load_col.add(self.iid_field)
-            if source == 'inter' and self.time_field is not None:
+            if source == FeatureSource.INTERACTION and self.time_field is not None:
                 load_col.add(self.time_field)
 
-        if self.config['unload_col'] is not None and source in self.config['unload_col']:
-            unload_col = set(self.config['unload_col'][source])
+        if self.config['unload_col'] is not None and source.value in self.config['unload_col']:
+            unload_col = set(self.config['unload_col'][source.value])
         else:
             unload_col = None
 
@@ -153,6 +161,9 @@ class Dataset(object):
         for field_type in df.columns:
             field, ftype = field_type.split(':')
             field_names.append(field)
+            if ftype not in str2ftype:
+                raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
+            ftype = str2ftype[ftype]
             if load_col is not None and field not in load_col:
                 continue
             if unload_col is not None and field in unload_col:
@@ -160,11 +171,9 @@ class Dataset(object):
             # TODO user_id & item_id bridge check
             # TODO user_id & item_id not be set in config
             # TODO inter __iter__ loading
-            if ftype not in self.support_types:
-                raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
             self.field2source[field] = source
             self.field2type[field] = ftype
-            if not ftype.endswith('seq'):
+            if not ftype.value.endswith('seq'):
                 self.field2seqlen[field] = 1
             columns.append(field)
             remain_field.add(field)
@@ -183,10 +192,10 @@ class Dataset(object):
         def _token_seq(df, field): df[field] = [_.split(seq_separator) for _ in df[field].values]
         def _float_seq(df, field): df[field] = [list(map(float, _.split(seq_separator))) for _ in df[field].values]
         ftype2func = {
-            'token': _token,
-            'float': _float,
-            'token_seq': _token_seq,
-            'float_seq': _float_seq,
+            FeatureType.TOKEN: _token,
+            FeatureType.FLOAT: _float,
+            FeatureType.TOKEN_SEQ: _token_seq,
+            FeatureType.FLOAT_SEQ: _float_seq,
         }
         for field in remain_field:
             ftype = self.field2type[field]
@@ -205,12 +214,12 @@ class Dataset(object):
                     if field not in feat:
                         continue
                     ftype = self.field2type[field]
-                    if ftype == 'token':
+                    if ftype == FeatureType.TOKEN:
                         feat.loc[:,field] = most_freq.fit_transform(feat.loc[:,field].values.reshape(-1, 1))
-                    elif ftype == 'float':
+                    elif ftype == FeatureType.FLOAT:
                         feat.loc[:,field] = aveg.fit_transform(feat.loc[:,field].values.reshape(-1, 1))
                     elif ftype.endswith('seq'):
-                        raise NotImplementedError('seq feature fill nan has not been implemented')
+                        self.logger.warning('feature [{}] (type: {}) probably has nan, while has not been filled.'.format(field, ftype))
 
     def filter_by_inter_num(self, max_user_inter_num=None, min_user_inter_num=None,
                             max_item_inter_num=None, min_item_inter_num=None):
@@ -318,9 +327,7 @@ class Dataset(object):
         if len(threshold) != 1:
             raise ValueError('threshold length should be 1')
 
-        self.field2type[self.label_field] = 'float'
-        self.field2source[self.label_field] = 'inter'
-        self.field2seqlen[self.label_field] = 1
+        self.set_field_property(self.label_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
         for field, value in threshold.items():
             if field in self.inter_feat:
                 self.inter_feat[self.label_field] = (self.inter_feat[field] >= value).astype(int)
@@ -332,30 +339,30 @@ class Dataset(object):
         for field in self.field2type:
             ftype = self.field2type[field]
             fsource = self.field2source[field]
-            if ftype == 'token':
+            if ftype == FeatureType.TOKEN:
                 self._remap_ID(fsource, field)
-            elif ftype == 'token_seq':
+            elif ftype == FeatureType.TOKEN_SEQ:
                 self._remap_ID_seq(fsource, field)
 
     def _remap_ID(self, source, field):
-        feat_name = '{}_feat'.format(source.split('_')[0])
+        feat_name = '{}_feat'.format(source.value.split('_')[0])
         feat = getattr(self, feat_name)
         if feat is None:
             feat = pd.DataFrame(columns=[field])
-        if source in ['user_id', 'item_id']:
+        if source in [FeatureSource.USER_ID, FeatureSource.ITEM_ID]:
             df = pd.concat([self.inter_feat[field], feat[field]])
             new_ids, mp = pd.factorize(df)
             split_point = [len(self.inter_feat[field])]
             self.inter_feat[field], feat[field] = np.split(new_ids + 1, split_point)
             self.field2id_token[field] = [None] + list(mp)
-        elif source in ['inter', 'user', 'item']:
+        elif source in [FeatureSource.USER, FeatureSource.ITEM, FeatureSource.INTERACTION]:
             new_ids, mp = pd.factorize(feat[field])
             feat[field] = new_ids + 1
             self.field2id_token[field] = [None] + list(mp)
 
     def _remap_ID_seq(self, source, field):
-        if source in ['inter', 'user', 'item']:
-            feat_name = '{}_feat'.format(source)
+        if source in [FeatureSource.USER, FeatureSource.ITEM, FeatureSource.INTERACTION]:
+            feat_name = '{}_feat'.format(source.value)
             df = getattr(self, feat_name)
             split_point = np.cumsum(df[field].agg(len))[:-1]
             new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
@@ -366,13 +373,13 @@ class Dataset(object):
     def num(self, field):
         if field not in self.field2type:
             raise ValueError('field [{}] not defined in dataset'.format(field))
-        if self.field2type[field] not in {'token', 'token_seq'}:
+        if self.field2type[field] not in {FeatureType.TOKEN, FeatureType.TOKEN_SEQ}:
             return self.field2seqlen[field]
         else:
             return len(self.field2id_token[field])
 
     def fields(self, ftype=None):
-        ftype = set(ftype) if ftype is not None else {'token', 'token_seq', 'float', 'float_seq'}
+        ftype = set(ftype) if ftype is not None else set(FeatureType)
         ret = []
         for field in self.field2type:
             tp = self.field2type[field]
