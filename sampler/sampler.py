@@ -3,12 +3,21 @@
 # @Email  : houyupeng@ruc.edu.cn
 # @File   : sampler.py
 
+# UPDATE
+# @Time   : 2020/8/17 
+# @Author : Xingyu Pan
+# @email  : panxy@ruc.edu.cn
+
 import random
 import numpy as np
 
 
 class Sampler(object):
-    def __init__(self, config, phases, datasets):
+    def __init__(self, config, phases, datasets, distribution='uniform'):
+        legal_distribution = {'uniform', 'popularity'} 
+        if distribution not in legal_distribution:
+            raise ValueError('Distribution [{}] should in {}'.format(distribution, list(legal_distribution)))
+
         if not isinstance(phases, list):
             phases = [phases]
         if not isinstance(datasets, list):
@@ -25,8 +34,14 @@ class Sampler(object):
 
         self.n_users = self.datasets[0].user_num
         self.n_items = self.datasets[0].item_num
-
-        self.random_item_list = list(range(self.n_items))
+        
+        if distribution == 'uniform':
+            self.random_item_list = list(range(self.n_items))
+        else:
+            self.random_item_list = []
+            for dataset in datasets:
+                self.random_item_list.extend(dataset.inter_feat[iid_field].values)
+            self.n_items = len(self.random_item_list)
         random.shuffle(self.random_item_list)
         self.random_pr = 0
 
@@ -38,7 +53,7 @@ class Sampler(object):
             for uid, iid in dataset.inter_feat[[uid_field, iid_field]].values:
                 cur[uid].add(iid)
             last = self.used_item_id[phase] = cur
-
+        
     def random_item(self):
         item = self.random_item_list[self.random_pr % self.n_items]
         self.random_pr += 1
@@ -104,3 +119,4 @@ class Sampler(object):
         except IndexError:
             if user_id < 0 or user_id >= self.n_users:
                 raise ValueError('user_id [{}] not exist'.format(user_id))
+
