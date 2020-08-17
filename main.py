@@ -19,7 +19,6 @@ logger.info(model)
 # please refer to `data_preparation()` in `data/utils.py`.
 train_data, test_data, valid_data = data_preparation(config, model, dataset)
 
-
 trainer = Trainer(config, model)
 
 # trainer.resume_checkpoint('saved/model_best.pth')

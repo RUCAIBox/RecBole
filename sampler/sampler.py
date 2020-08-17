@@ -53,7 +53,7 @@ class Sampler(object):
             for uid, iid in dataset.inter_feat[[uid_field, iid_field]].values:
                 cur[uid].add(iid)
             last = self.used_item_id[phase] = cur
-        
+
     def random_item(self):
         item = self.random_item_list[self.random_pr % self.n_items]
         self.random_pr += 1
@@ -119,4 +119,3 @@ class Sampler(object):
         except IndexError:
             if user_id < 0 or user_id >= self.n_users:
                 raise ValueError('user_id [{}] not exist'.format(user_id))
-
