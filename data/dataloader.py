@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/11, 2020/8/14
+# @Time   : 2020/8/11, 2020/8/16
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -52,6 +52,9 @@ class AbstractDataLoader(object):
 
     def _dataframe_to_interaction(self, data, *args):
         data = data.to_dict(orient='list')
+        return self._dict_to_interaction(data, *args)
+
+    def _dict_to_interaction(self, data, *args):
         seqlen = self.dataset.field2seqlen
         for k in data:
             ftype = self.dataset.field2type[k]
@@ -60,10 +63,10 @@ class AbstractDataLoader(object):
             elif ftype == 'float':
                 data[k] = torch.FloatTensor(data[k])
             elif ftype == 'token_seq':
-                seq_data = [torch.LongTensor(d[:seqlen[k]]) for d in data[k]]  # TODO  cutting strategy?
+                seq_data = [torch.LongTensor(d[:seqlen[k]]) for d in data[k]]
                 data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == 'float_seq':
-                seq_data = [torch.FloatTensor(d[:seqlen[k]]) for d in data[k]]  # TODO  cutting strategy?
+                seq_data = [torch.FloatTensor(d[:seqlen[k]]) for d in data[k]]
                 data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             else:
                 raise ValueError('Illegal ftype [{}]'.format(ftype))
@@ -147,9 +150,7 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
             self.times = 1 + self.neg_sample_by
 
             self.label_field = config['LABEL_FIELD']
-            dataset.field2type[self.label_field] = 'float'
-            dataset.field2source[self.label_field] = 'inter'
-            dataset.field2seqlen[self.label_field] = 1
+            dataset.set_field_property(self.label_field, 'float', 'inter', 1)
         elif dl_format == InputType.PAIRWISE:
             self.times = 1
 
@@ -159,9 +160,7 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
             columns = [iid_field] if dataset.item_feat is None else dataset.item_feat.columns
             for item_feat_col in columns:
                 neg_item_feat_col = neg_prefix + item_feat_col
-                dataset.field2type[neg_item_feat_col] = dataset.field2type[item_feat_col]
-                dataset.field2source[neg_item_feat_col] = dataset.field2source[item_feat_col]
-                dataset.field2seqlen[neg_item_feat_col] = dataset.field2seqlen[item_feat_col]
+                dataset.copy_field_property(neg_item_feat_col, item_feat_col)
 
         super(GeneralIndividualDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                           batch_size, dl_format, shuffle)
@@ -401,3 +400,73 @@ class ContextIndividualDataLoader(GeneralIndividualDataLoader):
 
 class ContextGroupedDataLoader(GeneralGroupedDataLoader):
     pass
+
+
+class SequentialDataLoader(AbstractDataLoader):
+    def __init__(self, config, dataset,
+                 batch_size=1, shuffle=False):
+        self.dl_type = DataLoaderType.ORIGIN
+        self.step = batch_size
+
+        self.uid_field = dataset.uid_field
+        self.iid_field = dataset.iid_field
+        self.time_field = dataset.time_field
+        self.max_item_list_len = config['MAX_ITEM_LIST_LENGTH']
+
+        target_prefix = config['TARGET_PREFIX']
+        list_suffix = config['LIST_SUFFIX']
+        self.item_list_field = self.iid_field + list_suffix
+        self.time_list_field = self.time_field + list_suffix
+        self.position_field = config['POSITION_FIELD']
+        self.target_iid_field = target_prefix + self.iid_field
+        self.target_time_field = target_prefix + self.time_field
+        self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
+
+        dataset.set_field_property(self.item_list_field, 'token_seq', 'inter', self.max_item_list_len)
+        dataset.set_field_property(self.time_list_field, 'float_seq', 'inter', self.max_item_list_len)
+        dataset.set_field_property(self.position_field, 'token_seq', 'inter', self.max_item_list_len)
+        dataset.set_field_property(self.target_iid_field, 'token', 'inter', 1)
+        dataset.set_field_property(self.target_time_field, 'float', 'inter', 1)
+        dataset.set_field_property(self.item_list_length_field, 'token', 'inter', 1)
+
+        self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
+            dataset.prepare_data_augmentation(max_item_list_len=self.max_item_list_len)
+
+        super(SequentialDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+
+    @property
+    def pr_end(self):
+        return len(self.uid_list)
+
+    def _shuffle(self):
+        new_index = np.random.permutation(len(self.item_list_index))
+        self.uid_list = self.uid_list[new_index]
+        self.item_list_index = self.item_list_index[new_index]
+        self.target_index = self.target_index[new_index]
+        self.item_list_length = self.item_list_length[new_index]
+
+    def _next_batch_data(self):
+        cur_index = slice(self.pr, self.pr + self.step)
+        cur_data = self.augmentation(self.uid_list[cur_index],
+                                     self.item_list_index[cur_index],
+                                     self.target_index[cur_index],
+                                     self.item_list_length[cur_index])
+        self.pr += self.step
+        return self._dict_to_interaction(cur_data)
+
+    def augmentation(self, uid_list, item_list_index, target_index, item_list_length):
+        new_length = len(item_list_index)
+        new_dict = {
+            self.uid_field: uid_list,
+            self.item_list_field: [],
+            self.time_list_field: [],
+            self.position_field: [np.arange(self.max_item_list_len)] * new_length,
+            self.target_iid_field: self.dataset.inter_feat[self.iid_field][target_index].values,
+            self.target_time_field: self.dataset.inter_feat[self.time_field][target_index].values,
+            self.item_list_length_field: item_list_length,
+        }
+        for index in item_list_index:
+            df = self.dataset.inter_feat[index]
+            new_dict[self.item_list_field].append(df[self.iid_field].values)
+            new_dict[self.time_list_field].append(df[self.time_field].values)
+        return new_dict
