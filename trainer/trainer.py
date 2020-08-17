@@ -133,6 +133,8 @@ class Trainer(AbstractTrainer):
         print(message_output)
 
     def fit(self, train_data, valid_data=None, verbose=True):
+        if hasattr(self.model, 'train_preparation'):
+            self.model.train_preparation(train_data=train_data, valid_data=valid_data)
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()

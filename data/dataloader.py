@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/11, 2020/8/16
+# @Time   : 2020/8/17, 2020/8/16
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -58,14 +58,14 @@ class AbstractDataLoader(object):
         seqlen = self.dataset.field2seqlen
         for k in data:
             ftype = self.dataset.field2type[k]
-            if ftype == 'token':
+            if ftype == FeatureType.TOKEN:
                 data[k] = torch.LongTensor(data[k])
-            elif ftype == 'float':
+            elif ftype == FeatureType.FLOAT:
                 data[k] = torch.FloatTensor(data[k])
-            elif ftype == 'token_seq':
+            elif ftype == FeatureType.TOKEN_SEQ:
                 seq_data = [torch.LongTensor(d[:seqlen[k]]) for d in data[k]]
                 data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
-            elif ftype == 'float_seq':
+            elif ftype == FeatureType.FLOAT_SEQ:
                 seq_data = [torch.FloatTensor(d[:seqlen[k]]) for d in data[k]]
                 data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             else:
@@ -81,6 +81,9 @@ class AbstractDataLoader(object):
 
     def join(self, df):
         return self.dataset.join(df)
+
+    def inter_matrix(self, form='coo'):
+        return self.dataset.inter_matrix(form=form)
 
 
 class GeneralDataLoader(AbstractDataLoader):
@@ -150,7 +153,7 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
             self.times = 1 + self.neg_sample_by
 
             self.label_field = config['LABEL_FIELD']
-            dataset.set_field_property(self.label_field, 'float', 'inter', 1)
+            dataset.set_field_property(self.label_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
         elif dl_format == InputType.PAIRWISE:
             self.times = 1
 
@@ -422,12 +425,12 @@ class SequentialDataLoader(AbstractDataLoader):
         self.target_time_field = target_prefix + self.time_field
         self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
 
-        dataset.set_field_property(self.item_list_field, 'token_seq', 'inter', self.max_item_list_len)
-        dataset.set_field_property(self.time_list_field, 'float_seq', 'inter', self.max_item_list_len)
-        dataset.set_field_property(self.position_field, 'token_seq', 'inter', self.max_item_list_len)
-        dataset.set_field_property(self.target_iid_field, 'token', 'inter', 1)
-        dataset.set_field_property(self.target_time_field, 'float', 'inter', 1)
-        dataset.set_field_property(self.item_list_length_field, 'token', 'inter', 1)
+        dataset.set_field_property(self.item_list_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION, self.max_item_list_len)
+        dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION, self.max_item_list_len)
+        dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION, self.max_item_list_len)
+        dataset.set_field_property(self.target_iid_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
+        dataset.set_field_property(self.target_time_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
+        dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
 
         self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
             dataset.prepare_data_augmentation(max_item_list_len=self.max_item_list_len)
