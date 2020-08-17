@@ -25,4 +25,3 @@ trainer = Trainer(config, model)
 best_valid_score, _ = trainer.fit(train_data, valid_data)
 result = trainer.evaluate(test_data)
 logger.info(best_valid_score)
-

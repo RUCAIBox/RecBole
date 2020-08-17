@@ -37,13 +37,16 @@ class Sampler(object):
         
         if distribution == 'uniform':
             self.random_item_list = list(range(self.n_items))
-        else:
+        elif distribution == 'popularity':
             self.random_item_list = []
             for dataset in datasets:
                 self.random_item_list.extend(dataset.inter_feat[iid_field].values)
-            self.n_items = len(self.random_item_list)
+        else:
+            raise NotImplementedError('Distribution [{}] has not been implemented'.format(distribution))
+
         random.shuffle(self.random_item_list)
         self.random_pr = 0
+        self.random_item_list_length = len(self.random_item_list)
 
         self.full_set = set(range(self.n_items))
         self.used_item_id = dict()
@@ -55,7 +58,7 @@ class Sampler(object):
             last = self.used_item_id[phase] = cur
 
     def random_item(self):
-        item = self.random_item_list[self.random_pr % self.n_items]
+        item = self.random_item_list[self.random_pr % self.random_item_list_length]
         self.random_pr += 1
         return item
 
@@ -63,7 +66,7 @@ class Sampler(object):
         try:
             neg_item_id = []
             used_item_id = self.used_item_id[phase][user_id]
-            for step in range(self.n_items):
+            for step in range(self.random_item_list_length):
                 cur = self.random_item()
                 if cur not in used_item_id:
                     neg_item_id.append(cur)
@@ -79,7 +82,7 @@ class Sampler(object):
 
     def sample_one_by_user_id(self, phase, user_id):
         try:
-            for step in range(self.n_items):
+            for step in range(self.random_item_list_length):
                 cur = self.random_item()
                 if cur not in self.used_item_id[phase][user_id]:
                     return cur
