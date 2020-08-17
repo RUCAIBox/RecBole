@@ -73,8 +73,6 @@ class GRU4RecTest(SequentialRecommender):
         return loss
 
     def predict(self, interaction):
-        item = interaction[self.ITEM_ID]
-        position = interaction[self.POSITION_ID]
         pred = self.forward(interaction)
         scores = torch.matmul(pred, self.get_item_lookup_table())
         return scores
