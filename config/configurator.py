@@ -48,17 +48,17 @@ class Config(object):
             self._read_config_dict()
         self.cmd_args = CmdConfig(self.cmd_args_dict)
 
-        self.run_args = RunningConfig(config_file_name)
+        self.run_args = RunningConfig(config_file_name, self.cmd_args_dict)
 
         model_name = self.run_args['model']
         model_dir = os.path.join(os.path.dirname(config_file_name), 'model')
         model_arg_file_name = os.path.join(model_dir, model_name + '.config')
-        self.model_args = ModelConfig(model_arg_file_name)
+        self.model_args = ModelConfig(model_arg_file_name, self.cmd_args_dict)
 
         dataset_name = self.run_args['dataset']
         dataset_dir = os.path.join(os.path.dirname(config_file_name), 'dataset')
         dataset_arg_file_name = os.path.join(dataset_dir, dataset_name + '.config')
-        self.dataset_args = DataConfig(dataset_arg_file_name)
+        self.dataset_args = DataConfig(dataset_arg_file_name, self.cmd_args_dict)
 
         self.device = None
 
@@ -67,9 +67,10 @@ class Config(object):
         This function is a global initialization function that fix random seed and gpu device.
         """
         init_seed = self.run_args['seed']
-        gpu_id = self.run_args['gpu_id']
         use_gpu = self.run_args['use_gpu']
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+        if use_gpu:
+            gpu_id = self.run_args['gpu_id']
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
         # Get the device that run on.
         self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
 

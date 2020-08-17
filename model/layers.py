@@ -151,7 +151,7 @@ class AttLayer(nn.Module):
         super(AttLayer, self).__init__()
         self.in_dim = in_dim
         self.att_dim = att_dim
-        self.w = torch.nn.Linear(in_features=in_dim, out_features=att_dim)
+        self.w = torch.nn.Linear(in_features=in_dim, out_features=att_dim, bias=False)
         self.h = nn.Parameter(torch.randn(att_dim), requires_grad=True)
 
     def forward(self, infeatures):
