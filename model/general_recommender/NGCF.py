@@ -39,7 +39,6 @@ class NgCf(GeneralRecommender):
         self.device = config['device']
         self.delay = config['delay']
         self.batch_size = config['train_batch_size']
-        self.interaction_matrix = dataset.train_matrix.tocsr().astype(np.float32)
 
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
@@ -52,7 +51,6 @@ class NgCf(GeneralRecommender):
 
         self.apply(self.init_weights)
 
-        self.norm_adj_matrix = self.get_norm_adj_mat().to(self.device)
         self.eye_matrix = self.get_eye_mat().to(self.device)
 
     def init_weights(self, module):
@@ -112,6 +110,10 @@ class NgCf(GeneralRecommender):
         itemEmbd = self.item_embedding(iidx)
         features = torch.cat([userEmbd, itemEmbd], dim=0)
         return features
+
+    def train_preparation(self, train_data, valid_data):
+        self.interaction_matrix = train_data.inter_matrix(form='csr').astype(np.float32)
+        self.norm_adj_matrix = self.get_norm_adj_mat().to(self.device)
 
     def forward(self):
         A_hat = self.sparse_dropout(self.norm_adj_matrix,
