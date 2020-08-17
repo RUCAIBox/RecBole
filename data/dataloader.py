@@ -82,6 +82,9 @@ class AbstractDataLoader(object):
     def join(self, df):
         return self.dataset.join(df)
 
+    def inter_matrix(self, form='coo'):
+        return self.dataset.inter_matrix(form=form)
+
 
 class GeneralDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset,

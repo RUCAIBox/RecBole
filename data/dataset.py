@@ -14,6 +14,7 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 from sklearn.impute import SimpleImputer
+from scipy.sparse import coo_matrix
 from logging import getLogger
 from .dataloader import *
 
@@ -619,3 +620,19 @@ class Dataset(object):
             return pd.DataFrame({self.iid_field: np.arange(tot_item_cnt)})
         else:
             return self.item_feat
+
+    def inter_matrix(self, form='coo'):
+        if not self.uid_field or not self.iid_field:
+            raise ValueError('dataset doesn\'t exist uid/iid, thus can not converted to sparse matrix')
+
+        uids = self.inter_feat[self.uid_field].values
+        iids = self.inter_feat[self.iid_field].values
+        data = np.ones(len(self.inter_feat))
+        mat = coo_matrix((data, (uids, iids)), shape=(self.user_num, self.item_num))
+
+        if form == 'coo':
+            return mat
+        elif form == 'csr':
+            return mat.tocsr()
+        else:
+            raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
