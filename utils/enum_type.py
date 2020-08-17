@@ -24,3 +24,18 @@ class InputType(Enum):
     POINTWISE = 1
     PAIRWISE = 2
     LISTWISE = 3
+
+
+class FeatureType(Enum):
+    TOKEN = 'token'
+    FLOAT = 'float'
+    TOKEN_SEQ = 'token_seq'
+    FLOAT_SEQ = 'float_seq'
+
+
+class FeatureSource(Enum):
+    INTERACTION = 'inter'
+    USER = 'user'
+    ITEM = 'item'
+    USER_ID = 'user_id'
+    ITEM_ID = 'item_id'

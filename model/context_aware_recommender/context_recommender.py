@@ -3,13 +3,14 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 # @File   : context_recommender.py
+
 import numpy as np
 import torch
 import torch.nn as nn
 from utils import ModelType
 from model.layers import FMEmbedding
 from model.abstract_recommender import AbstractRecommender
-from utils import InputType
+from utils import InputType, FeatureType
 
 
 class ContextRecommender(AbstractRecommender):
@@ -32,10 +33,10 @@ class ContextRecommender(AbstractRecommender):
         for field_name in self.field_names:
             if field_name == self.LABEL:
                 continue
-            if dataset.field2type[field_name] == 'token':
+            if dataset.field2type[field_name] == FeatureType.TOKEN:
                 self.token_field_names.append(field_name)
                 self.token_field_dims.append(dataset.num(field_name))
-            elif dataset.field2type[field_name] == 'token_seq':
+            elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                 self.token_seq_field_names.append(field_name)
                 self.token_seq_field_dims.append(dataset.num(field_name))
             else:
@@ -171,10 +172,10 @@ class FMFirstOrderLinear(nn.Module):
         for field_name in self.field_names:
             if field_name == self.LABEL:
                 continue
-            if dataset.field2type[field_name] == 'token':
+            if dataset.field2type[field_name] == FeatureType.TOKEN:
                 self.token_field_names.append(field_name)
                 self.token_field_dims.append(dataset.num(field_name))
-            elif dataset.field2type[field_name] == 'token_seq':
+            elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                 self.token_seq_field_names.append(field_name)
                 self.token_seq_field_dims.append(dataset.num(field_name))
             else:
