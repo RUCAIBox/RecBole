@@ -63,7 +63,7 @@ class TopKEvaluator(object):
         for metric, value in zip(self.metrics, result_list):
             for k in self.topk:
                 key = '{}@{}'.format(metric, k)
-                metric_dict[key] = value[k - 1]
+                metric_dict[key] = round(value[k - 1], 4)
         return metric_dict
 
     def _check_args(self):

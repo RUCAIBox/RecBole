@@ -117,7 +117,6 @@ class ComputeSimilarity:
         W_sparse = sp.csr_matrix((values, (rows, cols)),
                                  shape=(self.n_columns, self.n_columns),
                                  dtype=np.float32)
-
         return W_sparse.tocsc()
 
 
@@ -171,11 +170,9 @@ class ItemKNN(GeneralRecommender):
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
-        user = user.cpu().numpy().astype(int)
-        result = []
-        
-        for uid in user:
-            score = self.pred_mat[uid, :].toarray()[0]
-            result.extend(score)
-        result = torch.from_numpy(np.array(result)).to(self.device)
+        user = user.cpu().numpy()
+
+        score = self.pred_mat[user, :].toarray().flatten()
+        result = torch.from_numpy(score).to(self.device)
+
         return result
