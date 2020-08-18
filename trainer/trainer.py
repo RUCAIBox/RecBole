@@ -186,7 +186,7 @@ class Trainer(AbstractTrainer):
         interaction = user_tensor.to_device_repeat_interleave(self.device, self.tot_item_num)
 
         batch_size = interaction.length
-        if 'full_sort_predict' in dir(self.model):
+        if hasattr(self.model, 'full_sort_predict'):
             scores = self.model.full_sort_predict(user_tensor.to(self.device))
         else:
             interaction.update(self.item_tensor[:batch_size])
