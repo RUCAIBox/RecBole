@@ -9,6 +9,7 @@
 
 import operator
 from functools import reduce
+import math
 import pandas as pd
 import numpy as np
 import torch
@@ -28,6 +29,9 @@ class AbstractDataLoader(object):
         self.shuffle = shuffle
         self.pr = 0
         self.dl_type = None
+
+    def __len__(self):
+        raise NotImplementedError('Method [len] should be implemented')
 
     def __iter__(self):
         if self.shuffle:
@@ -92,6 +96,9 @@ class GeneralDataLoader(AbstractDataLoader):
         self.dl_format = dl_format
 
         super(GeneralDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+
+    def __len__(self):
+        return math.ceil(self.pr_end / self.step)
 
     @property
     def pr_end(self):
@@ -164,6 +171,9 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
 
         super(GeneralIndividualDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                           batch_size, dl_format, shuffle)
+
+    def __len__(self):
+        return math.ceil(self.pr_end / self.step)
 
     def _batch_size_adaptation(self):
         if self.dl_format == InputType.PAIRWISE:
@@ -292,6 +302,9 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
 
         self.uid2items_num = self._get_uid2items_num()
         self.dl_type = DataLoaderType.FULL
+
+    def __len__(self):
+        return math.ceil(self.pr_end / self.step)
 
     def _batch_size_adaptation(self):
         batch_num = max(self.batch_size // self.dataset.item_num, 1)
@@ -422,9 +435,12 @@ class SequentialDataLoader(AbstractDataLoader):
         self.target_time_field = target_prefix + self.time_field
         self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
 
-        dataset.set_field_property(self.item_list_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION, self.max_item_list_len)
-        dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION, self.max_item_list_len)
-        dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION, self.max_item_list_len)
+        dataset.set_field_property(self.item_list_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
+                                   self.max_item_list_len)
+        dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION,
+                                   self.max_item_list_len)
+        dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
+                                   self.max_item_list_len)
         dataset.set_field_property(self.target_iid_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.target_time_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
@@ -433,6 +449,9 @@ class SequentialDataLoader(AbstractDataLoader):
             dataset.prepare_data_augmentation(max_item_list_len=self.max_item_list_len)
 
         super(SequentialDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+
+    def __len__(self):
+        return math.ceil(self.pr_end / self.step)
 
     @property
     def pr_end(self):
