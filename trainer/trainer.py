@@ -5,9 +5,9 @@
 # @File   : trainer.py
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/8/11 10:33
-# @Author : Zihan Lin, Yupeng Hou
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
+# @Time   : 2020/8/7 18:38, 2020/8/11 10:33, 2020/8/14
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import os
 import warnings
@@ -133,6 +133,8 @@ class Trainer(AbstractTrainer):
         print(message_output)
 
     def fit(self, train_data, valid_data=None, verbose=True):
+        if hasattr(self.model, 'train_preparation'):
+            self.model.train_preparation(train_data=train_data, valid_data=valid_data)
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
@@ -184,7 +186,7 @@ class Trainer(AbstractTrainer):
         interaction = user_tensor.to_device_repeat_interleave(self.device, self.tot_item_num)
 
         batch_size = interaction.length
-        if 'full_sort_predict' in dir(self.model):
+        if hasattr(self.model, 'full_sort_predict'):
             scores = self.model.full_sort_predict(user_tensor.to(self.device))
         else:
             interaction.update(self.item_tensor[:batch_size])
@@ -230,6 +232,8 @@ class Trainer(AbstractTrainer):
         batch_matrix_list = []
         for batch_idx, batched_data in enumerate(eval_data):
             if eval_data.dl_type == DataLoaderType.FULL:
+                if self.eval_type == EvaluatorType.INDIVIDUAL:
+                    raise ValueError('full sort can\'t use LossEvaluator')
                 interaction, scores = self._full_sort_batch_eval(batched_data)
             else:
                 interaction = batched_data

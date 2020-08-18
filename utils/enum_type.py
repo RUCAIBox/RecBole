@@ -10,17 +10,32 @@ class ModelType(Enum):
 
 
 class DataLoaderType(Enum):
-    NEGSAMPLE = 1
+    ORIGIN = 1
     FULL = 2
+    NEGSAMPLE = 3
 
 
-# can not use Enum Type , Enum Type can't be store in config object
-class EvaluatorType:
-    RANKING = 'ranking'
-    INDIVIDUAL = 'loss'
+class EvaluatorType(Enum):
+    RANKING = 1
+    INDIVIDUAL = 2
 
 
 class InputType(Enum):
     POINTWISE = 1
     PAIRWISE = 2
     LISTWISE = 3
+
+
+class FeatureType(Enum):
+    TOKEN = 'token'
+    FLOAT = 'float'
+    TOKEN_SEQ = 'token_seq'
+    FLOAT_SEQ = 'float_seq'
+
+
+class FeatureSource(Enum):
+    INTERACTION = 'inter'
+    USER = 'user'
+    ITEM = 'item'
+    USER_ID = 'user_id'
+    ITEM_ID = 'item_id'

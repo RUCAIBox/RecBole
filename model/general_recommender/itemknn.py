@@ -1,12 +1,18 @@
+# -*- coding: utf-8 -*-
+# @Time   : 2020/8/18 9:21
+# @Author : Zihan Lin
+# @Email  : linzihan.super@foxmail.con
+# @File   : itemknn.py
 import numpy as np
 from model.abstract_recommender import GeneralRecommender
 import scipy.sparse as sp
 import torch
+from utils import InputType
 
 
 class ComputeSimilarity:
 
-    def __init__(self, dataMatrix, topK=100, shrink=0, normalize=True):
+    def __init__(self, dataMatrix, topk=100, shrink=0, normalize=True):
         """
         Computes the cosine similarity on the columns of dataMatrix
         If it is computed on URM=|users|x|items|, pass the URM as is.
@@ -29,7 +35,7 @@ class ComputeSimilarity:
         self.normalize = normalize
 
         self.n_rows, self.n_columns = dataMatrix.shape
-        self.TopK = min(topK, self.n_columns)
+        self.TopK = min(topk, self.n_columns)
 
         self.dataMatrix = dataMatrix.copy()
 
@@ -119,21 +125,28 @@ class ItemKNN(GeneralRecommender):
     def __init__(self, config, dataset):
         super(ItemKNN, self).__init__()
 
+        self.input_type = InputType.POINTWISE
         self.device = config['device']
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.n_users = len(dataset.field2id_token[self.USER_ID])
         self.n_items = len(dataset.field2id_token[self.ITEM_ID])
 
-        self.interaction_matrix = dataset.train_matrix.tocsr().astype(np.float32)
-        shape = self.interaction_matrix.shape
-        assert self.n_users == shape[0] and self.n_items == shape[1]
         self.k = config['k']
         self.shrink = config['shrink'] if 'shrink' in config else 0.0
-        self.w = ComputeSimilarity(self.interaction_matrix, topK=self.k, shrink=self.shrink).compute_similarity()
-        self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
+
+        self.interaction_matrix = None
+        self.w = None
+        self.pred_mat = None
 
         self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))
+
+    def train_preparation(self, train_data, valid_data):
+        self.interaction_matrix = train_data.inter_matrix(form='csr').astype(np.float32)
+        shape = self.interaction_matrix.shape
+        assert self.n_users == shape[0] and self.n_items == shape[1]
+        self.w = ComputeSimilarity(self.interaction_matrix, topk=self.k, shrink=self.shrink).compute_similarity()
+        self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
 
     def forward(self, user, item):
         pass
@@ -153,5 +166,16 @@ class ItemKNN(GeneralRecommender):
             iid = item[item]
             score = self.pred_mat[uid, iid]
             result.append(score)
+        result = torch.from_numpy(np.array(result)).to(self.device)
+        return result
+
+    def full_sort_predict(self, interaction):
+        user = interaction[self.USER_ID]
+        user = user.cpu().numpy().astype(int)
+        result = []
+        
+        for uid in user:
+            score = self.pred_mat[uid, :].toarray()[0]
+            result.extend(score)
         result = torch.from_numpy(np.array(result)).to(self.device)
         return result
