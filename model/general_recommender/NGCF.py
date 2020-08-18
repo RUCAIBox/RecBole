@@ -19,16 +19,18 @@ from model.abstract_recommender import GeneralRecommender
 from model.layers import BiGNNLayer
 import numpy as np
 import scipy.sparse as sp
+from utils import InputType
 
 
-class NgCf(GeneralRecommender):
+class NGCF(GeneralRecommender):
 
     def __init__(self, config, dataset):
-        super(NgCf, self).__init__()
+        super(NGCF, self).__init__()
 
+        self.input_type = InputType.PAIRWISE
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.LABEL = config['LABEL_FIELD']
+        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
         self.n_users = dataset.num(self.USER_ID)
         self.n_items = dataset.num(self.ITEM_ID)
         self.embedding_size = config['embedding_size']
@@ -45,12 +47,10 @@ class NgCf(GeneralRecommender):
         self.GNNlayers = torch.nn.ModuleList()
         for From, To in zip(self.layers[:-1], self.layers[1:]):
             self.GNNlayers.append(BiGNNLayer(From, To))
-
-        self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
-
+        self.sigmoid = nn.LogSigmoid()
         self.apply(self.init_weights)
-
+        self.interaction_matrix = None
+        self.norm_adj_matrix = None
         self.eye_matrix = self.get_eye_mat().to(self.device)
 
     def init_weights(self, module):
@@ -63,14 +63,14 @@ class NgCf(GeneralRecommender):
 
     def get_norm_adj_mat(self):
         # build adj matrix
-        A = sp.dok_matrix((self.num_users + self.num_items, self.num_users + self.num_items), dtype=np.float32)
+        A = sp.dok_matrix((self.n_users + self.n_items, self.n_users + self.n_items), dtype=np.float32)
         A = A.tolil()
-        A[:self.num_users, self.num_users:] = self.interaction_matrix
-        A[self.num_users:, :self.num_users] = self.interaction_matrix.transpose()
+        A[:self.n_users, self.n_users:] = self.interaction_matrix
+        A[self.n_users:, :self.n_users] = self.interaction_matrix.transpose()
         A = A.todok()
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)
-        diag = list(np.array(sumArr.flatten())[0])
+        diag = np.array(sumArr.flatten())[0] + 1e-7     # add epsilon to avoid Devide by zero Warning
         diag = np.power(diag, -0.5)
         D = sp.diags(diag)
         L = D * A * D
@@ -85,7 +85,7 @@ class NgCf(GeneralRecommender):
 
     def get_eye_mat(self):
         num = self.n_items + self.n_users
-        i = torch.LongTensor([[k for k in range(0, num)], [j for j in range(0, num)]])
+        i = torch.LongTensor([range(0, num), range(0, num)])
         val = torch.FloatTensor([1] * num)
         return torch.sparse.FloatTensor(i, val)
 
@@ -103,12 +103,9 @@ class NgCf(GeneralRecommender):
         return out * (1. / (1 - rate))
 
     def get_feature_matrix(self):
-        uidx = torch.LongTensor([i for i in range(self.userNum)]).to(self.device)
-        iidx = torch.LongTensor([i for i in range(self.itemNum)]).to(self.device)
-
-        userEmbd = self.user_embedding(uidx)
-        itemEmbd = self.item_embedding(iidx)
-        features = torch.cat([userEmbd, itemEmbd], dim=0)
+        user_embd = self.user_embedding.weight
+        item_embd = self.item_embedding.weight
+        features = torch.cat([user_embd, item_embd], dim=0)
         return features
 
     def train_preparation(self, train_data, valid_data):
@@ -118,7 +115,7 @@ class NgCf(GeneralRecommender):
     def forward(self):
         A_hat = self.sparse_dropout(self.norm_adj_matrix,
                                     self.node_dropout,
-                            self.norm_adj_matrix._nnz()) if self.node_dropout is not None else self.norm_adj_matrix
+                            self.norm_adj_matrix._nnz()) if self.node_dropout != 0 else self.norm_adj_matrix
         features = self.get_feature_matrix()
         finalEmbd = [features.clone()]
         for gnn in self.GNNlayers:
@@ -129,8 +126,8 @@ class NgCf(GeneralRecommender):
             finalEmbd += [features.clone()]
         finalEmbd = torch.cat(finalEmbd, dim=1)
 
-        u_g_embeddings = finalEmbd[:self.n_user, :]
-        i_g_embeddings = finalEmbd[self.n_user:, :]
+        u_g_embeddings = finalEmbd[:self.n_users, :]
+        i_g_embeddings = finalEmbd[self.n_users:, :]
 
         return u_g_embeddings, i_g_embeddings
 
@@ -147,14 +144,12 @@ class NgCf(GeneralRecommender):
         pos_scores = torch.sum(torch.mul(u_embeddings, posi_embeddings), axis=1)
         neg_scores = torch.sum(torch.mul(u_embeddings, negi_embeddings), axis=1)
 
-        maxi = nn.LogSigmoid()(pos_scores - neg_scores)
+        maxi = self.sigmoid(pos_scores - neg_scores)
 
         mf_loss = -1 * torch.mean(maxi)
 
         # cul regularizer
-        regularizer = (torch.norm(u_embeddings) ** 2
-                       + torch.norm(posi_embeddings) ** 2
-                       + torch.norm(negi_embeddings) ** 2) / 2
+        regularizer = torch.norm(u_embeddings, p=2)+torch.norm(posi_embeddings, p=2)+torch.norm(negi_embeddings, p=2)
         emb_loss = self.delay * regularizer / self.batch_size
 
         return mf_loss + emb_loss
@@ -169,3 +164,14 @@ class NgCf(GeneralRecommender):
         i_embeddings = i_embedding[item, :]
         scores = torch.sum(torch.mul(u_embeddings, i_embeddings), axis=1)
         return scores
+
+    def full_sort_predict(self, interaction):
+        user = interaction[self.USER_ID]
+
+        u_embedding, i_embedding = self.forward()
+        u_embeddings = u_embedding[user, :]
+
+        scores = torch.matmul(u_embeddings, i_embedding.transpose(0, 1))
+
+        return scores.view(-1)
+
