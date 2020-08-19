@@ -591,7 +591,7 @@ class Dataset(object):
     def shuffle(self):
         self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
 
-    def sort(self, by, ascending):
+    def sort(self, by, ascending=True):
         self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True, ignore_index=True)
 
     # TODO
