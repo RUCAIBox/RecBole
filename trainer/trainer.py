@@ -1,17 +1,16 @@
-# -*- coding: utf-8 -*-
-# @Time   : 2020/6/26 15:49
+# @Time   : 2020/6/26
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-# @File   : trainer.py
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/8/11 10:33, 2020/8/14
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/8/7 18:38, 2020/8/19 18:59, 2020/8/14， 2020/8/19
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn
 
 import os
 import warnings
 import itertools
+import numpy as np
 import torch
 import torch.optim as optim
 import matplotlib.pyplot as plt
@@ -20,7 +19,7 @@ from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
 from evaluator import TopKEvaluator, LossEvaluator
 from data.interaction import Interaction
-from utils import ensure_dir, get_local_time, DataLoaderType, EvaluatorType
+from utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType
 from logging import getLogger
 
 
@@ -86,7 +85,7 @@ class Trainer(AbstractTrainer):
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         return optimizer
 
-    def _train_epoch(self, train_data):
+    def _train_epoch(self, train_data, epoch_idx):
         self.model.train()
         total_loss = 0.
         for batch_idx, interaction in enumerate(train_data):
@@ -133,10 +132,12 @@ class Trainer(AbstractTrainer):
         print(message_output)
 
     def fit(self, train_data, valid_data=None, verbose=True):
+        if hasattr(self.model, 'train_preparation'):
+            self.model.train_preparation(train_data=train_data, valid_data=valid_data)
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
-            train_loss = self._train_epoch(train_data)
+            train_loss = self._train_epoch(train_data, epoch_idx)
             self.train_loss_dict[epoch_idx] = train_loss
             training_end_time = time()
             train_loss_output = "epoch %d training [time: %.2fs, train loss: %.4f]" % \
@@ -180,13 +181,16 @@ class Trainer(AbstractTrainer):
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
-        user_tensor, pos_idx, used_idx, pos_len_list, user_len_list, neg_len_list = batched_data
-        interaction = user_tensor.to_device_repeat_interleave(self.device, self.tot_item_num)
+        # Note: interaction without item ids
+        interaction, pos_idx, used_idx, \
+        pos_len_list, neg_len_list = batched_data
 
-        batch_size = interaction.length
-        if 'full_sort_predict' in dir(self.model):
-            scores = self.model.full_sort_predict(user_tensor.to(self.device))
+        batch_size = interaction.length * self.tot_item_num
+        if hasattr(self.model, 'full_sort_predict'):
+            # Note: interaction without item ids
+            scores = self.model.full_sort_predict(interaction.to(self.device))
         else:
+            interaction = interaction.to_device_repeat_interleave(self.device, self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
             scores = self.model.predict(interaction)
         pos_idx = pos_idx.to(self.device)
@@ -204,7 +208,7 @@ class Trainer(AbstractTrainer):
         final_scores = torch.cat(final_scores)
 
         setattr(interaction, 'pos_len_list', pos_len_list)
-        setattr(interaction, 'user_len_list', user_len_list)
+        setattr(interaction, 'user_len_list', list(np.add(pos_len_list, neg_len_list)))
 
         return interaction, final_scores
 
@@ -274,3 +278,37 @@ class Trainer(AbstractTrainer):
             plt.show()
         if save_path:
             plt.savefig(save_path)
+
+
+class KGTrainer(Trainer):
+    def __init__(self, config, model):
+        super(KGTrainer, self).__init__(config, model)
+
+        self.train_kg_step = config['train_kg_step']
+
+    def _train_epoch(self, train_data, epoch_idx):
+        self.model.train()
+        total_loss = 0.
+        if self.train_kg_step <= 0:
+            interaction_state = KGDataLoaderState.RSKG
+        else:
+            interaction_state = KGDataLoaderState.KG \
+                if (epoch_idx + 1) % (self.train_kg_step + 1) == 0 else KGDataLoaderState.RS
+        train_data.set_mode(interaction_state)
+        if interaction_state in [KGDataLoaderState.RSKG, KGDataLoaderState.RS]:
+            for batch_idx, interaction in enumerate(train_data):
+                interaction = interaction.to(self.device)
+                self.optimizer.zero_grad()
+                loss = self.model.calculate_loss(interaction)
+                loss.backward()
+                self.optimizer.step()
+                total_loss += loss.item()
+        elif interaction_state in [KGDataLoaderState.KG]:
+            for bath_idx, interaction in enumerate(train_data):
+                interaction = interaction.to(self.device)
+                self.optimizer.zero_grad()
+                loss = self.model.calculate_kg_loss(interaction)
+                loss.backward()
+                self.optimizer.step()
+                total_loss += loss.item()
+        return total_loss

@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/13 11:11
+# @Time   : 2020/8/19 18:56
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
@@ -76,6 +76,8 @@ class EvalSetting(object):
         self.set_ordering('shuffle')
 
     def sort_by(self, field, ascending=None):
+        if not isinstance(field, list):
+            field = [field]
         if ascending is None:
             ascending = [True] * len(field)
             if len(ascending) == 1:
@@ -83,7 +85,7 @@ class EvalSetting(object):
         self.set_ordering('by', field=field, ascending=ascending)
 
     def temporal_ordering(self):
-        self.sort_by(field=self.config['TIMESTAMP_FIELD'])
+        self.sort_by(field=self.config['TIME_FIELD'])
 
     r"""Setting about split method
 

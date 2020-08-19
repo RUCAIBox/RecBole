@@ -40,7 +40,7 @@ def data_preparation(config, model, dataset, save=False):
     kwargs = {}
     if model.type == ModelType.GENERAL:
         es.neg_sample_by(1, real_time=True)
-        sampler = Sampler(config, phases, builded_datasets)
+        sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
         kwargs['sampler'] = sampler
         kwargs['phase'] = 'train'
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)

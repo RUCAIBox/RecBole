@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/17, 2020/8/5, 2020/8/16
+# @Time   : 2020/8/19, 2020/8/5, 2020/8/16
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -14,6 +14,7 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 from sklearn.impute import SimpleImputer
+from scipy.sparse import coo_matrix
 from logging import getLogger
 from .dataloader import *
 from utils import *
@@ -590,7 +591,7 @@ class Dataset(object):
     def shuffle(self):
         self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
 
-    def sort(self, by, ascending):
+    def sort(self, by, ascending=True):
         self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True, ignore_index=True)
 
     # TODO
@@ -643,3 +644,19 @@ class Dataset(object):
             return pd.DataFrame({self.iid_field: np.arange(tot_item_cnt)})
         else:
             return self.item_feat
+
+    def inter_matrix(self, form='coo'):
+        if not self.uid_field or not self.iid_field:
+            raise ValueError('dataset doesn\'t exist uid/iid, thus can not converted to sparse matrix')
+
+        uids = self.inter_feat[self.uid_field].values
+        iids = self.inter_feat[self.iid_field].values
+        data = np.ones(len(self.inter_feat))
+        mat = coo_matrix((data, (uids, iids)), shape=(self.user_num, self.item_num))
+
+        if form == 'coo':
+            return mat
+        elif form == 'csr':
+            return mat.tocsr()
+        else:
+            raise NotImplementedError('interaction matrix format [{}] has not been implemented.')

@@ -56,7 +56,7 @@ class LossEvaluator(object):
         result_list = self._calculate_metrics(trues, preds)
         for metric, value in zip(self.metrics, result_list):
             key = '{}'.format(metric)
-            metric_dict[key] = value
+            metric_dict[key] = round(value, 4)
         return metric_dict
 
     def _check_args(self):
