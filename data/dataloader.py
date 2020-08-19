@@ -3,12 +3,13 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/17, 2020/8/16
+# @Time   : 2020/8/17, 2020/8/18
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import operator
 from functools import reduce
+import math
 import pandas as pd
 import numpy as np
 import torch
@@ -28,6 +29,9 @@ class AbstractDataLoader(object):
         self.shuffle = shuffle
         self.pr = 0
         self.dl_type = None
+
+    def __len__(self):
+        raise NotImplementedError('Method [len] should be implemented')
 
     def __iter__(self):
         if self.shuffle:
@@ -95,6 +99,9 @@ class GeneralDataLoader(AbstractDataLoader):
         self.dl_format = dl_format
 
         super(GeneralDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+
+    def __len__(self):
+        return math.ceil(self.pr_end / self.step)
 
     @property
     def pr_end(self):
@@ -167,6 +174,9 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
 
         super(GeneralIndividualDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
                                                           batch_size, dl_format, shuffle)
+
+    def __len__(self):
+        return math.ceil(self.pr_end / self.step)
 
     def _batch_size_adaptation(self):
         if self.dl_format == InputType.PAIRWISE:
@@ -296,6 +306,9 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
         self.uid2items_num = self._get_uid2items_num()
         self.dl_type = DataLoaderType.FULL
 
+    def __len__(self):
+        return math.ceil(self.pr_end / self.step)
+
     def _batch_size_adaptation(self):
         batch_num = max(self.batch_size // self.dataset.item_num, 1)
         new_batch_size = batch_num * self.dataset.item_num
@@ -410,6 +423,7 @@ class SequentialDataLoader(AbstractDataLoader):
                  batch_size=1, shuffle=False):
         self.dl_type = DataLoaderType.ORIGIN
         self.step = batch_size
+        self.real_time = config['real_time_process']
 
         self.uid_field = dataset.uid_field
         self.iid_field = dataset.iid_field
@@ -425,9 +439,12 @@ class SequentialDataLoader(AbstractDataLoader):
         self.target_time_field = target_prefix + self.time_field
         self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
 
-        dataset.set_field_property(self.item_list_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION, self.max_item_list_len)
-        dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION, self.max_item_list_len)
-        dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION, self.max_item_list_len)
+        dataset.set_field_property(self.item_list_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
+                                   self.max_item_list_len)
+        dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION,
+                                   self.max_item_list_len)
+        dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
+                                   self.max_item_list_len)
         dataset.set_field_property(self.target_iid_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.target_time_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
@@ -435,7 +452,14 @@ class SequentialDataLoader(AbstractDataLoader):
         self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
             dataset.prepare_data_augmentation(max_item_list_len=self.max_item_list_len)
 
+        if not self.real_time:
+            self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
+                                                        self.target_index, self.item_list_length)
+
         super(SequentialDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+
+    def __len__(self):
+        return math.ceil(self.pr_end / self.step)
 
     @property
     def pr_end(self):
@@ -450,10 +474,15 @@ class SequentialDataLoader(AbstractDataLoader):
 
     def _next_batch_data(self):
         cur_index = slice(self.pr, self.pr + self.step)
-        cur_data = self.augmentation(self.uid_list[cur_index],
-                                     self.item_list_index[cur_index],
-                                     self.target_index[cur_index],
-                                     self.item_list_length[cur_index])
+        if self.real_time:
+            cur_data = self.augmentation(self.uid_list[cur_index],
+                                         self.item_list_index[cur_index],
+                                         self.target_index[cur_index],
+                                         self.item_list_length[cur_index])
+        else:
+            cur_data = {}
+            for key, value in self.pre_processed_data.items():
+                cur_data[key] = value[cur_index]
         self.pr += self.step
         return self._dict_to_interaction(cur_data)
 
