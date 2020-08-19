@@ -15,7 +15,7 @@ class DataLoaderType(Enum):
     NEGSAMPLE = 3
 
 
-class KGDataLoaderType(Enum):
+class KGDataLoaderState(Enum):
     RSKG = 1
     RS = 2
     KG = 3

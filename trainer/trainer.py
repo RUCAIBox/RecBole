@@ -18,7 +18,7 @@ from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
 from evaluator import TopKEvaluator, LossEvaluator
 from data.interaction import Interaction
-from utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderType, EvaluatorType
+from utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType
 from logging import getLogger
 
 
@@ -286,12 +286,12 @@ class KGTrainer(Trainer):
         self.model.train()
         total_loss = 0.
         if self.train_kg_step <= 0:
-            interaction_type = KGDataLoaderType.RSKG
+            interaction_state = KGDataLoaderState.RSKG
         else:
-            interaction_type = KGDataLoaderType.KG \
-                if (epoch_idx + 1) % (self.train_kg_step + 1) == 0 else KGDataLoaderType.RS
-        train_data.set_mode(interaction_type)
-        if interaction_type in [KGDataLoaderType.RSKG, KGDataLoaderType.RS]:
+            interaction_state = KGDataLoaderState.KG \
+                if (epoch_idx + 1) % (self.train_kg_step + 1) == 0 else KGDataLoaderState.RS
+        train_data.set_mode(interaction_state)
+        if interaction_state in [KGDataLoaderState.RSKG, KGDataLoaderState.RS]:
             for batch_idx, interaction in enumerate(train_data):
                 interaction = interaction.to(self.device)
                 self.optimizer.zero_grad()
@@ -299,7 +299,7 @@ class KGTrainer(Trainer):
                 loss.backward()
                 self.optimizer.step()
                 total_loss += loss.item()
-        elif interaction_type in [KGDataLoaderType.KG]:
+        elif interaction_state in [KGDataLoaderState.KG]:
             for bath_idx, interaction in enumerate(train_data):
                 interaction = interaction.to(self.device)
                 self.optimizer.zero_grad()
