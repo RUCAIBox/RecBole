@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
-# @Time   : 2020/6/26 15:49
+# @Time   : 2020/6/26
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-# @File   : trainer.py
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/8/11 10:33, 2020/8/14
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/8/7 18:38, 2020/8/11 10:33, 2020/8/14， 2020/8/19
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn
 
 import os
 import warnings
@@ -20,7 +18,7 @@ from time import time
 from trainer.utils import early_stopping, calculate_valid_score, dict2str
 from evaluator import TopKEvaluator, LossEvaluator
 from data.interaction import Interaction
-from utils import ensure_dir, get_local_time, DataLoaderType, EvaluatorType
+from utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderType, EvaluatorType
 from logging import getLogger
 
 
@@ -86,7 +84,7 @@ class Trainer(AbstractTrainer):
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         return optimizer
 
-    def _train_epoch(self, train_data):
+    def _train_epoch(self, train_data, epoch_idx):
         self.model.train()
         total_loss = 0.
         for batch_idx, interaction in enumerate(train_data):
@@ -138,7 +136,7 @@ class Trainer(AbstractTrainer):
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
-            train_loss = self._train_epoch(train_data)
+            train_loss = self._train_epoch(train_data, epoch_idx)
             self.train_loss_dict[epoch_idx] = train_loss
             training_end_time = time()
             train_loss_output = "epoch %d training [time: %.2fs, train loss: %.4f]" % \
@@ -276,3 +274,37 @@ class Trainer(AbstractTrainer):
             plt.show()
         if save_path:
             plt.savefig(save_path)
+
+
+class KGTrainer(Trainer):
+    def __init__(self, config, model):
+        super(KGTrainer, self).__init__(config, model)
+
+        self.train_kg_step = config['train_kg_step']
+
+    def _train_epoch(self, train_data, epoch_idx):
+        self.model.train()
+        total_loss = 0.
+        if self.train_kg_step <= 0:
+            interaction_type = KGDataLoaderType.RSKG
+        else:
+            interaction_type = KGDataLoaderType.KG \
+                if (epoch_idx + 1) % (self.train_kg_step + 1) == 0 else KGDataLoaderType.RS
+        train_data.set_mode(interaction_type)
+        if interaction_type in [KGDataLoaderType.RSKG, KGDataLoaderType.RS]:
+            for batch_idx, interaction in enumerate(train_data):
+                interaction = interaction.to(self.device)
+                self.optimizer.zero_grad()
+                loss = self.model.calculate_loss(interaction)
+                loss.backward()
+                self.optimizer.step()
+                total_loss += loss.item()
+        elif interaction_type in [KGDataLoaderType.KG]:
+            for bath_idx, interaction in enumerate(train_data):
+                interaction = interaction.to(self.device)
+                self.optimizer.zero_grad()
+                loss = self.model.calculate_kg_loss(interaction)
+                loss.backward()
+                self.optimizer.step()
+                total_loss += loss.item()
+        return total_loss
