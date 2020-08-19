@@ -1,80 +1,89 @@
-# @Time   : 2020/6/28
-# @Author : Shanlei Mu
-# @Email  : slmu@ruc.edu.cn
+# @Time   : 2020/8/17
+# @Author : Yujie Lu
+# @Email  : yujielu1998@gmail.com
 
 # UPDATE:
-# @Time   : 2020/8/5
-# @Author : Shanlei Mu
-# @Email  : slmu@ruc.edu.cn
-
-"""
-Reference:
-Balázs Hidasi et al., "Session-based Recommendations with Recurrent Neural Networks." in ICLR 2016.
-"""
+# @Time   : 2020/8/19 14:58
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
 
 import torch
-import torch.nn as nn
-from torch.nn.init import xavier_normal_
-
+from torch import nn
+from torch.nn.init import xavier_uniform_
+from torch.nn import functional as F
 from model.abstract_recommender import SequentialRecommender
+from utils import InputType
 
 
 class GRU4Rec(SequentialRecommender):
     def __init__(self, config, dataset):
         super(GRU4Rec, self).__init__()
+        self.input_type = InputType.POINTWISE
 
         self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
-        self.n_items = len(dataset.field2id_token[self.ITEM_ID])
+        self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
+        self.POSITION_ID = config['POSITION_FIELD']
+        self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
+        self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
+        max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
+
         self.embedding_size = config['embedding_size']
         self.num_layers = config['num_layers']
         self.dropout = config['dropout']
-        self.seq_len = config['seq_len']
+        self.item_count = dataset.item_num
 
-        # todo: padding index 0
-        self.item_embedding = nn.Embedding(self.n_items + 1, self.embedding_size, padding_idx=0)
-        self.gru_layers = nn.GRU(self.embedding_size, self.embedding_size,
-                                 self.num_layers, bias=False, batch_first=True, dropout=self.dropout)
-        self.sigmoid = nn.Sigmoid()
+        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size)
+        self.position_list_embedding = nn.Embedding(max_item_list_length, self.embedding_size)
+        self.gru_layers = nn.GRU(
+            input_size=self.embedding_size,
+            hidden_size=self.embedding_size,
+            num_layers=self.num_layers,
+            bias=False,
+            batch_first=True,
+            dropout=self.dropout
+        )
+        self.layer_norm = nn.LayerNorm(self.embedding_size)
+        self.criterion = nn.CrossEntropyLoss()
+
         self.apply(self.init_weights)
 
     def init_weights(self, module):
-        # todo: GRU unit weights initialization
         if isinstance(module, nn.Embedding):
-            xavier_normal_(module.weight)
+            xavier_uniform_(module.weight)
+        elif isinstance(module,nn.GRU):
+            xavier_uniform_(self.gru_layers.weight_hh_l0)
+            xavier_uniform_(self.gru_layers.weight_ih_l0)
 
-    def get_item_embedding(self, item):
-        return self.item_embedding(item)
+    def get_item_lookup_table(self):
+        return self.item_list_embedding.weight.t()
 
-    def get_history_embedding(self, history_seq):
-        output, hn = self.gru_layers(self.item_embedding(history_seq))
-        return output
+    def forward(self, interaction):
+        #TODO behavior_list_emb = concat(item,catgory)
+        item_list_emb = self.item_list_embedding(interaction[self.ITEM_ID_LIST])
+        position_list_emb = self.position_list_embedding(interaction[self.POSITION_ID])
+        behavior_list_emb = item_list_emb + position_list_emb
+        short_term_intent_temp, _ = self.gru_layers(behavior_list_emb)
+        short_term_intent_temp = self.gather_indexes(short_term_intent_temp, interaction[self.ITEM_LIST_LEN] - 1)
+        predict_behavior_emb = self.layer_norm(short_term_intent_temp)
+        return predict_behavior_emb
 
-    def forward(self, history_seq, item):
-        history_embedding = self.get_history_embedding(history_seq)
-        item_embedding = self.get_item_embedding(item)
-        return history_embedding, item_embedding
+    def gather_indexes(self, gru_output, gather_index):
+        "Gathers the vectors at the spexific positions over a minibatch"
+        gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, self.embedding_size)
+        output_tensor = gru_output.gather(dim=1, index=gather_index)
+        return output_tensor.squeeze(1)
 
     def calculate_loss(self, interaction):
-        history_seq = interaction['history_seq']    # (batch, seq_len)
-        pos_item = interaction[self.ITEM_ID]        # (batch, seq_len)
-        neg_item = interaction[self.NEG_ITEM_ID]    # (batch, seq_len)
-        seq_emb, pos_emb = self.forward(history_seq, pos_item)
-        neg_emb = self.get_history_embedding(neg_item)
-        seq_emb = seq_emb.contiguous().view(-1, self.embedding_size)     # (batch * seq_len, hidden_size)
-        pos_emb, neg_emb = pos_emb.view(-1, pos_emb.size(2)), neg_emb.view(-1, neg_emb.size(2))
-        pos_logits, neg_logits = torch.sum(pos_emb * seq_emb, -1), torch.sum(neg_emb * seq_emb, -1)  # (batch * seq_len)
-        istarget = (pos_item > 0).view(pos_item.size(0) * self.seq_len).float()  # [batch * seq_len]
-        loss = torch.sum(
-            - torch.log(self.sigmoid(pos_logits) + 1e-24) * istarget -
-            torch.log(1 - self.sigmoid(neg_logits) + 1e-24) * istarget
-        ) / torch.sum(istarget)
+        target_id = interaction[self.TARGET_ITEM_ID]
+        pred = self.forward(interaction)
+        logits = torch.matmul(pred, self.get_item_lookup_table())
+        loss = self.criterion(logits, target_id)
         return loss
 
     def predict(self, interaction):
-        history_seq = interaction['history_seq']    # (batch, seq_len)
-        item = interaction[self.ITEM_ID]            # (batch, 1 + neg_sample_num)
-        seq_emb, item_emb = self.forward(history_seq, item)
-        scores = torch.matmul(seq_emb, item_emb.transpose(1, 2))     # (batch, seq_len, 1 + neg_sample_num)
-        scores = scores[:, -1, :]   # (batch, 1 + neg_sample_num)
+        pass
+
+    def full_sort_predict(self, interaction):
+        pred = self.forward(interaction)
+        scores = torch.matmul(pred, self.get_item_lookup_table())
         return scores
