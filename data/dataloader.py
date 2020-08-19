@@ -418,7 +418,7 @@ class ContextGroupedDataLoader(GeneralGroupedDataLoader):
 
 class SequentialDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset,
-                 batch_size=1, shuffle=False):
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.dl_type = DataLoaderType.ORIGIN
         self.step = batch_size
         self.real_time = config['real_time_process']
