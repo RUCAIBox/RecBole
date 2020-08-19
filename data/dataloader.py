@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/17, 2020/8/18
+# @Time   : 2020/8/19, 2020/8/18
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -331,7 +331,6 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
         start_idx = 0
         pos_len_list = []
         neg_len_list = []
-        user_len_list = []
 
         pos_idx = []
         used_idx = []
@@ -352,19 +351,18 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
             neg_num = tot_item_num - used_num
             neg_len_list.append(neg_num)
 
-            user_len_list.append(pos_num + neg_num)
-
             start_idx += tot_item_num
 
         user_df = pd.DataFrame({uid_field: users})
         user_tensor = self._dataframe_to_interaction(self.join(user_df))
 
-        return user_tensor, torch.LongTensor(pos_idx), torch.LongTensor(used_idx), \
-               pos_len_list, user_len_list, neg_len_list
+        return user_tensor, \
+               torch.LongTensor(pos_idx), torch.LongTensor(used_idx), \
+               pos_len_list, neg_len_list
 
     def _pre_neg_sampling(self):
         self.user_tensor, tmp_pos_idx, tmp_used_idx, \
-        self.pos_len_list, self.user_len_list, self.neg_len_list = \
+        self.pos_len_list, self.neg_len_list = \
             self._neg_sampling(self.uid2items, show_progress=True)
         tmp_pos_len_list = [sum(self.pos_len_list[_: _ + self.step]) for _ in range(0, self.pr_end, self.step)]
         tot_item_num = self.dataset.item_num
@@ -383,7 +381,7 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
             slc = slice(self.pr, self.pr + self.step)
             idx = self.pr // self.step
             cur_data = self.user_tensor[slc], self.pos_idx[idx], self.used_idx[idx], \
-                       self.pos_len_list[slc], self.user_len_list[slc], self.neg_len_list[slc]
+                       self.pos_len_list[slc], self.neg_len_list[slc]
         else:
             cur_data = self._neg_sampling(self.uid2items[self.pr: self.pr + self.step])
         self.pr += self.step
@@ -420,7 +418,7 @@ class ContextGroupedDataLoader(GeneralGroupedDataLoader):
 
 class SequentialDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset,
-                 batch_size=1, shuffle=False):
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.dl_type = DataLoaderType.ORIGIN
         self.step = batch_size
         self.real_time = config['real_time_process']

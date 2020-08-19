@@ -3,13 +3,14 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/8/11 10:33, 2020/8/14， 2020/8/19
+# @Time   : 2020/8/7 18:38, 2020/8/19 18:59, 2020/8/14， 2020/8/19
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn
 
 import os
 import warnings
 import itertools
+import numpy as np
 import torch
 import torch.optim as optim
 import matplotlib.pyplot as plt
@@ -180,13 +181,16 @@ class Trainer(AbstractTrainer):
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
-        user_tensor, pos_idx, used_idx, pos_len_list, user_len_list, neg_len_list = batched_data
-        interaction = user_tensor.to_device_repeat_interleave(self.device, self.tot_item_num)
+        # Note: interaction without item ids
+        interaction, pos_idx, used_idx, \
+        pos_len_list, neg_len_list = batched_data
 
-        batch_size = interaction.length
+        batch_size = interaction.length * self.tot_item_num
         if hasattr(self.model, 'full_sort_predict'):
-            scores = self.model.full_sort_predict(user_tensor.to(self.device))
+            # Note: interaction without item ids
+            scores = self.model.full_sort_predict(interaction.to(self.device))
         else:
+            interaction = interaction.to_device_repeat_interleave(self.device, self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
             scores = self.model.predict(interaction)
         pos_idx = pos_idx.to(self.device)
@@ -204,7 +208,7 @@ class Trainer(AbstractTrainer):
         final_scores = torch.cat(final_scores)
 
         setattr(interaction, 'pos_len_list', pos_len_list)
-        setattr(interaction, 'user_len_list', user_len_list)
+        setattr(interaction, 'user_len_list', list(np.add(pos_len_list, neg_len_list)))
 
         return interaction, final_scores
 

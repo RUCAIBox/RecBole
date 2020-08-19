@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/15 20:28
+# @Time   : 2020/8/19 18:24
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
@@ -114,6 +114,28 @@ test_examples = {
         'epochs': 1,
         'valid_metric': 'AUC',
         'metrics': ['AUC']
+    },
+    'Test Criteo': {
+        'model': 'FM',
+        'dataset': 'criteo',
+        'group_by_user': False,
+        'epochs': 1,
+        'valid_metric': 'AUC',
+        'metrics': ['AUC']
+    },
+    'Test GRU4Rec': {
+        'model': 'GRU4Rec',
+        'dataset': 'ml-100k',
+        'eval_setting': 'TO_LS, full',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_neg_sampling': None,
+        'real_time_process': True,
+        'NEG_PREFIX': None,
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['rating', 'timestamp']},
+        'min_user_inter_num': 5
     }
 }
 

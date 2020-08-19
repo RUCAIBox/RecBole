@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/17, 2020/8/5, 2020/8/16
+# @Time   : 2020/8/19, 2020/8/5, 2020/8/16
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -591,7 +591,7 @@ class Dataset(object):
     def shuffle(self):
         self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
 
-    def sort(self, by, ascending):
+    def sort(self, by, ascending=True):
         self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True, ignore_index=True)
 
     # TODO
