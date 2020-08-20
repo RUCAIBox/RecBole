@@ -61,12 +61,12 @@ class Config(object):
         self.dataset_args = DataConfig(dataset_arg_file_name, self.cmd_args_dict)
 
         self.device = None
+        self._init_device()
 
-    def init(self):
+    def _init_device(self):
         """
         This function is a global initialization function that fix random seed and gpu device.
         """
-        init_seed = self.run_args['seed']
         use_gpu = self.run_args['use_gpu']
         if use_gpu:
             gpu_id = self.run_args['gpu_id']
@@ -74,11 +74,14 @@ class Config(object):
         # Get the device that run on.
         self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
 
+    def init(self):
+        init_seed = self.run_args['seed']
         random.seed(init_seed)
         np.random.seed(init_seed)
         torch.manual_seed(init_seed)
         torch.cuda.manual_seed(init_seed)
         torch.cuda.manual_seed_all(init_seed)
+        torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
 
     def _read_cmd_line(self):

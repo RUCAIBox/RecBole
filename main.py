@@ -18,7 +18,7 @@ logger.info(model)
 # If you want to customize the evaluation setting,
 # please refer to `data_preparation()` in `data/utils.py`.
 train_data, test_data, valid_data = data_preparation(config, model, dataset)
-
+config.init()
 trainer = Trainer(config, model)
 
 # trainer.resume_checkpoint('saved/model_best.pth')
