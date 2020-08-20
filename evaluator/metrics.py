@@ -231,8 +231,8 @@ def log_loss_(trues, preds):
     yp is the estimated probability that yt = 1.
 
     """
+    return log_loss(trues, preds, eps=1e-7)
 
-    return log_loss(trues, preds)
 
 
 # Item based Metrics #

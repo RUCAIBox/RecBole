@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/17, 2020/8/5, 2020/8/16
+# @Time   : 2020/8/19, 2020/8/5, 2020/8/16
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -17,6 +17,7 @@ from sklearn.impute import SimpleImputer
 from scipy.sparse import coo_matrix
 from logging import getLogger
 from .dataloader import *
+from utils import *
 
 
 class Dataset(object):
@@ -449,9 +450,12 @@ class Dataset(object):
         return np.array(index), np.array(uid2items_num)
 
     def prepare_data_augmentation(self, max_item_list_len=None):
+        if hasattr(self, 'uid_list'):
+            return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
+
         self._check_field('uid_field', 'time_field')
         if max_item_list_len is None:
-            max_item_list_len = np.inf
+            max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH']
         self.sort(by=[self.uid_field, self.time_field], ascending=True)
         last_uid = None
         uid_list, item_list_index, target_index, item_list_length = [], [], [], []
@@ -467,7 +471,12 @@ class Dataset(object):
                 item_list_index.append(slice(seq_start, i))
                 target_index.append(i)
                 item_list_length.append(i - seq_start)
-        return np.array(uid_list), np.array(item_list_index), np.array(target_index), np.array(item_list_length)
+
+        self.uid_list = np.array(uid_list)
+        self.item_list_index = np.array(item_list_index)
+        self.target_index = np.array(target_index)
+        self.item_list_length = np.array(item_list_length)
+        return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
     def _check_field(self, *field_names):
         for field_name in field_names:
@@ -545,34 +554,48 @@ class Dataset(object):
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
-    def leave_one_out(self, group_by, leave_one_num=1):
+    def _split_index_by_leave_one_out(self, grouped_index, leave_one_num):
+        next_index = [[] for i in range(leave_one_num + 1)]
+        for index in grouped_index:
+            index = list(index)
+            tot_cnt = len(index)
+            legal_leave_one_num = min(leave_one_num, tot_cnt - 1)
+            pr = tot_cnt - legal_leave_one_num
+            next_index[0].extend(index[:pr])
+            for i in range(legal_leave_one_num):
+                next_index[-legal_leave_one_num + i].append(index[pr])
+                pr += 1
+        return next_index
+
+    def leave_one_out(self, group_by, model_type, leave_one_num=1):
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 
-        grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
-        next_index = [[] for i in range(leave_one_num + 1)]
-        for grouped_index in grouped_inter_feat_index:
-            grouped_index = list(grouped_index)
-            tot_cnt = len(grouped_index)
-            legal_leave_one_num = min(leave_one_num, tot_cnt - 1)
-            pr = tot_cnt - legal_leave_one_num
-            next_index[0].extend(grouped_index[:pr])
-            for i in range(legal_leave_one_num):
-                next_index[-legal_leave_one_num + i].append(grouped_index[pr])
-                pr += 1
-
-        next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
-        next_ds = [self.copy(_) for _ in next_df]
+        if model_type == ModelType.SEQUENTIAL:
+            self.prepare_data_augmentation()
+            grouped_index = pd.DataFrame(self.uid_list).groupby(by=0).groups.values()
+            next_index = self._split_index_by_leave_one_out(grouped_index, leave_one_num)
+            next_ds = []
+            for index in next_index:
+                ds = copy.copy(self)
+                for field in ['uid_list', 'item_list_index', 'target_index', 'item_list_length']:
+                    setattr(ds, field, np.array(getattr(ds, field)[index]))
+                next_ds.append(ds)
+        else:
+            grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
+            next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num)
+            next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
+            next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
     def shuffle(self):
         self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
 
-    def sort(self, by, ascending):
+    def sort(self, by, ascending=True):
         self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True, ignore_index=True)
 
     # TODO
-    def build(self, eval_setting):
+    def build(self, eval_setting, model_type):
         ordering_args = eval_setting.ordering_args
         if ordering_args['strategy'] == 'shuffle':
             self.shuffle()
@@ -587,7 +610,8 @@ class Dataset(object):
         elif split_args['strategy'] == 'by_value':
             raise NotImplementedError()
         elif split_args['strategy'] == 'loo':
-            datasets = self.leave_one_out(group_by=group_field, leave_one_num=split_args['leave_one_num'])
+            datasets = self.leave_one_out(group_by=group_field, model_type=model_type,
+                                          leave_one_num=split_args['leave_one_num'])
         else:
             datasets = self
 

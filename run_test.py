@@ -15,15 +15,13 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 config
     """
-
     config = Config(config_file, config_dict)
     config.init()
-
     """
+    
     初始化 logger
     """
     init_logger(config)
-
     """
     初始化 dataset
     """
