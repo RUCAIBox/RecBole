@@ -118,6 +118,7 @@ test_examples = {
     'Test Criteo': {
         'model': 'FM',
         'dataset': 'criteo',
+        'normalize_all': True,
         'group_by_user': False,
         'epochs': 1,
         'valid_metric': 'AUC',
