@@ -156,6 +156,9 @@ def get_data_loader(name, config, eval_setting, model_type):
         elif neg_sample_strategy == 'full':
             raise NotImplementedError('context model\'s full_sort has not been implemented')
     elif model_type == ModelType.SEQUENTIAL:
-        return SequentialDataLoader
+        if name == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
+            return SequentialDataLoader
+        else:
+            return SequentialFullDataLoader
     else:
         raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))

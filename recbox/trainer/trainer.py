@@ -186,7 +186,7 @@ class Trainer(AbstractTrainer):
         batch_size = interaction.length * self.tot_item_num
         if hasattr(self.model, 'full_sort_predict'):
             # Note: interaction without item ids
-            scores = self.model.full_sort_predict(interaction.to(self.device))
+            scores = self.model.full_sort_predict(interaction.to(self.device)).flatten()
         else:
             interaction = interaction.to_device_repeat_interleave(self.device, self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
@@ -225,8 +225,8 @@ class Trainer(AbstractTrainer):
         self.model.eval()
 
         if eval_data.dl_type == DataLoaderType.FULL:
-
-            self.item_tensor = eval_data.get_item_tensor().to(self.device).repeat(eval_data.step)
+            if not hasattr(self.model, 'full_sort_predict'):
+                self.item_tensor = eval_data.get_item_tensor().to(self.device).repeat(eval_data.step)
             self.tot_item_num = eval_data.dataset.item_num
 
         batch_matrix_list = []

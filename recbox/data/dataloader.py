@@ -405,7 +405,11 @@ class ContextGroupedDataLoader(GeneralGroupedDataLoader):
 class SequentialDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+        if dl_format != InputType.POINTWISE:
+            raise ValueError('dl_format in Sequential DataLoader should be POINTWISE')
+
         self.dl_type = DataLoaderType.ORIGIN
+        self.dl_format = dl_format
         self.step = batch_size
         self.real_time = config['real_time_process']
 
@@ -451,10 +455,16 @@ class SequentialDataLoader(AbstractDataLoader):
 
     def _shuffle(self):
         new_index = np.random.permutation(len(self.item_list_index))
-        self.uid_list = self.uid_list[new_index]
-        self.item_list_index = self.item_list_index[new_index]
-        self.target_index = self.target_index[new_index]
-        self.item_list_length = self.item_list_length[new_index]
+        if self.real_time:
+            self.uid_list = self.uid_list[new_index]
+            self.item_list_index = self.item_list_index[new_index]
+            self.target_index = self.target_index[new_index]
+            self.item_list_length = self.item_list_length[new_index]
+        else:
+            new_data = {}
+            for key, value in self.pre_processed_data.items():
+                new_data[key] = value[new_index]
+            self.pre_processed_data = new_data
 
     def _next_batch_data(self):
         cur_index = slice(self.pr, self.pr + self.step)
@@ -486,3 +496,26 @@ class SequentialDataLoader(AbstractDataLoader):
             new_dict[self.item_list_field].append(df[self.iid_field].values)
             new_dict[self.time_list_field].append(df[self.time_field].values)
         return new_dict
+
+
+class SequentialFullDataLoader(SequentialDataLoader):
+    def __init__(self, config, dataset,
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+        super(SequentialFullDataLoader, self).__init__(config, dataset, batch_size, dl_format, shuffle)
+
+        self.dl_type = DataLoaderType.FULL
+
+    def _shuffle(self):
+        raise NotImplementedError('SequentialFullDataLoader can\'t shuffle')
+
+    def _next_batch_data(self):
+        interaction = super(SequentialFullDataLoader, self)._next_batch_data()
+        tot_item_num = self.dataset.item_num
+        inter_num = len(interaction)
+        pos_idx = used_idx = interaction[self.target_iid_field] + torch.arange(inter_num) * tot_item_num
+        pos_len_list = [1] * inter_num
+        neg_len_list = [tot_item_num - 1] * inter_num
+        return interaction, pos_idx, used_idx, pos_len_list, neg_len_list
+
+    def get_pos_len_list(self):
+        return np.ones(self.pr_end, dtype=np.int)
