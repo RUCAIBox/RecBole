@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/19, 2020/8/18
+# @Time   : 2020/8/21, 2020/8/18
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -86,8 +86,8 @@ class AbstractDataLoader(object):
     def join(self, df):
         return self.dataset.join(df)
 
-    def inter_matrix(self, form='coo'):
-        return self.dataset.inter_matrix(form=form)
+    def inter_matrix(self, form='coo', value_field=None):
+        return self.dataset.inter_matrix(form=form, value_field=value_field)
 
 
 class GeneralDataLoader(AbstractDataLoader):
