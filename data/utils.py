@@ -30,7 +30,7 @@ def data_preparation(config, model, dataset, save=False):
     if es.split_args['strategy'] != 'loo' and model.type == ModelType.SEQUENTIAL:
         raise ValueError('Sequential models require "loo" split strategy.')
 
-    builded_datasets = dataset.build(es)
+    builded_datasets = dataset.build(es, model.type)
     train_dataset, valid_dataset, test_dataset = builded_datasets
     phases = ['train', 'valid', 'test']
 
@@ -40,7 +40,7 @@ def data_preparation(config, model, dataset, save=False):
     kwargs = {}
     if model.type == ModelType.GENERAL:
         es.neg_sample_by(1, real_time=True)
-        sampler = Sampler(config, phases, builded_datasets)
+        sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
         kwargs['sampler'] = sampler
         kwargs['phase'] = 'train'
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
@@ -155,5 +155,7 @@ def get_data_loader(name, config, eval_setting, model_type):
                 return ContextGroupedDataLoader
         elif neg_sample_strategy == 'full':
             raise NotImplementedError('context model\'s full_sort has not been implemented')
+    elif model_type == ModelType.SEQUENTIAL:
+        return SequentialDataLoader
     else:
         raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))

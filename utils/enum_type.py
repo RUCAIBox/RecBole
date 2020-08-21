@@ -15,6 +15,12 @@ class DataLoaderType(Enum):
     NEGSAMPLE = 3
 
 
+class KGDataLoaderState(Enum):
+    RSKG = 1
+    RS = 2
+    KG = 3
+
+
 class EvaluatorType(Enum):
     RANKING = 1
     INDIVIDUAL = 2

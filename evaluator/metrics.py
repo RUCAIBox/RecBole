@@ -4,7 +4,7 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/12   2020/08/09
+# @Time    :   2020/08/12   2020/08/21
 # @Author  :   Kaiyuan Li   Zhichao Feng
 # @email   :   tsotfsk@outlook.com  fzcbupt@gmail.com
 
@@ -231,8 +231,12 @@ def log_loss_(trues, preds):
     yp is the estimated probability that yt = 1.
 
     """
+    eps = 1e-15
+    preds = np.float64(preds)
+    preds = np.clip(preds, eps, 1 - eps)
+    loss = np.sum(- trues * np.log(preds) - (1 - trues) * np.log(1 - preds))
 
-    return log_loss(trues, preds)
+    return loss / len(preds)
 
 
 # Item based Metrics #
