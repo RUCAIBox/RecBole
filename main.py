@@ -1,9 +1,9 @@
-from config import Config
-from data import Dataset, data_preparation
-from model.general_recommender.bprmf import BPRMF
-from trainer import Trainer
-from utils import init_logger
 from logging import getLogger
+from recbox.config import Config
+from recbox.data import Dataset, data_preparation
+from recbox.model.general_recommender.bprmf import BPRMF
+from recbox.trainer import Trainer
+from recbox.utils import init_logger
 
 config = Config('properties/overall.config')
 config.init()
