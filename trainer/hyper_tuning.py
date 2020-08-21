@@ -120,13 +120,12 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
 
 
 class HyperTuning(object):
-    def __init__(self, data_generation_function, objective_function, space=None, params_file=None, algo=tpe.suggest, max_evals=100):
+    def __init__(self, objective_function, space=None, params_file=None, algo=tpe.suggest, max_evals=100):
         self.best_score = None
         self.best_params = None
         self.best_test_result = None
         self.params2result = {}
 
-        self.dataset, self.dataloader = data_generation_function()
         self.objective_function = objective_function
         self.max_evals = max_evals
         if space:
@@ -189,7 +188,7 @@ class HyperTuning(object):
         config_dict = params
         params_str = self.params2str(params)
         print('running parameters:', config_dict)
-        result_dict = self.objective_function(self.dataset, self.dataloader, config_dict)
+        result_dict = self.objective_function(config_dict)
         self.params2result[params_str] = result_dict
         score, bigger = result_dict['best_valid_score'], result_dict['valid_score_bigger']
 
