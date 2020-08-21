@@ -40,7 +40,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
 
     train_data, test_data, valid_data = data_preparation(config, model, dataset)
-    config.init()
+
     """
     初始化 trainer
     """
