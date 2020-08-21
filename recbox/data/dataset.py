@@ -68,6 +68,9 @@ class Dataset(object):
         if self.config['fill_nan']:
             self._fill_nan()
 
+        if self.config['normalize_field'] or self.config['normalize_all']:
+            self._normalize(self.config['normalize_field'])
+
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
             raise ValueError('filepath [{}] need to be a dir'.format(saved_dataset))
@@ -185,8 +188,6 @@ class Dataset(object):
         df.columns = field_names
         df = df[columns]
 
-        # TODO  fill nan in df
-
         seq_separator = self.config['seq_separator']
         def _token(df, field): pass
         def _float(df, field): pass
@@ -221,6 +222,26 @@ class Dataset(object):
                         feat.loc[:,field] = aveg.fit_transform(feat.loc[:,field].values.reshape(-1, 1))
                     elif ftype.endswith('seq'):
                         self.logger.warning('feature [{}] (type: {}) probably has nan, while has not been filled.'.format(field, ftype))
+
+    def _normalize(self, fields=None):
+        if fields is None:
+            fields = list(self.field2type)
+        else:
+            for field in fields:
+                if field not in self.field2type:
+                    raise ValueError('Field [{}] doesn\'t exist'.format(field))
+                elif self.field2type[field] != FeatureType.FLOAT:
+                    self.logger.warn('{} is not a FLOAT feat, which will not be normalized.'.format(field))
+        for feat in [self.inter_feat, self.user_feat, self.item_feat]:
+            if feat is None:
+                continue
+            for field in feat:
+                if field in fields and self.field2type[field] == FeatureType.FLOAT:
+                    lst = feat[field].values
+                    mx, mn = max(lst), min(lst)
+                    if mx == mn:
+                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, source))
+                    feat[field] = (lst - mn) / (mx - mn)
 
     def filter_by_inter_num(self, max_user_inter_num=None, min_user_inter_num=None,
                             max_item_inter_num=None, min_item_inter_num=None):
