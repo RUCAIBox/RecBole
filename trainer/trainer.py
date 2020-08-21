@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/8/19 18:59, 2020/8/14， 2020/8/19
+# @Time   : 2020/8/7 18:38, 2020/8/19 18:59, 2020/8/21, 2020/8/19
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn
 
@@ -182,8 +182,7 @@ class Trainer(AbstractTrainer):
 
     def _full_sort_batch_eval(self, batched_data):
         # Note: interaction without item ids
-        interaction, pos_idx, used_idx, \
-        pos_len_list, neg_len_list = batched_data
+        interaction, pos_idx, used_idx, pos_len_list, neg_len_list = batched_data
 
         batch_size = interaction.length * self.tot_item_num
         if hasattr(self.model, 'full_sort_predict'):

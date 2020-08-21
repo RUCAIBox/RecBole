@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/19, 2020/8/5, 2020/8/16
+# @Time   : 2020/8/19, 2020/8/5, 2020/8/21
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -401,10 +401,12 @@ class Dataset(object):
 
     @property
     def user_num(self):
+        self._check_field('uid_field')
         return self.num(self.uid_field)
 
     @property
     def item_num(self):
+        self._check_field('iid_field')
         return self.num(self.iid_field)
 
     @property
@@ -640,8 +642,7 @@ class Dataset(object):
     def get_item_feature(self):
         if self.item_feat is None:
             self._check_field('iid_field')
-            tot_item_cnt = self.num(self.iid_field)
-            return pd.DataFrame({self.iid_field: np.arange(tot_item_cnt)})
+            return pd.DataFrame({self.iid_field: np.arange(self.item_num)})
         else:
             return self.item_feat
 
