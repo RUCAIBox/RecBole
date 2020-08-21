@@ -8,10 +8,10 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 
-from config import Config
-from data import Dataset, data_preparation
-from trainer import Trainer, HyperTuning
-from utils import init_logger, get_model
+from recbox.config import Config
+from recbox.data import Dataset, data_preparation
+from recbox.trainer import Trainer, HyperTuning
+from recbox.utils import init_logger, get_model
 
 
 def objective_function(config_dict=None):
