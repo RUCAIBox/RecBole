@@ -5,25 +5,23 @@
 # @File   : run_test.py
 
 
-from trainer import Trainer
-from utils import init_logger, get_model
-from config import Config
-from data import Dataset, data_preparation
+from recbox.trainer import Trainer
+from recbox.utils import init_logger, get_model
+from recbox.config import Config
+from recbox.data import Dataset, data_preparation
 
 
 def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 config
     """
-
     config = Config(config_file, config_dict)
     config.init()
-
     """
+    
     初始化 logger
     """
     init_logger(config)
-
     """
     初始化 dataset
     """
