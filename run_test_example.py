@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/19 18:24
-# @Author : Yupeng Hou
-# @Email  : houyupeng@ruc.edu.cn
+# @Time   : 2020/8/19 18:24, 2020/8/21
+# @Author : Yupeng Hou, Yushuo Chen
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import traceback
 from run_test import whole_process
@@ -109,7 +109,7 @@ test_examples = {
         'model': 'FM',
         'dataset': 'ml-100k',
         'lowest_val': None,
-        'threshold': {'rating':3},
+        'threshold': {'rating': 3},
         'group_by_user': False,
         'epochs': 1,
         'valid_metric': 'AUC',
@@ -127,6 +127,7 @@ test_examples = {
     'Test GRU4Rec': {
         'model': 'GRU4Rec',
         'dataset': 'ml-100k',
+        'epochs': 1,
         'eval_setting': 'TO_LS, full',
         'split_ratio': None,
         'leave_one_num': 2,
