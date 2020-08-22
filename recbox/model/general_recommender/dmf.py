@@ -46,6 +46,8 @@ class DMF(GeneralRecommender):
         #print('111')
 
     def forward(self, user, item):
+        user = self.interaction_matrix[user]
+        item = self.interaction_matrix[:, item].t()
         user = self.linear_user_1(user)
         item = self.linear_item_1(item)
 
@@ -57,16 +59,14 @@ class DMF(GeneralRecommender):
             item = F.relu(item)
             item = self.item_fc_layers[idx](item)
 
-        vector = torch.cosine_similarity(user, item).view(-1, 1)  # 得到一个列tensor
+        vector = torch.cosine_similarity(user, item).view(-1,)
         vector = torch.clamp(vector, min=1e-6, max=1)
-
+        #print(vector.shape)
         return vector
 
     def calculate_loss(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        user = self.interaction_matrix[user]
-        item = self.interaction_matrix[:, item].t()
         output = self.forward(user,item)
         self.max_rating = self.interaction_matrix.max()
         regRate = output / self.max_rating
@@ -77,6 +77,5 @@ class DMF(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        user = self.interaction_matrix[user]
-        item = self.interaction_matrix[:, item].t()
         return self.forward(user,item)
+
