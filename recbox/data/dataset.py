@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/19, 2020/8/5, 2020/8/16
+# @Time   : 2020/8/21, 2020/8/5, 2020/8/16
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -67,6 +67,9 @@ class Dataset(object):
 
         if self.config['fill_nan']:
             self._fill_nan()
+
+        if self.config['normalize_field'] or self.config['normalize_all']:
+            self._normalize(self.config['normalize_field'])
 
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
@@ -185,8 +188,6 @@ class Dataset(object):
         df.columns = field_names
         df = df[columns]
 
-        # TODO  fill nan in df
-
         seq_separator = self.config['seq_separator']
         def _token(df, field): pass
         def _float(df, field): pass
@@ -221,6 +222,26 @@ class Dataset(object):
                         feat.loc[:,field] = aveg.fit_transform(feat.loc[:,field].values.reshape(-1, 1))
                     elif ftype.endswith('seq'):
                         self.logger.warning('feature [{}] (type: {}) probably has nan, while has not been filled.'.format(field, ftype))
+
+    def _normalize(self, fields=None):
+        if fields is None:
+            fields = list(self.field2type)
+        else:
+            for field in fields:
+                if field not in self.field2type:
+                    raise ValueError('Field [{}] doesn\'t exist'.format(field))
+                elif self.field2type[field] != FeatureType.FLOAT:
+                    self.logger.warn('{} is not a FLOAT feat, which will not be normalized.'.format(field))
+        for feat in [self.inter_feat, self.user_feat, self.item_feat]:
+            if feat is None:
+                continue
+            for field in feat:
+                if field in fields and self.field2type[field] == FeatureType.FLOAT:
+                    lst = feat[field].values
+                    mx, mn = max(lst), min(lst)
+                    if mx == mn:
+                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, source))
+                    feat[field] = (lst - mn) / (mx - mn)
 
     def filter_by_inter_num(self, max_user_inter_num=None, min_user_inter_num=None,
                             max_item_inter_num=None, min_item_inter_num=None):
@@ -644,13 +665,20 @@ class Dataset(object):
         else:
             return self.item_feat
 
-    def inter_matrix(self, form='coo'):
+    def inter_matrix(self, form='coo', value_field=None):
         if not self.uid_field or not self.iid_field:
             raise ValueError('dataset doesn\'t exist uid/iid, thus can not converted to sparse matrix')
 
         uids = self.inter_feat[self.uid_field].values
         iids = self.inter_feat[self.iid_field].values
-        data = np.ones(len(self.inter_feat))
+        if value_field is None:
+            data = np.ones(len(self.inter_feat))
+        else:
+            if value_field not in self.field2source:
+                raise ValueError('value_field [{}] not exist.'.format(value_field))
+            if self.field2source[value_field] != FeatureSource.INTERACTION:
+                raise ValueError('value_field [{}] can only be one of the interaction features'.format(value_field))
+            data = self.inter_feat[value_field].values
         mat = coo_matrix((data, (uids, iids)), shape=(self.user_num, self.item_num))
 
         if form == 'coo':
