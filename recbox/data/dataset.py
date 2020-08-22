@@ -211,17 +211,19 @@ class Dataset(object):
         aveg = SimpleImputer(missing_values=np.nan, strategy='mean', copy=False)
 
         for feat in [self.inter_feat, self.user_feat, self.item_feat]:
-            if feat is not None:
-                for field in self.field2type:
-                    if field not in feat:
-                        continue
-                    ftype = self.field2type[field]
-                    if ftype == FeatureType.TOKEN:
-                        feat.loc[:,field] = most_freq.fit_transform(feat.loc[:,field].values.reshape(-1, 1))
-                    elif ftype == FeatureType.FLOAT:
-                        feat.loc[:,field] = aveg.fit_transform(feat.loc[:,field].values.reshape(-1, 1))
-                    elif ftype.endswith('seq'):
-                        self.logger.warning('feature [{}] (type: {}) probably has nan, while has not been filled.'.format(field, ftype))
+            if feat is None:
+                continue
+            for field in self.field2type:
+                if field not in feat:
+                    continue
+                ftype = self.field2type[field]
+                if ftype == FeatureType.TOKEN:
+                    feat.loc[:, field] = most_freq.fit_transform(feat.loc[:, field].values.reshape(-1, 1))
+                elif ftype == FeatureType.FLOAT:
+                    feat.loc[:, field] = aveg.fit_transform(feat.loc[:, field].values.reshape(-1, 1))
+                elif ftype.endswith('seq'):
+                    self.logger.warning('feature [{}] (type: {}) probably has nan, while has not been filled.'
+                                        .format(field, ftype))
 
     def _normalize(self, fields=None):
         if fields is None:
@@ -231,7 +233,7 @@ class Dataset(object):
                 if field not in self.field2type:
                     raise ValueError('Field [{}] doesn\'t exist'.format(field))
                 elif self.field2type[field] != FeatureType.FLOAT:
-                    self.logger.warn('{} is not a FLOAT feat, which will not be normalized.'.format(field))
+                    self.logger.warning('{} is not a FLOAT feat, which will not be normalized.'.format(field))
         for feat in [self.inter_feat, self.user_feat, self.item_feat]:
             if feat is None:
                 continue
@@ -240,7 +242,7 @@ class Dataset(object):
                     lst = feat[field].values
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, source))
+                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, feat))
                     feat[field] = (lst - mn) / (mx - mn)
 
     def filter_by_inter_num(self, max_user_inter_num=None, min_user_inter_num=None,
