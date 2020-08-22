@@ -68,8 +68,12 @@ class Dataset(object):
         if self.config['fill_nan']:
             self._fill_nan()
 
-        if self.config['normalize_field'] or self.config['normalize_all']:
+        if self.config['normalize_field'] is not None and self.config['normalize_all'] is not None:
+            raise ValueError('normalize_field and normalize_all can\'t be set at the same time')
+        if self.config['normalize_field']:
             self._normalize(self.config['normalize_field'])
+        elif self.config['normalize_all']:
+            self._normalize(list(self.field2type))
 
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
@@ -225,15 +229,12 @@ class Dataset(object):
                     self.logger.warning('feature [{}] (type: {}) probably has nan, while has not been filled.'
                                         .format(field, ftype))
 
-    def _normalize(self, fields=None):
-        if fields is None:
-            fields = list(self.field2type)
-        else:
-            for field in fields:
-                if field not in self.field2type:
-                    raise ValueError('Field [{}] doesn\'t exist'.format(field))
-                elif self.field2type[field] != FeatureType.FLOAT:
-                    self.logger.warning('{} is not a FLOAT feat, which will not be normalized.'.format(field))
+    def _normalize(self, fields):
+        for field in fields:
+            if field not in self.field2type:
+                raise ValueError('Field [{}] doesn\'t exist'.format(field))
+            elif self.field2type[field] != FeatureType.FLOAT:
+                self.logger.warning('{} is not a FLOAT feat, which will not be normalized.'.format(field))
         for feat in [self.inter_feat, self.user_feat, self.item_feat]:
             if feat is None:
                 continue
