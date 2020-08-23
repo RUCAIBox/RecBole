@@ -39,7 +39,7 @@ class MLPLayers(nn.Module):
         >> torch.Size([128, 16])
     """
 
-    def __init__(self, layers, dropout=0, activation='none'):
+    def __init__(self, layers, dropout=0, activation='relu'):
         super(MLPLayers, self).__init__()
         self.layers = layers
         self.dropout = dropout
