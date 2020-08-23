@@ -7,6 +7,7 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
+
 class EvalSetting(object):
     def __init__(self, config):
         self.config = config

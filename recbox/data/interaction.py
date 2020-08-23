@@ -7,6 +7,7 @@
 # @Author  : Yupeng Hou, Yushuo Chen, Xingyu Pan
 # @email   : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, panxy@ruc.edu.cn
 
+
 class Interaction(object):
     """The basic class representing a batch of interaction records.
 
