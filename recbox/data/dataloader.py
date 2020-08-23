@@ -498,7 +498,6 @@ class SequentialDataLoader(AbstractDataLoader):
         return new_dict
 
 
-<<<<<<< HEAD
 class KnowledgeBasedDataLoader(GeneralDataLoader):
 
     def __init__(self, config, dataset,
@@ -524,7 +523,8 @@ class KnowledgeBasedDataLoader(GeneralDataLoader):
         cur_data = self.dataset[self.pr: self.pr + self.step]
         self.pr += self.step
         return self._dataframe_to_interaction(cur_data)
-=======
+
+        
 class SequentialFullDataLoader(SequentialDataLoader):
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
@@ -546,4 +546,3 @@ class SequentialFullDataLoader(SequentialDataLoader):
 
     def get_pos_len_list(self):
         return np.ones(self.pr_end, dtype=np.int)
->>>>>>> 3817202b87b46d23d99eba4130ea7f8fe91c7a58
