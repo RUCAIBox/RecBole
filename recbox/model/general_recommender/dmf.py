@@ -25,6 +25,7 @@ class DMF(GeneralRecommender):
         self.device = config['device']
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
+        self.LABEL = config['LABEL_FIELD']
         self.n_users = dataset.user_num
         self.n_items = dataset.item_num
         self.layers = config['layers']
@@ -41,8 +42,9 @@ class DMF(GeneralRecommender):
 
         self.user_fc_layers = MLPLayers(self.layers)
         self.item_fc_layers = MLPLayers(self.layers)
+        self.loss = nn.BCELoss()
 
-    def train_preparation(self,train_data,valid_data):
+    def train_preparation(self, train_data, valid_data):
         self.interaction_matrix = train_data.inter_matrix(form='csr').astype(np.float32)
 
     def forward(self, user, item):
@@ -61,12 +63,12 @@ class DMF(GeneralRecommender):
     def calculate_loss(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
+        label = interaction[self.LABEL]
         # print(user)
-        output = self.forward(user,item)
+        output = self.forward(user, item)
         self.max_rating = self.interaction_matrix.max()
-        reg_rating = output / self.max_rating
-        loss = (reg_rating * (output.log()) + (1 - reg_rating) * ((1 - output).log())).mean()
-        loss = -loss
+        label = label / self.max_rating
+        loss = -(label * (output.log()) + (1 - label) * ((1 - output).log())).mean()
         return loss
 
     def predict(self, interaction):
@@ -98,8 +100,8 @@ class DMF(GeneralRecommender):
         self.u_embedding = self.get_user_embedding(user)
         if self.i_embedding is None:
             self.i_embedding = self.get_item_embedding()
-        u_sqrt = torch.mul(self.u_embedding, self.u_embedding).sum(dim=1).sqrt().view(-1,1)
-        i_sqrt = torch.mul(self.i_embedding, self.i_embedding).sum(dim=1).sqrt().view(1,-1)
+        u_sqrt = torch.sqrt(torch.sum(torch.square(self.u_embedding), dim=1)).view(-1, 1)
+        i_sqrt = torch.sqrt(torch.sum(torch.square(self.i_embedding), dim=1)).view(1, -1)
         cos_similarity = torch.mm(self.u_embedding, self.i_embedding.t()) / torch.mm(u_sqrt, i_sqrt)
         cos_similarity = torch.max(cos_similarity, torch.tensor([self.min_y_hat]).to(self.device))
         return cos_similarity.view(-1)
