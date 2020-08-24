@@ -46,8 +46,8 @@ class DMF(GeneralRecommender):
         self.interaction_matrix = train_data.inter_matrix(form='csr').astype(np.float32)
 
     def forward(self, user, item):
-        user = torch.from_numpy(self.interaction_matrix[user].todense()).to(self.device)
-        item = torch.from_numpy(self.interaction_matrix[:, item].todense()).to(self.device).t()
+        user = torch.from_numpy(self.interaction_matrix[user.cpu()].todense()).to(self.device)
+        item = torch.from_numpy(self.interaction_matrix[:, item.cpu()].todense()).to(self.device).t()
         user = self.linear_user(user)
         item = self.linear_item(item)
 
@@ -55,7 +55,7 @@ class DMF(GeneralRecommender):
         item = self.item_fc_layers(item)
 
         vector = torch.cosine_similarity(user, item).view(-1,)
-        vector = torch.max(vector, torch.tensor([self.min_y_hat]))
+        vector = torch.max(vector, torch.tensor([self.min_y_hat]).to(self.device))
         return vector
 
     def calculate_loss(self, interaction):
@@ -75,24 +75,31 @@ class DMF(GeneralRecommender):
         return self.forward(user,item)
 
     def get_user_embedding(self, user):
-        user = torch.from_numpy(self.interaction_matrix[user].todense()).to(self.device)
+        user = torch.from_numpy(self.interaction_matrix[user.cpu()].todense()).to(self.device)
         user = self.linear_user(user)
         user = self.user_fc_layers(user)
         return user
 
     def get_item_embedding(self):
-        item = torch.from_numpy(self.interaction_matrix.todense()).to(self.device).t()
-        item = self.linear_item(item)
+        interaction_matrix = self.interaction_matrix.tocoo()
+        row = interaction_matrix.row
+        col = interaction_matrix.col
+        i = torch.LongTensor([row, col])
+        data = torch.FloatTensor(interaction_matrix.data)
+        item_matrix = torch.sparse.FloatTensor(i, data).to(self.device).transpose(0, 1)
+
+        item = torch.sparse.mm(item_matrix, self.linear_item.weight.t())
+
         item = self.item_fc_layers(item)
         return item
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
         self.u_embedding = self.get_user_embedding(user)
-        if self.i_embedding == None:
+        if self.i_embedding is None:
             self.i_embedding = self.get_item_embedding()
         u_sqrt = torch.mul(self.u_embedding, self.u_embedding).sum(dim=1).sqrt().view(-1,1)
         i_sqrt = torch.mul(self.i_embedding, self.i_embedding).sum(dim=1).sqrt().view(1,-1)
         cos_similarity = torch.mm(self.u_embedding, self.i_embedding.t()) / torch.mm(u_sqrt, i_sqrt)
-        cos_similarity = torch.max(cos_similarity, torch.tensor([self.min_y_hat]))
+        cos_similarity = torch.max(cos_similarity, torch.tensor([self.min_y_hat]).to(self.device))
         return cos_similarity.view(-1)

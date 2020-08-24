@@ -39,17 +39,19 @@ class MLPLayers(nn.Module):
         >> torch.Size([128, 16])
     """
 
-    def __init__(self, layers, dropout=0, activation='relu'):
+    def __init__(self, layers, dropout=0, activation='relu', bn=False):
         super(MLPLayers, self).__init__()
         self.layers = layers
         self.dropout = dropout
         self.activation = activation
+        self.use_bn = bn
 
         mlp_modules = []
         for idx, (input_size, output_size) in enumerate(zip(self.layers[:-1], self.layers[1:])):
             mlp_modules.append(nn.Dropout(p=self.dropout))
             mlp_modules.append(nn.Linear(input_size, output_size))
-
+            if self.use_bn:
+                mlp_modules.append(nn.BatchNorm1d(num_features=output_size))
             if self.activation.lower() == 'sigmoid':
                 mlp_modules.append(nn.Sigmoid())
             elif self.activation.lower() == 'tanh':
@@ -62,6 +64,7 @@ class MLPLayers(nn.Module):
                 pass
             else:
                 warnings.warn('Received unrecognized activation function, set default activation function', UserWarning)
+
 
         self.mlp_layers = nn.Sequential(*mlp_modules)
 
