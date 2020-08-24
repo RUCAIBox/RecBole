@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/21, 2020/8/5, 2020/8/21
+# @Time   : 2020/8/24, 2020/8/5, 2020/8/21
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -73,7 +73,8 @@ class Dataset(object):
         if self.config['normalize_field']:
             self._normalize(self.config['normalize_field'])
         elif self.config['normalize_all']:
-            self._normalize(list(self.field2type))
+            self._normalize([_ for _ in self.field2type if ((self.field2type[_] == FeatureType.FLOAT) \
+                                                        or (self.field2type[_] == FeatureType.FLOAT_SEQ))])
 
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
@@ -231,20 +232,33 @@ class Dataset(object):
 
     def _normalize(self, fields):
         for field in fields:
+            ftype = self.field2type[field]
             if field not in self.field2type:
                 raise ValueError('Field [{}] doesn\'t exist'.format(field))
-            elif self.field2type[field] != FeatureType.FLOAT:
-                self.logger.warning('{} is not a FLOAT feat, which will not be normalized.'.format(field))
+            elif ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
+                self.logger.warning('{} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.'.format(field))
         for feat in [self.inter_feat, self.user_feat, self.item_feat]:
             if feat is None:
                 continue
             for field in feat:
-                if field in fields and self.field2type[field] == FeatureType.FLOAT:
+                if field not in fields:
+                    continue
+                ftype = self.field2type[field]
+                if ftype == FeatureType.FLOAT:
                     lst = feat[field].values
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
                         raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, feat))
                     feat[field] = (lst - mn) / (mx - mn)
+                elif ftype == FeatureType.FLOAT_SEQ:
+                    split_point = np.cumsum(feat[field].agg(len))[:-1]
+                    lst = feat[field].agg(np.concatenate)
+                    mx, mn = max(lst), min(lst)
+                    if mx == mn:
+                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, feat))
+                    lst = (lst - mn) / (mx - mn)
+                    lst = np.split(lst, split_point)
+                    feat[field] = lst
 
     def filter_by_inter_num(self, max_user_inter_num=None, min_user_inter_num=None,
                             max_item_inter_num=None, min_item_inter_num=None):
