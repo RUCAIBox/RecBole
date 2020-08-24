@@ -1,4 +1,4 @@
-# @Time   : 2020/8/17
+# @Time   : 2020/8/17 19:38
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
 
@@ -10,7 +10,6 @@
 import torch
 from torch import nn
 from torch.nn.init import xavier_uniform_
-from torch.nn import functional as F
 from ...utils import InputType
 from ..abstract_recommender import SequentialRecommender
 

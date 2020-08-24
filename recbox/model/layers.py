@@ -4,6 +4,11 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : layers.py
 
+# UPDATE:
+# @Time   : 2020/8/24 14:58
+# @Author : Yujie Lu
+# @Email  : yujielu1998@gmail.com
+
 """
 Common Layers in recommender system
 """
@@ -162,5 +167,45 @@ class AttLayer(nn.Module):
         att_singal = fn.softmax(att_singal, dim=1)  # [batch_size, M]
 
         return att_singal
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self,n_head,d_model,d_k,d_v):
+        super(MultiHeadAttention,self).__init__()
+        assert d_model % n_head == 0
+        self.d_model = d_model
+        self.n_head = n_head
+        self.d_k = d_k
+        self.d_v = d_v
+
+        self.W_Q = nn.Linear(self.d_model,self.d_k*self.n_head,bias=False)
+        self.W_K = nn.Linear(self.d_model,self.d_k*self.n_head,bias=False)
+        self.W_V = nn.Linear(self.d_model,self.d_v*self.n_head,bias=False)
+        self.fc = nn.Linear(self.n_head*self.d_v,self.d_model,bias=False)
+
+
+    def ScaleDotProductAttention(self,Q,K,V,mask=None):
+        d_k = Q.size(-1)
+        scores = torch.matmul(Q,K.transpose(-1,-2))/np.sqrt(d_k)
+        if mask is not None:
+            scores.masked_fill_(mask,-1e9)# Fills elements of self tensor with value where mask is True.
+        attn = nn.Softmax(dim=-1)(scores)
+        context = torch.matmul(attn,V)
+        return context,attn
+
+
+    def forward(self,input_Q,input_K,input_V,mask = None):
+        residual,batch_size = input_Q,input_Q.size(0)
+
+        Q = self.W_Q(input_Q).view(batch_size,-1,self.n_head,self.d_k).transpose(1,2)
+        K = self.W_K(input_K).view(batch_size,-1,self.n_head,self.d_k).transpose(1,2)
+        V = self.W_V(input_V).view(batch_size,-1,self.n_head,self.d_v).transpose(1,2)
+
+        if mask is not None:
+            mask = mask.unsqueeze(1).repeat(1,self.n_head,1,1)
+
+        context,attn = self.ScaleDotProductAttention(Q,K,V,mask)
+        context = context.transpose(1,2).reshape(batch_size,-1,self.n_head*self.d_v)
+        output = self.fc(context)
+        return nn.LayerNorm(self.d_model)(output+residual),attn
 
 
