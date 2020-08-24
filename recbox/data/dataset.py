@@ -73,7 +73,8 @@ class Dataset(object):
         if self.config['normalize_field']:
             self._normalize(self.config['normalize_field'])
         elif self.config['normalize_all']:
-            self._normalize([_ for _ in self.field2type if ((self.field2type[_] == FeatureType.FLOAT) or (self.field2type[_] == FeatureType.FLOAT_SEQ))])
+            self._normalize([_ for _ in self.field2type if ((self.field2type[_] == FeatureType.FLOAT) \
+                                                        or (self.field2type[_] == FeatureType.FLOAT_SEQ))])
 
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
