@@ -11,7 +11,6 @@ Hong-Jian Xue et al., "Deep Matrix Factorization Models for Recommender Systems.
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 
 from ..abstract_recommender import GeneralRecommender
@@ -52,10 +51,7 @@ class DMF(GeneralRecommender):
         user = self.linear_user(user)
         item = self.linear_item(item)
 
-        user = F.relu(user)
         user = self.user_fc_layers(user)
-
-        item = F.relu(item)
         item = self.item_fc_layers(item)
 
         vector = torch.cosine_similarity(user, item).view(-1,)
@@ -81,14 +77,12 @@ class DMF(GeneralRecommender):
     def get_user_embedding(self, user):
         user = torch.from_numpy(self.interaction_matrix[user].todense()).to(self.device)
         user = self.linear_user(user)
-        user = F.relu(user)
         user = self.user_fc_layers(user)
         return user
 
     def get_item_embedding(self):
         item = torch.from_numpy(self.interaction_matrix.todense()).to(self.device).t()
         item = self.linear_item(item)
-        item = F.relu(item)
         item = self.item_fc_layers(item)
         return item
 
