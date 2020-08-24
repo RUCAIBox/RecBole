@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/21, 2020/8/18
+# @Time   : 2020/8/21, 2020/8/21
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -298,12 +298,11 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'full':
             raise ValueError('neg_sample strategy in GeneralFullDataLoader() should be `full`')
-        self.uid2items = dataset.uid2items
+        self.uid2index, self.uid2items_num = dataset.uid2index
 
         super().__init__(config, dataset, sampler, phase, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
-        self.uid2items_num = self._get_uid2items_num()
         self.dl_type = DataLoaderType.FULL
 
     def __len__(self):
@@ -317,15 +316,14 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
 
     @property
     def pr_end(self):
-        return len(self.uid2items)
+        return len(self.uid2index)
 
     def _shuffle(self):
         raise NotImplementedError('GeneralFullDataLoader can\'t shuffle')
 
-    def _neg_sampling(self, uid2items, show_progress=False):
-        uid_field = self.config['USER_ID_FIELD']
-        iid_field = self.config['ITEM_ID_FIELD']
-
+    def _neg_sampling(self, uid2index, show_progress=False):
+        uid_field = self.dataset.uid_field
+        iid_field = self.dataset.iid_field
         tot_item_num = self.dataset.item_num
 
         start_idx = 0
@@ -335,11 +333,9 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
         pos_idx = []
         used_idx = []
 
-        users = list(uid2items[uid_field])
-        iter_data = tqdm(uid2items.itertuples()) if show_progress else uid2items.itertuples()
-        for i, row in enumerate(iter_data):
-            uid = users[i]
-            pos_item_id = getattr(row, iid_field)
+        iter_data = tqdm(uid2index) if show_progress else uid2index
+        for uid, index in iter_data:
+            pos_item_id = self.dataset.inter_feat[iid_field][index].values
             pos_idx.extend([_ + start_idx for _ in pos_item_id])
             pos_num = len(pos_item_id)
             pos_len_list.append(pos_num)
@@ -353,17 +349,16 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
 
             start_idx += tot_item_num
 
-        user_df = pd.DataFrame({uid_field: users})
-        user_tensor = self._dataframe_to_interaction(self.join(user_df))
+        user_df = pd.DataFrame({uid_field: np.array(uid2index[:, 0], dtype=np.int)})
+        user_interaction = self._dataframe_to_interaction(self.join(user_df))
 
-        return user_tensor, \
+        return user_interaction, \
                torch.LongTensor(pos_idx), torch.LongTensor(used_idx), \
                pos_len_list, neg_len_list
 
     def _pre_neg_sampling(self):
-        self.user_tensor, tmp_pos_idx, tmp_used_idx, \
-        self.pos_len_list, self.neg_len_list = \
-            self._neg_sampling(self.uid2items, show_progress=True)
+        self.user_tensor, tmp_pos_idx, tmp_used_idx, self.pos_len_list, self.neg_len_list = \
+            self._neg_sampling(self.uid2index, show_progress=True)
         tmp_pos_len_list = [sum(self.pos_len_list[_: _ + self.step]) for _ in range(0, self.pr_end, self.step)]
         tot_item_num = self.dataset.item_num
         tmp_used_len_list = [sum(
@@ -383,22 +378,13 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
             cur_data = self.user_tensor[slc], self.pos_idx[idx], self.used_idx[idx], \
                        self.pos_len_list[slc], self.neg_len_list[slc]
         else:
-            cur_data = self._neg_sampling(self.uid2items[self.pr: self.pr + self.step])
+            cur_data = self._neg_sampling(self.uid2index[self.pr: self.pr + self.step])
         self.pr += self.step
         return cur_data
 
     def get_item_tensor(self):
         item_df = self.dataset.get_item_feature()
         return self._dataframe_to_interaction(item_df)
-
-    def _get_uid2items_num(self):
-        uid2items_num = []
-        uid_field = self.config['USER_ID_FIELD']
-        iid_field = self.config['ITEM_ID_FIELD']
-        for i, row in enumerate(self.uid2items.itertuples()):
-            user_id = getattr(row, uid_field)
-            uid2items_num.append(len(getattr(row, iid_field)))
-        return np.array(uid2items_num)
 
     def get_pos_len_list(self):
         return self.uid2items_num
@@ -419,7 +405,11 @@ class ContextGroupedDataLoader(GeneralGroupedDataLoader):
 class SequentialDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+        if dl_format != InputType.POINTWISE:
+            raise ValueError('dl_format in Sequential DataLoader should be POINTWISE')
+
         self.dl_type = DataLoaderType.ORIGIN
+        self.dl_format = dl_format
         self.step = batch_size
         self.real_time = config['real_time_process']
 
@@ -465,10 +455,16 @@ class SequentialDataLoader(AbstractDataLoader):
 
     def _shuffle(self):
         new_index = np.random.permutation(len(self.item_list_index))
-        self.uid_list = self.uid_list[new_index]
-        self.item_list_index = self.item_list_index[new_index]
-        self.target_index = self.target_index[new_index]
-        self.item_list_length = self.item_list_length[new_index]
+        if self.real_time:
+            self.uid_list = self.uid_list[new_index]
+            self.item_list_index = self.item_list_index[new_index]
+            self.target_index = self.target_index[new_index]
+            self.item_list_length = self.item_list_length[new_index]
+        else:
+            new_data = {}
+            for key, value in self.pre_processed_data.items():
+                new_data[key] = value[new_index]
+            self.pre_processed_data = new_data
 
     def _next_batch_data(self):
         cur_index = slice(self.pr, self.pr + self.step)
@@ -500,3 +496,26 @@ class SequentialDataLoader(AbstractDataLoader):
             new_dict[self.item_list_field].append(df[self.iid_field].values)
             new_dict[self.time_list_field].append(df[self.time_field].values)
         return new_dict
+
+
+class SequentialFullDataLoader(SequentialDataLoader):
+    def __init__(self, config, dataset,
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+        super(SequentialFullDataLoader, self).__init__(config, dataset, batch_size, dl_format, shuffle)
+
+        self.dl_type = DataLoaderType.FULL
+
+    def _shuffle(self):
+        raise NotImplementedError('SequentialFullDataLoader can\'t shuffle')
+
+    def _next_batch_data(self):
+        interaction = super(SequentialFullDataLoader, self)._next_batch_data()
+        tot_item_num = self.dataset.item_num
+        inter_num = len(interaction)
+        pos_idx = used_idx = interaction[self.target_iid_field] + torch.arange(inter_num) * tot_item_num
+        pos_len_list = [1] * inter_num
+        neg_len_list = [tot_item_num - 1] * inter_num
+        return interaction, pos_idx, used_idx, pos_len_list, neg_len_list
+
+    def get_pos_len_list(self):
+        return np.ones(self.pr_end, dtype=np.int)
