@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/21, 2020/8/5, 2020/8/21
+# @Time   : 2020/8/24, 2020/8/5, 2020/8/21
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -73,7 +73,7 @@ class Dataset(object):
         if self.config['normalize_field']:
             self._normalize(self.config['normalize_field'])
         elif self.config['normalize_all']:
-            self._normalize(list(self.field2type))
+            self._normalize([_ for _ in self.field2type if ((self.field2type[_] == FeatureType.FLOAT) and (self.field2type[_] == FeatureType.FLOAT_SEQ))])
 
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
