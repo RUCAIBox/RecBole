@@ -134,18 +134,13 @@ class ItemKNN(GeneralRecommender):
         self.k = config['k']
         self.shrink = config['shrink'] if 'shrink' in config else 0.0
 
-        self.interaction_matrix = None
-        self.w = None
-        self.pred_mat = None
-
-        self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))
-
-    def train_preparation(self, train_data, valid_data):
-        self.interaction_matrix = train_data.inter_matrix(form='csr').astype(np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
         shape = self.interaction_matrix.shape
         assert self.n_users == shape[0] and self.n_items == shape[1]
         self.w = ComputeSimilarity(self.interaction_matrix, topk=self.k, shrink=self.shrink).compute_similarity()
         self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
+
+        self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))
 
     def forward(self, user, item):
         pass

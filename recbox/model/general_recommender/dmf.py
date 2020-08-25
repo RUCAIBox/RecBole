@@ -31,7 +31,7 @@ class DMF(GeneralRecommender):
         self.layers = config['layers']
         self.latent_dim = self.layers[0]
         self.min_y_hat = config['min_y_hat']
-        self.interaction_matrix = None
+        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
         self.u_embedding = None
         self.i_embedding = None
 
@@ -43,9 +43,6 @@ class DMF(GeneralRecommender):
         self.user_fc_layers = MLPLayers(self.layers)
         self.item_fc_layers = MLPLayers(self.layers)
         self.loss = nn.BCELoss()
-
-    def train_preparation(self, train_data, valid_data):
-        self.interaction_matrix = train_data.inter_matrix(form='csr').astype(np.float32)
 
     def forward(self, user, item):
         user = torch.from_numpy(self.interaction_matrix[user.cpu()].todense()).to(self.device)
