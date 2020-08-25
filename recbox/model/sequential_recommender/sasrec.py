@@ -13,9 +13,9 @@ from ..layers import MultiHeadAttention
 
 
 class SASRec(SequentialRecommender):
+    input_type = InputType.POINTWISE
     def __init__(self, config, dataset):
         super(SASRec, self).__init__()
-        self.input_type = InputType.POINTWISE
 
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
