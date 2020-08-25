@@ -19,10 +19,10 @@ from ..loss import BPRLoss
 
 
 class BPRMF(GeneralRecommender):
+    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(BPRMF, self).__init__()
-        self.input_type = InputType.PAIRWISE
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
