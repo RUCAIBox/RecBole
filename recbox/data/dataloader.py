@@ -417,6 +417,7 @@ class SequentialDataLoader(AbstractDataLoader):
         self.iid_field = dataset.iid_field
         self.time_field = dataset.time_field
         self.max_item_list_len = config['MAX_ITEM_LIST_LENGTH']
+        self.stop_token_id = dataset.item_num - 1
 
         target_prefix = config['TARGET_PREFIX']
         list_suffix = config['LIST_SUFFIX']
@@ -438,7 +439,7 @@ class SequentialDataLoader(AbstractDataLoader):
         dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
 
         self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
-            dataset.prepare_data_augmentation(max_item_list_len=self.max_item_list_len)
+            dataset.prepare_data_augmentation(max_item_list_len=self.max_item_list_len - 1)
 
         if not self.real_time:
             self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
@@ -493,8 +494,8 @@ class SequentialDataLoader(AbstractDataLoader):
         }
         for index in item_list_index:
             df = self.dataset.inter_feat[index]
-            new_dict[self.item_list_field].append(df[self.iid_field].values)
-            new_dict[self.time_list_field].append(df[self.time_field].values)
+            new_dict[self.item_list_field].append(np.append(df[self.iid_field].values, self.stop_token_id))
+            new_dict[self.time_list_field].append(np.append(df[self.time_field].values, 0))
         return new_dict
 
 
