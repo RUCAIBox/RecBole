@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/21, 2020/8/21
+# @Time   : 2020/8/25, 2020/8/21
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -29,6 +29,14 @@ class AbstractDataLoader(object):
         self.shuffle = shuffle
         self.pr = 0
         self.dl_type = None
+
+        self.join = self.dataset.join
+        self.inter_matrix = self.dataset.inter_matrix
+        self.num = self.dataset.num
+        if self.dataset.uid_field:
+            self.user_num = self.dataset.user_num
+        if self.dataset.iid_field:
+            self.item_num = self.dataset.item_num
 
     def __len__(self):
         raise NotImplementedError('Method [len] should be implemented')
@@ -82,12 +90,6 @@ class AbstractDataLoader(object):
         if self.batch_size != batch_size:
             self.batch_size = batch_size
             # TODO  batch size is changed
-
-    def join(self, df):
-        return self.dataset.join(df)
-
-    def inter_matrix(self, form='coo', value_field=None):
-        return self.dataset.inter_matrix(form=form, value_field=value_field)
 
 
 class GeneralDataLoader(AbstractDataLoader):
