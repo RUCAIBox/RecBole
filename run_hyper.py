@@ -4,9 +4,9 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : run_hyper.py
 # UPDATE:
-# @Time   : 2020/8/20 21:17,
-# @Author : Zihan Lin
-# @Email  : linzihan.super@foxmail.com
+# @Time   : 2020/8/20 21:17, 2020/8/25
+# @Author : Zihan Lin, Yupeng Hou
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
 
 from recbox.config import Config
 from recbox.data import Dataset, data_preparation
@@ -20,9 +20,9 @@ def objective_function(config_dict=None):
     config.init()
     dataset = Dataset(config)
 
-    model = get_model(config['model'])(config, dataset).to(config['device'])
+    train_data, test_data, valid_data = data_preparation(config, dataset)
 
-    train_data, test_data, valid_data = data_preparation(config, model, dataset)
+    model = get_model(config['model'])(config, train_data).to(config['device'])
 
     trainer = Trainer(config, model)
 

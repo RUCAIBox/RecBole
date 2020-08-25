@@ -15,7 +15,9 @@ from ..utils import ModelType, InputType, EvaluatorType
 from .dataloader import *
 
 
-def data_preparation(config, model, dataset, save=False):
+def data_preparation(config, dataset, save=False):
+    model_type = config['MODEL_TYPE']
+
     es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
 
@@ -27,10 +29,10 @@ def data_preparation(config, model, dataset, save=False):
     kwargs['group_by_user'] = config['group_by_user']
     getattr(es, es_str[0])(**kwargs)
 
-    if es.split_args['strategy'] != 'loo' and model.type == ModelType.SEQUENTIAL:
+    if es.split_args['strategy'] != 'loo' and model_type == ModelType.SEQUENTIAL:
         raise ValueError('Sequential models require "loo" split strategy.')
 
-    builded_datasets = dataset.build(es, model.type)
+    builded_datasets = dataset.build(es, model_type)
     train_dataset, valid_dataset, test_dataset = builded_datasets
     phases = ['train', 'valid', 'test']
 
@@ -38,7 +40,7 @@ def data_preparation(config, model, dataset, save=False):
         save_datasets(config['checkpoint_dir'], name=phases, dataset=builded_datasets)
 
     kwargs = {}
-    if model.type == ModelType.GENERAL:
+    if model_type == ModelType.GENERAL:
         es.neg_sample_by(1, real_time=True)
         sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
         kwargs['sampler'] = sampler
@@ -56,7 +58,7 @@ def data_preparation(config, model, dataset, save=False):
         **kwargs
     )
 
-    if model.type == ModelType.GENERAL:
+    if model_type == ModelType.GENERAL:
         getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
         kwargs['phase'] = ['valid', 'test']
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)

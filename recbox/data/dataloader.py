@@ -33,6 +33,8 @@ class AbstractDataLoader(object):
         self.join = self.dataset.join
         self.inter_matrix = self.dataset.inter_matrix
         self.num = self.dataset.num
+        self.fields = self.dataset.fields
+        self.field2type = self.dataset.field2type
         if self.dataset.uid_field:
             self.user_num = self.dataset.user_num
         if self.dataset.iid_field:
