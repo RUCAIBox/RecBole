@@ -18,10 +18,10 @@ from ...utils import InputType
 from ..layers import MLPLayers
 
 class DMF(GeneralRecommender):
+    input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
         super(DMF, self).__init__()
-        self.input_type = InputType.POINTWISE
         self.device = config['device']
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']

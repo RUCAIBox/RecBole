@@ -32,7 +32,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 model
     """
-    model = get_model(config)(config, dataset).to(config['device'])
+    model = get_model(config['model'])(config, dataset).to(config['device'])
     print(model)
 
     """

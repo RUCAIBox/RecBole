@@ -13,10 +13,10 @@ from ..abstract_recommender import AbstractRecommender
 
 
 class ContextRecommender(AbstractRecommender):
+    type = ModelType.CONTEXT
+    input_type = InputType.POINTWISE
     def __init__(self, config, dataset):
         super(ContextRecommender, self).__init__()
-        self.type = ModelType.CONTEXT
-        self.input_type = InputType.POINTWISE
 
         self.field_names = dataset.fields()
         self.LABEL = config['LABEL_FIELD']

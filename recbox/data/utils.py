@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/15, 2020/8/14
+# @Time   : 2020/8/25, 2020/8/14
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -49,8 +49,8 @@ def data_preparation(config, model, dataset, save=False):
         config=config,
         eval_setting=es,
         dataset=train_dataset,
-        model_type=model.type,
-        dl_format=model.input_type,
+        model_type=config['MODEL_TYPE'],
+        dl_format=config['MODEL_INPUT_TYPE'],
         batch_size=config['train_batch_size'],
         shuffle=True,
         **kwargs
@@ -65,7 +65,7 @@ def data_preparation(config, model, dataset, save=False):
         config=config,
         eval_setting=es,
         dataset=[valid_dataset, test_dataset],
-        model_type=model.type,
+        model_type=config['MODEL_TYPE'],
         batch_size=config['eval_batch_size'],
         **kwargs
     )

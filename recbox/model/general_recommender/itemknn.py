@@ -121,10 +121,10 @@ class ComputeSimilarity:
 
 
 class ItemKNN(GeneralRecommender):
+    input_type = InputType.POINTWISE
     def __init__(self, config, dataset):
         super(ItemKNN, self).__init__()
 
-        self.input_type = InputType.POINTWISE
         self.device = config['device']
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
