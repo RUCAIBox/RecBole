@@ -45,6 +45,7 @@ class Dataset(object):
         self.user_feat = None
         self.item_feat = None
 
+        self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
@@ -92,6 +93,7 @@ class Dataset(object):
                 df = pd.read_csv(cur_file_name)
                 setattr(self, '{}_feat'.format(name), df)
 
+        self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
@@ -374,6 +376,7 @@ class Dataset(object):
         feat = getattr(self, feat_name)
         if feat is None:
             feat = pd.DataFrame(columns=[field])
+
         if source in [FeatureSource.USER_ID, FeatureSource.ITEM_ID]:
             df = pd.concat([self.inter_feat[field], feat[field]])
             new_ids, mp = pd.factorize(df)
@@ -385,6 +388,9 @@ class Dataset(object):
             feat[field] = new_ids + 1
             self.field2id_token[field] = [None] + list(mp)
 
+        if self.model_type == ModelType.SEQUENTIAL:
+            self.field2id_token[field].append('[STOP]')
+
     def _remap_ID_seq(self, source, field):
         if source in [FeatureSource.USER, FeatureSource.ITEM, FeatureSource.INTERACTION]:
             feat_name = '{}_feat'.format(source.value)
@@ -394,6 +400,8 @@ class Dataset(object):
             new_ids = np.split(new_ids + 1, split_point)
             df[field] = new_ids
             self.field2id_token[field] = [None] + list(mp)
+            if self.model_type == ModelType.SEQUENTIAL:
+                self.field2id_token[field].append('[STOP]')
 
     def num(self, field):
         if field not in self.field2type:
