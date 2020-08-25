@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/6
-# @Author : Shanlei Mu
-# @Email  : slmu@ruc.edu.cn
+# @Time   : 2020/8/6, 2020/8/25
+# @Author : Shanlei Mu, Yupeng Hou
+# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
 
 import numpy as np
 import torch
@@ -52,21 +52,21 @@ class AbstractRecommender(nn.Module):
 
 
 class GeneralRecommender(AbstractRecommender):
+    type = ModelType.GENERAL
     def __init__(self):
         super(GeneralRecommender, self).__init__()
-        self.type = ModelType.GENERAL
 
 
 class SequentialRecommender(AbstractRecommender):
+    type = ModelType.SEQUENTIAL
     def __init__(self):
         super(SequentialRecommender, self).__init__()
-        self.type = ModelType.SEQUENTIAL
 
 
 class KnowledgeRecommender(AbstractRecommender):
+    type = ModelType.KNOWLEDGE
     def __init__(self, config, dataset):
         super(KnowledgeRecommender, self).__init__()
-        self.type = ModelType.KNOWLEDGE
 
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']

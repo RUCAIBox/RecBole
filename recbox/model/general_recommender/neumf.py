@@ -22,10 +22,10 @@ from ..layers import MLPLayers
 
 
 class NeuMF(GeneralRecommender):
+    input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
         super(NeuMF, self).__init__()
-        self.input_type = InputType.POINTWISE
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.LABEL = config['LABEL_FIELD']
