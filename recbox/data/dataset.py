@@ -49,6 +49,7 @@ class Dataset(object):
 
         self._filter_by_inter_num()
         self._filter_by_field_value()
+        self._reset_index()
         self._remap_ID_all()
 
         self._fill_nan()
@@ -262,19 +263,19 @@ class Dataset(object):
             return
 
         if self.user_feat is not None:
-            selected_user = ~self.user_feat[self.uid_field].isin(ban_users)
-            self.user_feat = self.user_feat[selected_user].reset_index(drop=True)
+            dropped_user = self.user_feat[self.uid_field].isin(ban_users)
+            self.user_feat.drop(self.user_feat.index[dropped_user], inplace=True)
 
         if self.item_feat is not None:
-            selected_item = ~self.item_feat[self.iid_field].isin(ban_users)
-            self.item_feat = self.item_feat[selected_item].reset_index(drop=True)
+            dropped_item = self.item_feat[self.iid_field].isin(ban_items)
+            self.item_feat.drop(self.item_feat.index[dropped_item], inplace=True)
 
-        selected_inter = pd.Series(True, index=self.inter_feat.index)
+        dropped_inter = pd.Series(False, index=self.inter_feat.index)
         if self.uid_field:
-            selected_inter &= ~self.inter_feat[self.uid_field].isin(ban_users)
+            dropped_inter |= self.inter_feat[self.uid_field].isin(ban_users)
         if self.iid_field:
-            selected_inter &= ~self.inter_feat[self.iid_field].isin(ban_items)
-        self.inter_feat = self.inter_feat[selected_inter].reset_index(drop=True)
+            dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
+        self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
     def _get_illegal_ids_by_inter_num(self, field, max_num=None, min_num=None):
         if field is None:
@@ -316,8 +317,9 @@ class Dataset(object):
             remained_inter &= self.inter_feat[self.uid_field].isin(remained_uids)
         if self.iid_field is not None:
             remained_inter &= self.inter_feat[self.iid_field].isin(remained_iids)
-        self.inter_feat = self.inter_feat[remained_inter]
+        self.inter_feat.drop(self.inter_feat.index[~remained_inter], inplace=True)
 
+    def _reset_index(self):
         for feat in self.feat_list:
             feat.reset_index(drop=True, inplace=True)
 
