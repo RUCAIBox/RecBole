@@ -7,11 +7,13 @@
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
-import os
 import copy
+import os
 from logging import getLogger
+
 from ..config import EvalSetting
-from ..utils import ModelType, InputType, EvaluatorType
+from ..sampler import KGSampler, Sampler
+from ..utils import EvaluatorType, InputType, ModelType
 from .dataloader import *
 
 
@@ -38,12 +40,17 @@ def data_preparation(config, model, dataset, save=False):
         save_datasets(config['checkpoint_dir'], name=phases, dataset=builded_datasets)
 
     kwargs = {}
-    if model.type == ModelType.GENERAL:
+    # TODO 为什么这里type不包含context？
+    if model.type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
         es.neg_sample_by(1, real_time=True)
         sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
+        # TODO 如果model.type是kg, 可能还要设置一个kg的sampler
         kwargs['sampler'] = sampler
         kwargs['phase'] = 'train'
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
+        if model.type == ModelType.KNOWLEDGE:
+            kg_sampler = KGSampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
+            kwargs['kg_sampler'] = kg_sampler
     train_data = dataloader_construct(
         name='train',
         config=config,
@@ -56,7 +63,7 @@ def data_preparation(config, model, dataset, save=False):
         **kwargs
     )
 
-    if model.type == ModelType.GENERAL:
+    if model.type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
         getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
         kwargs['phase'] = ['valid', 'test']
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
@@ -160,5 +167,20 @@ def get_data_loader(name, config, eval_setting, model_type):
             return SequentialDataLoader
         else:
             return SequentialFullDataLoader
+    elif model_type == ModelType.KNOWLEDGE:
+        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+        if neg_sample_strategy == 'by':
+            if name == 'train':
+                return KnowledgeBasedDataLoader
+            elif config['eval_type'] == EvaluatorType.INDIVIDUAL:
+                return GeneralIndividualDataLoader
+            else:
+                return GeneralGroupedDataLoader
+        elif neg_sample_strategy == 'full':
+            return GeneralFullDataLoader
+        elif neg_sample_strategy == 'none':
+            # return GeneralDataLoader
+            # TODO 训练也可以为none? 看general的逻辑似乎是都可以为None
+            raise NotImplementedError('The use of external negative sampling for knowledge model has not been implemented')
     else:
         raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
