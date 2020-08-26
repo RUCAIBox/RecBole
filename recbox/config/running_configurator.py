@@ -1,6 +1,6 @@
 import os
 from ..evaluator import loss_metrics, topk_metrics
-from ..utils import EvaluatorType
+from ..utils import EvaluatorType, get_model
 from .abstract_configurator import AbstractConfig
 
 
@@ -39,7 +39,7 @@ class RunningConfig(AbstractConfig):
                     eval_type = EvaluatorType.RANKING
         self['eval_type'] = eval_type
 
-        smaller_metric = ['rmse','mae', 'logloss']
+        smaller_metric = ['rmse', 'mae', 'logloss']
 
         if 'valid_metric' not in self:
             valid_metric = self['metric'][0]
@@ -54,6 +54,6 @@ class RunningConfig(AbstractConfig):
             else:
                 self['valid_metric_bigger'] = True
 
-
-
-
+        model = get_model(self['model'])
+        self['MODEL_TYPE'] = model.type
+        self['MODEL_INPUT_TYPE'] = model.input_type

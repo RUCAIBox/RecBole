@@ -58,7 +58,7 @@ class DeepFM(ContextRecommender):
             x.append(dense_embedding)
         x = torch.cat(x, dim=1)  # [batch_size, num_field, embed_dim]
         batch_size = x.shape[0]
-        y_fm = self.first_order_linear(interaction) + self.fm(sparse_embedding)
+        y_fm = self.first_order_linear(interaction) + self.fm(x)
 
         y_deep = self.deep_predict_layer(
             self.mlp_layers(x.view(batch_size, -1)))

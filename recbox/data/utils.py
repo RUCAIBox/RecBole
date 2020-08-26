@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/15, 2020/8/14
+# @Time   : 2020/8/25, 2020/8/14
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -17,7 +17,9 @@ from ..utils import EvaluatorType, InputType, ModelType
 from .dataloader import *
 
 
-def data_preparation(config, model, dataset, save=False):
+def data_preparation(config, dataset, save=False):
+    model_type = config['MODEL_TYPE']
+
     es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
 
@@ -29,10 +31,10 @@ def data_preparation(config, model, dataset, save=False):
     kwargs['group_by_user'] = config['group_by_user']
     getattr(es, es_str[0])(**kwargs)
 
-    if es.split_args['strategy'] != 'loo' and model.type == ModelType.SEQUENTIAL:
+    if es.split_args['strategy'] != 'loo' and model_type == ModelType.SEQUENTIAL:
         raise ValueError('Sequential models require "loo" split strategy.')
 
-    builded_datasets = dataset.build(es, model.type)
+    builded_datasets = dataset.build(es, model_type)
     train_dataset, valid_dataset, test_dataset = builded_datasets
     phases = ['train', 'valid', 'test']
 
@@ -56,8 +58,8 @@ def data_preparation(config, model, dataset, save=False):
         config=config,
         eval_setting=es,
         dataset=train_dataset,
-        model_type=model.type,
-        dl_format=model.input_type,
+        model_type=config['MODEL_TYPE'],
+        dl_format=config['MODEL_INPUT_TYPE'],
         batch_size=config['train_batch_size'],
         shuffle=True,
         **kwargs
@@ -72,7 +74,7 @@ def data_preparation(config, model, dataset, save=False):
         config=config,
         eval_setting=es,
         dataset=[valid_dataset, test_dataset],
-        model_type=model.type,
+        model_type=config['MODEL_TYPE'],
         batch_size=config['eval_batch_size'],
         **kwargs
     )

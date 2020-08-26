@@ -23,11 +23,11 @@ from ..layers import BiGNNLayer
 
 
 class NGCF(GeneralRecommender):
+    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(NGCF, self).__init__()
 
-        self.input_type = InputType.PAIRWISE
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
@@ -49,8 +49,8 @@ class NGCF(GeneralRecommender):
             self.GNNlayers.append(BiGNNLayer(From, To))
         self.sigmoid = nn.LogSigmoid()
         self.apply(self.init_weights)
-        self.interaction_matrix = None
-        self.norm_adj_matrix = None
+        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
+        self.norm_adj_matrix = self.get_norm_adj_mat().to(self.device)
         self.eye_matrix = self.get_eye_mat().to(self.device)
 
     def init_weights(self, module):
@@ -107,10 +107,6 @@ class NGCF(GeneralRecommender):
         item_embd = self.item_embedding.weight
         features = torch.cat([user_embd, item_embd], dim=0)
         return features
-
-    def train_preparation(self, train_data, valid_data):
-        self.interaction_matrix = train_data.inter_matrix(form='csr').astype(np.float32)
-        self.norm_adj_matrix = self.get_norm_adj_mat().to(self.device)
 
     def forward(self):
         A_hat = self.sparse_dropout(self.norm_adj_matrix,
