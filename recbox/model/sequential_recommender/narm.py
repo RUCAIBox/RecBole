@@ -12,9 +12,9 @@ from torch.nn.utils.rnn import pack_padded_sequence,pad_packed_sequence
 
 # TODO:init
 class NARM(SequentialRecommender):
+    input_type = InputType.POINTWISE
     def __init__(self, config, dataset):
         super(NARM, self).__init__()
-        self.input_type = InputType.POINTWISE
 
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
@@ -25,16 +25,17 @@ class NARM(SequentialRecommender):
         self.embedding_size = config['embedding_size']
         self.hidden_size = config['hidden_size']
         self.n_layers = config['n_layers']
+        self.dropout = config['dropout']
         self.item_count = dataset.item_num
 
 
         self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
-        self.emb_dropout = nn.Dropout(0.25)
+        self.emb_dropout = nn.Dropout(self.dropout[0])
         self.gru = nn.GRU(self.embedding_size, self.hidden_size, self.n_layers, batch_first=True)
         self.a_1 = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
         self.a_2 = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
         self.v_t = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
-        self.ct_dropout = nn.Dropout(0.5)
+        self.ct_dropout = nn.Dropout(self.dropout[1])
         self.b = nn.Linear(2*self.hidden_size, self.embedding_size, bias=False)
         self.criterion = nn.CrossEntropyLoss()
 
