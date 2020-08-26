@@ -3,49 +3,31 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 # @File   : run_hyper.py
+# UPDATE:
+# @Time   : 2020/8/20 21:17, 2020/8/25
+# @Author : Zihan Lin, Yupeng Hou
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
+
+from recbox.config import Config
+from recbox.data import Dataset, data_preparation
+from recbox.trainer import Trainer, HyperTuning
+from recbox.utils import init_logger, get_model
 
 
-from config import Config
-from data import Dataset, data_preparation
-from trainer import Trainer, HyperTuning
-from utils import init_logger, get_model
+def objective_function(config_dict=None):
 
-
-def data_preparation_function():
-    config = Config('properties/overall.config')
-    config.init()
-
-    init_logger(config)
-
-    dataset = Dataset(config)
-    print(dataset)
-
-    model = get_model(config)(config, dataset).to(config['device'])
-    print(model)
-
-    train_data, test_data, valid_data = data_preparation(config, model, dataset)
-
-    dataloader = {
-        'train_data': train_data,
-        'test_data': test_data,
-        'valid_data': valid_data
-    }
-    return dataset, dataloader
-
-
-def objective_function(dataset, dataloader, config_dict=None):
     config = Config('properties/overall.config', config_dict)
     config.init()
+    dataset = Dataset(config)
 
-    assert(config['dataset'] == dataset.dataset_name)
-    # todo: 判断eval_setting是否一致
+    train_data, test_data, valid_data = data_preparation(config, dataset)
 
-    model = get_model(config)(config, dataset).to(config['device'])
-
-    train_data, test_data, valid_data = dataloader['train_data'], dataloader['test_data'], dataloader['valid_data']
+    model = get_model(config['model'])(config, train_data).to(config['device'])
 
     trainer = Trainer(config, model)
+
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False)
+
     test_result = trainer.evaluate(test_data)
 
     return {
@@ -58,7 +40,7 @@ def objective_function(dataset, dataloader, config_dict=None):
 
 def main():
     # plz set algo='exhaustive' to use exhaustive search, in this case, max_evals is auto set
-    hp = HyperTuning(data_preparation_function, objective_function, algo='exhaustive', params_file='hyper.test', max_evals=5)
+    hp = HyperTuning(objective_function, algo='exhaustive', params_file='hyper.test')
     hp.run()
     print('best params: ', hp.best_params)
     print('best result: ')

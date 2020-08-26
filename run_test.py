@@ -4,44 +4,44 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : run_test.py
 
+# UPDATE
+# @Time   : 2020/8/25
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
 
-from trainer import Trainer
-from utils import init_logger, get_model
-from config import Config
-from data import Dataset, data_preparation
+from recbox.trainer import Trainer
+from recbox.utils import init_logger, get_model
+from recbox.config import Config
+from recbox.data import Dataset, data_preparation
 
 
 def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 config
     """
-
     config = Config(config_file, config_dict)
     config.init()
-
     """
+    
     初始化 logger
     """
     init_logger(config)
-
     """
     初始化 dataset
     """
     dataset = Dataset(config)
     print(dataset)
 
+    """
+    生成 训练/验证/测试 数据
+    """
+    train_data, test_data, valid_data = data_preparation(config, dataset)
 
     """
     初始化 model
     """
-    model = get_model(config)(config, dataset).to(config['device'])
+    model = get_model(config['model'])(config, train_data).to(config['device'])
     print(model)
-
-    """
-    生成 训练/验证/测试 数据
-    """
-
-    train_data, test_data, valid_data = data_preparation(config, model, dataset)
 
     """
     初始化 trainer
