@@ -31,7 +31,7 @@ class GRU4Rec(SequentialRecommender):
         self.dropout = config['dropout']
         self.item_count = dataset.item_num
 
-        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size,padding_idx=0)
+        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
         self.emb_dropout = nn.Dropout(self.dropout)
         self.gru_layers = nn.GRU(
             input_size=self.embedding_size,
@@ -40,7 +40,7 @@ class GRU4Rec(SequentialRecommender):
             bias=False,
             batch_first=True,
         )
-        self.dense = nn.Linear(self.hidden_size,self.embedding_size)
+        self.dense = nn.Linear(self.hidden_size, self.embedding_size)
         self.criterion = nn.CrossEntropyLoss()
 
         self.apply(self.init_weights)
