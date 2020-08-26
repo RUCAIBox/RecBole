@@ -12,9 +12,9 @@ from torch.nn.utils.rnn import pack_padded_sequence,pad_packed_sequence
 
 # TODO:init
 class NARM(SequentialRecommender):
+    input_type = InputType.POINTWISE
     def __init__(self, config, dataset):
         super(NARM, self).__init__()
-        self.input_type = InputType.POINTWISE
 
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
