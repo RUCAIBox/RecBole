@@ -7,15 +7,17 @@
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
-import os
-import json
 import copy
+import json
+import os
 from collections import Counter
 from logging import getLogger
-import pandas as pd
+
 import numpy as np
-from sklearn.impute import SimpleImputer
+import pandas as pd
 from scipy.sparse import coo_matrix
+from sklearn.impute import SimpleImputer
+
 from ..utils import FeatureSource, FeatureType, ModelType
 
 

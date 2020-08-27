@@ -68,12 +68,12 @@ class TopKEvaluator(object):
 
     def _check_args(self):
 
-        # Check eval_metric
+        # Check metrics
         if isinstance(self.metrics, (str, list)):
             if isinstance(self.metrics, str):
                 self.metrics = [self.metrics]
         else:
-            raise TypeError('eval_metric must be str or list')
+            raise TypeError('metrics must be str or list')
 
         # Convert metric to lowercase
         for m in self.metrics:
