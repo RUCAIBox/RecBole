@@ -386,7 +386,7 @@ class Dataset(object):
             feat[field] = new_ids + 1
             self.field2id_token[field] = [None] + list(mp)
 
-        if self.model_type == ModelType.SEQUENTIAL:
+        if self.model_type == ModelType.SEQUENTIAL and field != self.uid_field:
             self.field2id_token[field].append('[STOP]')
 
     def _remap_ID_seq(self, source, field):
