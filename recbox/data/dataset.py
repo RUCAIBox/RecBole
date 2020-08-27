@@ -206,7 +206,7 @@ class Dataset(object):
             new_item_df = pd.DataFrame({self.iid_field: np.arange(self.item_num)})
             self.item_feat = pd.merge(new_item_df, self.item_feat, on=self.iid_field, how='left')
             flag = True
-        if True:
+        if flag:
             self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
             self.config['fill_nan'] = True
 
