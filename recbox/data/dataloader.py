@@ -443,7 +443,7 @@ class SequentialDataLoader(AbstractDataLoader):
         dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
 
         self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
-            dataset.prepare_data_augmentation(max_item_list_len=self.max_item_list_len - 1)
+            dataset.prepare_data_augmentation()
 
         if not self.real_time:
             self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
