@@ -209,9 +209,8 @@ class Dataset(object):
                     feat[field] = most_freq.fit_transform(feat[field].values.reshape(-1, 1))
                 elif ftype == FeatureType.FLOAT:
                     feat[field] = aveg.fit_transform(feat[field].values.reshape(-1, 1))
-                elif ftype.endswith('seq'):
-                    self.logger.warning('feature [{}] (type: {}) probably has nan, while has not been filled.'
-                                        .format(field, ftype))
+                elif ftype.value.endswith('seq'):
+                    feat[field] = feat[field].apply(lambda x: [0] if (not isinstance(x, np.ndarray)) else x)
 
     def _normalize(self):
         if self.config['normalize_field'] is not None and self.config['normalize_all'] is not None:
