@@ -713,3 +713,8 @@ class Dataset(object):
             return mat.tocsr()
         else:
             raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
+
+
+class KnowledgeBasedDataset(Dataset):
+    def __init__(self, config, saved_dataset=None):
+        super().__init__(config, saved_dataset=saved_dataset)

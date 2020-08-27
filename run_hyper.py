@@ -9,7 +9,7 @@
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
 
 from recbox.config import Config
-from recbox.data import Dataset, data_preparation
+from recbox.data import create_dataset, data_preparation
 from recbox.trainer import Trainer, HyperTuning
 from recbox.utils import init_logger, get_model
 
@@ -18,7 +18,7 @@ def objective_function(config_dict=None):
 
     config = Config('properties/overall.config', config_dict)
     config.init()
-    dataset = Dataset(config)
+    dataset = create_dataset(config)
 
     train_data, test_data, valid_data = data_preparation(config, dataset)
 

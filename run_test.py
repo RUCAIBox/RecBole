@@ -12,7 +12,7 @@
 from recbox.trainer import Trainer
 from recbox.utils import init_logger, get_model
 from recbox.config import Config
-from recbox.data import Dataset, data_preparation
+from recbox.data import create_dataset, data_preparation
 
 
 def whole_process(config_file='properties/overall.config', config_dict=None):
@@ -29,7 +29,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 dataset
     """
-    dataset = Dataset(config)
+    dataset = create_dataset(config)
     print(dataset)
 
     """
