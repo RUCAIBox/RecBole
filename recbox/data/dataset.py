@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/24, 2020/8/5, 2020/8/26
+# @Time   : 2020/8/27, 2020/8/5, 2020/8/26
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -51,6 +51,7 @@ class Dataset(object):
         self._filter_by_field_value()
         self._reset_index()
         self._remap_ID_all()
+        self._user_item_feat_preparation()
 
         self._fill_nan()
         self._set_label_by_threshold()
@@ -194,6 +195,20 @@ class Dataset(object):
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = max(map(len, df[field].values))
         return df
+
+    def _user_item_feat_preparation(self):
+        flag = False
+        if self.user_feat is not None:
+            new_user_df = pd.DataFrame({self.uid_field: np.arange(self.user_num)})
+            self.user_feat = pd.merge(new_user_df, self.user_feat, on=self.uid_field, how='left')
+            flag = True
+        if self.item_feat is not None:
+            new_item_df = pd.DataFrame({self.iid_field: np.arange(self.item_num)})
+            self.item_feat = pd.merge(new_item_df, self.item_feat, on=self.iid_field, how='left')
+            flag = True
+        if True:
+            self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+            self.config['fill_nan'] = True
 
     def _fill_nan(self):
         if not self.config['fill_nan']:
