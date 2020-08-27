@@ -93,6 +93,10 @@ class AbstractDataLoader(object):
             self.batch_size = batch_size
             # TODO  batch size is changed
 
+    def get_item_feature(self):
+        item_df = self.dataset.get_item_feature()
+        return self._dataframe_to_interaction(item_df)
+
 
 class GeneralDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset,
@@ -385,10 +389,6 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
             cur_data = self._neg_sampling(self.uid2index[self.pr: self.pr + self.step])
         self.pr += self.step
         return cur_data
-
-    def get_item_tensor(self):
-        item_df = self.dataset.get_item_feature()
-        return self._dataframe_to_interaction(item_df)
 
     def get_pos_len_list(self):
         return self.uid2items_num
