@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/25, 2020/8/21
+# @Time   : 2020/8/27, 2020/8/21
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -436,7 +436,8 @@ class SequentialDataLoader(AbstractDataLoader):
                                    self.max_item_list_len)
         dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION,
                                    self.max_item_list_len)
-        dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
+        if self.position_field:
+            dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
                                    self.max_item_list_len)
         dataset.set_field_property(self.target_iid_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.target_time_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
@@ -491,11 +492,12 @@ class SequentialDataLoader(AbstractDataLoader):
             self.uid_field: uid_list,
             self.item_list_field: [],
             self.time_list_field: [],
-            self.position_field: [np.arange(self.max_item_list_len)] * new_length,
             self.target_iid_field: self.dataset.inter_feat[self.iid_field][target_index].values,
             self.target_time_field: self.dataset.inter_feat[self.time_field][target_index].values,
             self.item_list_length_field: item_list_length,
         }
+        if self.position_field:
+            new_dict[self.position_field] = [np.arange(self.max_item_list_len)] * new_length
         for index in item_list_index:
             df = self.dataset.inter_feat[index]
             new_dict[self.item_list_field].append(np.append(df[self.iid_field].values, self.stop_token_id))
