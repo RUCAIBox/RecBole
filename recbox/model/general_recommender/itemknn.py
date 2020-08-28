@@ -128,8 +128,8 @@ class ItemKNN(GeneralRecommender):
         self.device = config['device']
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.n_users = len(dataset.field2id_token[self.USER_ID])
-        self.n_items = len(dataset.field2id_token[self.ITEM_ID])
+        self.n_users = dataset.num(self.USER_ID)
+        self.n_items = dataset.num(self.ITEM_ID)
 
         self.k = config['k']
         self.shrink = config['shrink'] if 'shrink' in config else 0.0
