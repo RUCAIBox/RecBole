@@ -378,6 +378,7 @@ class Dataset(object):
         if source in [FeatureSource.USER_ID, FeatureSource.ITEM_ID]:
             df = pd.concat([self.inter_feat[field], feat[field]])
             new_ids, mp = pd.factorize(df)
+            print(mp)
             split_point = [len(self.inter_feat[field])]
             self.inter_feat[field], feat[field] = np.split(new_ids + 1, split_point)
             self.field2id_token[field] = [None] + list(mp)
