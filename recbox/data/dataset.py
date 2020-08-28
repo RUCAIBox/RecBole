@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/27, 2020/8/5, 2020/8/26
+# @Time   : 2020/8/27, 2020/8/5, 2020/8/27
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -240,7 +240,7 @@ class Dataset(object):
                 elif ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
                     self.logger.warning('{} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.'.format(field))
         elif self.config['normalize_all']:
-            fields = self.fields([FeatureType.FLOAT, FeatureType.FLOAT_SEQ])
+            fields = self.float_like_fields
         else:
             return
 
@@ -343,6 +343,8 @@ class Dataset(object):
         for field in val:
             if field not in self.field2type:
                 raise ValueError('field [{}] not defined in dataset'.format(field))
+            if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
+                raise ValueError('field [{}] is not float like field in dataset, which can\'t be filter'.format(field))
             for feat in self.feat_list:
                 if field in feat:
                     feat.drop(feat.index[cmp(feat[field].values, val[field])], inplace=True)
@@ -374,46 +376,77 @@ class Dataset(object):
                 raise ValueError('field [{}] not in inter_feat'.format(field))
             self._del_col(field)
 
+    def _get_fields_in_same_space(self):
+        fields_in_same_space = self.config['fields_in_same_space'] or []
+        additional = []
+        token_like_fields = self.token_like_fields
+        for field in token_like_fields:
+            count = 0
+            for field_set in fields_in_same_space:
+                if field in field_set:
+                    count += 1
+            if count == 0:
+                additional.append({field})
+            elif count == 1:
+                continue
+            else:
+                raise ValueError('field [{}] occurred in `fields_in_same_space` more than one time'.format(field))
+
+        for field_set in fields_in_same_space:
+            if self.uid_field in field_set and self.iid_field in field_set:
+                raise ValueError('uid_field and iid_field can\'t in the same ID space')
+            for field in field_set:
+                if field not in token_like_fields:
+                    raise ValueError('field [{}] is not a token like field'.format(field))
+
+        fields_in_same_space.extend(additional)
+        return fields_in_same_space
+
     def _remap_ID_all(self):
-        for field in self.field2type:
-            ftype = self.field2type[field]
-            fsource = self.field2source[field]
+        fields_in_same_space = self._get_fields_in_same_space()
+        for field_set in fields_in_same_space:
+            remap_list = []
+            for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
+                if field in field_set:
+                    field_set.remove(field)
+                    remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
+                    if feat is not None:
+                        remap_list.append((feat, field, FeatureType.TOKEN))
+            for field in field_set:
+                source = self.field2source[field]
+                feat = getattr(self, '{}_feat'.format(source.value))
+                ftype = self.field2type[field]
+                remap_list.append((feat, field, ftype))
+            self._remap(remap_list)
+
+    def _remap(self, remap_list):
+        tokens = []
+        for feat, field, ftype in remap_list:
             if ftype == FeatureType.TOKEN:
-                self._remap_ID(fsource, field)
+                tokens.append(feat[field].values)
             elif ftype == FeatureType.TOKEN_SEQ:
-                self._remap_ID_seq(fsource, field)
+                tokens.append(feat[field].agg(np.concatenate))
+        split_point = np.cumsum(list(map(len, tokens)))[:-1]
+        tokens = np.concatenate(tokens)
+        new_ids_list, mp = pd.factorize(tokens)
+        new_ids_list = np.split(new_ids_list + 1, split_point)
+        mp = ['[PAD]'] + list(mp)
+        if self.model_type == ModelType.SEQUENTIAL:
+            item_related = False
+            for (feat, field, ftype) in remap_list:
+                if self.field2source[field] in {FeatureSource.ITEM_ID, FeatureSource.ITEM}:
+                    item_related = True
+                    break
+            if item_related:
+                mp.append('[STOP]')
 
-    def _remap_ID(self, source, field):
-        feat_name = '{}_feat'.format(source.value.split('_')[0])
-        feat = getattr(self, feat_name)
-        if feat is None:
-            feat = pd.DataFrame(columns=[field])
-
-        if source in [FeatureSource.USER_ID, FeatureSource.ITEM_ID]:
-            df = pd.concat([self.inter_feat[field], feat[field]])
-            new_ids, mp = pd.factorize(df)
-            split_point = [len(self.inter_feat[field])]
-            self.inter_feat[field], feat[field] = np.split(new_ids + 1, split_point)
-            self.field2id_token[field] = [None] + list(mp)
-        elif source in [FeatureSource.USER, FeatureSource.ITEM, FeatureSource.INTERACTION]:
-            new_ids, mp = pd.factorize(feat[field])
-            feat[field] = new_ids + 1
-            self.field2id_token[field] = [None] + list(mp)
-
-        if self.model_type == ModelType.SEQUENTIAL and field != self.uid_field:
-            self.field2id_token[field].append('[STOP]')
-
-    def _remap_ID_seq(self, source, field):
-        if source in [FeatureSource.USER, FeatureSource.ITEM, FeatureSource.INTERACTION]:
-            feat_name = '{}_feat'.format(source.value)
-            df = getattr(self, feat_name)
-            split_point = np.cumsum(df[field].agg(len))[:-1]
-            new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
-            new_ids = np.split(new_ids + 1, split_point)
-            df[field] = new_ids
-            self.field2id_token[field] = [None] + list(mp)
-            if self.model_type == ModelType.SEQUENTIAL:
-                self.field2id_token[field].append('[STOP]')
+        for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
+            self.field2id_token[field] = mp
+            if ftype == FeatureType.TOKEN:
+                feat[field] = new_ids
+            elif ftype == FeatureType.TOKEN_SEQ:
+                split_point = np.cumsum(feat[field].agg(len))[:-1]
+                feat[field] = np.split(new_ids, split_point)
 
     def num(self, field):
         if field not in self.field2type:
@@ -431,6 +464,22 @@ class Dataset(object):
             if tp in ftype:
                 ret.append(field)
         return ret
+
+    @property
+    def float_like_fields(self):
+        return self.fields([FeatureType.FLOAT, FeatureType.FLOAT_SEQ])
+
+    @property
+    def token_like_fields(self):
+        return self.fields([FeatureType.TOKEN, FeatureType.TOKEN_SEQ])
+
+    @property
+    def seq_fields(self):
+        return self.fields([FeatureType.FLOAT_SEQ, FeatureType.TOKEN_SEQ])
+
+    @property
+    def non_seq_fields(self):
+        return self.fields([FeatureType.FLOAT, FeatureType.TOKEN])
 
     def set_field_property(self, field, field2type, field2source, field2seqlen):
         self.field2type[field] = field2type
@@ -494,13 +543,12 @@ class Dataset(object):
         uid2items_num = [end[uid] - start[uid] + 1 for uid in uid_list]
         return np.array(index), np.array(uid2items_num)
 
-    def prepare_data_augmentation(self, max_item_list_len=None):
+    def prepare_data_augmentation(self):
         if hasattr(self, 'uid_list'):
             return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
         self._check_field('uid_field', 'time_field')
-        if max_item_list_len is None:
-            max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH']
+        max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH'] - 1
         self.sort(by=[self.uid_field, self.time_field], ascending=True)
         last_uid = None
         uid_list, item_list_index, target_index, item_list_length = [], [], [], []
