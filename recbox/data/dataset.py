@@ -718,3 +718,76 @@ class Dataset(object):
 class KnowledgeBasedDataset(Dataset):
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
+
+    def _from_scratch(self, config):
+        self.dataset_path = config['data_path']
+
+        self.field2type = {}
+        self.field2source = {}
+        self.field2id_token = {}
+        self.field2seqlen = config['seq_len'] or {}
+
+        self.model_type = self.config['MODEL_TYPE']
+        self.uid_field = self.config['USER_ID_FIELD']
+        self.iid_field = self.config['ITEM_ID_FIELD']
+        self.label_field = self.config['LABEL_FIELD']
+        self.time_field = self.config['TIME_FIELD']
+
+        self.head_entity_field = self.config['HEAD_ENTITY_ID_FIELD']
+        self.tail_entity_field = self.config['TAIL_ENTITY_ID_FIELD']
+        self.relation_field = self.config['RELATION_ID_FIELD']
+        self.entity_field = self.config['ENTITY_ID_FIELD']
+        self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
+
+        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+
+        self.kg, self.link = self._load_kg_and_link(self.dataset_name, self.dataset_path)
+
+        self._filter_by_inter_num()
+        self._filter_by_field_value()
+        self._reset_index()
+        self._remap_ID_all()
+        self._user_item_feat_preparation()
+
+        self._fill_nan()
+        self._set_label_by_threshold()
+        self._normalize()
+
+    def _restore_saved_dataset(self, saved_dataset):
+        raise NotImplementedError()
+
+    def _load_kg_and_link(self, token, dataset_path):
+        kg_path = os.path.join(dataset_path, '{}.{}'.format(token, 'kg'))
+        if not os.path.isfile(kg_path):
+            raise ValueError('[{}.{}] not found in [{}]'.format(token, 'kg', dataset_path))
+        kg = self._load_kg_data(kg_path)
+
+        link_path = os.path.join(dataset_path, '{}.{}'.format(token, 'link'))
+        if not os.path.isfile(link_path):
+            raise ValueError('[{}.{}] not found in [{}]'.format(token, 'link', dataset_path))
+        link = self._load_kg_data(link_path)
+
+        return kg, link
+
+    def _load_kg_data(self, filepath):
+        df = pd.read_csv(filepath, delimiter=self.config['field_separator'])
+        field_names = []
+        for field_type in df.columns:
+            field, ftype = field_type.split(':')
+            field_names.append(field)
+            assert ftype == 'token', 'kg data requires fields with type token'
+            self.field2source[field] = FeatureSource.KG
+            self.field2type[field] = FeatureType.TOKEN
+            self.field2seqlen[field] = 1
+        df.columns = field_names
+        return df
+
+    def _check_kg(self, kg):
+        assert self.head_entity_field in kg, 'kg data requires field [{}]'.format(self.head_entity_field)
+        assert self.tail_entity_field in kg, 'kg data requires field [{}]'.format(self.tail_entity_field)
+        assert self.relation_field in kg, 'kg data requires field [{}]'.format(self.relation_field)
+
+    def _check_link(self, link):
+        assert self.entity_field in link, 'link data requires field [{}]'.format(self.entity_field)
+        assert self.iid_field in link, 'link data requires field [{}]'.format(self.iid_field)
