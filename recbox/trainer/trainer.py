@@ -22,6 +22,13 @@ from ..utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderStat
 from .utils import early_stopping, calculate_valid_score, dict2str
 
 
+def get_trainer(model_type):
+    if model_type == ModelType.KNOWLEDGE:
+        return KGTrainer
+    else:
+        return Trainer
+
+
 class AbstractTrainer(object):
     def __init__(self, config, model):
         self.config = config
