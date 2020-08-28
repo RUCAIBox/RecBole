@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/24, 2020/8/5, 2020/8/21
+# @Time   : 2020/8/27, 2020/8/5, 2020/8/27
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -36,14 +36,7 @@ class Dataset(object):
         self.field2type = {}
         self.field2source = {}
         self.field2id_token = {}
-        if config['seq_len'] is not None:
-            self.field2seqlen = config['seq_len']
-        else:
-            self.field2seqlen = {}
-
-        self.inter_feat = None
-        self.user_feat = None
-        self.item_feat = None
+        self.field2seqlen = config['seq_len'] or {}
 
         self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
@@ -52,30 +45,17 @@ class Dataset(object):
         self.time_field = self.config['TIME_FIELD']
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
 
-        self.filter_by_inter_num(max_user_inter_num=config['max_user_inter_num'],
-                                 min_user_inter_num=config['min_user_inter_num'],
-                                 max_item_inter_num=config['max_item_inter_num'],
-                                 min_item_inter_num=config['min_item_inter_num'])
-
-        self.filter_by_field_value(lowest_val=config['lowest_val'], highest_val=config['highest_val'],
-                                   equal_val=config['equal_val'], not_equal_val=config['not_equal_val'],
-                                   drop=config['drop_filter_field'])
-
-        self._set_label_by_threshold(self.config['threshold'])
-
+        self._filter_by_inter_num()
+        self._filter_by_field_value()
+        self._reset_index()
         self._remap_ID_all()
+        self._user_item_feat_preparation()
 
-        if self.config['fill_nan']:
-            self._fill_nan()
-
-        if self.config['normalize_field'] is not None and self.config['normalize_all'] is not None:
-            raise ValueError('normalize_field and normalize_all can\'t be set at the same time')
-        if self.config['normalize_field']:
-            self._normalize(self.config['normalize_field'])
-        elif self.config['normalize_all']:
-            self._normalize([_ for _ in self.field2type if ((self.field2type[_] == FeatureType.FLOAT) \
-                                                        or (self.field2type[_] == FeatureType.FLOAT_SEQ))])
+        self._fill_nan()
+        self._set_label_by_threshold()
+        self._normalize()
 
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
@@ -93,6 +73,9 @@ class Dataset(object):
             if os.path.isfile(cur_file_name):
                 df = pd.read_csv(cur_file_name)
                 setattr(self, '{}_feat'.format(name), df)
+            else:
+                setattr(self, '{}_feat'.format(name), None)
+        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
 
         self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
@@ -213,35 +196,55 @@ class Dataset(object):
                 self.field2seqlen[field] = max(map(len, df[field].values))
         return df
 
+    def _user_item_feat_preparation(self):
+        flag = False
+        if self.user_feat is not None:
+            new_user_df = pd.DataFrame({self.uid_field: np.arange(self.user_num)})
+            self.user_feat = pd.merge(new_user_df, self.user_feat, on=self.uid_field, how='left')
+            flag = True
+        if self.item_feat is not None:
+            new_item_df = pd.DataFrame({self.iid_field: np.arange(self.item_num)})
+            self.item_feat = pd.merge(new_item_df, self.item_feat, on=self.iid_field, how='left')
+            flag = True
+        if flag:
+            self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+            self.config['fill_nan'] = True
+
     def _fill_nan(self):
+        if not self.config['fill_nan']:
+            return
+
         most_freq = SimpleImputer(missing_values=np.nan, strategy='most_frequent', copy=False)
         aveg = SimpleImputer(missing_values=np.nan, strategy='mean', copy=False)
 
-        for feat in [self.inter_feat, self.user_feat, self.item_feat]:
-            if feat is None:
-                continue
-            for field in self.field2type:
-                if field not in feat:
-                    continue
+        for feat in self.feat_list:
+            for field in feat:
                 ftype = self.field2type[field]
                 if ftype == FeatureType.TOKEN:
-                    feat.loc[:, field] = most_freq.fit_transform(feat.loc[:, field].values.reshape(-1, 1))
+                    feat[field] = most_freq.fit_transform(feat[field].values.reshape(-1, 1))
                 elif ftype == FeatureType.FLOAT:
-                    feat.loc[:, field] = aveg.fit_transform(feat.loc[:, field].values.reshape(-1, 1))
-                elif ftype.endswith('seq'):
-                    self.logger.warning('feature [{}] (type: {}) probably has nan, while has not been filled.'
-                                        .format(field, ftype))
+                    feat[field] = aveg.fit_transform(feat[field].values.reshape(-1, 1))
+                elif ftype.value.endswith('seq'):
+                    feat[field] = feat[field].apply(lambda x: [0] if (not isinstance(x, np.ndarray)) else x)
 
-    def _normalize(self, fields):
-        for field in fields:
-            ftype = self.field2type[field]
-            if field not in self.field2type:
-                raise ValueError('Field [{}] doesn\'t exist'.format(field))
-            elif ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
-                self.logger.warning('{} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.'.format(field))
-        for feat in [self.inter_feat, self.user_feat, self.item_feat]:
-            if feat is None:
-                continue
+    def _normalize(self):
+        if self.config['normalize_field'] is not None and self.config['normalize_all'] is not None:
+            raise ValueError('normalize_field and normalize_all can\'t be set at the same time')
+
+        if self.config['normalize_field']:
+            fields = self.config['normalize_field']
+            for field in fields:
+                ftype = self.field2type[field]
+                if field not in self.field2type:
+                    raise ValueError('Field [{}] doesn\'t exist'.format(field))
+                elif ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
+                    self.logger.warning('{} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.'.format(field))
+        elif self.config['normalize_all']:
+            fields = self.float_like_fields
+        else:
+            return
+
+        for feat in self.feat_list:
             for field in feat:
                 if field not in fields:
                     continue
@@ -262,55 +265,56 @@ class Dataset(object):
                     lst = np.split(lst, split_point)
                     feat[field] = lst
 
-    def filter_by_inter_num(self, max_user_inter_num=None, min_user_inter_num=None,
-                            max_item_inter_num=None, min_item_inter_num=None):
-        ban_users = self._get_illegal_ids_by_inter_num(source='user', max_num=max_user_inter_num,
-                                                       min_num=min_user_inter_num)
-        ban_items = self._get_illegal_ids_by_inter_num(source='item', max_num=max_item_inter_num,
-                                                       min_num=min_item_inter_num)
+    def _filter_by_inter_num(self):
+        ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field,
+                                                       max_num=self.config['max_user_inter_num'],
+                                                       min_num=self.config['min_user_inter_num'])
+        ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field,
+                                                       max_num=self.config['max_item_inter_num'],
+                                                       min_num=self.config['min_item_inter_num'])
 
         if len(ban_users) == 0 and len(ban_items) == 0:
             return
 
         if self.user_feat is not None:
-            selected_user = ~self.user_feat[self.uid_field].isin(ban_users)
-            self.user_feat = self.user_feat[selected_user].reset_index(drop=True)
+            dropped_user = self.user_feat[self.uid_field].isin(ban_users)
+            self.user_feat.drop(self.user_feat.index[dropped_user], inplace=True)
 
         if self.item_feat is not None:
-            selected_item = ~self.item_feat[self.iid_field].isin(ban_users)
-            self.item_feat = self.item_feat[selected_item].reset_index(drop=True)
+            dropped_item = self.item_feat[self.iid_field].isin(ban_items)
+            self.item_feat.drop(self.item_feat.index[dropped_item], inplace=True)
 
-        selected_inter = pd.Series(True, index=self.inter_feat.index)
+        dropped_inter = pd.Series(False, index=self.inter_feat.index)
         if self.uid_field:
-            selected_inter &= ~self.inter_feat[self.uid_field].isin(ban_users)
+            dropped_inter |= self.inter_feat[self.uid_field].isin(ban_users)
         if self.iid_field:
-            selected_inter &= ~self.inter_feat[self.iid_field].isin(ban_items)
-        self.inter_feat = self.inter_feat[selected_inter].reset_index(drop=True)
+            dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
+        self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
-    def _get_illegal_ids_by_inter_num(self, source, max_num=None, min_num=None):
-        if source not in {'user', 'item'}:
-            raise ValueError('source [{}] should be user or item'.format(source))
+    def _get_illegal_ids_by_inter_num(self, field, max_num=None, min_num=None):
+        if field is None:
+            return set()
         if max_num is None and min_num is None:
             return set()
 
         max_num = max_num or np.inf
         min_num = min_num or -1
 
-        field_name = self.uid_field if source == 'user' else self.iid_field
-        if field_name is None:
-            return set()
-
-        ids = self.inter_feat[field_name].values
+        ids = self.inter_feat[field].values
         inter_num = Counter(ids)
         ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
         return ids
 
-    def filter_by_field_value(self, lowest_val=None, highest_val=None,
-                              equal_val=None, not_equal_val=None, drop=False):
-        self._filter_by_field_value(lowest_val, lambda x, y: x >= y, drop)
-        self._filter_by_field_value(highest_val, lambda x, y: x <= y, drop)
-        self._filter_by_field_value(equal_val, lambda x, y: x == y, drop)
-        self._filter_by_field_value(not_equal_val, lambda x, y: x != y, drop)
+    def _filter_by_field_value(self):
+        drop_field = self.config['drop_filter_field']
+        changed = False
+        changed |= self._drop_by_value(self.config['lowest_val'], lambda x, y: x < y, drop_field)
+        changed |= self._drop_by_value(self.config['highest_val'], lambda x, y: x > y, drop_field)
+        changed |= self._drop_by_value(self.config['equal_val'], lambda x, y: x != y, drop_field)
+        changed |= self._drop_by_value(self.config['not_equal_val'], lambda x, y: x == y, drop_field)
+
+        if not changed:
+            return
 
         if self.user_feat is not None:
             remained_uids = set(self.user_feat[self.uid_field].values)
@@ -327,41 +331,37 @@ class Dataset(object):
             remained_inter &= self.inter_feat[self.uid_field].isin(remained_uids)
         if self.iid_field is not None:
             remained_inter &= self.inter_feat[self.iid_field].isin(remained_iids)
-        self.inter_feat = self.inter_feat[remained_inter]
+        self.inter_feat.drop(self.inter_feat.index[~remained_inter], inplace=True)
 
-        for source in {'user', 'item', 'inter'}:
-            feat = getattr(self, '{}_feat'.format(source))
-            if feat is not None:
-                feat.reset_index(drop=True, inplace=True)
+    def _reset_index(self):
+        for feat in self.feat_list:
+            feat.reset_index(drop=True, inplace=True)
 
-    def _filter_by_field_value(self, val, cmp, drop=False):
+    def _drop_by_value(self, val, cmp, drop_field=False):
         if val is None:
-            return
-        all_feats = []
-        for source in ['inter', 'user', 'item']:
-            cur_feat = getattr(self, '{}_feat'.format(source))
-            if cur_feat is not None:
-                all_feats.append([source, cur_feat])
+            return False
         for field in val:
             if field not in self.field2type:
                 raise ValueError('field [{}] not defined in dataset'.format(field))
-            for source, cur_feat in all_feats:
-                if field in cur_feat:
-                    new_feat = cur_feat[cmp(cur_feat[field].values, val[field])]
-                    setattr(self, '{}_feat'.format(source), new_feat)
-            if drop:
+            if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
+                raise ValueError('field [{}] is not float like field in dataset, which can\'t be filter'.format(field))
+            for feat in self.feat_list:
+                if field in feat:
+                    feat.drop(feat.index[cmp(feat[field].values, val[field])], inplace=True)
+            if drop_field:
                 self._del_col(field)
+        return True
 
     def _del_col(self, field):
-        for source in ['inter', 'user', 'item']:
-            cur_feat = getattr(self, '{}_feat'.format(source))
-            if cur_feat is not None and field in cur_feat:
-                setattr(self, '{}_feat'.format(source), cur_feat.drop(columns=field))
+        for feat in self.feat_list:
+            if field in feat:
+                feat.drop(columns=field, inplace=True)
         for dct in [self.field2id_token, self.field2seqlen, self.field2source, self.field2type]:
             if field in dct:
                 del dct[field]
 
-    def _set_label_by_threshold(self, threshold):
+    def _set_label_by_threshold(self):
+        threshold = self.config['threshold']
         if threshold is None:
             return
 
@@ -376,46 +376,77 @@ class Dataset(object):
                 raise ValueError('field [{}] not in inter_feat'.format(field))
             self._del_col(field)
 
+    def _get_fields_in_same_space(self):
+        fields_in_same_space = self.config['fields_in_same_space'] or []
+        additional = []
+        token_like_fields = self.token_like_fields
+        for field in token_like_fields:
+            count = 0
+            for field_set in fields_in_same_space:
+                if field in field_set:
+                    count += 1
+            if count == 0:
+                additional.append({field})
+            elif count == 1:
+                continue
+            else:
+                raise ValueError('field [{}] occurred in `fields_in_same_space` more than one time'.format(field))
+
+        for field_set in fields_in_same_space:
+            if self.uid_field in field_set and self.iid_field in field_set:
+                raise ValueError('uid_field and iid_field can\'t in the same ID space')
+            for field in field_set:
+                if field not in token_like_fields:
+                    raise ValueError('field [{}] is not a token like field'.format(field))
+
+        fields_in_same_space.extend(additional)
+        return fields_in_same_space
+
     def _remap_ID_all(self):
-        for field in self.field2type:
-            ftype = self.field2type[field]
-            fsource = self.field2source[field]
+        fields_in_same_space = self._get_fields_in_same_space()
+        for field_set in fields_in_same_space:
+            remap_list = []
+            for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
+                if field in field_set:
+                    field_set.remove(field)
+                    remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
+                    if feat is not None:
+                        remap_list.append((feat, field, FeatureType.TOKEN))
+            for field in field_set:
+                source = self.field2source[field]
+                feat = getattr(self, '{}_feat'.format(source.value))
+                ftype = self.field2type[field]
+                remap_list.append((feat, field, ftype))
+            self._remap(remap_list)
+
+    def _remap(self, remap_list):
+        tokens = []
+        for feat, field, ftype in remap_list:
             if ftype == FeatureType.TOKEN:
-                self._remap_ID(fsource, field)
+                tokens.append(feat[field].values)
             elif ftype == FeatureType.TOKEN_SEQ:
-                self._remap_ID_seq(fsource, field)
-
-    def _remap_ID(self, source, field):
-        feat_name = '{}_feat'.format(source.value.split('_')[0])
-        feat = getattr(self, feat_name)
-        if feat is None:
-            feat = pd.DataFrame(columns=[field])
-
-        if source in [FeatureSource.USER_ID, FeatureSource.ITEM_ID]:
-            df = pd.concat([self.inter_feat[field], feat[field]])
-            new_ids, mp = pd.factorize(df)
-            split_point = [len(self.inter_feat[field])]
-            self.inter_feat[field], feat[field] = np.split(new_ids + 1, split_point)
-            self.field2id_token[field] = [None] + list(mp)
-        elif source in [FeatureSource.USER, FeatureSource.ITEM, FeatureSource.INTERACTION]:
-            new_ids, mp = pd.factorize(feat[field])
-            feat[field] = new_ids + 1
-            self.field2id_token[field] = [None] + list(mp)
-
+                tokens.append(feat[field].agg(np.concatenate))
+        split_point = np.cumsum(list(map(len, tokens)))[:-1]
+        tokens = np.concatenate(tokens)
+        new_ids_list, mp = pd.factorize(tokens)
+        new_ids_list = np.split(new_ids_list + 1, split_point)
+        mp = ['[PAD]'] + list(mp)
         if self.model_type == ModelType.SEQUENTIAL:
-            self.field2id_token[field].append('[STOP]')
+            item_related = False
+            for (feat, field, ftype) in remap_list:
+                if self.field2source[field] in {FeatureSource.ITEM_ID, FeatureSource.ITEM}:
+                    item_related = True
+                    break
+            if item_related:
+                mp.append('[STOP]')
 
-    def _remap_ID_seq(self, source, field):
-        if source in [FeatureSource.USER, FeatureSource.ITEM, FeatureSource.INTERACTION]:
-            feat_name = '{}_feat'.format(source.value)
-            df = getattr(self, feat_name)
-            split_point = np.cumsum(df[field].agg(len))[:-1]
-            new_ids, mp = pd.factorize(df[field].agg(np.concatenate))
-            new_ids = np.split(new_ids + 1, split_point)
-            df[field] = new_ids
-            self.field2id_token[field] = [None] + list(mp)
-            if self.model_type == ModelType.SEQUENTIAL:
-                self.field2id_token[field].append('[STOP]')
+        for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
+            self.field2id_token[field] = mp
+            if ftype == FeatureType.TOKEN:
+                feat[field] = new_ids
+            elif ftype == FeatureType.TOKEN_SEQ:
+                split_point = np.cumsum(feat[field].agg(len))[:-1]
+                feat[field] = np.split(new_ids, split_point)
 
     def num(self, field):
         if field not in self.field2type:
@@ -433,6 +464,22 @@ class Dataset(object):
             if tp in ftype:
                 ret.append(field)
         return ret
+
+    @property
+    def float_like_fields(self):
+        return self.fields([FeatureType.FLOAT, FeatureType.FLOAT_SEQ])
+
+    @property
+    def token_like_fields(self):
+        return self.fields([FeatureType.TOKEN, FeatureType.TOKEN_SEQ])
+
+    @property
+    def seq_fields(self):
+        return self.fields([FeatureType.FLOAT_SEQ, FeatureType.TOKEN_SEQ])
+
+    @property
+    def non_seq_fields(self):
+        return self.fields([FeatureType.FLOAT, FeatureType.TOKEN])
 
     def set_field_property(self, field, field2type, field2source, field2seqlen):
         self.field2type[field] = field2type
@@ -496,13 +543,12 @@ class Dataset(object):
         uid2items_num = [end[uid] - start[uid] + 1 for uid in uid_list]
         return np.array(index), np.array(uid2items_num)
 
-    def prepare_data_augmentation(self, max_item_list_len=None):
+    def prepare_data_augmentation(self):
         if hasattr(self, 'uid_list'):
             return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
         self._check_field('uid_field', 'time_field')
-        if max_item_list_len is None:
-            max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH']
+        max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH'] - 1
         self.sort(by=[self.uid_field, self.time_field], ascending=True)
         last_uid = None
         uid_list, item_list_index, target_index, item_list_length = [], [], [], []

@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/25, 2020/8/21
+# @Time   : 2020/8/27, 2020/8/27
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -92,6 +92,10 @@ class AbstractDataLoader(object):
         if self.batch_size != batch_size:
             self.batch_size = batch_size
             # TODO  batch size is changed
+
+    def get_item_feature(self):
+        item_df = self.dataset.get_item_feature()
+        return self._dataframe_to_interaction(item_df)
 
 
 class GeneralDataLoader(AbstractDataLoader):
@@ -386,10 +390,6 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
         self.pr += self.step
         return cur_data
 
-    def get_item_tensor(self):
-        item_df = self.dataset.get_item_feature()
-        return self._dataframe_to_interaction(item_df)
-
     def get_pos_len_list(self):
         return self.uid2items_num
 
@@ -436,14 +436,15 @@ class SequentialDataLoader(AbstractDataLoader):
                                    self.max_item_list_len)
         dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION,
                                    self.max_item_list_len)
-        dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
+        if self.position_field:
+            dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
                                    self.max_item_list_len)
         dataset.set_field_property(self.target_iid_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.target_time_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
 
         self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
-            dataset.prepare_data_augmentation(max_item_list_len=self.max_item_list_len - 1)
+            dataset.prepare_data_augmentation()
 
         if not self.real_time:
             self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
@@ -491,11 +492,12 @@ class SequentialDataLoader(AbstractDataLoader):
             self.uid_field: uid_list,
             self.item_list_field: [],
             self.time_list_field: [],
-            self.position_field: [np.arange(self.max_item_list_len)] * new_length,
             self.target_iid_field: self.dataset.inter_feat[self.iid_field][target_index].values,
             self.target_time_field: self.dataset.inter_feat[self.time_field][target_index].values,
             self.item_list_length_field: item_list_length,
         }
+        if self.position_field:
+            new_dict[self.position_field] = [np.arange(self.max_item_list_len)] * new_length
         for index in item_list_index:
             df = self.dataset.inter_feat[index]
             new_dict[self.item_list_field].append(np.append(df[self.iid_field].values, self.stop_token_id))
