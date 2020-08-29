@@ -532,10 +532,10 @@ class SequentialFullDataLoader(SequentialDataLoader):
 class KGDataLoader(NegSampleBasedDataLoader):
 
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+                 batch_size=1, dl_format=InputType.PAIRWISE, shuffle=False):
 
         super(KGDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
-                 batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+                                           batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in KnowledgeBasedDataLoader() should be `by`')
         if dl_format != InputType.PAIRWISE or neg_sample_args['by'] != 1:
@@ -543,12 +543,11 @@ class KGDataLoader(NegSampleBasedDataLoader):
         if shuffle is False:
             raise ValueError('kg based dataloader must shuffle the data')
 
+        self.batch_size = batch_size
         self.neg_sample_by = neg_sample_args['by']
-
         self.times = 1
 
         neg_prefix = config['NEG_PREFIX']
-        iid_field = config['ITEM_ID_FIELD']
         tid_field = config['TAIL_ENTITY_ID_FIELD']
 
         # kg negative cols
@@ -593,7 +592,7 @@ class KGDataLoader(NegSampleBasedDataLoader):
         return kg_feat
 
     def _batch_size_adaptation(self):
-        raise NotImplementedError('Method [batch_size_adaptation] should be implemented.')
+        self.step = self.batch_size
 
 
 class KnowledgeBasedDataLoader(AbstractDataLoader):
@@ -620,12 +619,6 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         else:
             return GeneralGroupedDataLoader(**kwargs)
 
-    def _get_main_data_loader(self):
-        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
-            return self.general_dataloader
-        elif self.state == KGDataLoaderState.KG:
-            return self.kg_dataloader
-
     @property
     def pr(self):
         return self.main_dataloader.pr
@@ -635,8 +628,8 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         self.main_dataloader.pr = value
 
     def __iter__(self):
-        if not hasattr(self, 'state'):
-            raise ValueError('The dataloader\'s state must be set when using the kg based dataloader')
+        if not hasattr(self, 'state') or not hasattr(self, 'main_dataloader'):
+            raise ValueError('The dataloader\'s state  and main_dataloader must be set when using the kg based dataloader')
         return super().__iter__()
 
     def __next__(self):
@@ -669,7 +662,8 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
     def set_mode(self, state):
         if state not in set(KGDataLoaderState):
             raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
+        self.state = state
         if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
-            return self.general_dataloader
+            self.main_dataloader = self.general_dataloader
         elif self.state == KGDataLoaderState.KG:
-            return self.kg_dataloader
+            self.main_dataloader = self.kg_dataloader
