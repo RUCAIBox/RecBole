@@ -9,7 +9,7 @@
 
 import torch
 from torch import nn
-from torch.nn.init import xavier_uniform_
+from torch.nn.init import xavier_uniform_,xavier_normal_
 from ...utils import InputType
 from ..abstract_recommender import SequentialRecommender
 
@@ -23,6 +23,7 @@ class GRU4Rec(SequentialRecommender):
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
         self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
+        self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
 
 
         self.embedding_size = config['embedding_size']
@@ -47,7 +48,7 @@ class GRU4Rec(SequentialRecommender):
 
     def init_weights(self, module):
         if isinstance(module, nn.Embedding):
-            xavier_uniform_(module.weight)
+            xavier_normal_(module.weight)
         elif isinstance(module,nn.GRU):
             xavier_uniform_(self.gru_layers.weight_hh_l0)
             xavier_uniform_(self.gru_layers.weight_ih_l0)
