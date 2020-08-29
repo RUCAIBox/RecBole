@@ -11,6 +11,7 @@
 import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
+
 from .metrics import metrics_dict
 
 # These metrics are typical in topk recommendations
@@ -23,7 +24,7 @@ class TopKEvaluator(object):
         self.topk = config['topk']
         self.metrics = config['metrics']
 
-    def evaluate(self, intercation, score_tensor):
+    def evaluate(self, interaction, score_tensor):
         """ evalaute the topk metrics
 
         Args:
@@ -32,7 +33,7 @@ class TopKEvaluator(object):
 
         """
         # intermediate variables
-        user_len_list = intercation.user_len_list
+        user_len_list = interaction.user_len_list
 
         score_list = torch.split(score_tensor, user_len_list, dim=0)
         scores_matrix = pad_sequence(score_list, batch_first=True, padding_value=-np.inf)  # nusers x items

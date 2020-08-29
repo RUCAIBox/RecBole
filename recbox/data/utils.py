@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/25, 2020/8/14
+# @Time   : 2020/8/29, 2020/8/14
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -15,6 +15,17 @@ from ..config import EvalSetting
 from ..sampler import KGSampler, Sampler
 from ..utils import EvaluatorType, InputType, ModelType
 from .dataloader import *
+from .dataset import Dataset, KnowledgeBasedDataset
+
+
+def create_dataset(config):
+    model_type = config['MODEL_TYPE']
+    if model_type == ModelType.KNOWLEDGE:
+        return KnowledgeBasedDataset(config)
+    elif model_type == ModelType.SOCIAL:
+        raise not NotImplementedError('Social Recommendation Dataset has not been implemented.')
+    else:
+        return Dataset(config)
 
 
 def data_preparation(config, dataset, save=False):
@@ -43,14 +54,14 @@ def data_preparation(config, dataset, save=False):
 
     kwargs = {}
     # TODO 为什么这里type不包含context？
-    if model.type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
+    if model_type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
         es.neg_sample_by(1, real_time=True)
         sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
-        # TODO 如果model.type是kg, 可能还要设置一个kg的sampler
+        # TODO 如果model_type是kg, 可能还要设置一个kg的sampler
         kwargs['sampler'] = sampler
         kwargs['phase'] = 'train'
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
-        if model.type == ModelType.KNOWLEDGE:
+        if model_type == ModelType.KNOWLEDGE:
             kg_sampler = KGSampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
             kwargs['kg_sampler'] = kg_sampler
     train_data = dataloader_construct(
@@ -65,7 +76,7 @@ def data_preparation(config, dataset, save=False):
         **kwargs
     )
 
-    if model.type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
+    if model_type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
         getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
         kwargs['phase'] = ['valid', 'test']
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
