@@ -532,10 +532,10 @@ class SequentialFullDataLoader(SequentialDataLoader):
 class KGDataLoader(NegSampleBasedDataLoader):
 
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+                 batch_size=1, dl_format=InputType.PAIRWISE, shuffle=False):
 
         super(KGDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
-                 batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+                                           batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in KnowledgeBasedDataLoader() should be `by`')
         if dl_format != InputType.PAIRWISE or neg_sample_args['by'] != 1:
@@ -543,12 +543,11 @@ class KGDataLoader(NegSampleBasedDataLoader):
         if shuffle is False:
             raise ValueError('kg based dataloader must shuffle the data')
 
+        self.batch_size = batch_size
         self.neg_sample_by = neg_sample_args['by']
-
         self.times = 1
 
         neg_prefix = config['NEG_PREFIX']
-        iid_field = config['ITEM_ID_FIELD']
         tid_field = config['TAIL_ENTITY_ID_FIELD']
 
         # kg negative cols
@@ -593,7 +592,7 @@ class KGDataLoader(NegSampleBasedDataLoader):
         return kg_feat
 
     def _batch_size_adaptation(self):
-        raise NotImplementedError('Method [batch_size_adaptation] should be implemented.')
+        self.step = self.batch_size
 
 
 class KnowledgeBasedDataLoader(AbstractDataLoader):
@@ -622,41 +621,32 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
 
     @property
     def pr(self):
-        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
-            return self.general_dataloader.pr
-        elif self.state == KGDataLoaderState.KG:
-            return self.kg_dataloader.pr
+        return self.main_dataloader.pr
 
     @pr.setter
     def pr(self, value):
-        self.general_dataloader.pr = value
-        self.kg_dataloader.pr = value
+        self.main_dataloader.pr = value
 
     def __iter__(self):
-        if not hasattr(self, 'state'):
-            raise ValueError('The dataloader\'s state must be set when using the kg based dataloader')
+        if not hasattr(self, 'state') or not hasattr(self, 'main_dataloader'):
+            raise ValueError('The dataloader\'s state  and main_dataloader must be set when using the kg based dataloader')
         return super().__iter__()
 
     def __next__(self):
         if self.pr >= self.pr_end:
             self.pr = 0
             # After the rec data ends, the kg data pointer needs to be cleared to zero
-            self.kg_dataloader.pr = 0
+            if self.state == KGDataLoaderState.RSKG:
+                self.kg_dataloader.pr = 0
             raise StopIteration()
         return self._next_batch_data()
 
+    def __len__(self):
+        return len(self.main_dataloader)
+
     @property
     def pr_end(self):
-        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
-            return self.general_dataloader.pr_end
-        elif self.state == KGDataLoaderState.KG:
-            return self.kg_dataloader.pr_end
-
-    def __len__(self):
-        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
-            return len(self.general_dataloader)
-        elif self.state == KGDataLoaderState.KG:
-            return len(self.kg_dataloader)
+        return self.main_dataloader.pr_end
 
     def _next_batch_data(self):
         if self.state == KGDataLoaderState.KG:
@@ -673,3 +663,7 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         if state not in set(KGDataLoaderState):
             raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
         self.state = state
+        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
+            self.main_dataloader = self.general_dataloader
+        elif self.state == KGDataLoaderState.KG:
+            self.main_dataloader = self.kg_dataloader
