@@ -4,12 +4,12 @@
 
 # UPDATE:
 # @Time   : 2020/8/26 17:16
-# @Author : Yupeng Hou,Yujie Lu
-# @Email  : houyupeng@ruc.edu.cn,yujielu1998@gmail.com
+# @Author : Yupeng Hou, Yujie Lu
+# @Email  : houyupeng@ruc.edu.cn, yujielu1998@gmail.com
 
 import torch
 from torch import nn
-from torch.nn.init import xavier_uniform_,xavier_normal_
+from torch.nn.init import xavier_uniform_, xavier_normal_
 from ...utils import InputType
 from ..abstract_recommender import SequentialRecommender
 
