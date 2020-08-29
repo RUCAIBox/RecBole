@@ -1,48 +1,46 @@
-# @Time   : 2020/8/17
+# @Time   : 2020/8/17 19:38
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
 
 # UPDATE:
-# @Time   : 2020/8/19 14:58
-# @Author : Yupeng Hou
-# @Email  : houyupeng@ruc.edu.cn
+# @Time   : 2020/8/26 17:16
+# @Author : Yupeng Hou,Yujie Lu
+# @Email  : houyupeng@ruc.edu.cn,yujielu1998@gmail.com
 
 import torch
 from torch import nn
 from torch.nn.init import xavier_uniform_
-from torch.nn import functional as F
 from ...utils import InputType
 from ..abstract_recommender import SequentialRecommender
 
 
 class GRU4Rec(SequentialRecommender):
+    input_type = InputType.POINTWISE
     def __init__(self, config, dataset):
         super(GRU4Rec, self).__init__()
-        self.input_type = InputType.POINTWISE
 
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
-        self.POSITION_ID = config['POSITION_FIELD']
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
         self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
-        max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
+
 
         self.embedding_size = config['embedding_size']
+        self.hidden_size = config['hidden_size']
         self.num_layers = config['num_layers']
         self.dropout = config['dropout']
         self.item_count = dataset.item_num
 
-        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size)
-        self.position_list_embedding = nn.Embedding(max_item_list_length, self.embedding_size)
+        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
+        self.emb_dropout = nn.Dropout(self.dropout)
         self.gru_layers = nn.GRU(
             input_size=self.embedding_size,
-            hidden_size=self.embedding_size,
+            hidden_size=self.hidden_size,
             num_layers=self.num_layers,
             bias=False,
             batch_first=True,
-            dropout=self.dropout
         )
-        self.layer_norm = nn.LayerNorm(self.embedding_size)
+        self.dense = nn.Linear(self.hidden_size, self.embedding_size)
         self.criterion = nn.CrossEntropyLoss()
 
         self.apply(self.init_weights)
@@ -58,13 +56,11 @@ class GRU4Rec(SequentialRecommender):
         return self.item_list_embedding.weight.t()
 
     def forward(self, interaction):
-        #TODO behavior_list_emb = concat(item,catgory)
         item_list_emb = self.item_list_embedding(interaction[self.ITEM_ID_LIST])
-        position_list_emb = self.position_list_embedding(interaction[self.POSITION_ID])
-        behavior_list_emb = item_list_emb + position_list_emb
-        short_term_intent_temp, _ = self.gru_layers(behavior_list_emb)
-        short_term_intent_temp = self.gather_indexes(short_term_intent_temp, interaction[self.ITEM_LIST_LEN] - 1)
-        predict_behavior_emb = self.layer_norm(short_term_intent_temp)
+        item_list_emb_dropout = self.emb_dropout(item_list_emb)
+        short_term_intent_temp, _ = self.gru_layers(item_list_emb_dropout)
+        short_term_intent_temp = self.dense(short_term_intent_temp)
+        predict_behavior_emb = self.gather_indexes(short_term_intent_temp, interaction[self.ITEM_LIST_LEN] - 1)
         return predict_behavior_emb
 
     def gather_indexes(self, gru_output, gather_index):

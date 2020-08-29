@@ -31,8 +31,9 @@ class AFM(ContextRecommender):
         self.num_pair = self.num_feature_field * (self.num_feature_field-1) / 2
         self.attlayer = AttLayer(self.embedding_size, self.attention_size)
         self.p = nn.Parameter(torch.randn(self.embedding_size), requires_grad=True)
+        self.dropout_layer = nn.Dropout(p=self.dropout)
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.MSELoss()
+        self.loss = nn.BCELoss()
 
         self.apply(self.init_weights)
 
@@ -68,11 +69,11 @@ class AFM(ContextRecommender):
         pair_wise_inter = torch.mul(p, q)  # [batch_size, num_pairs, emb_dim]
 
         # [batch_size, num_pairs, 1]
-        att_signal = F.dropout(self.attlayer(pair_wise_inter), self.dropout[0]).unsqueeze(dim=2)
+        att_signal = self.attlayer(pair_wise_inter).unsqueeze(dim=2)
 
         att_inter = torch.mul(att_signal, pair_wise_inter)  # [batch_size, num_pairs, emb_dim]
         att_pooling = torch.sum(att_inter, dim=1)  # [batch_size, emb_dim]
-        att_pooling = F.dropout(att_pooling, self.dropout[1])  # [batch_size, emb_dim]
+        att_pooling = self.dropout_layer(att_pooling)  # [batch_size, emb_dim]
 
         att_pooling = torch.mul(att_pooling, self.p)  # [batch_size, emb_dim]
         att_pooling = torch.sum(att_pooling, dim=1, keepdim=True)  # [batch_size, 1]
@@ -90,7 +91,7 @@ class AFM(ContextRecommender):
             x.append(dense_embedding)
         x = torch.cat(x, dim=1)  # [batch_size, num_field, embed_dim]
 
-        y = self.first_order_linear(interaction) + self.afm_layer(x)
+        y = self.sigmoid(self.first_order_linear(interaction) + self.afm_layer(x))
         return y.squeeze()
 
     def calculate_loss(self, interaction):
@@ -98,7 +99,7 @@ class AFM(ContextRecommender):
 
         output = self.forward(interaction)
         l2_loss = self.weight_decay * torch.norm(self.attlayer.w.weight, p=2)
-        return torch.sqrt(self.loss(output, label)) + l2_loss
+        return self.loss(output, label) + l2_loss
 
     def predict(self, interaction):
         return self.forward(interaction)

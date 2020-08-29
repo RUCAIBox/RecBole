@@ -28,7 +28,8 @@ class NFM(ContextRecommender):
 
         size_list = [self.embedding_size] + self.mlp_hidden_size
         self.fm = BaseFactorizationMachine(reduce_sum=False)
-        self.mlp_layers = MLPLayers(size_list, self.dropout, activation='sigmoid')
+        self.bn = nn.BatchNorm1d(num_features=self.embedding_size)
+        self.mlp_layers = MLPLayers(size_list, self.dropout, activation='sigmoid', bn=True)
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1, bias=False)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
@@ -53,7 +54,7 @@ class NFM(ContextRecommender):
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             x.append(dense_embedding)
         x = torch.cat(x, dim=1)  # [batch_size, num_field, embed_dim]
-        emb_x = self.fm(x)
+        emb_x = self.bn(self.fm(x))
 
         y = self.predict_layer(self.mlp_layers(emb_x)) + self.first_order_linear(interaction)
         y = self.sigmoid(y)

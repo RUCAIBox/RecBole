@@ -15,18 +15,19 @@ def ensure_dir(dir_path):
         os.makedirs(dir_path)
 
 
-def get_model(config):
+def get_model(model_name):
+    model_submodule = [
+        'general_recommender',
+        'context_aware_recommender',
+        'sequential_recommender',
+        'knowledge_aware_recommender'
+    ]
 
-    model_name = config['model']
     model_file_name = model_name.lower()
-    if importlib.util.find_spec("recbox.model.general_recommender." + model_file_name) is not None:
-        model_module = importlib.import_module("recbox.model.general_recommender." + model_file_name)
-    elif importlib.util.find_spec("recbox.model.context_aware_recommender." + model_file_name) is not None:
-
-        model_module = importlib.import_module("recbox.model.context_aware_recommender." + model_file_name)
-    else:
-        model_module = importlib.import_module("recbox.model.sequential_recommender." + model_file_name)
+    for submodule in model_submodule:
+        module_path = '.'.join(['...model', submodule, model_file_name])
+        if importlib.util.find_spec(module_path, __name__):
+            model_module = importlib.import_module(module_path, __name__)
 
     model_class = getattr(model_module, model_name)
-
     return model_class
