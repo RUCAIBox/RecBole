@@ -505,33 +505,6 @@ class SequentialDataLoader(AbstractDataLoader):
         return new_dict
 
 
-class KnowledgeBasedDataLoader(GeneralDataLoader):
-
-    def __init__(self, config, dataset,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        self.dl_type = DataLoaderType.ORIGIN
-        self.step = batch_size
-
-        self.dl_format = dl_format
-
-        super(KnowledgeBasedDataLoader, self).__init__(config, dataset, batch_size, shuffle)
-
-    def __len__(self):
-        return math.ceil(self.pr_end / self.step)
-
-    @property
-    def pr_end(self):
-        return len(self.dataset)
-
-    def _shuffle(self):
-        self.dataset.shuffle()
-
-    def _next_batch_data(self):
-        cur_data = self.dataset[self.pr: self.pr + self.step]
-        self.pr += self.step
-        return self._dataframe_to_interaction(cur_data)
-
-        
 class SequentialFullDataLoader(SequentialDataLoader):
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
