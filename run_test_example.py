@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/19 18:24, 2020/8/21
+# @Time   : 2020/8/29 15:40, 2020/8/21
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -154,7 +154,8 @@ def run_test_examples():
 
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
-    for idx, example in enumerate(test_examples.keys()):
+    # for idx, example in enumerate(test_examples.keys()):
+    for idx, example in enumerate(['Test KG Example']):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
             whole_process(config_file='properties/overall.config', config_dict=test_examples[example])
