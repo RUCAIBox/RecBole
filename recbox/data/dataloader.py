@@ -606,14 +606,16 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
                                                        batch_size=batch_size, shuffle=shuffle)
 
         # using sampler
-        self.general_dataloader = self.get_data_loader(config, dataset, sampler, phase, neg_sample_args,
-                                                       batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        self.general_dataloader = self._get_general_data_loader(config, dataset, sampler, phase, neg_sample_args,
+                                                                batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
         # using kg_sampler and dl_format is pairwise
         self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, phase, neg_sample_args,
                                           batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=False)
 
-    def get_data_loader(self, **kwargs):
+        self.main_dataloader = None
+
+    def _get_general_data_loader(self, **kwargs):
         phase = kwargs['phase']
         config = kwargs['config']
         if phase == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
@@ -621,40 +623,40 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         else:
             return GeneralGroupedDataLoader(**kwargs)
 
+    def _get_main_data_loader(self):
+        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
+            return self.general_dataloader
+        elif self.state == KGDataLoaderState.KG:
+            return self.kg_dataloader
+
     @property
     def pr(self):
-        return self.general_dataloader.pr
+        return self.main_dataloader.pr
 
     @pr.setter
     def pr(self, value):
-        self.general_dataloader.pr = value
+        self.main_dataloader.pr = value
 
     def __iter__(self):
         if not hasattr(self, 'state'):
             raise ValueError('The dataloader\'s state must be set when using the kg based dataloader')
-        if self.shuffle:
-            self._shuffle()
-        return self
+        return 
 
     def __next__(self):
         if self.pr >= self.pr_end:
             self.pr = 0
             # After the rec data ends, the kg data pointer needs to be cleared to zero
-            self.kg_dataloader.pr = 0
+            if self.state == KGDataLoaderState.RSKG:
+                self.kg_dataloader.pr = 0
             raise StopIteration()
         return self._next_batch_data()
 
+    def __len__(self):
+        return len(self.main_dataloader)
+
     @property
     def pr_end(self):
-        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
-            return self.general_dataloader.pr_end
-        elif self.state == KGDataLoaderState.KG:
-            return self.kg_dataloader.pr_end
-        else:
-            raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
-
-    def __len__(self):
-        return len(self.general_dataloader)
+        return self.main_dataloader.pr_end
 
     def _next_batch_data(self):
         if self.state == KGDataLoaderState.KG:
@@ -669,4 +671,12 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
             raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
 
     def set_mode(self, state):
+        if state not in set(KGDataLoader):
+            raise ValueError()
         self.state = state
+        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
+            return self.general_dataloader
+        elif self.state == KGDataLoaderState.KG:
+            return self.kg_dataloader
+        else:
+            raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
