@@ -1,8 +1,7 @@
 from logging import getLogger
 from recbox.config import Config
-from recbox.data import Dataset, data_preparation
-from recbox.model.general_recommender.bprmf import BPRMF
-from recbox.trainer import Trainer
+from recbox.data import create_dataset, data_preparation
+from recbox.trainer import get_trainer
 from recbox.utils import init_logger, get_model
 
 config = Config('properties/overall.config')
@@ -10,7 +9,7 @@ config.init()
 init_logger(config)
 logger = getLogger()
 
-dataset = Dataset(config)
+dataset = create_dataset(config)
 logger.info(dataset)
 
 # If you want to customize the evaluation setting,
@@ -20,7 +19,7 @@ train_data, test_data, valid_data = data_preparation(config, dataset)
 model = get_model(config['model'])(config, train_data).to(config['device'])
 logger.info(model)
 
-trainer = Trainer(config, model)
+trainer = get_trainer(config['MODEL_TYPE'])(config, model)
 
 # trainer.resume_checkpoint('saved/model_best.pth')
 best_valid_score, _ = trainer.fit(train_data, valid_data)
