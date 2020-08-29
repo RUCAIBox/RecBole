@@ -34,6 +34,7 @@ class Dataset(object):
 
     def _from_scratch(self, config):
         self.dataset_path = config['data_path']
+        self._fill_nan_flag = self.config['fill_nan']
 
         self.field2type = {}
         self.field2source = {}
@@ -210,10 +211,10 @@ class Dataset(object):
             flag = True
         if flag:
             self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
-            self.config['fill_nan'] = True
+            self._fill_nan_flag = True
 
     def _fill_nan(self):
-        if not self.config['fill_nan']:
+        if not self._fill_nan_flag:
             return
 
         most_freq = SimpleImputer(missing_values=np.nan, strategy='most_frequent', copy=False)
@@ -770,6 +771,7 @@ class KnowledgeBasedDataset(Dataset):
 
     def _from_scratch(self, config):
         self.dataset_path = config['data_path']
+        self._fill_nan_flag = self.config['fill_nan']
 
         self.field2type = {}
         self.field2source = {}
@@ -917,3 +919,11 @@ class KnowledgeBasedDataset(Dataset):
     @property
     def entity_num(self):
         return self.num(self.entity_field)
+
+    @property
+    def head_entities(self):
+        return self.kg_feat[self.head_entity_field].values
+
+    @property
+    def entities_list(self):
+        return np.arange(self.entity_num)
