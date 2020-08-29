@@ -12,13 +12,14 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_
 
+from ...utils import InputType
 from ..abstract_recommender import KnowledgeRecommender
 from ..loss import BPRLoss
 
 
 # todo: L2 regularization
 class CKE(KnowledgeRecommender):
-
+    input_type = InputType.PAIRWISE
     def __init__(self, config, dataset):
         super(CKE, self).__init__(config, dataset)
 

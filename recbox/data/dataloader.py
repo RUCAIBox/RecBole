@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/25, 2020/8/21
+# @Time   : 2020/8/29, 2020/8/27
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -93,6 +93,10 @@ class AbstractDataLoader(object):
         if self.batch_size != batch_size:
             self.batch_size = batch_size
             # TODO  batch size is changed
+
+    def get_item_feature(self):
+        item_df = self.dataset.get_item_feature()
+        return self._dataframe_to_interaction(item_df)
 
 
 class GeneralDataLoader(AbstractDataLoader):
@@ -387,10 +391,6 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
         self.pr += self.step
         return cur_data
 
-    def get_item_tensor(self):
-        item_df = self.dataset.get_item_feature()
-        return self._dataframe_to_interaction(item_df)
-
     def get_pos_len_list(self):
         return self.uid2items_num
 
@@ -437,14 +437,15 @@ class SequentialDataLoader(AbstractDataLoader):
                                    self.max_item_list_len)
         dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION,
                                    self.max_item_list_len)
-        dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
+        if self.position_field:
+            dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
                                    self.max_item_list_len)
         dataset.set_field_property(self.target_iid_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.target_time_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
 
         self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
-            dataset.prepare_data_augmentation(max_item_list_len=self.max_item_list_len - 1)
+            dataset.prepare_data_augmentation()
 
         if not self.real_time:
             self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
@@ -492,11 +493,12 @@ class SequentialDataLoader(AbstractDataLoader):
             self.uid_field: uid_list,
             self.item_list_field: [],
             self.time_list_field: [],
-            self.position_field: [np.arange(self.max_item_list_len)] * new_length,
             self.target_iid_field: self.dataset.inter_feat[self.iid_field][target_index].values,
             self.target_time_field: self.dataset.inter_feat[self.time_field][target_index].values,
             self.item_list_length_field: item_list_length,
         }
+        if self.position_field:
+            new_dict[self.position_field] = [np.arange(self.max_item_list_len)] * new_length
         for index in item_list_index:
             df = self.dataset.inter_feat[index]
             new_dict[self.item_list_field].append(np.append(df[self.iid_field].values, self.stop_token_id))
@@ -536,7 +538,7 @@ class KGDataLoader(NegSampleBasedDataLoader):
                  batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in KnowledgeBasedDataLoader() should be `by`')
-        if dl_format != InputType.PAIRWISE and neg_sample_args['by'] != 1:
+        if dl_format != InputType.PAIRWISE or neg_sample_args['by'] != 1:
             raise ValueError('kg based dataloader must be pairwise and can only neg sample by 1')
         if shuffle is False:
             raise ValueError('kg based dataloader must shuffle the data')
@@ -548,12 +550,6 @@ class KGDataLoader(NegSampleBasedDataLoader):
         neg_prefix = config['NEG_PREFIX']
         iid_field = config['ITEM_ID_FIELD']
         tid_field = config['TAIL_ENTITY_ID_FIELD']
-
-        # rec negative cols
-        columns = [iid_field] if dataset.item_feat is None else dataset.item_feat.columns
-        for item_feat_col in columns:
-            neg_item_feat_col = neg_prefix + item_feat_col
-            dataset.copy_field_property(neg_item_feat_col, item_feat_col)
 
         # kg negative cols
         neg_kg_col = neg_prefix + tid_field
@@ -596,26 +592,27 @@ class KGDataLoader(NegSampleBasedDataLoader):
         kg_feat.insert(len(kg_feat.columns), neg_tail_entity_id, neg_tids)
         return kg_feat
 
+    def _batch_size_adaptation(self):
+        raise NotImplementedError('Method [batch_size_adaptation] should be implemented.')
+
 
 class KnowledgeBasedDataLoader(AbstractDataLoader):
 
     def __init__(self, config, dataset, sampler, kg_sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
 
-        super(KnowledgeBasedDataLoader, self).__init__(config, dataset,
-                                                       batch_size=batch_size, shuffle=shuffle)
-
         # using sampler
-        self.general_dataloader = self._get_general_data_loader(config, dataset, sampler, phase, neg_sample_args,
-                                                                batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        self.general_dataloader = self._get_data_loader(config=config, dataset=dataset, sampler=sampler, phase=phase, neg_sample_args=neg_sample_args,
+                                                       batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
         # using kg_sampler and dl_format is pairwise
         self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, phase, neg_sample_args,
                                           batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=False)
 
-        self.main_dataloader = None
+        super(KnowledgeBasedDataLoader, self).__init__(config, dataset,
+                                                       batch_size=batch_size, shuffle=shuffle)
 
-    def _get_general_data_loader(self, **kwargs):
+    def _get_data_loader(self, **kwargs):
         phase = kwargs['phase']
         config = kwargs['config']
         if phase == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
@@ -640,7 +637,7 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
     def __iter__(self):
         if not hasattr(self, 'state'):
             raise ValueError('The dataloader\'s state must be set when using the kg based dataloader')
-        return 
+        return super().__iter__()
 
     def __next__(self):
         if self.pr >= self.pr_end:
@@ -666,17 +663,13 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         elif self.state == KGDataLoaderState.RSKG:
             kg_data = self.kg_dataloader._next_batch_data()
             rec_data = self.general_dataloader._next_batch_data()
-            return rec_data.update(kg_data)
-        else:
-            raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
+            rec_data.update(kg_data)
+            return rec_data
 
     def set_mode(self, state):
-        if state not in set(KGDataLoader):
-            raise ValueError()
-        self.state = state
+        if state not in set(KGDataLoaderState):
+            raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
         if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
             return self.general_dataloader
         elif self.state == KGDataLoaderState.KG:
             return self.kg_dataloader
-        else:
-            raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
