@@ -10,9 +10,9 @@ from ..abstract_recommender import GeneralRecommender
 
 
 class Pop(GeneralRecommender):
+    input_type = InputType.POINTWISE
     def __init__(self, config, dataset):
         super(Pop, self).__init__()
-        self.input_type = InputType.POINTWISE
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.device = config['device']

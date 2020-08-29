@@ -23,11 +23,11 @@ from ..layers import BiGNNLayer
 
 
 class NGCF(GeneralRecommender):
+    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(NGCF, self).__init__()
 
-        self.input_type = InputType.PAIRWISE
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
@@ -49,9 +49,12 @@ class NGCF(GeneralRecommender):
             self.GNNlayers.append(BiGNNLayer(From, To))
         self.sigmoid = nn.LogSigmoid()
         self.apply(self.init_weights)
-        self.interaction_matrix = None
-        self.norm_adj_matrix = None
+        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
+        self.norm_adj_matrix = self.get_norm_adj_mat().to(self.device)
         self.eye_matrix = self.get_eye_mat().to(self.device)
+
+        self.restore_user_e = None
+        self.restore_item_e = None
 
     def init_weights(self, module):
         if isinstance(module, nn.Embedding):
@@ -108,10 +111,6 @@ class NGCF(GeneralRecommender):
         features = torch.cat([user_embd, item_embd], dim=0)
         return features
 
-    def train_preparation(self, train_data, valid_data):
-        self.interaction_matrix = train_data.inter_matrix(form='csr').astype(np.float32)
-        self.norm_adj_matrix = self.get_norm_adj_mat().to(self.device)
-
     def forward(self):
         A_hat = self.sparse_dropout(self.norm_adj_matrix,
                                     self.node_dropout,
@@ -132,6 +131,8 @@ class NGCF(GeneralRecommender):
         return u_g_embeddings, i_g_embeddings
 
     def calculate_loss(self, interaction):
+        if self.restore_user_e is not None or self.restore_item_e is not None:
+            self.restore_user_e, self.restore_item_e = None, None
         user = interaction[self.USER_ID]
         pos_item = interaction[self.ITEM_ID]
         neg_item = interaction[self.NEG_ITEM_ID]
@@ -167,11 +168,11 @@ class NGCF(GeneralRecommender):
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
+        if self.restore_user_e is None or self.restore_item_e is None:
+            self.restore_user_e, self.restore_item_e = self.forward()
+        u_embeddings = self.restore_user_e[user, :]
 
-        u_embedding, i_embedding = self.forward()
-        u_embeddings = u_embedding[user, :]
-
-        scores = torch.matmul(u_embeddings, i_embedding.transpose(0, 1))
+        scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
 
         return scores.view(-1)
 
