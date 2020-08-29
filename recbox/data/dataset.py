@@ -771,6 +771,7 @@ class KnowledgeBasedDataset(Dataset):
 
     def _from_scratch(self, config):
         self.dataset_path = config['data_path']
+        self._fill_nan_flag = self.config['fill_nan']
 
         self.field2type = {}
         self.field2source = {}
