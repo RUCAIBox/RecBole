@@ -138,6 +138,14 @@ test_examples = {
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['rating', 'timestamp']},
         'min_user_inter_num': 5
+    },
+    'Test KG Example': {
+        'model': 'CKE',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics:': ['Recall'],
+        'topk': [10]
     }
 }
 
