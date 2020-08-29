@@ -919,3 +919,11 @@ class KnowledgeBasedDataset(Dataset):
     @property
     def entity_num(self):
         return self.num(self.entity_field)
+
+    @property
+    def head_entities(self):
+        return self.kg_feat[self.head_entity_field].values
+
+    @property
+    def entities_list(self):
+        return np.arange(self.entity_num)
