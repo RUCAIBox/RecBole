@@ -420,6 +420,7 @@ class Dataset(object):
             self._remap(remap_list)
 
     def _remap(self, remap_list):
+        print(remap_list)
         tokens = []
         for feat, field, ftype in remap_list:
             if ftype == FeatureType.TOKEN:
