@@ -272,6 +272,5 @@ metrics_dict = {
     'rmse': rmse,
     'mae': mae,
     'logloss': log_loss_,
-    'auc': auc,
-    'map': map_
+    'auc': auc
 }
