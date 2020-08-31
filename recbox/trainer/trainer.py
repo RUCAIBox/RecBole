@@ -18,7 +18,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from ..evaluator import TopKEvaluator, LossEvaluator
 from ..data.interaction import Interaction
-from ..utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType
+from ..utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType, ModelType
 from .utils import early_stopping, calculate_valid_score, dict2str
 
 
