@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/27, 2020/8/5, 2020/8/27
+# @Time   : 2020/8/29, 2020/8/5, 2020/8/27
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -32,6 +32,7 @@ class Dataset(object):
 
     def _from_scratch(self, config):
         self.dataset_path = config['data_path']
+        self._fill_nan_flag = self.config['fill_nan']
 
         self.field2type = {}
         self.field2source = {}
@@ -208,10 +209,10 @@ class Dataset(object):
             flag = True
         if flag:
             self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
-            self.config['fill_nan'] = True
+            self._fill_nan_flag = True
 
     def _fill_nan(self):
-        if not self.config['fill_nan']:
+        if not self._fill_nan_flag:
             return
 
         most_freq = SimpleImputer(missing_values=np.nan, strategy='most_frequent', copy=False)

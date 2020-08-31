@@ -8,6 +8,7 @@ from torch import nn
 from ...utils import InputType
 from ..abstract_recommender import SequentialRecommender
 from torch.nn.utils.rnn import pack_padded_sequence,pad_packed_sequence
+from torch.nn.init import xavier_normal_, constant_
 
 
 # TODO:init
@@ -38,6 +39,15 @@ class NARM(SequentialRecommender):
         self.ct_dropout = nn.Dropout(self.dropout[1])
         self.b = nn.Linear(2*self.hidden_size, self.embedding_size, bias=False)
         self.criterion = nn.CrossEntropyLoss()
+        self.apply(self.init_weights)
+
+    def init_weights(self, module):
+        if isinstance(module, nn.Embedding):
+            xavier_normal_(module.weight.data)
+        elif isinstance(module, nn.Linear):
+            xavier_normal_(module.weight.data)
+            if module.bias is not None:
+                constant_(module.bias.data, 0)
 
 
 
