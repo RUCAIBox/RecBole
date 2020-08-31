@@ -572,7 +572,7 @@ class KGDataLoader(NegSampleBasedDataLoader):
         # TODO 这个地方应该取的kg_data
         cur_data = self.dataset.kg_feat[self.pr: self.pr + self.step]
         self.pr += self.step
-        if self.real_time_neg_sampling:
+        if self.real_time:
             cur_data = self._neg_sampling(cur_data)
         return self._dataframe_to_interaction(cur_data)
 
@@ -603,8 +603,9 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
 
         # using sampler
-        self.general_dataloader = self._get_data_loader(config=config, dataset=dataset, sampler=sampler, phase=phase, neg_sample_args=neg_sample_args,
-                                                       batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        self.general_dataloader = self._get_data_loader(config=config, dataset=dataset, sampler=sampler, phase=phase,
+                                                        neg_sample_args=neg_sample_args,
+                                                        batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
         # using kg_sampler and dl_format is pairwise
         self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, phase, neg_sample_args,
@@ -631,7 +632,8 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
 
     def __iter__(self):
         if not hasattr(self, 'state') or not hasattr(self, 'main_dataloader'):
-            raise ValueError('The dataloader\'s state  and main_dataloader must be set when using the kg based dataloader')
+            raise ValueError('The dataloader\'s state and main_dataloader must be set '
+                             'when using the kg based dataloader')
         return super().__iter__()
 
     def __next__(self):
