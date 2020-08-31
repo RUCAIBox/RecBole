@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/25, 2020/8/14
+# @Time   : 2020/8/31, 2020/8/14
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -41,7 +41,7 @@ def data_preparation(config, dataset, save=False):
 
     kwargs = {}
     if model_type == ModelType.GENERAL:
-        es.neg_sample_by(1, real_time=True)
+        es.neg_sample_by(config['training_neg_sample_num'], real_time=True)
         sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
         kwargs['sampler'] = sampler
         kwargs['phase'] = 'train'
