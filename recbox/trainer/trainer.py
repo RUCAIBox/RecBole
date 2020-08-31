@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/8/19 18:59, 2020/8/21, 2020/8/19
+# @Time   : 2020/8/7 18:38, 2020/8/29 15:40, 2020/8/21, 2020/8/19
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn
 
@@ -18,8 +18,15 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from ..evaluator import TopKEvaluator, LossEvaluator
 from ..data.interaction import Interaction
-from ..utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType
+from ..utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType, ModelType
 from .utils import early_stopping, calculate_valid_score, dict2str
+
+
+def get_trainer(model_type):
+    if model_type == ModelType.KNOWLEDGE:
+        return KGTrainer
+    else:
+        return Trainer
 
 
 class AbstractTrainer(object):
