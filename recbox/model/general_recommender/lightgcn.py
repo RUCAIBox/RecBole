@@ -80,7 +80,7 @@ class LightGCN(GeneralRecommender):
         val = torch.FloatTensor([1] * num)
         return torch.sparse.FloatTensor(i, val)
 
-    def computer_embedding(self):
+    def compute_embedding(self):
         """
         propagate methods for lightGCN
         """
@@ -100,7 +100,7 @@ class LightGCN(GeneralRecommender):
         return users, items
 
     def get_embedding(self, users, pos_items, neg_items):
-        all_users, all_items = self.computer_embedding()
+        all_users, all_items = self.compute_embedding()
         users_emb = all_users[users]
         pos_emb = all_items[pos_items]
         neg_emb = all_items[neg_items]
@@ -139,7 +139,7 @@ class LightGCN(GeneralRecommender):
 
     def forward(self, users, items):
         # compute embedding
-        all_users, all_items = self.computer_embedding()
+        all_users, all_items = self.compute_embedding()
         users_emb = all_users[users]
         items_emb = all_items[items]
         inner_pro = torch.mul(users_emb, items_emb)
@@ -156,9 +156,10 @@ class LightGCN(GeneralRecommender):
         user = interaction[self.USER_ID]
 
         if self.restore_user_e is None or self.restore_item_e is None:
-            self.restore_user_e, self.restore_item_e = self.computer_embedding()
+            self.restore_user_e, self.restore_item_e = self.compute_embedding()
         u_embeddings = self.restore_user_e[user, :]
 
         scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
 
         return scores.view(-1)
+        
