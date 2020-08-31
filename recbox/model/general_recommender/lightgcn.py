@@ -43,7 +43,6 @@ class LightGCN(GeneralRecommender):
         self.embedding_item = torch.nn.Embedding(num_embeddings=self.num_items, embedding_dim=self.latent_dim)
         nn.init.xavier_uniform_(self.embedding_user.weight, gain=1)
         nn.init.xavier_uniform_(self.embedding_item.weight, gain=1)
-        self.BPRLoss = BPRLoss(gamma=self.weight_decay)
 
         self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32) # csr
         self.Graph = self.get_norm_adj_mat().to(self.device)
@@ -121,7 +120,6 @@ class LightGCN(GeneralRecommender):
         neg_scores = torch.mul(users_emb, neg_emb)
         neg_scores = torch.sum(neg_scores, dim=1)
 
-        # loss = - self.BPRLoss(pos_scores, neg_scores)
         loss = torch.mean(torch.nn.functional.softplus(neg_scores - pos_scores))
         reg_loss = reg_loss * self.weight_decay
         loss = loss + reg_loss
