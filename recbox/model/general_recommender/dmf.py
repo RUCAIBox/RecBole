@@ -1,21 +1,29 @@
 # _*_ coding: utf-8 _*_
-# @CreateTime : 2020/8/21 16:58 
+# @CreateTime : 2020/8/21 16:58
 # @Author : Kaizhou Zhang
 # @Email  : kaizhou361@163.com
 # @File : dmf.py
+
+# UPDATE
+# @Time    :   2020/08/31
+# @Author  :   Kaiyuan Li
+# @email   :   tsotfsk@outlook.com
 
 """
 Reference:
 Hong-Jian Xue et al., "Deep Matrix Factorization Models for Recommender Systems." in IJCAI 2017.
 """
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
+import torch.nn.functional as F
+from torch.nn.init import xavier_normal_
 
-from ..abstract_recommender import GeneralRecommender
 from ...utils import InputType
+from ..abstract_recommender import GeneralRecommender
 from ..layers import MLPLayers
+
 
 class DMF(GeneralRecommender):
     input_type = InputType.POINTWISE
@@ -26,42 +34,59 @@ class DMF(GeneralRecommender):
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.LABEL = config['LABEL_FIELD']
+        self.RATING = config['RATING_FIELD']
+
+        self.user_layers_dim = config['user_layers_dim']
+        self.item_layers_dim = config['item_layers_dim']
+        assert self.user_layers_dim[-1] == self.item_layers_dim[-1], 'The dimensions of the last layer of users and items must be the same'
+
+        self.min_y_hat = config['min_y_hat']
+        inter_matrix_type = config['inter_matrix_type']
+        if inter_matrix_type == '01':
+            self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
+        elif inter_matrix_type == 'rating':
+            self.interaction_matrix = dataset.inter_matrix(form='csr', value_field=self.RATING).astype(np.float32)
+        else:
+            raise ValueError("The inter_matrix_type must in ['0,1', 'rating'] but get {}".format(inter_matrix_type))
+
         self.n_users = dataset.user_num
         self.n_items = dataset.item_num
-        self.layers = config['layers']
-        self.latent_dim = self.layers[0]
-        self.min_y_hat = config['min_y_hat']
-        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
-        self.u_embedding = None
+
+        self.user_linear = nn.Linear(in_features=self.n_items, out_features=self.user_layers_dim[0], bias=False)
+        self.item_linear = nn.Linear(in_features=self.n_users, out_features=self.item_layers_dim[0], bias=False)
+
+        self.user_fc_layers = MLPLayers(self.user_layers_dim)
+        self.item_fc_layers = MLPLayers(self.item_layers_dim)
+        self.apply(self.init_weights)
+
+        # Save the item embedding before dot product layer to speed up evaluation
         self.i_embedding = None
 
-        self.linear_user = nn.Linear(in_features=self.n_items, out_features=self.latent_dim,bias=False)
-        self.linear_user.weight.detach().normal_(0, 0.01)
-        self.linear_item = nn.Linear(in_features=self.n_users, out_features=self.latent_dim,bias=False)
-        self.linear_item.weight.detach().normal_(0, 0.01)
-
-        self.user_fc_layers = MLPLayers(self.layers)
-        self.item_fc_layers = MLPLayers(self.layers)
-        self.loss = nn.BCELoss()
+    def init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            xavier_normal_(module.weight.data)
 
     def forward(self, user, item):
         user = torch.from_numpy(self.interaction_matrix[user.cpu()].todense()).to(self.device)
         item = torch.from_numpy(self.interaction_matrix[:, item.cpu()].todense()).to(self.device).t()
-        user = self.linear_user(user)
-        item = self.linear_item(item)
+        user = self.user_linear(user)
+        item = self.item_linear(item)
 
         user = self.user_fc_layers(user)
         item = self.item_fc_layers(item)
 
-        vector = torch.cosine_similarity(user, item).view(-1,)
+        vector = torch.cosine_similarity(user, item).view(-1)
         vector = torch.max(vector, torch.tensor([self.min_y_hat]).to(self.device))
         return vector
 
     def calculate_loss(self, interaction):
+        # when starting a new epoch, the item embedding we saved must be cleared
+        if self.training:
+            self.i_embedding = None
+
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
         label = interaction[self.LABEL]
-        # print(user)
         output = self.forward(user, item)
         self.max_rating = self.interaction_matrix.max()
         label = label / self.max_rating
@@ -71,11 +96,11 @@ class DMF(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        return self.forward(user,item)
+        return self.forward(user, item)
 
     def get_user_embedding(self, user):
         user = torch.from_numpy(self.interaction_matrix[user.cpu()].todense()).to(self.device)
-        user = self.linear_user(user)
+        user = self.user_linear(user)
         user = self.user_fc_layers(user)
         return user
 
@@ -87,18 +112,19 @@ class DMF(GeneralRecommender):
         data = torch.FloatTensor(interaction_matrix.data)
         item_matrix = torch.sparse.FloatTensor(i, data).to(self.device).transpose(0, 1)
 
-        item = torch.sparse.mm(item_matrix, self.linear_item.weight.t())
-
+        item = torch.sparse.mm(item_matrix, self.item_linear.weight.t())
         item = self.item_fc_layers(item)
         return item
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
-        self.u_embedding = self.get_user_embedding(user)
+        u_embedding = self.get_user_embedding(user)
+        u_embedding = F.normalize(u_embedding, p=2, dim=1)
+
         if self.i_embedding is None:
             self.i_embedding = self.get_item_embedding()
-        u_sqrt = torch.sqrt(torch.sum(torch.square(self.u_embedding), dim=1)).view(-1, 1)
-        i_sqrt = torch.sqrt(torch.sum(torch.square(self.i_embedding), dim=1)).view(1, -1)
-        cos_similarity = torch.mm(self.u_embedding, self.i_embedding.t()) / torch.mm(u_sqrt, i_sqrt)
+            self.i_embedding = F.normalize(self.i_embedding, p=2, dim=1)
+
+        cos_similarity = torch.mm(u_embedding, self.i_embedding.t())
         cos_similarity = torch.max(cos_similarity, torch.tensor([self.min_y_hat]).to(self.device))
         return cos_similarity.view(-1)
