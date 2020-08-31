@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/19 18:24, 2020/8/31
+# @Time   : 2020/8/29 15:40, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -137,6 +137,14 @@ test_examples = {
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['rating', 'timestamp']},
         'min_user_inter_num': 5
+    },
+    'Test KG Example': {
+        'model': 'CKE',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics:': ['Recall'],
+        'topk': [10]
     }
 }
 

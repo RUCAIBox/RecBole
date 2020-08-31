@@ -3,17 +3,29 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/25, 2020/8/31
+# @Time   : 2020/8/31, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
-import os
 import copy
+import os
 from logging import getLogger
+
 from ..config import EvalSetting
-from ..utils import ModelType, InputType, EvaluatorType
+from ..sampler import KGSampler, Sampler
+from ..utils import EvaluatorType, InputType, ModelType
 from .dataloader import *
-from ..sampler import Sampler
+from .dataset import Dataset, KnowledgeBasedDataset
+
+
+def create_dataset(config):
+    model_type = config['MODEL_TYPE']
+    if model_type == ModelType.KNOWLEDGE:
+        return KnowledgeBasedDataset(config)
+    elif model_type == ModelType.SOCIAL:
+        raise not NotImplementedError('Social Recommendation Dataset has not been implemented.')
+    else:
+        return Dataset(config)
 
 
 def data_preparation(config, dataset, save=False):
@@ -41,12 +53,17 @@ def data_preparation(config, dataset, save=False):
         save_datasets(config['checkpoint_dir'], name=phases, dataset=builded_datasets)
 
     kwargs = {}
-    if model_type == ModelType.GENERAL:
-        es.neg_sample_by(1)
+    # TODO 为什么这里type不包含context？
+    if model_type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
+        es.neg_sample_by(config['training_neg_sample_num'])
         sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
+        # TODO 如果model_type是kg, 可能还要设置一个kg的sampler
         kwargs['sampler'] = sampler
         kwargs['phase'] = 'train'
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
+        if model_type == ModelType.KNOWLEDGE:
+            kg_sampler = KGSampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
+            kwargs['kg_sampler'] = kg_sampler
     train_data = dataloader_construct(
         name='train',
         config=config,
@@ -59,7 +76,7 @@ def data_preparation(config, dataset, save=False):
         **kwargs
     )
 
-    if model_type == ModelType.GENERAL:
+    if model_type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
         getattr(es, es_str[1])()
         kwargs['phase'] = ['valid', 'test']
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
@@ -163,5 +180,20 @@ def get_data_loader(name, config, eval_setting, model_type):
             return SequentialDataLoader
         else:
             return SequentialFullDataLoader
+    elif model_type == ModelType.KNOWLEDGE:
+        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+        if neg_sample_strategy == 'by':
+            if name == 'train':
+                return KnowledgeBasedDataLoader
+            elif config['eval_type'] == EvaluatorType.INDIVIDUAL:
+                return GeneralIndividualDataLoader
+            else:
+                return GeneralGroupedDataLoader
+        elif neg_sample_strategy == 'full':
+            return GeneralFullDataLoader
+        elif neg_sample_strategy == 'none':
+            # return GeneralDataLoader
+            # TODO 训练也可以为none? 看general的逻辑似乎是都可以为None
+            raise NotImplementedError('The use of external negative sampling for knowledge model has not been implemented')
     else:
         raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
