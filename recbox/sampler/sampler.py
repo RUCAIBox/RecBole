@@ -4,9 +4,9 @@
 # @File   : sampler.py
 
 # UPDATE
-# @Time   : 2020/8/17 
-# @Author : Xingyu Pan
-# @email  : panxy@ruc.edu.cn
+# @Time   : 2020/8/17, 2020/8/31, 2020/8/31
+# @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou
+# @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn
 
 import random
 import numpy as np
@@ -102,8 +102,9 @@ class KGSampler(object):
         hid_field = self.config['HEAD_ENTITY_ID_FIELD']
         tid_field = self.config['TAIL_ENTITY_ID_FIELD']
 
-        self.head_entities = self.datasets[0].head_entities
+        self.head_entities = set(self.datasets[0].head_entities)
         self.entities = self.datasets[0].entities_list
+        self.entity_num = self.datasets[0].entity_num
 
         if distribution == 'uniform':
             self.random_entity_list = self.entities[:]
@@ -121,9 +122,9 @@ class KGSampler(object):
 
         self.full_set = set(self.entities)
         self.used_tail_eneity_id = dict()
-        last = {hid: set() for hid in self.head_entities}
+        last = [set() for i in range(self.entity_num)]
         for phase, dataset in zip(self.phases, self.datasets):
-            cur = {k: set(v) for k, v in last.items()}
+            cur = np.array([set(s) for s in last])
             for hid, tid in dataset.kg_feat[[hid_field, tid_field]].values:
                 cur[hid].add(tid)
             last = self.used_tail_eneity_id[phase] = cur
@@ -133,20 +134,22 @@ class KGSampler(object):
         self.random_pr += 1
         return entity
 
-    def sample_by_entity_ids(self, phase, entity_id, num=1):
+    def sample_by_entity_ids(self, phase, head_entity_ids, num=1):
         try:
-            neg_entity_id = []
-            used_entity_id = self.used_tail_eneity_id[phase][entity_id]
-            for _ in range(self.random_entity_list_length):
+            head_entity_num = len(head_entity_ids)
+            total_num = head_entity_num * num
+            neg_tail_entity_id = np.zeros(total_num, dtype=np.int64)
+            used_tail_entity_id_list = np.repeat(self.used_tail_eneity_id[phase][head_entity_ids], num)
+            for i, used_tail_entity_id in enumerate(used_tail_entity_id_list):
                 cur = self.random_entity()
-                if cur not in used_entity_id:
-                    neg_entity_id.append(cur)
-                    if len(neg_entity_id) == num:
-                        return neg_entity_id
-            return neg_entity_id
+                while cur in used_tail_entity_id:
+                    cur = self.random_entity()
+                neg_tail_entity_id[i] = cur
+            return neg_tail_entity_id
         except KeyError:
             if phase not in self.phases:
                 raise ValueError('phase [{}] not exist'.format(phase))
         except IndexError:
-            if entity_id < 0 or entity_id >= self.n_entitys:
-                raise ValueError('entity_id [{}] not exist'.format(entity_id))
+            for head_entity_id in head_entity_ids:
+                if head_entity_id not in self.head_entities:
+                    raise ValueError('head_entity_id [{}] not exist'.format(head_entity_id))
