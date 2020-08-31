@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/25, 2020/8/14
+# @Time   : 2020/8/25, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -42,7 +42,7 @@ def data_preparation(config, dataset, save=False):
 
     kwargs = {}
     if model_type == ModelType.GENERAL:
-        es.neg_sample_by(1, real_time=True)
+        es.neg_sample_by(1)
         sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
         kwargs['sampler'] = sampler
         kwargs['phase'] = 'train'
@@ -60,7 +60,7 @@ def data_preparation(config, dataset, save=False):
     )
 
     if model_type == ModelType.GENERAL:
-        getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
+        getattr(es, es_str[1])()
         kwargs['phase'] = ['valid', 'test']
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
     valid_data, test_data = dataloader_construct(

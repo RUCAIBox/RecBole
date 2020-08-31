@@ -3,12 +3,10 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/27, 2020/8/27
+# @Time   : 2020/8/27, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
-import operator
-from functools import reduce
 import math
 import pandas as pd
 import numpy as np
@@ -29,6 +27,7 @@ class AbstractDataLoader(object):
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.pr = 0
+        self.real_time = config['real_time_process']
 
         self.join = self.dataset.join
         self.inter_matrix = self.dataset.inter_matrix
@@ -139,10 +138,9 @@ class NegSampleBasedDataLoader(AbstractDataLoader):
         self.phase = phase
         self.neg_sample_args = neg_sample_args
         self.dl_format = dl_format
-        self.real_time_neg_sampling = self.neg_sample_args['real_time']
 
         self._batch_size_adaptation()
-        if not self.real_time_neg_sampling:
+        if not self.real_time:
             self._pre_neg_sampling()
 
     def _batch_size_adaptation(self):
@@ -193,7 +191,7 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
             return
         batch_num = max(self.batch_size // self.times, 1)
         new_batch_size = batch_num * self.times
-        self.step = batch_num if self.real_time_neg_sampling else new_batch_size
+        self.step = batch_num if self.real_time else new_batch_size
         self.set_batch_size(new_batch_size)
 
     @property
@@ -206,7 +204,7 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
     def _next_batch_data(self):
         cur_data = self.dataset[self.pr: self.pr + self.step]
         self.pr += self.step
-        if self.real_time_neg_sampling:
+        if self.real_time:
             cur_data = self._neg_sampling(cur_data)
         return self._dataframe_to_interaction(cur_data)
 
@@ -276,7 +274,7 @@ class GeneralGroupedDataLoader(GeneralIndividualDataLoader):
         self.uid2items_num = self.uid2items_num[new_index]
 
     def _next_batch_data(self):
-        sampling_func = self._neg_sampling if self.real_time_neg_sampling else (lambda x: x)
+        sampling_func = self._neg_sampling if self.real_time else (lambda x: x)
         cur_data = []
         for uid, index in self.uid2index[self.pr: self.pr + self.step]:
             cur_data.append(sampling_func(self.dataset[index]))
@@ -381,7 +379,7 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
             self.used_idx[i] -= i * tot_item_num * self.step
 
     def _next_batch_data(self):
-        if not self.real_time_neg_sampling:
+        if not self.real_time:
             slc = slice(self.pr, self.pr + self.step)
             idx = self.pr // self.step
             cur_data = self.user_tensor[slc], self.pos_idx[idx], self.used_idx[idx], \
@@ -415,9 +413,10 @@ class SequentialDataLoader(AbstractDataLoader):
         if dl_format != InputType.POINTWISE:
             raise ValueError('dl_format in Sequential DataLoader should be POINTWISE')
 
+        super(SequentialDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+
         self.dl_format = dl_format
         self.step = batch_size
-        self.real_time = config['real_time_process']
 
         self.uid_field = dataset.uid_field
         self.iid_field = dataset.iid_field
@@ -451,8 +450,6 @@ class SequentialDataLoader(AbstractDataLoader):
         if not self.real_time:
             self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
                                                         self.target_index, self.item_list_length)
-
-        super(SequentialDataLoader, self).__init__(config, dataset, batch_size, shuffle)
 
     def __len__(self):
         return math.ceil(self.pr_end / self.step)
