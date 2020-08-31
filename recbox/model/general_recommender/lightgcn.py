@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/8/29 10:30
+# @Time   : 2020/8/31 11:30
 # @Author : Changxin Tian
 # @Email  : cx.tian@outlook.con
 # @File   : lightgcn.py
@@ -9,14 +9,6 @@ Reference:
 He, Xiangnan, et al. "LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation."
 arXiv preprint arXiv:2002.02126 (2020)..
 """
-
-# dataset=ml-1m
-# Parameters: {'delay': 0.001, 'layers': 2, 'learning_rate': 0.002}
-# test result: {'Recall@10': 0.1713, 'MRR@10': 0.3738, 'NDCG@10': 0.2118, 'Hit@10': 0.725, 'Precision@10': 0.1569}
-#
-# dataset=yelp
-# Parameters: {'delay': 1e-4, 'layers': 3, 'learning_rate': 0.001}
-# test result: {'Recall@10': 0.0597, 'MRR@10': 0.0728, 'NDCG@10': 0.0458, 'Hit@10': 0.1867, 'Precision@10': 0.023}
 
 import numpy as np
 import scipy.sparse as sp
@@ -51,9 +43,6 @@ class LightGCN(GeneralRecommender):
         self.embedding_item = torch.nn.Embedding(num_embeddings=self.num_items, embedding_dim=self.latent_dim)
         nn.init.xavier_uniform_(self.embedding_user.weight, gain=1)
         nn.init.xavier_uniform_(self.embedding_item.weight, gain=1)
-        # print('using xavier initilizer')
-
-        self.Sigmoid = nn.Sigmoid()
         self.BPRLoss = BPRLoss(gamma=self.weight_decay)
 
         self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32) # csr
@@ -63,11 +52,6 @@ class LightGCN(GeneralRecommender):
         self.restore_user_e = None
         self.restore_item_e = None
 
-        # future work
-        self.dropout_on = False
-        self.keep_prob = 0.6  # dropout prob
-        self.A_split = False
-        # print(f"lgn is already to go(dropout:{self.dropout_on})")
 
     def get_norm_adj_mat(self):
         # build adj matrix
@@ -97,7 +81,7 @@ class LightGCN(GeneralRecommender):
         val = torch.FloatTensor([1] * num)
         return torch.sparse.FloatTensor(i, val)
 
-    def computer(self):
+    def computer_embedding(self):
         """
         propagate methods for lightGCN
         """
@@ -116,15 +100,8 @@ class LightGCN(GeneralRecommender):
         users, items = torch.split(light_out, [self.num_users, self.num_items])
         return users, items
 
-    def getUsersRating(self, users):
-        all_users, all_items = self.computer()
-        users_emb = all_users[users.long()]
-        items_emb = all_items
-        rating = self.f(torch.matmul(users_emb, items_emb.t()))
-        return rating
-
-    def getEmbedding(self, users, pos_items, neg_items):
-        all_users, all_items = self.computer()
+    def get_embedding(self, users, pos_items, neg_items):
+        all_users, all_items = self.computer_embedding()
         users_emb = all_users[users]
         pos_emb = all_items[pos_items]
         neg_emb = all_items[neg_items]
@@ -135,7 +112,7 @@ class LightGCN(GeneralRecommender):
 
     def bpr_loss(self, users, pos, neg):
         (users_emb, pos_emb, neg_emb,
-         userEmb0, posEmb0, negEmb0) = self.getEmbedding(users.long(), pos.long(), neg.long())
+         userEmb0, posEmb0, negEmb0) = self.get_embedding(users, pos, neg)
         reg_loss = (1 / 2) * (userEmb0.norm(2).pow(2) +
                               posEmb0.norm(2).pow(2) +
                               negEmb0.norm(2).pow(2)) / float(len(users))
@@ -164,7 +141,7 @@ class LightGCN(GeneralRecommender):
 
     def forward(self, users, items):
         # compute embedding
-        all_users, all_items = self.computer()
+        all_users, all_items = self.computer_embedding()
         users_emb = all_users[users]
         items_emb = all_items[items]
         inner_pro = torch.mul(users_emb, items_emb)
@@ -181,7 +158,7 @@ class LightGCN(GeneralRecommender):
         user = interaction[self.USER_ID]
 
         if self.restore_user_e is None or self.restore_item_e is None:
-            self.restore_user_e, self.restore_item_e = self.computer()
+            self.restore_user_e, self.restore_item_e = self.computer_embedding()
         u_embeddings = self.restore_user_e[user, :]
 
         scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
