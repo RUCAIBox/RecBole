@@ -139,10 +139,20 @@ test_examples = {
         'load_col': {'inter': ['rating', 'timestamp']},
         'min_user_inter_num': 5
     },
-    'Test KG Example': {
+    'Test CKE': {
         'model': 'CKE',
         'dataset': 'kgdata_example',
+        'epochs': 3,
+        'train_kg_step': 0,
+        'valid_metric': 'Recall@10',
+        'metrics:': ['Recall'],
+        'topk': [10]
+    },
+    'Test KTUP': {
+        'model': 'KTUP',
+        'dataset': 'kgdata_example',
         'epochs': 1,
+        'train_kg_step': 1,
         'valid_metric': 'Recall@10',
         'metrics:': ['Recall'],
         'topk': [10]

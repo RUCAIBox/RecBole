@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/29, 2020/8/27
-# @Author : Yupeng Hou, Yushuo Chen
-# @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/8/31, 2020/8/27, 2020/8/31
+# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
+# @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
 import math
 
@@ -606,7 +606,9 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
 
         # using kg_sampler and dl_format is pairwise
         self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, phase, neg_sample_args,
-                                          batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=False)
+                                          batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=shuffle)
+
+        self.main_dataloader = self.general_dataloader
 
         super(KnowledgeBasedDataLoader, self).__init__(config, dataset,
                                                        batch_size=batch_size, shuffle=shuffle)
@@ -631,6 +633,11 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         if not hasattr(self, 'state') or not hasattr(self, 'main_dataloader'):
             raise ValueError('The dataloader\'s state  and main_dataloader must be set when using the kg based dataloader')
         return super().__iter__()
+
+    def _shuffle(self):
+        self.main_dataloader._shuffle()
+        if self.state == KGDataLoaderState.RSKG:
+            self.kg_dataloader._shuffle()
 
     def __next__(self):
         if self.pr >= self.pr_end:

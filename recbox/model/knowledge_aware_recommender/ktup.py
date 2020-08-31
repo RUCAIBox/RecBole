@@ -15,13 +15,14 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_
 from torch.autograd import Variable
 
+from ...utils import InputType
 from ..abstract_recommender import KnowledgeRecommender
 from ..loss import BPRLoss, MarginLoss
 
 
 # todo: L2 regularization
 class KTUP(KnowledgeRecommender):
-
+    input_type = InputType.PAIRWISE
     def __init__(self, config, dataset):
         super(KTUP, self).__init__(config, dataset)
 

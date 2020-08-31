@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/31, 2020/8/14
-# @Author : Yupeng Hou, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/8/31, 2020/8/14, 2020/8/31
+# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
 import copy
 import os
@@ -80,6 +80,8 @@ def data_preparation(config, dataset, save=False):
         getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
         kwargs['phase'] = ['valid', 'test']
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
+        if 'kg_sampler' in kwargs:
+            del kwargs['kg_sampler']
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
