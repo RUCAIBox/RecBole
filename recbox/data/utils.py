@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/29, 2020/8/14
-# @Author : Yupeng Hou, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/8/31, 2020/8/14, 2020/8/31
+# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
 import copy
 import os
@@ -55,7 +55,7 @@ def data_preparation(config, dataset, save=False):
     kwargs = {}
     # TODO 为什么这里type不包含context？
     if model_type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
-        es.neg_sample_by(1, real_time=True)
+        es.neg_sample_by(config['training_neg_sample_num'], real_time=True)
         sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
         # TODO 如果model_type是kg, 可能还要设置一个kg的sampler
         kwargs['sampler'] = sampler
@@ -80,6 +80,8 @@ def data_preparation(config, dataset, save=False):
         getattr(es, es_str[1])(real_time=config['real_time_neg_sampling'])
         kwargs['phase'] = ['valid', 'test']
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
+        if 'kg_sampler' in kwargs:
+            del kwargs['kg_sampler']
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
