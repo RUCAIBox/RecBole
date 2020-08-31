@@ -18,7 +18,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.init import xavier_normal_
+from torch.nn.init import normal_
 
 from ...utils import InputType
 from ..abstract_recommender import GeneralRecommender
@@ -64,7 +64,7 @@ class DMF(GeneralRecommender):
 
     def init_weights(self, module):
         if isinstance(module, nn.Linear):
-            xavier_normal_(module.weight.data)
+            normal_(module.weight.data, 0, 0.01)
 
     def forward(self, user, item):
         user = torch.from_numpy(self.interaction_matrix[user.cpu()].todense()).to(self.device)
