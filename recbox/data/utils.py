@@ -13,6 +13,7 @@ from logging import getLogger
 from ..config import EvalSetting
 from ..utils import ModelType, InputType, EvaluatorType
 from .dataloader import *
+from ..sampler import Sampler
 
 
 def data_preparation(config, dataset, save=False):
