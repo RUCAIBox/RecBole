@@ -4,9 +4,9 @@
 # @File   : sampler.py
 
 # UPDATE
-# @Time   : 2020/8/17 
-# @Author : Xingyu Pan
-# @email  : panxy@ruc.edu.cn
+# @Time   : 2020/8/17, 2020/8/31, 2020/8/31
+# @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou
+# @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn
 
 import random
 import numpy as np
@@ -122,3 +122,76 @@ class Sampler(object):
         except IndexError:
             if user_id < 0 or user_id >= self.n_users:
                 raise ValueError('user_id [{}] not exist'.format(user_id))
+
+
+class KGSampler(object):
+    def __init__(self, config, phases, datasets, distribution='uniform'):
+        legal_distribution = {'uniform', 'popularity'} 
+        if distribution not in legal_distribution:
+            raise ValueError('Distribution [{}] should in {}'.format(distribution, list(legal_distribution)))
+
+        if not isinstance(phases, list):
+            phases = [phases]
+        if not isinstance(datasets, list):
+            datasets = [datasets]
+        if len(phases) != len(datasets):
+            raise ValueError('phases {} and datasets {} should have the same length'.format(phases, datasets))
+
+        self.config = config
+        self.phases = phases
+        self.datasets = datasets
+
+        hid_field = self.config['HEAD_ENTITY_ID_FIELD']
+        tid_field = self.config['TAIL_ENTITY_ID_FIELD']
+
+        self.head_entities = set(self.datasets[0].head_entities)
+        self.entities = self.datasets[0].entities_list
+        self.entity_num = self.datasets[0].entity_num
+
+        if distribution == 'uniform':
+            self.random_entity_list = self.entities[:]
+        elif distribution == 'popularity':
+            self.random_entity_list = []
+            for dataset in datasets:
+                self.random_entity_list.extend(dataset.kg_feat[hid_field].values)
+                self.random_entity_list.extend(dataset.kg_feat[tid_field].values)
+        else:
+            raise NotImplementedError('Distribution [{}] has not been implemented'.format(distribution))
+
+        random.shuffle(self.random_entity_list)
+        self.random_pr = 0
+        self.random_entity_list_length = len(self.random_entity_list)
+
+        self.full_set = set(self.entities)
+        self.used_tail_eneity_id = dict()
+        last = [set() for i in range(self.entity_num)]
+        for phase, dataset in zip(self.phases, self.datasets):
+            cur = np.array([set(s) for s in last])
+            for hid, tid in dataset.kg_feat[[hid_field, tid_field]].values:
+                cur[hid].add(tid)
+            last = self.used_tail_eneity_id[phase] = cur
+
+    def random_entity(self):
+        entity = self.random_entity_list[self.random_pr % self.random_entity_list_length]
+        self.random_pr += 1
+        return entity
+
+    def sample_by_entity_ids(self, phase, head_entity_ids, num=1):
+        try:
+            head_entity_num = len(head_entity_ids)
+            total_num = head_entity_num * num
+            neg_tail_entity_id = np.zeros(total_num, dtype=np.int64)
+            used_tail_entity_id_list = np.repeat(self.used_tail_eneity_id[phase][head_entity_ids], num)
+            for i, used_tail_entity_id in enumerate(used_tail_entity_id_list):
+                cur = self.random_entity()
+                while cur in used_tail_entity_id:
+                    cur = self.random_entity()
+                neg_tail_entity_id[i] = cur
+            return neg_tail_entity_id
+        except KeyError:
+            if phase not in self.phases:
+                raise ValueError('phase [{}] not exist'.format(phase))
+        except IndexError:
+            for head_entity_id in head_entity_ids:
+                if head_entity_id not in self.head_entities:
+                    raise ValueError('head_entity_id [{}] not exist'.format(head_entity_id))

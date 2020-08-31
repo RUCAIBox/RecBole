@@ -8,9 +8,10 @@
 # @Author  :   Kaiyuan Li   Zhichao Feng
 # @email   :   tsotfsk@outlook.com  fzcbupt@gmail.com
 
-from .metrics import metrics_dict
 import numpy as np
 import torch
+
+from .metrics import metrics_dict
 
 # These metrics are typical in loss recommendations
 loss_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOGLOSS']}

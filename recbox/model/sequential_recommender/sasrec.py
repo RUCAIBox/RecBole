@@ -6,7 +6,7 @@
 import torch
 import numpy as np
 from torch import nn
-from torch.nn.init import xavier_uniform_
+from torch.nn.init import xavier_normal_
 from ...utils import InputType
 from ..abstract_recommender import SequentialRecommender
 from ..layers import MultiHeadAttention
@@ -44,7 +44,7 @@ class SASRec(SequentialRecommender):
 
     def init_weights(self, module):
         if isinstance(module, nn.Embedding):
-            xavier_uniform_(module.weight)
+            xavier_normal_(module.weight)
 
     def get_item_lookup_table(self):
         return self.item_list_embedding.weight.t()
