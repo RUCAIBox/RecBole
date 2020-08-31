@@ -11,8 +11,8 @@ arXiv preprint arXiv:2002.02126 (2020)..
 """
 
 # dataset=ml-1m
-# Parameters: {'delay': 0.001, 'layers': 3, 'learning_rate': 0.002}
-# test result: {'Recall@10': 0.1677, 'MRR@10': 0.3686, 'NDCG@10': 0.2087, 'Hit@10': 0.7164, 'Precision@10': 0.1558}
+# Parameters: {'delay': 0.001, 'layers': 2, 'learning_rate': 0.002}
+# test result: {'Recall@10': 0.1713, 'MRR@10': 0.3738, 'NDCG@10': 0.2118, 'Hit@10': 0.725, 'Precision@10': 0.1569}
 #
 # dataset=yelp
 # Parameters: {'delay': 1e-4, 'layers': 3, 'learning_rate': 0.001}
