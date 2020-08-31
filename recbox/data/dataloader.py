@@ -96,6 +96,10 @@ class AbstractDataLoader(object):
             self.batch_size = batch_size
             # TODO  batch size is changed
 
+    def get_user_feature(self):
+        user_df = self.dataset.get_user_feature()
+        return self._dataframe_to_interaction(user_df)
+
     def get_item_feature(self):
         item_df = self.dataset.get_item_feature()
         return self._dataframe_to_interaction(item_df)
