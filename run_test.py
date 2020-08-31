@@ -5,14 +5,14 @@
 # @File   : run_test.py
 
 # UPDATE
-# @Time   : 2020/8/25
+# @Time   : 2020/8/29
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
-from recbox.trainer import Trainer
+from recbox.trainer import get_trainer
 from recbox.utils import init_logger, get_model
 from recbox.config import Config
-from recbox.data import Dataset, data_preparation
+from recbox.data import create_dataset, data_preparation
 
 
 def whole_process(config_file='properties/overall.config', config_dict=None):
@@ -29,7 +29,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 dataset
     """
-    dataset = Dataset(config)
+    dataset = create_dataset(config)
     print(dataset)
 
     """
@@ -46,7 +46,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     初始化 trainer
     """
-    trainer = Trainer(config, model)
+    trainer = get_trainer(config['MODEL_TYPE'])(config, model)
 
     """
     训练
