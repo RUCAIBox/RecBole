@@ -4,13 +4,13 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : run_hyper.py
 # UPDATE:
-# @Time   : 2020/8/20 21:17, 2020/8/25
+# @Time   : 2020/8/20 21:17, 2020/8/29
 # @Author : Zihan Lin, Yupeng Hou
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
 
 from recbox.config import Config
-from recbox.data import Dataset, data_preparation
-from recbox.trainer import Trainer, HyperTuning
+from recbox.data import create_dataset, data_preparation
+from recbox.trainer import get_trainer, HyperTuning
 from recbox.utils import init_logger, get_model
 
 
@@ -18,13 +18,13 @@ def objective_function(config_dict=None):
 
     config = Config('properties/overall.config', config_dict)
     config.init()
-    dataset = Dataset(config)
+    dataset = create_dataset(config)
 
     train_data, test_data, valid_data = data_preparation(config, dataset)
 
     model = get_model(config['model'])(config, train_data).to(config['device'])
 
-    trainer = Trainer(config, model)
+    trainer = get_trainer(config['MODEL_TYPE'])(config, model)
 
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False)
 
