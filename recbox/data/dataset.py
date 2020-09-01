@@ -47,7 +47,7 @@ class Dataset(object):
         self.label_field = self.config['LABEL_FIELD']
         self.time_field = self.config['TIME_FIELD']
 
-        self._preload_weight_matrix = {}
+        self._preloaded_weight = {}
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
         self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
@@ -58,9 +58,9 @@ class Dataset(object):
         self._remap_ID_all()
         self._user_item_feat_preparation()
         self._fill_nan()
-        self._preload_weight_matrix()
         self._set_label_by_threshold()
         self._normalize()
+        self._preload_weight_matrix()
 
     def _restore_saved_dataset(self, saved_dataset):
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
@@ -215,7 +215,7 @@ class Dataset(object):
             self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
             self._fill_nan_flag = True
 
-    def _preload_weight(self):
+    def _preload_weight_matrix(self):
         preload_fields = self.config['preload_weight']
         if preload_fields is None:
             return
@@ -243,7 +243,7 @@ class Dataset(object):
                         self.logger.warning('Field [{}] with type [{}] is not \'float\' or \'float_seq\', \
                                              which will not be handled by preload matrix.'.format(field, ftype))
                         continue
-                    self._preload_weight_matrix[field] = matrix
+                    self._preloaded_weight[field] = matrix
                     if drop_flag:
                         self._del_col(field)
             if not used_flag:
@@ -810,9 +810,9 @@ class Dataset(object):
             raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
 
     def get_preload_weight(self, field):
-        if field not in self._preload_weight_matrix:
+        if field not in self._preloaded_weight:
             raise ValueError('field [{}] not in preload_weight'.format(field))
-        return self._preload_weight_matrix[field]
+        return self._preloaded_weight[field]
 
 class KnowledgeBasedDataset(Dataset):
     def __init__(self, config, saved_dataset=None):
