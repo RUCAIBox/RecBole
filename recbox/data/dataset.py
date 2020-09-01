@@ -47,6 +47,8 @@ class Dataset(object):
         self.label_field = self.config['LABEL_FIELD']
         self.time_field = self.config['TIME_FIELD']
 
+        self._preload_weight_matrix = {}
+
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
         self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
 
@@ -55,8 +57,8 @@ class Dataset(object):
         self._reset_index()
         self._remap_ID_all()
         self._user_item_feat_preparation()
-
         self._fill_nan()
+        self._preload_weight_matrix()
         self._set_label_by_threshold()
         self._normalize()
 
@@ -212,6 +214,40 @@ class Dataset(object):
         if flag:
             self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
             self._fill_nan_flag = True
+
+    def _preload_weight(self):
+        preload_fields = self.config['preload_weight']
+        if preload_fields is None:
+            return
+        drop_flag = self.config['drop_preload_weight']
+        if drop_flag is None:
+            drop_flag = True
+        if not isinstance(preload_fields, list):
+            preload_fields = [preload_fields]
+
+        feats = [feat for feat in [self.user_feat, self.item_feat] if feat is not None]
+        for field in preload_fields:
+            used_flag = False
+            for feat in feats:
+                if field in feat:
+                    used_flag = True
+                    ftype = self.field2type[field]
+                    if ftype == FeatureType.FLOAT:
+                        matrix = feat[field].values
+                    elif ftype == FeatureType.FLOAT_SEQ:
+                        max_len = self.field2seqlen[field]
+                        matrix = np.zeros((len(feat[field]), max_len))
+                        for i, row in enumerate(feat[field].to_list()):
+                            matrix[i] = row[:max_len]
+                    else:
+                        self.logger.warning('Field [{}] with type [{}] is not \'float\' or \'float_seq\', \
+                                             which will not be handled by preload matrix.'.format(field, ftype))
+                        continue
+                    self._preload_weight_matrix[field] = matrix
+                    if drop_flag:
+                        self._del_col(field)
+            if not used_flag:
+                self.logger.warning('Field [{}] doesn\'t exist, thus not been handled.'.format(field))
 
     def _fill_nan(self):
         if not self._fill_nan_flag:
@@ -773,6 +809,10 @@ class Dataset(object):
         else:
             raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
 
+    def get_preload_weight(self, field):
+        if field not in self._preload_weight_matrix:
+            raise ValueError('field [{}] not in preload_weight'.format(field))
+        return self._preload_weight_matrix[field]
 
 class KnowledgeBasedDataset(Dataset):
     def __init__(self, config, saved_dataset=None):

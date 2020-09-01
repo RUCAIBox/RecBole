@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/31, 2020/8/31, 2020/8/31
+# @Time   : 2020/9/1, 2020/8/31, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -37,6 +37,7 @@ class AbstractDataLoader(object):
         self.inter_matrix = self.dataset.inter_matrix
         self.num = self.dataset.num
         self.fields = self.dataset.fields
+        self.get_preload_weight = self.dataset.get_preload_weight
         self.field2type = self.dataset.field2type
         if self.dataset.uid_field:
             self.user_num = self.dataset.user_num
