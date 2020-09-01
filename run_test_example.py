@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/29 15:40, 2020/8/31
+# @Time   : 2020/9/1, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -141,7 +141,7 @@ test_examples = {
     'Test CKE': {
         'model': 'CKE',
         'dataset': 'kgdata_example',
-        'epochs': 3,
+        'epochs': 1,
         'train_kg_step': 0,
         'valid_metric': 'Recall@10',
         'metrics:': ['Recall'],
