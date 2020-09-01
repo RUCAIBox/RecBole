@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/29, 2020/8/5, 2020/8/27
+# @Time   : 2020/9/1, 2020/8/5, 2020/8/27
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -228,7 +228,9 @@ class Dataset(object):
                 elif ftype == FeatureType.FLOAT:
                     feat[field] = aveg.fit_transform(feat[field].values.reshape(-1, 1))
                 elif ftype.value.endswith('seq'):
-                    feat[field] = feat[field].apply(lambda x: [0] if (not isinstance(x, np.ndarray)) else x)
+                    feat[field] = feat[field].apply(lambda x: [0] if (not isinstance(x, np.ndarray) and
+                                                                     (not isinstance(x, list)))
+                                                                  else x)
 
     def _normalize(self):
         if self.config['normalize_field'] is not None and self.config['normalize_all'] is not None:
