@@ -734,6 +734,13 @@ class Dataset(object):
             if df is not None:
                 df.to_csv(os.path.join(filepath, '{}.csv'.format(name)))
 
+    def get_user_feature(self):
+        if self.user_feat is None:
+            self._check_field('uid_field')
+            return pd.DataFrame({self.uid_field: np.arange(self.user_num)})
+        else:
+            return self.user_feat
+
     def get_item_feature(self):
         if self.item_feat is None:
             self._check_field('iid_field')
