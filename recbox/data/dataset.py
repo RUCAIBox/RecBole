@@ -33,6 +33,8 @@ class Dataset(object):
             self._restore_saved_dataset(saved_dataset)
 
     def _from_scratch(self, config):
+        self.logger.debug('Loading dataset from scratch')
+
         self.dataset_path = config['data_path']
         self._fill_nan_flag = self.config['fill_nan']
 
@@ -46,6 +48,9 @@ class Dataset(object):
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
         self.time_field = self.config['TIME_FIELD']
+
+        self.logger.debug('uid_field: {}'.format(self.uid_field))
+        self.logger.debug('iid_field: {}'.format(self.iid_field))
 
         self._preloaded_weight = {}
 
@@ -63,6 +68,8 @@ class Dataset(object):
         self._preload_weight_matrix()
 
     def _restore_saved_dataset(self, saved_dataset):
+        self.logger.debug('Restoring dataset from [{}]'.format(saved_dataset))
+
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
             raise ValueError('filepath [{}] need to be a dir'.format(saved_dataset))
 
@@ -88,26 +95,32 @@ class Dataset(object):
         self.label_field = self.config['LABEL_FIELD']
         self.time_field = self.config['TIME_FIELD']
 
+        self.logger.debug('uid_field: {}'.format(self.uid_field))
+        self.logger.debug('iid_field: {}'.format(self.iid_field))
+
     def _load_data(self, token, dataset_path):
         user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
         if os.path.isfile(user_feat_path):
             user_feat = self._load_feat(user_feat_path, FeatureSource.USER)
+            self.logger.debug('user feature loaded successfully from [{}]'.format(user_feat_path))
         else:
-            # TODO logging user feat not exist
             user_feat = None
+            self.logger.debug('[{}] not found, user features are not loaded'.format(user_feat_path))
 
         item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
         if os.path.isfile(item_feat_path):
             item_feat = self._load_feat(item_feat_path, FeatureSource.ITEM)
+            self.logger.debug('item feature loaded successfully from [{}]'.format(item_feat_path))
         else:
-            # TODO logging item feat not exist
             item_feat = None
+            self.logger.debug('[{}] not found, item features are not loaded'.format(item_feat_path))
 
         inter_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'inter'))
         if not os.path.isfile(inter_feat_path):
             raise ValueError('File {} not exist'.format(inter_feat_path))
 
         inter_feat = self._load_feat(inter_feat_path, FeatureSource.INTERACTION)
+        self.logger.debug('interaction feature loaded successfully from [{}]'.format(inter_feat_path))
 
         if user_feat is not None and self.uid_field is None:
             raise ValueError('uid_field must be exist if user_feat exist')
@@ -124,6 +137,8 @@ class Dataset(object):
         return inter_feat, user_feat, item_feat
 
     def _load_feat(self, filepath, source):
+        self.logger.debug('loading feature from [{}] (source: [{}])'.format(filepath, source))
+
         str2ftype = {
             'token': FeatureType.TOKEN,
             'float': FeatureType.FLOAT,
@@ -153,6 +168,8 @@ class Dataset(object):
             raise ValueError('load_col [{}] and unload_col [{}] can not be setted the same time'.format(
                 load_col, unload_col))
 
+        self.logger.debug('\n [{}]:\n\t load_col: [{}]\n\t unload_col: [{}]\n'.format(filepath, load_col, unload_col))
+
         df = pd.read_csv(filepath, delimiter=self.config['field_separator'])
         field_names = []
         columns = []
@@ -178,7 +195,7 @@ class Dataset(object):
             remain_field.add(field)
 
         if len(columns) == 0:
-            print('source', source)
+            self.logger.warning('no columns has been loaded from [{}]'.format(source))
             return None
         df.columns = field_names
         df = df[columns]
@@ -207,10 +224,12 @@ class Dataset(object):
             new_user_df = pd.DataFrame({self.uid_field: np.arange(self.user_num)})
             self.user_feat = pd.merge(new_user_df, self.user_feat, on=self.uid_field, how='left')
             flag = True
+            self.logger.debug('ordering user features by user id.')
         if self.item_feat is not None:
             new_item_df = pd.DataFrame({self.iid_field: np.arange(self.item_num)})
             self.item_feat = pd.merge(new_item_df, self.item_feat, on=self.iid_field, how='left')
             flag = True
+            self.logger.debug('ordering item features by user id.')
         if flag:
             self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
             self._fill_nan_flag = True
@@ -224,6 +243,8 @@ class Dataset(object):
             drop_flag = True
         if not isinstance(preload_fields, list):
             preload_fields = [preload_fields]
+
+        self.logger.debug('preload weight matrix for {}, drop=[{}]'.format(preload_fields, drop_flag))
 
         feats = [feat for feat in [self.user_feat, self.item_feat] if feat is not None]
         for field in preload_fields:
@@ -250,6 +271,8 @@ class Dataset(object):
                 self.logger.warning('Field [{}] doesn\'t exist, thus not been handled.'.format(field))
 
     def _fill_nan(self):
+        self.logger.debug('Filling nan')
+
         if not self._fill_nan_flag:
             return
 
@@ -284,6 +307,8 @@ class Dataset(object):
             fields = self.float_like_fields
         else:
             return
+
+        self.logger.debug('Normalized fields: {}'.format(fields))
 
         for feat in self.feat_list:
             for field in feat:
@@ -330,9 +355,14 @@ class Dataset(object):
             dropped_inter |= self.inter_feat[self.uid_field].isin(ban_users)
         if self.iid_field:
             dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
+        self.logger.debug('[{}] dropped interactions'.format(len(dropped_inter)))
         self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
     def _get_illegal_ids_by_inter_num(self, field, max_num=None, min_num=None):
+        self.logger.debug('\n get_illegal_ids_by_inter_num:\n\t field=[{}], max_num=[{}], min_num=[{}]'.format(
+            field, max_num, min_num
+        ))
+
         if field is None:
             return set()
         if max_num is None and min_num is None:
@@ -344,6 +374,8 @@ class Dataset(object):
         ids = self.inter_feat[field].values
         inter_num = Counter(ids)
         ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
+
+        self.logger.debug('[{}] illegal_ids_by_inter_num, field=[{}]'.format(len(ids), field))
         return ids
 
     def _filter_by_field_value(self):
@@ -372,6 +404,7 @@ class Dataset(object):
             remained_inter &= self.inter_feat[self.uid_field].isin(remained_uids)
         if self.iid_field is not None:
             remained_inter &= self.inter_feat[self.iid_field].isin(remained_iids)
+        self.logger.debug('[{}] interactions are remained after filtering'.format(len(remained_inter)))
         self.inter_feat.drop(self.inter_feat.index[~remained_inter], inplace=True)
 
     def _reset_index(self):
@@ -381,6 +414,8 @@ class Dataset(object):
     def _drop_by_value(self, val, cmp, drop_field=False):
         if val is None:
             return False
+
+        self.logger.debug('drop_by_value: val={}, drop=[{}]'.format(val, drop_field))
         for field in val:
             if field not in self.field2type:
                 raise ValueError('field [{}] not defined in dataset'.format(field))
@@ -394,6 +429,7 @@ class Dataset(object):
         return True
 
     def _del_col(self, field):
+        self.logger.debug('delete column [{}]'.format(field))
         for feat in self.feat_list:
             if field in feat:
                 feat.drop(columns=field, inplace=True)
@@ -405,6 +441,8 @@ class Dataset(object):
         threshold = self.config['threshold']
         if threshold is None:
             return
+
+        self.logger.debug('set label by {}'.format(threshold))
 
         if len(threshold) != 1:
             raise ValueError('threshold length should be 1')
@@ -445,6 +483,7 @@ class Dataset(object):
 
     def _remap_ID_all(self):
         fields_in_same_space = self._get_fields_in_same_space()
+        self.logger.debug('fields_in_same_space: {}'.format(fields_in_same_space))
         for field_set in fields_in_same_space:
             remap_list = []
             for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
@@ -586,6 +625,7 @@ class Dataset(object):
         return np.array(index), np.array(uid2items_num)
 
     def prepare_data_augmentation(self):
+        self.logger.debug('prepare_data_augmentation')
         if hasattr(self, 'uid_list'):
             return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
@@ -669,6 +709,7 @@ class Dataset(object):
         return list(split_ids)
 
     def split_by_ratio(self, ratios, group_by=None):
+        self.logger.debug('split by ratios [{}], group_by=[{}]'.format(ratios, group_by))
         tot_ratio = sum(ratios)
         ratios = [_ / tot_ratio for _ in ratios]
 
@@ -703,6 +744,7 @@ class Dataset(object):
         return next_index
 
     def leave_one_out(self, group_by, model_type, leave_one_num=1):
+        self.logger.debug('leave one out, group_by=[{}], leave_one_num=[{}]'.format(group_by, leave_one_num))
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 
@@ -756,6 +798,7 @@ class Dataset(object):
         if (filepath is None) or (not os.path.isdir(filepath)):
             raise ValueError('filepath [{}] need to be a dir'.format(filepath))
 
+        self.logger.debug('Saving into [{}]'.format(filepath))
         basic_info = {
             'field2type': self.field2type,
             'field2source': self.field2source,
@@ -819,6 +862,8 @@ class KnowledgeBasedDataset(Dataset):
         super().__init__(config, saved_dataset=saved_dataset)
 
     def _from_scratch(self, config):
+        self.logger.debug('Loading dataset from scratch')
+
         self.dataset_path = config['data_path']
         self._fill_nan_flag = self.config['fill_nan']
 
@@ -832,6 +877,9 @@ class KnowledgeBasedDataset(Dataset):
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
         self.time_field = self.config['TIME_FIELD']
+
+        self.logger.debug('uid_field: {}'.format(self.uid_field))
+        self.logger.debug('iid_field: {}'.format(self.iid_field))
 
         self.head_entity_field = self.config['HEAD_ENTITY_ID_FIELD']
         self.tail_entity_field = self.config['TAIL_ENTITY_ID_FIELD']
@@ -862,6 +910,7 @@ class KnowledgeBasedDataset(Dataset):
         raise NotImplementedError()
 
     def _load_kg(self, token, dataset_path):
+        self.logger.debug('loading kg from [{}]'.format(dataset_path))
         kg_path = os.path.join(dataset_path, '{}.{}'.format(token, 'kg'))
         if not os.path.isfile(kg_path):
             raise ValueError('[{}.{}] not found in [{}]'.format(token, 'kg', dataset_path))
@@ -885,6 +934,7 @@ class KnowledgeBasedDataset(Dataset):
         assert self.relation_field in kg, kg_warn_message.format(self.relation_field)
 
     def _load_link(self, token, dataset_path):
+        self.logger.debug('loading link from [{}]'.format(dataset_path))
         link_path = os.path.join(dataset_path, '{}.{}'.format(token, 'link'))
         if not os.path.isfile(link_path):
             raise ValueError('[{}.{}] not found in [{}]'.format(token, 'link', dataset_path))
@@ -933,6 +983,8 @@ class KnowledgeBasedDataset(Dataset):
             self.kg_feat[ent_field] = entity_list
 
         fields_in_same_space = self._get_fields_in_same_space()
+        self.logger.debug('fields_in_same_space: {}'.format(fields_in_same_space))
+
         for field_set in fields_in_same_space:
             if self.iid_field not in field_set:
                 continue
