@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/19 18:56, 2020/8/31
+# @Time   : 2020/9/1, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -30,7 +30,7 @@ class EvalSetting(object):
 
         full: adopt the entire item set (excluding ground-truth items) for ranking
         uniXX: uniform sampling XX items while negative sampling
-        popXX: popularity-biased sampling XX items while negative sampling
+        popXX: popularity-based sampling XX items while negative sampling
 
     Note that records are grouped by user_id by default if you use these presets.
 
@@ -322,7 +322,7 @@ class EvalSetting(object):
         self.neg_sample_by(100)
 
     def pop100(self):
-        """Preset about popularity-biased sampling 100 items for each positive records while negative sampling.
+        """Preset about popularity-based sampling 100 items for each positive records while negative sampling.
         """
         self.neg_sample_by(100, distribution='popularity')
 
@@ -332,7 +332,7 @@ class EvalSetting(object):
         self.neg_sample_by(1000)
 
     def pop1000(self):
-        """Preset about popularity-biased sampling 1000 items for each positive records while negative sampling.
+        """Preset about popularity-based sampling 1000 items for each positive records while negative sampling.
         """
         self.neg_sample_by(1000, distribution='popularity')
 
