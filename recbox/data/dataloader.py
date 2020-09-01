@@ -3,24 +3,27 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/8/25, 2020/8/21
-# @Author : Yupeng Hou, Yushuo Chen
-# @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/8/31, 2020/8/31, 2020/8/31
+# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
+# @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
-import operator
-from functools import reduce
 import math
-import pandas as pd
+
 import numpy as np
-from tqdm import tqdm
+import pandas as pd
 import torch
 import torch.nn.utils.rnn as rnn_utils
-from ..sampler import Sampler
-from ..utils import FeatureSource, FeatureType, InputType, DataLoaderType
+from tqdm import tqdm
+
+from ..utils import (
+    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
+    KGDataLoaderState)
 from .interaction import Interaction
 
 
 class AbstractDataLoader(object):
+    dl_type = None
+
     def __init__(self, config, dataset,
                  batch_size=1, shuffle=False):
         self.config = config
@@ -28,7 +31,7 @@ class AbstractDataLoader(object):
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.pr = 0
-        self.dl_type = None
+        self.real_time = config['real_time_process']
 
         self.join = self.dataset.join
         self.inter_matrix = self.dataset.inter_matrix
@@ -93,15 +96,20 @@ class AbstractDataLoader(object):
             self.batch_size = batch_size
             # TODO  batch size is changed
 
+    def get_user_feature(self):
+        user_df = self.dataset.get_user_feature()
+        return self._dataframe_to_interaction(user_df)
+
     def get_item_feature(self):
         item_df = self.dataset.get_item_feature()
         return self._dataframe_to_interaction(item_df)
 
 
 class GeneralDataLoader(AbstractDataLoader):
+    dl_type = DataLoaderType.ORIGIN
+
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        self.dl_type = DataLoaderType.ORIGIN
         self.step = batch_size
 
         self.dl_format = dl_format
@@ -125,6 +133,8 @@ class GeneralDataLoader(AbstractDataLoader):
 
 
 class NegSampleBasedDataLoader(AbstractDataLoader):
+    dl_type = DataLoaderType.NEGSAMPLE
+
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] not in ['by', 'full']:
@@ -132,16 +142,13 @@ class NegSampleBasedDataLoader(AbstractDataLoader):
 
         super(NegSampleBasedDataLoader, self).__init__(config, dataset, batch_size, shuffle)
 
-        self.dl_type = DataLoaderType.NEGSAMPLE
-
         self.sampler = sampler
         self.phase = phase
         self.neg_sample_args = neg_sample_args
         self.dl_format = dl_format
-        self.real_time_neg_sampling = self.neg_sample_args['real_time']
 
         self._batch_size_adaptation()
-        if not self.real_time_neg_sampling:
+        if not self.real_time:
             self._pre_neg_sampling()
 
     def _batch_size_adaptation(self):
@@ -192,7 +199,7 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
             return
         batch_num = max(self.batch_size // self.times, 1)
         new_batch_size = batch_num * self.times
-        self.step = batch_num if self.real_time_neg_sampling else new_batch_size
+        self.step = batch_num if self.real_time else new_batch_size
         self.set_batch_size(new_batch_size)
 
     @property
@@ -205,7 +212,7 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
     def _next_batch_data(self):
         cur_data = self.dataset[self.pr: self.pr + self.step]
         self.pr += self.step
-        if self.real_time_neg_sampling:
+        if self.real_time:
             cur_data = self._neg_sampling(cur_data)
         return self._dataframe_to_interaction(cur_data)
 
@@ -275,7 +282,7 @@ class GeneralGroupedDataLoader(GeneralIndividualDataLoader):
         self.uid2items_num = self.uid2items_num[new_index]
 
     def _next_batch_data(self):
-        sampling_func = self._neg_sampling if self.real_time_neg_sampling else (lambda x: x)
+        sampling_func = self._neg_sampling if self.real_time else (lambda x: x)
         cur_data = []
         for uid, index in self.uid2index[self.pr: self.pr + self.step]:
             cur_data.append(sampling_func(self.dataset[index]))
@@ -302,6 +309,8 @@ class GeneralGroupedDataLoader(GeneralIndividualDataLoader):
 
 
 class GeneralFullDataLoader(NegSampleBasedDataLoader):
+    dl_type = DataLoaderType.FULL
+
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'full':
@@ -310,8 +319,6 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
 
         super().__init__(config, dataset, sampler, phase, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
-
-        self.dl_type = DataLoaderType.FULL
 
     def __len__(self):
         return math.ceil(self.pr_end / self.step)
@@ -380,7 +387,7 @@ class GeneralFullDataLoader(NegSampleBasedDataLoader):
             self.used_idx[i] -= i * tot_item_num * self.step
 
     def _next_batch_data(self):
-        if not self.real_time_neg_sampling:
+        if not self.real_time:
             slc = slice(self.pr, self.pr + self.step)
             idx = self.pr // self.step
             cur_data = self.user_tensor[slc], self.pos_idx[idx], self.used_idx[idx], \
@@ -407,15 +414,17 @@ class ContextGroupedDataLoader(GeneralGroupedDataLoader):
 
 
 class SequentialDataLoader(AbstractDataLoader):
+    dl_type = DataLoaderType.ORIGIN
+
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if dl_format != InputType.POINTWISE:
             raise ValueError('dl_format in Sequential DataLoader should be POINTWISE')
 
-        self.dl_type = DataLoaderType.ORIGIN
+        super(SequentialDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+
         self.dl_format = dl_format
         self.step = batch_size
-        self.real_time = config['real_time_process']
 
         self.uid_field = dataset.uid_field
         self.iid_field = dataset.iid_field
@@ -436,20 +445,19 @@ class SequentialDataLoader(AbstractDataLoader):
                                    self.max_item_list_len)
         dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION,
                                    self.max_item_list_len)
-        dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
-                                   self.max_item_list_len)
+        if self.position_field:
+            dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
+                                       self.max_item_list_len)
         dataset.set_field_property(self.target_iid_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.target_time_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
         dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
 
         self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
-            dataset.prepare_data_augmentation(max_item_list_len=self.max_item_list_len - 1)
+            dataset.prepare_data_augmentation()
 
         if not self.real_time:
             self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
                                                         self.target_index, self.item_list_length)
-
-        super(SequentialDataLoader, self).__init__(config, dataset, batch_size, shuffle)
 
     def __len__(self):
         return math.ceil(self.pr_end / self.step)
@@ -491,11 +499,12 @@ class SequentialDataLoader(AbstractDataLoader):
             self.uid_field: uid_list,
             self.item_list_field: [],
             self.time_list_field: [],
-            self.position_field: [np.arange(self.max_item_list_len)] * new_length,
             self.target_iid_field: self.dataset.inter_feat[self.iid_field][target_index].values,
             self.target_time_field: self.dataset.inter_feat[self.time_field][target_index].values,
             self.item_list_length_field: item_list_length,
         }
+        if self.position_field:
+            new_dict[self.position_field] = [np.arange(self.max_item_list_len)] * new_length
         for index in item_list_index:
             df = self.dataset.inter_feat[index]
             new_dict[self.item_list_field].append(np.append(df[self.iid_field].values, self.stop_token_id))
@@ -504,11 +513,11 @@ class SequentialDataLoader(AbstractDataLoader):
 
 
 class SequentialFullDataLoader(SequentialDataLoader):
+    dl_type = DataLoaderType.FULL
+
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         super(SequentialFullDataLoader, self).__init__(config, dataset, batch_size, dl_format, shuffle)
-
-        self.dl_type = DataLoaderType.FULL
 
     def _shuffle(self):
         raise NotImplementedError('SequentialFullDataLoader can\'t shuffle')
@@ -524,3 +533,152 @@ class SequentialFullDataLoader(SequentialDataLoader):
 
     def get_pos_len_list(self):
         return np.ones(self.pr_end, dtype=np.int)
+
+
+class KGDataLoader(NegSampleBasedDataLoader):
+
+    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+                 batch_size=1, dl_format=InputType.PAIRWISE, shuffle=False):
+
+        super(KGDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
+                                           batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        if neg_sample_args['strategy'] != 'by':
+            raise ValueError('neg_sample strategy in KnowledgeBasedDataLoader() should be `by`')
+        if dl_format != InputType.PAIRWISE or neg_sample_args['by'] != 1:
+            raise ValueError('kg based dataloader must be pairwise and can only neg sample by 1')
+        if shuffle is False:
+            raise ValueError('kg based dataloader must shuffle the data')
+
+        self.batch_size = batch_size
+        self.neg_sample_by = neg_sample_args['by']
+        self.times = 1
+
+        neg_prefix = config['NEG_PREFIX']
+        tid_field = config['TAIL_ENTITY_ID_FIELD']
+
+        # kg negative cols
+        neg_kg_col = neg_prefix + tid_field
+        dataset.copy_field_property(neg_kg_col, tid_field)
+
+    def __len__(self):
+        return math.ceil(self.pr_end / self.step)
+
+    @property
+    def pr_end(self):
+        # TODO 这个地方应该是取kg_data的len
+        return len(self.dataset.kg_feat)
+
+    def _shuffle(self):
+        # TODO 这个地方应该是取kg_data的len
+        self.dataset.kg_feat = self.dataset.kg_feat.sample(frac=1).reset_index(drop=True)
+
+    def _next_batch_data(self):
+        # TODO 这个地方应该取的kg_data
+        cur_data = self.dataset.kg_feat[self.pr: self.pr + self.step]
+        self.pr += self.step
+        if self.real_time:
+            cur_data = self._neg_sampling(cur_data)
+        return self._dataframe_to_interaction(cur_data)
+
+    def _pre_neg_sampling(self):
+        # TODO 这个地方应该是kg_data
+        self.dataset.kg_feat = self._neg_sampling(self.dataset.kg_feat)
+
+    def _neg_sampling(self, kg_feat):
+        hid_field = self.config['HEAD_ENTITY_ID_FIELD']
+        tid_field = self.config['TAIL_ENTITY_ID_FIELD']
+        hids = kg_feat[hid_field].to_list()
+        neg_tids = self.sampler.sample_by_entity_ids(self.phase, hids, self.neg_sample_by)
+        return self._neg_sample_by_pair_wise_sampling(tid_field, neg_tids, kg_feat)
+
+    def _neg_sample_by_pair_wise_sampling(self, tid_field, neg_tids, kg_feat):
+        neg_prefix = self.config['NEG_PREFIX']
+        neg_tail_entity_id = neg_prefix + tid_field
+        kg_feat.insert(len(kg_feat.columns), neg_tail_entity_id, neg_tids)
+        return kg_feat
+
+    def _batch_size_adaptation(self):
+        self.step = self.batch_size
+
+
+class KnowledgeBasedDataLoader(AbstractDataLoader):
+
+    def __init__(self, config, dataset, sampler, kg_sampler, phase, neg_sample_args,
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+
+        # using sampler
+        self.general_dataloader = self._get_data_loader(config=config, dataset=dataset, sampler=sampler, phase=phase,
+                                                        neg_sample_args=neg_sample_args,
+                                                        batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+
+        # using kg_sampler and dl_format is pairwise
+        self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, phase, neg_sample_args,
+                                          batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=shuffle)
+
+        self.main_dataloader = self.general_dataloader
+
+        super(KnowledgeBasedDataLoader, self).__init__(config, dataset,
+                                                       batch_size=batch_size, shuffle=shuffle)
+
+    def _get_data_loader(self, **kwargs):
+        phase = kwargs['phase']
+        config = kwargs['config']
+        if phase == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
+            return GeneralIndividualDataLoader(**kwargs)
+        else:
+            return GeneralGroupedDataLoader(**kwargs)
+
+    @property
+    def pr(self):
+        return self.main_dataloader.pr
+
+    @pr.setter
+    def pr(self, value):
+        self.main_dataloader.pr = value
+
+    def __iter__(self):
+        if not hasattr(self, 'state') or not hasattr(self, 'main_dataloader'):
+            raise ValueError('The dataloader\'s state and main_dataloader must be set '
+                             'when using the kg based dataloader')
+        return super().__iter__()
+
+    def _shuffle(self):
+        self.main_dataloader._shuffle()
+        if self.state == KGDataLoaderState.RSKG:
+            self.kg_dataloader._shuffle()
+
+    def __next__(self):
+        if self.pr >= self.pr_end:
+            self.pr = 0
+            # After the rec data ends, the kg data pointer needs to be cleared to zero
+            if self.state == KGDataLoaderState.RSKG:
+                self.kg_dataloader.pr = 0
+            raise StopIteration()
+        return self._next_batch_data()
+
+    def __len__(self):
+        return len(self.main_dataloader)
+
+    @property
+    def pr_end(self):
+        return self.main_dataloader.pr_end
+
+    def _next_batch_data(self):
+        if self.state == KGDataLoaderState.KG:
+            return self.kg_dataloader._next_batch_data()
+        elif self.state == KGDataLoaderState.RS:
+            return self.general_dataloader._next_batch_data()
+        elif self.state == KGDataLoaderState.RSKG:
+            kg_data = self.kg_dataloader._next_batch_data()
+            rec_data = self.general_dataloader._next_batch_data()
+            rec_data.update(kg_data)
+            return rec_data
+
+    def set_mode(self, state):
+        if state not in set(KGDataLoaderState):
+            raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
+        self.state = state
+        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
+            self.main_dataloader = self.general_dataloader
+        elif self.state == KGDataLoaderState.KG:
+            self.main_dataloader = self.kg_dataloader
