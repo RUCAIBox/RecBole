@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/29, 2020/8/5, 2020/8/27
+# @Time   : 2020/8/29, 2020/9/1, 2020/8/27
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -17,7 +17,8 @@ import numpy as np
 from sklearn.impute import SimpleImputer
 from scipy.sparse import coo_matrix
 from ..utils import FeatureSource, FeatureType, ModelType
-
+import dgl
+import torch
 
 class Dataset(object):
     def __init__(self, config, saved_dataset=None):
@@ -47,7 +48,7 @@ class Dataset(object):
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
         self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
-
+        
         self._filter_by_inter_num()
         self._filter_by_field_value()
         self._reset_index()
@@ -77,7 +78,7 @@ class Dataset(object):
             else:
                 setattr(self, '{}_feat'.format(name), None)
         self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
-
+       
         self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
@@ -760,3 +761,115 @@ class Dataset(object):
             return mat.tocsr()
         else:
             raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
+
+class SocialDataset(Dataset):
+    def __init__(self, config, saved_dataset=None):
+        self.config = config
+        self.dataset_name = config['dataset']
+        self.logger = getLogger()
+
+        if saved_dataset is None:
+            self._from_scratch(config)
+        else:
+            super(SocialDataset, self)._restore_saved_dataset(saved_dataset)
+    def _from_scratch(self, config):
+        self.dataset_path = config['data_path']
+        self._fill_nan_flag = self.config['fill_nan']
+
+        self.field2type = {}
+        self.field2source = {}
+        self.field2id_token = {}
+        self.field2seqlen = config['seq_len'] or {}
+
+        self.model_type = self.config['MODEL_TYPE']
+        self.uid_field = self.config['USER_ID_FIELD']
+        self.iid_field = self.config['ITEM_ID_FIELD']
+        self.label_field = self.config['LABEL_FIELD']
+        self.time_field = self.config['TIME_FIELD']
+
+        self.inter_feat, self.user_feat, self.item_feat = super(SocialDataset, self)._load_data(self.dataset_name, self.dataset_path)
+        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        print("####### load_feat finished #######")
+
+        super(SocialDataset, self)._filter_by_inter_num()
+        super(SocialDataset, self)._filter_by_field_value()
+        super(SocialDataset, self)._reset_index()
+       
+        self.net_field = config['net_field']
+        if self.net_field is not None:
+            self.net_feat = self._load_net(self.dataset_name, self.dataset_path, self.net_field)
+
+        self._remap_ID_all()
+        super(SocialDataset, self)._user_item_feat_preparation()
+
+        super(SocialDataset, self)._fill_nan()
+        super(SocialDataset, self)._set_label_by_threshold()
+        super(SocialDataset, self)._normalize()
+        self.dgl_graph = self.create_dgl()
+        if self.dgl_graph is not None:
+            print('We have %d nodes.' % self.dgl_graph.number_of_nodes())
+            print('We have %d edges.' % self.dgl_graph.number_of_edges())
+
+        
+    def _load_net(self, dataset_name, dataset_path, field): 
+        str2ftype = {
+            'token': FeatureType.TOKEN,
+            'float': FeatureType.FLOAT,
+            'token_seq': FeatureType.TOKEN_SEQ,
+            'float_seq': FeatureType.FLOAT_SEQ
+        }
+
+        net_file_path = os.path.join(dataset_path,'{}.{}'.format(dataset_name,'net'))
+        if os.path.isfile(net_file_path):
+            df = pd.read_csv(net_file_path, delimiter=self.config['field_separator'])
+            field_names = []
+            for field_type in df.columns:
+                field, ftype = field_type.split(':')
+                field_names.append(field)
+                if ftype not in str2ftype:
+                    raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
+                ftype = str2ftype[ftype]
+                self.field2source[field] = FeatureSource.NET
+                self.field2type[field] = ftype
+
+            df.columns = field_names
+            
+            if self.uid_field in self.field2source:
+                self.field2source[self.uid_field] = FeatureSource.USER_ID
+
+            if self.iid_field in self.field2source:
+                self.field2source[self.iid_field] = FeatureSource.ITEM_ID
+            return df
+
+        return None
+
+    def _remap_ID_all(self):
+        fields_in_same_space = super(SocialDataset, self)._get_fields_in_same_space()
+        for field_set in fields_in_same_space:
+            remap_list = []
+            for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
+                if field in field_set:
+                    field_set.remove(field)
+                    remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
+                    if field == self.net_field and self.net_feat is not None:
+                        remap_list.append((self.net_feat, 'source', FeatureType.TOKEN))
+                        remap_list.append((self.net_feat, 'target', FeatureType.TOKEN))
+                    if feat is not None:
+                        remap_list.append((feat, field, FeatureType.TOKEN))
+            for field in field_set:
+                source = self.field2source[field]
+                feat = getattr(self, '{}_feat'.format(source.value))
+                ftype = self.field2type[field]
+                remap_list.append((feat, field, ftype))
+            super(SocialDataset, self)._remap(remap_list)
+
+
+    def create_dgl(self):
+        if self.net_feat is not None:
+            source = np.array(self.net_feat['source'])
+            target = np.array(self.net_feat['target'])
+            return dgl.graph((source, target))       
+        else:
+            return None
+
+    
