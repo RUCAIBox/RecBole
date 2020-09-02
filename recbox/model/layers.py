@@ -63,7 +63,7 @@ class MLPLayers(nn.Module):
                 mlp_modules.append(nn.Tanh())
             elif self.activation.lower() == 'relu':
                 mlp_modules.append(nn.ReLU())
-            elif self.activation.lower() == 'leekyrelu':
+            elif self.activation.lower() == 'leakyrelu':
                 mlp_modules.append(nn.LeakyReLU())
             elif self.activation.lower() == 'none':
                 pass
@@ -133,12 +133,10 @@ class BiGNNLayer(nn.Module):
     def forward(self, lap_matrix, eye_matrix, features):
         # for GCF ajdMat is a (N+M) by (N+M) mat
         # lap_matrix L = D^-1(A)D^-1 # 拉普拉斯矩阵
-        L1 = lap_matrix + eye_matrix
+        x = torch.sparse.mm(lap_matrix, features)
 
-        inter_part1 = self.linear(torch.sparse.mm(L1, features))
-
-        inter_feature = torch.sparse.mm(lap_matrix, features)
-        inter_feature = torch.mul(inter_feature, features)
+        inter_part1 = self.linear(features + x)
+        inter_feature = torch.mul(x, features)
         inter_part2 = self.interActTransform(inter_feature)
 
         return inter_part1 + inter_part2
