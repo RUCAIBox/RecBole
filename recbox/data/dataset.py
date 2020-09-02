@@ -771,7 +771,8 @@ class SocialDataset(Dataset):
         if saved_dataset is None:
             self._from_scratch(config)
         else:
-            super(SocialDataset, self)._restore_saved_dataset(saved_dataset)
+            self._restore_saved_dataset(saved_dataset)
+
     def _from_scratch(self, config):
         self.dataset_path = config['data_path']
         self._fill_nan_flag = self.config['fill_nan']
@@ -786,39 +787,36 @@ class SocialDataset(Dataset):
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
         self.time_field = self.config['TIME_FIELD']
+        self.source_field = self.config['SOURCE_ID_FIELD']
+        self.target_field = self.config['TARGET_ID_FIELD']
 
-        self.inter_feat, self.user_feat, self.item_feat = super(SocialDataset, self)._load_data(self.dataset_name, self.dataset_path)
+        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
         self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
-        print("####### load_feat finished #######")
-
-        super(SocialDataset, self)._filter_by_inter_num()
-        super(SocialDataset, self)._filter_by_field_value()
-        super(SocialDataset, self)._reset_index()
        
-        self.net_field = config['net_field']
-        if self.net_field is not None:
-            self.net_feat = self._load_net(self.dataset_name, self.dataset_path, self.net_field)
+
+        self._filter_by_inter_num()
+        self._filter_by_field_value()
+        self._reset_index()
+
+        self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
 
         self._remap_ID_all()
-        super(SocialDataset, self)._user_item_feat_preparation()
+        self._user_item_feat_preparation()
 
-        super(SocialDataset, self)._fill_nan()
-        super(SocialDataset, self)._set_label_by_threshold()
-        super(SocialDataset, self)._normalize()
+        self._fill_nan()
+        self._set_label_by_threshold()
+        self._normalize()
+
         self.dgl_graph = self.create_dgl()
-        if self.dgl_graph is not None:
-            print('We have %d nodes.' % self.dgl_graph.number_of_nodes())
-            print('We have %d edges.' % self.dgl_graph.number_of_edges())
 
-        
-    def _load_net(self, dataset_name, dataset_path, field): 
+    def _load_net(self, dataset_name, dataset_path): 
         str2ftype = {
             'token': FeatureType.TOKEN,
             'float': FeatureType.FLOAT,
             'token_seq': FeatureType.TOKEN_SEQ,
             'float_seq': FeatureType.FLOAT_SEQ
         }
-
+        self._check_field('source_field','target_field')
         net_file_path = os.path.join(dataset_path,'{}.{}'.format(dataset_name,'net'))
         if os.path.isfile(net_file_path):
             df = pd.read_csv(net_file_path, delimiter=self.config['field_separator'])
@@ -833,27 +831,29 @@ class SocialDataset(Dataset):
                 self.field2type[field] = ftype
 
             df.columns = field_names
-            
-            if self.uid_field in self.field2source:
-                self.field2source[self.uid_field] = FeatureSource.USER_ID
-
-            if self.iid_field in self.field2source:
-                self.field2source[self.iid_field] = FeatureSource.ITEM_ID
             return df
-
-        return None
+        else:
+            raise ValueError('File {} not exist'.format(net_file_path))
+            
 
     def _remap_ID_all(self):
-        fields_in_same_space = super(SocialDataset, self)._get_fields_in_same_space()
+        fields_in_same_space = self._get_fields_in_same_space()
         for field_set in fields_in_same_space:
+            if self.uid_field in field_set:
+                field_set.update({self.source_field, self.target_field})
+            elif self.source_field in field_set:
+                field_set.remove(self.source_field)
+            elif self.target_field in field_set:
+                field_set.remove(self.target_field)
+
+        for field_set in fields_in_same_space:
+            if len(field_set) == 0:
+                continue
             remap_list = []
             for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
                 if field in field_set:
                     field_set.remove(field)
                     remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
-                    if field == self.net_field and self.net_feat is not None:
-                        remap_list.append((self.net_feat, 'source', FeatureType.TOKEN))
-                        remap_list.append((self.net_feat, 'target', FeatureType.TOKEN))
                     if feat is not None:
                         remap_list.append((feat, field, FeatureType.TOKEN))
             for field in field_set:
@@ -861,15 +861,32 @@ class SocialDataset(Dataset):
                 feat = getattr(self, '{}_feat'.format(source.value))
                 ftype = self.field2type[field]
                 remap_list.append((feat, field, ftype))
-            super(SocialDataset, self)._remap(remap_list)
+            self._remap(remap_list)
 
 
     def create_dgl(self):
         if self.net_feat is not None:
-            source = np.array(self.net_feat['source'])
-            target = np.array(self.net_feat['target'])
+            source = np.array(self.net_feat[self.source_field])
+            target = np.array(self.net_feat[self.target_field])
             return dgl.graph((source, target))       
         else:
-            return None
+            raise ValueError('net_feat is not exist')
 
+    def __str__(self):
+        info = []
+        if self.uid_field:
+            info.extend(['The number of users: {}'.format(self.user_num),
+                         'Average actions of users: {}'.format(self.avg_actions_of_users)])
+        if self.iid_field:
+            info.extend(['The number of items: {}'.format(self.item_num),
+                         'Average actions of items: {}'.format(self.avg_actions_of_items)])
+        if self.dgl_graph is not None:
+            info.extend(['The number of nodes: {}'.format(self.dgl_graph.number_of_nodes()),
+                         'The number of edges: {}'.format(self.dgl_graph.number_of_edges())])
+        info.append('The number of inters: {}'.format(self.inter_num))
+        if self.uid_field and self.iid_field:
+            info.append('The sparsity of the dataset: {}%'.format(self.sparsity * 100))
+
+        info.append('Remain Fields: {}'.format(list(self.field2type)))
+        return '\n'.join(info)
     

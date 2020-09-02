@@ -1,6 +1,6 @@
 from logging import getLogger
 from recbox.config import Config
-from recbox.data import Dataset, data_preparation, SocialDataset
+from recbox.data import Dataset, data_preparation
 from recbox.model.general_recommender.bprmf import BPRMF
 from recbox.trainer import Trainer
 from recbox.utils import init_logger, get_model
@@ -26,3 +26,4 @@ trainer = Trainer(config, model)
 best_valid_score, _ = trainer.fit(train_data, valid_data)
 result = trainer.evaluate(test_data)
 logger.info(best_valid_score)
+
