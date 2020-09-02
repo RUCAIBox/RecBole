@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/1, 2020/8/31, 2020/8/31
+# @Time   : 2020/9/1, 2020/9/2, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -25,10 +25,11 @@ class AbstractDataLoader(object):
     dl_type = None
 
     def __init__(self, config, dataset,
-                 batch_size=1, shuffle=False):
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.config = config
         self.dataset = dataset
         self.batch_size = batch_size
+        self.dl_format = dl_format
         self.shuffle = shuffle
         self.pr = 0
         self.real_time = config['real_time_process']
@@ -113,9 +114,8 @@ class GeneralDataLoader(AbstractDataLoader):
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.step = batch_size
 
-        self.dl_format = dl_format
-
-        super(GeneralDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+        super().__init__(config, dataset,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def __len__(self):
         return math.ceil(self.pr_end / self.step)
@@ -133,7 +133,7 @@ class GeneralDataLoader(AbstractDataLoader):
         return self._dataframe_to_interaction(cur_data)
 
 
-class NegSampleBasedDataLoader(AbstractDataLoader):
+class NegSampleMixin(object):
     dl_type = DataLoaderType.NEGSAMPLE
 
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
@@ -141,12 +141,12 @@ class NegSampleBasedDataLoader(AbstractDataLoader):
         if neg_sample_args['strategy'] not in ['by', 'full']:
             raise ValueError('neg_sample strategy [{}] has not been implemented'.format(neg_sample_args['strategy']))
 
-        super(NegSampleBasedDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+        super().__init__(config, dataset,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
         self.sampler = sampler
         self.phase = phase
         self.neg_sample_args = neg_sample_args
-        self.dl_format = dl_format
 
         self._batch_size_adaptation()
         if not self.real_time:
@@ -162,7 +162,7 @@ class NegSampleBasedDataLoader(AbstractDataLoader):
         raise NotImplementedError('Method [neg_sampling] should be implemented.')
 
 
-class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
+class NegSampleByMixin(NegSampleMixin):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'by':
@@ -172,13 +172,16 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
 
         self.neg_sample_by = neg_sample_args['by']
 
+        # TODO self.times 改个名（有点意义不明）
         if dl_format == InputType.POINTWISE:
             self.times = 1 + self.neg_sample_by
+            self.sampling_func = self._neg_sample_by_point_wise_sampling
 
             self.label_field = config['LABEL_FIELD']
             dataset.set_field_property(self.label_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
         elif dl_format == InputType.PAIRWISE:
             self.times = 1
+            self.sampling_func = self._neg_sample_by_pair_wise_sampling
 
             neg_prefix = config['NEG_PREFIX']
             iid_field = config['ITEM_ID_FIELD']
@@ -187,17 +190,29 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
             for item_feat_col in columns:
                 neg_item_feat_col = neg_prefix + item_feat_col
                 dataset.copy_field_property(neg_item_feat_col, item_feat_col)
+        else:
+            raise ValueError('`neg sampling by` with dl_format [{}] not been implemented'.format(dl_format))
 
-        super(GeneralIndividualDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
-                                                          batch_size, dl_format, shuffle)
+        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+
+    def _neg_sample_by_pair_wise_sampling(self, *args):
+        raise NotImplementedError('Method [neg_sample_by_pair_wise_sampling] should be implemented.')
+
+    def _neg_sample_by_point_wise_sampling(self, *args):
+        raise NotImplementedError('Method [neg_sample_by_point_wise_sampling] should be implemented.')
+
+
+class GeneralIndividualDataLoader(NegSampleByMixin, AbstractDataLoader):
+    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def __len__(self):
         return math.ceil(self.pr_end / self.step)
 
     def _batch_size_adaptation(self):
-        if self.dl_format == InputType.PAIRWISE:
-            self.step = self.batch_size
-            return
         batch_num = max(self.batch_size // self.times, 1)
         new_batch_size = batch_num * self.times
         self.step = batch_num if self.real_time else new_batch_size
@@ -225,13 +240,7 @@ class GeneralIndividualDataLoader(NegSampleBasedDataLoader):
         iid_field = self.config['ITEM_ID_FIELD']
         uids = inter_feat[uid_field].to_list()
         neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
-        if self.dl_format == InputType.POINTWISE:
-            sampling_func = self._neg_sample_by_point_wise_sampling
-        elif self.dl_format == InputType.PAIRWISE:
-            sampling_func = self._neg_sample_by_pair_wise_sampling
-        else:
-            raise ValueError('`neg sampling by` with dl_format [{}] not been implemented'.format(self.dl_format))
-        return sampling_func(uid_field, iid_field, neg_iids, inter_feat)
+        return self.sampling_func(uid_field, iid_field, neg_iids, inter_feat)
 
     def _neg_sample_by_pair_wise_sampling(self, uid_field, iid_field, neg_iids, inter_feat):
         neg_prefix = self.config['NEG_PREFIX']
@@ -263,8 +272,8 @@ class GeneralGroupedDataLoader(GeneralIndividualDataLoader):
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.uid2index, self.uid2items_num = dataset.uid2index
 
-        super(GeneralGroupedDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
-                                                       batch_size, dl_format, shuffle)
+        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def _batch_size_adaptation(self):
         max_uid2inter_num = max(self.uid2items_num) * self.times
@@ -309,7 +318,7 @@ class GeneralGroupedDataLoader(GeneralIndividualDataLoader):
         return self.uid2items_num
 
 
-class GeneralFullDataLoader(NegSampleBasedDataLoader):
+class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
     dl_type = DataLoaderType.FULL
 
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
@@ -422,9 +431,9 @@ class SequentialDataLoader(AbstractDataLoader):
         if dl_format != InputType.POINTWISE:
             raise ValueError('dl_format in Sequential DataLoader should be POINTWISE')
 
-        super(SequentialDataLoader, self).__init__(config, dataset, batch_size, shuffle)
+        super().__init__(config, dataset,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
-        self.dl_format = dl_format
         self.step = batch_size
 
         self.uid_field = dataset.uid_field
@@ -513,18 +522,77 @@ class SequentialDataLoader(AbstractDataLoader):
         return new_dict
 
 
+class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
+    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+
+    def _batch_size_adaptation(self):
+        batch_num = max(self.batch_size // self.times, 1)
+        new_batch_size = batch_num * self.times
+        self.step = batch_num if self.real_time else new_batch_size
+        self.set_batch_size(new_batch_size)
+
+    def _next_batch_data(self):
+        cur_index = slice(self.pr, self.pr + self.step)
+        if self.real_time:
+            cur_data = self.augmentation(self.uid_list[cur_index],
+                                         self.item_list_index[cur_index],
+                                         self.target_index[cur_index],
+                                         self.item_list_length[cur_index])
+            cur_data = self._neg_sampling(cur_data)
+        else:
+            cur_data = {}
+            for key, value in self.pre_processed_data.items():
+                cur_data[key] = value[cur_index]
+        self.pr += self.step
+        return self._dict_to_interaction(cur_data)
+
+    def _pre_neg_sampling(self):
+        self.pre_processed_data = self._neg_sampling(self.pre_processed_data)
+
+    def _neg_sampling(self, data):
+        uids = data[self.uid_field]
+        neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
+        return self.sampling_func(data, neg_iids)
+
+    def _neg_sample_by_pair_wise_sampling(self, data, neg_iids):
+        neg_prefix = self.config['NEG_PREFIX']
+        neg_item_id = neg_prefix + self.target_iid_field
+        data[neg_item_id] = neg_iids
+        return data
+
+    def _neg_sample_by_point_wise_sampling(self, data, neg_iids):
+        new_data = {}
+        for key, value in data.items():
+            if key == self.target_iid_field:
+                new_data[key] = np.concatenate([value, neg_iids])
+            else:
+                if isinstance(value, list):
+                    new_data[key] = value * self.times
+                elif isinstance(value, np.ndarray):
+                    new_data[key] = np.tile(value, (self.times, 1))
+        pos_len = len(data[self.target_iid_field])
+        total_len = len(new_data[self.target_iid_field])
+        new_data[self.label_field] = np.zeros(total_len, dtype=np.int)
+        new_data[self.label_field][:pos_len] = 1
+        return new_data
+
+
 class SequentialFullDataLoader(SequentialDataLoader):
     dl_type = DataLoaderType.FULL
 
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        super(SequentialFullDataLoader, self).__init__(config, dataset, batch_size, dl_format, shuffle)
+        super().__init__(config, dataset,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def _shuffle(self):
         raise NotImplementedError('SequentialFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
-        interaction = super(SequentialFullDataLoader, self)._next_batch_data()
+        interaction = super()._next_batch_data()
         tot_item_num = self.dataset.item_num
         inter_num = len(interaction)
         pos_idx = used_idx = interaction[self.target_iid_field] + torch.arange(inter_num) * tot_item_num
@@ -536,13 +604,13 @@ class SequentialFullDataLoader(SequentialDataLoader):
         return np.ones(self.pr_end, dtype=np.int)
 
 
-class KGDataLoader(NegSampleBasedDataLoader):
+class KGDataLoader(NegSampleMixin, AbstractDataLoader):
 
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.PAIRWISE, shuffle=False):
 
-        super(KGDataLoader, self).__init__(config, dataset, sampler, phase, neg_sample_args,
-                                           batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in KnowledgeBasedDataLoader() should be `by`')
         if dl_format != InputType.PAIRWISE or neg_sample_args['by'] != 1:
@@ -618,8 +686,8 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
 
         self.main_dataloader = self.general_dataloader
 
-        super(KnowledgeBasedDataLoader, self).__init__(config, dataset,
-                                                       batch_size=batch_size, shuffle=shuffle)
+        super().__init__(config, dataset,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def _get_data_loader(self, **kwargs):
         phase = kwargs['phase']
