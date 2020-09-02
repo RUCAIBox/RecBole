@@ -107,9 +107,9 @@ class NAIS(GeneralRecommender):
                 module.bias.data.fill_(0.0)
 
     def forward(self, user, item):
-        user_bool_inter = torch.from_numpy(self.interaction_matrix[user.cpu()].toarray()).to(self.device)
-        item_num = torch.sum(user_bool_inter, axis=1, keepdim=True)
-        _, indices = torch.nonzero(user_bool_inter, as_tuple=True)
+        user_input = torch.from_numpy(self.interaction_matrix[user.cpu()].toarray()).to(self.device)
+        item_num = torch.sum(user_input, axis=1, keepdim=True)
+        _, indices = torch.nonzero(user_input, as_tuple=True)
         user_inter = torch.split(indices, item_num.view(-1).int().cpu().numpy().tolist(), dim=0)
         user_inter = pad_sequence(user_inter, batch_first=True, padding_value=self.n_items)
         user_history = self.item_src_embedding(user_inter)
