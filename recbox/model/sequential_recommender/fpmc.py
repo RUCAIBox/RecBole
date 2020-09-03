@@ -14,7 +14,7 @@ class FPMC(SequentialRecommender):
     input_type = InputType.POINTWISE
     def __init__(self, config, dataset):
         super(FPMC, self).__init__()
-        # TODO 和data对接 user_id,neg_item_id
+        # TODO init
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
@@ -26,7 +26,6 @@ class FPMC(SequentialRecommender):
         self.user_count = dataset.num(self.ITEM_ID)
 
         self.embedding_size = config['embedding_size']
-        self.neg_count = config['neg_count']
 
         self.UI_emb = nn.Embedding(self.user_count, self.embedding_size)#user emb
         self.IU_emb = nn.Embedding(self.item_count, self.embedding_size)#pred emb
@@ -69,8 +68,8 @@ class FPMC(SequentialRecommender):
     def pmfc(self, Vui, Viu, Vil, Vli):
         """
         :param Vui: user embedding:[B,1,E]
-        :param Viu: pos or neg:[B,N,E]
-        :param Vil: pos or neg:[B,N,E]
+        :param Viu: pos or neg:[B,1,E]
+        :param Vil: pos or neg:[B,1,E]
         :param Vli: item_list :[B,S,E]
         :return:
         """
@@ -78,9 +77,9 @@ class FPMC(SequentialRecommender):
         mf = torch.matmul(Vui, Viu.permute(0, 2, 1))
         mf = torch.squeeze(mf, dim=1)#[B,1]
 
-    #     PMF
+    #     PMC
         pmf = torch.matmul(Vil, Vli.permute(0, 2, 1))
-        pmf = torch.mean(pmf, dim=-1)#[B,N]
+        pmf = torch.mean(pmf, dim=-1)#[B,1]
         x = mf + pmf
         return x
 
@@ -98,13 +97,13 @@ class FPMC(SequentialRecommender):
         item_list_emb = self.LI_emb(item_id_list)  # [b,n,emb]
 
         neg_item_list = interaction[self.NEG_ITEM_ID]
-        neg_item_list = neg_item_list.view(neg_item_list.size(0), self.neg_count, self.embedding_size)
         neg_iu = self.IU_emb(neg_item_list)
+        neg_iu = torch.unsqueeze(neg_iu, dim=1)  # [b,1,emb]
 
         neg_il = self.IL_emb(neg_item_list)
+        neg_il = torch.unsqueeze(neg_il, dim=1)  # [b,1,emb]
 
         neg_score = self.pmfc(user_emb, neg_iu, neg_il, item_list_emb)
-        neg_score = torch.mean(neg_score, dim=-1)
         pos_score = self.forward(interaction)
         neg_score = torch.squeeze(neg_score)
         loss = - self.loss(pos_score, neg_score)
