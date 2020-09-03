@@ -820,12 +820,12 @@ class SocialDataset(Dataset):
             
     def _get_fields_in_same_space(self):
         fields_in_same_space = super()._get_fields_in_same_space()
-
+        fields_in_same_space = [_ for _ in fields_in_same_space if (self.source_field not in _) and
+                                                                   (self.target_field not in _)]
         for field_set in fields_in_same_space:
             if self.uid_field in field_set:
                 field_set.update({self.source_field, self.target_field})
-        fields_in_same_space = [_ for _ in fields_in_same_space if (self.source_field not in _) and
-                                                                   (self.target_field not in _)]
+
         return fields_in_same_space
 
     def create_dgl_graph(self):
