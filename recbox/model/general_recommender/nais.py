@@ -41,7 +41,7 @@ class NAIS(GeneralRecommender):
         self.n_items = dataset.item_num
 
         # Construct src item embedding matrix, padding at n_items position
-        self.item_src_embedding = nn.Embedding(self.n_items+1, self.embedding_size, padding_idx=self.n_items)
+        self.item_src_embedding = nn.Embedding(self.n_items + 1, self.embedding_size, padding_idx=self.n_items)
         # Construct dst item embedding matrix, the target items don't require padding
         self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.bias = nn.Parameter(torch.zeros(self.n_items))
@@ -68,7 +68,6 @@ class NAIS(GeneralRecommender):
         return loss_1 + loss_2 + loss_3
 
     def attention_mlp(self, inter, target):
-        batch_size, max_len, _ = inter.size()
         if self.algorithm == 'prod':
             mlp_input = inter * target.unsqueeze(1)  # batch_size x max_len x embedding_size
         else:
