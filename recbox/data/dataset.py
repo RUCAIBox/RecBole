@@ -48,7 +48,7 @@ class Dataset(object):
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
         self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
-        
+
         self._filter_by_inter_num()
         self._filter_by_field_value()
         self._reset_index()
@@ -78,7 +78,7 @@ class Dataset(object):
             else:
                 setattr(self, '{}_feat'.format(name), None)
         self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
-       
+
         self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
@@ -787,11 +787,13 @@ class SocialDataset(Dataset):
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
         self.time_field = self.config['TIME_FIELD']
+
         self.source_field = self.config['SOURCE_ID_FIELD']
         self.target_field = self.config['TARGET_ID_FIELD']
+        self._check_field('source_field', 'target_field')
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
-        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.net_feat] if feat is not None]
 
         self._filter_by_inter_num()
         self._filter_by_field_value()
@@ -810,50 +812,21 @@ class SocialDataset(Dataset):
         self.dgl_graph = self.create_dgl_graph()
 
     def _load_net(self, dataset_name, dataset_path): 
-        self._check_field('source_field','target_field')
-        net_file_path = os.path.join(dataset_path,'{}.{}'.format(dataset_name,'net'))
+        net_file_path = os.path.join(dataset_path, '{}.{}'.format(dataset_name, 'net'))
         if os.path.isfile(net_file_path):
             return self._load_feat(net_file_path, FeatureSource.NET)
         else:
             raise ValueError('File {} not exist'.format(net_file_path))
             
     def _get_fields_in_same_space(self):
-        fields_in_same_space = self.config['fields_in_same_space'] or []
-        additional = []
-        token_like_fields = self.token_like_fields
-        for field in token_like_fields:
-            count = 0
-            for field_set in fields_in_same_space:
-                if field in field_set:
-                    count += 1
-            if count == 0:
-                additional.append({field})
-            elif count == 1:
-                continue
-            else:
-                raise ValueError('field [{}] occurred in `fields_in_same_space` more than one time'.format(field))
-
-        for field_set in fields_in_same_space:
-            if self.uid_field in field_set and self.iid_field in field_set:
-                raise ValueError('uid_field and iid_field can\'t in the same ID space')
-            for field in field_set:
-                if field not in token_like_fields:
-                    raise ValueError('field [{}] is not a token like field'.format(field))
-
-        fields_in_same_space.extend(additional)
+        fields_in_same_space = super()._get_fields_in_same_space()
 
         for field_set in fields_in_same_space:
             if self.uid_field in field_set:
                 field_set.update({self.source_field, self.target_field})
-            elif self.source_field in field_set:
-                field_set.remove(self.source_field)
-            elif self.target_field in field_set:
-                field_set.remove(self.target_field) 
-        no_empty_fields_in_same_space = []
-        for field_set in fields_in_same_space:
-            if len(field_set) != 0:
-                no_empty_fields_in_same_space.append(field_set)
-        return no_empty_fields_in_same_space
+        fields_in_same_space = [_ for _ in fields_in_same_space if (self.source_field not in _) and
+                                                                   (self.target_field not in _)]
+        return fields_in_same_space
 
     def create_dgl_graph(self):
         if self.net_feat is not None:
