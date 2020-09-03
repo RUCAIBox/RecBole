@@ -48,7 +48,6 @@ class Sampler(object):
         self.random_pr = 0
         self.random_item_list_length = len(self.random_item_list)
 
-        self.full_set = set(range(self.n_items))
         self.used_item_id = dict()
         last = [set() for i in range(self.n_users)]
         for phase, dataset in zip(self.phases, self.datasets):
@@ -61,37 +60,6 @@ class Sampler(object):
         item = self.random_item_list[self.random_pr % self.random_item_list_length]
         self.random_pr += 1
         return item
-
-    def sample_by_user_id(self, phase, user_id, num=1):
-        try:
-            neg_item_id = []
-            used_item_id = self.used_item_id[phase][user_id]
-            for step in range(self.random_item_list_length):
-                cur = self.random_item()
-                if cur not in used_item_id:
-                    neg_item_id.append(cur)
-                    if len(neg_item_id) == num:
-                        return neg_item_id
-            return neg_item_id
-        except KeyError:
-            if phase not in self.phases:
-                raise ValueError('phase [{}] not exist'.format(phase))
-        except IndexError:
-            if user_id < 0 or user_id >= self.n_users:
-                raise ValueError('user_id [{}] not exist'.format(user_id))
-
-    def sample_one_by_user_id(self, phase, user_id):
-        try:
-            for step in range(self.random_item_list_length):
-                cur = self.random_item()
-                if cur not in self.used_item_id[phase][user_id]:
-                    return cur
-        except KeyError:
-            if phase not in self.phases:
-                raise ValueError('phase [{}] not exist'.format(phase))
-        except IndexError:
-            if user_id < 0 or user_id >= self.n_users:
-                raise ValueError('user_id [{}] not exist'.format(user_id))
 
     def sample_by_user_ids(self, phase, user_ids, num):
         try:
@@ -113,20 +81,10 @@ class Sampler(object):
                 if user_id < 0 or user_id >= self.n_users:
                     raise ValueError('user_id [{}] not exist'.format(user_id))
 
-    def sample_full_by_user_id(self, phase, user_id):
-        try:
-            return list(self.full_set - self.used_item_id[phase][user_id])
-        except KeyError:
-            if phase not in self.phases:
-                raise ValueError('phase [{}] not exist'.format(phase))
-        except IndexError:
-            if user_id < 0 or user_id >= self.n_users:
-                raise ValueError('user_id [{}] not exist'.format(user_id))
-
 
 class KGSampler(object):
     def __init__(self, config, phases, datasets, distribution='uniform'):
-        legal_distribution = {'uniform', 'popularity'} 
+        legal_distribution = {'uniform', 'popularity'}
         if distribution not in legal_distribution:
             raise ValueError('Distribution [{}] should in {}'.format(distribution, list(legal_distribution)))
 
