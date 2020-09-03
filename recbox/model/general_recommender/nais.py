@@ -6,7 +6,7 @@
 """
 Reference:
 Xiangnan He et al., "NAIS: Neural Attentive Item Similarity Model for Recommendation." in TKDE 2018.
-Also, our code is base on https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
+Also, our code is based on https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
 """
 
 import numpy as np
