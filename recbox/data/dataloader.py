@@ -36,6 +36,10 @@ class AbstractDataLoader(object):
 
         self.join = self.dataset.join
         self.inter_matrix = self.dataset.inter_matrix
+
+        if hasattr(self.dataset, 'dgl_graph'):
+            self.dgl_graph = self.dataset.dgl_graph
+
         self.num = self.dataset.num
         self.fields = self.dataset.fields
         self.get_preload_weight = self.dataset.get_preload_weight
