@@ -33,15 +33,15 @@ def init_logger(config):
     sformatter = logging.Formatter(sfmt, sdatefmt)
 
     fh = logging.FileHandler(logfilepath)
-    fh.setLevel(logging.DEBUG)
+    fh.setLevel(logging.INFO)
     fh.setFormatter(fileformatter)
 
     sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
+    sh.setLevel(logging.INFO)
     sh.setFormatter(sformatter)
 
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         handlers=[fh, sh]
     )
 
