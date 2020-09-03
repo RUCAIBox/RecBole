@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/1, 2020/8/31
+# @Time   : 2020/9/3, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -27,7 +27,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall', 'MRR', 'NDCG'],
+        'metrics': ['Recall', 'MRR', 'NDCG'],
         'topk': [5, 10, 20],
     },
     'Test Real Time Full Sort': {
@@ -35,7 +35,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall'],
+        'metrics': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, full',
         'real_time_process': True
@@ -45,7 +45,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall'],
+        'metrics': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, full',
         'real_time_process': False
@@ -55,7 +55,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall'],
+        'metrics': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, uni100',
         'real_time_process': True
@@ -65,7 +65,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall'],
+        'metrics': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, uni100',
         'real_time_process': False
@@ -75,7 +75,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall'],
+        'metrics': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_LS, full',
         'leave_one_num': 2,
@@ -86,7 +86,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall'],
+        'metrics': ['Recall'],
         'topk': [10]
     },
     'Test NeuMF': {
@@ -94,7 +94,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall'],
+        'metrics': ['Recall'],
         'topk': [10]
     },
     'Test NAIS': {
@@ -104,7 +104,7 @@ test_examples = {
         'eval_setting': 'RO_LS, uni100',
         'valid_metric': 'Recall@10',
         'leave_one_num': 2,
-        'metrics:': ["Recall"],
+        'metrics': ["Recall"],
         'topk': [10]
     },
     'Test POP': {
@@ -112,7 +112,7 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall'],
+        'metrics': ['Recall'],
         'topk': [10]
     },
     'Test FM': {
@@ -154,7 +154,7 @@ test_examples = {
         'epochs': 1,
         'train_kg_step': 0,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall'],
+        'metrics': ['Recall'],
         'topk': [10]
     },
     'Test KTUP': {
@@ -163,7 +163,7 @@ test_examples = {
         'epochs': 1,
         'train_kg_step': 1,
         'valid_metric': 'Recall@10',
-        'metrics:': ['Recall'],
+        'metrics': ['Recall'],
         'topk': [10]
     }
 }
@@ -173,7 +173,6 @@ def run_test_examples():
 
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
-    # for idx, example in enumerate(['Test NAIS']):
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:

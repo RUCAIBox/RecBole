@@ -22,6 +22,7 @@ class SASRec(SequentialRecommender):
         self.POSITION_ID = config['POSITION_FIELD']
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
         self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
+        self.device = config['device']
         max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
 
         self.embedding_size = config['embedding_size']
@@ -38,6 +39,10 @@ class SASRec(SequentialRecommender):
         self.position_list_embedding = nn.Embedding(max_item_list_length, self.embedding_size)
         self.multi_head_attention = MultiHeadAttention(self.n_head, self.d_model, self.d_k, self.d_v)
         self.layer_norm = nn.LayerNorm(self.embedding_size)
+        self.conv1d_1 = nn.Conv1d(in_channels=self.d_model, out_channels=self.d_ff, kernel_size=1, bias=True)
+        self.conv1d_2 = nn.Conv1d(in_channels=self.d_ff, out_channels=self.d_model, kernel_size=1, bias=True)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(p = self.dropout)
         self.criterion = nn.CrossEntropyLoss()
 
         self.apply(self.init_weights)
@@ -53,15 +58,15 @@ class SASRec(SequentialRecommender):
         item_list_emb = self.item_list_embedding(interaction[self.ITEM_ID_LIST])
         position_list_emb = self.position_list_embedding(interaction[self.POSITION_ID])
         behavior_list_emb = item_list_emb + position_list_emb
-        key_padding_mask = self.get_attn_pad_mask(interaction[self.ITEM_ID_LIST], interaction[self.ITEM_ID_LIST])
-        look_ahead_mask = self.get_attn_subsequence_mask(interaction[self.ITEM_ID_LIST])
-        mask = torch.gt((key_padding_mask + look_ahead_mask), 0)
+        key_padding_mask = self.get_attn_pad_mask(interaction[self.ITEM_ID_LIST], interaction[self.ITEM_ID_LIST]).to(self.device)
+        look_ahead_mask = self.get_attn_subsequence_mask(interaction[self.ITEM_ID_LIST]).to(self.device)
+        mask = torch.gt((key_padding_mask + look_ahead_mask), 0).to(self.device)
         attn_weights = []
         attn_outputs = behavior_list_emb
         for i in range(self.num_blocks):
             attn_outputs, attn = self.multi_head_attention(attn_outputs, attn_outputs, attn_outputs, mask)
             attn_weights.append(attn)
-            attn_outputs = self.feedforward(attn_outputs, self.d_model, self.d_ff, self.dropout)
+            attn_outputs = self.feedforward(attn_outputs)
         long_term_prefernce = self.gather_indexes(attn_outputs, interaction[self.ITEM_LIST_LEN])
         predict_behavior_emb = self.layer_norm(long_term_prefernce)
         return predict_behavior_emb, attn_weights
@@ -79,7 +84,7 @@ class SASRec(SequentialRecommender):
         pad_attn_mask = seq_k.data.eq(0).unsqueeze(1)  # [batch_size, 1, len_k], False is masked
         return pad_attn_mask.expand(batch_size, len_q, len_k)  # [batch_size, len_q, len_k]
 
-    def get_attn_subsequence_mask(seq):
+    def get_attn_subsequence_mask(self,seq):
         '''
         seq: [batch_size, tgt_len]
         '''
@@ -89,13 +94,13 @@ class SASRec(SequentialRecommender):
         return subsequence_mask
 
 
-    def feedforward(self, x, d_model, d_ff, dropout=0.2):
+    def feedforward(self, x):
         residual = x
         x = x.permute(0, 2, 1)
-        x = nn.Conv1d(in_channels=self.d_model, out_channels=self.d_ff, kernel_size=1, bias=True)(x)
-        x = nn.ReLU()(x)
-        x = nn.Dropout(p = dropout)(x)
-        x = nn.Conv1d(in_channels=self.d_ff, out_channels=self.d_model, kernel_size=1, bias=True)(x)
+        x = self.conv1d_1(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.conv1d_2(x)
         x = x.permute(0, 2, 1)
         x = x + residual
         x = self.layer_norm(x)

@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/31, 2020/8/31, 2020/8/31
+# @Time   : 2020/9/3, 2020/8/31, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -15,16 +15,18 @@ from ..config import EvalSetting
 from ..sampler import KGSampler, Sampler
 from ..utils import EvaluatorType, InputType, ModelType
 from .dataloader import *
-from .dataset import Dataset, KnowledgeBasedDataset
 
 
 def create_dataset(config):
     model_type = config['MODEL_TYPE']
     if model_type == ModelType.KNOWLEDGE:
+        from .dataset import KnowledgeBasedDataset
         return KnowledgeBasedDataset(config)
     elif model_type == ModelType.SOCIAL:
-        raise not NotImplementedError('Social Recommendation Dataset has not been implemented.')
+        from .dataset import SocialDataset
+        return SocialDataset(config)
     else:
+        from .dataset import Dataset
         return Dataset(config)
 
 
