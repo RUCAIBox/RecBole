@@ -1,6 +1,6 @@
 from logging import getLogger
 from recbox.config import Config
-from recbox.data import Dataset, data_preparation,SocialDataset
+from recbox.data import Dataset, data_preparation
 from recbox.model.general_recommender.bprmf import BPRMF
 from recbox.trainer import Trainer
 from recbox.utils import init_logger, get_model
@@ -10,7 +10,7 @@ config.init()
 init_logger(config)
 logger = getLogger()
 
-dataset = SocialDataset(config)
+dataset = Dataset(config)
 logger.info(dataset)
 
 # If you want to customize the evaluation setting,
