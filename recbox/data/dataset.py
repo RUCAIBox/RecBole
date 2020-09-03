@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/29, 2020/9/1, 2020/8/27
+# @Time   : 2020/8/29, 2020/9/3, 2020/8/27
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -792,7 +792,6 @@ class SocialDataset(Dataset):
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
         self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
-       
 
         self._filter_by_inter_num()
         self._filter_by_field_value()
@@ -801,76 +800,72 @@ class SocialDataset(Dataset):
         self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
 
         self._remap_ID_all()
+
         self._user_item_feat_preparation()
 
         self._fill_nan()
         self._set_label_by_threshold()
         self._normalize()
-
-        self.dgl_graph = self.create_dgl()
+        
+        self.dgl_graph = self.create_dgl_graph()
 
     def _load_net(self, dataset_name, dataset_path): 
-        str2ftype = {
-            'token': FeatureType.TOKEN,
-            'float': FeatureType.FLOAT,
-            'token_seq': FeatureType.TOKEN_SEQ,
-            'float_seq': FeatureType.FLOAT_SEQ
-        }
         self._check_field('source_field','target_field')
         net_file_path = os.path.join(dataset_path,'{}.{}'.format(dataset_name,'net'))
         if os.path.isfile(net_file_path):
-            df = pd.read_csv(net_file_path, delimiter=self.config['field_separator'])
-            field_names = []
-            for field_type in df.columns:
-                field, ftype = field_type.split(':')
-                field_names.append(field)
-                if ftype not in str2ftype:
-                    raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
-                ftype = str2ftype[ftype]
-                self.field2source[field] = FeatureSource.NET
-                self.field2type[field] = ftype
-
-            df.columns = field_names
-            return df
+            return self._load_feat(net_file_path, FeatureSource.NET)
         else:
             raise ValueError('File {} not exist'.format(net_file_path))
             
+    def _get_fields_in_same_space(self):
+        fields_in_same_space = self.config['fields_in_same_space'] or []
+        additional = []
+        token_like_fields = self.token_like_fields
+        for field in token_like_fields:
+            count = 0
+            for field_set in fields_in_same_space:
+                if field in field_set:
+                    count += 1
+            if count == 0:
+                additional.append({field})
+            elif count == 1:
+                continue
+            else:
+                raise ValueError('field [{}] occurred in `fields_in_same_space` more than one time'.format(field))
 
-    def _remap_ID_all(self):
-        fields_in_same_space = self._get_fields_in_same_space()
+        for field_set in fields_in_same_space:
+            if self.uid_field in field_set and self.iid_field in field_set:
+                raise ValueError('uid_field and iid_field can\'t in the same ID space')
+            for field in field_set:
+                if field not in token_like_fields:
+                    raise ValueError('field [{}] is not a token like field'.format(field))
+
+        fields_in_same_space.extend(additional)
+
         for field_set in fields_in_same_space:
             if self.uid_field in field_set:
                 field_set.update({self.source_field, self.target_field})
             elif self.source_field in field_set:
                 field_set.remove(self.source_field)
             elif self.target_field in field_set:
-                field_set.remove(self.target_field)
-
+                field_set.remove(self.target_field) 
+        no_empty_fields_in_same_space = []
         for field_set in fields_in_same_space:
-            if len(field_set) == 0:
-                continue
-            remap_list = []
-            for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
-                if field in field_set:
-                    field_set.remove(field)
-                    remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
-                    if feat is not None:
-                        remap_list.append((feat, field, FeatureType.TOKEN))
-            for field in field_set:
-                source = self.field2source[field]
-                feat = getattr(self, '{}_feat'.format(source.value))
-                ftype = self.field2type[field]
-                remap_list.append((feat, field, ftype))
-            self._remap(remap_list)
+            if len(field_set) != 0:
+                no_empty_fields_in_same_space.append(field_set)
+        return no_empty_fields_in_same_space
 
-
-    def create_dgl(self):
+    def create_dgl_graph(self):
         if self.net_feat is not None:
-            source = np.array(self.net_feat[self.source_field])
-            target = np.array(self.net_feat[self.target_field])
-            return dgl.graph((source, target))       
+            source = torch.tensor(self.net_feat[self.source_field].values)
+            target = torch.tensor(self.net_feat[self.target_field].values)
+            ret = dgl.graph((source, target))
+
+            # TODO add edge feature
+            
+            return ret       
         else:
-            raise ValueError('net_feat is not exist')
+            raise ValueError('net_feat does not exist')
 
     def __str__(self):
         info = []
