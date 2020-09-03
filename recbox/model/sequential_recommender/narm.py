@@ -11,7 +11,7 @@ from torch.nn.utils.rnn import pack_padded_sequence,pad_packed_sequence
 from torch.nn.init import xavier_normal_, constant_
 
 
-# TODO:init
+
 class NARM(SequentialRecommender):
     input_type = InputType.POINTWISE
     def __init__(self, config, dataset):
@@ -27,6 +27,7 @@ class NARM(SequentialRecommender):
         self.hidden_size = config['hidden_size']
         self.n_layers = config['n_layers']
         self.dropout = config['dropout']
+        self.device = config['device']
         self.item_count = dataset.item_num
 
 
@@ -35,7 +36,7 @@ class NARM(SequentialRecommender):
         self.gru = nn.GRU(self.embedding_size, self.hidden_size, self.n_layers, batch_first=True)
         self.a_1 = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
         self.a_2 = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
-        self.v_t = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
+        self.v_t = nn.Linear(self.hidden_size, 1, bias=False)
         self.ct_dropout = nn.Dropout(self.dropout[1])
         self.b = nn.Linear(2*self.hidden_size, self.embedding_size, bias=False)
         self.criterion = nn.CrossEntropyLoss()
@@ -76,8 +77,9 @@ class NARM(SequentialRecommender):
 
         q1 = self.a_1(gru_out.contiguous().view(-1, self.hidden_size)).view(gru_out.size())
         q2 = self.a_2(ht)
-
-        mask = torch.where(item_id_list>0, torch.tensor([1.]), torch.tensor([0.]))
+        a = torch.tensor([1.]).to(self.device)
+        b = torch.tensor([0.]).to(self.device)
+        mask = torch.where(item_id_list>0, a, b)
         q2_expand = q2.unsqueeze(1).expand_as(q1)
         q2_masked = mask.unsqueeze(2).expand_as(q1)*q2_expand
 

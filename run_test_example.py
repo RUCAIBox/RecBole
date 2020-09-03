@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/19 18:24, 2020/8/21
+# @Time   : 2020/9/1, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -13,7 +13,7 @@ from run_test import whole_process
 
 """
 乞丐版代码测试程序，防止bug越写越多，尤其是后期model多起来，一不小心就会使某些model run不起来
- 
+
 代码提交前，请运行一下这个程序，保证无误后再提交
 
 有必要加入测试例子的，请尽量添加！按照格式添加到 `test_examples` 中
@@ -38,7 +38,7 @@ test_examples = {
         'metrics:': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, full',
-        'real_time_neg_sampling': True
+        'real_time_process': True
     },
     'Test Pre Full Sort': {
         'model': 'BPRMF',
@@ -48,7 +48,7 @@ test_examples = {
         'metrics:': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, full',
-        'real_time_neg_sampling': False
+        'real_time_process': False
     },
     'Test Real Time Neg Sample By': {
         'model': 'BPRMF',
@@ -58,7 +58,7 @@ test_examples = {
         'metrics:': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, uni100',
-        'real_time_neg_sampling': True
+        'real_time_process': True
     },
     'Test Pre Neg Sample By': {
         'model': 'BPRMF',
@@ -68,7 +68,7 @@ test_examples = {
         'metrics:': ['Recall'],
         'topk': [10],
         'eval_setting': 'RO_RS, uni100',
-        'real_time_neg_sampling': False
+        'real_time_process': False
     },
     'Test Leave One Out': {
         'model': 'BPRMF',
@@ -79,7 +79,7 @@ test_examples = {
         'topk': [10],
         'eval_setting': 'RO_LS, full',
         'leave_one_num': 2,
-        'real_time_neg_sampling': True
+        'real_time_process': True
     },
     'Test BPRMF': {
         'model': 'BPRMF',
@@ -95,6 +95,16 @@ test_examples = {
         'epochs': 1,
         'valid_metric': 'Recall@10',
         'metrics:': ['Recall'],
+        'topk': [10]
+    },
+    'Test NAIS': {
+        'model': 'NAIS',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'eval_setting': 'RO_LS, uni100',
+        'valid_metric': 'Recall@10',
+        'leave_one_num': 2,
+        'metrics:': ["Recall"],
         'topk': [10]
     },
     'Test POP': {
@@ -131,13 +141,30 @@ test_examples = {
         'eval_setting': 'TO_LS, full',
         'split_ratio': None,
         'leave_one_num': 2,
-        'real_time_neg_sampling': None,
         'real_time_process': True,
         'NEG_PREFIX': None,
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['rating', 'timestamp']},
         'min_user_inter_num': 5
+    },
+    'Test CKE': {
+        'model': 'CKE',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'train_kg_step': 0,
+        'valid_metric': 'Recall@10',
+        'metrics:': ['Recall'],
+        'topk': [10]
+    },
+    'Test KTUP': {
+        'model': 'KTUP',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'train_kg_step': 1,
+        'valid_metric': 'Recall@10',
+        'metrics:': ['Recall'],
+        'topk': [10]
     }
 }
 
@@ -146,6 +173,7 @@ def run_test_examples():
 
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
+    # for idx, example in enumerate(['Test NAIS']):
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:

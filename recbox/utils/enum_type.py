@@ -45,4 +45,5 @@ class FeatureSource(Enum):
     ITEM = 'item'
     USER_ID = 'user_id'
     ITEM_ID = 'item_id'
+    KG = 'kg'
     NET = 'net'
