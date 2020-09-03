@@ -13,7 +13,7 @@ from run_test import whole_process
 
 """
 乞丐版代码测试程序，防止bug越写越多，尤其是后期model多起来，一不小心就会使某些model run不起来
- 
+
 代码提交前，请运行一下这个程序，保证无误后再提交
 
 有必要加入测试例子的，请尽量添加！按照格式添加到 `test_examples` 中
@@ -97,6 +97,16 @@ test_examples = {
         'metrics:': ['Recall'],
         'topk': [10]
     },
+    'Test NAIS': {
+        'model': 'NAIS',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'eval_setting': 'RO_LS, uni100',
+        'valid_metric': 'Recall@10',
+        'leave_one_num': 2,
+        'metrics:': ["Recall"],
+        'topk': [10]
+    },
     'Test POP': {
         'model': 'Pop',
         'dataset': 'ml-100k',
@@ -163,6 +173,7 @@ def run_test_examples():
 
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
+    # for idx, example in enumerate(['Test NAIS']):
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
