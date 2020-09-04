@@ -168,10 +168,9 @@ class NAIS(GeneralRecommender):
         item_nums = torch.FloatTensor(list(map(len, user_iters))).view(-1, 1).to(self.device)  # batch_size x 1
         return user_iters, item_nums
 
-    def predict(self, interaction):
+    def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
-        user_ids = user.unique()
-        user_iters, item_nums = self.get_input(user_ids)
+        user_iters, item_nums = self.get_input(user)
         scores = []
         for user_input, item_num in zip(user_iters, item_nums.squeeze(1)):
             if self.split_to <= 0:
@@ -185,3 +184,9 @@ class NAIS(GeneralRecommender):
             scores.append(output)
         result = torch.cat(scores, dim=0)
         return result
+
+    def predict(self, interaction):
+        user = interaction[self.USER_ID]
+        item = interaction[self.ITEM_ID]
+        output = self.forward(user, item)
+        return output
