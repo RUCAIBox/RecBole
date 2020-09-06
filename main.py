@@ -1,24 +1,27 @@
-from config import Config
-from dataset import Dataset
-from model import Model
-from trainer import Trainer
-from evaluator import Evaluator
+from logging import getLogger
+from recbox.config import Config
+from recbox.data import create_dataset, data_preparation
+from recbox.trainer import get_trainer
+from recbox.utils import init_logger, get_model
 
-
-
-config = Config()
+config = Config('properties/overall.config')
 config.init()
+init_logger(config)
+logger = getLogger()
 
+dataset = create_dataset(config)
+logger.info(dataset)
 
-dataset = Dataset(config)
-train_data, test_data = dataset.preprocessing()
+# If you want to customize the evaluation setting,
+# please refer to `data_preparation()` in `data/utils.py`.
+train_data, test_data, valid_data = data_preparation(config, dataset)
 
+model = get_model(config['model'])(config, train_data).to(config['device'])
+logger.info(model)
 
-model = Model(config)
-trainer = Trainer(config)
-model = trainer.train(model, train_data)
-result = trainer.predict(model, test_data)
+trainer = get_trainer(config['MODEL_TYPE'])(config, model)
 
-
-evaluator = Evaluator(config)
-evaluator.evaluate(result, test_data)
+# trainer.resume_checkpoint('saved/model_best.pth')
+best_valid_score, _ = trainer.fit(train_data, valid_data)
+result = trainer.evaluate(test_data)
+logger.info(best_valid_score)

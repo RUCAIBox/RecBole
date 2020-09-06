@@ -1,0 +1,4 @@
+learning_rate loguniform -8,0
+embedding_size choice [64,96,128]
+train_batch_size choice [512,1024,2048]
+mlp_hidden_size choice ['[64,64,64]','[128,128]']
