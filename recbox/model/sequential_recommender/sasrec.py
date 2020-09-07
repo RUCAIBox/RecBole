@@ -37,12 +37,14 @@ class SASRec(SequentialRecommender):
 
         self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
         self.position_list_embedding = nn.Embedding(max_item_list_length, self.embedding_size)
+        self.emb_dropout = nn.Dropout(self.dropout[0])
         self.multi_head_attention = MultiHeadAttention(self.n_head, self.d_model, self.d_k, self.d_v)
         self.layer_norm = nn.LayerNorm(self.embedding_size)
         self.conv1d_1 = nn.Conv1d(in_channels=self.d_model, out_channels=self.d_ff, kernel_size=1, bias=True)
         self.conv1d_2 = nn.Conv1d(in_channels=self.d_ff, out_channels=self.d_model, kernel_size=1, bias=True)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(p = self.dropout)
+        self.conv1_dropout = nn.Dropout(p = self.dropout[1])
+        self.conv2_dropout = nn.Dropout(p = self.dropout[2])
         self.criterion = nn.CrossEntropyLoss()
 
         self.apply(self.init_weights)
@@ -58,11 +60,12 @@ class SASRec(SequentialRecommender):
         item_list_emb = self.item_list_embedding(interaction[self.ITEM_ID_LIST])
         position_list_emb = self.position_list_embedding(interaction[self.POSITION_ID])
         behavior_list_emb = item_list_emb + position_list_emb
+        behavior_list_emb_drop = self.emb_dropout(behavior_list_emb)
         key_padding_mask = self.get_attn_pad_mask(interaction[self.ITEM_ID_LIST], interaction[self.ITEM_ID_LIST]).to(self.device)
         look_ahead_mask = self.get_attn_subsequence_mask(interaction[self.ITEM_ID_LIST]).to(self.device)
         mask = torch.gt((key_padding_mask + look_ahead_mask), 0).to(self.device)
         attn_weights = []
-        attn_outputs = behavior_list_emb
+        attn_outputs = behavior_list_emb_drop
         for i in range(self.num_blocks):
             attn_outputs, attn = self.multi_head_attention(attn_outputs, attn_outputs, attn_outputs, mask)
             attn_weights.append(attn)
@@ -99,9 +102,10 @@ class SASRec(SequentialRecommender):
         x = x.permute(0, 2, 1)
         x = self.conv1d_1(x)
         x = self.relu(x)
-        x = self.dropout(x)
+        x = self.conv1_dropout(x)
         x = self.conv1d_2(x)
         x = x.permute(0, 2, 1)
+        x = self.conv2_dropout(x)
         x = x + residual
         x = self.layer_norm(x)
         return x
