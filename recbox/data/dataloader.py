@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/1, 2020/9/2, 2020/8/31
+# @Time   : 2020/9/7, 2020/9/2, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -432,9 +432,6 @@ class SequentialDataLoader(AbstractDataLoader):
 
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        if dl_format != InputType.POINTWISE:
-            raise ValueError('dl_format in Sequential DataLoader should be POINTWISE')
-
         super().__init__(config, dataset,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
