@@ -97,6 +97,14 @@ test_examples = {
         'metrics': ['Recall'],
         'topk': [10]
     },
+    'Test DMF': {
+        'model': 'DMF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
     'Test NAIS': {
         'model': 'NAIS',
         'dataset': 'ml-100k',
