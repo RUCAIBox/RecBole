@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/3, 2020/8/31, 2020/8/31
+# @Time   : 2020/9/7, 2020/8/31, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -124,7 +124,7 @@ def dataloader_construct(name, config, eval_setting, dataset,
     logger.info(eval_setting)
     logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
 
-    DataLoader = get_data_loader(name, config, eval_setting, model_type)
+    DataLoader = get_data_loader(name, config, eval_setting)
 
     ret = [
         DataLoader(
@@ -156,7 +156,15 @@ def save_datasets(save_path, name, dataset):
         d.save(cur_path)
 
 
-def get_data_loader(name, config, eval_setting, model_type):
+def get_data_loader(name, config, eval_setting):
+    register_table = {
+        'DIN': _get_DIN_data_loader
+    }
+
+    if config['model'] in register_table:
+        return register_table[config['model']](name, config, eval_setting)
+
+    model_type = config['model_type']
     if model_type == ModelType.GENERAL:
         neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'none':
@@ -201,3 +209,7 @@ def get_data_loader(name, config, eval_setting, model_type):
             raise NotImplementedError('The use of external negative sampling for knowledge model has not been implemented')
     else:
         raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
+
+
+def _get_DIN_data_loader(name, config, eval_setting):
+    raise NotImplementedError()
