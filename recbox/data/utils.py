@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/7, 2020/8/31, 2020/8/31
+# @Time   : 2020/9/7, 2020/9/8, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -47,7 +47,7 @@ def data_preparation(config, dataset, save=False):
     if es.split_args['strategy'] != 'loo' and model_type == ModelType.SEQUENTIAL:
         raise ValueError('Sequential models require "loo" split strategy.')
 
-    builded_datasets = dataset.build(es, model_type)
+    builded_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = builded_datasets
     phases = ['train', 'valid', 'test']
 
@@ -71,7 +71,6 @@ def data_preparation(config, dataset, save=False):
         config=config,
         eval_setting=es,
         dataset=train_dataset,
-        model_type=config['MODEL_TYPE'],
         dl_format=config['MODEL_INPUT_TYPE'],
         batch_size=config['train_batch_size'],
         shuffle=True,
@@ -89,7 +88,6 @@ def data_preparation(config, dataset, save=False):
         config=config,
         eval_setting=es,
         dataset=[valid_dataset, test_dataset],
-        model_type=config['MODEL_TYPE'],
         batch_size=config['eval_batch_size'],
         **kwargs
     )
@@ -98,7 +96,7 @@ def data_preparation(config, dataset, save=False):
 
 
 def dataloader_construct(name, config, eval_setting, dataset,
-                         model_type=ModelType.GENERAL, dl_format=InputType.POINTWISE,
+                         dl_format=InputType.POINTWISE,
                          batch_size=1, shuffle=False, **kwargs):
     if not isinstance(dataset, list):
         dataset = [dataset]
@@ -119,6 +117,7 @@ def dataloader_construct(name, config, eval_setting, dataset,
         for kw, k, w in zip(kwargs_list, key, value):
             kw[k] = w
 
+    model_type = config['MODEL_TYPE']
     logger = getLogger()
     logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(model_type, name, dl_format))
     logger.info(eval_setting)
@@ -164,7 +163,7 @@ def get_data_loader(name, config, eval_setting):
     if config['model'] in register_table:
         return register_table[config['model']](name, config, eval_setting)
 
-    model_type = config['model_type']
+    model_type = config['MODEL_TYPE']
     if model_type == ModelType.GENERAL:
         neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'none':
@@ -206,7 +205,8 @@ def get_data_loader(name, config, eval_setting):
         elif neg_sample_strategy == 'none':
             # return GeneralDataLoader
             # TODO 训练也可以为none? 看general的逻辑似乎是都可以为None
-            raise NotImplementedError('The use of external negative sampling for knowledge model has not been implemented')
+            raise NotImplementedError('The use of external negative sampling for knowledge model '
+                                      'has not been implemented')
     else:
         raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
 
