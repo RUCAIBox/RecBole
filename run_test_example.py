@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/3, 2020/8/31
+# @Time   : 2020/9/3, 2020/9/8
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -146,6 +146,7 @@ test_examples = {
         'model': 'GRU4Rec',
         'dataset': 'ml-100k',
         'epochs': 1,
+        'training_neg_sample_num': 0,
         'eval_setting': 'TO_LS, full',
         'split_ratio': None,
         'leave_one_num': 2,
