@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/3, 2020/8/27
+# @Time   : 2020/9/8, 2020/9/3, 2020/9/8
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -746,12 +746,12 @@ class Dataset(object):
                 pr += 1
         return next_index
 
-    def leave_one_out(self, group_by, model_type, leave_one_num=1):
+    def leave_one_out(self, group_by, leave_one_num=1):
         self.logger.debug('leave one out, group_by=[{}], leave_one_num=[{}]'.format(group_by, leave_one_num))
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 
-        if model_type == ModelType.SEQUENTIAL:
+        if self.model_type == ModelType.SEQUENTIAL:
             self.prepare_data_augmentation()
             grouped_index = pd.DataFrame(self.uid_list).groupby(by=0).groups.values()
             next_index = self._split_index_by_leave_one_out(grouped_index, leave_one_num)
@@ -775,7 +775,7 @@ class Dataset(object):
         self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True, ignore_index=True)
 
     # TODO
-    def build(self, eval_setting, model_type):
+    def build(self, eval_setting):
         ordering_args = eval_setting.ordering_args
         if ordering_args['strategy'] == 'shuffle':
             self.shuffle()
@@ -790,8 +790,7 @@ class Dataset(object):
         elif split_args['strategy'] == 'by_value':
             raise NotImplementedError()
         elif split_args['strategy'] == 'loo':
-            datasets = self.leave_one_out(group_by=group_field, model_type=model_type,
-                                          leave_one_num=split_args['leave_one_num'])
+            datasets = self.leave_one_out(group_by=group_field, leave_one_num=split_args['leave_one_num'])
         else:
             datasets = self
 
@@ -872,10 +871,10 @@ class Dataset(object):
             elif ftype == FeatureType.FLOAT:
                 data[k] = torch.FloatTensor(data[k])
             elif ftype == FeatureType.TOKEN_SEQ:
-                seq_data = [torch.LongTensor(d[:self.seqlen[k]]) for d in data[k]]
+                seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in data[k]]
                 data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == FeatureType.FLOAT_SEQ:
-                seq_data = [torch.FloatTensor(d[:self.seqlen[k]]) for d in data[k]]
+                seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in data[k]]
                 data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             else:
                 raise ValueError('Illegal ftype [{}]'.format(ftype))

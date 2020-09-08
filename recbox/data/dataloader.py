@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/8, 2020/9/7, 2020/8/31
+# @Time   : 2020/9/8, 2020/9/8, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -541,7 +541,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
 
     def _neg_sample_by_pair_wise_sampling(self, data, neg_iids):
         neg_prefix = self.config['NEG_PREFIX']
-        neg_item_id = neg_prefix + self.target_iid_field
+        neg_item_id = neg_prefix + self.iid_field
         data[neg_item_id] = neg_iids
         return data
 
@@ -554,7 +554,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
                 if isinstance(value, list):
                     new_data[key] = value * self.times
                 elif isinstance(value, np.ndarray):
-                    new_data[key] = np.tile(value, (self.times, 1))
+                    new_data[key] = np.tile(value, self.times)
         pos_len = len(data[self.target_iid_field])
         total_len = len(new_data[self.target_iid_field])
         new_data[self.label_field] = np.zeros(total_len, dtype=np.int)
