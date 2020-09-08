@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/7, 2020/9/7, 2020/8/31
+# @Time   : 2020/9/8, 2020/9/8, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -12,7 +12,6 @@ import math
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn.utils.rnn as rnn_utils
 from tqdm import tqdm
 
 from ..utils import (
@@ -36,9 +35,8 @@ class AbstractDataLoader(object):
 
         self.join = self.dataset.join
         self.inter_matrix = self.dataset.inter_matrix
-
-        if hasattr(self.dataset, 'dgl_graph'):
-            self.dgl_graph = self.dataset.dgl_graph
+        if hasattr(self.dataset, 'net_matrix'):
+            self.net_matrix = self.dataset.net_matrix
 
         self.num = self.dataset.num
         self.fields = self.dataset.fields
@@ -50,6 +48,8 @@ class AbstractDataLoader(object):
             self.user_num = self.dataset.user_num
         if self.dataset.iid_field:
             self.item_num = self.dataset.item_num
+        self._dataframe_to_interaction = self.dataset._dataframe_to_interaction
+        self._dict_to_interaction = self.dataset._dict_to_interaction
 
     def __len__(self):
         raise NotImplementedError('Method [len] should be implemented')
@@ -74,28 +74,6 @@ class AbstractDataLoader(object):
 
     def _next_batch_data(self):
         raise NotImplementedError('Method [next_batch_data] should be implemented.')
-
-    def _dataframe_to_interaction(self, data, *args):
-        data = data.to_dict(orient='list')
-        return self._dict_to_interaction(data, *args)
-
-    def _dict_to_interaction(self, data, *args):
-        seqlen = self.dataset.field2seqlen
-        for k in data:
-            ftype = self.dataset.field2type[k]
-            if ftype == FeatureType.TOKEN:
-                data[k] = torch.LongTensor(data[k])
-            elif ftype == FeatureType.FLOAT:
-                data[k] = torch.FloatTensor(data[k])
-            elif ftype == FeatureType.TOKEN_SEQ:
-                seq_data = [torch.LongTensor(d[:seqlen[k]]) for d in data[k]]
-                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
-            elif ftype == FeatureType.FLOAT_SEQ:
-                seq_data = [torch.FloatTensor(d[:seqlen[k]]) for d in data[k]]
-                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
-            else:
-                raise ValueError('Illegal ftype [{}]'.format(ftype))
-        return Interaction(data, *args)
 
     def set_batch_size(self, batch_size):  # TODO batch size is useless...
         if self.pr != 0:
@@ -562,7 +540,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
 
     def _neg_sample_by_pair_wise_sampling(self, data, neg_iids):
         neg_prefix = self.config['NEG_PREFIX']
-        neg_item_id = neg_prefix + self.target_iid_field
+        neg_item_id = neg_prefix + self.iid_field
         data[neg_item_id] = neg_iids
         return data
 
@@ -575,7 +553,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
                 if isinstance(value, list):
                     new_data[key] = value * self.times
                 elif isinstance(value, np.ndarray):
-                    new_data[key] = np.tile(value, (self.times, 1))
+                    new_data[key] = np.tile(value, self.times)
         pos_len = len(data[self.target_iid_field])
         total_len = len(new_data[self.target_iid_field])
         new_data[self.label_field] = np.zeros(total_len, dtype=np.int)
