@@ -26,17 +26,10 @@ class DSSM(ContextRecommender):
         self.LABEL = config['LABEL_FIELD']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout = config['dropout']
-        #print(self.field_names)
-
-        #print(self.user_token_field_names)
-        #print(self.user_token_field_dims)
-
         self.user_feature_num = self.user_token_field_num + self.user_float_field_num + self.user_token_seq_field_num
         self.item_feature_num = self.item_token_field_num + self.item_float_field_num + self.item_token_seq_field_num
         user_size_list = [self.embedding_size * self.user_feature_num] + self.mlp_hidden_size
         item_size_list = [self.embedding_size * self.item_feature_num] + self.mlp_hidden_size
-        #print(self.embedding_size)
-        #print(size_list)
 
         self.user_mlp_layers = MLPLayers(user_size_list, self.dropout, activation='tanh', bn=True)
         self.item_mlp_layers = MLPLayers(item_size_list, self.dropout, activation='tanh', bn=True)
@@ -66,9 +59,6 @@ class DSSM(ContextRecommender):
             user.append(user_dense_embedding)
 
         embed_user = torch.cat(user, dim=1)
-        #print(embed_user.shape)
-        #print(embed_user.shape)
-        
 
         item = []
         if item_sparse_embedding is not None:
@@ -79,17 +69,11 @@ class DSSM(ContextRecommender):
         embed_item = torch.cat(item, dim=1)
 
         batch_size = embed_item.shape[0]
-        #print(self.embedding_size)
-        #print(size_list)
-
         user_dnn_out = self.user_mlp_layers(embed_user.view(batch_size, -1))
         item_dnn_out = self.item_mlp_layers(embed_item.view(batch_size, -1))
-        #print(user_dnn_out.shape, item_dnn_out.shape)
         score = torch.cosine_similarity(user_dnn_out, item_dnn_out, dim=1)
 
         sig_score = self.sigmod(score)
-        # print(sig_score)
-        # print(sig_score.shape)
         return sig_score.squeeze()
 
     def calculate_loss(self, interaction):

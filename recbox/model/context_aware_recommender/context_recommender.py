@@ -3,7 +3,10 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 # @File   : context_recommender.py
-
+# UPDATE:
+# @Time   : 2020/9/8,
+# @Author :Zihan Lin
+# @Email  : linzihan.super@foxmail.com
 import numpy as np
 import torch
 import torch.nn as nn
