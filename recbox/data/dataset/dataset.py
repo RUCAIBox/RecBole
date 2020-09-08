@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/1, 2020/9/3, 2020/9/8
+# @Time   : 2020/9/8, 2020/9/3, 2020/9/8
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -15,10 +15,13 @@ from logging import getLogger
 
 import numpy as np
 import pandas as pd
+import torch
+import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 from sklearn.impute import SimpleImputer
 
 from ...utils import FeatureSource, FeatureType, ModelType
+from ..interaction import Interaction
 
 
 class Dataset(object):
@@ -855,3 +858,24 @@ class Dataset(object):
         if field not in self._preloaded_weight:
             raise ValueError('field [{}] not in preload_weight'.format(field))
         return self._preloaded_weight[field]
+
+    def _dataframe_to_interaction(self, data, *args):
+        data = data.to_dict(orient='list')
+        return self._dict_to_interaction(data, *args)
+
+    def _dict_to_interaction(self, data, *args):
+        for k in data:
+            ftype = self.field2type[k]
+            if ftype == FeatureType.TOKEN:
+                data[k] = torch.LongTensor(data[k])
+            elif ftype == FeatureType.FLOAT:
+                data[k] = torch.FloatTensor(data[k])
+            elif ftype == FeatureType.TOKEN_SEQ:
+                seq_data = [torch.LongTensor(d[:self.seqlen[k]]) for d in data[k]]
+                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+            elif ftype == FeatureType.FLOAT_SEQ:
+                seq_data = [torch.FloatTensor(d[:self.seqlen[k]]) for d in data[k]]
+                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+            else:
+                raise ValueError('Illegal ftype [{}]'.format(ftype))
+        return Interaction(data, *args)
