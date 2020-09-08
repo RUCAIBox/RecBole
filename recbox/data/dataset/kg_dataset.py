@@ -2,6 +2,11 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
+# UPDATE:
+# @Time   : 2020/9/8
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
+
 import os
 
 import numpy as np
@@ -42,7 +47,7 @@ class KnowledgeBasedDataset(Dataset):
         self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
-        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        self.feat_list = self._build_feat_list()
 
         self.kg_feat = self._load_kg(self.dataset_name, self.dataset_path)
         self.item2entity, self.entity2item = self._load_link(self.dataset_name, self.dataset_path)
@@ -56,6 +61,9 @@ class KnowledgeBasedDataset(Dataset):
         self._fill_nan()
         self._set_label_by_threshold()
         self._normalize()
+
+    def _build_feat_list(self):
+        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.kg_feat] if feat is not None]
 
     def _restore_saved_dataset(self, saved_dataset):
         raise NotImplementedError()

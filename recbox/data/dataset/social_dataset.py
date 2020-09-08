@@ -2,6 +2,11 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
+# UPDATE:
+# @Time   : 2020/9/8, 2020/9/3
+# @Author : Yupeng Hou, Xingyu Pan
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
+
 import os
 from logging import getLogger
 
@@ -24,6 +29,8 @@ class SocialDataset(Dataset):
             self._restore_saved_dataset(saved_dataset)
 
     def _from_scratch(self, config):
+        self.logger.debug('Loading social dataset from scratch')
+
         self.dataset_path = config['data_path']
         self._fill_nan_flag = self.config['fill_nan']
 
@@ -42,24 +49,30 @@ class SocialDataset(Dataset):
         self.target_field = self.config['TARGET_ID_FIELD']
         self._check_field('source_field', 'target_field')
 
+        self.logger.debug('uid_field: {}'.format(self.uid_field))
+        self.logger.debug('iid_field: {}'.format(self.iid_field))
+        self.logger.debug('source_id_field: {}'.format(self.source_field))
+        self.logger.debug('target_id_field: {}'.format(self.target_field))
+
+        self._preloaded_weight = {}
+
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
-        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.net_feat] if feat is not None]
+        self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
+        self.feat_list = self._build_feat_list()
 
         self._filter_by_inter_num()
         self._filter_by_field_value()
         self._reset_index()
-
-        self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
-
         self._remap_ID_all()
-
         self._user_item_feat_preparation()
-
         self._fill_nan()
         self._set_label_by_threshold()
         self._normalize()
-        
-        self.dgl_graph = self.create_dgl_graph()
+        self._preload_weight_matrix()
+        self.dgl_graph = self._create_dgl_graph()
+
+    def _build_feat_list(self):
+        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.net_feat] if feat is not None]
 
     def _load_net(self, dataset_name, dataset_path): 
         net_file_path = os.path.join(dataset_path, '{}.{}'.format(dataset_name, 'net'))
