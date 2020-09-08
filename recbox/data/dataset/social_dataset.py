@@ -10,8 +10,8 @@
 import os
 from logging import getLogger
 
-import torch
-import dgl
+import numpy as np
+from scipy.sparse import coo_matrix
 
 from .dataset import Dataset
 from ...utils import FeatureSource
@@ -69,7 +69,6 @@ class SocialDataset(Dataset):
         self._set_label_by_threshold()
         self._normalize()
         self._preload_weight_matrix()
-        self.dgl_graph = self._create_dgl_graph()
 
     def _build_feat_list(self):
         return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.net_feat] if feat is not None]
@@ -77,7 +76,10 @@ class SocialDataset(Dataset):
     def _load_net(self, dataset_name, dataset_path): 
         net_file_path = os.path.join(dataset_path, '{}.{}'.format(dataset_name, 'net'))
         if os.path.isfile(net_file_path):
-            return self._load_feat(net_file_path, FeatureSource.NET)
+            net_feat = self._load_feat(net_file_path, FeatureSource.NET)
+            if net_feat is None:
+                raise ValueError('.net file exist, but net_feat is None, please check your load_col')
+            return net_feat
         else:
             raise ValueError('File {} not exist'.format(net_file_path))
             
@@ -91,17 +93,38 @@ class SocialDataset(Dataset):
 
         return fields_in_same_space
 
-    def create_dgl_graph(self):
-        if self.net_feat is not None:
-            source = torch.tensor(self.net_feat[self.source_field].values)
-            target = torch.tensor(self.net_feat[self.target_field].values)
-            ret = dgl.graph((source, target))
+    def _create_dgl_graph(self):
+        import dgl
+        net_tensor = self._dataframe_to_interaction(self.net_feat)
+        source = net_tensor[self.source_field]
+        target = net_tensor[self.target_field]
+        ret = dgl.graph((source, target))
+        for k in net_tensor:
+            if k not in [self.source_field, self.target_field]:
+                ret.edata[k] = net_tensor[k]
+        return ret
 
-            # TODO add edge feature
-
-            return ret
+    def net_matrix(self, form='coo', value_field=None):
+        sids = self.net_feat[self.source_field].values
+        tids = self.net_feat[self.target_field].values
+        if form in ['coo', 'csr']:
+            if value_field is None:
+                data = np.ones(len(self.net_feat))
+            else:
+                if value_field not in self.field2source:
+                    raise ValueError('value_field [{}] not exist.'.format(value_field))
+                if self.field2source[value_field] != FeatureSource.NET:
+                    raise ValueError('value_field [{}] can only be one of the net features'.format(value_field))
+                data = self.net_feat[value_field].values
+            mat = coo_matrix((data, (sids, tids)), shape=(self.user_num, self.user_num))
+            if form == 'coo':
+                return mat
+            elif form == 'csr':
+                return mat.tocsr()
+        elif form == 'dgl':
+            return self._create_dgl_graph()
         else:
-            raise ValueError('net_feat does not exist')
+            raise NotImplementedError('net matrix format [{}] has not been implemented.')
 
     def __str__(self):
         info = []
@@ -111,9 +134,7 @@ class SocialDataset(Dataset):
         if self.iid_field:
             info.extend(['The number of items: {}'.format(self.item_num),
                          'Average actions of items: {}'.format(self.avg_actions_of_items)])
-        if self.dgl_graph is not None:
-            info.extend(['The number of nodes: {}'.format(self.dgl_graph.number_of_nodes()),
-                         'The number of edges: {}'.format(self.dgl_graph.number_of_edges())])
+        info.append('The number of connections of social network: {}'.format(len(self.net_feat)))
         info.append('The number of inters: {}'.format(self.inter_num))
         if self.uid_field and self.iid_field:
             info.append('The sparsity of the dataset: {}%'.format(self.sparsity * 100))
