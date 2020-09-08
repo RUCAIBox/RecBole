@@ -14,11 +14,11 @@ Common Layers in recommender system
 """
 
 import warnings
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as fn
-from torch.nn.init import xavier_normal_
 
 
 class MLPLayers(nn.Module):
@@ -69,7 +69,6 @@ class MLPLayers(nn.Module):
                 pass
             else:
                 warnings.warn('Received unrecognized activation function, set default activation function', UserWarning)
-
 
         self.mlp_layers = nn.Sequential(*mlp_modules)
 
@@ -182,6 +181,7 @@ class MultiHeadAttention(nn.Module):
         self.W_K = nn.Linear(self.d_model, self.d_k * self.n_head, bias=False)
         self.W_V = nn.Linear(self.d_model, self.d_v * self.n_head, bias=False)
         self.fc = nn.Linear(self.n_head * self.d_v, self.d_model, bias=False)
+        self.layernorm = nn.LayerNorm(self.d_model)
 
 
     def scale_dot_product_attention(self, Q, K, V, mask=None):
@@ -207,6 +207,4 @@ class MultiHeadAttention(nn.Module):
         context, attn = self.scale_dot_product_attention(Q, K, V, mask)
         context = context.transpose(1,2).reshape(batch_size, -1, self.n_head * self.d_v)
         output = self.fc(context)
-        return nn.LayerNorm(self.d_model)(output + residual), attn
-
-
+        return self.layernorm(output + residual), attn
