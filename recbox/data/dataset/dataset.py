@@ -871,10 +871,10 @@ class Dataset(object):
             elif ftype == FeatureType.FLOAT:
                 data[k] = torch.FloatTensor(data[k])
             elif ftype == FeatureType.TOKEN_SEQ:
-                seq_data = [torch.LongTensor(d[:self.seqlen[k]]) for d in data[k]]
+                seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in data[k]]
                 data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == FeatureType.FLOAT_SEQ:
-                seq_data = [torch.FloatTensor(d[:self.seqlen[k]]) for d in data[k]]
+                seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in data[k]]
                 data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             else:
                 raise ValueError('Illegal ftype [{}]'.format(ftype))

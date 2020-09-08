@@ -55,8 +55,7 @@ def data_preparation(config, dataset, save=False):
         save_datasets(config['checkpoint_dir'], name=phases, dataset=builded_datasets)
 
     kwargs = {}
-    # TODO 为什么这里type不包含context？
-    if model_type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
+    if config['training_neg_sample_num']:
         es.neg_sample_by(config['training_neg_sample_num'])
         sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
         # TODO 如果model_type是kg, 可能还要设置一个kg的sampler
@@ -77,7 +76,7 @@ def data_preparation(config, dataset, save=False):
         **kwargs
     )
 
-    if model_type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
+    if config['training_neg_sample_num']:
         getattr(es, es_str[1])()
         kwargs['phase'] = ['valid', 'test']
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
@@ -125,16 +124,19 @@ def dataloader_construct(name, config, eval_setting, dataset,
 
     DataLoader = get_data_loader(name, config, eval_setting)
 
-    ret = [
-        DataLoader(
-            config=config,
-            dataset=ds,
-            batch_size=bs,
-            dl_format=dl_format,
-            shuffle=shuffle,
-            **kw
-        ) for ds, bs, kw in zip(dataset, batch_size, kwargs_list)
-    ]
+    try:
+        ret = [
+            DataLoader(
+                config=config,
+                dataset=ds,
+                batch_size=bs,
+                dl_format=dl_format,
+                shuffle=shuffle,
+                **kw
+            ) for ds, bs, kw in zip(dataset, batch_size, kwargs_list)
+        ]
+    except TypeError:
+        raise ValueError('training_neg_sample_num should be 0')
 
     if len(ret) == 1:
         return ret[0]
