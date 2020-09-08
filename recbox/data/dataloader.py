@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/7, 2020/9/7, 2020/8/31
+# @Time   : 2020/9/8, 2020/9/7, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -12,7 +12,6 @@ import math
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn.utils.rnn as rnn_utils
 from tqdm import tqdm
 
 from ..utils import (
@@ -50,6 +49,8 @@ class AbstractDataLoader(object):
             self.user_num = self.dataset.user_num
         if self.dataset.iid_field:
             self.item_num = self.dataset.item_num
+        self._dataframe_to_interaction = self.dataset._dataframe_to_interaction
+        self._dict_to_interaction = self.dataset._dict_to_interaction
 
     def __len__(self):
         raise NotImplementedError('Method [len] should be implemented')
@@ -74,28 +75,6 @@ class AbstractDataLoader(object):
 
     def _next_batch_data(self):
         raise NotImplementedError('Method [next_batch_data] should be implemented.')
-
-    def _dataframe_to_interaction(self, data, *args):
-        data = data.to_dict(orient='list')
-        return self._dict_to_interaction(data, *args)
-
-    def _dict_to_interaction(self, data, *args):
-        seqlen = self.dataset.field2seqlen
-        for k in data:
-            ftype = self.dataset.field2type[k]
-            if ftype == FeatureType.TOKEN:
-                data[k] = torch.LongTensor(data[k])
-            elif ftype == FeatureType.FLOAT:
-                data[k] = torch.FloatTensor(data[k])
-            elif ftype == FeatureType.TOKEN_SEQ:
-                seq_data = [torch.LongTensor(d[:seqlen[k]]) for d in data[k]]
-                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
-            elif ftype == FeatureType.FLOAT_SEQ:
-                seq_data = [torch.FloatTensor(d[:seqlen[k]]) for d in data[k]]
-                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
-            else:
-                raise ValueError('Illegal ftype [{}]'.format(ftype))
-        return Interaction(data, *args)
 
     def set_batch_size(self, batch_size):  # TODO batch size is useless...
         if self.pr != 0:
