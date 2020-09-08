@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/7, 2020/8/31, 2020/8/31
+# @Time   : 2020/9/8, 2020/8/31, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -164,7 +164,7 @@ def get_data_loader(name, config, eval_setting):
     if config['model'] in register_table:
         return register_table[config['model']](name, config, eval_setting)
 
-    model_type = config['model_type']
+    model_type = config['MODEL_TYPE']
     if model_type == ModelType.GENERAL:
         neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'none':
