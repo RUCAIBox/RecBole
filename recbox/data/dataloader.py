@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/8, 2020/9/8, 2020/8/31
+# @Time   : 2020/9/9, 2020/9/9, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -564,7 +564,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
 class SequentialFullDataLoader(SequentialDataLoader):
     dl_type = DataLoaderType.FULL
 
-    def __init__(self, config, dataset,
+    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         super().__init__(config, dataset,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
