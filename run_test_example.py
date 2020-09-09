@@ -186,8 +186,6 @@ def run_test_examples():
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
     for idx, example in enumerate(test_examples.keys()):
-        if 'FM' not in example:
-            continue
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
             whole_process(config_file='properties/overall.config', config_dict=test_examples[example])
