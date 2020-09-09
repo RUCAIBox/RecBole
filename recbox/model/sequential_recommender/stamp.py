@@ -53,9 +53,9 @@ class STAMP(SequentialRecommender):
 
     def forward(self, interaction):
         item_list_emb = self.item_list_embedding(interaction[self.ITEM_ID_LIST])
-        last_inputs = self.gather_indexes(item_list_emb,interaction[self.ITEM_LIST_LEN] - 1)
+        last_inputs = self.gather_indexes(item_list_emb, interaction[self.ITEM_LIST_LEN] - 1)
         org_memory = item_list_emb
-        ms = torch.div(torch.sum(org_memory, dim = 1),interaction[self.ITEM_LIST_LEN].unsqueeze(1),float())
+        ms = torch.div(torch.sum(org_memory, dim=1), interaction[self.ITEM_LIST_LEN].unsqueeze(1).float())
         alpha = self.count_alpha(org_memory, last_inputs, ms)
         vec = torch.matmul(alpha.unsqueeze(1), org_memory)
         ma = vec.squeeze(1) + ms

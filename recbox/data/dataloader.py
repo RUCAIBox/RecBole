@@ -421,7 +421,7 @@ class SequentialDataLoader(AbstractDataLoader):
         self.iid_field = dataset.iid_field
         self.time_field = dataset.time_field
         self.max_item_list_len = config['MAX_ITEM_LIST_LENGTH']
-        self.stop_token_id = dataset.item_num - 1
+        # self.stop_token_id = dataset.item_num - 1
 
         target_prefix = config['TARGET_PREFIX']
         list_suffix = config['LIST_SUFFIX']
@@ -496,10 +496,12 @@ class SequentialDataLoader(AbstractDataLoader):
         }
         if self.position_field:
             new_dict[self.position_field] = [np.arange(self.max_item_list_len)] * new_length
+
+        iid_value = self.dataset.inter_feat[self.iid_field].values
+        time_value = self.dataset.inter_feat[self.time_field].values
         for index in item_list_index:
-            df = self.dataset.inter_feat[index]
-            new_dict[self.item_list_field].append(np.append(df[self.iid_field].values, self.stop_token_id))
-            new_dict[self.time_list_field].append(np.append(df[self.time_field].values, 0))
+            new_dict[self.item_list_field].append(iid_value[index])
+            new_dict[self.time_list_field].append(time_value[index])
         return new_dict
 
 
