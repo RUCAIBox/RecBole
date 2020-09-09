@@ -43,10 +43,10 @@ class FPMC(SequentialRecommender):
 
     def forward(self, interaction):
         item_id_list = interaction[self.ITEM_ID_LIST]
-        index = interaction[self.ITEM_LIST_LEN]
-        index = index.view(item_id_list.size(0), 1)
-        # reset masked_id to 0
-        item_id_list.scatter_(dim=1, index=index, src=torch.zeros_like(item_id_list))
+        # index = interaction[self.ITEM_LIST_LEN]
+        # index = index.view(item_id_list.size(0), 1)
+        # # reset masked_id to 0
+        # item_id_list.scatter_(dim=1, index=index, src=torch.zeros_like(item_id_list))
         item_list_emb = self.LI_emb(item_id_list)#[b,n,emb]
 
         user_emb = self.UI_emb(interaction[self.USER_ID])

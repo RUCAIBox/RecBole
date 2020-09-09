@@ -70,7 +70,7 @@ class SASRec(SequentialRecommender):
             attn_outputs, attn = self.multi_head_attention(attn_outputs, attn_outputs, attn_outputs, mask)
             attn_weights.append(attn)
             attn_outputs = self.feedforward(attn_outputs)
-        long_term_prefernce = self.gather_indexes(attn_outputs, interaction[self.ITEM_LIST_LEN])
+        long_term_prefernce = self.gather_indexes(attn_outputs, interaction[self.ITEM_LIST_LEN] - 1)
         predict_behavior_emb = self.layer_norm(long_term_prefernce)
         return predict_behavior_emb, attn_weights
 
