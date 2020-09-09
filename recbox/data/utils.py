@@ -76,12 +76,14 @@ def data_preparation(config, dataset, save=False):
         **kwargs
     )
 
-    if config['training_neg_sample_num']:
+    kwargs = {}
+    if len(es_str) > 1 and getattr(es, es_str[1], None):
         getattr(es, es_str[1])()
+        if 'sampler' not in locals():
+            sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
+        kwargs['sampler'] = sampler
         kwargs['phase'] = ['valid', 'test']
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
-        if 'kg_sampler' in kwargs:
-            del kwargs['kg_sampler']
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
@@ -166,8 +168,8 @@ def get_data_loader(name, config, eval_setting):
         return register_table[config['model']](name, config, eval_setting)
 
     model_type = config['MODEL_TYPE']
+    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
     if model_type == ModelType.GENERAL:
-        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'none':
             return GeneralDataLoader
         elif neg_sample_strategy == 'by':
@@ -178,7 +180,6 @@ def get_data_loader(name, config, eval_setting):
         elif neg_sample_strategy == 'full':
             return GeneralFullDataLoader
     elif model_type == ModelType.CONTEXT:
-        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'none':
             return ContextDataLoader
         elif neg_sample_strategy == 'by':
@@ -189,12 +190,13 @@ def get_data_loader(name, config, eval_setting):
         elif neg_sample_strategy == 'full':
             raise NotImplementedError('context model\'s full_sort has not been implemented')
     elif model_type == ModelType.SEQUENTIAL:
-        if name == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
+        if neg_sample_strategy == 'none':
             return SequentialDataLoader
-        else:
+        elif neg_sample_strategy == 'by':
+            return SequentialNegSampleDataLoader
+        elif neg_sample_strategy == 'full':
             return SequentialFullDataLoader
     elif model_type == ModelType.KNOWLEDGE:
-        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'by':
             if name == 'train':
                 return KnowledgeBasedDataLoader

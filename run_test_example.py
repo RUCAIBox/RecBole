@@ -130,6 +130,8 @@ test_examples = {
         'threshold': {'rating': 3},
         'group_by_user': False,
         'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
         'valid_metric': 'AUC',
         'metrics': ['AUC']
     },
@@ -139,6 +141,8 @@ test_examples = {
         'normalize_all': True,
         'group_by_user': False,
         'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
         'valid_metric': 'AUC',
         'metrics': ['AUC']
     },
