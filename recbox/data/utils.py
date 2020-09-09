@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/8, 2020/8/31
+# @Time   : 2020/9/9, 2020/9/9, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -216,4 +216,10 @@ def get_data_loader(name, config, eval_setting):
 
 
 def _get_DIN_data_loader(name, config, eval_setting):
-    raise NotImplementedError()
+    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    if neg_sample_strategy == 'none':
+        return SequentialDataLoader
+    elif neg_sample_strategy == 'by':
+        return SequentialNegSampleDataLoader
+    elif neg_sample_strategy == 'full':
+        return SequentialFullDataLoader
