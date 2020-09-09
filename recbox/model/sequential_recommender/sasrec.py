@@ -87,7 +87,7 @@ class SASRec(SequentialRecommender):
         pad_attn_mask = seq_k.data.eq(0).unsqueeze(1)  # [batch_size, 1, len_k], False is masked
         return pad_attn_mask.expand(batch_size, len_q, len_k)  # [batch_size, len_q, len_k]
 
-    def get_attn_subsequence_mask(self,seq):
+    def get_attn_subsequence_mask(self, seq):
         '''
         seq: [batch_size, tgt_len]
         '''

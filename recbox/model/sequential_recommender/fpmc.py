@@ -11,7 +11,7 @@ from ..abstract_recommender import SequentialRecommender
 
 
 class FPMC(SequentialRecommender):
-    input_type = InputType.POINTWISE
+    input_type = InputType.PAIRWISE
     def __init__(self, config, dataset):
         super(FPMC, self).__init__()
         self.USER_ID = config['USER_ID_FIELD']
@@ -21,16 +21,16 @@ class FPMC(SequentialRecommender):
         self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
 
-        self.NEG_ITEM_ID = config['NEG_PREFIX'] + config['TARGET_PREFIX'] + self.ITEM_ID
-        self.item_count = dataset.num(self.USER_ID)
-        self.user_count = dataset.num(self.ITEM_ID)
+        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
+        self.user_count = dataset.user_num
+        self.item_count = dataset.item_num
 
         self.embedding_size = config['embedding_size']
 
-        self.UI_emb = nn.Embedding(self.user_count, self.embedding_size)#user emb
-        self.IU_emb = nn.Embedding(self.item_count, self.embedding_size)#pred emb
-        self.LI_emb = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)#item list emb
-        self.IL_emb = nn.Embedding(self.item_count, self.embedding_size)#pred emb
+        self.UI_emb = nn.Embedding(self.user_count, self.embedding_size)                # user emb
+        self.IU_emb = nn.Embedding(self.item_count, self.embedding_size)                # pred emb
+        self.LI_emb = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0) # item list emb
+        self.IL_emb = nn.Embedding(self.item_count, self.embedding_size)                # pred emb
         self.loss = BPRLoss()
 
 
@@ -47,16 +47,16 @@ class FPMC(SequentialRecommender):
         # index = index.view(item_id_list.size(0), 1)
         # # reset masked_id to 0
         # item_id_list.scatter_(dim=1, index=index, src=torch.zeros_like(item_id_list))
-        item_list_emb = self.LI_emb(item_id_list)#[b,n,emb]
+        item_list_emb = self.LI_emb(item_id_list) # [b,n,emb]
 
         user_emb = self.UI_emb(interaction[self.USER_ID])
-        user_emb = torch.unsqueeze(user_emb, dim=1)#[b,1,emb]
+        user_emb = torch.unsqueeze(user_emb, dim=1) # [b,1,emb]
 
         pos_iu = self.IU_emb(interaction[self.TARGET_ITEM_ID])
-        pos_iu = torch.unsqueeze(pos_iu, dim=1)#[b,1,emb]
+        pos_iu = torch.unsqueeze(pos_iu, dim=1) # [b,1,emb]
 
         pos_il = self.IL_emb(interaction[self.TARGET_ITEM_ID])
-        pos_il = torch.unsqueeze(pos_il, dim=1)#[b,1,emb]
+        pos_il = torch.unsqueeze(pos_il, dim=1) # [b,1,emb]
 
         pos_score = self.pmfc(user_emb, pos_iu, pos_il, item_list_emb)
 
@@ -90,17 +90,17 @@ class FPMC(SequentialRecommender):
         user_emb = torch.unsqueeze(user_emb, dim=1)  # [b,1,emb]
 
         item_id_list = interaction[self.ITEM_ID_LIST]
-        index = interaction[self.ITEM_LIST_LEN]
-        index = index.view(item_id_list.size(0), 1)
+        # index = interaction[self.ITEM_LIST_LEN]
+        # index = index.view(item_id_list.size(0), 1)
         # reset masked_id to 0
-        item_id_list.scatter_(dim=1, index=index, src=torch.zeros_like(item_id_list))
+        # item_id_list.scatter_(dim=1, index=index, src=torch.zeros_like(item_id_list))
         item_list_emb = self.LI_emb(item_id_list)  # [b,n,emb]
 
-        neg_item_list = interaction[self.NEG_ITEM_ID]
-        neg_iu = self.IU_emb(neg_item_list)
+        neg_item = interaction[self.NEG_ITEM_ID]
+        neg_iu = self.IU_emb(neg_item)
         neg_iu = torch.unsqueeze(neg_iu, dim=1)  # [b,1,emb]
 
-        neg_il = self.IL_emb(neg_item_list)
+        neg_il = self.IL_emb(neg_item)
         neg_il = torch.unsqueeze(neg_il, dim=1)  # [b,1,emb]
 
         neg_score = self.pmfc(user_emb, neg_iu, neg_il, item_list_emb)

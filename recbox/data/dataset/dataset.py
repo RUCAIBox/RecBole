@@ -517,14 +517,14 @@ class Dataset(object):
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
         mp = ['[PAD]'] + list(mp)
-        if self.model_type == ModelType.SEQUENTIAL:
-            item_related = False
-            for (feat, field, ftype) in remap_list:
-                if self.field2source[field] in {FeatureSource.ITEM_ID, FeatureSource.ITEM}:
-                    item_related = True
-                    break
-            if item_related:
-                mp.append('[STOP]')
+        # if self.model_type == ModelType.SEQUENTIAL:
+        #     item_related = False
+        #     for (feat, field, ftype) in remap_list:
+        #         if self.field2source[field] in {FeatureSource.ITEM_ID, FeatureSource.ITEM}:
+        #             item_related = True
+        #             break
+        #     if item_related:
+        #         mp.append('[STOP]')
 
         for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
             if overwrite or (field not in self.field2id_token):
@@ -636,7 +636,7 @@ class Dataset(object):
             return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
         self._check_field('uid_field', 'time_field')
-        max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH'] - 1
+        max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH']
         self.sort(by=[self.uid_field, self.time_field], ascending=True)
         last_uid = None
         uid_list, item_list_index, target_index, item_list_length = [], [], [], []

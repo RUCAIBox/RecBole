@@ -81,7 +81,7 @@ class NARM(SequentialRecommender):
         b = torch.tensor([0.]).to(self.device)
         mask = torch.where(item_id_list>0, a, b)
         q2_expand = q2.unsqueeze(1).expand_as(q1)
-        q2_masked = mask.unsqueeze(2).expand_as(q1)*q2_expand
+        q2_masked = mask.unsqueeze(2).expand_as(q1) * q2_expand
 
         alpha = self.v_t(torch.sigmoid(q1+q2_masked).view(-1, self.hidden_size)).view(mask.size())
         c_local = torch.sum(alpha.unsqueeze(2).expand_as(gru_out)*gru_out, 1)
