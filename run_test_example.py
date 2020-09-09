@@ -130,6 +130,8 @@ test_examples = {
         'threshold': {'rating': 3},
         'group_by_user': False,
         'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
         'valid_metric': 'AUC',
         'metrics': ['AUC']
     },
@@ -139,6 +141,7 @@ test_examples = {
         'normalize_all': True,
         'group_by_user': False,
         'epochs': 1,
+        'training_neg_sample_num': 0,
         'valid_metric': 'AUC',
         'metrics': ['AUC']
     },
@@ -183,6 +186,8 @@ def run_test_examples():
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
     for idx, example in enumerate(test_examples.keys()):
+        if 'FM' not in example:
+            continue
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
             whole_process(config_file='properties/overall.config', config_dict=test_examples[example])
