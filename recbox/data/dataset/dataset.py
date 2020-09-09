@@ -58,7 +58,7 @@ class Dataset(object):
         self._preloaded_weight = {}
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
-        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        self.feat_list = self._build_feat_list()
 
         self._filter_by_inter_num()
         self._filter_by_field_value()
@@ -69,6 +69,9 @@ class Dataset(object):
         self._set_label_by_threshold()
         self._normalize()
         self._preload_weight_matrix()
+
+    def _build_feat_list(self):
+        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
 
     def _restore_saved_dataset(self, saved_dataset):
         self.logger.debug('Restoring dataset from [{}]'.format(saved_dataset))
@@ -90,7 +93,7 @@ class Dataset(object):
                 setattr(self, '{}_feat'.format(name), df)
             else:
                 setattr(self, '{}_feat'.format(name), None)
-        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        self.feat_list = self._build_feat_list()
 
         self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
@@ -234,7 +237,7 @@ class Dataset(object):
             flag = True
             self.logger.debug('ordering item features by user id.')
         if flag:
-            self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+            self.feat_list = self._build_feat_list()
             self._fill_nan_flag = True
 
     def _preload_weight_matrix(self):
