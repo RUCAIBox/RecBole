@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/3, 2020/9/8
+# @Time   : 2020/9/8, 2020/9/3, 2020/9/10
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -874,11 +874,17 @@ class Dataset(object):
             elif ftype == FeatureType.FLOAT:
                 data[k] = torch.FloatTensor(data[k])
             elif ftype == FeatureType.TOKEN_SEQ:
-                seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in data[k]]
-                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+                if isinstance(data[k], np.ndarray):
+                    data[k] = torch.LongTensor(data[k][:, :self.field2seqlen[k]])
+                else:
+                    seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in data[k]]
+                    data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == FeatureType.FLOAT_SEQ:
-                seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in data[k]]
-                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+                if isinstance(data[k], np.ndarray):
+                    data[k] = torch.FloatTensor(data[k][:, :self.field2seqlen[k]])
+                else:
+                    seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in data[k]]
+                    data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             else:
                 raise ValueError('Illegal ftype [{}]'.format(ftype))
         return Interaction(data, *args)
