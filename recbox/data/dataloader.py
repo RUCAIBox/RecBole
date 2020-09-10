@@ -154,7 +154,7 @@ class NegSampleByMixin(NegSampleMixin):
         if dl_format == InputType.PAIRWISE and neg_sample_args['by'] != 1:
             raise ValueError('Pairwise dataloader can only neg sample by 1')
 
-        self.grouped_by_user = (phase != 'train') and (config['eval_type'] != EvaluatorType.INDIVIDUAL)
+        self.user_inter_in_one_batch = (phase != 'train') and (config['eval_type'] != EvaluatorType.INDIVIDUAL)
         self.neg_sample_by = neg_sample_args['by']
 
         # TODO self.times 改个名（有点意义不明）
@@ -524,7 +524,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
                                          self.item_list_index[cur_index],
                                          self.target_index[cur_index],
                                          self.item_list_length[cur_index])
-            if self.grouped_by_user:
+            if self.user_inter_in_one_batch:
                 pos_len_list = np.ones(len(cur_data[self.uid_field]), dtype=np.int64)
                 user_len_list = pos_len_list * self.times
             cur_data = self._neg_sampling(cur_data)
@@ -533,7 +533,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
             for key, value in self.pre_processed_data.items():
                 cur_data[key] = value[cur_index]
         self.pr += self.step
-        if self.grouped_by_user:
+        if self.user_inter_in_one_batch:
             return self._dict_to_interaction(cur_data, list(pos_len_list), list(user_len_list))
         else:
             return self._dict_to_interaction(cur_data)
@@ -542,7 +542,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         self.pre_processed_data = self._neg_sampling(self.pre_processed_data)
 
     def _neg_sampling(self, data):
-        if self.grouped_by_user:
+        if self.user_inter_in_one_batch:
             data_len = len(data[self.uid_field])
             data_list = []
             for i in range(data_len):
