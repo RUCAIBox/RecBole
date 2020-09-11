@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/10, 2020/8/31
+# @Time   : 2020/9/9, 2020/9/11, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -524,9 +524,6 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
                                          self.item_list_index[cur_index],
                                          self.target_index[cur_index],
                                          self.item_list_length[cur_index])
-            if self.user_inter_in_one_batch:
-                pos_len_list = np.ones(len(cur_data[self.uid_field]), dtype=np.int64)
-                user_len_list = pos_len_list * self.times
             cur_data = self._neg_sampling(cur_data)
         else:
             cur_data = {}
@@ -534,6 +531,9 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
                 cur_data[key] = value[cur_index]
         self.pr += self.step
         if self.user_inter_in_one_batch:
+            cur_data_len = len(cur_data[self.uid_field])
+            pos_len_list = np.ones(cur_data_len // self.times, dtype=np.int64)
+            user_len_list = pos_len_list * self.times
             return self._dict_to_interaction(cur_data, list(pos_len_list), list(user_len_list))
         else:
             return self._dict_to_interaction(cur_data)
