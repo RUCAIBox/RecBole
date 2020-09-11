@@ -157,7 +157,7 @@ class ItemKNN(GeneralRecommender):
 
         for index in range(len(user)):
             uid = user[index]
-            iid = item[item]
+            iid = item[index]
             score = self.pred_mat[uid, iid]
             result.append(score)
         result = torch.from_numpy(np.array(result)).to(self.device)

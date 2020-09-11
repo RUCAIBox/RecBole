@@ -14,11 +14,11 @@ Common Layers in recommender system
 """
 
 import warnings
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as fn
-from torch.nn.init import xavier_normal_
 
 
 class MLPLayers(nn.Module):
@@ -63,13 +63,12 @@ class MLPLayers(nn.Module):
                 mlp_modules.append(nn.Tanh())
             elif self.activation.lower() == 'relu':
                 mlp_modules.append(nn.ReLU())
-            elif self.activation.lower() == 'leekyrelu':
+            elif self.activation.lower() == 'leakyrelu':
                 mlp_modules.append(nn.LeakyReLU())
             elif self.activation.lower() == 'none':
                 pass
             else:
                 warnings.warn('Received unrecognized activation function, set default activation function', UserWarning)
-
 
         self.mlp_layers = nn.Sequential(*mlp_modules)
 
@@ -133,12 +132,10 @@ class BiGNNLayer(nn.Module):
     def forward(self, lap_matrix, eye_matrix, features):
         # for GCF ajdMat is a (N+M) by (N+M) mat
         # lap_matrix L = D^-1(A)D^-1 # 拉普拉斯矩阵
-        L1 = lap_matrix + eye_matrix
+        x = torch.sparse.mm(lap_matrix, features)
 
-        inter_part1 = self.linear(torch.sparse.mm(L1, features))
-
-        inter_feature = torch.sparse.mm(lap_matrix, features)
-        inter_feature = torch.mul(inter_feature, features)
+        inter_part1 = self.linear(features + x)
+        inter_feature = torch.mul(x, features)
         inter_part2 = self.interActTransform(inter_feature)
 
         return inter_part1 + inter_part2
@@ -184,6 +181,7 @@ class MultiHeadAttention(nn.Module):
         self.W_K = nn.Linear(self.d_model, self.d_k * self.n_head, bias=False)
         self.W_V = nn.Linear(self.d_model, self.d_v * self.n_head, bias=False)
         self.fc = nn.Linear(self.n_head * self.d_v, self.d_model, bias=False)
+        self.layernorm = nn.LayerNorm(self.d_model)
 
 
     def scale_dot_product_attention(self, Q, K, V, mask=None):
@@ -209,6 +207,4 @@ class MultiHeadAttention(nn.Module):
         context, attn = self.scale_dot_product_attention(Q, K, V, mask)
         context = context.transpose(1,2).reshape(batch_size, -1, self.n_head * self.d_v)
         output = self.fc(context)
-        return nn.LayerNorm(self.d_model)(output + residual), attn
-
-
+        return self.layernorm(output + residual), attn

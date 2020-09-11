@@ -3,11 +3,14 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 # @File   : context_recommender.py
-
+# UPDATE:
+# @Time   : 2020/9/8,
+# @Author :Zihan Lin
+# @Email  : linzihan.super@foxmail.com
 import numpy as np
 import torch
 import torch.nn as nn
-from ...utils import ModelType, InputType, FeatureType
+from ...utils import ModelType, InputType, FeatureType, FeatureSource
 from ..layers import FMEmbedding
 from ..abstract_recommender import AbstractRecommender
 
@@ -15,6 +18,7 @@ from ..abstract_recommender import AbstractRecommender
 class ContextRecommender(AbstractRecommender):
     type = ModelType.CONTEXT
     input_type = InputType.POINTWISE
+
     def __init__(self, config, dataset):
         super(ContextRecommender, self).__init__()
 
@@ -22,6 +26,9 @@ class ContextRecommender(AbstractRecommender):
         self.LABEL = config['LABEL_FIELD']
         self.embedding_size = config['embedding_size']
         self.device = config['device']
+        self.double_tower = config['double_tower']
+        if self.double_tower is None:
+            self.double_tower = False
         self.token_field_names = []
         self.token_field_dims = []
         self.float_field_names = []
@@ -29,6 +36,37 @@ class ContextRecommender(AbstractRecommender):
         self.token_seq_field_names = []
         self.token_seq_field_dims = []
         self.num_feature_field = 0
+
+        if self.double_tower:
+            self.user_field_names = []
+            self.item_field_names = []
+            for field_name in self.field_names:
+                if dataset.dataset.field2source[field_name] in {FeatureSource.USER, FeatureSource.USER_ID}:
+                    self.user_field_names.append(field_name)
+                elif dataset.dataset.field2source[field_name] in {FeatureSource.ITEM, FeatureSource.ITEM_ID}:
+                    self.item_field_names.append(field_name)
+            self.field_names = self.user_field_names + self.item_field_names
+            self.user_token_field_num = 0
+            self.user_float_field_num = 0
+            self.user_token_seq_field_num = 0
+            for field_name in self.user_field_names:
+                if dataset.field2type[field_name] == FeatureType.TOKEN:
+                    self.user_token_field_num += 1
+                elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
+                    self.user_token_seq_field_num += 1
+                else:
+                    self.user_float_field_num += dataset.num(field_name)
+            self.item_token_field_num = 0
+            self.item_float_field_num = 0
+            self.item_token_seq_field_num = 0
+            for field_name in self.item_field_names:
+                if dataset.field2type[field_name] == FeatureType.TOKEN:
+                    self.item_token_field_num += 1
+                elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
+                    self.item_token_seq_field_num += 1
+                else:
+                    self.item_float_field_num += dataset.num(field_name)
+
         for field_name in self.field_names:
             if field_name == self.LABEL:
                 continue
@@ -44,9 +82,11 @@ class ContextRecommender(AbstractRecommender):
             self.num_feature_field += 1
         if len(self.token_field_dims) > 0:
             self.token_field_offsets = np.array((0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long)
-            self.token_embedding_table = FMEmbedding(self.token_field_dims, self.token_field_offsets, self.embedding_size)
+            self.token_embedding_table = FMEmbedding(self.token_field_dims, self.token_field_offsets,
+                                                     self.embedding_size)
         if len(self.float_field_dims) > 0:
-            self.float_embedding_table = nn.Embedding(np.sum(self.float_field_dims, dtype=np.int32), self.embedding_size)
+            self.float_embedding_table = nn.Embedding(np.sum(self.float_field_dims, dtype=np.int32),
+                                                      self.embedding_size)
         if len(self.token_seq_field_dims) > 0:
             self.token_seq_embedding_table = nn.ModuleList()
             for token_seq_field_dim in self.token_seq_field_dims:
@@ -107,6 +147,28 @@ class ContextRecommender(AbstractRecommender):
             return None
         else:
             return torch.cat(fields_result, dim=1)  # [batch_size, num_token_seq_field, embed_dim]
+
+    def double_tower_embed_input_fields(self, interaction):
+        if not self.double_tower:
+            raise RuntimeError('Please check your model hyper parameters and set \'double tower\' as True')
+        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
+        if dense_embedding is not None:
+            first_dense_embedding, second_dense_embedding = \
+                torch.split(dense_embedding, [self.user_float_field_num, self.item_float_field_num], dim=1)
+        else:
+            first_dense_embedding, second_dense_embedding = None, None
+
+        if sparse_embedding is not None:
+            sizes = [self.user_token_seq_field_num, self.item_token_seq_field_num,
+                     self.user_token_field_num, self.item_token_field_num]
+            first_token_seq_embedding, second_token_seq_embedding, first_token_embedding, second_token_embedding = \
+                torch.split(sparse_embedding, sizes, dim=1)
+            first_sparse_embedding = torch.cat([first_token_seq_embedding, first_token_embedding], dim=1)
+            second_sparse_embedding = torch.cat([second_token_seq_embedding, second_token_embedding], dim=1)
+        else:
+            first_sparse_embedding, second_sparse_embedding = None, None
+
+        return first_sparse_embedding, first_dense_embedding, second_sparse_embedding, second_dense_embedding
 
     def embed_input_fields(self, interaction):
         float_fields = []
@@ -209,7 +271,6 @@ class FMFirstOrderLinear(nn.Module):
         float_embedding = torch.sum(float_embedding, dim=1, keepdim=True)
 
         return float_embedding
-
 
     def embed_token_fields(self, token_fields):
         # input Tensor shape : [batch_size, num_token_field]

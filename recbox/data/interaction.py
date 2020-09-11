@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time    : 2020/8/18, 2020/8/6, 2020/8/12
+# @Time    : 2020/8/18, 2020/9/8, 2020/8/12
 # @Author  : Yupeng Hou, Yushuo Chen, Xingyu Pan
 # @email   : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -68,6 +68,9 @@ class Interaction(object):
         for k in self.interaction:
             self.length = self.interaction[k].shape[0]
             break
+
+    def __iter__(self):
+        return self.interaction.__iter__()
 
     def __getitem__(self, index):
         if isinstance(index, str):

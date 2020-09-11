@@ -41,13 +41,14 @@ class DMF(GeneralRecommender):
         assert self.user_layers_dim[-1] == self.item_layers_dim[-1], 'The dimensions of the last layer of users and items must be the same'
 
         self.min_y_hat = config['min_y_hat']
-        inter_matrix_type = config['inter_matrix_type']
-        if inter_matrix_type == '01':
+        self.inter_matrix_type = config['inter_matrix_type']
+        if self.inter_matrix_type == '01':
             self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
-        elif inter_matrix_type == 'rating':
+        elif self.inter_matrix_type == 'rating':
             self.interaction_matrix = dataset.inter_matrix(form='csr', value_field=self.RATING).astype(np.float32)
         else:
-            raise ValueError("The inter_matrix_type must in ['0,1', 'rating'] but get {}".format(inter_matrix_type))
+            raise ValueError("The inter_matrix_type must in ['01', 'rating'] but get {}".format(self.inter_matrix_type))
+        self.max_rating = self.interaction_matrix.max()
 
         self.n_users = dataset.user_num
         self.n_items = dataset.item_num
@@ -63,8 +64,11 @@ class DMF(GeneralRecommender):
         self.i_embedding = None
 
     def init_weights(self, module):
+        # We just initialize the module with normal distribution as the paper said
         if isinstance(module, nn.Linear):
             normal_(module.weight.data, 0, 0.01)
+            if module.bias is not None:
+                module.bias.data.fill_(0.0)
 
     def forward(self, user, item):
         user = torch.from_numpy(self.interaction_matrix[user.cpu()].todense()).to(self.device)
@@ -86,9 +90,11 @@ class DMF(GeneralRecommender):
 
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        label = interaction[self.LABEL]
+        if self.inter_matrix_type == '01':
+            label = interaction[self.LABEL]
+        elif self.inter_matrix_type == 'rating':
+            label = interaction[self.RATING] * interaction[self.LABEL]
         output = self.forward(user, item)
-        self.max_rating = self.interaction_matrix.max()
         label = label / self.max_rating
         loss = -(label * (output.log()) + (1 - label) * ((1 - output).log())).mean()
         return loss
