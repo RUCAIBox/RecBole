@@ -228,6 +228,8 @@ class DGCF(GeneralRecommender):
         return u_g_embeddings, i_g_embeddings
 
     def calculate_loss(self, interaction):
+        if self.restore_user_e is not None or self.restore_item_e is not None:
+            self.restore_user_e, self.restore_item_e = None, None
         user = interaction[self.USER_ID]
         pos_item = interaction[self.ITEM_ID]
         neg_item = interaction[self.NEG_ITEM_ID]
@@ -273,8 +275,6 @@ class DGCF(GeneralRecommender):
         return loss
 
     def create_cor_loss(self, cor_u_embeddings, cor_i_embeddings):
-        if self.restore_user_e is not None or self.restore_item_e is not None:
-            self.restore_user_e, self.restore_item_e = None, None
         cor_loss = None
 
         ui_embeddings = torch.cat((cor_u_embeddings, cor_i_embeddings), dim=0)
