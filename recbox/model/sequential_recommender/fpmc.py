@@ -77,10 +77,10 @@ class FPMC(SequentialRecommender):
         mf = torch.matmul(Vui, Viu.permute(0, 2, 1))
         mf = torch.squeeze(mf, dim=1)#[B,1]
 
-    #     PMC
-        pmf = torch.matmul(Vil, Vli.permute(0, 2, 1))
-        pmf = torch.mean(pmf, dim=-1)#[B,1]
-        x = mf + pmf
+    #     FMC
+        fmc = torch.matmul(Vil, Vli.permute(0, 2, 1))
+        fmc = torch.mean(fmc, dim=-1)#[B,1]
+        x = mf + fmc
         return x
 
 
@@ -114,4 +114,14 @@ class FPMC(SequentialRecommender):
         return score
 
     def full_sort_predict(self, interaction):
-        pass
+        user = interaction[self.USER_ID]
+        user_emb = self.UI_emb(user)
+        all_iu_emb = self.IU_emb.weight
+        mf = torch.matmul(user_emb, all_iu_emb.transpose(0,1))
+        all_il_emb = self.IL_emb.weight
+        item_list = interaction[self.ITEM_ID_LIST]
+        item_list_emb = self.LI_emb(item_list)
+        fmc = torch.matmul(item_list_emb, all_il_emb.transpose(0,1))
+        fmc = torch.mean(fmc, dim=1)
+        score = mf + fmc
+        return score
