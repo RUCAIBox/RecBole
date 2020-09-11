@@ -2,6 +2,11 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
+# UPDATE:
+# @Time   : 2020/9/8
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
+
 import os
 
 import numpy as np
@@ -16,7 +21,7 @@ class KnowledgeBasedDataset(Dataset):
         super().__init__(config, saved_dataset=saved_dataset)
 
     def _from_scratch(self, config):
-        self.logger.debug('Loading dataset from scratch')
+        self.logger.debug('Loading kg dataset from scratch')
 
         self.dataset_path = config['data_path']
         self._fill_nan_flag = self.config['fill_nan']
@@ -41,21 +46,28 @@ class KnowledgeBasedDataset(Dataset):
         self.entity_field = self.config['ENTITY_ID_FIELD']
         self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
 
-        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
-        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        self.logger.debug('relation_field: {}'.format(self.relation_field))
+        self.logger.debug('entity_field: {}'.format(self.entity_field))
 
+        self._preloaded_weight = {}
+
+        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
         self.kg_feat = self._load_kg(self.dataset_name, self.dataset_path)
         self.item2entity, self.entity2item = self._load_link(self.dataset_name, self.dataset_path)
+        self.feat_list = self._build_feat_list()
 
         self._filter_by_inter_num()
         self._filter_by_field_value()
         self._reset_index()
         self._remap_ID_all()
         self._user_item_feat_preparation()
-
         self._fill_nan()
         self._set_label_by_threshold()
         self._normalize()
+        self._preload_weight_matrix()
+
+    def _build_feat_list(self):
+        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.kg_feat] if feat is not None]
 
     def _restore_saved_dataset(self, saved_dataset):
         raise NotImplementedError()

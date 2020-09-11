@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/3, 2020/8/31, 2020/8/31
+# @Time   : 2020/9/9, 2020/9/9, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -47,7 +47,7 @@ def data_preparation(config, dataset, save=False):
     if es.split_args['strategy'] != 'loo' and model_type == ModelType.SEQUENTIAL:
         raise ValueError('Sequential models require "loo" split strategy.')
 
-    builded_datasets = dataset.build(es, model_type)
+    builded_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = builded_datasets
     phases = ['train', 'valid', 'test']
 
@@ -55,8 +55,7 @@ def data_preparation(config, dataset, save=False):
         save_datasets(config['checkpoint_dir'], name=phases, dataset=builded_datasets)
 
     kwargs = {}
-    # TODO 为什么这里type不包含context？
-    if model_type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
+    if config['training_neg_sample_num']:
         es.neg_sample_by(config['training_neg_sample_num'])
         sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
         # TODO 如果model_type是kg, 可能还要设置一个kg的sampler
@@ -71,25 +70,25 @@ def data_preparation(config, dataset, save=False):
         config=config,
         eval_setting=es,
         dataset=train_dataset,
-        model_type=config['MODEL_TYPE'],
         dl_format=config['MODEL_INPUT_TYPE'],
         batch_size=config['train_batch_size'],
         shuffle=True,
         **kwargs
     )
 
-    if model_type in [ModelType.GENERAL, ModelType.KNOWLEDGE]:
+    kwargs = {}
+    if len(es_str) > 1 and getattr(es, es_str[1], None):
         getattr(es, es_str[1])()
+        if 'sampler' not in locals():
+            sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
+        kwargs['sampler'] = sampler
         kwargs['phase'] = ['valid', 'test']
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
-        if 'kg_sampler' in kwargs:
-            del kwargs['kg_sampler']
     valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
         eval_setting=es,
         dataset=[valid_dataset, test_dataset],
-        model_type=config['MODEL_TYPE'],
         batch_size=config['eval_batch_size'],
         **kwargs
     )
@@ -98,7 +97,7 @@ def data_preparation(config, dataset, save=False):
 
 
 def dataloader_construct(name, config, eval_setting, dataset,
-                         model_type=ModelType.GENERAL, dl_format=InputType.POINTWISE,
+                         dl_format=InputType.POINTWISE,
                          batch_size=1, shuffle=False, **kwargs):
     if not isinstance(dataset, list):
         dataset = [dataset]
@@ -119,23 +118,27 @@ def dataloader_construct(name, config, eval_setting, dataset,
         for kw, k, w in zip(kwargs_list, key, value):
             kw[k] = w
 
+    model_type = config['MODEL_TYPE']
     logger = getLogger()
     logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(model_type, name, dl_format))
     logger.info(eval_setting)
     logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
 
-    DataLoader = get_data_loader(name, config, eval_setting, model_type)
+    DataLoader = get_data_loader(name, config, eval_setting)
 
-    ret = [
-        DataLoader(
-            config=config,
-            dataset=ds,
-            batch_size=bs,
-            dl_format=dl_format,
-            shuffle=shuffle,
-            **kw
-        ) for ds, bs, kw in zip(dataset, batch_size, kwargs_list)
-    ]
+    try:
+        ret = [
+            DataLoader(
+                config=config,
+                dataset=ds,
+                batch_size=bs,
+                dl_format=dl_format,
+                shuffle=shuffle,
+                **kw
+            ) for ds, bs, kw in zip(dataset, batch_size, kwargs_list)
+        ]
+    except TypeError:
+        raise ValueError('training_neg_sample_num should be 0')
 
     if len(ret) == 1:
         return ret[0]
@@ -156,9 +159,17 @@ def save_datasets(save_path, name, dataset):
         d.save(cur_path)
 
 
-def get_data_loader(name, config, eval_setting, model_type):
+def get_data_loader(name, config, eval_setting):
+    register_table = {
+        'DIN': _get_DIN_data_loader
+    }
+
+    if config['model'] in register_table:
+        return register_table[config['model']](name, config, eval_setting)
+
+    model_type = config['MODEL_TYPE']
+    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
     if model_type == ModelType.GENERAL:
-        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'none':
             return GeneralDataLoader
         elif neg_sample_strategy == 'by':
@@ -169,7 +180,6 @@ def get_data_loader(name, config, eval_setting, model_type):
         elif neg_sample_strategy == 'full':
             return GeneralFullDataLoader
     elif model_type == ModelType.CONTEXT:
-        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'none':
             return ContextDataLoader
         elif neg_sample_strategy == 'by':
@@ -180,12 +190,13 @@ def get_data_loader(name, config, eval_setting, model_type):
         elif neg_sample_strategy == 'full':
             raise NotImplementedError('context model\'s full_sort has not been implemented')
     elif model_type == ModelType.SEQUENTIAL:
-        if name == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
+        if neg_sample_strategy == 'none':
             return SequentialDataLoader
-        else:
+        elif neg_sample_strategy == 'by':
+            return SequentialNegSampleDataLoader
+        elif neg_sample_strategy == 'full':
             return SequentialFullDataLoader
     elif model_type == ModelType.KNOWLEDGE:
-        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
         if neg_sample_strategy == 'by':
             if name == 'train':
                 return KnowledgeBasedDataLoader
@@ -198,6 +209,17 @@ def get_data_loader(name, config, eval_setting, model_type):
         elif neg_sample_strategy == 'none':
             # return GeneralDataLoader
             # TODO 训练也可以为none? 看general的逻辑似乎是都可以为None
-            raise NotImplementedError('The use of external negative sampling for knowledge model has not been implemented')
+            raise NotImplementedError('The use of external negative sampling for knowledge model '
+                                      'has not been implemented')
     else:
         raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
+
+
+def _get_DIN_data_loader(name, config, eval_setting):
+    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    if neg_sample_strategy == 'none':
+        return SequentialDataLoader
+    elif neg_sample_strategy == 'by':
+        return SequentialNegSampleDataLoader
+    elif neg_sample_strategy == 'full':
+        return SequentialFullDataLoader

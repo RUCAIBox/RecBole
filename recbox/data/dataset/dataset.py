@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/1, 2020/9/3, 2020/8/27
+# @Time   : 2020/9/8, 2020/9/3, 2020/9/10
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -15,10 +15,13 @@ from logging import getLogger
 
 import numpy as np
 import pandas as pd
+import torch
+import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 from sklearn.impute import SimpleImputer
 
 from ...utils import FeatureSource, FeatureType, ModelType
+from ..interaction import Interaction
 
 
 class Dataset(object):
@@ -55,7 +58,7 @@ class Dataset(object):
         self._preloaded_weight = {}
 
         self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
-        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        self.feat_list = self._build_feat_list()
 
         self._filter_by_inter_num()
         self._filter_by_field_value()
@@ -66,6 +69,9 @@ class Dataset(object):
         self._set_label_by_threshold()
         self._normalize()
         self._preload_weight_matrix()
+
+    def _build_feat_list(self):
+        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
 
     def _restore_saved_dataset(self, saved_dataset):
         self.logger.debug('Restoring dataset from [{}]'.format(saved_dataset))
@@ -87,7 +93,7 @@ class Dataset(object):
                 setattr(self, '{}_feat'.format(name), df)
             else:
                 setattr(self, '{}_feat'.format(name), None)
-        self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        self.feat_list = self._build_feat_list()
 
         self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
@@ -231,7 +237,7 @@ class Dataset(object):
             flag = True
             self.logger.debug('ordering item features by user id.')
         if flag:
-            self.feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+            self.feat_list = self._build_feat_list()
             self._fill_nan_flag = True
 
     def _preload_weight_matrix(self):
@@ -511,14 +517,14 @@ class Dataset(object):
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
         mp = ['[PAD]'] + list(mp)
-        if self.model_type == ModelType.SEQUENTIAL:
-            item_related = False
-            for (feat, field, ftype) in remap_list:
-                if self.field2source[field] in {FeatureSource.ITEM_ID, FeatureSource.ITEM}:
-                    item_related = True
-                    break
-            if item_related:
-                mp.append('[STOP]')
+        # if self.model_type == ModelType.SEQUENTIAL:
+        #     item_related = False
+        #     for (feat, field, ftype) in remap_list:
+        #         if self.field2source[field] in {FeatureSource.ITEM_ID, FeatureSource.ITEM}:
+        #             item_related = True
+        #             break
+        #     if item_related:
+        #         mp.append('[STOP]')
 
         for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
             if overwrite or (field not in self.field2id_token):
@@ -630,7 +636,7 @@ class Dataset(object):
             return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
         self._check_field('uid_field', 'time_field')
-        max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH'] - 1
+        max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH']
         self.sort(by=[self.uid_field, self.time_field], ascending=True)
         last_uid = None
         uid_list, item_list_index, target_index, item_list_length = [], [], [], []
@@ -743,12 +749,12 @@ class Dataset(object):
                 pr += 1
         return next_index
 
-    def leave_one_out(self, group_by, model_type, leave_one_num=1):
+    def leave_one_out(self, group_by, leave_one_num=1):
         self.logger.debug('leave one out, group_by=[{}], leave_one_num=[{}]'.format(group_by, leave_one_num))
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 
-        if model_type == ModelType.SEQUENTIAL:
+        if self.model_type == ModelType.SEQUENTIAL:
             self.prepare_data_augmentation()
             grouped_index = pd.DataFrame(self.uid_list).groupby(by=0).groups.values()
             next_index = self._split_index_by_leave_one_out(grouped_index, leave_one_num)
@@ -772,7 +778,7 @@ class Dataset(object):
         self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True, ignore_index=True)
 
     # TODO
-    def build(self, eval_setting, model_type):
+    def build(self, eval_setting):
         ordering_args = eval_setting.ordering_args
         if ordering_args['strategy'] == 'shuffle':
             self.shuffle()
@@ -787,8 +793,7 @@ class Dataset(object):
         elif split_args['strategy'] == 'by_value':
             raise NotImplementedError()
         elif split_args['strategy'] == 'loo':
-            datasets = self.leave_one_out(group_by=group_field, model_type=model_type,
-                                          leave_one_num=split_args['leave_one_num'])
+            datasets = self.leave_one_out(group_by=group_field, leave_one_num=split_args['leave_one_num'])
         else:
             datasets = self
 
@@ -856,3 +861,30 @@ class Dataset(object):
         if field not in self._preloaded_weight:
             raise ValueError('field [{}] not in preload_weight'.format(field))
         return self._preloaded_weight[field]
+
+    def _dataframe_to_interaction(self, data, *args):
+        data = data.to_dict(orient='list')
+        return self._dict_to_interaction(data, *args)
+
+    def _dict_to_interaction(self, data, *args):
+        for k in data:
+            ftype = self.field2type[k]
+            if ftype == FeatureType.TOKEN:
+                data[k] = torch.LongTensor(data[k])
+            elif ftype == FeatureType.FLOAT:
+                data[k] = torch.FloatTensor(data[k])
+            elif ftype == FeatureType.TOKEN_SEQ:
+                if isinstance(data[k], np.ndarray):
+                    data[k] = torch.LongTensor(data[k][:, :self.field2seqlen[k]])
+                else:
+                    seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in data[k]]
+                    data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+            elif ftype == FeatureType.FLOAT_SEQ:
+                if isinstance(data[k], np.ndarray):
+                    data[k] = torch.FloatTensor(data[k][:, :self.field2seqlen[k]])
+                else:
+                    seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in data[k]]
+                    data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+            else:
+                raise ValueError('Illegal ftype [{}]'.format(ftype))
+        return Interaction(data, *args)
