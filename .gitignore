@@ -3,3 +3,4 @@
 *.pyc
 *.log
 saved/
+*.lprof
