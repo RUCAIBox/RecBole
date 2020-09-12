@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/11, 2020/8/31
+# @Time   : 2020/9/9, 2020/9/12, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -199,7 +199,7 @@ class NegSampleByMixin(NegSampleMixin):
         raise NotImplementedError('Method [neg_sample_by_point_wise_sampling] should be implemented.')
 
 
-class GeneralIndividualDataLoader(NegSampleByMixin, AbstractDataLoader):
+class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.uid2index, self.uid2items_num = None, None
@@ -305,10 +305,6 @@ class GeneralIndividualDataLoader(NegSampleByMixin, AbstractDataLoader):
         return self.uid2items_num
 
 
-class GeneralGroupedDataLoader(GeneralIndividualDataLoader):
-    pass
-
-
 class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
     dl_type = DataLoaderType.FULL
 
@@ -403,11 +399,7 @@ class ContextDataLoader(GeneralDataLoader):
     pass
 
 
-class ContextIndividualDataLoader(GeneralIndividualDataLoader):
-    pass
-
-
-class ContextGroupedDataLoader(GeneralGroupedDataLoader):
+class ContextNegSampleDataLoader(GeneralNegSampleDataLoader):
     pass
 
 
@@ -676,9 +668,11 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
 
         # using sampler
-        self.general_dataloader = self._get_data_loader(config=config, dataset=dataset, sampler=sampler, phase=phase,
-                                                        neg_sample_args=neg_sample_args,
-                                                        batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        self.general_dataloader = GeneralNegSampleDataLoader(config=config, dataset=dataset,
+                                                             sampler=sampler, phase=phase,
+                                                             neg_sample_args=neg_sample_args,
+                                                             batch_size=batch_size, dl_format=dl_format,
+                                                             shuffle=shuffle)
 
         # using kg_sampler and dl_format is pairwise
         self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, phase, neg_sample_args,
@@ -688,14 +682,6 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
 
         super().__init__(config, dataset,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
-
-    def _get_data_loader(self, **kwargs):
-        phase = kwargs['phase']
-        config = kwargs['config']
-        if phase == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
-            return GeneralIndividualDataLoader(**kwargs)
-        else:
-            return GeneralGroupedDataLoader(**kwargs)
 
     @property
     def pr(self):
