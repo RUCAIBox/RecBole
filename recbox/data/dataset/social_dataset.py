@@ -10,6 +10,7 @@
 import os
 from logging import getLogger
 
+import pandas as pd
 import numpy as np
 from scipy.sparse import coo_matrix
 
@@ -55,14 +56,20 @@ class SocialDataset(Dataset):
         self.logger.debug('target_id_field: {}'.format(self.target_field))
 
         self._preloaded_weight = {}
-
-        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        self.benchmark_filename_list = config['benchmark_filename']
+        if self.benchmark_filename_list is None:
+            self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        else:
+            self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(self.dataset_name, self.dataset_path, self.benchmark_filename_list)
+    
         self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
         self.feat_list = self._build_feat_list()
+        
+        if self.benchmark_filename_list is None:
+            self._filter_by_inter_num()
+            self._filter_by_field_value()
+            self._reset_index()
 
-        self._filter_by_inter_num()
-        self._filter_by_field_value()
-        self._reset_index()
         self._remap_ID_all()
         self._user_item_feat_preparation()
         self._fill_nan()
@@ -70,12 +77,49 @@ class SocialDataset(Dataset):
         self._normalize()
         self._preload_weight_matrix()
 
+    def _load_benchmark_file(self, token, dataset_path, benchmark_filename_list):
+        user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
+        if os.path.isfile(user_feat_path):
+            user_feat = self._load_feat(user_feat_path, FeatureSource.USER)
+            self.logger.debug('user feature loaded successfully from [{}]'.format(user_feat_path))
+        else:
+            user_feat = None
+            self.logger.debug('[{}] not found, user features are not loaded'.format(user_feat_path))
+
+        item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
+        if os.path.isfile(item_feat_path):
+            item_feat = self._load_feat(item_feat_path, FeatureSource.ITEM)
+            self.logger.debug('item feature loaded successfully from [{}]'.format(item_feat_path))
+        else:
+            item_feat = None
+            self.logger.debug('[{}] not found, item features are not loaded'.format(item_feat_path))
+
+        inter_feat = pd.DataFrame() 
+        size_list = []
+        for filename in benchmark_filename_list:
+            file_path =  os.path.join(dataset_path, '{}.{}.{}'.format(token, filename,'inter'))
+            if os.path.isfile(file_path):
+                temp = self._load_feat(file_path, FeatureSource.INTERACTION)
+                inter_feat = pd.concat([inter_feat, temp])
+                size_list.append(len(inter_feat))
+            else:
+                raise ValueError('File {} not exist'.format(file_path))
+        
+        if self.uid_field in self.field2source:
+            self.field2source[self.uid_field] = FeatureSource.USER_ID
+
+        if self.iid_field in self.field2source:
+            self.field2source[self.iid_field] = FeatureSource.ITEM_ID
+
+        return inter_feat, user_feat, item_feat, size_list
+
     def _build_feat_list(self):
         return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.net_feat] if feat is not None]
 
     def _load_net(self, dataset_name, dataset_path): 
         net_file_path = os.path.join(dataset_path, '{}.{}'.format(dataset_name, 'net'))
         if os.path.isfile(net_file_path):
+            print(net_file_path)
             net_feat = self._load_feat(net_file_path, FeatureSource.NET)
             if net_feat is None:
                 raise ValueError('.net file exist, but net_feat is None, please check your load_col')
