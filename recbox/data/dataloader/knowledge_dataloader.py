@@ -20,9 +20,6 @@ class KGDataLoader(NegSampleMixin, AbstractDataLoader):
 
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.PAIRWISE, shuffle=False):
-
-        super().__init__(config, dataset, sampler, phase, neg_sample_args,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in KnowledgeBasedDataLoader() should be `by`')
         if dl_format != InputType.PAIRWISE or neg_sample_args['by'] != 1:
@@ -40,6 +37,9 @@ class KGDataLoader(NegSampleMixin, AbstractDataLoader):
         # kg negative cols
         neg_kg_col = neg_prefix + tid_field
         dataset.copy_field_property(neg_kg_col, tid_field)
+
+        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     @property
     def pr_end(self):
