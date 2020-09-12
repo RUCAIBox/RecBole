@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/3, 2020/9/8
+# @Time   : 2020/9/8, 2020/9/3, 2020/9/10
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -517,14 +517,14 @@ class Dataset(object):
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
         mp = ['[PAD]'] + list(mp)
-        if self.model_type == ModelType.SEQUENTIAL:
-            item_related = False
-            for (feat, field, ftype) in remap_list:
-                if self.field2source[field] in {FeatureSource.ITEM_ID, FeatureSource.ITEM}:
-                    item_related = True
-                    break
-            if item_related:
-                mp.append('[STOP]')
+        # if self.model_type == ModelType.SEQUENTIAL:
+        #     item_related = False
+        #     for (feat, field, ftype) in remap_list:
+        #         if self.field2source[field] in {FeatureSource.ITEM_ID, FeatureSource.ITEM}:
+        #             item_related = True
+        #             break
+        #     if item_related:
+        #         mp.append('[STOP]')
 
         for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
             if overwrite or (field not in self.field2id_token):
@@ -636,7 +636,7 @@ class Dataset(object):
             return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
         self._check_field('uid_field', 'time_field')
-        max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH'] - 1
+        max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH']
         self.sort(by=[self.uid_field, self.time_field], ascending=True)
         last_uid = None
         uid_list, item_list_index, target_index, item_list_length = [], [], [], []
@@ -874,11 +874,17 @@ class Dataset(object):
             elif ftype == FeatureType.FLOAT:
                 data[k] = torch.FloatTensor(data[k])
             elif ftype == FeatureType.TOKEN_SEQ:
-                seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in data[k]]
-                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+                if isinstance(data[k], np.ndarray):
+                    data[k] = torch.LongTensor(data[k][:, :self.field2seqlen[k]])
+                else:
+                    seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in data[k]]
+                    data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == FeatureType.FLOAT_SEQ:
-                seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in data[k]]
-                data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+                if isinstance(data[k], np.ndarray):
+                    data[k] = torch.FloatTensor(data[k][:, :self.field2seqlen[k]])
+                else:
+                    seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in data[k]]
+                    data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             else:
                 raise ValueError('Illegal ftype [{}]'.format(ftype))
         return Interaction(data, *args)
