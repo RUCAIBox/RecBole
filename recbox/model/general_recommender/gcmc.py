@@ -6,58 +6,53 @@
 
 """
 Reference:
-van den Berg, Rianne, Thomas N. Kipf, and Max Welling. "Graph Convolutional Matrix Completion." in SIGKDD 2018.
+van den Berg et al. "Graph Convolutional Matrix Completion." in SIGKDD 2018.
 """
 
+import math
 import torch
 import torch.nn as nn
 import scipy.sparse as sp
 import numpy as np
 
-from recbox.model.abstract_recommender import GeneralRecommender
-from recbox.utils import InputType
-import math
+from ...utils import InputType
+from ..abstract_recommender import GeneralRecommender
 
 
 class GCMC(GeneralRecommender):
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
-        super(GCMC, self).__init__()
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
+        super(GCMC, self).__init__(config, dataset)
 
-        self.num_users = dataset.num(self.USER_ID)
-        self.num_items = dataset.num(self.ITEM_ID)
-        self.num_all = self.num_users + self.num_items
-        self.device = config['device']
+        # load dataset info
+        self.num_all = self.n_users + self.n_items
+        # 原文处理multi-relation场景，该场景下self.support中存放每个relation对应的adj
+        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)  # csr
+
+        # load parameters info
         self.drop_prob = config['drop_prob']
         self.sparse_feature = config['sparse_feature']
-
+        self.hidden_dim = [int(i) for i in list(config['hidden_dim'])]
+        self.n_class = config['class_num']
         self.num_basis_functions = config['num_basis_functions']
-        self.loss_function = nn.CrossEntropyLoss()
 
+        # generate intermediate data
         if self.sparse_feature:
             features = self.get_sparse_eye_mat(self.num_all)
             i = features._indices()
             v = features._values()
-            self.user_features = torch.sparse.FloatTensor(i[:, :self.num_users], v[:self.num_users],
-                                                          torch.Size([self.num_users, self.num_all])).to(self.device)
-            item_i = i[:, self.num_users:]
-            item_i[0, :] = item_i[0, :] - self.num_users
-            self.item_features = torch.sparse.FloatTensor(item_i, v[self.num_users:],
-                                                          torch.Size([self.num_items, self.num_all])).to(self.device)
+            self.user_features = torch.sparse.FloatTensor(i[:, :self.n_users], v[:self.n_users],
+                                                          torch.Size([self.n_users, self.num_all])).to(self.device)
+            item_i = i[:, self.n_users:]
+            item_i[0, :] = item_i[0, :] - self.n_users
+            self.item_features = torch.sparse.FloatTensor(item_i, v[self.n_users:],
+                                                          torch.Size([self.n_items, self.num_all])).to(self.device)
         else:
             features = torch.eye(self.num_all).to(self.device)
-            self.user_features, self.item_features = torch.split(features, [self.num_users, self.num_items])
-
+            self.user_features, self.item_features = torch.split(features, [self.n_users, self.n_items])
         self.input_dim = self.user_features.shape[1]
-        self.hidden_dim = [int(i) for i in list(config['hidden_dim'])]
-        self.n_class = config['class_num']
 
-        # 原文处理multi-relation场景，该场景下self.support中存放每个relation对应的adj
-        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)  # csr
         self.Graph = self.get_norm_adj_mat().to(self.device)
         self.support = [self.Graph]
 
@@ -69,21 +64,22 @@ class GCMC(GeneralRecommender):
                       % (self.hidden_dim[0], len(self.support) * div, len(self.support)))
             self.hidden_dim[0] = len(self.support) * div
 
+        # define layers and loss
         self.GcEncoder = GcEncoder(accum=self.accum,
-                                   num_user=self.num_users,
-                                   num_item=self.num_items,
+                                   num_user=self.n_users,
+                                   num_item=self.n_items,
                                    support=self.support,
                                    input_dim=self.input_dim,
                                    hidden_dim=self.hidden_dim,
                                    drop_prob=self.drop_prob,
                                    device=self.device,
                                    sparse_feature=self.sparse_feature).to(self.device)
-
         self.BiDecoder = BiDecoder(input_dim=self.hidden_dim[-1],
                                    output_dim=self.n_class,
                                    drop_prob=0.,
                                    device=self.device,
                                    num_weights=self.num_basis_functions).to(self.device)
+        self.loss_function = nn.CrossEntropyLoss()
 
     def get_sparse_eye_mat(self, num):
         i = torch.LongTensor([range(0, num), range(0, num)])
@@ -92,10 +88,10 @@ class GCMC(GeneralRecommender):
 
     def get_norm_adj_mat(self):
         # build adj matrix
-        A = sp.dok_matrix((self.num_users + self.num_items, self.num_users + self.num_items), dtype=np.float32)
+        A = sp.dok_matrix((self.n_users + self.n_items, self.n_users + self.n_items), dtype=np.float32)
         A = A.tolil()
-        A[:self.num_users, self.num_users:] = self.interaction_matrix
-        A[self.num_users:, :self.num_users] = self.interaction_matrix.transpose()
+        A[:self.n_users, self.n_users:] = self.interaction_matrix
+        A[self.n_users:, :self.n_users] = self.interaction_matrix.transpose()
         A = A.todok()
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)

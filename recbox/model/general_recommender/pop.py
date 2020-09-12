@@ -2,21 +2,19 @@
 # @Time   : 2020/8/11 9:57
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.con
-# @File   : pop.py
 
 import torch
+
 from ...utils import InputType
 from ..abstract_recommender import GeneralRecommender
 
 
 class Pop(GeneralRecommender):
     input_type = InputType.POINTWISE
+
     def __init__(self, config, dataset):
-        super(Pop, self).__init__()
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.device = config['device']
-        self.n_items = dataset.num(self.ITEM_ID)
+        super(Pop, self).__init__(config, dataset)
+
         self.item_cnt = torch.zeros(self.n_items, 1, dtype=torch.long, device=self.device, requires_grad=False)
         self.max_cnt = None
 

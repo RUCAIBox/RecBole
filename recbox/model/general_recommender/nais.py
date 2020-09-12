@@ -5,7 +5,7 @@
 
 """
 Reference:
-Xiangnan He et al., "NAIS: Neural Attentive Item Similarity Model for Recommendation." in TKDE 2018.
+Xiangnan He et al. "NAIS: Neural Attentive Item Similarity Model for Recommendation." in TKDE 2018.
 Also, our code is based on https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
 """
 
@@ -24,12 +24,13 @@ class NAIS(GeneralRecommender):
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
-        super(NAIS, self).__init__()
-        self.device = config['device']
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.LABEL = config['LABEL_FIELD']
+        super(NAIS, self).__init__(config, dataset)
 
+        # load dataset info
+        self.LABEL = config['LABEL_FIELD']
+        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
+
+        # load parameters info
         self.embedding_size = config['embedding_size']
         self.weight_size = config['weight_size']
         self.algorithm = config['algorithm']
@@ -38,18 +39,15 @@ class NAIS(GeneralRecommender):
         self.beta = config['beta']
         self.split_to = config['split_to']
 
-        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
-        self.n_items = dataset.item_num
-
         if self.split_to > 0:
             self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
 
+        # define layers and loss
         # Construct src item embedding matrix, padding at n_items position
         self.item_src_embedding = nn.Embedding(self.n_items + 1, self.embedding_size, padding_idx=self.n_items)
         # Construct dst item embedding matrix, the target items don't require padding
         self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.bias = nn.Parameter(torch.zeros(self.n_items))
-
         if self.algorithm == 'concat':
             self.mlp_layers = MLPLayers([self.embedding_size*2, self.weight_size])
         elif self.algorithm == 'prod':
@@ -57,9 +55,9 @@ class NAIS(GeneralRecommender):
         else:
             raise ValueError("NAIS just support attention type in ['concat', 'prod'] but get {}".format(self.algorithm))
         self.weight_layer = nn.Parameter(torch.ones(self.weight_size, 1))
-
         self.bceloss = nn.BCELoss()
 
+        # parameters initialization
         self.apply(self.init_weights)
 
     def reg_loss(self):

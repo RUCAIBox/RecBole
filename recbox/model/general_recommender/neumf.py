@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/6/27 15:10
+# @Time   : 2020/6/27
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-# @File   : neumf.py
+
 # UPDATE:
 # @Time   : 2020/8/22,
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmain.com
+
 """
 Reference:
-Xiangnan He et al., "Neural Collaborative Filtering." in WWW 2017.
+Xiangnan He et al. "Neural Collaborative Filtering." in WWW 2017.
 """
 
 import torch
@@ -25,21 +26,21 @@ class NeuMF(GeneralRecommender):
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
-        super(NeuMF, self).__init__()
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
+        super(NeuMF, self).__init__(config, dataset)
+
+        # load dataset info
         self.LABEL = config['LABEL_FIELD']
-        self.n_users = dataset.num(self.USER_ID)
-        self.n_items = dataset.num(self.ITEM_ID)
+
+        # load parameters info
         self.mf_embedding_size = config['mf_embedding_size']
         self.mlp_embedding_size = config['mlp_embedding_size']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout = config['dropout']
-
         self.mf_train = config['mf_train']
         self.mlp_train = config['mlp_train']
         self.use_pretrain = config['use_pretrain']
 
+        # define layers and loss
         self.user_mf_embedding = nn.Embedding(self.n_users, self.mf_embedding_size)
         self.item_mf_embedding = nn.Embedding(self.n_items, self.mf_embedding_size)
         self.user_mlp_embedding = nn.Embedding(self.n_users, self.mlp_embedding_size)
@@ -53,6 +54,8 @@ class NeuMF(GeneralRecommender):
             self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
+
+        # parameters initialization
         if self.use_pretrain:
             self.load_pretrain()
         else:
