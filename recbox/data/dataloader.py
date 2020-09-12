@@ -632,9 +632,6 @@ class KGDataLoader(NegSampleMixin, AbstractDataLoader):
         neg_kg_col = neg_prefix + tid_field
         dataset.copy_field_property(neg_kg_col, tid_field)
 
-    def __len__(self):
-        return math.ceil(self.pr_end / self.step)
-
     @property
     def pr_end(self):
         # TODO 这个地方应该是取kg_data的len
