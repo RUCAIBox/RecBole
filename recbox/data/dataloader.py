@@ -122,7 +122,7 @@ class GeneralDataLoader(AbstractDataLoader):
         return self._dataframe_to_interaction(cur_data)
 
 
-class NegSampleMixin(object):
+class NegSampleMixin(AbstractDataLoader):
     dl_type = DataLoaderType.NEGSAMPLE
 
     def __init__(self, config, dataset, sampler, phase, neg_sample_args,
@@ -141,13 +141,10 @@ class NegSampleMixin(object):
         self._batch_size_adaptation()
 
     def data_preprocess(self):
-        self._pre_neg_sampling()
+        raise NotImplementedError('Method [data_preprocess] should be implemented.')
 
     def _batch_size_adaptation(self):
         raise NotImplementedError('Method [batch_size_adaptation] should be implemented.')
-
-    def _pre_neg_sampling(self):
-        raise NotImplementedError('Method [pre_neg_sampling] should be implemented.')
 
     def _neg_sampling(self, inter_feat):
         raise NotImplementedError('Method [neg_sampling] should be implemented.')
@@ -256,7 +253,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
                 cur_data = self._neg_sampling(cur_data)
             return self._dataframe_to_interaction(cur_data)
 
-    def _pre_neg_sampling(self):
+    def data_preprocess(self):
         if self.user_inter_in_one_batch:
             new_inter_num = 0
             new_inter_feat = []
@@ -365,7 +362,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
             torch.LongTensor(pos_idx), torch.LongTensor(used_idx), \
             pos_len_list, neg_len_list
 
-    def _pre_neg_sampling(self):
+    def data_preprocess(self):
         self.user_tensor, tmp_pos_idx, tmp_used_idx, self.pos_len_list, self.neg_len_list = \
             self._neg_sampling(self.uid2index, show_progress=True)
         tmp_pos_len_list = [sum(self.pos_len_list[_: _ + self.step]) for _ in range(0, self.pr_end, self.step)]
@@ -505,7 +502,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
     def data_preprocess(self):
         self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
                                                     self.target_index, self.item_list_length)
-        self._pre_neg_sampling()
+        self.pre_processed_data = self._neg_sampling(self.pre_processed_data)
 
     def _batch_size_adaptation(self):
         batch_num = max(self.batch_size // self.times, 1)
@@ -534,9 +531,6 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
             return self._dict_to_interaction(cur_data, list(pos_len_list), list(user_len_list))
         else:
             return self._dict_to_interaction(cur_data)
-
-    def _pre_neg_sampling(self):
-        self.pre_processed_data = self._neg_sampling(self.pre_processed_data)
 
     def _neg_sampling(self, data):
         if self.user_inter_in_one_batch:
@@ -641,7 +635,7 @@ class KGDataLoader(NegSampleMixin, AbstractDataLoader):
             cur_data = self._neg_sampling(cur_data)
         return self._dataframe_to_interaction(cur_data)
 
-    def _pre_neg_sampling(self):
+    def data_preprocess(self):
         # TODO 这个地方应该是kg_data
         self.dataset.kg_feat = self._neg_sampling(self.dataset.kg_feat)
 
