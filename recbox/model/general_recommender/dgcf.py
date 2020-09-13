@@ -232,7 +232,7 @@ class DGCF(GeneralRecommender):
             cor_loss = self.create_cor_loss(cor_u_embeddings, cor_i_embeddings)
             loss = mf_loss + self.reg_weight * reg_loss + self.cor_weight * cor_loss
         else:
-            loss = mf_loss + self.reg_weight * emb_loss
+            loss = mf_loss + self.reg_weight * reg_loss
         return loss
 
     def create_cor_loss(self, cor_u_embeddings, cor_i_embeddings):
