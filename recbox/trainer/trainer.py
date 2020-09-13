@@ -294,7 +294,7 @@ class KGTrainer(Trainer):
     def _train_epoch(self, train_data, epoch_idx):
         self.model.train()
         total_loss = 0.
-        if self.train_kg_step <= 0:
+        if not self.train_kg_step or self.train_kg_step <= 0:
             interaction_state = KGDataLoaderState.RSKG
         else:
             interaction_state = KGDataLoaderState.KG \
