@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/8, 2020/9/7, 2020/8/31
+# @Time   : 2020/9/9, 2020/9/10, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -35,9 +35,8 @@ class AbstractDataLoader(object):
 
         self.join = self.dataset.join
         self.inter_matrix = self.dataset.inter_matrix
-
-        if hasattr(self.dataset, 'dgl_graph'):
-            self.dgl_graph = self.dataset.dgl_graph
+        if hasattr(self.dataset, 'net_matrix'):
+            self.net_matrix = self.dataset.net_matrix
 
         self.num = self.dataset.num
         self.fields = self.dataset.fields
@@ -155,6 +154,7 @@ class NegSampleByMixin(NegSampleMixin):
         if dl_format == InputType.PAIRWISE and neg_sample_args['by'] != 1:
             raise ValueError('Pairwise dataloader can only neg sample by 1')
 
+        self.grouped_by_user = (phase != 'train') and (config['eval_type'] != EvaluatorType.INDIVIDUAL)
         self.neg_sample_by = neg_sample_args['by']
 
         # TODO self.times 改个名（有点意义不明）
@@ -170,6 +170,7 @@ class NegSampleByMixin(NegSampleMixin):
 
             neg_prefix = config['NEG_PREFIX']
             iid_field = config['ITEM_ID_FIELD']
+            self.neg_item_id = neg_prefix + iid_field
 
             columns = [iid_field] if dataset.item_feat is None else dataset.item_feat.columns
             for item_feat_col in columns:
@@ -228,14 +229,13 @@ class GeneralIndividualDataLoader(NegSampleByMixin, AbstractDataLoader):
         return self.sampling_func(uid_field, iid_field, neg_iids, inter_feat)
 
     def _neg_sample_by_pair_wise_sampling(self, uid_field, iid_field, neg_iids, inter_feat):
-        neg_prefix = self.config['NEG_PREFIX']
-        neg_item_id = neg_prefix + iid_field
-        inter_feat.insert(len(inter_feat.columns), neg_item_id, neg_iids)
+        inter_feat.insert(len(inter_feat.columns), self.neg_item_id, neg_iids)
 
         if self.dataset.item_feat is not None:
+            neg_prefix = self.config['NEG_PREFIX']
             neg_item_feat = self.dataset.item_feat.add_prefix(neg_prefix)
             inter_feat = pd.merge(inter_feat, neg_item_feat,
-                                  on=neg_item_id, how='left', suffixes=('_inter', '_item'))
+                                  on=self.neg_item_id, how='left', suffixes=('_inter', '_item'))
 
         return inter_feat
 
@@ -422,7 +422,6 @@ class SequentialDataLoader(AbstractDataLoader):
         self.iid_field = dataset.iid_field
         self.time_field = dataset.time_field
         self.max_item_list_len = config['MAX_ITEM_LIST_LENGTH']
-        self.stop_token_id = dataset.item_num - 1
 
         target_prefix = config['TARGET_PREFIX']
         list_suffix = config['LIST_SUFFIX']
@@ -489,18 +488,20 @@ class SequentialDataLoader(AbstractDataLoader):
         new_length = len(item_list_index)
         new_dict = {
             self.uid_field: uid_list,
-            self.item_list_field: [],
-            self.time_list_field: [],
+            self.item_list_field: np.zeros((new_length, self.max_item_list_len), dtype=np.int64),
+            self.time_list_field: np.zeros((new_length, self.max_item_list_len), dtype=np.int64),
             self.target_iid_field: self.dataset.inter_feat[self.iid_field][target_index].values,
             self.target_time_field: self.dataset.inter_feat[self.time_field][target_index].values,
             self.item_list_length_field: item_list_length,
         }
         if self.position_field:
-            new_dict[self.position_field] = [np.arange(self.max_item_list_len)] * new_length
-        for index in item_list_index:
-            df = self.dataset.inter_feat[index]
-            new_dict[self.item_list_field].append(np.append(df[self.iid_field].values, self.stop_token_id))
-            new_dict[self.time_list_field].append(np.append(df[self.time_field].values, 0))
+            new_dict[self.position_field] = np.tile(np.arange(self.max_item_list_len), (new_length, 1))
+
+        iid_value = self.dataset.inter_feat[self.iid_field].values
+        time_value = self.dataset.inter_feat[self.time_field].values
+        for i, (index, length) in enumerate(zip(item_list_index, item_list_length)):
+            new_dict[self.item_list_field][i][:length] = iid_value[index]
+            new_dict[self.time_list_field][i][:length] = time_value[index]
         return new_dict
 
 
@@ -523,26 +524,41 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
                                          self.item_list_index[cur_index],
                                          self.target_index[cur_index],
                                          self.item_list_length[cur_index])
+            if self.grouped_by_user:
+                pos_len_list = np.ones(len(cur_data[self.uid_field]), dtype=np.int64)
+                user_len_list = pos_len_list * self.times
             cur_data = self._neg_sampling(cur_data)
         else:
             cur_data = {}
             for key, value in self.pre_processed_data.items():
                 cur_data[key] = value[cur_index]
         self.pr += self.step
-        return self._dict_to_interaction(cur_data)
+        if self.grouped_by_user:
+            return self._dict_to_interaction(cur_data, list(pos_len_list), list(user_len_list))
+        else:
+            return self._dict_to_interaction(cur_data)
 
     def _pre_neg_sampling(self):
         self.pre_processed_data = self._neg_sampling(self.pre_processed_data)
 
     def _neg_sampling(self, data):
-        uids = data[self.uid_field]
-        neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
-        return self.sampling_func(data, neg_iids)
+        if self.grouped_by_user:
+            data_len = len(data[self.uid_field])
+            data_list = []
+            for i in range(data_len):
+                uids = data[self.uid_field][i: i + 1]
+                neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
+                cur_data = {field: data[field][i: i + 1] for field in data}
+                data_list.append(self.sampling_func(cur_data, neg_iids))
+            return {field: np.concatenate([d[field] for d in data_list])
+                    for field in data}
+        else:
+            uids = data[self.uid_field]
+            neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
+            return self.sampling_func(data, neg_iids)
 
     def _neg_sample_by_pair_wise_sampling(self, data, neg_iids):
-        neg_prefix = self.config['NEG_PREFIX']
-        neg_item_id = neg_prefix + self.target_iid_field
-        data[neg_item_id] = neg_iids
+        data[self.neg_item_id] = neg_iids
         return data
 
     def _neg_sample_by_point_wise_sampling(self, data, neg_iids):
@@ -551,21 +567,21 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
             if key == self.target_iid_field:
                 new_data[key] = np.concatenate([value, neg_iids])
             else:
-                if isinstance(value, list):
-                    new_data[key] = value * self.times
-                elif isinstance(value, np.ndarray):
-                    new_data[key] = np.tile(value, (self.times, 1))
+                new_data[key] = np.concatenate([value] * self.times)
         pos_len = len(data[self.target_iid_field])
         total_len = len(new_data[self.target_iid_field])
         new_data[self.label_field] = np.zeros(total_len, dtype=np.int)
         new_data[self.label_field][:pos_len] = 1
         return new_data
 
+    def get_pos_len_list(self):
+        return np.ones(self.pr_end, dtype=np.int64)
+
 
 class SequentialFullDataLoader(SequentialDataLoader):
     dl_type = DataLoaderType.FULL
 
-    def __init__(self, config, dataset,
+    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         super().__init__(config, dataset,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
@@ -583,7 +599,7 @@ class SequentialFullDataLoader(SequentialDataLoader):
         return interaction, pos_idx, used_idx, pos_len_list, neg_len_list
 
     def get_pos_len_list(self):
-        return np.ones(self.pr_end, dtype=np.int)
+        return np.ones(self.pr_end, dtype=np.int64)
 
 
 class KGDataLoader(NegSampleMixin, AbstractDataLoader):

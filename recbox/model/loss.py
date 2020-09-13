@@ -42,7 +42,7 @@ class BPRLoss(nn.Module):
         self.gamma = gamma
 
     def forward(self, pos_score, neg_score):
-        loss = torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
+        loss = - torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
         return loss
 
 
@@ -59,6 +59,21 @@ class RegLoss(nn.Module):
             else:
                 reg_loss = reg_loss + W.norm(2)
         return reg_loss
+
+
+class EmbLoss(nn.Module):
+
+    def __init__(self, norm=2):
+        super(EmbLoss, self).__init__()
+        self.norm = norm
+
+    def forward(self, embedding_list):
+        assert len(embedding_list) > 0
+        emb_loss = torch.zeros(1).to(embedding_list[-1].device)
+        for embedding in embedding_list:
+            emb_loss += torch.norm(embedding, p=self.norm)
+        emb_loss /= embedding_list[-1].shape[0]
+        return emb_loss
 
 
 # todo: wait to be test

@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/3, 2020/8/31
+# @Time   : 2020/9/3, 2020/9/10
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -130,6 +130,8 @@ test_examples = {
         'threshold': {'rating': 3},
         'group_by_user': False,
         'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
         'valid_metric': 'AUC',
         'metrics': ['AUC']
     },
@@ -139,6 +141,8 @@ test_examples = {
         'normalize_all': True,
         'group_by_user': False,
         'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
         'valid_metric': 'AUC',
         'metrics': ['AUC']
     },
@@ -146,12 +150,26 @@ test_examples = {
         'model': 'GRU4Rec',
         'dataset': 'ml-100k',
         'epochs': 1,
+        'training_neg_sample_num': 0,
         'eval_setting': 'TO_LS, full',
         'split_ratio': None,
         'leave_one_num': 2,
         'real_time_process': True,
         'NEG_PREFIX': None,
         'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['rating', 'timestamp']},
+        'min_user_inter_num': 5
+    },
+    'Test FPMC': {
+        'model': 'FPMC',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, uni100',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['rating', 'timestamp']},
         'min_user_inter_num': 5

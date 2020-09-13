@@ -1,27 +1,25 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/8/26 11:10
+# @Time   : 2020/8/26
 # @Author : Gaole He
 # @Email  : hegaole@ruc.edu.cn
-# @File   : DGCF.py
 
 """
 Reference:
-Wang Xiang et al. Disentangled Graph Collaborative Filtering. In SIGIR 2020.
+Wang Xiang et al. "Disentangled Graph Collaborative Filtering." in SIGIR 2020.
 """
 
 import numpy as np
-import time
 import random as rd
-import scipy.sparse as sp
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.init import xavier_normal_, constant_
 from torch.autograd import Variable
 
 from ...utils import InputType
 from ..abstract_recommender import GeneralRecommender
-from ..layers import BiGNNLayer
+from ..loss import BPRLoss, EmbLoss
+from ..utils import xavier_normal_initialization
+
 
 def sample_cor_samples(n_users, n_items, cor_batch_size):
     '''
@@ -38,42 +36,24 @@ class DGCF(GeneralRecommender):
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
-        super(DGCF, self).__init__()
+        super(DGCF, self).__init__(config, dataset)
 
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
-        self.n_users = dataset.num(self.USER_ID)
-        self.n_items = dataset.num(self.ITEM_ID)
+        # load dataset info
+        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
+
+        # load parameters info
         self.embedding_size = config['embedding_size']
-        self.layers = config['layers']
-        self.layers = [self.embedding_size] + self.layers
-        self.node_dropout = config['node_dropout']
-        self.message_dropout = config['message_dropout']
-        self.device = config['device']
-        self.delay = config['delay']
-        self.cor_decay = config['cor_decay']
-        self.batch_size = config['train_batch_size']
-
-        inter_num = dataset.dataset.inter_num
-
-        n_batch = inter_num // self.batch_size + 1
-        self.cor_batch_size = int(max(self.n_users / n_batch, self.n_items / n_batch))
         self.n_factors = config['n_factors']
         self.n_iterations = config['n_iterations']
         self.n_layers = config['n_layers']
-        print("{} batchese with {} size, {} cor size".format(n_batch, self.batch_size, self.cor_batch_size))
-
+        self.reg_weight = config['reg_weight']
+        self.cor_weight = config['cor_weight']
+        n_batch = dataset.dataset.inter_num // self.batch_size + 1
+        self.cor_batch_size = int(max(self.n_users / n_batch, self.n_items / n_batch))
         # ensure embedding can be divided into <n_factors> intent
         assert self.embedding_size % self.n_factors == 0
 
-        self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
-        self.sigmoid = nn.LogSigmoid()
-        self.softplus = torch.nn.Softplus()
-        self.softmax = torch.nn.Softmax(dim=1)
-        self.apply(self.init_weights)
-        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
+        # generate intermediate data
         row = self.interaction_matrix.row.tolist()
         col = self.interaction_matrix.col.tolist()
         col = [item_index + self.n_users for item_index in col]
@@ -94,25 +74,26 @@ class DGCF(GeneralRecommender):
         self.num_edge = num_edge
         self.num_node = num_node
 
+        # define layers and loss
+        self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
+        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
+        self.softmax = torch.nn.Softmax(dim=1)
+        self.mf_loss = BPRLoss()
+        self.reg_loss = EmbLoss()
         self.restore_user_e = None
         self.restore_item_e = None
+
+        # parameters initialization
+        self.apply(xavier_normal_initialization)
 
     def _build_sparse_tensor(self, indices, values, size):
         return torch.sparse.FloatTensor(indices, values, size).to(self.device)
 
-    def init_weights(self, module):
-        if isinstance(module, nn.Embedding):
-            xavier_normal_(module.weight.data)
-        elif isinstance(module, nn.Linear):
-            xavier_normal_(module.weight.data)
-            if module.bias is not None:
-                constant_(module.bias.data, 0)
-
-    def get_feature_matrix(self):
+    def get_ego_embeddings(self):
         user_embd = self.user_embedding.weight
         item_embd = self.item_embedding.weight
-        features = torch.cat([user_embd, item_embd], dim=0)
-        return features
+        ego_embeddings = torch.cat([user_embd, item_embd], dim=0)
+        return ego_embeddings
 
     def build_matrix(self, A_values):
         '''
@@ -120,7 +101,6 @@ class DGCF(GeneralRecommender):
         :param A_values: (num_edge, n_factors)
         :return: (num_edge) * n_factor
         '''
-        # norm_A_values = F.softmax(A_values, dim=1)
         norm_A_values = self.softmax(A_values)
         factor_edge_weight = []
         for i in range(self.n_factors):
@@ -139,16 +119,13 @@ class DGCF(GeneralRecommender):
             # (num_edge, num_node) (num_node, 1) -> (num_edge, 1)
 
             tail_term = torch.sparse.mm(self.tail2edge_mat, d_values)
-            # print(tp_values.size(), head_term.size(), tail_term.size())
             edge_weight = tp_values * head_term * tail_term
             factor_edge_weight.append(edge_weight)
         return factor_edge_weight
 
     def forward(self):
-        # torch.autograd.set_detect_anomaly(True)
-        ego_embeddings = self.get_feature_matrix()
+        ego_embeddings = self.get_ego_embeddings()
         all_embeddings = [ego_embeddings.unsqueeze(1)]
-        output_factors_distribution = []
         A_values = torch.ones((self.num_edge, self.n_factors)).to(self.device)
         A_values = Variable(A_values, requires_grad=True)
         for k in range(self.n_layers):
@@ -157,13 +134,10 @@ class DGCF(GeneralRecommender):
             # split the input embedding table
             # .... ego_layer_embeddings is a (n_factors)-leng list of embeddings [n_users+n_items, embed_size/n_factors]
             ego_layer_embeddings = torch.chunk(ego_embeddings, self.n_factors, 1)
-            # st = time.time()
-            # print("layer {} start at time {}".format(k, st))
             for t in range(0, self.n_iterations):
                 iter_embeddings = []
                 A_iter_values = []
                 factor_edge_weight = self.build_matrix(A_values=A_values)
-                # print("iteration {} start at time {}".format(t, time.time() - st))
                 for i in range(0, self.n_factors):
                     # update the embeddings via simplified graph convolution layer
                     edge_weight = factor_edge_weight[i]
@@ -202,7 +176,6 @@ class DGCF(GeneralRecommender):
 
                     # update the attentive weights
                     A_iter_values.append(A_factor_values)
-                # print("iteration {} end at time {}".format(t, time.time() - st))
                 A_iter_values = torch.cat(A_iter_values, dim=1)
                 # (num_edge, n_factors)
                 # add all layer-wise attentive weights up.
@@ -228,53 +201,41 @@ class DGCF(GeneralRecommender):
         return u_g_embeddings, i_g_embeddings
 
     def calculate_loss(self, interaction):
+        if self.restore_user_e is not None or self.restore_item_e is not None:
+            self.restore_user_e, self.restore_item_e = None, None
+
         user = interaction[self.USER_ID]
         pos_item = interaction[self.ITEM_ID]
         neg_item = interaction[self.NEG_ITEM_ID]
 
-        # st = time.time()
-        u_embedding, i_embedding = self.forward()
-        # print("Single forward cost time: {}".format(time.time() - st))
-        u_embeddings = u_embedding[user, :]
-        posi_embeddings = i_embedding[pos_item, :]
-        negi_embeddings = i_embedding[neg_item, :]
+        user_all_embeddings, item_all_embeddings = self.forward()
+        u_embeddings = user_all_embeddings[user]
+        posi_embeddings = item_all_embeddings[pos_item]
+        negi_embeddings = item_all_embeddings[neg_item]
 
         pos_scores = torch.sum(torch.mul(u_embeddings, posi_embeddings), axis=1)
         neg_scores = torch.sum(torch.mul(u_embeddings, negi_embeddings), axis=1)
-
-        mf_loss = torch.mean(self.softplus(-(pos_scores - neg_scores)))
-
-        # maxi = self.sigmoid(pos_scores - neg_scores)
-        # mf_loss = -1 * torch.mean(maxi)
+        mf_loss = self.mf_loss(pos_scores, neg_scores)
 
         # cul regularizer
-        u_embeddings_pre = self.user_embedding.weight[user, :]
-        posi_embeddings_pre = self.item_embedding.weight[pos_item, :]
-        negi_embeddings_pre = self.item_embedding.weight[neg_item, :]
-        # regularizer = torch.norm(u_embeddings, p=2)+torch.norm(posi_embeddings, p=2)+torch.norm(negi_embeddings, p=2)
-        regularizer = torch.norm(u_embeddings_pre, p=2) + torch.norm(posi_embeddings_pre, p=2) +\
-                      torch.norm(negi_embeddings_pre, p=2)
-        emb_loss = self.delay * regularizer / self.batch_size
-        # print("basic loss cost time: {}".format(time.time() - st))
+        u_ego_embeddings = self.user_embedding(user)
+        posi_ego_embeddings = self.item_embedding(pos_item)
+        negi_ego_embeddings = self.item_embedding(neg_item)
+        reg_loss = self.reg_loss([u_ego_embeddings, posi_ego_embeddings, negi_ego_embeddings])
 
-        if self.n_factors > 1 and self.cor_decay > 1e-9:
+        if self.n_factors > 1 and self.cor_weight > 1e-9:
             cor_users, cor_items = sample_cor_samples(self.n_users, self.n_items, self.cor_batch_size)
             cor_users = torch.LongTensor(cor_users).to(self.device)
             cor_items = torch.LongTensor(cor_items).to(self.device)
-            cor_u_embeddings = torch.index_select(u_embedding, dim=0, index=cor_users)
-            cor_i_embeddings = torch.index_select(i_embedding, dim=0, index=cor_items)
+            cor_u_embeddings = user_all_embeddings[cor_users]
+            cor_i_embeddings = item_all_embeddings[cor_items]
             cor_loss = self.create_cor_loss(cor_u_embeddings, cor_i_embeddings)
-            loss = mf_loss + emb_loss + self.cor_decay * cor_loss
-            # print("mf :{:.4f}, emb :{:.4f}, cor :{:.4f}".format(mf_loss.item(), regularizer.item(), cor_loss.item()))
+            loss = mf_loss + self.reg_weight * reg_loss + self.cor_weight * cor_loss
         else:
-            loss = mf_loss + emb_loss
-            # print("mf :{:.4f}, emb :{:.4f}, cor :{:.4f}".format(mf_loss.item(), regularizer.item(), 0.0))
-        # print("full loss cost time: {}".format(time.time() - st))
+            loss = mf_loss + self.reg_weight * emb_loss
         return loss
 
     def create_cor_loss(self, cor_u_embeddings, cor_i_embeddings):
-        if self.restore_user_e is not None or self.restore_item_e is not None:
-            self.restore_user_e, self.restore_item_e = None, None
         cor_loss = None
 
         ui_embeddings = torch.cat((cor_u_embeddings, cor_i_embeddings), dim=0)
@@ -356,8 +317,8 @@ class DGCF(GeneralRecommender):
 
         u_embedding, i_embedding = self.forward()
 
-        u_embeddings = u_embedding[user, :]
-        i_embeddings = i_embedding[item, :]
+        u_embeddings = u_embedding[user]
+        i_embeddings = i_embedding[item]
         scores = torch.sum(torch.mul(u_embeddings, i_embeddings), axis=1)
         return scores
 
@@ -365,7 +326,7 @@ class DGCF(GeneralRecommender):
         user = interaction[self.USER_ID]
         if self.restore_user_e is None or self.restore_item_e is None:
             self.restore_user_e, self.restore_item_e = self.forward()
-        u_embeddings = self.restore_user_e[user, :]
+        u_embeddings = self.restore_user_e[user]
 
         scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
 

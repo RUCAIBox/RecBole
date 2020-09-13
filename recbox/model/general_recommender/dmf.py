@@ -1,17 +1,16 @@
 # _*_ coding: utf-8 _*_
-# @CreateTime : 2020/8/21 16:58
+# @Time : 2020/8/21
 # @Author : Kaizhou Zhang
 # @Email  : kaizhou361@163.com
-# @File : dmf.py
 
 # UPDATE
-# @Time    :   2020/08/31
-# @Author  :   Kaiyuan Li
-# @email   :   tsotfsk@outlook.com
+# @Time   : 2020/08/31
+# @Author : Kaiyuan Li
+# @email  : tsotfsk@outlook.com
 
 """
 Reference:
-Hong-Jian Xue et al., "Deep Matrix Factorization Models for Recommender Systems." in IJCAI 2017.
+Hong-Jian Xue et al. "Deep Matrix Factorization Models for Recommender Systems." in IJCAI 2017.
 """
 
 import numpy as np
@@ -29,19 +28,21 @@ class DMF(GeneralRecommender):
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
-        super(DMF, self).__init__()
-        self.device = config['device']
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
+        super(DMF, self).__init__(config, dataset)
+
+        # load dataset info
         self.LABEL = config['LABEL_FIELD']
         self.RATING = config['RATING_FIELD']
 
+        # load parameters info
         self.user_layers_dim = config['user_layers_dim']
         self.item_layers_dim = config['item_layers_dim']
-        assert self.user_layers_dim[-1] == self.item_layers_dim[-1], 'The dimensions of the last layer of users and items must be the same'
-
+        # The dimensions of the last layer of users and items must be the same
+        assert self.user_layers_dim[-1] == self.item_layers_dim[-1]
         self.min_y_hat = config['min_y_hat']
         self.inter_matrix_type = config['inter_matrix_type']
+
+        # generate intermediate data
         if self.inter_matrix_type == '01':
             self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
         elif self.inter_matrix_type == 'rating':
@@ -50,18 +51,16 @@ class DMF(GeneralRecommender):
             raise ValueError("The inter_matrix_type must in ['01', 'rating'] but get {}".format(self.inter_matrix_type))
         self.max_rating = self.interaction_matrix.max()
 
-        self.n_users = dataset.user_num
-        self.n_items = dataset.item_num
-
+        # define layers and loss
         self.user_linear = nn.Linear(in_features=self.n_items, out_features=self.user_layers_dim[0], bias=False)
         self.item_linear = nn.Linear(in_features=self.n_users, out_features=self.item_layers_dim[0], bias=False)
-
         self.user_fc_layers = MLPLayers(self.user_layers_dim)
         self.item_fc_layers = MLPLayers(self.item_layers_dim)
-        self.apply(self.init_weights)
-
         # Save the item embedding before dot product layer to speed up evaluation
         self.i_embedding = None
+
+        # parameters initialization
+        self.apply(self.init_weights)
 
     def init_weights(self, module):
         # We just initialize the module with normal distribution as the paper said
