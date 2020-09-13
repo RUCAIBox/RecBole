@@ -2,6 +2,10 @@
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
 
+# UPDATE
+# @Time   : 2020/9/10
+# @Author : Yupeng Hou
+# @email  : houyupeng@ruc.edu.cn
 
 import torch
 import numpy as np
@@ -43,8 +47,8 @@ class SASRec(SequentialRecommender):
         self.conv1d_1 = nn.Conv1d(in_channels=self.d_model, out_channels=self.d_ff, kernel_size=1, bias=True)
         self.conv1d_2 = nn.Conv1d(in_channels=self.d_ff, out_channels=self.d_model, kernel_size=1, bias=True)
         self.relu = nn.ReLU()
-        self.conv1_dropout = nn.Dropout(p = self.dropout[1])
-        self.conv2_dropout = nn.Dropout(p = self.dropout[2])
+        self.conv1_dropout = nn.Dropout(p=self.dropout[1])
+        self.conv2_dropout = nn.Dropout(p=self.dropout[2])
         self.criterion = nn.CrossEntropyLoss()
 
         self.apply(self.init_weights)
@@ -61,9 +65,9 @@ class SASRec(SequentialRecommender):
         position_list_emb = self.position_list_embedding(interaction[self.POSITION_ID])
         behavior_list_emb = item_list_emb + position_list_emb
         behavior_list_emb_drop = self.emb_dropout(behavior_list_emb)
-        key_padding_mask = self.get_attn_pad_mask(interaction[self.ITEM_ID_LIST], interaction[self.ITEM_ID_LIST]).to(self.device)
-        look_ahead_mask = self.get_attn_subsequence_mask(interaction[self.ITEM_ID_LIST]).to(self.device)
-        mask = torch.gt((key_padding_mask + look_ahead_mask), 0).to(self.device)
+        key_padding_mask = self.get_attn_pad_mask(interaction[self.ITEM_ID_LIST], interaction[self.ITEM_ID_LIST])
+        look_ahead_mask = self.get_attn_subsequence_mask(interaction[self.ITEM_ID_LIST])
+        mask = torch.gt((key_padding_mask + look_ahead_mask), 0)
         attn_weights = []
         attn_outputs = behavior_list_emb_drop
         for i in range(self.num_blocks):
@@ -80,7 +84,7 @@ class SASRec(SequentialRecommender):
             seq_k: [batch_size, seq_len]
             seq_len could be src_len or it could be tgt_len
             seq_len in seq_q and seq_len in seq_k maybe not equal
-            '''
+        '''
         batch_size, len_q = seq_q.size()
         batch_size, len_k = seq_k.size()
         # eq(zero) is PAD token
@@ -89,13 +93,12 @@ class SASRec(SequentialRecommender):
 
     def get_attn_subsequence_mask(self, seq):
         '''
-        seq: [batch_size, tgt_len]
+            seq: [batch_size, tgt_len]
         '''
         attn_shape = [seq.size(0), seq.size(1), seq.size(1)]
-        subsequence_mask = np.triu(np.ones(attn_shape), k=1)  # Upper triangular matrix
-        subsequence_mask = torch.from_numpy(subsequence_mask).byte()
+        ones = torch.ones(attn_shape, dtype=torch.uint8, device=self.device)
+        subsequence_mask = ones.triu(diagonal=1)
         return subsequence_mask
-
 
     def feedforward(self, x):
         residual = x
@@ -109,7 +112,6 @@ class SASRec(SequentialRecommender):
         x = x + residual
         x = self.layer_norm(x)
         return x
-
 
     def gather_indexes(self, gru_output, gather_index):
         "Gathers the vectors at the spexific positions over a minibatch"
