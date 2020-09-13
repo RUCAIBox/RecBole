@@ -96,7 +96,7 @@ class SASRec(SequentialRecommender):
             seq: [batch_size, tgt_len]
         '''
         attn_shape = [seq.size(0), seq.size(1), seq.size(1)]
-        ones = torch.ones(attn_shape, dtype=torch.bool, device=self.device)
+        ones = torch.ones(attn_shape, dtype=torch.uint8, device=self.device)
         subsequence_mask = ones.triu(diagonal=1)
         return subsequence_mask
 
