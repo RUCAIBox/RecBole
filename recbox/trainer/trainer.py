@@ -289,16 +289,19 @@ class KGTrainer(Trainer):
     def __init__(self, config, model):
         super(KGTrainer, self).__init__(config, model)
 
+        self.train_rec_step = config['train_rec_step']
         self.train_kg_step = config['train_kg_step']
 
     def _train_epoch(self, train_data, epoch_idx):
         self.model.train()
         total_loss = 0.
-        if not self.train_kg_step or self.train_kg_step <= 0:
+        if self.train_rec_step is None or self.train_kg_step is None:
             interaction_state = KGDataLoaderState.RSKG
         else:
-            interaction_state = KGDataLoaderState.KG \
-                if (epoch_idx + 1) % (self.train_kg_step + 1) == 0 else KGDataLoaderState.RS
+            assert self.train_rec_step > 0 and self.train_kg_step > 0
+            interaction_state = KGDataLoaderState.RS \
+                if epoch_idx % (self.train_rec_step + self.train_kg_step) < self.train_rec_step \
+                else KGDataLoaderState.KG
         train_data.set_mode(interaction_state)
         if interaction_state in [KGDataLoaderState.RSKG, KGDataLoaderState.RS]:
             for batch_idx, interaction in enumerate(train_data):

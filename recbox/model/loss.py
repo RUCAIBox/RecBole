@@ -88,7 +88,6 @@ class EmbMarginLoss(nn.Module):
         for embedding in embeddings:
             norm_e = torch.sum(embedding ** self.power, dim=1, keepdim=True)
             emb_loss += torch.sum(torch.max(norm_e - cache_one, cache_zero))
-        print(emb_loss)
         return emb_loss
 
 
