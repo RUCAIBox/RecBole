@@ -139,7 +139,7 @@ class NGCF(GeneralRecommender):
         neg_scores = torch.sum(torch.mul(u_embeddings, negi_embeddings), axis=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)
 
-        reg_loss = self.reg_loss([u_embeddings, posi_embeddings, negi_embeddings])
+        reg_loss = self.reg_loss(u_embeddings, posi_embeddings, negi_embeddings)
 
         return mf_loss + self.reg_weight * reg_loss
 
