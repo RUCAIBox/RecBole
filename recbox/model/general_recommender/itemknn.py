@@ -3,9 +3,11 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.con
 # @File   : itemknn.py
+
 import numpy as np
 import scipy.sparse as sp
 import torch
+
 from ...utils import InputType
 from ..abstract_recommender import GeneralRecommender
 
@@ -122,14 +124,9 @@ class ComputeSimilarity:
 
 class ItemKNN(GeneralRecommender):
     input_type = InputType.POINTWISE
-    def __init__(self, config, dataset):
-        super(ItemKNN, self).__init__()
 
-        self.device = config['device']
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.n_users = dataset.num(self.USER_ID)
-        self.n_items = dataset.num(self.ITEM_ID)
+    def __init__(self, config, dataset):
+        super(ItemKNN, self).__init__(config, dataset)
 
         self.k = config['k']
         self.shrink = config['shrink'] if 'shrink' in config else 0.0
