@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8
+# @Time   : 2020/9/14
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
@@ -170,7 +170,9 @@ class KnowledgeBasedDataset(Dataset):
         entity_id_token = self.field2id_token[self.head_entity_field]
         id2item = self.field2id_token[self.iid_field]
         for i in range(1, self.item_num):
-            entity_id_token[i] = self.item2entity[id2item[entity_id_token[i]]]
+            tmp_item_id = id2item[entity_id_token[i]]
+            if tmp_item_id in self.item2entity:
+                entity_id_token[i] = self.item2entity[tmp_item_id]
 
         for ent_field in [self.head_entity_field, self.tail_entity_field, self.entity_field]:
             self.field2id_token[ent_field] = entity_id_token
