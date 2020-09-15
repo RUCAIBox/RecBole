@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/12
+# @Time   : 2020/9/9, 2020/9/15
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -29,6 +29,8 @@ class AbstractDataLoader(object):
         self.real_time = config['real_time_process']
 
         self.join = self.dataset.join
+        self.history_item_matrix = self.dataset.history_item_matrix
+        self.history_user_matrix = self.dataset.history_user_matrix
         self.inter_matrix = self.dataset.inter_matrix
         if hasattr(self.dataset, 'net_matrix'):
             self.net_matrix = self.dataset.net_matrix
