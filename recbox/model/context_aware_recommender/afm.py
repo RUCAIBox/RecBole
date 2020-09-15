@@ -14,8 +14,8 @@ import torch.nn.functional as F
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from ..layers import AttLayer
-from .context_recommender import ContextRecommender
+from recbox.model.layers import AttLayer
+from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
 class AFM(ContextRecommender):

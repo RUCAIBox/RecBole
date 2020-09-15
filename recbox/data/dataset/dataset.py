@@ -20,8 +20,8 @@ import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 from sklearn.impute import SimpleImputer
 
-from ...utils import FeatureSource, FeatureType, ModelType
-from ..interaction import Interaction
+from recbox.utils import FeatureSource, FeatureType, ModelType
+from recbox.data.interaction import Interaction
 
 
 class Dataset(object):

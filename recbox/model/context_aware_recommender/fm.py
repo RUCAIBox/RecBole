@@ -17,8 +17,8 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_
 
-from ..layers import BaseFactorizationMachine
-from .context_recommender import ContextRecommender
+from recbox.model.layers import BaseFactorizationMachine
+from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
 class FM(ContextRecommender):

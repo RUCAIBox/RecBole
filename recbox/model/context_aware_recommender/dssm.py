@@ -14,8 +14,9 @@ PS Huang et al., "Learning Deep Structured Semantic Models for Web Search using 
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
-from ..layers import MLPLayers
-from .context_recommender import ContextRecommender
+
+from recbox.model.layers import MLPLayers
+from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
 class DSSM(ContextRecommender):

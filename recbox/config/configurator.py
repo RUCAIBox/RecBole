@@ -1,12 +1,14 @@
 import os
-import torch
 import random
 import sys
+
 import numpy as np
-from .running_configurator import RunningConfig
-from .model_configurator import ModelConfig
-from .data_configurator import DataConfig
-from .cmd_configurator import CmdConfig
+import torch
+
+from recbox.config.running_configurator import RunningConfig
+from recbox.config.model_configurator import ModelConfig
+from recbox.config.data_configurator import DataConfig
+from recbox.config.cmd_configurator import CmdConfig
 
 
 class Config(object):

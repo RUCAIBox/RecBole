@@ -10,9 +10,10 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from ...utils import ModelType, InputType, FeatureType, FeatureSource
-from ..layers import FMEmbedding
-from ..abstract_recommender import AbstractRecommender
+
+from recbox.utils import ModelType, InputType, FeatureType, FeatureSource
+from recbox.model.layers import FMEmbedding
+from recbox.model.abstract_recommender import AbstractRecommender
 
 
 class ContextRecommender(AbstractRecommender):

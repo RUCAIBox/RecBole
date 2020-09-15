@@ -9,7 +9,8 @@
 
 import numpy as np
 import torch.nn as nn
-from ..utils import ModelType
+
+from recbox.utils import ModelType
 
 
 class AbstractRecommender(nn.Module):

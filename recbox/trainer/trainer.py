@@ -16,10 +16,10 @@ import numpy as np
 import torch
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from ..evaluator import TopKEvaluator, LossEvaluator
-from ..data.interaction import Interaction
-from ..utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType, ModelType
-from .utils import early_stopping, calculate_valid_score, dict2str
+from recbox.evaluator import TopKEvaluator, LossEvaluator
+from recbox.data.interaction import Interaction
+from recbox.utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType, ModelType
+from recbox.trainer.utils import early_stopping, calculate_valid_score, dict2str
 
 
 def get_trainer(model_type):
