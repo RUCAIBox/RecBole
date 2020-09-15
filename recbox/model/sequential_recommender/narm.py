@@ -2,6 +2,10 @@
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
 
+# UPDATE
+# @Time   : 2020/9/15
+# @Author : Yupeng Hou
+# @email  : houyupeng@ruc.edu.cn
 
 import torch
 from torch import nn
@@ -50,41 +54,30 @@ class NARM(SequentialRecommender):
             if module.bias is not None:
                 constant_(module.bias.data, 0)
 
-
+    def gather_indexes(self, gru_output, gather_index):
+        "Gathers the vectors at the spexific positions over a minibatch"
+        gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, self.hidden_size)
+        output_tensor = gru_output.gather(dim=1, index=gather_index)
+        return output_tensor.squeeze(1)
 
     def get_item_lookup_table(self):
         return self.item_list_embedding.weight.t()
 
     def forward(self, interaction):
         item_id_list = interaction[self.ITEM_ID_LIST]
-        # index = interaction[self.ITEM_LIST_LEN]
-        # index = index.view(item_id_list.size(0), 1)
-        # #reset masked_id to 0
-        # item_id_list.scatter_(dim=1, index=index, src=torch.zeros_like(item_id_list))
         item_list_emb = self.item_list_embedding(item_id_list)
         item_list_emb_dropout = self.emb_dropout(item_list_emb)
-        item_list_emb_nopad = pack_padded_sequence(
-            input=item_list_emb_dropout,
-            lengths=interaction[self.ITEM_LIST_LEN],
-            batch_first=True,
-            enforce_sorted=False)
-        gru_out, hidden = self.gru(item_list_emb_nopad)
-        gru_out, lengths = pad_packed_sequence(gru_out, batch_first=True, total_length=self.max_item_list_length)
+        gru_out, _ = self.gru(item_list_emb_dropout)
 
         # fetch the last hidden state of last timestamp
-        ht = hidden[-1]
-        c_global = ht
+        c_global = ht = self.gather_indexes(gru_out, interaction[self.ITEM_LIST_LEN] - 1)
 
-        q1 = self.a_1(gru_out.contiguous().view(-1, self.hidden_size)).view(gru_out.size())
+        mask = item_id_list.gt(0).unsqueeze(2).expand_as(gru_out)
+        q1 = self.a_1(gru_out)
         q2 = self.a_2(ht)
-        a = torch.tensor([1.]).to(self.device)
-        b = torch.tensor([0.]).to(self.device)
-        mask = torch.where(item_id_list>0, a, b)
         q2_expand = q2.unsqueeze(1).expand_as(q1)
-        q2_masked = mask.unsqueeze(2).expand_as(q1) * q2_expand
-
-        alpha = self.v_t(torch.sigmoid(q1+q2_masked).view(-1, self.hidden_size)).view(mask.size())
-        c_local = torch.sum(alpha.unsqueeze(2).expand_as(gru_out)*gru_out, 1)
+        alpha = self.v_t(mask * torch.sigmoid(q1 + q2_expand))
+        c_local = torch.sum(alpha.expand_as(gru_out) * gru_out, 1)
 
         c_t = torch.cat([c_local, c_global], 1)
         c_t = self.ct_dropout(c_t)
