@@ -34,7 +34,7 @@ class Sampler(object):
 
         self.n_users = self.datasets[0].user_num
         self.n_items = self.datasets[0].item_num
-        
+
         if distribution == 'uniform':
             self.random_item_list = list(range(self.n_items))
         elif distribution == 'popularity':
@@ -107,7 +107,7 @@ class KGSampler(object):
         self.entity_num = self.datasets[0].entity_num
 
         if distribution == 'uniform':
-            self.random_entity_list = self.entities[:]
+            self.random_entity_list = self.entities
         elif distribution == 'popularity':
             self.random_entity_list = []
             for dataset in datasets:
