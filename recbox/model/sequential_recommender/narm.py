@@ -54,12 +54,6 @@ class NARM(SequentialRecommender):
             if module.bias is not None:
                 constant_(module.bias.data, 0)
 
-    def gather_indexes(self, gru_output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
-        gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, self.hidden_size)
-        output_tensor = gru_output.gather(dim=1, index=gather_index)
-        return output_tensor.squeeze(1)
-
     def get_item_lookup_table(self):
         return self.item_list_embedding.weight.t()
 
