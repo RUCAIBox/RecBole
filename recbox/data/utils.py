@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/9, 2020/9/9, 2020/8/31
+# @Time   : 2020/9/9, 2020/9/12, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -173,20 +173,14 @@ def get_data_loader(name, config, eval_setting):
         if neg_sample_strategy == 'none':
             return GeneralDataLoader
         elif neg_sample_strategy == 'by':
-            if name == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
-                return GeneralIndividualDataLoader
-            else:
-                return GeneralGroupedDataLoader
+            return GeneralNegSampleDataLoader
         elif neg_sample_strategy == 'full':
             return GeneralFullDataLoader
     elif model_type == ModelType.CONTEXT:
         if neg_sample_strategy == 'none':
             return ContextDataLoader
         elif neg_sample_strategy == 'by':
-            if name == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
-                return ContextIndividualDataLoader
-            else:
-                return ContextGroupedDataLoader
+            return ContextNegSampleDataLoader
         elif neg_sample_strategy == 'full':
             raise NotImplementedError('context model\'s full_sort has not been implemented')
     elif model_type == ModelType.SEQUENTIAL:
@@ -200,10 +194,8 @@ def get_data_loader(name, config, eval_setting):
         if neg_sample_strategy == 'by':
             if name == 'train':
                 return KnowledgeBasedDataLoader
-            elif config['eval_type'] == EvaluatorType.INDIVIDUAL:
-                return GeneralIndividualDataLoader
             else:
-                return GeneralGroupedDataLoader
+                return GeneralNegSampleDataLoader
         elif neg_sample_strategy == 'full':
             return GeneralFullDataLoader
         elif neg_sample_strategy == 'none':

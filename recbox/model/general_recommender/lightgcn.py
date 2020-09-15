@@ -118,7 +118,7 @@ class LightGCN(GeneralRecommender):
         # reg_loss = (1 / 2) * (u_ego_embeddings.norm(2).pow(2) +
         #                       posi_ego_embeddings.norm(2).pow(2) +
         #                       negi_ego_embeddings.norm(2).pow(2)) / float(len(user))
-        reg_loss = self.reg_loss([u_ego_embeddings, posi_ego_embeddings, negi_ego_embeddings])
+        reg_loss = self.reg_loss(u_ego_embeddings, posi_ego_embeddings, negi_ego_embeddings)
         loss = mf_loss + self.reg_weight * reg_loss
 
         return loss
