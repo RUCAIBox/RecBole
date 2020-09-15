@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/7/8 10:33
+# @Time   : 2020/7/8
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 # @File   : deepfm.py
 
 # UPDATE:
-# @Time   : 2020/8/14,
+# @Time   : 2020/8/14
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmain.com
 """
 Reference:
-Huifeng Guo et al., "DeepFM: A Factorization-Machine based Neural Network for CTR Prediction." in IJCAI 2017.
+Huifeng Guo et al. "DeepFM: A Factorization-Machine based Neural Network for CTR Prediction." in IJCAI 2017.
 """
 
 import torch
@@ -51,17 +51,17 @@ class DeepFM(ContextRecommender):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
         sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        x = []
+        all_embeddings = []
         if sparse_embedding is not None:
-            x.append(sparse_embedding)
+            all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            x.append(dense_embedding)
-        x = torch.cat(x, dim=1)  # [batch_size, num_field, embed_dim]
-        batch_size = x.shape[0]
-        y_fm = self.first_order_linear(interaction) + self.fm(x)
+            all_embeddings.append(dense_embedding)
+        deepfm_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        batch_size = deepfm_all_embeddings.shape[0]
+        y_fm = self.first_order_linear(interaction) + self.fm(deepfm_all_embeddings)
 
         y_deep = self.deep_predict_layer(
-            self.mlp_layers(x.view(batch_size, -1)))
+            self.mlp_layers(deepfm_all_embeddings.view(batch_size, -1)))
         y = self.sigmoid(y_fm + y_deep)
         return y.squeeze()
 
