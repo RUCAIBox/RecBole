@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/3, 2020/9/10
+# @Time   : 2020/9/8, 2020/9/3, 2020/9/15
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -848,6 +848,38 @@ class Dataset(object):
             return mat.tocsr()
         else:
             raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
+
+    def _history_matrix(self, row):
+        self._check_field(self.uid_field, self.iid_field)
+
+        user_ids = self.inter_feat[self.uid_field].values
+        item_ids = self.inter_feat[self.iid_field].values
+
+        if row == 'user':
+            row_num = self.user_num
+            row_ids, col_ids = user_ids, item_ids
+        else:
+            row_num = self.item_num
+            row_ids, col_ids = item_ids, user_ids
+
+        history_len = np.zeros(row_num, dtype=np.int64)
+        for row_id in row_ids:
+            history_len[row_id] += 1
+
+        col_num = np.max(history_len)
+        history_matrix = np.zeros((row_num, col_num), dtype=np.int64)
+        history_len[:] = 0
+        for row_id, col_id in zip(row_ids, col_ids):
+            history_matrix[history_len[row_id]] = col_id
+            history_len[row_id] += 1
+
+        return torch.LongTensor(history_matrix), torch.LongTensor(history_len)
+
+    def history_item_matrix(self):
+        return self._history_matrix(row='user')
+
+    def history_user_matrix(self):
+        return self._history_matrix(row='item')
 
     def get_preload_weight(self, field):
         if field not in self._preloaded_weight:
