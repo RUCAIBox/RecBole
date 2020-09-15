@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/7/25 18:19
+# @Time   : 2020/7/25
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 # @File   : context_recommender.py
 # UPDATE:
-# @Time   : 2020/9/8,
-# @Author :Zihan Lin
+# @Time   : 2020/9/8
+# @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 import numpy as np
 import torch

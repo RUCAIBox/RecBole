@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/9/2 10:09
+# @Time   : 2020/9/2
 # @Author : Yingqian Min
 # @Email  : gmqszyq@qq.com
 # @File   : dssm.py
@@ -7,7 +7,7 @@
 
 """
 Reference:
-PS Huang et al., "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
+PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
 """
 
 
