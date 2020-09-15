@@ -517,14 +517,6 @@ class Dataset(object):
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
         mp = ['[PAD]'] + list(mp)
-        # if self.model_type == ModelType.SEQUENTIAL:
-        #     item_related = False
-        #     for (feat, field, ftype) in remap_list:
-        #         if self.field2source[field] in {FeatureSource.ITEM_ID, FeatureSource.ITEM}:
-        #             item_related = True
-        #             break
-        #     if item_related:
-        #         mp.append('[STOP]')
 
         for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
             if overwrite or (field not in self.field2id_token):
