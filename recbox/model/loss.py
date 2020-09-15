@@ -15,7 +15,6 @@ Common Loss in recommender system
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as fn
 
 
 class BPRLoss(nn.Module):
@@ -42,7 +41,7 @@ class BPRLoss(nn.Module):
         self.gamma = gamma
 
     def forward(self, pos_score, neg_score):
-        loss = torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
+        loss = - torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
         return loss
 
 
@@ -61,7 +60,37 @@ class RegLoss(nn.Module):
         return reg_loss
 
 
-# todo: wait to be test
+class EmbLoss(nn.Module):
+
+    def __init__(self, norm=2):
+        super(EmbLoss, self).__init__()
+        self.norm = norm
+
+    def forward(self, *embeddings):
+        emb_loss = torch.zeros(1).to(embeddings[-1].device)
+        for embedding in embeddings:
+            emb_loss += torch.norm(embedding, p=self.norm)
+        emb_loss /= embeddings[-1].shape[0]
+        return emb_loss
+
+
+class EmbMarginLoss(nn.Module):
+
+    def __init__(self, power=2):
+        super(EmbMarginLoss, self).__init__()
+        self.power = power
+
+    def forward(self, *embeddings):
+        dev = embeddings[-1].device
+        cache_one = torch.tensor(1.0).to(dev)
+        cache_zero = torch.tensor(0.0).to(dev)
+        emb_loss = torch.tensor(0.).to(dev)
+        for embedding in embeddings:
+            norm_e = torch.sum(embedding ** self.power, dim=1, keepdim=True)
+            emb_loss += torch.sum(torch.max(norm_e - cache_one, cache_zero))
+        return emb_loss
+
+
 class MarginLoss(nn.Module):
 
     def __init__(self, margin=1.0):
@@ -70,7 +99,6 @@ class MarginLoss(nn.Module):
 
     def forward(self, pos_score, neg_score):
         dev = pos_score.device
-        cache_zeros = torch.zeros_like(pos_score).to(dev)
-
-        loss = torch.sum(torch.max(pos_score - neg_score + self.margin, cache_zeros))
+        cache_zero = torch.tensor(0.).to(dev)
+        loss = torch.sum(torch.max(pos_score - neg_score + self.margin, cache_zero))
         return loss
