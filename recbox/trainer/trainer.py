@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/8/29 15:40, 2020/8/21, 2020/8/19
+# @Time   : 2020/8/7 18:38, 2020/9/15, 2020/8/21, 2020/8/19
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn
 
@@ -195,7 +195,7 @@ class Trainer(AbstractTrainer):
             # Note: interaction without item ids
             scores = self.model.full_sort_predict(interaction.to(self.device)).flatten()
         else:
-            interaction = interaction.to_device_repeat_interleave(self.device, self.tot_item_num)
+            interaction = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
             scores = self.model.predict(interaction)
         pos_idx = pos_idx.to(self.device)

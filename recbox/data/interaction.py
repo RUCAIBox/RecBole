@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time    : 2020/8/18, 2020/9/8, 2020/8/12
+# @Time    : 2020/9/15, 2020/9/8, 2020/8/12
 # @Author  : Yupeng Hou, Yushuo Chen, Xingyu Pan
 # @email   : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -173,19 +173,18 @@ class Interaction(object):
                 ret[k] = self.interaction[k].repeat([sizes, 1])
         return Interaction(ret)
 
-    def to_device_repeat_interleave(self, device, repeats, dim=0):
-        """Combination of ``torch.to(device)`` and ``torch.repeat_interleave()``.
-        
+    def repeat_interleave(self, repeats, dim=0):
+        """Similar to repeat_interleave of PyTorch.
+
         Details can be found in:
             https://pytorch.org/docs/stable/tensors.html?highlight=repeat#torch.Tensor.repeat_interleave
-            https://pytorch.org/docs/stable/tensors.html?highlight=#torch.Tensor.to
 
         Note:
             ``torch.repeat_interleave()`` is supported in PyTorch >= 1.2.0.
         """
         ret = {}
         for k in self.interaction:
-            ret[k] = self.interaction[k].to(device).repeat_interleave(repeats, dim=dim)
+            ret[k] = self.interaction[k].repeat_interleave(repeats, dim=dim)
         return Interaction(ret)
 
     def update(self, new_inter):
