@@ -9,7 +9,6 @@
 
 import os
 from logging import getLogger
-
 import pandas as pd
 import numpy as np
 from scipy.sparse import coo_matrix
