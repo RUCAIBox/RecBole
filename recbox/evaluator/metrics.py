@@ -8,7 +8,9 @@
 # @Author  :   Kaiyuan Li   Zhichao Feng
 # @email   :   tsotfsk@outlook.com  fzcbupt@gmail.com
 
+import warnings
 import numpy as np
+from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.metrics import auc as sk_auc
 from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error
 
