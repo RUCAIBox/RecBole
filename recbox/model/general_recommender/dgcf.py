@@ -221,7 +221,7 @@ class DGCF(GeneralRecommender):
         u_ego_embeddings = self.user_embedding(user)
         posi_ego_embeddings = self.item_embedding(pos_item)
         negi_ego_embeddings = self.item_embedding(neg_item)
-        reg_loss = self.reg_loss([u_ego_embeddings, posi_ego_embeddings, negi_ego_embeddings])
+        reg_loss = self.reg_loss(u_ego_embeddings, posi_ego_embeddings, negi_ego_embeddings)
 
         if self.n_factors > 1 and self.cor_weight > 1e-9:
             cor_users, cor_items = sample_cor_samples(self.n_users, self.n_items, self.cor_batch_size)
@@ -232,7 +232,7 @@ class DGCF(GeneralRecommender):
             cor_loss = self.create_cor_loss(cor_u_embeddings, cor_i_embeddings)
             loss = mf_loss + self.reg_weight * reg_loss + self.cor_weight * cor_loss
         else:
-            loss = mf_loss + self.reg_weight * emb_loss
+            loss = mf_loss + self.reg_weight * reg_loss
         return loss
 
     def create_cor_loss(self, cor_u_embeddings, cor_i_embeddings):
