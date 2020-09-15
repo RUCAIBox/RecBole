@@ -856,10 +856,10 @@ class Dataset(object):
         item_ids = self.inter_feat[self.iid_field].values
 
         if row == 'user':
-            row_num = self.user_num
+            row_num, max_col_num = self.user_num, self.item_num
             row_ids, col_ids = user_ids, item_ids
         else:
-            row_num = self.item_num
+            row_num, max_col_num = self.item_num, self.user_num
             row_ids, col_ids = item_ids, user_ids
 
         history_len = np.zeros(row_num, dtype=np.int64)
@@ -867,6 +867,11 @@ class Dataset(object):
             history_len[row_id] += 1
 
         col_num = np.max(history_len)
+        if col_num > max_col_num * 0.2:
+            self.logger.warning('max value of {}\'s history interaction records has reached {}% of the total'.format(
+                row, col_num / max_col_num * 100,
+            ))
+
         history_matrix = np.zeros((row_num, col_num), dtype=np.int64)
         history_len[:] = 0
         for row_id, col_id in zip(row_ids, col_ids):
