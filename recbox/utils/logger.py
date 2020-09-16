@@ -1,6 +1,7 @@
 import logging
 import os
-from .utils import get_local_time
+
+from recbox.utils.utils import get_local_time
 
 
 def init_logger(config):

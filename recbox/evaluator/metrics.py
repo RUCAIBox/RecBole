@@ -14,7 +14,7 @@ from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.metrics import auc as sk_auc
 from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error
 
-from .utils import _binary_clf_curve
+from recbox.evaluator.utils import _binary_clf_curve
 
 #    TopK Metrics    #
 

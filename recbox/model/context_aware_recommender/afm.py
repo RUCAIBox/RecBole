@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/7/21 9:23
+# @Time   : 2020/7/21
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 # @File   : afm.py
 
 """
 Reference:
-"Attentional Factorization Machines: Learning the Weight of Feature Interactions via Attention Networks" in IJCAI 2017.
+Jun Xiao et al. "Attentional Factorization Machines: Learning the Weight of Feature Interactions via Attention Networks" in IJCAI 2017.
 """
 
 import torch
@@ -14,8 +14,8 @@ import torch.nn.functional as F
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from ..layers import AttLayer
-from .context_recommender import ContextRecommender
+from recbox.model.layers import AttLayer
+from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
 class AFM(ContextRecommender):
@@ -84,15 +84,15 @@ class AFM(ContextRecommender):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
         sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        x = []
+        all_embeddings = []
         if sparse_embedding is not None:
-            x.append(sparse_embedding)
+            all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            x.append(dense_embedding)
-        x = torch.cat(x, dim=1)  # [batch_size, num_field, embed_dim]
+            all_embeddings.append(dense_embedding)
+        afm_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
 
-        y = self.sigmoid(self.first_order_linear(interaction) + self.afm_layer(x))
-        return y.squeeze()
+        output = self.sigmoid(self.first_order_linear(interaction) + self.afm_layer(afm_all_embeddings))
+        return output.squeeze()
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

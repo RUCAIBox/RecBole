@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/7/25 18:19
+# @Time   : 2020/7/25
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 # @File   : context_recommender.py
 # UPDATE:
-# @Time   : 2020/9/8,
-# @Author :Zihan Lin
+# @Time   : 2020/9/8
+# @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 import numpy as np
 import torch
 import torch.nn as nn
-from ...utils import ModelType, InputType, FeatureType, FeatureSource
-from ..layers import FMEmbedding
-from ..abstract_recommender import AbstractRecommender
+
+from recbox.utils import ModelType, InputType, FeatureType, FeatureSource
+from recbox.model.layers import FMEmbedding
+from recbox.model.abstract_recommender import AbstractRecommender
 
 
 class ContextRecommender(AbstractRecommender):
