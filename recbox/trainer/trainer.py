@@ -3,12 +3,11 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/9/15, 2020/8/21, 2020/8/19
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn
+# @Time   : 2020/8/7 18:38, 2020/9/15, 2020/8/21, 2020/8/19, 2020/9/16
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
 
 import os
-import warnings
 import itertools
 from time import time
 from logging import getLogger
@@ -87,7 +86,7 @@ class Trainer(AbstractTrainer):
         elif self.learner.lower() == 'rmsprop':
             optimizer = optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
         else:
-            warnings.warn('Received unrecognized optimizer, set default Adam optimizer', UserWarning)
+            self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         return optimizer
 
@@ -128,8 +127,8 @@ class Trainer(AbstractTrainer):
 
         # load architecture params from checkpoint
         if checkpoint['config']['model'].lower() != self.config['model'].lower():
-            warnings.warn('Architecture configuration given in config file is different from that of checkpoint. '
-                          'This may yield an exception while state_dict is being loaded.', UserWarning)
+            self.logger.warning('Architecture configuration given in config file is different from that of checkpoint. '
+                                'This may yield an exception while state_dict is being loaded.')
         self.model.load_state_dict(checkpoint['state_dict'])
 
         # load optimizer state from checkpoint only when optimizer type is not changed

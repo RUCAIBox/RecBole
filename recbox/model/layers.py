@@ -5,16 +5,15 @@
 # @File   : layers.py
 
 # UPDATE:
-# @Time   : 2020/8/24 14:58
-# @Author : Yujie Lu
-# @Email  : yujielu1998@gmail.com
+# @Time   : 2020/8/24 14:58, 2020/9/16
+# @Author : Yujie Lu, Xingyu Pan
+# @Email  : yujielu1998@gmail.com, panxy@ruc.edu.cn
 
 """
 Common Layers in recommender system
 """
 
-import warnings
-
+from logging import getLogger
 import numpy as np
 import torch
 import torch.nn as nn
@@ -50,6 +49,7 @@ class MLPLayers(nn.Module):
         self.dropout = dropout
         self.activation = activation
         self.use_bn = bn
+        self.logger = getLogger()
 
         mlp_modules = []
         for idx, (input_size, output_size) in enumerate(zip(self.layers[:-1], self.layers[1:])):
@@ -68,8 +68,7 @@ class MLPLayers(nn.Module):
             elif self.activation.lower() == 'none':
                 pass
             else:
-                warnings.warn('Received unrecognized activation function, set default activation function', UserWarning)
-
+                self.logger.warning('Received unrecognized activation function, set default activation function')
         self.mlp_layers = nn.Sequential(*mlp_modules)
 
     def forward(self, input_feature):
