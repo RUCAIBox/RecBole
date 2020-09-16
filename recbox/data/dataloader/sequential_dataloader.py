@@ -3,18 +3,16 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/12
+# @Time   : 2020/9/9, 2020/9/16
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import numpy as np
 import torch
 
-from .abstract_dataloader import AbstractDataLoader
-from .neg_sample_mixin import NegSampleByMixin
-from ...utils import (
-    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
-    KGDataLoaderState)
+from recbox.data.dataloader.abstract_dataloader import AbstractDataLoader
+from recbox.data.dataloader.neg_sample_mixin import NegSampleByMixin
+from recbox.utils import DataLoaderType, FeatureSource, FeatureType, InputType
 
 
 class SequentialDataLoader(AbstractDataLoader):
@@ -195,7 +193,7 @@ class SequentialFullDataLoader(SequentialDataLoader):
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def _shuffle(self):
-        raise NotImplementedError('SequentialFullDataLoader can\'t shuffle')
+        self.logger.warnning('SequentialFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
         interaction = super()._next_batch_data()
