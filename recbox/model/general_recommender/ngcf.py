@@ -2,7 +2,7 @@
 # @Time   : 2020/7/16
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.con
-# @File   : ngcf.py
+
 # UPDATE:
 # @Time   : 2020/9/16
 # @Author : Shanlei Mu
