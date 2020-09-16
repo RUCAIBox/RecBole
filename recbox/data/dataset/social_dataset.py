@@ -110,9 +110,9 @@ class SocialDataset(Dataset):
         return ret
 
     def net_matrix(self, form='coo', value_field=None):
-        sids = self.net_feat[self.source_field].values
-        tids = self.net_feat[self.target_field].values
         if form in ['coo', 'csr']:
+            sids = self.net_feat[self.source_field].values
+            tids = self.net_feat[self.target_field].values
             if value_field is None:
                 data = np.ones(len(self.net_feat))
             else:
