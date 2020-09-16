@@ -64,12 +64,6 @@ class STAMP(SequentialRecommender):
         predict_behavior_emb = hs * ht
         return predict_behavior_emb
 
-    def gather_indexes(self, output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
-        gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, self.embedding_size)
-        output_tensor = output.gather(dim=1, index=gather_index)
-        return output_tensor.squeeze(1)
-
     def count_alpha(self, context, aspect, output):
         """
         :param context: org_memory [batch_size, seq_len, emb]
@@ -87,7 +81,6 @@ class STAMP(SequentialRecommender):
         res_act = self.w0(self.sigmoid(res_sum))
         alpha = res_act.squeeze(2)
         return alpha
-
 
     def calculate_loss(self, interaction):
         target_id = interaction[self.TARGET_ITEM_ID]
