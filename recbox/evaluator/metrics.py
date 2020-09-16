@@ -176,7 +176,6 @@ def auc(trues, preds):
 
     M is the number of positive samples.N is the number of negative samples.${rank_i}$ is the rank of the ith positive sample.
     """
-    logger = getLogger()
     fps, tps = _binary_clf_curve(trues, preds)
 
     if len(fps) > 2:
@@ -188,6 +187,7 @@ def auc(trues, preds):
     fps = np.r_[0, fps]
 
     if fps[-1] <= 0:
+        logger = getLogger()
         logger.warning("No negative samples in y_true, "
                        "false positive value should be meaningless")
         fpr = np.repeat(np.nan, fps.shape)
@@ -195,6 +195,7 @@ def auc(trues, preds):
         fpr = fps / fps[-1]
 
     if tps[-1] <= 0:
+        logger = getLogger()
         logger.warning("No positive samples in y_true, "
                        "true positive value should be meaningless")
         tpr = np.repeat(np.nan, tps.shape)
