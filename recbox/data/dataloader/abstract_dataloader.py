@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/16
+# @Time   : 2020/9/16, 2020/9/16
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -30,8 +30,11 @@ class AbstractDataLoader(object):
         self.history_item_matrix = self.dataset.history_item_matrix
         self.history_user_matrix = self.dataset.history_user_matrix
         self.inter_matrix = self.dataset.inter_matrix
-        if hasattr(self.dataset, 'net_matrix'):
-            self.net_matrix = self.dataset.net_matrix
+
+        optional_attrs = ['kg_graph', 'ckg_graph', 'net_matrix']
+        for op_attr in optional_attrs:
+            if hasattr(self.dataset, op_attr):
+                setattr(self, op_attr, getattr(self.dataset, op_attr))
 
         self.logger = self.dataset.logger
         self.num = self.dataset.num

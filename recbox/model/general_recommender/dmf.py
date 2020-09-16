@@ -1,5 +1,5 @@
 # _*_ coding: utf-8 _*_
-# @Time : 2020/8/21
+# @Time   : 2020/8/21
 # @Author : Kaizhou Zhang
 # @Email  : kaizhou361@163.com
 
@@ -19,9 +19,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.init import normal_
 
-from ...utils import InputType
-from ..abstract_recommender import GeneralRecommender
-from ..layers import MLPLayers
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
+from recbox.model.layers import MLPLayers
 
 
 class DMF(GeneralRecommender):
