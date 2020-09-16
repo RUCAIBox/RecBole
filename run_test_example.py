@@ -105,18 +105,58 @@ test_examples = {
         'metrics': ['Recall'],
         'topk': [10]
     },
-    'Test NAIS': {
-        'model': 'NAIS',
+    # 'Test NAIS': {
+    #     'model': 'NAIS',
+    #     'dataset': 'ml-100k',
+    #     'epochs': 1,
+    #     'eval_setting': 'RO_LS, uni100',
+    #     'valid_metric': 'Recall@10',
+    #     'leave_one_num': 2,
+    #     'metrics': ["Recall"],
+    #     'topk': [10]
+    # },
+    'Test GCMC': {
+        'model': 'GCMC',
         'dataset': 'ml-100k',
         'epochs': 1,
-        'eval_setting': 'RO_LS, uni100',
         'valid_metric': 'Recall@10',
-        'leave_one_num': 2,
-        'metrics': ["Recall"],
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test NGCF': {
+        'model': 'NGCF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test LightGCN': {
+        'model': 'LightGCN',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test DGCF': {
+        'model': 'DGCF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
         'topk': [10]
     },
     'Test POP': {
         'model': 'Pop',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test ItemKNN': {
+        'model': 'ItemKNN',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -135,17 +175,17 @@ test_examples = {
         'valid_metric': 'AUC',
         'metrics': ['AUC']
     },
-    'Test Criteo': {
-        'model': 'FM',
-        'dataset': 'criteo',
-        'normalize_all': True,
-        'group_by_user': False,
-        'epochs': 1,
-        'training_neg_sample_num': 0,
-        'eval_setting': 'RO_RS',
-        'valid_metric': 'AUC',
-        'metrics': ['AUC']
-    },
+    # 'Test Criteo': {
+    #     'model': 'FM',
+    #     'dataset': 'criteo',
+    #     'normalize_all': True,
+    #     'group_by_user': False,
+    #     'epochs': 1,
+    #     'training_neg_sample_num': 0,
+    #     'eval_setting': 'RO_RS',
+    #     'valid_metric': 'AUC',
+    #     'metrics': ['AUC']
+    # },
     'Test GRU4Rec': {
         'model': 'GRU4Rec',
         'dataset': 'ml-100k',
