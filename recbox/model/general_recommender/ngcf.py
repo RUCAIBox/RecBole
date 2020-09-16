@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/7/16 11:25
+# @Time   : 2020/7/16
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.con
-# @File   : NGCF.py
+
+# UPDATE:
+# @Time   : 2020/9/16
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
 
 """
 Reference:
@@ -15,11 +19,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ...utils import InputType
-from ..abstract_recommender import GeneralRecommender
-from ..loss import BPRLoss, EmbLoss
-from ..layers import BiGNNLayer
-from ..utils import xavier_normal_initialization
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
+from recbox.model.loss import BPRLoss, EmbLoss
+from recbox.model.layers import BiGNNLayer
+from recbox.model.init import xavier_normal_initialization
 
 
 def sparse_dropout(x, rate, noise_shape):
@@ -135,8 +139,8 @@ class NGCF(GeneralRecommender):
         posi_embeddings = item_all_embeddings[pos_item]
         negi_embeddings = item_all_embeddings[neg_item]
 
-        pos_scores = torch.sum(torch.mul(u_embeddings, posi_embeddings), axis=1)
-        neg_scores = torch.sum(torch.mul(u_embeddings, negi_embeddings), axis=1)
+        pos_scores = torch.mul(u_embeddings, posi_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)
 
         reg_loss = self.reg_loss(u_embeddings, posi_embeddings, negi_embeddings)
@@ -151,7 +155,7 @@ class NGCF(GeneralRecommender):
 
         u_embeddings = user_all_embeddings[user]
         i_embeddings = item_all_embeddings[item]
-        scores = torch.sum(torch.mul(u_embeddings, i_embeddings), axis=1)
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)
         return scores
 
     def full_sort_predict(self, interaction):

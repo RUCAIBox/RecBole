@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2020/9/11
-# @Author  : Shanlei Mu
-# @Email   : msl@ruc.edu.cn
+# @Time   : 2020/9/16
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
 
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, xavier_uniform_, constant_
