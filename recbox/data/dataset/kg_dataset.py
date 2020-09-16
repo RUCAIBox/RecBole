@@ -302,7 +302,7 @@ class KnowledgeBasedDataset(Dataset):
                     raise ValueError('v alue_field [{}] can only be [{}] in ckg_graph.'.format(value_field, self.relation_field))
 
                 kg_rel = self.kg_feat[value_field].values
-                ui_rel = np.linspace(ui_rel_id, ui_rel_id, 2*ui_rel_num, dtype=kg_rel.dtype)
+                ui_rel = np.full(2 * ui_rel_num, ui_rel_id, dtype=kg_rel.dtype)
                 data = np.concatenate([ui_rel, kg_rel])
             mat = coo_matrix((data, (source, target)), shape=(self.entity_num, self.entity_num))
             if form == 'coo':
