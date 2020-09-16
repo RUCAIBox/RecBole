@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/12
+# @Time   : 2020/9/9, 2020/9/16
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -184,7 +184,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         return len(self.uid2index)
 
     def _shuffle(self):
-        raise NotImplementedError('GeneralFullDataLoader can\'t shuffle')
+        self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
         if not self.real_time:
