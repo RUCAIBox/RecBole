@@ -3,14 +3,16 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/14
-# @Author : Yupeng Hou
-# @Email  : houyupeng@ruc.edu.cn
+# @Time   : 2020/9/16, 2020/9/15
+# @Author : Yupeng Hou, Xingyu Pan
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
 
 import os
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import coo_matrix
+import torch
 
 from recbox.data.dataset.dataset import Dataset
 from recbox.utils import FeatureSource, FeatureType
@@ -31,7 +33,6 @@ class KnowledgeBasedDataset(Dataset):
         self.field2id_token = {}
         self.field2seqlen = config['seq_len'] or {}
 
-        self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
@@ -51,14 +52,21 @@ class KnowledgeBasedDataset(Dataset):
 
         self._preloaded_weight = {}
 
-        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        self.benchmark_filename_list = config['benchmark_filename']
+        if self.benchmark_filename_list is None:
+            self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        else:
+            self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(self.dataset_name, self.dataset_path, self.benchmark_filename_list)
+
         self.kg_feat = self._load_kg(self.dataset_name, self.dataset_path)
         self.item2entity, self.entity2item = self._load_link(self.dataset_name, self.dataset_path)
         self.feat_list = self._build_feat_list()
 
-        self._filter_by_inter_num()
-        self._filter_by_field_value()
-        self._reset_index()
+        if self.benchmark_filename_list is None:
+            self._filter_by_inter_num()
+            self._filter_by_field_value()
+            self._reset_index()
+
         self._remap_ID_all()
         self._user_item_feat_preparation()
         self._fill_nan()
@@ -181,6 +189,8 @@ class KnowledgeBasedDataset(Dataset):
         self.field2type[self.entity_field] = FeatureType.TOKEN
         self.field2seqlen[self.entity_field] = 1
 
+        self.field2id_token[self.relation_field].append('[UI-Relation]')
+
     @property
     def relation_num(self):
         return self.num(self.relation_field)
@@ -196,3 +206,98 @@ class KnowledgeBasedDataset(Dataset):
     @property
     def entities_list(self):
         return np.arange(self.entity_num)
+
+    def _create_dgl_kg_graph(self):
+        import dgl
+        kg_tensor = self._dataframe_to_interaction(self.kg_feat)
+        head_entity = kg_tensor[self.head_entity_field]
+        tail_entity = kg_tensor[self.tail_entity_field]
+        ret = dgl.graph((head_entity, tail_entity))
+        for k in kg_tensor:
+            if k not in [self.head_entity_field, self.tail_entity_field]:
+                ret.edata[k] = kg_tensor[k]
+        return ret
+
+    def kg_graph(self, form='coo', value_field=None):
+        hids = self.kg_feat[self.head_entity_field].values
+        tids = self.kg_feat[self.tail_entity_field].values
+        if form in ['coo', 'csr']:
+            if value_field is None:
+                data = np.ones(len(self.kg_feat))
+            else:
+                if value_field not in self.field2source:
+                    raise ValueError('value_field [{}] not exist.'.format(value_field))
+                if self.field2source[value_field] != FeatureSource.KG:
+                    raise ValueError('value_field [{}] can only be one of the kg features'.format(value_field))
+                data = self.kg_feat[value_field].values
+            mat = coo_matrix((data, (hids, tids)), shape=(self.entity_num, self.entity_num))
+            if form == 'coo':
+                return mat
+            elif form == 'csr':
+                return mat.tocsr()
+        elif form == 'dgl':
+            return self._create_dgl_kg_graph()
+        else:
+            raise NotImplementedError('net matrix format [{}] has not been implemented.')
+
+    def _create_dgl_ckg_graph(self):
+        import dgl
+
+        kg_tensor = self._dataframe_to_interaction(self.kg_feat)
+        inter_tensor = self._dataframe_to_interaction(self.inter_feat)
+
+        head_entity = kg_tensor[self.head_entity_field]
+        tail_entity = kg_tensor[self.tail_entity_field]
+
+        user = inter_tensor[self.uid_field]
+        item = inter_tensor[self.iid_field]
+
+        source = torch.cat([user, item, head_entity])
+        target = torch.cat([item, user, tail_entity])
+
+        ret = dgl.graph((source, target))
+
+        ui_rel_num = user.shape[0]
+        ui_rel_id = self.relation_num - 1
+        assert self.field2id_token[self.relation_field][ui_rel_id] == '[UI-Relation]'
+
+        kg_rel = kg_tensor[self.relation_field]
+        ui_rel = torch.linspace(ui_rel_id, ui_rel_id, 2*ui_rel_num, dtype=kg_rel.dtype)
+        edge = torch.cat([ui_rel, kg_rel])
+
+        ret.edata[self.relation_field] = edge
+        return ret
+
+    def ckg_graph(self, form='coo', value_field=None):
+        hids = self.kg_feat[self.head_entity_field].values
+        tids = self.kg_feat[self.tail_entity_field].values
+
+        uids = self.inter_feat[self.uid_field].values
+        iids = self.inter_feat[self.iid_field].values
+
+        ui_rel_num = len(uids)
+        ui_rel_id = self.relation_num - 1
+        assert self.field2id_token[self.relation_field][ui_rel_id] == '[UI-Relation]'
+
+        source = np.concatenate([uids, iids, hids])
+        target = np.concatenate([iids, uids, tids])
+
+        if form in ['coo', 'csr']:
+            if value_field is None:
+                data = np.ones(len(source))
+            else:
+                if value_field != self.relation_field:
+                    raise ValueError('v alue_field [{}] can only be [{}] in ckg_graph.'.format(value_field, self.relation_field))
+
+                kg_rel = self.kg_feat[value_field].values
+                ui_rel = np.linspace(ui_rel_id, ui_rel_id, 2*ui_rel_num, dtype=kg_rel.dtype)
+                data = np.concatenate([ui_rel, kg_rel])
+            mat = coo_matrix((data, (source, target)), shape=(self.entity_num, self.entity_num))
+            if form == 'coo':
+                return mat
+            elif form == 'csr':
+                return mat.tocsr()
+        elif form == 'dgl':
+            return self._create_dgl_ckg_graph()
+        else:
+            raise NotImplementedError('net matrix format [{}] has not been implemented.')

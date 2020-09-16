@@ -5,8 +5,8 @@
 
 import torch
 
-from ...utils import InputType
-from ..abstract_recommender import GeneralRecommender
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
 
 
 class Pop(GeneralRecommender):

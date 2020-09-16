@@ -2,7 +2,6 @@
 # @Time   : 2020/9/1 14:00
 # @Author : Changxin Tian
 # @Email  : cx.tian@outlook.com
-# @File   : gcmc.py
 
 """
 Reference:
@@ -15,8 +14,8 @@ import torch.nn as nn
 import scipy.sparse as sp
 import numpy as np
 
-from ...utils import InputType
-from ..abstract_recommender import GeneralRecommender
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
 
 
 class GCMC(GeneralRecommender):

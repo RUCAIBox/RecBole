@@ -3,17 +3,15 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/12, 2020/8/31
+# @Time   : 2020/9/16, 2020/9/16, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
 
-from .abstract_dataloader import AbstractDataLoader
-from .general_dataloader import GeneralNegSampleDataLoader
-from .neg_sample_mixin import NegSampleMixin
-from ...utils import (
-    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
-    KGDataLoaderState)
+from recbox.data.dataloader.abstract_dataloader import AbstractDataLoader
+from recbox.data.dataloader.general_dataloader import GeneralNegSampleDataLoader
+from recbox.data.dataloader.neg_sample_mixin import NegSampleMixin
+from recbox.utils import InputType, KGDataLoaderState
 
 
 class KGDataLoader(NegSampleMixin, AbstractDataLoader):

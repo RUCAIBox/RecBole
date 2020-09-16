@@ -11,10 +11,10 @@ Fuzheng Zhang et al. "Collaborative Knowledge Base Embedding for Recommender Sys
 import torch
 import torch.nn as nn
 
-from ...utils import InputType
-from ..abstract_recommender import KnowledgeRecommender
-from ..loss import BPRLoss
-from ..utils import xavier_normal_initialization
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import KnowledgeRecommender
+from recbox.model.loss import BPRLoss
+from recbox.model.init import xavier_normal_initialization
 
 
 # todo: L2 regularization

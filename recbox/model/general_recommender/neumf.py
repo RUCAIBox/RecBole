@@ -17,9 +17,9 @@ import torch
 import torch.nn as nn
 from torch.nn.init import normal_
 
-from ...utils import InputType
-from ..abstract_recommender import GeneralRecommender
-from ..layers import MLPLayers
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
+from recbox.model.layers import MLPLayers
 
 
 class NeuMF(GeneralRecommender):

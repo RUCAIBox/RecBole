@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/8/18 9:21
+# @Time   : 2020/8/18
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.con
-# @File   : itemknn.py
 
 import numpy as np
 import scipy.sparse as sp
 import torch
 
-from ...utils import InputType
-from ..abstract_recommender import GeneralRecommender
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
 
 
 class ComputeSimilarity:
