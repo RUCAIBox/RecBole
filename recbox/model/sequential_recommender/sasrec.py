@@ -113,12 +113,6 @@ class SASRec(SequentialRecommender):
         x = self.layer_norm(x)
         return x
 
-    def gather_indexes(self, gru_output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
-        gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, self.embedding_size)
-        output_tensor = gru_output.gather(dim=1, index=gather_index)
-        return output_tensor.squeeze(1)
-
     def calculate_loss(self, interaction):
         target_id = interaction[self.TARGET_ITEM_ID]
         pred, _ = self.forward(interaction)

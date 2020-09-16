@@ -8,11 +8,13 @@
 # @Author  :   Kaiyuan Li   Zhichao Feng
 # @email   :   tsotfsk@outlook.com  fzcbupt@gmail.com
 
+import warnings
 import numpy as np
+from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.metrics import auc as sk_auc
 from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error
 
-from .utils import _binary_clf_curve
+from recbox.evaluator.utils import _binary_clf_curve
 
 #    TopK Metrics    #
 
@@ -176,12 +178,31 @@ def auc(trues, preds):
     M is the number of positive samples.N is the number of negative samples.${rank_i}$ is the rank of the ith positive sample.
     """
     fps, tps = _binary_clf_curve(trues, preds)
-    optimal_idxs = np.where(np.r_[True, np.logical_or(np.diff(fps, 2), np.diff(tps, 2)), True])[0]
-    fps = np.r_[0, fps[optimal_idxs]]
-    tps = np.r_[0, tps[optimal_idxs]]
 
-    fpr = fps / fps[-1]
-    tpr = tps / tps[-1]
+    if len(fps) > 2:
+        optimal_idxs = np.where(np.r_[True, np.logical_or(np.diff(fps, 2), np.diff(tps, 2)), True])[0]
+        fps = fps[optimal_idxs]
+        tps = tps[optimal_idxs]
+
+    tps = np.r_[0, tps]
+    fps = np.r_[0, fps]
+
+    if fps[-1] <= 0:
+        warnings.warn("No negative samples in y_true, "
+                      "false positive value should be meaningless",
+                      UndefinedMetricWarning)
+        fpr = np.repeat(np.nan, fps.shape)
+    else:
+        fpr = fps / fps[-1]
+
+    if tps[-1] <= 0:
+        warnings.warn("No positive samples in y_true, "
+                      "true positive value should be meaningless",
+                      UndefinedMetricWarning)
+        tpr = np.repeat(np.nan, tps.shape)
+    else:
+        tpr = tps / tps[-1]
+
     return sk_auc(fpr, tpr)
 
 

@@ -9,7 +9,8 @@
 
 import numpy as np
 import torch.nn as nn
-from ..utils import ModelType
+
+from recbox.utils import ModelType
 
 
 class AbstractRecommender(nn.Module):
@@ -73,6 +74,12 @@ class SequentialRecommender(AbstractRecommender):
 
     def __init__(self):
         super(SequentialRecommender, self).__init__()
+
+    def gather_indexes(self, output, gather_index):
+        "Gathers the vectors at the spexific positions over a minibatch"
+        gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.shape[-1])
+        output_tensor = output.gather(dim=1, index=gather_index)
+        return output_tensor.squeeze(1)
 
 
 class KnowledgeRecommender(AbstractRecommender):

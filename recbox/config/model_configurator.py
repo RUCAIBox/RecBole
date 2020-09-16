@@ -1,4 +1,4 @@
-from .abstract_configurator import AbstractConfig
+from recbox.config.abstract_configurator import AbstractConfig
 
 
 class ModelConfig(AbstractConfig):
