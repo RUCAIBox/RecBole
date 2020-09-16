@@ -3,11 +3,12 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time    : 2020/9/15, 2020/9/8, 2020/8/12
+# @Time    : 2020/9/15, 2020/9/16, 2020/8/12
 # @Author  : Yupeng Hou, Yushuo Chen, Xingyu Pan
 # @email   : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, panxy@ruc.edu.cn
 
 import numpy as np
+
 
 class Interaction(object):
     """The basic class representing a batch of interaction records.

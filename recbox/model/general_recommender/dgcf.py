@@ -3,6 +3,11 @@
 # @Author : Gaole He
 # @Email  : hegaole@ruc.edu.cn
 
+# UPDATE:
+# @Time   : 2020/9/16
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
+
 """
 Reference:
 Wang Xiang et al. "Disentangled Graph Collaborative Filtering." in SIGIR 2020.
@@ -15,10 +20,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from ...utils import InputType
-from ..abstract_recommender import GeneralRecommender
-from ..loss import BPRLoss, EmbLoss
-from ..utils import xavier_normal_initialization
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
+from recbox.model.loss import BPRLoss, EmbLoss
+from recbox.model.init import xavier_normal_initialization
 
 
 def sample_cor_samples(n_users, n_items, cor_batch_size):
@@ -213,8 +218,8 @@ class DGCF(GeneralRecommender):
         posi_embeddings = item_all_embeddings[pos_item]
         negi_embeddings = item_all_embeddings[neg_item]
 
-        pos_scores = torch.sum(torch.mul(u_embeddings, posi_embeddings), axis=1)
-        neg_scores = torch.sum(torch.mul(u_embeddings, negi_embeddings), axis=1)
+        pos_scores = torch.mul(u_embeddings, posi_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)
 
         # cul regularizer
@@ -281,7 +286,7 @@ class DGCF(GeneralRecommender):
             # matrix - average over row - average over col + average over matrix
             # D = D - tf.reduce_mean(D, axis=0, keepdims=True) - tf.reduce_mean(D, axis=1, keepdims=True) \
             #     + tf.reduce_mean(D)
-            D = D - torch.mean(D, dim=0, keepdims=True) - torch.mean(D, dim=1, keepdims=True) + torch.mean(D)
+            D = D - torch.mean(D, dim=0, keepdim=True) - torch.mean(D, dim=1, keepdim=True) + torch.mean(D)
             return D
 
         def _create_distance_covariance(D1, D2):
@@ -319,7 +324,7 @@ class DGCF(GeneralRecommender):
 
         u_embeddings = u_embedding[user]
         i_embeddings = i_embedding[item]
-        scores = torch.sum(torch.mul(u_embeddings, i_embeddings), axis=1)
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)
         return scores
 
     def full_sort_predict(self, interaction):

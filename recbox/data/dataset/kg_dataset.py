@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/16
-# @Author : Yupeng Hou
-# @Email  : houyupeng@ruc.edu.cn
+# @Time   : 2020/9/16, 2020/9/15
+# @Author : Yupeng Hou, Xingyu Pan
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
 
 import os
 
@@ -33,7 +33,6 @@ class KnowledgeBasedDataset(Dataset):
         self.field2id_token = {}
         self.field2seqlen = config['seq_len'] or {}
 
-        self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
@@ -53,14 +52,21 @@ class KnowledgeBasedDataset(Dataset):
 
         self._preloaded_weight = {}
 
-        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        self.benchmark_filename_list = config['benchmark_filename']
+        if self.benchmark_filename_list is None:
+            self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        else:
+            self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(self.dataset_name, self.dataset_path, self.benchmark_filename_list)
+
         self.kg_feat = self._load_kg(self.dataset_name, self.dataset_path)
         self.item2entity, self.entity2item = self._load_link(self.dataset_name, self.dataset_path)
         self.feat_list = self._build_feat_list()
 
-        self._filter_by_inter_num()
-        self._filter_by_field_value()
-        self._reset_index()
+        if self.benchmark_filename_list is None:
+            self._filter_by_inter_num()
+            self._filter_by_field_value()
+            self._reset_index()
+
         self._remap_ID_all()
         self._user_item_feat_preparation()
         self._fill_nan()
