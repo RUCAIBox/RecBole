@@ -15,10 +15,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from ...utils import InputType
-from ..abstract_recommender import KnowledgeRecommender
-from ..loss import BPRLoss, EmbMarginLoss
-from ..utils import xavier_normal_initialization
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import KnowledgeRecommender
+from recbox.model.loss import BPRLoss, EmbMarginLoss
+from recbox.model.init import xavier_normal_initialization
 
 
 def orthogonalLoss(rel_embeddings, norm_embeddings):
