@@ -100,9 +100,6 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         super().__init__(config, dataset,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
-        self.kg_graph = self.dataset.kg_graph
-        self.ckg_graph = self.dataset.ckg_graph
-
     @property
     def pr(self):
         return self.main_dataloader.pr
