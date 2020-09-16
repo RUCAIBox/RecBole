@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/12
+# @Time   : 2020/9/9, 2020/9/16
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -12,11 +12,9 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from .abstract_dataloader import AbstractDataLoader
-from .neg_sample_mixin import NegSampleMixin, NegSampleByMixin
-from ...utils import (
-    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
-    KGDataLoaderState)
+from recbox.data.dataloader.abstract_dataloader import AbstractDataLoader
+from recbox.data.dataloader.neg_sample_mixin import NegSampleMixin, NegSampleByMixin
+from recbox.utils import DataLoaderType, InputType
 
 
 class GeneralDataLoader(AbstractDataLoader):
@@ -184,7 +182,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         return len(self.uid2index)
 
     def _shuffle(self):
-        raise NotImplementedError('GeneralFullDataLoader can\'t shuffle')
+        self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
         if not self.real_time:

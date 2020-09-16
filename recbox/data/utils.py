@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/9, 2020/9/12, 2020/8/31
+# @Time   : 2020/9/9, 2020/9/16, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -13,13 +13,16 @@ from logging import getLogger
 
 from recbox.config import EvalSetting
 from recbox.sampler import KGSampler, Sampler
-from recbox.utils import EvaluatorType, InputType, ModelType
+from recbox.utils import ModelType
 from recbox.data.dataloader import *
 
 
 def create_dataset(config):
     model_type = config['MODEL_TYPE']
-    if model_type == ModelType.KNOWLEDGE:
+    if model_type == ModelType.SEQUENTIAL:
+        from .dataset import SequentialDataset
+        return SequentialDataset(config)
+    elif model_type == ModelType.KNOWLEDGE:
         from .dataset import KnowledgeBasedDataset
         return KnowledgeBasedDataset(config)
     elif model_type == ModelType.SOCIAL:

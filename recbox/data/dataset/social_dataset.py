@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/15
+# @Time   : 2020/9/16, 2020/9/15
 # @Author : Yupeng Hou, Xingyu Pan
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -39,7 +39,6 @@ class SocialDataset(Dataset):
         self.field2id_token = {}
         self.field2seqlen = config['seq_len'] or {}
 
-        self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
@@ -99,7 +98,7 @@ class SocialDataset(Dataset):
 
         return fields_in_same_space
 
-    def _create_dgl_graph(self):
+    def _create_dgl_net_graph(self):
         import dgl
         net_tensor = self._dataframe_to_interaction(self.net_feat)
         source = net_tensor[self.source_field]
@@ -111,9 +110,9 @@ class SocialDataset(Dataset):
         return ret
 
     def net_matrix(self, form='coo', value_field=None):
-        sids = self.net_feat[self.source_field].values
-        tids = self.net_feat[self.target_field].values
         if form in ['coo', 'csr']:
+            sids = self.net_feat[self.source_field].values
+            tids = self.net_feat[self.target_field].values
             if value_field is None:
                 data = np.ones(len(self.net_feat))
             else:
@@ -128,7 +127,7 @@ class SocialDataset(Dataset):
             elif form == 'csr':
                 return mat.tocsr()
         elif form == 'dgl':
-            return self._create_dgl_graph()
+            return self._create_dgl_net_graph()
         else:
             raise NotImplementedError('net matrix format [{}] has not been implemented.')
 

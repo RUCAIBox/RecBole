@@ -3,6 +3,11 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+# UPDATE:
+# @Time   : 2020/9/16
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
+
 """
 Reference:
 Steffen Rendle et al. "BPR: Bayesian Personalized Ranking from Implicit Feedback." in UAI 2009.
@@ -11,10 +16,10 @@ Steffen Rendle et al. "BPR: Bayesian Personalized Ranking from Implicit Feedback
 import torch
 import torch.nn as nn
 
-from ...utils import InputType
-from ..abstract_recommender import GeneralRecommender
-from ..loss import BPRLoss
-from ..utils import xavier_normal_initialization
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
+from recbox.model.loss import BPRLoss
+from recbox.model.init import xavier_normal_initialization
 
 
 class BPRMF(GeneralRecommender):

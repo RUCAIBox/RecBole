@@ -13,9 +13,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ...utils import InputType
-from ..abstract_recommender import KnowledgeRecommender
-from ..utils import xavier_normal_initialization
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import KnowledgeRecommender
+from recbox.model.init import xavier_normal_initialization
 
 
 """
