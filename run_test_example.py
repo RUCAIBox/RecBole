@@ -115,8 +115,48 @@ test_examples = {
         'metrics': ["Recall"],
         'topk': [10]
     },
+    'Test GCMC': {
+        'model': 'GCMC',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test NGCF': {
+        'model': 'NGCF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test LightGCN': {
+        'model': 'LightGCN',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test DGCF': {
+        'model': 'DGCF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
     'Test POP': {
         'model': 'Pop',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test ItemKNN': {
+        'model': 'ItemKNN',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -191,7 +231,17 @@ test_examples = {
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
-    }
+    },
+    'Test CFKG': {
+        'model': 'CFKG',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'train_kg_step': 0,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+
 }
 
 
