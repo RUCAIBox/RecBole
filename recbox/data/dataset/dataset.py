@@ -165,24 +165,25 @@ class Dataset(object):
             item_feat = None
             self.logger.debug('[{}] not found, item features are not loaded'.format(item_feat_path))
  
-        size_list = []
-        temp_list = []
+        sub_inter_lens = []
+        sub_inter_feats = []
         for filename in benchmark_filename_list:
             file_path = os.path.join(dataset_path, '{}.{}.{}'.format(token, filename,'inter'))
             if os.path.isfile(file_path):
                 temp = self._load_feat(file_path, FeatureSource.INTERACTION)
-                temp_list.append(temp) 
-                size_list.append(len(temp))
+                sub_inter_feats.append(temp) 
+                sub_inter_lens.append(len(temp))
             else:
                 raise ValueError('File {} not exist'.format(file_path))
-        inter_feat = pd.concat(temp_list)
+        inter_feat = pd.concat(sub_inter_feats)
+
         if self.uid_field in self.field2source:
             self.field2source[self.uid_field] = FeatureSource.USER_ID
 
         if self.iid_field in self.field2source:
             self.field2source[self.iid_field] = FeatureSource.ITEM_ID
 
-        return inter_feat, user_feat, item_feat, size_list
+        return inter_feat, user_feat, item_feat, sub_inter_lens
 
     def _load_feat(self, filepath, source):
         self.logger.debug('loading feature from [{}] (source: [{}])'.format(filepath, source))

@@ -9,7 +9,6 @@
 
 import os
 from logging import getLogger
-import pandas as pd
 import numpy as np
 from scipy.sparse import coo_matrix
 
@@ -60,7 +59,9 @@ class SocialDataset(Dataset):
             self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
         else:
             self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(self.dataset_name, self.dataset_path, self.benchmark_filename_list)
-
+        print(self.file_size_list)
+        print(self.inter_feat)
+        exit()
         self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
         self.feat_list = self._build_feat_list()
         
