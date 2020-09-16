@@ -105,16 +105,16 @@ test_examples = {
         'metrics': ['Recall'],
         'topk': [10]
     },
-    # 'Test NAIS': {
-    #     'model': 'NAIS',
-    #     'dataset': 'ml-100k',
-    #     'epochs': 1,
-    #     'eval_setting': 'RO_LS, uni100',
-    #     'valid_metric': 'Recall@10',
-    #     'leave_one_num': 2,
-    #     'metrics': ["Recall"],
-    #     'topk': [10]
-    # },
+    'Test NAIS': {
+        'model': 'NAIS',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'eval_setting': 'RO_LS, uni100',
+        'valid_metric': 'Recall@10',
+        'leave_one_num': 2,
+        'metrics': ["Recall"],
+        'topk': [10]
+    },
     'Test GCMC': {
         'model': 'GCMC',
         'dataset': 'ml-100k',
@@ -175,17 +175,17 @@ test_examples = {
         'valid_metric': 'AUC',
         'metrics': ['AUC']
     },
-    # 'Test Criteo': {
-    #     'model': 'FM',
-    #     'dataset': 'criteo',
-    #     'normalize_all': True,
-    #     'group_by_user': False,
-    #     'epochs': 1,
-    #     'training_neg_sample_num': 0,
-    #     'eval_setting': 'RO_RS',
-    #     'valid_metric': 'AUC',
-    #     'metrics': ['AUC']
-    # },
+    'Test Criteo': {
+        'model': 'FM',
+        'dataset': 'criteo',
+        'normalize_all': True,
+        'group_by_user': False,
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
+        'valid_metric': 'AUC',
+        'metrics': ['AUC']
+    },
     'Test GRU4Rec': {
         'model': 'GRU4Rec',
         'dataset': 'ml-100k',
@@ -231,7 +231,17 @@ test_examples = {
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
-    }
+    },
+    'Test CFKG': {
+        'model': 'CFKG',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'train_kg_step': 0,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+
 }
 
 
