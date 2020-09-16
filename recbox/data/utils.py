@@ -19,7 +19,10 @@ from .dataloader import *
 
 def create_dataset(config):
     model_type = config['MODEL_TYPE']
-    if model_type == ModelType.KNOWLEDGE:
+    if model_type == ModelType.SEQUENTIAL:
+        from .dataset import SequentialDataset
+        return SequentialDataset(config)
+    elif model_type == ModelType.KNOWLEDGE:
         from .dataset import KnowledgeBasedDataset
         return KnowledgeBasedDataset(config)
     elif model_type == ModelType.SOCIAL:

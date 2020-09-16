@@ -9,9 +9,7 @@
 
 import math
 
-from ...utils import (
-    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
-    KGDataLoaderState)
+from ...utils import InputType
 
 
 class AbstractDataLoader(object):
@@ -88,7 +86,7 @@ class AbstractDataLoader(object):
             raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
         if self.batch_size != batch_size:
             self.batch_size = batch_size
-            self.logger.warnning('Batch size is changed to {}'.format(batch_size))
+            self.logger.warning('Batch size is changed to {}'.format(batch_size))
 
     def get_user_feature(self):
         user_df = self.dataset.get_user_feature()

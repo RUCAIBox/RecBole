@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/3, 2020/9/15
+# @Time   : 2020/9/8, 2020/9/3, 2020/9/16
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -20,7 +20,7 @@ import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 from sklearn.impute import SimpleImputer
 
-from ...utils import FeatureSource, FeatureType, ModelType
+from ...utils import FeatureSource, FeatureType
 from ..interaction import Interaction
 
 
@@ -46,7 +46,6 @@ class Dataset(object):
         self.field2id_token = {}
         self.field2seqlen = config['seq_len'] or {}
 
-        self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
@@ -95,7 +94,6 @@ class Dataset(object):
                 setattr(self, '{}_feat'.format(name), None)
         self.feat_list = self._build_feat_list()
 
-        self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
@@ -597,17 +595,6 @@ class Dataset(object):
         return 1 - self.inter_num / self.user_num / self.item_num
 
     @property
-    def uid2items(self):
-        self._check_field('uid_field', 'iid_field')
-        uid2items = dict()
-        columns = [self.uid_field, self.iid_field]
-        for uid, iid in self.inter_feat[columns].values:
-            if uid not in uid2items:
-                uid2items[uid] = []
-            uid2items[uid].append(iid)
-        return pd.DataFrame(list(uid2items.items()), columns=columns)
-
-    @property
     def uid2index(self):
         self._check_field('uid_field')
         self.sort(by=self.uid_field, ascending=True)
@@ -621,35 +608,6 @@ class Dataset(object):
         index = [(uid, slice(start[uid], end[uid] + 1)) for uid in uid_list]
         uid2items_num = [end[uid] - start[uid] + 1 for uid in uid_list]
         return np.array(index), np.array(uid2items_num)
-
-    def prepare_data_augmentation(self):
-        self.logger.debug('prepare_data_augmentation')
-        if hasattr(self, 'uid_list'):
-            return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
-
-        self._check_field('uid_field', 'time_field')
-        max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH']
-        self.sort(by=[self.uid_field, self.time_field], ascending=True)
-        last_uid = None
-        uid_list, item_list_index, target_index, item_list_length = [], [], [], []
-        seq_start = 0
-        for i, uid in enumerate(self.inter_feat[self.uid_field].values):
-            if last_uid != uid:
-                last_uid = uid
-                seq_start = i
-            else:
-                if i - seq_start > max_item_list_len:
-                    seq_start += 1
-                uid_list.append(uid)
-                item_list_index.append(slice(seq_start, i))
-                target_index.append(i)
-                item_list_length.append(i - seq_start)
-
-        self.uid_list = np.array(uid_list)
-        self.item_list_index = np.array(item_list_index)
-        self.target_index = np.array(target_index)
-        self.item_list_length = np.array(item_list_length)
-        return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
     def _check_field(self, *field_names):
         for field_name in field_names:
@@ -746,21 +704,10 @@ class Dataset(object):
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 
-        if self.model_type == ModelType.SEQUENTIAL:
-            self.prepare_data_augmentation()
-            grouped_index = pd.DataFrame(self.uid_list).groupby(by=0).groups.values()
-            next_index = self._split_index_by_leave_one_out(grouped_index, leave_one_num)
-            next_ds = []
-            for index in next_index:
-                ds = copy.copy(self)
-                for field in ['uid_list', 'item_list_index', 'target_index', 'item_list_length']:
-                    setattr(ds, field, np.array(getattr(ds, field)[index]))
-                next_ds.append(ds)
-        else:
-            grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
-            next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num)
-            next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
-            next_ds = [self.copy(_) for _ in next_df]
+        grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
+        next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num)
+        next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
+        next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
     def shuffle(self):

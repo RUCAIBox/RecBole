@@ -39,7 +39,6 @@ class SocialDataset(Dataset):
         self.field2id_token = {}
         self.field2seqlen = config['seq_len'] or {}
 
-        self.model_type = self.config['MODEL_TYPE']
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
