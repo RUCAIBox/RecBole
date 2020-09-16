@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/7/16 11:25
+# @Time   : 2020/7/16
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.con
 # @File   : ngcf.py
