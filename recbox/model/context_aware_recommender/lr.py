@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-# UPDATE:
-# @Time   : 2020/8/13,
+# @Time   : 2020/8/13
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmain.com
 # @File   : lr.py
 
-import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_
 from .context_recommender import ContextRecommender
@@ -27,8 +25,8 @@ class LR(ContextRecommender):
             xavier_normal_(module.weight.data)
 
     def forward(self, interaction):
-        y = self.sigmoid(self.first_order_linear(interaction))
-        return y.squeeze()
+        output = self.sigmoid(self.first_order_linear(interaction))
+        return output.squeeze()
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

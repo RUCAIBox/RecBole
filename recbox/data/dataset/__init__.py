@@ -1,3 +1,3 @@
-from .dataset import Dataset
-from .kg_dataset import KnowledgeBasedDataset
-from .social_dataset import SocialDataset
+from recbox.data.dataset.dataset import Dataset
+from recbox.data.dataset.kg_dataset import KnowledgeBasedDataset
+from recbox.data.dataset.social_dataset import SocialDataset

@@ -1,9 +1,11 @@
 import os
 from configparser import ConfigParser
-from ..utils.enum_type import *
+
+from recbox.utils import *
 
 
 class AbstractConfig(object):
+
     def __init__(self, ):
         self.args = dict()
         self.must_args = []

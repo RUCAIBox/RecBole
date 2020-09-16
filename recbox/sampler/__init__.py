@@ -1,1 +1,1 @@
-from .sampler import Sampler, KGSampler
+from recbox.sampler.sampler import Sampler, KGSampler
