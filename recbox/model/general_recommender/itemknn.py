@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time   : 2020/8/18
 # @Author : Zihan Lin
-# @Email  : linzihan.super@foxmail.con
+# @Email  : linzihan.super@foxmail.com
 
 import numpy as np
 import scipy.sparse as sp
