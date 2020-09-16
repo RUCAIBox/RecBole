@@ -219,9 +219,10 @@ class KnowledgeBasedDataset(Dataset):
         return ret
 
     def kg_graph(self, form='coo', value_field=None):
-        hids = self.kg_feat[self.head_entity_field].values
-        tids = self.kg_feat[self.tail_entity_field].values
         if form in ['coo', 'csr']:
+            hids = self.kg_feat[self.head_entity_field].values
+            tids = self.kg_feat[self.tail_entity_field].values
+
             if value_field is None:
                 data = np.ones(len(self.kg_feat))
             else:
@@ -242,15 +243,16 @@ class KnowledgeBasedDataset(Dataset):
 
     def _create_dgl_ckg_graph(self):
         import dgl
+        user_num = self.user_num
 
         kg_tensor = self._dataframe_to_interaction(self.kg_feat)
         inter_tensor = self._dataframe_to_interaction(self.inter_feat)
 
-        head_entity = kg_tensor[self.head_entity_field]
-        tail_entity = kg_tensor[self.tail_entity_field]
+        head_entity = kg_tensor[self.head_entity_field] + user_num
+        tail_entity = kg_tensor[self.tail_entity_field] + user_num
 
         user = inter_tensor[self.uid_field]
-        item = inter_tensor[self.iid_field]
+        item = inter_tensor[self.iid_field] + user_num
 
         source = torch.cat([user, item, head_entity])
         target = torch.cat([item, user, tail_entity])
@@ -269,20 +271,22 @@ class KnowledgeBasedDataset(Dataset):
         return ret
 
     def ckg_graph(self, form='coo', value_field=None):
-        hids = self.kg_feat[self.head_entity_field].values
-        tids = self.kg_feat[self.tail_entity_field].values
-
-        uids = self.inter_feat[self.uid_field].values
-        iids = self.inter_feat[self.iid_field].values
-
-        ui_rel_num = len(uids)
-        ui_rel_id = self.relation_num - 1
-        assert self.field2id_token[self.relation_field][ui_rel_id] == '[UI-Relation]'
-
-        source = np.concatenate([uids, iids, hids])
-        target = np.concatenate([iids, uids, tids])
-
         if form in ['coo', 'csr']:
+            user_num = self.user_num
+
+            hids = self.kg_feat[self.head_entity_field].values + user_num
+            tids = self.kg_feat[self.tail_entity_field].values + user_num
+
+            uids = self.inter_feat[self.uid_field].values
+            iids = self.inter_feat[self.iid_field].values + user_num
+
+            ui_rel_num = len(uids)
+            ui_rel_id = self.relation_num - 1
+            assert self.field2id_token[self.relation_field][ui_rel_id] == '[UI-Relation]'
+
+            source = np.concatenate([uids, iids, hids])
+            target = np.concatenate([iids, uids, tids])
+
             if value_field is None:
                 data = np.ones(len(source))
             else:
