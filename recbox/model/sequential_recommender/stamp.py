@@ -6,8 +6,8 @@
 import torch
 from torch import nn
 from torch.nn.init import normal_
-from ...utils import InputType
-from ..abstract_recommender import SequentialRecommender
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import SequentialRecommender
 
 
 class STAMP(SequentialRecommender):
