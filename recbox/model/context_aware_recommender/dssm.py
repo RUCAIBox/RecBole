@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/9/2 10:09
+# @Time   : 2020/9/2
 # @Author : Yingqian Min
 # @Email  : gmqszyq@qq.com
 # @File   : dssm.py
@@ -7,15 +7,16 @@
 
 """
 Reference:
-PS Huang et al., "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
+PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
 """
 
 
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
-from ..layers import MLPLayers
-from .context_recommender import ContextRecommender
+
+from recbox.model.layers import MLPLayers
+from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
 class DSSM(ContextRecommender):

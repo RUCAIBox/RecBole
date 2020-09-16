@@ -1,2 +1,4 @@
-from .trainer import get_trainer
-from .hyper_tuning import HyperTuning
+from recbox.trainer.trainer import get_trainer
+from recbox.trainer.hyper_tuning import HyperTuning
+
+__all__ = ['get_trainer']

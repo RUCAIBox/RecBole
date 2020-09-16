@@ -4,7 +4,7 @@
 
 """
 Reference:
-Yixin Cao et al., "Unifying Knowledge Graph Learning and Recommendation:Towards a Better Understanding of User Preferences." in WWW 2019.
+Yixin Cao et al. "Unifying Knowledge Graph Learning and Recommendation:Towards a Better Understanding of User Preferences." in WWW 2019.
 
 Code Reference:
 https://github.com/TaoMiner/joint-kg-recommender
@@ -12,23 +12,38 @@ https://github.com/TaoMiner/joint-kg-recommender
 
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_normal_
+import torch.nn.functional as F
 from torch.autograd import Variable
 
 from ...utils import InputType
 from ..abstract_recommender import KnowledgeRecommender
-from ..loss import BPRLoss, MarginLoss
+from ..loss import BPRLoss, EmbMarginLoss
+from ..utils import xavier_normal_initialization
+
+
+def orthogonalLoss(rel_embeddings, norm_embeddings):
+    return torch.sum(torch.sum(norm_embeddings * rel_embeddings, dim=1, keepdim=True) ** 2 /
+                     torch.sum(rel_embeddings ** 2, dim=1, keepdim=True))
+
+
+def alignLoss(emb1, emb2):
+    distance = torch.sum((emb1 - emb2) ** 2, 1).mean()
+    return distance
 
 
 # todo: L2 regularization
 class KTUP(KnowledgeRecommender):
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(KTUP, self).__init__(config, dataset)
 
         self.embedding_size = config['embedding_size']
         self.use_st_gumbel = config['use_st_gumbel']
+        self.kg_weight = config['kg_weight']
+        self.align_weight = config['align_weight']
         self.margin = config['margin']
+        self.p_norm = config['p_norm']
 
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
@@ -39,13 +54,31 @@ class KTUP(KnowledgeRecommender):
         self.relation_norm_embedding = nn.Embedding(self.n_relations, self.embedding_size)
 
         self.rec_loss = BPRLoss()
-        self.kg_loss = MarginLoss(margin=self.margin)
+        self.kg_loss = nn.TripletMarginLoss(margin=self.margin, p=self.p_norm, reduction='mean')
+        self.reg_loss = EmbMarginLoss()
 
-        self.apply(self.init_weights)
+        self.apply(xavier_normal_initialization)
 
-    def init_weights(self, module):
-        if isinstance(module, nn.Embedding):
-            xavier_normal_(module.weight.data)
+    def masked_softmax(self, logits):
+        probs = F.softmax(logits, dim=len(logits.shape)-1)
+        return probs
+
+    def convert_to_one_hot(self, indices, num_classes):
+        """
+        Args:
+            indices (Variable): A vector containing indices,
+                whose size is (batch_size,).
+            num_classes (Variable): The number of classes, which would be
+                the second dimension of the resulting one-hot matrix.
+        Returns:
+            result: The one-hot matrix of size (batch_size, num_classes).
+        """
+        old_shape = indices.shape
+        new_shape = torch.Size([i for i in old_shape] + [num_classes])
+        indices = indices.unsqueeze(len(old_shape))
+
+        one_hot = Variable(indices.data.new(new_shape).zero_().scatter_(len(old_shape), indices.data, 1))
+        return one_hot
 
     def st_gumbel_softmax(self, logits, temperature=1.0):
         """
@@ -81,8 +114,8 @@ class KTUP(KnowledgeRecommender):
         if use_st_gumbel:
             # todo: different torch versions may cause the st_gumbel_softmax to report errors, wait to be test
             pref_probs = self.st_gumbel_softmax(pref_probs)
-        relation_e = torch.matmul(pref_probs, self.pref_embedding.weight + self.relation_embedding) / 2
-        norm_e = torch.matmul(pref_probs, self.pref_norm_embedding + self.relation_norm_embedding) / 2
+        relation_e = torch.matmul(pref_probs, self.pref_embedding.weight + self.relation_embedding.weight) / 2
+        norm_e = torch.matmul(pref_probs, self.pref_norm_embedding.weight + self.relation_norm_embedding.weight) / 2
         return pref_probs, relation_e, norm_e
 
     @staticmethod
@@ -92,7 +125,7 @@ class KTUP(KnowledgeRecommender):
     def forward(self, user, item):
         user_e = self.user_embedding(user)
         item_e = self.item_embedding(item)
-        entity_e = self.item_embedding(item)
+        entity_e = self.entity_embedding(item)
         item_e = item_e + entity_e
 
         _, relation_e, norm_e = self.get_prefernces(user_e, item_e, use_st_gumbel=self.use_st_gumbel)
@@ -101,43 +134,51 @@ class KTUP(KnowledgeRecommender):
 
         return proj_user_e, relation_e, proj_item_e
 
-    def calculate_loss(self, interaction, is_rec=True):
-        if is_rec:
-            user = interaction[self.USER_ID]
-            pos_item = interaction[self.ITEM_ID]
-            neg_item = interaction[self.NEG_ITEM_ID]
-            proj_user_e, pos_relation_e, proj_pos_item_e = self.forward(user, pos_item)
-            proj_user_e, neg_relation_e, proj_neg_item_e = self.forwar(user, neg_item)
+    def calculate_loss(self, interaction):
+        user = interaction[self.USER_ID]
+        pos_item = interaction[self.ITEM_ID]
+        neg_item = interaction[self.NEG_ITEM_ID]
+        proj_user_e, pos_relation_e, proj_pos_item_e = self.forward(user, pos_item)
+        proj_user_e, neg_relation_e, proj_neg_item_e = self.forward(user, neg_item)
 
-            pos_item_score = ((proj_user_e + pos_relation_e - proj_pos_item_e) ** 2).sum(dim=1)
-            neg_item_score = ((proj_user_e + neg_relation_e - proj_neg_item_e) ** 2).sum(dim=1)
+        pos_item_score = ((proj_user_e + pos_relation_e - proj_pos_item_e) ** 2).sum(dim=1)
+        neg_item_score = ((proj_user_e + neg_relation_e - proj_neg_item_e) ** 2).sum(dim=1)
 
-            rec_loss = - self.rec_loss(pos_item_score, neg_item_score)
+        rec_loss = self.rec_loss(pos_item_score, neg_item_score)
+        orthogonal_loss = orthogonalLoss(self.pref_embedding.weight, self.pref_norm_embedding.weight)
+        loss = rec_loss + orthogonal_loss
+        item = torch.cat([pos_item, neg_item])
+        align_loss = alignLoss(self.item_embedding(item), self.entity_embedding(item))
+        loss += self.align_weight * align_loss
 
-            return rec_loss
+        return loss
 
-        else:
-            h = interaction[self.HEAD_ENTITY_ID]
-            r = interaction[self.RELATION_ID]
-            pos_t = interaction[self.TAIL_ENTITY_ID]
-            neg_t = interaction[self.NEG_TAIL_ENTITY_ID]
+    def calculate_kg_loss(self, interaction):
+        h = interaction[self.HEAD_ENTITY_ID]
+        r = interaction[self.RELATION_ID]
+        pos_t = interaction[self.TAIL_ENTITY_ID]
+        neg_t = interaction[self.NEG_TAIL_ENTITY_ID]
 
-            h_e = self.entity_embedding(h)
-            pos_t_e = self.entity_embedding(pos_t)
-            neg_t_e = self.entity_embedding(neg_t)
-            r_e = self.relation_embedding(r)
-            norm_e = self.relation_norm_embedding(r)
+        h_e = self.entity_embedding(h)
+        pos_t_e = self.entity_embedding(pos_t)
+        neg_t_e = self.entity_embedding(neg_t)
+        r_e = self.relation_embedding(r)
+        norm_e = self.relation_norm_embedding(r)
 
-            proj_h_e = self.transH_projection(h_e, norm_e)
-            proj_pos_t_e = self.transH_projection(pos_t_e, norm_e)
-            proj_neg_t_e = self.transH_projection(neg_t_e, norm_e)
+        proj_h_e = self.transH_projection(h_e, norm_e)
+        proj_pos_t_e = self.transH_projection(pos_t_e, norm_e)
+        proj_neg_t_e = self.transH_projection(neg_t_e, norm_e)
 
-            pos_tail_score = ((proj_h_e + r_e - proj_pos_t_e) ** 2).sum(dim=1)
-            neg_tail_score = ((proj_h_e + r_e - proj_neg_t_e) ** 2).sum(dim=1)
+        kg_loss = self.kg_loss(proj_h_e + r_e, proj_pos_t_e, proj_neg_t_e)
+        orthogonal_loss = orthogonalLoss(r_e, norm_e)
+        reg_loss = self.reg_loss(h_e, pos_t_e, neg_t_e, r_e)
+        loss = self.kg_weight * (kg_loss + orthogonal_loss + reg_loss)
+        entity = torch.cat([h, pos_t, neg_t])
+        entity = entity[entity < self.n_items]
+        align_loss = alignLoss(self.item_embedding(entity), self.entity_embedding(entity))
+        loss += self.align_weight * align_loss
 
-            kg_loss = self.kg_loss(pos_tail_score, neg_tail_score)
-
-            return kg_loss
+        return loss
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]

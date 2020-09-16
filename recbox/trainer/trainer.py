@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/8/29 15:40, 2020/8/21, 2020/8/19
+# @Time   : 2020/8/7 18:38, 2020/9/15, 2020/8/21, 2020/8/19
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn
 
@@ -16,10 +16,10 @@ import numpy as np
 import torch
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from ..evaluator import TopKEvaluator, LossEvaluator
-from ..data.interaction import Interaction
-from ..utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType, ModelType
-from .utils import early_stopping, calculate_valid_score, dict2str
+from recbox.evaluator import TopKEvaluator, LossEvaluator
+from recbox.data.interaction import Interaction
+from recbox.utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType, ModelType
+from recbox.trainer.utils import early_stopping, calculate_valid_score, dict2str
 
 
 def get_trainer(model_type):
@@ -195,7 +195,7 @@ class Trainer(AbstractTrainer):
             # Note: interaction without item ids
             scores = self.model.full_sort_predict(interaction.to(self.device)).flatten()
         else:
-            interaction = interaction.to_device_repeat_interleave(self.device, self.tot_item_num)
+            interaction = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
             scores = self.model.predict(interaction)
         pos_idx = pos_idx.to(self.device)
@@ -289,16 +289,19 @@ class KGTrainer(Trainer):
     def __init__(self, config, model):
         super(KGTrainer, self).__init__(config, model)
 
+        self.train_rec_step = config['train_rec_step']
         self.train_kg_step = config['train_kg_step']
 
     def _train_epoch(self, train_data, epoch_idx):
         self.model.train()
         total_loss = 0.
-        if self.train_kg_step <= 0:
+        if self.train_rec_step is None or self.train_kg_step is None:
             interaction_state = KGDataLoaderState.RSKG
         else:
-            interaction_state = KGDataLoaderState.KG \
-                if (epoch_idx + 1) % (self.train_kg_step + 1) == 0 else KGDataLoaderState.RS
+            assert self.train_rec_step > 0 and self.train_kg_step > 0
+            interaction_state = KGDataLoaderState.RS \
+                if epoch_idx % (self.train_rec_step + self.train_kg_step) < self.train_rec_step \
+                else KGDataLoaderState.KG
         train_data.set_mode(interaction_state)
         if interaction_state in [KGDataLoaderState.RSKG, KGDataLoaderState.RS]:
             for batch_idx, interaction in enumerate(train_data):

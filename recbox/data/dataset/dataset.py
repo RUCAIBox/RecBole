@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/15, 2020/9/10
+# @Time   : 2020/9/15, 2020/9/15, 2020/9/15
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -20,8 +20,8 @@ import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 from sklearn.impute import SimpleImputer
 
-from ...utils import FeatureSource, FeatureType, ModelType
-from ..interaction import Interaction
+from recbox.utils import FeatureSource, FeatureType, ModelType
+from recbox.data.interaction import Interaction
 
 
 class Dataset(object):
@@ -199,14 +199,10 @@ class Dataset(object):
             load_col = None
         elif source.value not in self.config['load_col']:
             return None
+        elif self.config['load_col'][source.value] == '*':
+            load_col = None
         else:
             load_col = set(self.config['load_col'][source.value])
-            if source in {FeatureSource.USER, FeatureSource.INTERACTION} and self.uid_field is not None:
-                load_col.add(self.uid_field)
-            if source in {FeatureSource.ITEM, FeatureSource.INTERACTION} and self.iid_field is not None:
-                load_col.add(self.iid_field)
-            if source == FeatureSource.INTERACTION and self.time_field is not None:
-                load_col.add(self.time_field)
 
         if self.config['unload_col'] is not None and source.value in self.config['unload_col']:
             unload_col = set(self.config['unload_col'][source.value])
@@ -560,14 +556,6 @@ class Dataset(object):
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
         mp = ['[PAD]'] + list(mp)
-        # if self.model_type == ModelType.SEQUENTIAL:
-        #     item_related = False
-        #     for (feat, field, ftype) in remap_list:
-        #         if self.field2source[field] in {FeatureSource.ITEM_ID, FeatureSource.ITEM}:
-        #             item_related = True
-        #             break
-        #     if item_related:
-        #         mp.append('[STOP]')
 
         for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
             if overwrite or (field not in self.field2id_token):
@@ -899,6 +887,43 @@ class Dataset(object):
             return mat.tocsr()
         else:
             raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
+
+    def _history_matrix(self, row):
+        self._check_field(self.uid_field, self.iid_field)
+
+        user_ids = self.inter_feat[self.uid_field].values
+        item_ids = self.inter_feat[self.iid_field].values
+
+        if row == 'user':
+            row_num, max_col_num = self.user_num, self.item_num
+            row_ids, col_ids = user_ids, item_ids
+        else:
+            row_num, max_col_num = self.item_num, self.user_num
+            row_ids, col_ids = item_ids, user_ids
+
+        history_len = np.zeros(row_num, dtype=np.int64)
+        for row_id in row_ids:
+            history_len[row_id] += 1
+
+        col_num = np.max(history_len)
+        if col_num > max_col_num * 0.2:
+            self.logger.warning('max value of {}\'s history interaction records has reached {}% of the total'.format(
+                row, col_num / max_col_num * 100,
+            ))
+
+        history_matrix = np.zeros((row_num, col_num), dtype=np.int64)
+        history_len[:] = 0
+        for row_id, col_id in zip(row_ids, col_ids):
+            history_matrix[history_len[row_id]] = col_id
+            history_len[row_id] += 1
+
+        return torch.LongTensor(history_matrix), torch.LongTensor(history_len)
+
+    def history_item_matrix(self):
+        return self._history_matrix(row='user')
+
+    def history_user_matrix(self):
+        return self._history_matrix(row='item')
 
     def get_preload_weight(self, field):
         if field not in self._preloaded_weight:

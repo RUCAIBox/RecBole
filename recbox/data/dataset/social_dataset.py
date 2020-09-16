@@ -13,8 +13,8 @@ from logging import getLogger
 import numpy as np
 from scipy.sparse import coo_matrix
 
-from .dataset import Dataset
-from ...utils import FeatureSource
+from recbox.data.dataset.dataset import Dataset
+from recbox.utils import FeatureSource
 
 
 class SocialDataset(Dataset):
