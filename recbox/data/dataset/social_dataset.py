@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/15
+# @Time   : 2020/9/16, 2020/9/15
 # @Author : Yupeng Hou, Xingyu Pan
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -98,7 +98,7 @@ class SocialDataset(Dataset):
 
         return fields_in_same_space
 
-    def _create_dgl_graph(self):
+    def _create_dgl_net_graph(self):
         import dgl
         net_tensor = self._dataframe_to_interaction(self.net_feat)
         source = net_tensor[self.source_field]
@@ -127,7 +127,7 @@ class SocialDataset(Dataset):
             elif form == 'csr':
                 return mat.tocsr()
         elif form == 'dgl':
-            return self._create_dgl_graph()
+            return self._create_dgl_net_graph()
         else:
             raise NotImplementedError('net matrix format [{}] has not been implemented.')
 
