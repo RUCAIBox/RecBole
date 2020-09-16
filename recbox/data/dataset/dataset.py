@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/15, 2020/9/3, 2020/9/16
+# @Time   : 2020/9/15, 2020/9/15, 2020/9/16
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -56,12 +56,18 @@ class Dataset(object):
 
         self._preloaded_weight = {}
 
-        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        self.benchmark_filename_list = config['benchmark_filename']
+        if self.benchmark_filename_list is None:
+            self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        else:
+            self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(self.dataset_name, self.dataset_path, self.benchmark_filename_list)
         self.feat_list = self._build_feat_list()
 
-        self._filter_by_inter_num()
-        self._filter_by_field_value()
-        self._reset_index()
+        if self.benchmark_filename_list is None:
+            self._filter_by_inter_num()
+            self._filter_by_field_value()
+            self._reset_index()
+
         self._remap_ID_all()
         self._user_item_feat_preparation()
         self._fill_nan()
@@ -139,6 +145,43 @@ class Dataset(object):
             self.field2source[self.iid_field] = FeatureSource.ITEM_ID
 
         return inter_feat, user_feat, item_feat
+
+    def _load_benchmark_file(self, token, dataset_path, benchmark_filename_list):
+        user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
+        if os.path.isfile(user_feat_path):
+            user_feat = self._load_feat(user_feat_path, FeatureSource.USER)
+            self.logger.debug('user feature loaded successfully from [{}]'.format(user_feat_path))
+        else:
+            user_feat = None
+            self.logger.debug('[{}] not found, user features are not loaded'.format(user_feat_path))
+
+        item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
+        if os.path.isfile(item_feat_path):
+            item_feat = self._load_feat(item_feat_path, FeatureSource.ITEM)
+            self.logger.debug('item feature loaded successfully from [{}]'.format(item_feat_path))
+        else:
+            item_feat = None
+            self.logger.debug('[{}] not found, item features are not loaded'.format(item_feat_path))
+ 
+        sub_inter_lens = []
+        sub_inter_feats = []
+        for filename in benchmark_filename_list:
+            file_path = os.path.join(dataset_path, '{}.{}.{}'.format(token, filename,'inter'))
+            if os.path.isfile(file_path):
+                temp = self._load_feat(file_path, FeatureSource.INTERACTION)
+                sub_inter_feats.append(temp) 
+                sub_inter_lens.append(len(temp))
+            else:
+                raise ValueError('File {} not exist'.format(file_path))
+        inter_feat = pd.concat(sub_inter_feats)
+
+        if self.uid_field in self.field2source:
+            self.field2source[self.uid_field] = FeatureSource.USER_ID
+
+        if self.iid_field in self.field2source:
+            self.field2source[self.iid_field] = FeatureSource.ITEM_ID
+
+        return inter_feat, user_feat, item_feat, sub_inter_lens
 
     def _load_feat(self, filepath, source):
         self.logger.debug('loading feature from [{}] (source: [{}])'.format(filepath, source))
