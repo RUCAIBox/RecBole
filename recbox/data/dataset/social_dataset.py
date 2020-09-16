@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/3
+# @Time   : 2020/9/8, 2020/9/15
 # @Author : Yupeng Hou, Xingyu Pan
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -55,14 +55,20 @@ class SocialDataset(Dataset):
         self.logger.debug('target_id_field: {}'.format(self.target_field))
 
         self._preloaded_weight = {}
+        self.benchmark_filename_list = config['benchmark_filename']
+        if self.benchmark_filename_list is None:
+            self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+        else:
+            self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(self.dataset_name, self.dataset_path, self.benchmark_filename_list)
 
-        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
         self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
         self.feat_list = self._build_feat_list()
+        
+        if self.benchmark_filename_list is None:
+            self._filter_by_inter_num()
+            self._filter_by_field_value()
+            self._reset_index()
 
-        self._filter_by_inter_num()
-        self._filter_by_field_value()
-        self._reset_index()
         self._remap_ID_all()
         self._user_item_feat_preparation()
         self._fill_nan()
