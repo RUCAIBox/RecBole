@@ -11,10 +11,10 @@ import copy
 import os
 from logging import getLogger
 
-from ..config import EvalSetting
-from ..sampler import KGSampler, Sampler
-from ..utils import EvaluatorType, InputType, ModelType
-from .dataloader import *
+from recbox.config import EvalSetting
+from recbox.sampler import KGSampler, Sampler
+from recbox.utils import EvaluatorType, InputType, ModelType
+from recbox.data.dataloader import *
 
 
 def create_dataset(config):

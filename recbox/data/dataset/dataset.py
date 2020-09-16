@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8, 2020/9/3, 2020/9/16
+# @Time   : 2020/9/15, 2020/9/3, 2020/9/16
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -20,8 +20,8 @@ import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 from sklearn.impute import SimpleImputer
 
-from ...utils import FeatureSource, FeatureType
-from ..interaction import Interaction
+from recbox.utils import FeatureSource, FeatureType
+from recbox.data.interaction import Interaction
 
 
 class Dataset(object):
@@ -154,14 +154,10 @@ class Dataset(object):
             load_col = None
         elif source.value not in self.config['load_col']:
             return None
+        elif self.config['load_col'][source.value] == '*':
+            load_col = None
         else:
             load_col = set(self.config['load_col'][source.value])
-            if source in {FeatureSource.USER, FeatureSource.INTERACTION} and self.uid_field is not None:
-                load_col.add(self.uid_field)
-            if source in {FeatureSource.ITEM, FeatureSource.INTERACTION} and self.iid_field is not None:
-                load_col.add(self.iid_field)
-            if source == FeatureSource.INTERACTION and self.time_field is not None:
-                load_col.add(self.time_field)
 
         if self.config['unload_col'] is not None and source.value in self.config['unload_col']:
             unload_col = set(self.config['unload_col'][source.value])

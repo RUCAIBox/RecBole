@@ -12,8 +12,8 @@ import os
 import numpy as np
 import pandas as pd
 
-from .dataset import Dataset
-from ...utils import FeatureSource, FeatureType
+from recbox.data.dataset.dataset import Dataset
+from recbox.utils import FeatureSource, FeatureType
 
 
 class KnowledgeBasedDataset(Dataset):
