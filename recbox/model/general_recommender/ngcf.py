@@ -3,7 +3,10 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.con
 # @File   : ngcf.py
-
+# UPDATE:
+# @Time   : 2020/9/16
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
 """
 Reference:
 Xiang Wang et al. "Neural Graph Collaborative Filtering." in SIGIR 2019.
