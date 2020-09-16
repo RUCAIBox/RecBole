@@ -262,7 +262,7 @@ class KnowledgeBasedDataset(Dataset):
         assert self.field2id_token[self.relation_field][ui_rel_id] == '[UI-Relation]'
 
         kg_rel = kg_tensor[self.relation_field]
-        ui_rel = torch.linspace(ui_rel_id, ui_rel_id, 2*ui_rel_num, dtype=kg_rel.dtype)
+        ui_rel = torch.full((2 * ui_rel_num,), ui_rel_id, dtype=kg_rel.dtype)
         edge = torch.cat([ui_rel, kg_rel])
 
         ret.edata[self.relation_field] = edge
