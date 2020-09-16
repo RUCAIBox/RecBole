@@ -204,6 +204,14 @@ class KnowledgeBasedDataset(Dataset):
         return self.kg_feat[self.head_entity_field].values
 
     @property
+    def tail_entities(self):
+        return self.kg_feat[self.tail_entity_field].values
+
+    @property
+    def relations(self):
+        return self.kg_feat[self.relation_field].values
+
+    @property
     def entities_list(self):
         return np.arange(self.entity_num)
 
