@@ -12,11 +12,9 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from .abstract_dataloader import AbstractDataLoader
-from .neg_sample_mixin import NegSampleMixin, NegSampleByMixin
-from ...utils import (
-    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
-    KGDataLoaderState)
+from recbox.data.dataloader.abstract_dataloader import AbstractDataLoader
+from recbox.data.dataloader.neg_sample_mixin import NegSampleMixin, NegSampleByMixin
+from recbox.utils import DataLoaderType, InputType
 
 
 class GeneralDataLoader(AbstractDataLoader):

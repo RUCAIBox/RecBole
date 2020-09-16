@@ -10,11 +10,9 @@
 import numpy as np
 import torch
 
-from .abstract_dataloader import AbstractDataLoader
-from .neg_sample_mixin import NegSampleByMixin
-from ...utils import (
-    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
-    KGDataLoaderState)
+from recbox.data.dataloader.abstract_dataloader import AbstractDataLoader
+from recbox.data.dataloader.neg_sample_mixin import NegSampleByMixin
+from recbox.utils import DataLoaderType, FeatureSource, FeatureType, InputType
 
 
 class SequentialDataLoader(AbstractDataLoader):

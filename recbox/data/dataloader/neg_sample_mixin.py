@@ -3,14 +3,12 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/12
+# @Time   : 2020/9/9, 2020/9/16
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
-from .abstract_dataloader import AbstractDataLoader
-from ...utils import (
-    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
-    KGDataLoaderState)
+from recbox.data.dataloader.abstract_dataloader import AbstractDataLoader
+from recbox.utils import DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType
 
 
 class NegSampleMixin(AbstractDataLoader):

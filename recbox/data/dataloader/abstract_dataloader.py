@@ -9,7 +9,7 @@
 
 import math
 
-from ...utils import InputType
+from recbox.utils import InputType
 
 
 class AbstractDataLoader(object):
