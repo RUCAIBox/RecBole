@@ -5,9 +5,9 @@
 import torch
 from torch import nn
 from torch.nn.init import xavier_normal_
-from ...utils import InputType
-from ..loss import BPRLoss
-from ..abstract_recommender import SequentialRecommender
+from recbox.utils import InputType
+from recbox.model.loss import BPRLoss
+from recbox.model.abstract_recommender import SequentialRecommender
 
 
 class FPMC(SequentialRecommender):
