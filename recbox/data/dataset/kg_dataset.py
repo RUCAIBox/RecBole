@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/14
+# @Time   : 2020/9/16
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
@@ -11,6 +11,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import coo_matrix
 
 from recbox.data.dataset.dataset import Dataset
 from recbox.utils import FeatureSource, FeatureType
@@ -196,3 +197,36 @@ class KnowledgeBasedDataset(Dataset):
     @property
     def entities_list(self):
         return np.arange(self.entity_num)
+
+    def _create_dgl_graph(self):
+        import dgl
+        kg_tensor = self._dataframe_to_interaction(self.kg_feat)
+        head_entity = kg_tensor[self.head_entity_field]
+        tail_entity = kg_tensor[self.tail_entity_field]
+        ret = dgl.graph((head_entity, tail_entity))
+        for k in kg_tensor:
+            if k not in [self.head_entity_field, self.tail_entity_field]:
+                ret.edata[k] = kg_tensor[k]
+        return ret
+
+    def kg_graph(self, form='coo', value_field=None):
+        hids = self.kg_feat[self.head_entity_field].values
+        tids = self.kg_feat[self.tail_entity_field].values
+        if form in ['coo', 'csr']:
+            if value_field is None:
+                data = np.ones(len(self.kg_feat))
+            else:
+                if value_field not in self.field2source:
+                    raise ValueError('value_field [{}] not exist.'.format(value_field))
+                if self.field2source[value_field] != FeatureSource.KG:
+                    raise ValueError('value_field [{}] can only be one of the kg features'.format(value_field))
+                data = self.kg_feat[value_field].values
+            mat = coo_matrix((data, (hids, tids)), shape=(self.entity_num, self.entity_num))
+            if form == 'coo':
+                return mat
+            elif form == 'csr':
+                return mat.tocsr()
+        elif form == 'dgl':
+            return self._create_dgl_graph()
+        else:
+            raise NotImplementedError('net matrix format [{}] has not been implemented.')
