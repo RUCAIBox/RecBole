@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/16
+# @Time   : 2020/9/9, 2020/9/17
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -112,9 +112,9 @@ class SequentialDataLoader(AbstractDataLoader):
 
 
 class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
-    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+    def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+        super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def data_preprocess(self):
@@ -156,14 +156,14 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
             data_list = []
             for i in range(data_len):
                 uids = data[self.uid_field][i: i + 1]
-                neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
+                neg_iids = self.sampler.sample_by_user_ids(uids, self.neg_sample_by)
                 cur_data = {field: data[field][i: i + 1] for field in data}
                 data_list.append(self.sampling_func(cur_data, neg_iids))
             return {field: np.concatenate([d[field] for d in data_list])
                     for field in data}
         else:
             uids = data[self.uid_field]
-            neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
+            neg_iids = self.sampler.sample_by_user_ids(uids, self.neg_sample_by)
             return self.sampling_func(data, neg_iids)
 
     def _neg_sample_by_pair_wise_sampling(self, data, neg_iids):
@@ -190,7 +190,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
 class SequentialFullDataLoader(SequentialDataLoader):
     dl_type = DataLoaderType.FULL
 
-    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+    def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         super().__init__(config, dataset,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
