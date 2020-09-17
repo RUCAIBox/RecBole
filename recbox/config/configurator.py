@@ -1,6 +1,7 @@
 import os
 import random
 import sys
+from logging import getLogger
 
 import numpy as np
 import torch
@@ -87,16 +88,20 @@ class Config(object):
         torch.backends.cudnn.deterministic = True
 
     def _read_cmd_line(self):
-
+        unrecognized_args = []
         if "ipykernel_launcher" not in sys.argv[0]:
             for arg in sys.argv[1:]:
-                if not arg.startswith("--"):
-                    raise SyntaxError("Commend arg must start with '--', but '%s' is not!" % arg)
+                if not arg.startswith("--") or len(arg[2:].split("=")) != 2:
+                    unrecognized_args.append(arg)
+                    continue
                 cmd_arg_name, cmd_arg_value = arg[2:].split("=")
                 if cmd_arg_name in self.cmd_args_dict and cmd_arg_value != self.cmd_args_dict[cmd_arg_name]:
                     raise SyntaxError("There are duplicate commend arg '%s' with different value!" % arg)
                 else:
                     self.cmd_args_dict[cmd_arg_name] = cmd_arg_value
+        if len(unrecognized_args) > 0:
+            logger = getLogger()
+            logger.warning('command line args [{}] will not be used in RecBox'.format(' '.join(unrecognized_args)))
 
     def _read_config_dict(self):
         for dict_arg_name in self.config_dict:
