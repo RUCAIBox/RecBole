@@ -9,6 +9,7 @@
 
 import traceback
 from run_test import whole_process
+from time import time
 
 
 """
@@ -247,17 +248,20 @@ test_examples = {
 
 def run_test_examples():
 
+    test_start_time = time()
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
-            whole_process(config_file='properties/overall.config', config_dict=test_examples[example])
+            whole_process(config_file='properties/overall.config', config_dict=test_examples[example], saved=False)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:
             print(traceback.format_exc())
             fail_examples.append(example)
+    test_end_time = time()
+    print('total test time: ', test_end_time - test_start_time)
     print('success examples: ', success_examples)
     print('fail examples: ', fail_examples)
     print('\n')
