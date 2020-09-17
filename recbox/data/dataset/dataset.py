@@ -836,7 +836,7 @@ class Dataset(object):
             raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
 
     def _history_matrix(self, row):
-        self._check_field(self.uid_field, self.iid_field)
+        self._check_field('uid_field', 'iid_field')
 
         user_ids = self.inter_feat[self.uid_field].values
         item_ids = self.inter_feat[self.iid_field].values
@@ -861,7 +861,7 @@ class Dataset(object):
         history_matrix = np.zeros((row_num, col_num), dtype=np.int64)
         history_len[:] = 0
         for row_id, col_id in zip(row_ids, col_ids):
-            history_matrix[history_len[row_id]] = col_id
+            history_matrix[row_id, history_len[row_id]] = col_id
             history_len[row_id] += 1
 
         return torch.LongTensor(history_matrix), torch.LongTensor(history_len)
