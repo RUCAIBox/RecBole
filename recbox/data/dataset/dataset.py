@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/15, 2020/9/15, 2020/9/16
+# @Time   : 2020/9/15, 2020/9/15, 2020/9/17
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -812,10 +812,7 @@ class Dataset(object):
         else:
             return self.item_feat
 
-    def inter_matrix(self, form='coo', value_field=None):
-        if not self.uid_field or not self.iid_field:
-            raise ValueError('dataset doesn\'t exist uid/iid, thus can not converted to sparse matrix')
-
+    def _get_inter_by_value_field(self, value_field=None):
         uids = self.inter_feat[self.uid_field].values
         iids = self.inter_feat[self.iid_field].values
         if value_field is None:
@@ -826,6 +823,13 @@ class Dataset(object):
             if self.field2source[value_field] != FeatureSource.INTERACTION:
                 raise ValueError('value_field [{}] can only be one of the interaction features'.format(value_field))
             data = self.inter_feat[value_field].values
+        return uids, iids, data
+
+    def inter_matrix(self, form='coo', value_field=None):
+        if not self.uid_field or not self.iid_field:
+            raise ValueError('dataset doesn\'t exist uid/iid, thus can not converted to sparse matrix')
+
+        uids, iids, data = self._get_inter_by_value_field(value_field)
         mat = coo_matrix((data, (uids, iids)), shape=(self.user_num, self.item_num))
 
         if form == 'coo':
@@ -835,11 +839,10 @@ class Dataset(object):
         else:
             raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
 
-    def _history_matrix(self, row):
-        self._check_field(self.uid_field, self.iid_field)
+    def _history_matrix(self, row, value_field=None):
+        self._check_field('uid_field', 'iid_field')
 
-        user_ids = self.inter_feat[self.uid_field].values
-        item_ids = self.inter_feat[self.iid_field].values
+        user_ids, item_ids, values = self._get_inter_by_value_field(value_field)
 
         if row == 'user':
             row_num, max_col_num = self.user_num, self.item_num
@@ -859,18 +862,20 @@ class Dataset(object):
             ))
 
         history_matrix = np.zeros((row_num, col_num), dtype=np.int64)
+        history_value = np.zeros((row_num, col_num))
         history_len[:] = 0
-        for row_id, col_id in zip(row_ids, col_ids):
-            history_matrix[history_len[row_id]] = col_id
+        for row_id, value, col_id in zip(row_ids, values, col_ids):
+            history_matrix[row_id, history_len[row_id]] = col_id
+            history_value[row_id, history_len[row_id]] = value
             history_len[row_id] += 1
 
-        return torch.LongTensor(history_matrix), torch.LongTensor(history_len)
+        return torch.LongTensor(history_matrix), torch.FloatTensor(history_value), torch.LongTensor(history_len)
 
-    def history_item_matrix(self):
-        return self._history_matrix(row='user')
+    def history_item_matrix(self, value_field=None):
+        return self._history_matrix(row='user', value_field=value_field)
 
-    def history_user_matrix(self):
-        return self._history_matrix(row='item')
+    def history_user_matrix(self, value_field=None):
+        return self._history_matrix(row='item', value_field=value_field)
 
     def get_preload_weight(self, field):
         if field not in self._preloaded_weight:

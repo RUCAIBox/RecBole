@@ -15,7 +15,7 @@ from recbox.config import Config
 from recbox.data import create_dataset, data_preparation
 
 
-def whole_process(config_file='properties/overall.config', config_dict=None):
+def whole_process(config_file='properties/overall.config', config_dict=None, saved=True):
     """
     初始化 config
     """
@@ -51,12 +51,12 @@ def whole_process(config_file='properties/overall.config', config_dict=None):
     """
     训练
     """
-    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data)
+    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=saved)
 
     """
     测试
     """
-    test_result = trainer.evaluate(test_data)
+    test_result = trainer.evaluate(test_data, load_best_model=saved)
 
     print('best valid result:', best_valid_result)
     print('test result: ', test_result)
