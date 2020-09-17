@@ -64,12 +64,11 @@ def data_preparation(config, dataset, save=False):
     kwargs = {}
     if config['training_neg_sample_num']:
         es.neg_sample_by(config['training_neg_sample_num'])
-        sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
-        kwargs['sampler'] = sampler
-        kwargs['phase'] = 'train'
+        sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
+        kwargs['sampler'] = sampler.set_phase('train')
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
         if model_type == ModelType.KNOWLEDGE:
-            kg_sampler = KGSampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
+            kg_sampler = KGSampler(dataset, es.neg_sample_args['distribution'])
             kwargs['kg_sampler'] = kg_sampler
     train_data = dataloader_construct(
         name='train',
@@ -86,9 +85,8 @@ def data_preparation(config, dataset, save=False):
     if len(es_str) > 1 and getattr(es, es_str[1], None):
         getattr(es, es_str[1])()
         if 'sampler' not in locals():
-            sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
-        kwargs['sampler'] = sampler
-        kwargs['phase'] = ['valid', 'test']
+            sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
+        kwargs['sampler'] = [sampler.set_phase('valid'), sampler.set_phase('test')]
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
     valid_data, test_data = dataloader_construct(
         name='evaluation',
