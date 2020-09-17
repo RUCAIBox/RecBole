@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/7/14 9:15
+# @Time   : 2020/7/14
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 # @File   : nfm.py
@@ -48,17 +48,16 @@ class NFM(ContextRecommender):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
         sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        x = []
+        all_embeddings = []
         if sparse_embedding is not None:
-            x.append(sparse_embedding)
+            all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            x.append(dense_embedding)
-        x = torch.cat(x, dim=1)  # [batch_size, num_field, embed_dim]
-        emb_x = self.bn(self.fm(x))
+            all_embeddings.append(dense_embedding)
+        nfm_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        bn_nfm_all_embeddings = self.bn(self.fm(nfm_all_embeddings))
 
-        y = self.predict_layer(self.mlp_layers(emb_x)) + self.first_order_linear(interaction)
-        y = self.sigmoid(y)
-        return y.squeeze()
+        output = self.sigmoid(self.predict_layer(self.mlp_layers(bn_nfm_all_embeddings)) + self.first_order_linear(interaction))
+        return output.squeeze()
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

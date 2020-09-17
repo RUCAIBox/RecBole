@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/3, 2020/9/10
+# @Time   : 2020/9/16, 2020/9/10
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -115,8 +115,48 @@ test_examples = {
         'metrics': ["Recall"],
         'topk': [10]
     },
+    'Test GCMC': {
+        'model': 'GCMC',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test NGCF': {
+        'model': 'NGCF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test LightGCN': {
+        'model': 'LightGCN',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test DGCF': {
+        'model': 'DGCF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
     'Test POP': {
         'model': 'Pop',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test ItemKNN': {
+        'model': 'ItemKNN',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -158,7 +198,7 @@ test_examples = {
         'NEG_PREFIX': None,
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
-        'load_col': {'inter': ['rating', 'timestamp']},
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
         'min_user_inter_num': 5
     },
     'Test FPMC': {
@@ -171,7 +211,7 @@ test_examples = {
         'leave_one_num': 2,
         'real_time_process': True,
         'TIME_FIELD': 'timestamp',
-        'load_col': {'inter': ['rating', 'timestamp']},
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
         'min_user_inter_num': 5
     },
     'Test CKE': {
@@ -191,7 +231,17 @@ test_examples = {
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
-    }
+    },
+    'Test CFKG': {
+        'model': 'CFKG',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'train_kg_step': 0,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+
 }
 
 

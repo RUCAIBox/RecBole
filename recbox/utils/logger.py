@@ -1,6 +1,12 @@
+# -*- coding: utf-8 -*-
+# @Time   : 2020/8/7
+# @Author : Zihan Lin
+# @Email  : linzihan.super@foxmail.com
+
 import logging
 import os
-from .utils import get_local_time
+
+from recbox.utils.utils import get_local_time
 
 
 def init_logger(config):

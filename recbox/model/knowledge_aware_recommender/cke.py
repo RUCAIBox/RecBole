@@ -1,45 +1,45 @@
-# @Time   : 2020/8/6 14:40
+# -*- coding: utf-8 -*-
+# @Time   : 2020/8/6
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
-
 """
 Reference:
-Fuzheng Zhang et al., "Collaborative Knowledge Base Embedding for Recommender Systems." in SIGKDD 2016.
+Fuzheng Zhang et al. "Collaborative Knowledge Base Embedding for Recommender Systems." in SIGKDD 2016.
 """
 
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_normal_
 
-from ...utils import InputType
-from ..abstract_recommender import KnowledgeRecommender
-from ..loss import BPRLoss
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import KnowledgeRecommender
+from recbox.model.loss import BPRLoss
+from recbox.model.init import xavier_normal_initialization
 
 
 # todo: L2 regularization
 class CKE(KnowledgeRecommender):
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(CKE, self).__init__(config, dataset)
 
+        # load parameters info
         self.embedding_size = config['embedding_size']
         self.kg_embedding_size = config['kg_embedding_size']
+        self.kg_weight = config['kg_weight']
 
+        # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
         self.relation_embedding = nn.Embedding(self.n_relations, self.kg_embedding_size)
         self.trans_w = nn.Embedding(self.n_relations, self.embedding_size * self.kg_embedding_size)
-
         self.rec_loss = BPRLoss()
         self.kg_loss = BPRLoss()
 
-        self.apply(self.init_weights)
-
-    def init_weights(self, module):
-        if isinstance(module, nn.Embedding):
-            xavier_normal_(module.weight.data)
+        # parameters initialization
+        self.apply(xavier_normal_initialization)
 
     def get_user_embedding(self, user):
         return self.user_embedding(user)
@@ -77,16 +77,24 @@ class CKE(KnowledgeRecommender):
         user_e, pos_item_e = self.forward(user, pos_item)
         neg_item_e = self.get_item_embedding(neg_item)
         pos_item_score, neg_item_score = torch.mul(user_e, pos_item_e).sum(dim=1), torch.mul(user_e, neg_item_e).sum(dim=1)
-        rec_loss = - self.rec_loss(pos_item_score, neg_item_score)
+        rec_loss = self.rec_loss(pos_item_score, neg_item_score)
 
         h_e, r_e, pos_t_e, neg_t_e = self.get_kg_embedding(h, r, pos_t, neg_t)
         pos_tail_score, neg_tail_score = ((h_e + r_e - pos_t_e) ** 2).sum(dim=1), ((h_e + r_e - neg_t_e) ** 2).sum(dim=1)
-        kg_loss = - self.kg_loss(pos_tail_score, neg_tail_score)
+        kg_loss = self.kg_loss(pos_tail_score, neg_tail_score)
+        loss = rec_loss + self.kg_weight * kg_loss
 
-        return rec_loss + kg_loss
+        return loss
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
         user_e, item_e = self.forward(user, item)
         return torch.mul(user_e, item_e).sum(dim=1)
+
+    def full_sort_predict(self, interaction):
+        user = interaction[self.USER_ID]
+        user_e = self.get_user_embedding(user)
+        all_item_e = self.item_embedding.weight + self.entity_embedding.weight[:self.n_items]
+        score = torch.matmul(user_e, all_item_e.transpose(0, 1))
+        return score.view(-1)

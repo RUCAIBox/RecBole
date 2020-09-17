@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/9, 2020/9/9, 2020/8/31
+# @Time   : 2020/9/9, 2020/9/16, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -11,15 +11,18 @@ import copy
 import os
 from logging import getLogger
 
-from ..config import EvalSetting
-from ..sampler import KGSampler, Sampler
-from ..utils import EvaluatorType, InputType, ModelType
-from .dataloader import *
+from recbox.config import EvalSetting
+from recbox.sampler import KGSampler, Sampler
+from recbox.utils import ModelType
+from recbox.data.dataloader import *
 
 
 def create_dataset(config):
     model_type = config['MODEL_TYPE']
-    if model_type == ModelType.KNOWLEDGE:
+    if model_type == ModelType.SEQUENTIAL:
+        from .dataset import SequentialDataset
+        return SequentialDataset(config)
+    elif model_type == ModelType.KNOWLEDGE:
         from .dataset import KnowledgeBasedDataset
         return KnowledgeBasedDataset(config)
     elif model_type == ModelType.SOCIAL:
@@ -173,20 +176,14 @@ def get_data_loader(name, config, eval_setting):
         if neg_sample_strategy == 'none':
             return GeneralDataLoader
         elif neg_sample_strategy == 'by':
-            if name == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
-                return GeneralIndividualDataLoader
-            else:
-                return GeneralGroupedDataLoader
+            return GeneralNegSampleDataLoader
         elif neg_sample_strategy == 'full':
             return GeneralFullDataLoader
     elif model_type == ModelType.CONTEXT:
         if neg_sample_strategy == 'none':
             return ContextDataLoader
         elif neg_sample_strategy == 'by':
-            if name == 'train' or config['eval_type'] == EvaluatorType.INDIVIDUAL:
-                return ContextIndividualDataLoader
-            else:
-                return ContextGroupedDataLoader
+            return ContextNegSampleDataLoader
         elif neg_sample_strategy == 'full':
             raise NotImplementedError('context model\'s full_sort has not been implemented')
     elif model_type == ModelType.SEQUENTIAL:
@@ -200,10 +197,8 @@ def get_data_loader(name, config, eval_setting):
         if neg_sample_strategy == 'by':
             if name == 'train':
                 return KnowledgeBasedDataLoader
-            elif config['eval_type'] == EvaluatorType.INDIVIDUAL:
-                return GeneralIndividualDataLoader
             else:
-                return GeneralGroupedDataLoader
+                return GeneralNegSampleDataLoader
         elif neg_sample_strategy == 'full':
             return GeneralFullDataLoader
         elif neg_sample_strategy == 'none':

@@ -34,7 +34,7 @@ class Sampler(object):
 
         self.n_users = self.datasets[0].user_num
         self.n_items = self.datasets[0].item_num
-        
+
         if distribution == 'uniform':
             self.random_item_list = list(range(self.n_items))
         elif distribution == 'popularity':
@@ -107,7 +107,7 @@ class KGSampler(object):
         self.entity_num = self.datasets[0].entity_num
 
         if distribution == 'uniform':
-            self.random_entity_list = self.entities[:]
+            self.random_entity_list = self.entities
         elif distribution == 'popularity':
             self.random_entity_list = []
             for dataset in datasets:
@@ -121,13 +121,13 @@ class KGSampler(object):
         self.random_entity_list_length = len(self.random_entity_list)
 
         self.full_set = set(self.entities)
-        self.used_tail_eneity_id = dict()
+        self.used_tail_entity_id = dict()
         last = [set() for i in range(self.entity_num)]
         for phase, dataset in zip(self.phases, self.datasets):
             cur = np.array([set(s) for s in last])
             for hid, tid in dataset.kg_feat[[hid_field, tid_field]].values:
                 cur[hid].add(tid)
-            last = self.used_tail_eneity_id[phase] = cur
+            last = self.used_tail_entity_id[phase] = cur
 
     def random_entity(self):
         entity = self.random_entity_list[self.random_pr % self.random_entity_list_length]
@@ -139,7 +139,7 @@ class KGSampler(object):
             head_entity_num = len(head_entity_ids)
             total_num = head_entity_num * num
             neg_tail_entity_id = np.zeros(total_num, dtype=np.int64)
-            used_tail_entity_id_list = np.repeat(self.used_tail_eneity_id[phase][head_entity_ids], num)
+            used_tail_entity_id_list = np.repeat(self.used_tail_entity_id[phase][head_entity_ids], num)
             for i, used_tail_entity_id in enumerate(used_tail_entity_id_list):
                 cur = self.random_entity()
                 while cur in used_tail_entity_id:
