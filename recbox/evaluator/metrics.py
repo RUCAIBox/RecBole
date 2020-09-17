@@ -4,13 +4,12 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/12   2020/08/21
-# @Author  :   Kaiyuan Li   Zhichao Feng
-# @email   :   tsotfsk@outlook.com  fzcbupt@gmail.com
+# @Time    :   2020/08/12, 2020/08/21, 2020/9/16
+# @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan
+# @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, panxy@ruc.edu.cn
 
-import warnings
+from logging import getLogger
 import numpy as np
-from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.metrics import auc as sk_auc
 from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error
 
@@ -188,17 +187,17 @@ def auc(trues, preds):
     fps = np.r_[0, fps]
 
     if fps[-1] <= 0:
-        warnings.warn("No negative samples in y_true, "
-                      "false positive value should be meaningless",
-                      UndefinedMetricWarning)
+        logger = getLogger()
+        logger.warning("No negative samples in y_true, "
+                       "false positive value should be meaningless")
         fpr = np.repeat(np.nan, fps.shape)
     else:
         fpr = fps / fps[-1]
 
     if tps[-1] <= 0:
-        warnings.warn("No positive samples in y_true, "
-                      "true positive value should be meaningless",
-                      UndefinedMetricWarning)
+        logger = getLogger()
+        logger.warning("No positive samples in y_true, "
+                       "true positive value should be meaningless")
         tpr = np.repeat(np.nan, tps.shape)
     else:
         tpr = tps / tps[-1]

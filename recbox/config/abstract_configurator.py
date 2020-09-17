@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# @Time   : 2020/6/28
+# @Author : Zihan Lin
+# @Email  : linzihan.super@foxmail.com
 import os
 from configparser import ConfigParser
 

@@ -8,12 +8,11 @@
 # @email  : houyupeng@ruc.edu.cn
 
 import torch
-import numpy as np
 from torch import nn
 from torch.nn.init import xavier_normal_
-from ...utils import InputType
-from ..abstract_recommender import SequentialRecommender
-from ..layers import MultiHeadAttention
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import SequentialRecommender
+from recbox.model.layers import MultiHeadAttention
 
 
 class SASRec(SequentialRecommender):

@@ -97,6 +97,9 @@ class SequentialDataLoader(AbstractDataLoader):
             self.target_time_field: self.dataset.inter_feat[self.time_field][target_index].values,
             self.item_list_length_field: item_list_length,
         }
+        for field in self.dataset.inter_feat:
+            if field != self.iid_field and field != self.time_field:
+                new_dict[field] = self.dataset.inter_feat[field][target_index].values
         if self.position_field:
             new_dict[self.position_field] = np.tile(np.arange(self.max_item_list_len), (new_length, 1))
 
