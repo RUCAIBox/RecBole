@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time   : 2020/8/11 9:57
 # @Author : Zihan Lin
-# @Email  : linzihan.super@foxmail.con
+# @Email  : linzihan.super@foxmail.com
 
 import torch
 

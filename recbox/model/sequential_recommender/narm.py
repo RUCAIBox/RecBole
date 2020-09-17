@@ -9,9 +9,8 @@
 
 import torch
 from torch import nn
-from ...utils import InputType
-from ..abstract_recommender import SequentialRecommender
-from torch.nn.utils.rnn import pack_padded_sequence,pad_packed_sequence
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import SequentialRecommender
 from torch.nn.init import xavier_normal_, constant_
 
 

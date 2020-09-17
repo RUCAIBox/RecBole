@@ -7,7 +7,7 @@
 # UPDATE:
 # @Time   : 2020/8/16
 # @Author : Zihan Lin
-# @Email  : linzihan.super@foxmain.com
+# @Email  : linzihan.super@foxmail.com
 
 """
 Reference:
