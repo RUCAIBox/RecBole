@@ -65,8 +65,9 @@ class NAIS(GeneralRecommender):
         loss_1 = reg_1 * self.item_src_embedding.weight.norm(2)
         loss_2 = reg_2 * self.item_dst_embedding.weight.norm(2)
         loss_3 = 0
-        for parm in self.mlp_layers.parameters():
-            loss_3 = loss_3 + reg_3 * parm.norm(2)
+        for name, parm in self.mlp_layers.named_parameters():
+            if name.endswith('weight'):
+                loss_3 = loss_3 + reg_3 * parm.norm(2)
         return loss_1 + loss_2 + loss_3
 
     def attention_mlp(self, inter, target):
