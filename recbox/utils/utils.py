@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# @Time   : 2020/7/17
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
+
 import os
 import datetime
 import importlib

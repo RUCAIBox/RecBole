@@ -3,3 +3,5 @@
 *.pyc
 *.log
 saved/
+*.lprof
+*.egg-info/
