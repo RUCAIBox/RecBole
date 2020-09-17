@@ -836,7 +836,7 @@ class Dataset(object):
             raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
 
     def _history_matrix(self, row):
-        self._check_field(self.uid_field, self.iid_field)
+        self._check_field('uid_field', 'iid_field')
 
         user_ids = self.inter_feat[self.uid_field].values
         item_ids = self.inter_feat[self.iid_field].values
