@@ -55,6 +55,7 @@ class DMF(GeneralRecommender):
         elif self.inter_matrix_type == 'rating':
             self.history_user_id, self.history_user_value, _ = dataset.history_user_matrix(value_field=self.RATING)
             self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix(value_field=self.RATING)
+            self.interaction_matrix = dataset.inter_matrix(form='csr', value_field=self.RATING).astype(np.float32)
         else:
             raise ValueError("The inter_matrix_type must in ['01', 'rating'] but get {}".format(self.inter_matrix_type))
         self.max_rating = self.history_user_value.max()
