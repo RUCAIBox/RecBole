@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/16, 2020/9/17, 2020/8/31
+# @Time   : 2020/9/18, 2020/9/17, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -112,9 +112,11 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         return super().__iter__()
 
     def _shuffle(self):
-        self.main_dataloader._shuffle()
         if self.state == KGDataLoaderState.RSKG:
+            self.general_dataloader._shuffle()
             self.kg_dataloader._shuffle()
+        else:
+            self.main_dataloader._shuffle()
 
     def __next__(self):
         if self.pr >= self.pr_end:
@@ -147,7 +149,11 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         if state not in set(KGDataLoaderState):
             raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
         self.state = state
-        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
+        if self.state == KGDataLoaderState.RS:
             self.main_dataloader = self.general_dataloader
         elif self.state == KGDataLoaderState.KG:
             self.main_dataloader = self.kg_dataloader
+        else:   # RSKG
+            kgpr = self.kg_dataloader.pr_end
+            rspr = self.general_dataloader.pr_end
+            self.main_dataloader = self.general_dataloader if rspr < kgpr else self.kg_dataloader
