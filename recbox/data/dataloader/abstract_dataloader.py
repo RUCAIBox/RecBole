@@ -31,7 +31,11 @@ class AbstractDataLoader(object):
         self.history_user_matrix = self.dataset.history_user_matrix
         self.inter_matrix = self.dataset.inter_matrix
 
-        optional_attrs = ['kg_graph', 'ckg_graph', 'net_matrix']
+        optional_attrs = [
+            'kg_graph', 'ckg_graph', 'relation_num', 'entity_num',
+            'head_entities', 'tail_entities', 'relations', 'entities',
+            'net_matrix'
+        ]
         for op_attr in optional_attrs:
             if hasattr(self.dataset, op_attr):
                 setattr(self, op_attr, getattr(self.dataset, op_attr))

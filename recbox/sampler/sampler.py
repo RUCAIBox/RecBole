@@ -4,7 +4,7 @@
 # @File   : sampler.py
 
 # UPDATE
-# @Time   : 2020/8/17, 2020/8/31, 2020/8/31, 2020/9/18
+# @Time   : 2020/8/17, 2020/8/31, 2020/9/18, 2020/9/18
 # @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou, Yushuo Chen
 # @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
