@@ -4,7 +4,7 @@
 # @File   : sampler.py
 
 # UPDATE
-# @Time   : 2020/8/17, 2020/8/31, 2020/8/31, 2020/9/17
+# @Time   : 2020/8/17, 2020/8/31, 2020/9/18, 2020/9/18
 # @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou, Yushuo Chen
 # @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -70,7 +70,7 @@ class Sampler(AbstractSampler):
 
     def get_random_list(self):
         if self.distribution == 'uniform':
-            return list(range(self.n_items))
+            return list(range(1, self.n_items))
         elif self.distribution == 'popularity':
             random_item_list = []
             for dataset in self.datasets:
@@ -112,18 +112,17 @@ class KGSampler(AbstractSampler):
 
         self.hid_field = dataset.head_entity_field
         self.tid_field = dataset.tail_entity_field
-        self.hid_list = dataset.kg_feat[self.hid_field].values
-        self.tid_list = dataset.kg_feat[self.tid_field].values
+        self.hid_list = dataset.head_entities
+        self.tid_list = dataset.tail_entities
 
         self.head_entities = set(dataset.head_entities)
-        self.entities = dataset.entities_list
         self.entity_num = dataset.entity_num
 
         super().__init__(distribution=distribution)
 
     def get_random_list(self):
         if self.distribution == 'uniform':
-            return self.entities
+            return list(range(1, self.entity_num))
         elif self.distribution == 'popularity':
             return list(self.hid_list) + list(self.tid_list)
         else:
