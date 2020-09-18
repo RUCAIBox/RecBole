@@ -1,39 +1,44 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/7/8
-# @Author : Shanlei Mu
-# @Email  : slmu@ruc.edu.cn
-# @File   : deepfm.py
-
-# UPDATE:
-# @Time   : 2020/8/14
+# @Time   : 2020/9/15 10:57
 # @Author : Zihan Lin
-# @Email  : linzihan.super@foxmain.com
+# @Email  : linzihan.super@foxmail.com
+# @File   : fnn.py
+
 """
 Reference:
-Huifeng Guo et al. "DeepFM: A Factorization-Machine based Neural Network for CTR Prediction." in IJCAI 2017.
+Weinan Zhang1 et al. "Deep Learning over Multi-field Categorical Data" in ECIR 2016
+
+Note:
+    Based on the experiments in the paper above, This implementation incorporate
+    Dropout instead of L2 normalization to relieve over-fitting.
+    Our implementation of FNN is a basic version without pretrain support.
+    If you want to pretrain the feature embedding as the original paper,
+    we suggest you to construct a advanced FNN model and train it in two-stage
+    process with our FM model.
 """
 
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbox.model.layers import BaseFactorizationMachine, MLPLayers
-from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
+from ..layers import MLPLayers
+from .context_recommender import ContextRecommender
 
 
-class DeepFM(ContextRecommender):
+class FNN(ContextRecommender):
 
     def __init__(self, config, dataset):
-        super(DeepFM, self).__init__(config, dataset)
+        super(FNN, self).__init__(config, dataset)
 
         self.LABEL = config['LABEL_FIELD']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout = config['dropout']
 
-        self.fm = BaseFactorizationMachine(reduce_sum=True)
         size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
-        self.mlp_layers = MLPLayers(size_list, self.dropout)
-        self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
+
+        self.mlp_layers = MLPLayers(size_list, self.dropout, activation='tanh', bn=False)  # use tanh as activation
+        self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1, bias=True)
+
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
@@ -56,18 +61,17 @@ class DeepFM(ContextRecommender):
             all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             all_embeddings.append(dense_embedding)
-        deepfm_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
-        batch_size = deepfm_all_embeddings.shape[0]
-        y_fm = self.first_order_linear(interaction) + self.fm(deepfm_all_embeddings)
+        fnn_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        batch_size = fnn_all_embeddings.shape[0]
 
-        y_deep = self.deep_predict_layer(
-            self.mlp_layers(deepfm_all_embeddings.view(batch_size, -1)))
-        y = self.sigmoid(y_fm + y_deep)
-        return y.squeeze()
+        output = self.predict_layer(self.mlp_layers(fnn_all_embeddings.view(batch_size, -1)))
+        output = self.sigmoid(output)
+        return output.squeeze()
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]
         output = self.forward(interaction)
+
         return self.loss(output, label)
 
     def predict(self, interaction):

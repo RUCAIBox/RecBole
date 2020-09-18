@@ -15,10 +15,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from ...utils import InputType
-from ..abstract_recommender import KnowledgeRecommender
-from ..loss import BPRLoss, MarginLoss, EmbMarginLoss
-from ..utils import xavier_normal_initialization
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import KnowledgeRecommender
+from recbox.model.loss import BPRLoss, EmbMarginLoss
+from recbox.model.init import xavier_normal_initialization
 
 
 def orthogonalLoss(rel_embeddings, norm_embeddings):
@@ -43,6 +43,7 @@ class KTUP(KnowledgeRecommender):
         self.kg_weight = config['kg_weight']
         self.align_weight = config['align_weight']
         self.margin = config['margin']
+        self.p_norm = config['p_norm']
 
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
@@ -53,7 +54,7 @@ class KTUP(KnowledgeRecommender):
         self.relation_norm_embedding = nn.Embedding(self.n_relations, self.embedding_size)
 
         self.rec_loss = BPRLoss()
-        self.kg_loss = MarginLoss(margin=self.margin)
+        self.kg_loss = nn.TripletMarginLoss(margin=self.margin, p=self.p_norm, reduction='mean')
         self.reg_loss = EmbMarginLoss()
 
         self.apply(xavier_normal_initialization)
@@ -168,10 +169,7 @@ class KTUP(KnowledgeRecommender):
         proj_pos_t_e = self.transH_projection(pos_t_e, norm_e)
         proj_neg_t_e = self.transH_projection(neg_t_e, norm_e)
 
-        pos_tail_score = ((proj_h_e + r_e - proj_pos_t_e) ** 2).sum(dim=1)
-        neg_tail_score = ((proj_h_e + r_e - proj_neg_t_e) ** 2).sum(dim=1)
-
-        kg_loss = self.kg_loss(pos_tail_score, neg_tail_score)
+        kg_loss = self.kg_loss(proj_h_e + r_e, proj_pos_t_e, proj_neg_t_e)
         orthogonal_loss = orthogonalLoss(r_e, norm_e)
         reg_loss = self.reg_loss(h_e, pos_t_e, neg_t_e, r_e)
         loss = self.kg_weight * (kg_loss + orthogonal_loss + reg_loss)

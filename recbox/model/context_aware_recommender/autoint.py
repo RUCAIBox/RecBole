@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/09/01 15:30
+# @Time   : 2020/09/01
 # @Author : Shuqing Bian
 # @Email  : shuqingbian@gmail.com
 # @File   : autoint.py
 
 """
 Reference:
-"AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks" in CIKM 2018.
+Weiping Song et al. "AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks" in CIKM 2018.
 """
 
 import torch
@@ -14,8 +14,8 @@ import torch.nn.functional as F
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from ..layers import AttLayer, MLPLayers
-from .context_recommender import ContextRecommender
+from recbox.model.layers import AttLayer, MLPLayers
+from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
 class AUTOINT(ContextRecommender):
@@ -82,22 +82,22 @@ class AUTOINT(ContextRecommender):
             cross_term += v_res
         cross_term = F.relu(cross_term).contiguous().view(-1, self.atten_output_dim)
         batch_size = infeature.shape[0]
-        x = self.attn_fc(cross_term) + self.deep_predict_layer(self.mlp_layers(infeature.view(batch_size, -1)))
-        return x
+        att_output = self.attn_fc(cross_term) + self.deep_predict_layer(self.mlp_layers(infeature.view(batch_size, -1)))
+        return att_output
 
 
     def forward(self, interaction):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
         sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        x = []
+        all_embeddings = []
         if sparse_embedding is not None:
-            x.append(sparse_embedding)
+            all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            x.append(dense_embedding)
-        x = torch.cat(x, dim=1)  # [batch_size, num_field, embed_dim]
-        x = self.first_order_linear(interaction) + self.autoint_layer(x)
-        return self.sigmoid(x.squeeze(1))
+            all_embeddings.append(dense_embedding)
+        autoint_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        output = self.first_order_linear(interaction) + self.autoint_layer(autoint_all_embeddings)
+        return self.sigmoid(output.squeeze(1))
 
 
     def calculate_loss(self, interaction):

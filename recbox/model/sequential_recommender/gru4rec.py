@@ -10,8 +10,8 @@
 import torch
 from torch import nn
 from torch.nn.init import xavier_uniform_, xavier_normal_
-from ...utils import InputType
-from ..abstract_recommender import SequentialRecommender
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import SequentialRecommender
 
 
 class GRU4Rec(SequentialRecommender):
@@ -63,12 +63,6 @@ class GRU4Rec(SequentialRecommender):
         short_term_intent_temp = self.dense(short_term_intent_temp)
         predict_behavior_emb = self.gather_indexes(short_term_intent_temp, interaction[self.ITEM_LIST_LEN] - 1)
         return predict_behavior_emb
-
-    def gather_indexes(self, gru_output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
-        gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, self.embedding_size)
-        output_tensor = gru_output.gather(dim=1, index=gather_index)
-        return output_tensor.squeeze(1)
 
     def calculate_loss(self, interaction):
         target_id = interaction[self.TARGET_ITEM_ID]

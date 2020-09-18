@@ -1,7 +1,13 @@
+# -*- coding: utf-8 -*-
+# @Time   : 2020/6/28
+# @Author : Zihan Lin
+# @Email  : linzihan.super@foxmail.com
+
 import os
-from ..evaluator import loss_metrics, topk_metrics
-from ..utils import EvaluatorType, get_model
-from .abstract_configurator import AbstractConfig
+
+from recbox.evaluator import loss_metrics, topk_metrics
+from recbox.utils import EvaluatorType, get_model
+from recbox.config.abstract_configurator import AbstractConfig
 
 
 class RunningConfig(AbstractConfig):

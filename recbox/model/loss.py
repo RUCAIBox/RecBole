@@ -89,16 +89,3 @@ class EmbMarginLoss(nn.Module):
             norm_e = torch.sum(embedding ** self.power, dim=1, keepdim=True)
             emb_loss += torch.sum(torch.max(norm_e - cache_one, cache_zero))
         return emb_loss
-
-
-class MarginLoss(nn.Module):
-
-    def __init__(self, margin=1.0):
-        super(MarginLoss, self).__init__()
-        self.margin = margin
-
-    def forward(self, pos_score, neg_score):
-        dev = pos_score.device
-        cache_zero = torch.tensor(0.).to(dev)
-        loss = torch.sum(torch.max(pos_score - neg_score + self.margin, cache_zero))
-        return loss

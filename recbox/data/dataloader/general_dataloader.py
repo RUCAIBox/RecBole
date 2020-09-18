@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/12
+# @Time   : 2020/9/9, 2020/9/17
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -12,11 +12,9 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from .abstract_dataloader import AbstractDataLoader
-from .neg_sample_mixin import NegSampleMixin, NegSampleByMixin
-from ...utils import (
-    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
-    KGDataLoaderState)
+from recbox.data.dataloader.abstract_dataloader import AbstractDataLoader
+from recbox.data.dataloader.neg_sample_mixin import NegSampleMixin, NegSampleByMixin
+from recbox.utils import DataLoaderType, InputType
 
 
 class GeneralDataLoader(AbstractDataLoader):
@@ -41,11 +39,11 @@ class GeneralDataLoader(AbstractDataLoader):
 
 
 class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
-    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+    def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.uid2index, self.uid2items_num = None, None
 
-        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+        super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def setup(self):
@@ -116,7 +114,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
         uid_field = self.config['USER_ID_FIELD']
         iid_field = self.config['ITEM_ID_FIELD']
         uids = inter_feat[uid_field].to_list()
-        neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
+        neg_iids = self.sampler.sample_by_user_ids(uids, self.neg_sample_by)
         return self.sampling_func(uid_field, iid_field, neg_iids, inter_feat)
 
     def _neg_sample_by_pair_wise_sampling(self, uid_field, iid_field, neg_iids, inter_feat):
@@ -149,13 +147,13 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
 class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
     dl_type = DataLoaderType.FULL
 
-    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+    def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'full':
             raise ValueError('neg_sample strategy in GeneralFullDataLoader() should be `full`')
         self.uid2index, self.uid2items_num = dataset.uid2index
 
-        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+        super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def data_preprocess(self):
@@ -184,7 +182,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         return len(self.uid2index)
 
     def _shuffle(self):
-        raise NotImplementedError('GeneralFullDataLoader can\'t shuffle')
+        self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
         if not self.real_time:
@@ -216,7 +214,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
             pos_num = len(pos_item_id)
             pos_len_list.append(pos_num)
 
-            used_item_id = self.sampler.used_item_id[self.phase][uid]
+            used_item_id = self.sampler.used_ids[uid]
             used_idx.extend([_ + start_idx for _ in used_item_id])
             used_num = len(used_item_id)
 

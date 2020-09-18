@@ -3,18 +3,16 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/12
+# @Time   : 2020/9/9, 2020/9/17
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import numpy as np
 import torch
 
-from .abstract_dataloader import AbstractDataLoader
-from .neg_sample_mixin import NegSampleByMixin
-from ...utils import (
-    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
-    KGDataLoaderState)
+from recbox.data.dataloader.abstract_dataloader import AbstractDataLoader
+from recbox.data.dataloader.neg_sample_mixin import NegSampleByMixin
+from recbox.utils import DataLoaderType, FeatureSource, FeatureType, InputType
 
 
 class SequentialDataLoader(AbstractDataLoader):
@@ -99,6 +97,9 @@ class SequentialDataLoader(AbstractDataLoader):
             self.target_time_field: self.dataset.inter_feat[self.time_field][target_index].values,
             self.item_list_length_field: item_list_length,
         }
+        for field in self.dataset.inter_feat:
+            if field != self.iid_field and field != self.time_field:
+                new_dict[field] = self.dataset.inter_feat[field][target_index].values
         if self.position_field:
             new_dict[self.position_field] = np.tile(np.arange(self.max_item_list_len), (new_length, 1))
 
@@ -111,9 +112,9 @@ class SequentialDataLoader(AbstractDataLoader):
 
 
 class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
-    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+    def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+        super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def data_preprocess(self):
@@ -155,14 +156,14 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
             data_list = []
             for i in range(data_len):
                 uids = data[self.uid_field][i: i + 1]
-                neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
+                neg_iids = self.sampler.sample_by_user_ids(uids, self.neg_sample_by)
                 cur_data = {field: data[field][i: i + 1] for field in data}
                 data_list.append(self.sampling_func(cur_data, neg_iids))
             return {field: np.concatenate([d[field] for d in data_list])
                     for field in data}
         else:
             uids = data[self.uid_field]
-            neg_iids = self.sampler.sample_by_user_ids(self.phase, uids, self.neg_sample_by)
+            neg_iids = self.sampler.sample_by_user_ids(uids, self.neg_sample_by)
             return self.sampling_func(data, neg_iids)
 
     def _neg_sample_by_pair_wise_sampling(self, data, neg_iids):
@@ -189,13 +190,13 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
 class SequentialFullDataLoader(SequentialDataLoader):
     dl_type = DataLoaderType.FULL
 
-    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+    def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         super().__init__(config, dataset,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def _shuffle(self):
-        raise NotImplementedError('SequentialFullDataLoader can\'t shuffle')
+        self.logger.warnning('SequentialFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
         interaction = super()._next_batch_data()
