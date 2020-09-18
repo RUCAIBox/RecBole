@@ -212,7 +212,7 @@ class KnowledgeBasedDataset(Dataset):
         return self.kg_feat[self.relation_field].values
 
     @property
-    def entities_list(self):
+    def entities(self):
         return np.arange(self.entity_num)
 
     def _create_dgl_kg_graph(self):
