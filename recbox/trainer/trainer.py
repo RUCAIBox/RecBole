@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/9/15, 2020/8/21, 2020/8/19, 2020/9/16
+# @Time   : 2020/8/7 18:38, 2020/9/15, 2020/9/18, 2020/8/19, 2020/9/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -192,6 +192,8 @@ class Trainer(AbstractTrainer):
         interaction, pos_idx, used_idx, pos_len_list, neg_len_list = batched_data
 
         batch_size = interaction.length * self.tot_item_num
+        used_idx = torch.cat([used_idx, torch.arange(interaction.length) * self.tot_item_num])  # remove [pad] item
+        neg_len_list = list(np.subtract(neg_len_list, 1))
         if hasattr(self.model, 'full_sort_predict'):
             # Note: interaction without item ids
             scores = self.model.full_sort_predict(interaction.to(self.device)).flatten()
