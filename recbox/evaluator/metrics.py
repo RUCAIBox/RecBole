@@ -18,7 +18,7 @@ from recbox.evaluator.utils import _binary_clf_curve
 #    TopK Metrics    #
 
 
-def hit(pos_index, pos_len):
+def hit_(pos_index, pos_len):
     r"""Hit(also known as hit ratio at N) is a way of calculating how many 'hits' you have in an n-sized list of ranked items.
 
     url:https://medium.com/@rishabhbhatia315/recommendation-system-evaluation-metrics-3f6739288870
@@ -33,7 +33,7 @@ def hit(pos_index, pos_len):
     return (result > 0).astype(int)
 
 
-def mrr(pos_index, pos_len):
+def mrr_(pos_index, pos_len):
     r"""The MRR (also known as mean reciprocal rank) is a statistic measure for evaluating any process that produces a list
     of possible responses to a sample of queries, ordered by probability of correctness.
 
@@ -74,7 +74,7 @@ def map_(pos_index, pos_len):
         \end{align*}
     $$
     """
-    pre = precision(pos_index, pos_len)
+    pre = precision_(pos_index, pos_len)
     sum_pre = np.cumsum(pre * pos_index.astype(np.float), axis=1)
     len_rank = np.full_like(pos_len, pos_index.shape[1])
     actual_len = np.where(pos_len > len_rank, len_rank, pos_len)
@@ -86,7 +86,7 @@ def map_(pos_index, pos_len):
     return result
 
 
-def recall(pos_index, pos_len):
+def recall_(pos_index, pos_len):
     r"""recall (also known as sensitivity) is the fraction of the total amount of relevant instances that were actually
     retrieved
 
@@ -102,7 +102,7 @@ def recall(pos_index, pos_len):
     return np.cumsum(pos_index, axis=1) / pos_len.reshape(-1, 1)
 
 
-def ndcg(pos_index, pos_len):
+def ndcg_(pos_index, pos_len):
     r"""NDCG (also known as normalized discounted cumulative gain) is a measure of ranking quality. Through normalizing the
     score, users and their recommendation list results in the whole test set can be evaluated.
 
@@ -138,7 +138,7 @@ def ndcg(pos_index, pos_len):
     return result
 
 
-def precision(pos_index, pos_len):
+def precision_(pos_index, pos_len):
     r"""precision (also called positive predictive value) is the fraction of
     relevant instances among the retrieved instances
 
@@ -158,7 +158,7 @@ def precision(pos_index, pos_len):
 
 #    CTR Metrics    #
 
-def auc(trues, preds):
+def auc_(trues, preds):
     r"""AUC (also known as Area Under Curve) is used to evaluate the two-class model,
      referring to the area under the ROC curve
 
@@ -207,7 +207,7 @@ def auc(trues, preds):
 
 # Loss based Metrics #
 
-def mae(trues, preds):
+def mae_(trues, preds):
     r"""Mean absolute error regression loss
 
     url:https://en.wikipedia.org/wiki/Mean_absolute_error
@@ -223,7 +223,7 @@ def mae(trues, preds):
     return mean_absolute_error(trues, preds)
 
 
-def rmse(trues, preds):
+def rmse_(trues, preds):
     r"""Mean std error regression loss
 
     url:https://en.wikipedia.org/wiki/Root-mean-square_deviation
@@ -262,19 +262,19 @@ def log_loss_(trues, preds):
 # Item based Metrics #
 
 
-def coverage():
+def coverage_():
     raise NotImplementedError
 
 
-def gini_index():
+def gini_index_():
     raise NotImplementedError
 
 
-def shannon_entropy():
+def shannon_entropy_():
     raise NotImplementedError
 
 
-def diversity():
+def diversity_():
     raise NotImplementedError
 
 
@@ -283,14 +283,14 @@ Useful when we have to serialize evaluation metric names
 and call the functions based on deserialized names
 """
 metrics_dict = {
-    'ndcg': ndcg,
-    'hit': hit,
-    'precision': precision,
+    'ndcg': ndcg_,
+    'hit': hit_,
+    'precision': precision_,
     'map': map_,
-    'recall': recall,
-    'mrr': mrr,
-    'rmse': rmse,
-    'mae': mae,
+    'recall': recall_,
+    'mrr': mrr_,
+    'rmse': rmse_,
+    'mae': mae_,
     'logloss': log_loss_,
-    'auc': auc
+    'auc': auc_
 }
