@@ -4,7 +4,7 @@
 # @File   : sampler.py
 
 # UPDATE
-# @Time   : 2020/8/17, 2020/8/31, 2020/8/31, 2020/9/17
+# @Time   : 2020/8/17, 2020/8/31, 2020/9/18, 2020/9/17
 # @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou, Yushuo Chen
 # @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -116,7 +116,7 @@ class KGSampler(AbstractSampler):
         self.tid_list = dataset.kg_feat[self.tid_field].values
 
         self.head_entities = set(dataset.head_entities)
-        self.entities = dataset.entities_list
+        self.entities = dataset.entities
         self.entity_num = dataset.entity_num
 
         super().__init__(distribution=distribution)

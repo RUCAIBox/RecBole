@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/16, 2020/9/15
+# @Time   : 2020/9/18, 2020/9/15
 # @Author : Yupeng Hou, Xingyu Pan
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -212,7 +212,7 @@ class KnowledgeBasedDataset(Dataset):
         return self.kg_feat[self.relation_field].values
 
     @property
-    def entities_list(self):
+    def entities(self):
         return np.arange(self.entity_num)
 
     def _create_dgl_kg_graph(self):
@@ -304,7 +304,8 @@ class KnowledgeBasedDataset(Dataset):
                 kg_rel = self.kg_feat[value_field].values
                 ui_rel = np.full(2 * ui_rel_num, ui_rel_id, dtype=kg_rel.dtype)
                 data = np.concatenate([ui_rel, kg_rel])
-            mat = coo_matrix((data, (source, target)), shape=(self.entity_num, self.entity_num))
+            node_num = self.entity_num + self.user_num
+            mat = coo_matrix((data, (source, target)), shape=(node_num, node_num))
             if form == 'coo':
                 return mat
             elif form == 'csr':
