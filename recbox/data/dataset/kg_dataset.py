@@ -74,6 +74,14 @@ class KnowledgeBasedDataset(Dataset):
         self._normalize()
         self._preload_weight_matrix()
 
+    def __str__(self):
+        info = [super().__str__()]
+        info.append('The number of entities: {}'.format(self.entity_num))
+        info.append('The number of relations: {}'.format(self.relation_num))
+        info.append('The number of triples: {}'.format(len(self.kg_feat)))
+        info.append('The number of items that have been linked to KG: {}'.format(len(self.item2entity)))
+        return '\n'.join(info)
+
     def _build_feat_list(self):
         return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.kg_feat] if feat is not None]
 
