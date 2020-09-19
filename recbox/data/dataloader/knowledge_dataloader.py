@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/16, 2020/9/16, 2020/8/31
+# @Time   : 2020/9/18, 2020/9/17, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -16,7 +16,7 @@ from recbox.utils import InputType, KGDataLoaderState
 
 class KGDataLoader(NegSampleMixin, AbstractDataLoader):
 
-    def __init__(self, config, dataset, sampler, phase, neg_sample_args,
+    def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.PAIRWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in KnowledgeBasedDataLoader() should be `by`')
@@ -36,7 +36,7 @@ class KGDataLoader(NegSampleMixin, AbstractDataLoader):
         neg_kg_col = neg_prefix + tid_field
         dataset.copy_field_property(neg_kg_col, tid_field)
 
-        super().__init__(config, dataset, sampler, phase, neg_sample_args,
+        super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     @property
@@ -64,7 +64,7 @@ class KGDataLoader(NegSampleMixin, AbstractDataLoader):
         hid_field = self.config['HEAD_ENTITY_ID_FIELD']
         tid_field = self.config['TAIL_ENTITY_ID_FIELD']
         hids = kg_feat[hid_field].to_list()
-        neg_tids = self.sampler.sample_by_entity_ids(self.phase, hids, self.neg_sample_by)
+        neg_tids = self.sampler.sample_by_entity_ids(hids, self.neg_sample_by)
         return self._neg_sample_by_pair_wise_sampling(tid_field, neg_tids, kg_feat)
 
     def _neg_sample_by_pair_wise_sampling(self, tid_field, neg_tids, kg_feat):
@@ -79,18 +79,17 @@ class KGDataLoader(NegSampleMixin, AbstractDataLoader):
 
 class KnowledgeBasedDataLoader(AbstractDataLoader):
 
-    def __init__(self, config, dataset, sampler, kg_sampler, phase, neg_sample_args,
+    def __init__(self, config, dataset, sampler, kg_sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
 
         # using sampler
         self.general_dataloader = GeneralNegSampleDataLoader(config=config, dataset=dataset,
-                                                             sampler=sampler, phase=phase,
-                                                             neg_sample_args=neg_sample_args,
+                                                             sampler=sampler, neg_sample_args=neg_sample_args,
                                                              batch_size=batch_size, dl_format=dl_format,
                                                              shuffle=shuffle)
 
         # using kg_sampler and dl_format is pairwise
-        self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, phase, neg_sample_args,
+        self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, neg_sample_args,
                                           batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=shuffle)
 
         self.main_dataloader = self.general_dataloader
@@ -113,9 +112,11 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         return super().__iter__()
 
     def _shuffle(self):
-        self.main_dataloader._shuffle()
         if self.state == KGDataLoaderState.RSKG:
+            self.general_dataloader._shuffle()
             self.kg_dataloader._shuffle()
+        else:
+            self.main_dataloader._shuffle()
 
     def __next__(self):
         if self.pr >= self.pr_end:
@@ -148,7 +149,11 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         if state not in set(KGDataLoaderState):
             raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
         self.state = state
-        if self.state in [KGDataLoaderState.RS, KGDataLoaderState.RSKG]:
+        if self.state == KGDataLoaderState.RS:
             self.main_dataloader = self.general_dataloader
         elif self.state == KGDataLoaderState.KG:
             self.main_dataloader = self.kg_dataloader
+        else:   # RSKG
+            kgpr = self.kg_dataloader.pr_end
+            rspr = self.general_dataloader.pr_end
+            self.main_dataloader = self.general_dataloader if rspr < kgpr else self.kg_dataloader

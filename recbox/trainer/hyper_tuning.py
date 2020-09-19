@@ -14,6 +14,8 @@ from hyperopt.pyll.base import dfs, as_apply
 from hyperopt.pyll.stochastic import implicit_stochastic_symbols
 from hyperopt.pyll.base import Apply
 
+from recbox.trainer.utils import dict2str
+
 
 """
 Thanks to sbrodeur for the exhaustive search code.
@@ -183,6 +185,13 @@ class HyperTuning(object):
         print('current test result:')
         print(result_dict['test_result'])
         print()
+
+    def export_result(self, output_file=None):
+        with open(output_file, 'w') as fp:
+            for params in self.params2result:
+                fp.write(params + '\n')
+                fp.write('Valid result:\n' + dict2str(self.params2result[params]['best_valid_result']) + '\n')
+                fp.write('Test result:\n' + dict2str(self.params2result[params]['test_result']) + '\n\n')
 
     def trial(self, params):
         config_dict = params
