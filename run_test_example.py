@@ -176,17 +176,17 @@ test_examples = {
         'valid_metric': 'AUC',
         'metrics': ['AUC']
     },
-    'Test Criteo': {
-        'model': 'FM',
-        'dataset': 'criteo',
-        'normalize_all': True,
-        'group_by_user': False,
-        'epochs': 1,
-        'training_neg_sample_num': 0,
-        'eval_setting': 'RO_RS',
-        'valid_metric': 'AUC',
-        'metrics': ['AUC']
-    },
+    # 'Test Criteo': {
+    #     'model': 'FM',
+    #     'dataset': 'criteo',
+    #     'normalize_all': True,
+    #     'group_by_user': False,
+    #     'epochs': 1,
+    #     'training_neg_sample_num': 0,
+    #     'eval_setting': 'RO_RS',
+    #     'valid_metric': 'AUC',
+    #     'metrics': ['AUC']
+    # },
     'Test GRU4Rec': {
         'model': 'GRU4Rec',
         'dataset': 'ml-100k',

@@ -9,23 +9,18 @@
 
 import os
 import itertools
-from time import time
-from logging import getLogger
-import numpy as np
 import torch
 import torch.optim as optim
+import numpy as np
 import matplotlib.pyplot as plt
+
+from time import time
+from logging import getLogger
+
 from recbox.evaluator import TopKEvaluator, LossEvaluator
 from recbox.data.interaction import Interaction
-from recbox.utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType, ModelType
+from recbox.utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType
 from recbox.trainer.utils import early_stopping, calculate_valid_score, dict2str
-
-
-def get_trainer(model_type):
-    if model_type == ModelType.KNOWLEDGE:
-        return KGTrainer
-    else:
-        return Trainer
 
 
 class AbstractTrainer(object):
@@ -323,3 +318,37 @@ class KGTrainer(Trainer):
                 self.optimizer.step()
                 total_loss += loss.item()
         return total_loss
+
+
+class KGATTrainer(KGTrainer):
+    def __init__(self, config, model):
+        super(KGATTrainer, self).__init__(config, model)
+
+    def _train_epoch(self, train_data, epoch_idx):
+        self.model.train()
+        rs_total_loss, kg_total_loss = 0., 0.
+
+        # train rs
+        train_data.set_mode(KGDataLoaderState.RS)
+        for batch_idx, interaction in enumerate(train_data):
+            interaction = interaction.to(self.device)
+            self.optimizer.zero_grad()
+            loss = self.model.calculate_loss(interaction)
+            loss.backward()
+            self.optimizer.step()
+            rs_total_loss += loss.item()
+
+        # train kg
+        train_data.set_mode(KGDataLoaderState.KG)
+        for batch_idx, interaction in enumerate(train_data):
+            interaction = interaction.to(self.device)
+            self.optimizer.zero_grad()
+            loss = self.model.calculate_kg_loss(interaction)
+            loss.backward()
+            self.optimizer.step()
+            kg_total_loss += loss.item()
+
+        # update A
+        self.model.update_attentive_A()
+
+        return rs_total_loss + kg_total_loss
