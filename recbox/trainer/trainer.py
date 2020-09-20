@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/9/15, 2020/9/18, 2020/8/19, 2020/9/16
+# @Time   : 2020/8/7 18:38, 2020/9/15, 2020/9/18, 2020/9/20, 2020/9/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -131,6 +131,16 @@ class Trainer(AbstractTrainer):
         message_output = 'Checkpoint loaded. Resume training from epoch {}'.format(self.start_epoch)
         print(message_output)
 
+    def generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
+        train_loss_output = "epoch %d training [time: %.2fs, " % (epoch_idx, e_time - s_time)
+        if isinstance(losses, tuple):
+            for idx, loss in enumerate(losses):
+                train_loss_output += 'train_loss%d: %.4f, ' % (idx + 1, loss)
+            train_loss_output = train_loss_output[:-2]
+        else:
+            train_loss_output += "train loss: %.4f" % losses
+        return train_loss_output + ']'
+
     def fit(self, train_data, valid_data=None, verbose=True, saved=True):
         if hasattr(self.model, 'train_preparation'):
             self.model.train_preparation(train_data=train_data, valid_data=valid_data)
@@ -138,10 +148,10 @@ class Trainer(AbstractTrainer):
             # train
             training_start_time = time()
             train_loss = self._train_epoch(train_data, epoch_idx)
-            self.train_loss_dict[epoch_idx] = train_loss
+            self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
             training_end_time = time()
-            train_loss_output = "epoch %d training [time: %.2fs, train loss: %.4f]" % \
-                                (epoch_idx, training_end_time - training_start_time, train_loss)
+            train_loss_output = \
+                self.generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
             if verbose:
                 self.logger.info(train_loss_output)
 
@@ -351,4 +361,4 @@ class KGATTrainer(KGTrainer):
         # update A
         self.model.update_attentive_A()
 
-        return rs_total_loss + kg_total_loss
+        return rs_total_loss, kg_total_loss
