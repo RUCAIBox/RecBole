@@ -17,7 +17,6 @@ from recbox.model.loss import BPRLoss
 from recbox.model.init import xavier_normal_initialization
 
 
-# todo: L2 regularization
 class CKE(KnowledgeRecommender):
     input_type = InputType.PAIRWISE
 
@@ -27,7 +26,7 @@ class CKE(KnowledgeRecommender):
         # load parameters info
         self.embedding_size = config['embedding_size']
         self.kg_embedding_size = config['kg_embedding_size']
-        self.kg_weight = config['kg_weight']
+        self.reg_weights = config['reg_weights']
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
@@ -41,12 +40,6 @@ class CKE(KnowledgeRecommender):
         # parameters initialization
         self.apply(xavier_normal_initialization)
 
-    def get_user_embedding(self, user):
-        return self.user_embedding(user)
-
-    def get_item_embedding(self, item):
-        return self.item_embedding(item) + self.entity_embedding(item)
-
     def get_kg_embedding(self, h, r, pos_t, neg_t):
         h_e = self.entity_embedding(h).unsqueeze(1)
         pos_t_e = self.entity_embedding(pos_t).unsqueeze(1)
@@ -58,12 +51,34 @@ class CKE(KnowledgeRecommender):
         pos_t_e = torch.bmm(pos_t_e, r_trans_w).squeeze()
         neg_t_e = torch.bmm(neg_t_e, r_trans_w).squeeze()
 
-        return h_e, r_e, pos_t_e, neg_t_e
+        return h_e, r_e, pos_t_e, neg_t_e, r_trans_w
 
     def forward(self, user, item):
-        user_e = self.get_user_embedding(user)
-        item_e = self.get_item_embedding(item)
-        return user_e, item_e
+        u_e = self.user_embedding(user)
+        i_e = self.item_embedding(item) + self.entity_embedding(item)
+        score = torch.mul(u_e, i_e).sum(dim=1)
+        return score
+
+    def get_rec_loss(self, user_e, pos_e, neg_e):
+        pos_score = torch.mul(user_e, pos_e).sum(dim=1)
+        neg_score = torch.mul(user_e, neg_e).sum(dim=1)
+        rec_loss = self.rec_loss(pos_score, neg_score)
+        return rec_loss
+
+    def get_kg_loss(self, h_e, r_e, pos_e, neg_e):
+        pos_tail_score = ((h_e + r_e - pos_e) ** 2).sum(dim=1)
+        neg_tail_score = ((h_e + r_e - neg_e) ** 2).sum(dim=1)
+        kg_loss = self.kg_loss(pos_tail_score, neg_tail_score)
+        return kg_loss
+
+    def get_reg_loss1(self, final_e, item_e):
+        return ((final_e - item_e) ** 2).sum(dim=1).mean()
+
+    def get_reg_loss2(self, r_e):
+        return (r_e ** 2).sum(dim=1).mean()
+
+    def get_reg_loss3(self, r_trans_w):
+        return (r_trans_w ** 2).sum(dim=1).mean()
 
     def calculate_loss(self, interaction):
         user = interaction[self.USER_ID]
@@ -74,27 +89,34 @@ class CKE(KnowledgeRecommender):
         pos_t = interaction[self.TAIL_ENTITY_ID]
         neg_t = interaction[self.NEG_TAIL_ENTITY_ID]
 
-        user_e, pos_item_e = self.forward(user, pos_item)
-        neg_item_e = self.get_item_embedding(neg_item)
-        pos_item_score, neg_item_score = torch.mul(user_e, pos_item_e).sum(dim=1), torch.mul(user_e, neg_item_e).sum(dim=1)
-        rec_loss = self.rec_loss(pos_item_score, neg_item_score)
+        user_e = self.user_embedding(user)
+        pos_item_e = self.item_embedding(pos_item)
+        neg_item_e = self.item_embedding(neg_item)
+        pos_item_kg_e = self.entity_embedding(pos_item)
+        neg_item_kg_e = self.entity_embedding(neg_item)
+        pos_item_final_e = pos_item_e + pos_item_kg_e
+        neg_item_final_e = neg_item_e + neg_item_kg_e
 
-        h_e, r_e, pos_t_e, neg_t_e = self.get_kg_embedding(h, r, pos_t, neg_t)
-        pos_tail_score, neg_tail_score = ((h_e + r_e - pos_t_e) ** 2).sum(dim=1), ((h_e + r_e - neg_t_e) ** 2).sum(dim=1)
-        kg_loss = self.kg_loss(pos_tail_score, neg_tail_score)
-        loss = rec_loss + self.kg_weight * kg_loss
+        rec_loss = self.get_rec_loss(user_e, pos_item_final_e, neg_item_final_e)
 
-        return loss
+        h_e, r_e, pos_t_e, neg_t_e, r_trans_w = self.get_kg_embedding(h, r, pos_t, neg_t)
+        kg_loss = self.get_kg_loss(h_e, r_e, pos_t_e, neg_t_e)
+
+        reg_loss1 = self.get_reg_loss1(pos_item_final_e, pos_item_e)
+        reg_loss2 = self.get_reg_loss2(r_e)
+        reg_loss3 = self.get_reg_loss3(r_trans_w)
+        reg_loss = self.reg_weights[0] * reg_loss1 + self.reg_weights[1] * reg_loss2 + self.reg_weights[2] * reg_loss3
+
+        return rec_loss, kg_loss, reg_loss
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        user_e, item_e = self.forward(user, item)
-        return torch.mul(user_e, item_e).sum(dim=1)
+        return self.forward(user, item)
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
-        user_e = self.get_user_embedding(user)
+        user_e = self.user_embedding(user)
         all_item_e = self.item_embedding.weight + self.entity_embedding.weight[:self.n_items]
         score = torch.matmul(user_e, all_item_e.transpose(0, 1))
         return score.view(-1)
