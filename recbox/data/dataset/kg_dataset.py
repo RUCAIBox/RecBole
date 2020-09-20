@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/16, 2020/9/15
+# @Time   : 2020/9/18, 2020/9/15
 # @Author : Yupeng Hou, Xingyu Pan
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -73,6 +73,14 @@ class KnowledgeBasedDataset(Dataset):
         self._set_label_by_threshold()
         self._normalize()
         self._preload_weight_matrix()
+
+    def __str__(self):
+        info = [super().__str__()]
+        info.append('The number of entities: {}'.format(self.entity_num))
+        info.append('The number of relations: {}'.format(self.relation_num))
+        info.append('The number of triples: {}'.format(len(self.kg_feat)))
+        info.append('The number of items that have been linked to KG: {}'.format(len(self.item2entity)))
+        return '\n'.join(info)
 
     def _build_feat_list(self):
         return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.kg_feat] if feat is not None]
@@ -212,7 +220,7 @@ class KnowledgeBasedDataset(Dataset):
         return self.kg_feat[self.relation_field].values
 
     @property
-    def entities_list(self):
+    def entities(self):
         return np.arange(self.entity_num)
 
     def _create_dgl_kg_graph(self):
@@ -304,7 +312,8 @@ class KnowledgeBasedDataset(Dataset):
                 kg_rel = self.kg_feat[value_field].values
                 ui_rel = np.full(2 * ui_rel_num, ui_rel_id, dtype=kg_rel.dtype)
                 data = np.concatenate([ui_rel, kg_rel])
-            mat = coo_matrix((data, (source, target)), shape=(self.entity_num, self.entity_num))
+            node_num = self.entity_num + self.user_num
+            mat = coo_matrix((data, (source, target)), shape=(node_num, node_num))
             if form == 'coo':
                 return mat
             elif form == 'csr':

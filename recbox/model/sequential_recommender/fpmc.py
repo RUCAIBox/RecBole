@@ -47,7 +47,11 @@ class FPMC(SequentialRecommender):
         # index = index.view(item_id_list.size(0), 1)
         # # reset masked_id to 0
         # item_id_list.scatter_(dim=1, index=index, src=torch.zeros_like(item_id_list))
-        item_list_emb = self.LI_emb(item_id_list) # [b,n,emb]
+
+        item_list_len = interaction[self.ITEM_LIST_LEN]
+        item_last_click_index = item_list_len - 1
+        item_last_click = torch.gather(item_id_list, dim=1, index=item_last_click_index.unsqueeze(1))
+        item_list_emb = self.LI_emb(item_last_click) # [b,1,emb]
 
         user_emb = self.UI_emb(interaction[self.USER_ID])
         user_emb = torch.unsqueeze(user_emb, dim=1) # [b,1,emb]
@@ -57,6 +61,8 @@ class FPMC(SequentialRecommender):
 
         pos_il = self.IL_emb(interaction[self.TARGET_ITEM_ID])
         pos_il = torch.unsqueeze(pos_il, dim=1) # [b,1,emb]
+
+
 
         pos_score = self.pmfc(user_emb, pos_iu, pos_il, item_list_emb)
 
@@ -70,7 +76,7 @@ class FPMC(SequentialRecommender):
         :param Vui: user embedding:[B,1,E]
         :param Viu: pos or neg:[B,1,E]
         :param Vil: pos or neg:[B,1,E]
-        :param Vli: item_list :[B,S,E]
+        :param Vli: item_list :[B,1,E]
         :return:
         """
     #     MF
@@ -79,7 +85,7 @@ class FPMC(SequentialRecommender):
 
     #     FMC
         fmc = torch.matmul(Vil, Vli.permute(0, 2, 1))
-        fmc = torch.mean(fmc, dim=-1)#[B,1]
+        fmc = torch.squeeze(fmc, dim=1)#[B,1]
         x = mf + fmc
         return x
 
@@ -94,7 +100,10 @@ class FPMC(SequentialRecommender):
         # index = index.view(item_id_list.size(0), 1)
         # reset masked_id to 0
         # item_id_list.scatter_(dim=1, index=index, src=torch.zeros_like(item_id_list))
-        item_list_emb = self.LI_emb(item_id_list)  # [b,n,emb]
+        item_list_len = interaction[self.ITEM_LIST_LEN]
+        item_last_click_index = item_list_len - 1
+        item_last_click = torch.gather(item_id_list, dim=1, index=item_last_click_index.unsqueeze(1))
+        item_list_emb = self.LI_emb(item_last_click)  # [b,1,emb]
 
         neg_item = interaction[self.NEG_ITEM_ID]
         neg_iu = self.IU_emb(neg_item)
@@ -106,7 +115,7 @@ class FPMC(SequentialRecommender):
         neg_score = self.pmfc(user_emb, neg_iu, neg_il, item_list_emb)
         pos_score = self.forward(interaction)
         neg_score = torch.squeeze(neg_score)
-        loss = - self.loss(pos_score, neg_score)
+        loss = self.loss(pos_score, neg_score)
         return loss
 
     def predict(self, interaction):
@@ -120,8 +129,11 @@ class FPMC(SequentialRecommender):
         mf = torch.matmul(user_emb, all_iu_emb.transpose(0,1))
         all_il_emb = self.IL_emb.weight
         item_list = interaction[self.ITEM_ID_LIST]
-        item_list_emb = self.LI_emb(item_list)
+        item_list_len = interaction[self.ITEM_LIST_LEN]
+        item_last_click_index = item_list_len - 1
+        item_last_click = torch.gather(item_list, dim=1, index=item_last_click_index.unsqueeze(1))
+        item_list_emb = self.LI_emb(item_last_click)  # [b,1,emb]
         fmc = torch.matmul(item_list_emb, all_il_emb.transpose(0,1))
-        fmc = torch.mean(fmc, dim=1)
+        fmc = torch.squeeze(fmc, dim=1)
         score = mf + fmc
         return score
