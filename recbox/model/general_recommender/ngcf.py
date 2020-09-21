@@ -131,7 +131,7 @@ class NGCF(GeneralRecommender):
         col = L.col
         i = torch.LongTensor([row, col])
         data = torch.FloatTensor(L.data)
-        SparseL = torch.sparse.FloatTensor(i, data)
+        SparseL = torch.sparse.FloatTensor(i, data, torch.Size(L.shape))
         return SparseL
 
     def get_eye_mat(self):
