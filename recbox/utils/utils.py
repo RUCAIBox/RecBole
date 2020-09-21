@@ -7,6 +7,8 @@ import os
 import datetime
 import importlib
 
+from recbox.utils.enum_type import ModelType
+
 
 def get_local_time():
     cur = datetime.datetime.now()
@@ -36,3 +38,13 @@ def get_model(model_name):
 
     model_class = getattr(model_module, model_name)
     return model_class
+
+
+def get_trainer(model_type, model_name):
+    try:
+        return getattr(importlib.import_module('recbox.trainer'), model_name + 'Trainer')
+    except AttributeError:
+        if model_type == ModelType.KNOWLEDGE:
+            return getattr(importlib.import_module('recbox.trainer'), 'KGTrainer')
+        else:
+            return getattr(importlib.import_module('recbox.trainer'), 'Trainer')
