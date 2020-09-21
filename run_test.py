@@ -9,8 +9,7 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
-from recbox.trainer import get_trainer
-from recbox.utils import init_logger, get_model
+from recbox.utils import init_logger, get_model, get_trainer
 from recbox.config import Config
 from recbox.data import create_dataset, data_preparation
 
@@ -46,7 +45,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None, sav
     """
     初始化 trainer
     """
-    trainer = get_trainer(config['MODEL_TYPE'])(config, model)
+    trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
 
     """
     训练
