@@ -7,24 +7,32 @@
 Reference:
 Guorui Zhou et al. "Deep Interest Network for Click-Through Rate Prediction" in ACM SIGKDD 2018
 
-Note:
-    In this implementation, dropout is used instead of mini batch aware regularizat.
-    In order to compare with other models, we use AUC instead of GAUC to evaluate the model.
+Reference code:
+https://github.com/zhougr1993/DeepInterestNetwork/tree/master/din
+https://github.com/shenweichen/DeepCTR-Torch/tree/master/deepctr_torch/models
 '''
-
 import pandas as pd
 import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.init import xavier_normal_, constant_
 
 from recbox.utils import ModelType, InputType, FeatureType
-from recbox.model.abstract_recommender import SequentialRecommender
 from recbox.model.layers import FMEmbedding
 from recbox.model.layers import MLPLayers
+from recbox.model.abstract_recommender import SequentialRecommender
 
 class DIN(SequentialRecommender):
+    '''Din utilizes the attention mechanism to get the weight of each user's behavior according to the target items,
+    and finally gets the user representation
+
+    Note:
+        In this implementation, dropout is used instead of mini batch aware regularizat.
+        In order to compare with other models, we use AUC instead of GAUC to evaluate the model.
+
+    '''
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
@@ -176,59 +184,22 @@ class DIN(SequentialRecommender):
 
     # TODO: Merge the two predict functions when the data interface is ready
     def predict(self, interaction):
-        x = self.forward(interaction)
-        return x
-
-    # def predict(self, interaction):
-    #     item_list = interaction[self.ITEM_ID_LIST]
-    #     user_list = interaction[self.USER_ID]
-    #     item_list_len = interaction[self.ITEM_LIST_LEN]
-    #     target_item_list = interaction['item_id']
-    #     max_length = item_list.shape[1]
-    #
-    #     item_target_list = torch.cat((item_list, target_item_list.unsqueeze(1)), dim=-1)
-    #
-    #     sparse_embedding, dense_embedding = self.embed_input_fields(user_list, item_target_list)
-    #
-    #     feature_table = {}
-    #     for type in self.types:
-    #         feature_table[type] = []
-    #         if sparse_embedding[type] is not None:
-    #             feature_table[type].append(sparse_embedding[type])
-    #         if dense_embedding[type] is not None:
-    #             feature_table[type].append(dense_embedding[type])
-    #
-    #         feature_table[type] = torch.cat(feature_table[type], dim=1)
-    #         table_shape = feature_table[type].shape
-    #         feat_num, embedding_size = table_shape[-2], table_shape[-1]
-    #         feature_table[type] = feature_table[type].view(table_shape[:-2] + (feat_num * embedding_size,))
-    #
-    #     user_feat_list = feature_table['user']
-    #     item_feat_list, target_item_feat_emb = feature_table['item'].split([max_length, 1], dim=1)
-    #     target_item_feat_emb = target_item_feat_emb.squeeze()
-    #
-    #     user_emb = self.attention(target_item_feat_emb, item_feat_list, item_list_len)
-    #     user_emb = user_emb.squeeze()
-    #
-    #     din_in = torch.cat([user_emb, target_item_feat_emb,
-    #                         user_emb * target_item_feat_emb], dim=-1)
-    #     din_out = self.dnn_mlp_layers(din_in)
-    #     preds = self.dnn_predict_layers(din_out)
-    #     preds = self.PredictionLayer(preds)
-    #
-    #     return preds.squeeze(1)
-
-    '''
-        In the following three functions, when the type is user, [batch_ size, max_ item_length] should be changed
-        to [batch_ size]
-    '''
+        scores = self.forward(interaction)
+        return scores
 
     def embed_float_fields(self, float_fields, type, embed=True):
-        '''
-        :param float_fields: [batch_size, max_item_length, num_float_field]
-        :param type: user or item
-        :param embed: bool
-        :return: float fields embedding. [batch_size, max_item_length, num_float_field, embed_dim]
+        '''Get the embedding of float fields.
+            In the following three functions, when the type is user, [batch_ size, max_ item_length] should be recognised
+        to [batch_ size]
+
+        Args:
+            float_fields: [batch_size, max_item_length, num_float_field]
+            type: user or item
+            embed: bool
+
+        Returns
+            torch.Tensor: float fields embedding. [batch_size, max_item_length, num_float_field, embed_dim]
+
         '''
         if not embed or float_fields is None:
             return float_fields
@@ -244,10 +215,15 @@ class DIN(SequentialRecommender):
         return float_embedding
 
     def embed_token_fields(self, token_fields, type):
-        '''
-        :param token_fields: [batch_size, max_item_length, num_token_field]
-        :param type: user or item
-        :return: token fields embedding. [batch_size, max_item_length, num_token_field, embed_dim]
+        '''Get the embedding of toekn fields.
+
+        Args:
+            token_fields(torch.Tensor): input,[batch_size, max_item_length, num_token_field]
+            type(str): user or item
+
+        Returns:
+            token fields embedding(torch.Tensor): [batch_size, max_item_length, num_token_field, embed_dim]
+
         '''
         if token_fields is None:
             return None
@@ -263,11 +239,16 @@ class DIN(SequentialRecommender):
         return token_embedding
 
     def embed_token_seq_fields(self, token_seq_fields, type, mode='mean'):
-        '''
-        :param token_seq_fields: [batch_size, max_item_length, seq_len]`
-        :param type: user or item
-        :param mode: mean/max/sum
-        :return: [batch_size, max_item_length, num_token_seq_field, embed_dim]
+        '''Get the embedding of token_seq fields.
+
+        Args:
+            token_seq_fields(torch.Tensor): input, [batch_size, max_item_length, seq_len]`
+            type(str): user or item
+            mode(str): mean/max/sum
+
+        Returns:
+            torch.Tensor: result [batch_size, max_item_length, num_token_seq_field, embed_dim]
+
         '''
         fields_result = []
         for i, token_seq_field in enumerate(token_seq_fields):
@@ -300,12 +281,16 @@ class DIN(SequentialRecommender):
         else:
             return torch.cat(fields_result, dim=-2)  # [batch_size, max_item_length, num_token_seq_field, embed_dim]
 
-    # get embedding of user_idx and item_idx
     def embed_input_fields(self, user_idx, item_idx):
-        '''
-        :param user_idx: interaction['user_id']
-        :param item_idx: interaction['item_id_list']
-        :return: dict
+        '''Get the embedding of user_idx and item_idx
+
+        Args:
+            user_idx(torch.Tensor): interaction['user_id']
+            item_idx(torch.Tensor): interaction['item_id_list']
+
+        Returns:
+            dict: embedding of user feature and item feature
+
         '''
         user_item_feat = {'user': self.user_feat, 'item': self.item_feat}
         user_item_idx = {'user': user_idx, 'item': item_idx}
@@ -363,12 +348,16 @@ class DIN(SequentialRecommender):
         return sparse_embedding, dense_embedding
 
     def attention(self, queries, keys, keys_length):
-        """
-        :param queries:       [B, H] candidate ads
-        :param keys:          [B, T, H] user_hist
-        :param keys_length:   [B] mask
+        """attention Layer. Get the representation of each user in the batch.
 
-        H means embedding_size * feat_num
+        Args:
+            queries(torch.Tensor): candidate ads, [B, H], H means embedding_size * feat_num
+            keys(torch.Tensor): user_hist, [B, T, H]
+            keys_length(torch.Tensor): mask, [B]
+
+        Returns:
+            torch.Tensor: result
+
         """
         embbedding_size = queries.shape[-1]  # H
         hist_len = keys.shape[1]  # T
@@ -399,7 +388,8 @@ class DIN(SequentialRecommender):
 
 
 class PredictionLayer(nn.Module):
-
+    """Predict Layer.Get the possibilities that user clicks the candidate item.
+    """
     def __init__(self):
         super(PredictionLayer, self).__init__()
         self.bias = nn.Parameter(torch.zeros((1,)))

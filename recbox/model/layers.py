@@ -207,14 +207,23 @@ class MultiHeadAttention(nn.Module):
 
 
 class Dice(nn.Module):
+    '''Dice activation function
+
+    $$
+        f(s)=p(s)·s+(1-p(s))·\alpha s,
+        p(s)=\frac{1} {1 + e^{-\frac{s-E[s]} {\sqrt {Var[s] + \epsilon}}}}
+    $$
+
+    '''
+
     def __init__(self, emb_size):
         super(Dice, self).__init__()
 
         self.sigmoid = nn.Sigmoid()
         self.alpha = torch.zeros((emb_size,))
 
-    def forward(self, x):
-        self.alpha = self.alpha.to(x.device)
-        x_p = self.sigmoid(x)
+    def forward(self, score):
+        self.alpha = self.alpha.to(score.device)
+        score_p = self.sigmoid(score)
 
-        return self.alpha * (1 - x_p) * x + x_p * x
+        return self.alpha * (1 - score_p) * score + score_p * score
