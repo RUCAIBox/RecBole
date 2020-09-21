@@ -120,10 +120,11 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
 
     def __next__(self):
         if self.pr >= self.pr_end:
-            self.pr = 0
-            # After the rec data ends, the kg data pointer needs to be cleared to zero
             if self.state == KGDataLoaderState.RSKG:
+                self.general_dataloader.pr = 0
                 self.kg_dataloader.pr = 0
+            else:
+                self.pr = 0
             raise StopIteration()
         return self._next_batch_data()
 
