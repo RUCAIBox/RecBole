@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/15, 2020/9/15, 2020/9/17
+# @Time   : 2020/9/17, 2020/9/15, 2020/9/17
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -673,7 +673,7 @@ class Dataset(object):
         return self.__str__()
 
     def __str__(self):
-        info = []
+        info = [self.dataset_name]
         if self.uid_field:
             info.extend(['The number of users: {}'.format(self.user_num),
                          'Average actions of users: {}'.format(self.avg_actions_of_users)])

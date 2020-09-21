@@ -9,6 +9,7 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
+from logging import getLogger
 from recbox.utils import init_logger, get_model, get_trainer
 from recbox.config import Config
 from recbox.data import create_dataset, data_preparation
@@ -20,16 +21,18 @@ def whole_process(config_file='properties/overall.config', config_dict=None, sav
     """
     config = Config(config_file, config_dict)
     config.init()
+
     """
-    
     初始化 logger
     """
     init_logger(config)
+    logger = getLogger()
+
     """
     初始化 dataset
     """
     dataset = create_dataset(config)
-    print(dataset)
+    logger.info(dataset)
 
     """
     生成 训练/验证/测试 数据
@@ -40,7 +43,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None, sav
     初始化 model
     """
     model = get_model(config['model'])(config, train_data).to(config['device'])
-    print(model)
+    logger.info(model)
 
     """
     初始化 trainer
@@ -57,8 +60,8 @@ def whole_process(config_file='properties/overall.config', config_dict=None, sav
     """
     test_result = trainer.evaluate(test_data, load_best_model=saved)
 
-    print('best valid result:', best_valid_result)
-    print('test result: ', test_result)
+    logger.info('best valid result: {}'.format(best_valid_result))
+    logger.info('test result: {}'.format(test_result))
     #model.dump_paramaters()
 
 

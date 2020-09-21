@@ -87,15 +87,23 @@ class Trainer(AbstractTrainer):
 
     def _train_epoch(self, train_data, epoch_idx):
         self.model.train()
-        total_loss = 0.
+        losses_list = []
         for batch_idx, interaction in enumerate(train_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
-            loss = self.model.calculate_loss(interaction)
+            losses = self.model.calculate_loss(interaction)
+            loss = sum(losses) if isinstance(losses, tuple) else losses
             loss.backward()
             self.optimizer.step()
-            total_loss += loss.item()
-        return total_loss
+            losses_list.append(losses)
+        if isinstance(losses_list[0], tuple):
+            total_losses = []
+            for j in range(len(losses_list[0])):
+                total_losses.append(sum([losses[j] for losses in losses_list]).item())
+            return tuple(total_losses)
+
+        else:
+            return sum(losses_list).item()
 
     def _valid_epoch(self, valid_data):
         valid_result = self.evaluate(valid_data, load_best_model=False)
@@ -302,7 +310,7 @@ class KGTrainer(Trainer):
 
     def _train_epoch(self, train_data, epoch_idx):
         self.model.train()
-        total_loss = 0.
+        losses_list = []
         if self.train_rec_step is None or self.train_kg_step is None:
             interaction_state = KGDataLoaderState.RSKG
         else:
@@ -315,19 +323,28 @@ class KGTrainer(Trainer):
             for batch_idx, interaction in enumerate(train_data):
                 interaction = interaction.to(self.device)
                 self.optimizer.zero_grad()
-                loss = self.model.calculate_loss(interaction)
+                losses = self.model.calculate_loss(interaction)
+                loss = sum(losses) if isinstance(losses, tuple) else losses
                 loss.backward()
                 self.optimizer.step()
-                total_loss += loss.item()
+                losses_list.append(losses)
         elif interaction_state in [KGDataLoaderState.KG]:
             for bath_idx, interaction in enumerate(train_data):
                 interaction = interaction.to(self.device)
                 self.optimizer.zero_grad()
-                loss = self.model.calculate_kg_loss(interaction)
+                losses = self.model.calculate_kg_loss(interaction)
+                loss = sum(losses) if isinstance(losses, tuple) else losses
                 loss.backward()
                 self.optimizer.step()
-                total_loss += loss.item()
-        return total_loss
+                losses_list.append(losses)
+        if isinstance(losses_list[0], tuple):
+            total_losses = []
+            for j in range(len(losses_list[0])):
+                total_losses.append(sum([losses[j] for losses in losses_list]).item())
+            return tuple(total_losses)
+
+        else:
+            return sum(losses_list).item()
 
 
 class KGATTrainer(KGTrainer):
