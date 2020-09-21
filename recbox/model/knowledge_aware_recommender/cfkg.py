@@ -54,7 +54,8 @@ class CFKG(KnowledgeRecommender):
         item_e = self.entity_embedding(item)
         rec_r_e = self.relation_embedding.weight[-1]
         rec_r_e = rec_r_e.expand_as(user_e)
-        return user_e, item_e, rec_r_e
+        score = self.get_score(user_e, item_e, rec_r_e)
+        return score
 
     def get_rec_embedding(self, user, pos_item, neg_item):
         user_e = self.user_embedding(user)
@@ -102,9 +103,7 @@ class CFKG(KnowledgeRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        user_e, item_e, rec_r_e = self.forward(user, item)
-        score = self.get_score(user_e, item_e, rec_r_e)
-        return score
+        return self.forward(user, item)
 
     # def full_sort_predict(self, interaction):
     #     user = interaction[self.USER_ID]
