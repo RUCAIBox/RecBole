@@ -20,54 +20,19 @@ class SocialDataset(Dataset):
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
-    def _from_scratch(self, config):
-        self.logger.debug('Loading social dataset from scratch')
-
-        self.dataset_path = config['data_path']
-        self._fill_nan_flag = self.config['fill_nan']
-
-        self.field2type = {}
-        self.field2source = {}
-        self.field2id_token = {}
-        self.field2seqlen = config['seq_len'] or {}
-
-        self.uid_field = self.config['USER_ID_FIELD']
-        self.iid_field = self.config['ITEM_ID_FIELD']
-        self.label_field = self.config['LABEL_FIELD']
-        self.time_field = self.config['TIME_FIELD']
+    def _get_field_from_config(self):
+        super()._get_field_from_config()
 
         self.source_field = self.config['SOURCE_ID_FIELD']
         self.target_field = self.config['TARGET_ID_FIELD']
         self._check_field('source_field', 'target_field')
 
-        self.logger.debug('uid_field: {}'.format(self.uid_field))
-        self.logger.debug('iid_field: {}'.format(self.iid_field))
         self.logger.debug('source_id_field: {}'.format(self.source_field))
         self.logger.debug('target_id_field: {}'.format(self.target_field))
 
-        self._preloaded_weight = {}
-        self.benchmark_filename_list = config['benchmark_filename']
-        if self.benchmark_filename_list is None:
-            self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
-        else:
-            self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(
-                self.dataset_name, self.dataset_path, self.benchmark_filename_list
-            )
-
+    def _load_data(self, token, dataset_path):
+        super()._load_data(token, dataset_path)
         self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
-        self.feat_list = self._build_feat_list()
-        
-        if self.benchmark_filename_list is None:
-            self._filter_by_inter_num()
-            self._filter_by_field_value()
-            self._reset_index()
-
-        self._remap_ID_all()
-        self._user_item_feat_preparation()
-        self._fill_nan()
-        self._set_label_by_threshold()
-        self._normalize()
-        self._preload_weight_matrix()
 
     def _build_feat_list(self):
         return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.net_feat] if feat is not None]
