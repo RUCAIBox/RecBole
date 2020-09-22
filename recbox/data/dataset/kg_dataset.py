@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/18, 2020/9/15
-# @Author : Yupeng Hou, Xingyu Pan
-# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
+# @Time   : 2020/9/18, 2020/9/15, 2020/9/22
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import os
 
@@ -14,7 +14,7 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 import torch
 
-from recbox.data.dataset.dataset import Dataset
+from recbox.data.dataset import Dataset
 from recbox.utils import FeatureSource, FeatureType
 
 
@@ -75,11 +75,11 @@ class KnowledgeBasedDataset(Dataset):
         self._preload_weight_matrix()
 
     def __str__(self):
-        info = [super().__str__()]
-        info.append('The number of entities: {}'.format(self.entity_num))
-        info.append('The number of relations: {}'.format(self.relation_num))
-        info.append('The number of triples: {}'.format(len(self.kg_feat)))
-        info.append('The number of items that have been linked to KG: {}'.format(len(self.item2entity)))
+        info = [super().__str__(),
+                'The number of entities: {}'.format(self.entity_num),
+                'The number of relations: {}'.format(self.relation_num),
+                'The number of triples: {}'.format(len(self.kg_feat)),
+                'The number of items that have been linked to KG: {}'.format(len(self.item2entity))]
         return '\n'.join(info)
 
     def _build_feat_list(self):

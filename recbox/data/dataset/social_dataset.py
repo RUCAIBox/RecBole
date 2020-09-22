@@ -3,30 +3,22 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/16, 2020/9/15
-# @Author : Yupeng Hou, Xingyu Pan
-# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
+# @Time   : 2020/9/16, 2020/9/15, 2020/9/22
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import os
-from logging import getLogger
 
 import numpy as np
 from scipy.sparse import coo_matrix
 
-from recbox.data.dataset.dataset import Dataset
+from recbox.data.dataset import Dataset
 from recbox.utils import FeatureSource
 
 
 class SocialDataset(Dataset):
     def __init__(self, config, saved_dataset=None):
-        self.config = config
-        self.dataset_name = config['dataset']
-        self.logger = getLogger()
-
-        if saved_dataset is None:
-            self._from_scratch(config)
-        else:
-            self._restore_saved_dataset(saved_dataset)
+        super().__init__(config, saved_dataset=saved_dataset)
 
     def _from_scratch(self, config):
         self.logger.debug('Loading social dataset from scratch')
@@ -132,17 +124,6 @@ class SocialDataset(Dataset):
             raise NotImplementedError('net matrix format [{}] has not been implemented.')
 
     def __str__(self):
-        info = []
-        if self.uid_field:
-            info.extend(['The number of users: {}'.format(self.user_num),
-                         'Average actions of users: {}'.format(self.avg_actions_of_users)])
-        if self.iid_field:
-            info.extend(['The number of items: {}'.format(self.item_num),
-                         'Average actions of items: {}'.format(self.avg_actions_of_items)])
-        info.append('The number of connections of social network: {}'.format(len(self.net_feat)))
-        info.append('The number of inters: {}'.format(self.inter_num))
-        if self.uid_field and self.iid_field:
-            info.append('The sparsity of the dataset: {}%'.format(self.sparsity * 100))
-
-        info.append('Remain Fields: {}'.format(list(self.field2type)))
+        info = [super().__str__(),
+                'The number of connections of social network: {}'.format(len(self.net_feat))]
         return '\n'.join(info)
