@@ -183,8 +183,8 @@ class Dataset(object):
             field, ftype = field_type.split(':')
             field_names.append(field)
             try:
-                ftype = FeatureType[ftype.upper()]
-            except KeyError:
+                ftype = FeatureType(ftype)
+            except ValueError:
                 raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
             if load_col is not None and field not in load_col:
                 continue
@@ -254,7 +254,11 @@ class Dataset(object):
                         max_len = self.field2seqlen[field]
                         matrix = np.zeros((len(feat[field]), max_len))
                         for i, row in enumerate(feat[field].to_list()):
-                            matrix[i] = row[:max_len]
+                            length = len(row)
+                            if length <= max_len:
+                                matrix[i, length] = row
+                            else:
+                                matrix[i] = row[:max_len]
                     else:
                         self.logger.warning('Field [{}] with type [{}] is not \'float\' or \'float_seq\', \
                                              which will not be handled by preload matrix.'.format(field, ftype))
@@ -282,9 +286,9 @@ class Dataset(object):
                 elif ftype == FeatureType.FLOAT:
                     feat[field] = aveg.fit_transform(feat[field].values.reshape(-1, 1))
                 elif ftype.value.endswith('seq'):
-                    feat[field] = feat[field].apply(lambda x: [0] if (not isinstance(x, np.ndarray) and
-                                                                     (not isinstance(x, list)))
-                                                                  else x)
+                    feat[field] = feat[field].apply(lambda x: [0]
+                                                    if (not isinstance(x, np.ndarray) and (not isinstance(x, list)))
+                                                    else x)
 
     def _normalize(self):
         if self.config['normalize_field'] is not None and self.config['normalize_all'] is not None:
