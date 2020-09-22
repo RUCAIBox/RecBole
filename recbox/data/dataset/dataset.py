@@ -66,6 +66,7 @@ class Dataset(object):
     def _data_processing(self):
         self.feat_list = self._build_feat_list()
         if self.benchmark_filename_list is None:
+            self._filter_nan_user_or_item()
             self._filter_by_inter_num()
             self._filter_by_field_value()
             self._reset_index()
@@ -329,6 +330,22 @@ class Dataset(object):
                     lst = (lst - mn) / (mx - mn)
                     lst = np.split(lst, split_point)
                     feat[field] = lst
+
+    def _filter_nan_user_or_item(self):
+        for field, name in zip([self.uid_field, self.iid_field], ['user', 'item']):
+            feat = getattr(self, name + '_feat')
+            if feat is None:
+                continue
+            dropped_feat = feat.index[feat[field].isnull()]
+            if dropped_feat.any():
+                self.logger.warning('In {}_feat, line {}, {} do not exist, so they will be removed'.format(
+                    name, list(dropped_feat + 2), field))
+                feat.drop(feat.index[dropped_feat], inplace=True)
+            dropped_inter = self.inter_feat.index[self.inter_feat[field].isnull()]
+            if dropped_inter.any():
+                self.logger.warning('In inter_feat, line {}, {} do not exist, so they will be removed'.format(
+                    name, list(dropped_inter + 2), field))
+                self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
     def _filter_by_inter_num(self):
         ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field,
