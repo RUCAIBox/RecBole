@@ -104,7 +104,7 @@ class GCMC(GeneralRecommender):
         col = L.col
         i = torch.LongTensor([row, col])
         data = torch.FloatTensor(L.data)
-        SparseL = torch.sparse.FloatTensor(i, data)
+        SparseL = torch.sparse.FloatTensor(i, data, torch.Size(L.shape))
         return SparseL
 
     def forward(self, user_X, item_X, user, item):
