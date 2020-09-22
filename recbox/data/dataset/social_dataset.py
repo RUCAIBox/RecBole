@@ -50,7 +50,9 @@ class SocialDataset(Dataset):
         if self.benchmark_filename_list is None:
             self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
         else:
-            self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(self.dataset_name, self.dataset_path, self.benchmark_filename_list)
+            self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(
+                self.dataset_name, self.dataset_path, self.benchmark_filename_list
+            )
 
         self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
         self.feat_list = self._build_feat_list()
