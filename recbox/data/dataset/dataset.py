@@ -144,6 +144,8 @@ class Dataset(object):
         field = getattr(self, field_name, None)
         if feat is not None and field is None:
             raise ValueError('{} must be exist if {}_feat exist'.format(field_name, source.value))
+        if feat is not None and field not in feat:
+            raise ValueError('{} must be loaded if {}_feat is loaded'.format(field_name, source.value))
 
         if field in self.field2source:
             self.field2source[field] = FeatureSource(source.value + '_id')
