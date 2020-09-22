@@ -111,21 +111,8 @@ class Dataset(object):
         self.logger.debug('iid_field: {}'.format(self.iid_field))
 
     def _load_data(self, token, dataset_path):
-        user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
-        if os.path.isfile(user_feat_path):
-            user_feat = self._load_feat(user_feat_path, FeatureSource.USER)
-            self.logger.debug('user feature loaded successfully from [{}]'.format(user_feat_path))
-        else:
-            user_feat = None
-            self.logger.debug('[{}] not found, user features are not loaded'.format(user_feat_path))
-
-        item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
-        if os.path.isfile(item_feat_path):
-            item_feat = self._load_feat(item_feat_path, FeatureSource.ITEM)
-            self.logger.debug('item feature loaded successfully from [{}]'.format(item_feat_path))
-        else:
-            item_feat = None
-            self.logger.debug('[{}] not found, item features are not loaded'.format(item_feat_path))
+        user_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.USER, 'uid_field')
+        item_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.ITEM, 'iid_field')
 
         inter_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'inter'))
         if not os.path.isfile(inter_feat_path):
@@ -134,41 +121,17 @@ class Dataset(object):
         inter_feat = self._load_feat(inter_feat_path, FeatureSource.INTERACTION)
         self.logger.debug('interaction feature loaded successfully from [{}]'.format(inter_feat_path))
 
-        if user_feat is not None and self.uid_field is None:
-            raise ValueError('uid_field must be exist if user_feat exist')
-
-        if item_feat is not None and self.iid_field is None:
-            raise ValueError('iid_field must be exist if item_feat exist')
-
-        if self.uid_field in self.field2source:
-            self.field2source[self.uid_field] = FeatureSource.USER_ID
-
-        if self.iid_field in self.field2source:
-            self.field2source[self.iid_field] = FeatureSource.ITEM_ID
-
+        self._change_field2source()
         return inter_feat, user_feat, item_feat
 
     def _load_benchmark_file(self, token, dataset_path, benchmark_filename_list):
-        user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
-        if os.path.isfile(user_feat_path):
-            user_feat = self._load_feat(user_feat_path, FeatureSource.USER)
-            self.logger.debug('user feature loaded successfully from [{}]'.format(user_feat_path))
-        else:
-            user_feat = None
-            self.logger.debug('[{}] not found, user features are not loaded'.format(user_feat_path))
+        user_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.USER, 'uid_field')
+        item_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.ITEM, 'iid_field')
 
-        item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
-        if os.path.isfile(item_feat_path):
-            item_feat = self._load_feat(item_feat_path, FeatureSource.ITEM)
-            self.logger.debug('item feature loaded successfully from [{}]'.format(item_feat_path))
-        else:
-            item_feat = None
-            self.logger.debug('[{}] not found, item features are not loaded'.format(item_feat_path))
- 
         sub_inter_lens = []
         sub_inter_feats = []
         for filename in benchmark_filename_list:
-            file_path = os.path.join(dataset_path, '{}.{}.{}'.format(token, filename,'inter'))
+            file_path = os.path.join(dataset_path, '{}.{}.{}'.format(token, filename, 'inter'))
             if os.path.isfile(file_path):
                 temp = self._load_feat(file_path, FeatureSource.INTERACTION)
                 sub_inter_feats.append(temp) 
@@ -177,13 +140,28 @@ class Dataset(object):
                 raise ValueError('File {} not exist'.format(file_path))
         inter_feat = pd.concat(sub_inter_feats)
 
+        self._change_field2source()
+        return inter_feat, user_feat, item_feat, sub_inter_lens
+
+    def _load_user_or_item_feat(self, token, dataset_path, source, field_name):
+        feat_path = os.path.join(dataset_path, '{}.{}'.format(token, source.value))
+        if os.path.isfile(feat_path):
+            feat = self._load_feat(feat_path, source)
+            self.logger.debug('user feature loaded successfully from [{}]'.format(feat_path))
+        else:
+            feat = None
+            self.logger.debug('[{}] not found, user features are not loaded'.format(feat_path))
+
+        if feat is not None and getattr(self, field_name, None) is None:
+            raise ValueError('{} must be exist if {}_feat exist'.format(field_name, source.value))
+        return feat
+
+    def _change_field2source(self):
         if self.uid_field in self.field2source:
             self.field2source[self.uid_field] = FeatureSource.USER_ID
 
         if self.iid_field in self.field2source:
             self.field2source[self.iid_field] = FeatureSource.ITEM_ID
-
-        return inter_feat, user_feat, item_feat, sub_inter_lens
 
     def _load_feat(self, filepath, source):
         self.logger.debug('loading feature from [{}] (source: [{}])'.format(filepath, source))
