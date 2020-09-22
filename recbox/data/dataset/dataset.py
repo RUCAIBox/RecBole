@@ -163,20 +163,11 @@ class Dataset(object):
         if self.iid_field in self.field2source:
             self.field2source[self.iid_field] = FeatureSource.ITEM_ID
 
-    def _load_feat(self, filepath, source):
-        self.logger.debug('loading feature from [{}] (source: [{}])'.format(filepath, source))
-
-        str2ftype = {
-            'token': FeatureType.TOKEN,
-            'float': FeatureType.FLOAT,
-            'token_seq': FeatureType.TOKEN_SEQ,
-            'float_seq': FeatureType.FLOAT_SEQ
-        }
-
+    def _get_load_and_unload_col(self, filepath, source):
         if self.config['load_col'] is None:
             load_col = None
         elif source.value not in self.config['load_col']:
-            return None
+            load_col = set()
         elif self.config['load_col'][source.value] == '*':
             load_col = None
         else:
@@ -187,35 +178,38 @@ class Dataset(object):
         else:
             unload_col = None
 
-        if load_col is not None and unload_col is not None:
+        if load_col and unload_col:
             raise ValueError('load_col [{}] and unload_col [{}] can not be setted the same time'.format(
                 load_col, unload_col))
 
         self.logger.debug('\n [{}]:\n\t load_col: [{}]\n\t unload_col: [{}]\n'.format(filepath, load_col, unload_col))
+        return load_col, unload_col
 
+    def _load_feat(self, filepath, source):
+        self.logger.debug('loading feature from [{}] (source: [{}])'.format(filepath, source))
+
+        load_col, unload_col = self._get_load_and_unload_col(filepath, source)
+        if load_col == set():
+            return None
         df = pd.read_csv(filepath, delimiter=self.config['field_separator'])
         field_names = []
         columns = []
-        remain_field = set()
         for field_type in df.columns:
             field, ftype = field_type.split(':')
             field_names.append(field)
-            if ftype not in str2ftype:
+            try:
+                ftype = FeatureType[ftype.upper()]
+            except KeyError:
                 raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
-            ftype = str2ftype[ftype]
             if load_col is not None and field not in load_col:
                 continue
             if unload_col is not None and field in unload_col:
                 continue
-            # TODO user_id & item_id bridge check
-            # TODO user_id & item_id not be set in config
-            # TODO inter __iter__ loading
             self.field2source[field] = source
             self.field2type[field] = ftype
             if not ftype.value.endswith('seq'):
                 self.field2seqlen[field] = 1
             columns.append(field)
-            remain_field.add(field)
 
         if len(columns) == 0:
             self.logger.warning('no columns has been loaded from [{}]'.format(source))
@@ -224,19 +218,12 @@ class Dataset(object):
         df = df[columns]
 
         seq_separator = self.config['seq_separator']
-        def _token(df, field): pass
-        def _float(df, field): pass
-        def _token_seq(df, field): df[field] = [_.split(seq_separator) for _ in df[field].values]
-        def _float_seq(df, field): df[field] = [list(map(float, _.split(seq_separator))) for _ in df[field].values]
-        ftype2func = {
-            FeatureType.TOKEN: _token,
-            FeatureType.FLOAT: _float,
-            FeatureType.TOKEN_SEQ: _token_seq,
-            FeatureType.FLOAT_SEQ: _float_seq,
-        }
-        for field in remain_field:
+        for field in columns:
             ftype = self.field2type[field]
-            ftype2func[ftype](df, field)
+            if ftype == FeatureType.TOKEN_SEQ:
+                df[field] = [_.split(seq_separator) for _ in df[field].values]
+            elif ftype == FeatureType.FLOAT_SEQ:
+                df[field] = [list(map(float, _.split(seq_separator))) for _ in df[field].values]
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = max(map(len, df[field].values))
         return df
@@ -664,14 +651,6 @@ class Dataset(object):
         info.append('Remain Fields: {}'.format(list(self.field2type)))
         return '\n'.join(info)
 
-    # def __iter__(self):
-    #     return self
-
-    # TODO next func
-    # def next(self):
-    #     pass
-
-    # TODO copy
     def copy(self, new_inter_feat):
         nxt = copy.copy(self)
         nxt.inter_feat = new_inter_feat
