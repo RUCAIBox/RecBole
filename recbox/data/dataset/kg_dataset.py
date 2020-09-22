@@ -122,9 +122,10 @@ class KnowledgeBasedDataset(Dataset):
 
         for ent_field in [self.head_entity_field, self.tail_entity_field]:
             entity_list = self.kg_feat[ent_field].values
-            entity_list = [item2id[self.entity2item[_]] if (_ in self.entity2item) and
-                                                           (self.entity2item[_] in item2id)
-                                                        else _ for _ in entity_list]
+            entity_list = [item2id[self.entity2item[_]]
+                           if (_ in self.entity2item) and (self.entity2item[_] in item2id)
+                           else _
+                           for _ in entity_list]
             self.kg_feat[ent_field] = entity_list
 
         fields_in_same_space = self._get_fields_in_same_space()
