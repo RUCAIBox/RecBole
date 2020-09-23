@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/17, 2020/9/15, 2020/9/17
+# @Time   : 2020/9/17, 2020/9/15, 2020/9/22
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -31,21 +31,30 @@ class Dataset(object):
         self.logger = getLogger()
 
         if saved_dataset is None:
-            self._from_scratch(config)
+            self._from_scratch()
         else:
             self._restore_saved_dataset(saved_dataset)
 
-    def _from_scratch(self, config):
-        self.logger.debug('Loading dataset from scratch')
+    def _from_scratch(self):
+        self.logger.debug('Loading {} from scratch'.format(self.__class__))
 
-        self.dataset_path = config['data_path']
+        self._get_preset()
+        self._get_field_from_config()
+        self._load_data(self.dataset_name, self.dataset_path)
+        self._data_processing()
+
+    def _get_preset(self):
+        self.dataset_path = self.config['data_path']
         self._fill_nan_flag = self.config['fill_nan']
 
         self.field2type = {}
         self.field2source = {}
         self.field2id_token = {}
-        self.field2seqlen = config['seq_len'] or {}
+        self.field2seqlen = self.config['seq_len'] or {}
+        self._preloaded_weight = {}
+        self.benchmark_filename_list = self.config['benchmark_filename']
 
+    def _get_field_from_config(self):
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
@@ -54,18 +63,10 @@ class Dataset(object):
         self.logger.debug('uid_field: {}'.format(self.uid_field))
         self.logger.debug('iid_field: {}'.format(self.iid_field))
 
-        self._preloaded_weight = {}
-
-        self.benchmark_filename_list = config['benchmark_filename']
-        if self.benchmark_filename_list is None:
-            self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
-        else:
-            self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(
-                self.dataset_name, self.dataset_path, self.benchmark_filename_list
-            )
+    def _data_processing(self):
         self.feat_list = self._build_feat_list()
-
         if self.benchmark_filename_list is None:
+            self._filter_nan_user_or_item()
             self._filter_by_inter_num()
             self._filter_by_field_value()
             self._reset_index()
@@ -100,105 +101,61 @@ class Dataset(object):
                 setattr(self, '{}_feat'.format(name), df)
             else:
                 setattr(self, '{}_feat'.format(name), None)
-        self.feat_list = self._build_feat_list()
 
-        self.uid_field = self.config['USER_ID_FIELD']
-        self.iid_field = self.config['ITEM_ID_FIELD']
-        self.label_field = self.config['LABEL_FIELD']
-        self.time_field = self.config['TIME_FIELD']
-
-        self.logger.debug('uid_field: {}'.format(self.uid_field))
-        self.logger.debug('iid_field: {}'.format(self.iid_field))
+        self._get_field_from_config()
 
     def _load_data(self, token, dataset_path):
-        user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
-        if os.path.isfile(user_feat_path):
-            user_feat = self._load_feat(user_feat_path, FeatureSource.USER)
-            self.logger.debug('user feature loaded successfully from [{}]'.format(user_feat_path))
+        self._load_inter_feat(token, dataset_path)
+        self.user_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.USER, 'uid_field')
+        self.item_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.ITEM, 'iid_field')
+
+    def _load_inter_feat(self, token, dataset_path):
+        if self.benchmark_filename_list is None:
+            inter_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'inter'))
+            if not os.path.isfile(inter_feat_path):
+                raise ValueError('File {} not exist'.format(inter_feat_path))
+
+            inter_feat = self._load_feat(inter_feat_path, FeatureSource.INTERACTION)
+            self.logger.debug('interaction feature loaded successfully from [{}]'.format(inter_feat_path))
+            self.inter_feat = inter_feat
         else:
-            user_feat = None
-            self.logger.debug('[{}] not found, user features are not loaded'.format(user_feat_path))
+            sub_inter_lens = []
+            sub_inter_feats = []
+            for filename in self.benchmark_filename_list:
+                file_path = os.path.join(dataset_path, '{}.{}.{}'.format(token, filename, 'inter'))
+                if os.path.isfile(file_path):
+                    temp = self._load_feat(file_path, FeatureSource.INTERACTION)
+                    sub_inter_feats.append(temp)
+                    sub_inter_lens.append(len(temp))
+                else:
+                    raise ValueError('File {} not exist'.format(file_path))
+            inter_feat = pd.concat(sub_inter_feats)
+            self.inter_feat, self.file_size_list = inter_feat, sub_inter_lens
 
-        item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
-        if os.path.isfile(item_feat_path):
-            item_feat = self._load_feat(item_feat_path, FeatureSource.ITEM)
-            self.logger.debug('item feature loaded successfully from [{}]'.format(item_feat_path))
+    def _load_user_or_item_feat(self, token, dataset_path, source, field_name):
+        feat_path = os.path.join(dataset_path, '{}.{}'.format(token, source.value))
+        if os.path.isfile(feat_path):
+            feat = self._load_feat(feat_path, source)
+            self.logger.debug('user feature loaded successfully from [{}]'.format(feat_path))
         else:
-            item_feat = None
-            self.logger.debug('[{}] not found, item features are not loaded'.format(item_feat_path))
+            feat = None
+            self.logger.debug('[{}] not found, user features are not loaded'.format(feat_path))
 
-        inter_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'inter'))
-        if not os.path.isfile(inter_feat_path):
-            raise ValueError('File {} not exist'.format(inter_feat_path))
+        field = getattr(self, field_name, None)
+        if feat is not None and field is None:
+            raise ValueError('{} must be exist if {}_feat exist'.format(field_name, source.value))
+        if feat is not None and field not in feat:
+            raise ValueError('{} must be loaded if {}_feat is loaded'.format(field_name, source.value))
 
-        inter_feat = self._load_feat(inter_feat_path, FeatureSource.INTERACTION)
-        self.logger.debug('interaction feature loaded successfully from [{}]'.format(inter_feat_path))
+        if field in self.field2source:
+            self.field2source[field] = FeatureSource(source.value + '_id')
+        return feat
 
-        if user_feat is not None and self.uid_field is None:
-            raise ValueError('uid_field must be exist if user_feat exist')
-
-        if item_feat is not None and self.iid_field is None:
-            raise ValueError('iid_field must be exist if item_feat exist')
-
-        if self.uid_field in self.field2source:
-            self.field2source[self.uid_field] = FeatureSource.USER_ID
-
-        if self.iid_field in self.field2source:
-            self.field2source[self.iid_field] = FeatureSource.ITEM_ID
-
-        return inter_feat, user_feat, item_feat
-
-    def _load_benchmark_file(self, token, dataset_path, benchmark_filename_list):
-        user_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'user'))
-        if os.path.isfile(user_feat_path):
-            user_feat = self._load_feat(user_feat_path, FeatureSource.USER)
-            self.logger.debug('user feature loaded successfully from [{}]'.format(user_feat_path))
-        else:
-            user_feat = None
-            self.logger.debug('[{}] not found, user features are not loaded'.format(user_feat_path))
-
-        item_feat_path = os.path.join(dataset_path, '{}.{}'.format(token, 'item'))
-        if os.path.isfile(item_feat_path):
-            item_feat = self._load_feat(item_feat_path, FeatureSource.ITEM)
-            self.logger.debug('item feature loaded successfully from [{}]'.format(item_feat_path))
-        else:
-            item_feat = None
-            self.logger.debug('[{}] not found, item features are not loaded'.format(item_feat_path))
- 
-        sub_inter_lens = []
-        sub_inter_feats = []
-        for filename in benchmark_filename_list:
-            file_path = os.path.join(dataset_path, '{}.{}.{}'.format(token, filename,'inter'))
-            if os.path.isfile(file_path):
-                temp = self._load_feat(file_path, FeatureSource.INTERACTION)
-                sub_inter_feats.append(temp) 
-                sub_inter_lens.append(len(temp))
-            else:
-                raise ValueError('File {} not exist'.format(file_path))
-        inter_feat = pd.concat(sub_inter_feats)
-
-        if self.uid_field in self.field2source:
-            self.field2source[self.uid_field] = FeatureSource.USER_ID
-
-        if self.iid_field in self.field2source:
-            self.field2source[self.iid_field] = FeatureSource.ITEM_ID
-
-        return inter_feat, user_feat, item_feat, sub_inter_lens
-
-    def _load_feat(self, filepath, source):
-        self.logger.debug('loading feature from [{}] (source: [{}])'.format(filepath, source))
-
-        str2ftype = {
-            'token': FeatureType.TOKEN,
-            'float': FeatureType.FLOAT,
-            'token_seq': FeatureType.TOKEN_SEQ,
-            'float_seq': FeatureType.FLOAT_SEQ
-        }
-
+    def _get_load_and_unload_col(self, filepath, source):
         if self.config['load_col'] is None:
             load_col = None
         elif source.value not in self.config['load_col']:
-            return None
+            load_col = set()
         elif self.config['load_col'][source.value] == '*':
             load_col = None
         else:
@@ -209,35 +166,38 @@ class Dataset(object):
         else:
             unload_col = None
 
-        if load_col is not None and unload_col is not None:
+        if load_col and unload_col:
             raise ValueError('load_col [{}] and unload_col [{}] can not be setted the same time'.format(
                 load_col, unload_col))
 
         self.logger.debug('\n [{}]:\n\t load_col: [{}]\n\t unload_col: [{}]\n'.format(filepath, load_col, unload_col))
+        return load_col, unload_col
 
+    def _load_feat(self, filepath, source):
+        self.logger.debug('loading feature from [{}] (source: [{}])'.format(filepath, source))
+
+        load_col, unload_col = self._get_load_and_unload_col(filepath, source)
+        if load_col == set():
+            return None
         df = pd.read_csv(filepath, delimiter=self.config['field_separator'])
         field_names = []
         columns = []
-        remain_field = set()
         for field_type in df.columns:
             field, ftype = field_type.split(':')
             field_names.append(field)
-            if ftype not in str2ftype:
+            try:
+                ftype = FeatureType(ftype)
+            except ValueError:
                 raise ValueError('Type {} from field {} is not supported'.format(ftype, field))
-            ftype = str2ftype[ftype]
             if load_col is not None and field not in load_col:
                 continue
             if unload_col is not None and field in unload_col:
                 continue
-            # TODO user_id & item_id bridge check
-            # TODO user_id & item_id not be set in config
-            # TODO inter __iter__ loading
             self.field2source[field] = source
             self.field2type[field] = ftype
             if not ftype.value.endswith('seq'):
                 self.field2seqlen[field] = 1
             columns.append(field)
-            remain_field.add(field)
 
         if len(columns) == 0:
             self.logger.warning('no columns has been loaded from [{}]'.format(source))
@@ -246,19 +206,12 @@ class Dataset(object):
         df = df[columns]
 
         seq_separator = self.config['seq_separator']
-        def _token(df, field): pass
-        def _float(df, field): pass
-        def _token_seq(df, field): df[field] = [_.split(seq_separator) for _ in df[field].values]
-        def _float_seq(df, field): df[field] = [list(map(float, _.split(seq_separator))) for _ in df[field].values]
-        ftype2func = {
-            FeatureType.TOKEN: _token,
-            FeatureType.FLOAT: _float,
-            FeatureType.TOKEN_SEQ: _token_seq,
-            FeatureType.FLOAT_SEQ: _float_seq,
-        }
-        for field in remain_field:
+        for field in columns:
             ftype = self.field2type[field]
-            ftype2func[ftype](df, field)
+            if ftype == FeatureType.TOKEN_SEQ:
+                df[field] = [_.split(seq_separator) for _ in df[field].values]
+            elif ftype == FeatureType.FLOAT_SEQ:
+                df[field] = [list(map(float, _.split(seq_separator))) for _ in df[field].values]
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = max(map(len, df[field].values))
         return df
@@ -304,7 +257,11 @@ class Dataset(object):
                         max_len = self.field2seqlen[field]
                         matrix = np.zeros((len(feat[field]), max_len))
                         for i, row in enumerate(feat[field].to_list()):
-                            matrix[i] = row[:max_len]
+                            length = len(row)
+                            if length <= max_len:
+                                matrix[i, length] = row
+                            else:
+                                matrix[i] = row[:max_len]
                     else:
                         self.logger.warning('Field [{}] with type [{}] is not \'float\' or \'float_seq\', \
                                              which will not be handled by preload matrix.'.format(field, ftype))
@@ -332,9 +289,9 @@ class Dataset(object):
                 elif ftype == FeatureType.FLOAT:
                     feat[field] = aveg.fit_transform(feat[field].values.reshape(-1, 1))
                 elif ftype.value.endswith('seq'):
-                    feat[field] = feat[field].apply(lambda x: [0] if (not isinstance(x, np.ndarray) and
-                                                                     (not isinstance(x, list)))
-                                                                  else x)
+                    feat[field] = feat[field].apply(lambda x: [0]
+                                                    if (not isinstance(x, np.ndarray) and (not isinstance(x, list)))
+                                                    else x)
 
     def _normalize(self):
         if self.config['normalize_field'] is not None and self.config['normalize_all'] is not None:
@@ -375,6 +332,22 @@ class Dataset(object):
                     lst = (lst - mn) / (mx - mn)
                     lst = np.split(lst, split_point)
                     feat[field] = lst
+
+    def _filter_nan_user_or_item(self):
+        for field, name in zip([self.uid_field, self.iid_field], ['user', 'item']):
+            feat = getattr(self, name + '_feat')
+            if feat is not None:
+                dropped_feat = feat.index[feat[field].isnull()]
+                if dropped_feat.any():
+                    self.logger.warning('In {}_feat, line {}, {} do not exist, so they will be removed'.format(
+                        name, list(dropped_feat + 2), field))
+                    feat.drop(feat.index[dropped_feat], inplace=True)
+            if field is not None:
+                dropped_inter = self.inter_feat.index[self.inter_feat[field].isnull()]
+                if dropped_inter.any():
+                    self.logger.warning('In inter_feat, line {}, {} do not exist, so they will be removed'.format(
+                        name, list(dropped_inter + 2), field))
+                    self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
     def _filter_by_inter_num(self):
         ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field,
@@ -686,14 +659,6 @@ class Dataset(object):
         info.append('Remain Fields: {}'.format(list(self.field2type)))
         return '\n'.join(info)
 
-    # def __iter__(self):
-    #     return self
-
-    # TODO next func
-    # def next(self):
-    #     pass
-
-    # TODO copy
     def copy(self, new_inter_feat):
         nxt = copy.copy(self)
         nxt.inter_feat = new_inter_feat

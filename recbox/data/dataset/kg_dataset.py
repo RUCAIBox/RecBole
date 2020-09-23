@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/18, 2020/9/15
-# @Author : Yupeng Hou, Xingyu Pan
-# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn
+# @Time   : 2020/9/18, 2020/9/15, 2020/9/22
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import os
 
@@ -14,7 +14,7 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 import torch
 
-from recbox.data.dataset.dataset import Dataset
+from recbox.data.dataset import Dataset
 from recbox.utils import FeatureSource, FeatureType
 
 
@@ -22,24 +22,8 @@ class KnowledgeBasedDataset(Dataset):
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
-    def _from_scratch(self, config):
-        self.logger.debug('Loading kg dataset from scratch')
-
-        self.dataset_path = config['data_path']
-        self._fill_nan_flag = self.config['fill_nan']
-
-        self.field2type = {}
-        self.field2source = {}
-        self.field2id_token = {}
-        self.field2seqlen = config['seq_len'] or {}
-
-        self.uid_field = self.config['USER_ID_FIELD']
-        self.iid_field = self.config['ITEM_ID_FIELD']
-        self.label_field = self.config['LABEL_FIELD']
-        self.time_field = self.config['TIME_FIELD']
-
-        self.logger.debug('uid_field: {}'.format(self.uid_field))
-        self.logger.debug('iid_field: {}'.format(self.iid_field))
+    def _get_field_from_config(self):
+        super()._get_field_from_config()
 
         self.head_entity_field = self.config['HEAD_ENTITY_ID_FIELD']
         self.tail_entity_field = self.config['TAIL_ENTITY_ID_FIELD']
@@ -50,36 +34,17 @@ class KnowledgeBasedDataset(Dataset):
         self.logger.debug('relation_field: {}'.format(self.relation_field))
         self.logger.debug('entity_field: {}'.format(self.entity_field))
 
-        self._preloaded_weight = {}
-
-        self.benchmark_filename_list = config['benchmark_filename']
-        if self.benchmark_filename_list is None:
-            self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
-        else:
-            self.inter_feat, self.user_feat, self.item_feat, self.file_size_list = self._load_benchmark_file(self.dataset_name, self.dataset_path, self.benchmark_filename_list)
-
+    def _load_data(self, token, dataset_path):
+        super()._load_data(token, dataset_path)
         self.kg_feat = self._load_kg(self.dataset_name, self.dataset_path)
         self.item2entity, self.entity2item = self._load_link(self.dataset_name, self.dataset_path)
-        self.feat_list = self._build_feat_list()
-
-        if self.benchmark_filename_list is None:
-            self._filter_by_inter_num()
-            self._filter_by_field_value()
-            self._reset_index()
-
-        self._remap_ID_all()
-        self._user_item_feat_preparation()
-        self._fill_nan()
-        self._set_label_by_threshold()
-        self._normalize()
-        self._preload_weight_matrix()
 
     def __str__(self):
-        info = [super().__str__()]
-        info.append('The number of entities: {}'.format(self.entity_num))
-        info.append('The number of relations: {}'.format(self.relation_num))
-        info.append('The number of triples: {}'.format(len(self.kg_feat)))
-        info.append('The number of items that have been linked to KG: {}'.format(len(self.item2entity)))
+        info = [super().__str__(),
+                'The number of entities: {}'.format(self.entity_num),
+                'The number of relations: {}'.format(self.relation_num),
+                'The number of triples: {}'.format(len(self.kg_feat)),
+                'The number of items that have been linked to KG: {}'.format(len(self.item2entity))]
         return '\n'.join(info)
 
     def _build_feat_list(self):
@@ -102,9 +67,7 @@ class KnowledgeBasedDataset(Dataset):
             field, ftype = field_type.split(':')
             field_names.append(field)
             assert ftype == 'token', 'kg data requires fields with type token'
-            self.field2source[field] = FeatureSource.KG
-            self.field2type[field] = FeatureType.TOKEN
-            self.field2seqlen[field] = 1
+            self.set_field_property(field, FeatureType.TOKEN, FeatureSource.KG, 1)
         df.columns = field_names
         self._check_kg(df)
         return df
@@ -159,9 +122,10 @@ class KnowledgeBasedDataset(Dataset):
 
         for ent_field in [self.head_entity_field, self.tail_entity_field]:
             entity_list = self.kg_feat[ent_field].values
-            entity_list = [item2id[self.entity2item[_]] if (_ in self.entity2item) and
-                                                           (self.entity2item[_] in item2id)
-                                                        else _ for _ in entity_list]
+            entity_list = [item2id[self.entity2item[_]]
+                           if (_ in self.entity2item) and (self.entity2item[_] in item2id)
+                           else _
+                           for _ in entity_list]
             self.kg_feat[ent_field] = entity_list
 
         fields_in_same_space = self._get_fields_in_same_space()
@@ -193,10 +157,7 @@ class KnowledgeBasedDataset(Dataset):
         for ent_field in [self.head_entity_field, self.tail_entity_field, self.entity_field]:
             self.field2id_token[ent_field] = entity_id_token
 
-        self.field2source[self.entity_field] = FeatureSource.KG
-        self.field2type[self.entity_field] = FeatureType.TOKEN
-        self.field2seqlen[self.entity_field] = 1
-
+        self.set_field_property(self.entity_field, FeatureType.TOKEN, FeatureSource.KG, 1)
         self.field2id_token[self.relation_field].append('[UI-Relation]')
 
     @property
@@ -307,7 +268,9 @@ class KnowledgeBasedDataset(Dataset):
                 data = np.ones(len(source))
             else:
                 if value_field != self.relation_field:
-                    raise ValueError('v alue_field [{}] can only be [{}] in ckg_graph.'.format(value_field, self.relation_field))
+                    raise ValueError('v alue_field [{}] can only be [{}] in ckg_graph.'.format(
+                        value_field, self.relation_field)
+                    )
 
                 kg_rel = self.kg_feat[value_field].values
                 ui_rel = np.full(2 * ui_rel_num, ui_rel_id, dtype=kg_rel.dtype)
