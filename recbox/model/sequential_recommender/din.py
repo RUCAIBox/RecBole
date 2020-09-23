@@ -3,14 +3,16 @@
 # @Author : Zhichao Feng
 # @Email  : fzcbupt@gmai.com
 
-'''
+"""
 Reference:
 Guorui Zhou et al. "Deep Interest Network for Click-Through Rate Prediction" in ACM SIGKDD 2018
 
 Reference code:
 https://github.com/zhougr1993/DeepInterestNetwork/tree/master/din
 https://github.com/shenweichen/DeepCTR-Torch/tree/master/deepctr_torch/models
-'''
+
+"""
+
 import pandas as pd
 import numpy as np
 
@@ -25,18 +27,28 @@ from recbox.model.layers import MLPLayers
 from recbox.model.abstract_recommender import SequentialRecommender
 
 class DIN(SequentialRecommender):
-    '''Din utilizes the attention mechanism to get the weight of each user's behavior according to the target items,
+    """Din utilizes the attention mechanism to get the weight of each user's behavior according to the target items,
     and finally gets the user representation
 
     Note:
         In this implementation, dropout is used instead of mini batch aware regularizat.
-        In order to compare with other models, we use AUC instead of GAUC to evaluate the model.
 
-    '''
+        In the official source code, unlike the paper, user features and context features are not input into DNN.
+        In addition, the paper mentioned that the weights of items in the user history list will not go through softmax,
+        but this operation is carried out in the official code.
+
+        Considering the actual performance, we adopt the methods in the official source code for the above two points.
+        But You can get user features embedding from user_feat_list.
+
+        Besides, in order to compare with other models, we use AUC instead of GAUC to evaluate the model.
+
+    """
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
         super(DIN, self).__init__()
+
+        # get field names and parameter value from config
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.LABEL_FIELD = config['LABEL_FIELD']
@@ -47,18 +59,57 @@ class DIN(SequentialRecommender):
         self.embedding_size = config['embedding_size']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.device = config['device']
-        self.types = ['user', 'item']
-        self.user_feat = dataset.get_user_feature()
-        self.item_feat = dataset.get_item_feature()
-        self.user_feat = self.user_feat.to(self.device)
-        self.item_feat = self.item_feat.to(self.device)
         self.embedding_size = config['embedding_size']
         self.dropout = config['dropout']
+        self.max_len = config['MAX_ITEM_LIST_LENGTH']
+        self.dataset = dataset
 
-        # get user feature field and item feature field
+        self.mask_mat = torch.arange(self.max_len).to(self.device).view(1, -1) # init mask
+
+        self.user_feat = self.dataset.get_user_feature()
+        self.item_feat = self.dataset.get_item_feature()
+        self.user_feat = self.user_feat.to(self.device)
+        self.item_feat = self.item_feat.to(self.device)
+
+        self.init_fields_name_dim()
+        self.init_embedding()
+
+        # init MLP layers
+        # self.dnn_list = [(3 * self.num_feature_field['item'] + self.num_feature_field['user'])
+        #                  * self.embedding_size] + self.mlp_hidden_size
+        self.dnn_list = [(3 * self.num_feature_field['item']) * self.embedding_size] + self.mlp_hidden_size
+
+        self.att_list = [4 * self.num_feature_field['item'] * self.embedding_size] + self.mlp_hidden_size
+        self.dnn_mlp_layers = MLPLayers(self.dnn_list, activation='Dice', dropout=self.dropout, bn=True)
+        self.att_mlp_layers = MLPLayers(self.att_list, activation='Sigmoid', dropout=self.dropout, bn=False)
+        self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
+        self.dense = nn.Linear(self.mlp_hidden_size[-1], 1)
+        self.PredictionLayer = PredictionLayer()
+        self.sigmoid = nn.Sigmoid()
+        self.loss = nn.BCELoss()
+
+        self.apply(self.init_weights)
+
+    def init_weights(self, module):
+        if isinstance(module, nn.Embedding):
+            xavier_normal_(module.weight.data)
+        elif isinstance(module, nn.Linear):
+            xavier_normal_(module.weight.data)
+            if module.bias is not None:
+                constant_(module.bias.data, 0)
+
+    def init_fields_name_dim(self):
+        """get user feature field and item feature field
+
+        """
+        self.token_field_offsets = {}
+        self.token_embedding_table = {}
+        self.float_embedding_table = {}
+        self.token_seq_embedding_table = {}
         self.field_names = {'user': list(self.user_feat.interaction.keys()),
                             'item': list(self.item_feat.interaction.keys())}
 
+        self.types = ['user', 'item']
         self.token_field_names = {type: [] for type in self.types}
         self.token_field_dims = {type: [] for type in self.types}
         self.float_field_names = {type: [] for type in self.types}
@@ -69,67 +120,37 @@ class DIN(SequentialRecommender):
 
         for type in self.types:
             for field_name in self.field_names[type]:
-                if dataset.field2type[field_name] == FeatureType.TOKEN:
+                if self.dataset.field2type[field_name] == FeatureType.TOKEN:
                     self.token_field_names[type].append(field_name)
-                    self.token_field_dims[type].append(dataset.num(field_name))
-                elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
+                    self.token_field_dims[type].append(self.dataset.num(field_name))
+                elif self.dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                     self.token_seq_field_names[type].append(field_name)
-                    self.token_seq_field_dims[type].append(dataset.num(field_name))
+                    self.token_seq_field_dims[type].append(self.dataset.num(field_name))
                 else:
                     self.float_field_names[type].append(field_name)
-                    self.float_field_dims[type].append(dataset.num(field_name))
+                    self.float_field_dims[type].append(self.dataset.num(field_name))
                 self.num_feature_field[type] += 1
 
-        self.token_field_offsets = {}
-        self.token_embedding_table = {}
-        self.float_embedding_table = {}
-        self.token_seq_embedding_table = {}
+    def init_embedding(self):
+        """get embedding of all features
 
-        # get embedding
+        """
         for type in self.types:
             if len(self.token_field_dims[type]) > 0:
                 self.token_field_offsets[type] = np.array((0, *np.cumsum(self.token_field_dims[type])[:-1]),
-                                                            dtype=np.long)
+                                                          dtype=np.long)
 
                 self.token_embedding_table[type] = FMEmbedding(self.token_field_dims[type],
-                                                                 self.token_field_offsets[type],
-                                                                 self.embedding_size).to(self.device)
+                                                               self.token_field_offsets[type],
+                                                               self.embedding_size).to(self.device)
             if len(self.float_field_dims[type]) > 0:
                 self.float_embedding_table[type] = nn.Embedding(np.sum(self.float_field_dims[type], dtype=np.int32),
-                                                                  self.embedding_size).to(self.device)
+                                                                self.embedding_size).to(self.device)
             if len(self.token_seq_field_dims) > 0:
                 self.token_seq_embedding_table[type] = nn.ModuleList()
                 for token_seq_field_dim in self.token_seq_field_dims[type]:
                     self.token_seq_embedding_table[type].append(
                         nn.Embedding(token_seq_field_dim, self.embedding_size).to(self.device))
-
-        # init MLP layers
-        # self.dnn_list = [(3 * self.num_feature_field['item'] + self.num_feature_field['user'])
-        #                  * self.embedding_size] + self.mlp_hidden_size
-
-        self.dnn_list = [(3 * self.num_feature_field['item']) * self.embedding_size] + self.mlp_hidden_size
-
-        self.att_list = [4 * self.num_feature_field['item'] * self.embedding_size] + self.mlp_hidden_size
-        self.dnn_mlp_layers = MLPLayers(self.dnn_list, activation='Dice', dropout=self.dropout, bn=True)
-        self.att_mlp_layers = MLPLayers(self.att_list, activation='Sigmoid', dropout=self.dropout, bn=False)
-        self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
-        self.dense = nn.Linear(self.mlp_hidden_size[-1], 1)
-
-        self.max_len = config['MAX_ITEM_LIST_LENGTH']
-        self.mask_mat = torch.arange(self.max_len).to(self.device).view(1, -1)
-
-        self.PredictionLayer = PredictionLayer()
-        self.sigmoid = nn.Sigmoid()
-        self.apply(self.init_weights)
-        self.loss = nn.BCELoss()
-
-    def init_weights(self, module):
-        if isinstance(module, nn.Embedding):
-            xavier_normal_(module.weight.data)
-        elif isinstance(module, nn.Linear):
-            xavier_normal_(module.weight.data)
-            if module.bias is not None:
-                constant_(module.bias.data, 0)
 
     def forward(self, interaction):
         item_list = interaction[self.ITEM_ID_LIST]
@@ -138,13 +159,13 @@ class DIN(SequentialRecommender):
         target_item_list = interaction[self.TARGET_ITEM_ID]
         max_length = item_list.shape[1]
 
-        # concatenate the product history sequence with the target product to get embedding together
+        # concatenate the history item list with the target item to get embedding together
         item_target_list = torch.cat((item_list, target_item_list.unsqueeze(1)), dim=-1)
 
         sparse_embedding, dense_embedding = self.embed_input_fields(user_list, item_target_list)
-        feature_table = {}
 
         # concat the sparse embedding and float embedding
+        feature_table = {}
         for type in self.types:
             feature_table[type] = []
             if sparse_embedding[type] is not None:
@@ -164,7 +185,6 @@ class DIN(SequentialRecommender):
 
         # attention
         user_emb = self.attention(target_item_feat_emb, item_feat_list, item_list_len)
-
         user_emb = user_emb.squeeze()
 
         # input the DNN to get the prediction score
@@ -187,20 +207,21 @@ class DIN(SequentialRecommender):
         scores = self.forward(interaction)
         return scores
 
+    # TODO: 加入抽象类中
     def embed_float_fields(self, float_fields, type, embed=True):
-        '''Get the embedding of float fields.
+        """Get the embedding of float fields.
             In the following three functions, when the type is user, [batch_ size, max_ item_length] should be recognised
         to [batch_ size]
 
         Args:
-            float_fields: [batch_size, max_item_length, num_float_field]
-            type: user or item
-            embed: bool
+            float_fields(torch.Tensor): [batch_size, max_item_length, num_float_field]
+            type(str): user or item
+            embed(bool): embed or not
 
         Returns
             torch.Tensor: float fields embedding. [batch_size, max_item_length, num_float_field, embed_dim]
 
-        '''
+        """
         if not embed or float_fields is None:
             return float_fields
 
@@ -215,7 +236,7 @@ class DIN(SequentialRecommender):
         return float_embedding
 
     def embed_token_fields(self, token_fields, type):
-        '''Get the embedding of toekn fields.
+        """Get the embedding of toekn fields
 
         Args:
             token_fields(torch.Tensor): input,[batch_size, max_item_length, num_token_field]
@@ -224,7 +245,7 @@ class DIN(SequentialRecommender):
         Returns:
             token fields embedding(torch.Tensor): [batch_size, max_item_length, num_token_field, embed_dim]
 
-        '''
+        """
         if token_fields is None:
             return None
         # [batch_size, max_item_length, num_token_field, embed_dim]
@@ -239,7 +260,7 @@ class DIN(SequentialRecommender):
         return token_embedding
 
     def embed_token_seq_fields(self, token_seq_fields, type, mode='mean'):
-        '''Get the embedding of token_seq fields.
+        """Get the embedding of token_seq fields.
 
         Args:
             token_seq_fields(torch.Tensor): input, [batch_size, max_item_length, seq_len]`
@@ -249,7 +270,7 @@ class DIN(SequentialRecommender):
         Returns:
             torch.Tensor: result [batch_size, max_item_length, num_token_seq_field, embed_dim]
 
-        '''
+        """
         fields_result = []
         for i, token_seq_field in enumerate(token_seq_fields):
             embedding_table = self.token_seq_embedding_table[type][i]
@@ -282,7 +303,7 @@ class DIN(SequentialRecommender):
             return torch.cat(fields_result, dim=-2)  # [batch_size, max_item_length, num_token_seq_field, embed_dim]
 
     def embed_input_fields(self, user_idx, item_idx):
-        '''Get the embedding of user_idx and item_idx
+        """Get the embedding of user_idx and item_idx
 
         Args:
             user_idx(torch.Tensor): interaction['user_id']
@@ -291,7 +312,7 @@ class DIN(SequentialRecommender):
         Returns:
             dict: embedding of user feature and item feature
 
-        '''
+        """
         user_item_feat = {'user': self.user_feat, 'item': self.item_feat}
         user_item_idx = {'user': user_idx, 'item': item_idx}
         float_fields_embedding = {}
@@ -343,8 +364,8 @@ class DIN(SequentialRecommender):
                                                           token_seq_fields_embedding[type]], dim=-2)
             dense_embedding[type] = float_fields_embedding[type]
 
-            # sparse_embedding[type] shape: [batch_size, max_item_length, num_token_seq_field+num_token_field, embed_dim] or None
-            # dense_embedding[type] shape: [batch_size, max_item_length, num_float_field] or [batch_size, max_item_length, num_float_field, embed_dim] or None
+        # sparse_embedding[type] shape: [batch_size, max_item_length, num_token_seq_field+num_token_field, embed_dim] or None
+        # dense_embedding[type] shape: [batch_size, max_item_length, num_float_field] or [batch_size, max_item_length, num_float_field, embed_dim] or None
         return sparse_embedding, dense_embedding
 
     def attention(self, queries, keys, keys_length):
@@ -366,21 +387,21 @@ class DIN(SequentialRecommender):
         queries = queries.view(-1, hist_len, embbedding_size)
 
         # MLP Layer
-        input = torch.cat(
-            [queries, keys, queries - keys, queries * keys], dim=-1)
-        output = self.att_mlp_layers(input)
+        input_tensor = torch.cat([queries, keys, queries - keys, queries * keys], dim=-1)
+        output = self.att_mlp_layers(input_tensor)
         output = torch.transpose(self.dense(output), -1, -2)
 
         # get mask
         output = output.squeeze(1)
         mask = self.mask_mat.repeat(output.size(0), 1)
         mask = (mask >= keys_length.unsqueeze(1))
+
         # mask
         output = output.masked_fill(mask=mask, value=torch.tensor(-np.inf))
         output = output.unsqueeze(1)
         output = output / (embbedding_size ** 0.5)
 
-        # Get the weight of each user's history list about the target item
+        # get the weight of each user's history list about the target item
         output = F.softmax(output, dim=2)  # [B, 1, T]
         output = torch.matmul(output, keys)  # [B, 1, H]
 

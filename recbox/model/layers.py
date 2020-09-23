@@ -207,14 +207,13 @@ class MultiHeadAttention(nn.Module):
 
 
 class Dice(nn.Module):
-    '''Dice activation function
+    """Dice activation function
 
-    $$
-        f(s)=p(s)·s+(1-p(s))·\alpha s,
+    .. math::
+        f(s)=p(s) \cdot s+(1-p(s)) \cdot \alpha s,
         p(s)=\frac{1} {1 + e^{-\frac{s-E[s]} {\sqrt {Var[s] + \epsilon}}}}
-    $$
 
-    '''
+    """
 
     def __init__(self, emb_size):
         super(Dice, self).__init__()
