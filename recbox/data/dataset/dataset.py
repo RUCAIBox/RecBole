@@ -827,7 +827,13 @@ class Dataset(object):
     def _history_matrix(self, row, value_field=None):
         self._check_field('uid_field', 'iid_field')
 
-        user_ids, item_ids, values = self._get_inter_by_value_field(value_field)
+        user_ids, item_ids = self.inter_feat[self.uid_field].values, self.inter_feat[self.iid_field].values
+        if value_field is None:
+            values = np.ones(len(self.inter_feat))
+        else:
+            if value_field not in self.inter_feat.columns:
+                raise ValueError('value_field [{}] should be one of `inter_feat`\'s features.'.format(value_field))
+            values = self.inter_feat[value_field].values
 
         if row == 'user':
             row_num, max_col_num = self.user_num, self.item_num
