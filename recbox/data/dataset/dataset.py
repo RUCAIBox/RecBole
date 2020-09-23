@@ -336,18 +336,18 @@ class Dataset(object):
     def _filter_nan_user_or_item(self):
         for field, name in zip([self.uid_field, self.iid_field], ['user', 'item']):
             feat = getattr(self, name + '_feat')
-            if feat is None:
-                continue
-            dropped_feat = feat.index[feat[field].isnull()]
-            if dropped_feat.any():
-                self.logger.warning('In {}_feat, line {}, {} do not exist, so they will be removed'.format(
-                    name, list(dropped_feat + 2), field))
-                feat.drop(feat.index[dropped_feat], inplace=True)
-            dropped_inter = self.inter_feat.index[self.inter_feat[field].isnull()]
-            if dropped_inter.any():
-                self.logger.warning('In inter_feat, line {}, {} do not exist, so they will be removed'.format(
-                    name, list(dropped_inter + 2), field))
-                self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
+            if feat is not None:
+                dropped_feat = feat.index[feat[field].isnull()]
+                if dropped_feat.any():
+                    self.logger.warning('In {}_feat, line {}, {} do not exist, so they will be removed'.format(
+                        name, list(dropped_feat + 2), field))
+                    feat.drop(feat.index[dropped_feat], inplace=True)
+            if field is not None:
+                dropped_inter = self.inter_feat.index[self.inter_feat[field].isnull()]
+                if dropped_inter.any():
+                    self.logger.warning('In inter_feat, line {}, {} do not exist, so they will be removed'.format(
+                        name, list(dropped_inter + 2), field))
+                    self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
     def _filter_by_inter_num(self):
         ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field,
