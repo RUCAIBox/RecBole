@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/18, 2020/9/15, 2020/9/22
+# @Time   : 2020/9/23, 2020/9/15, 2020/9/22
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -184,42 +184,47 @@ class KnowledgeBasedDataset(Dataset):
     def entities(self):
         return np.arange(self.entity_num)
 
-    def _create_dgl_kg_graph(self):
-        import dgl
-        kg_tensor = self._dataframe_to_interaction(self.kg_feat)
-        head_entity = kg_tensor[self.head_entity_field]
-        tail_entity = kg_tensor[self.tail_entity_field]
-        ret = dgl.graph((head_entity, tail_entity))
-        for k in kg_tensor:
-            if k not in [self.head_entity_field, self.tail_entity_field]:
-                ret.edata[k] = kg_tensor[k]
-        return ret
-
     def kg_graph(self, form='coo', value_field=None):
+        args = [self.kg_feat, self.head_entity_field, self.tail_entity_field, form, value_field]
         if form in ['coo', 'csr']:
-            hids = self.kg_feat[self.head_entity_field].values
-            tids = self.kg_feat[self.tail_entity_field].values
-
-            if value_field is None:
-                data = np.ones(len(self.kg_feat))
-            else:
-                if value_field not in self.field2source:
-                    raise ValueError('value_field [{}] not exist.'.format(value_field))
-                if self.field2source[value_field] != FeatureSource.KG:
-                    raise ValueError('value_field [{}] can only be one of the kg features'.format(value_field))
-                data = self.kg_feat[value_field].values
-            mat = coo_matrix((data, (hids, tids)), shape=(self.entity_num, self.entity_num))
-            if form == 'coo':
-                return mat
-            elif form == 'csr':
-                return mat.tocsr()
-        elif form == 'dgl':
-            return self._create_dgl_kg_graph()
+            return self._create_sparse_matrix(*args)
+        elif form in ['dgl', 'pyg']:
+            return self._create_graph(*args)
         else:
-            raise NotImplementedError('net matrix format [{}] has not been implemented.')
+            raise NotImplementedError('kg graph format [{}] has not been implemented.')
 
-    def _create_dgl_ckg_graph(self):
-        import dgl
+    def _create_ckg_sparse_matrix(self, form='coo', show_relation=False):
+        user_num = self.user_num
+
+        hids = self.kg_feat[self.head_entity_field].values + user_num
+        tids = self.kg_feat[self.tail_entity_field].values + user_num
+
+        uids = self.inter_feat[self.uid_field].values
+        iids = self.inter_feat[self.iid_field].values + user_num
+
+        ui_rel_num = len(uids)
+        ui_rel_id = self.relation_num - 1
+        assert self.field2id_token[self.relation_field][ui_rel_id] == '[UI-Relation]'
+
+        src = np.concatenate([uids, iids, hids])
+        tgt = np.concatenate([iids, uids, tids])
+
+        if not show_relation:
+            data = np.ones(len(src))
+        else:
+            kg_rel = self.kg_feat[self.relation_field].values
+            ui_rel = np.full(2 * ui_rel_num, ui_rel_id, dtype=kg_rel.dtype)
+            data = np.concatenate([ui_rel, kg_rel])
+        node_num = self.entity_num + self.user_num
+        mat = coo_matrix((data, (src, tgt)), shape=(node_num, node_num))
+        if form == 'coo':
+            return mat
+        elif form == 'csr':
+            return mat.tocsr()
+        else:
+            raise NotImplementedError('sparse matrix format [{}] has not been implemented.'.format(form))
+
+    def _create_ckg_graph(self, form='dgl', show_relation=False):
         user_num = self.user_num
 
         kg_tensor = self._dataframe_to_interaction(self.kg_feat)
@@ -231,57 +236,41 @@ class KnowledgeBasedDataset(Dataset):
         user = inter_tensor[self.uid_field]
         item = inter_tensor[self.iid_field] + user_num
 
-        source = torch.cat([user, item, head_entity])
-        target = torch.cat([item, user, tail_entity])
+        src = torch.cat([user, item, head_entity])
+        tgt = torch.cat([item, user, tail_entity])
 
-        ret = dgl.graph((source, target))
-
-        ui_rel_num = user.shape[0]
-        ui_rel_id = self.relation_num - 1
-        assert self.field2id_token[self.relation_field][ui_rel_id] == '[UI-Relation]'
-
-        kg_rel = kg_tensor[self.relation_field]
-        ui_rel = torch.full((2 * ui_rel_num,), ui_rel_id, dtype=kg_rel.dtype)
-        edge = torch.cat([ui_rel, kg_rel])
-
-        ret.edata[self.relation_field] = edge
-        return ret
-
-    def ckg_graph(self, form='coo', value_field=None):
-        if form in ['coo', 'csr']:
-            user_num = self.user_num
-
-            hids = self.kg_feat[self.head_entity_field].values + user_num
-            tids = self.kg_feat[self.tail_entity_field].values + user_num
-
-            uids = self.inter_feat[self.uid_field].values
-            iids = self.inter_feat[self.iid_field].values + user_num
-
-            ui_rel_num = len(uids)
+        if show_relation:
+            ui_rel_num = user.shape[0]
             ui_rel_id = self.relation_num - 1
             assert self.field2id_token[self.relation_field][ui_rel_id] == '[UI-Relation]'
+            kg_rel = kg_tensor[self.relation_field]
+            ui_rel = torch.full((2 * ui_rel_num,), ui_rel_id, dtype=kg_rel.dtype)
+            edge = torch.cat([ui_rel, kg_rel])
 
-            source = np.concatenate([uids, iids, hids])
-            target = np.concatenate([iids, uids, tids])
-
-            if value_field is None:
-                data = np.ones(len(source))
-            else:
-                if value_field != self.relation_field:
-                    raise ValueError('v alue_field [{}] can only be [{}] in ckg_graph.'.format(
-                        value_field, self.relation_field)
-                    )
-
-                kg_rel = self.kg_feat[value_field].values
-                ui_rel = np.full(2 * ui_rel_num, ui_rel_id, dtype=kg_rel.dtype)
-                data = np.concatenate([ui_rel, kg_rel])
-            node_num = self.entity_num + self.user_num
-            mat = coo_matrix((data, (source, target)), shape=(node_num, node_num))
-            if form == 'coo':
-                return mat
-            elif form == 'csr':
-                return mat.tocsr()
-        elif form == 'dgl':
-            return self._create_dgl_ckg_graph()
+        if form == 'dgl':
+            import dgl
+            graph = dgl.graph((src, tgt))
+            if show_relation:
+                graph.edata[self.relation_field] = edge
+            return graph
+        elif form == 'pyg':
+            from torch_geometric.data import Data
+            edge_attr = edge if show_relation else None
+            graph = Data(edge_index=torch.stack([src, tgt]), edge_attr=edge_attr)
+            return graph
         else:
-            raise NotImplementedError('net matrix format [{}] has not been implemented.')
+            raise NotImplementedError('graph format [{}] has not been implemented.'.format(form))
+
+    def ckg_graph(self, form='coo', value_field=None):
+        if value_field is not None and value_field != self.relation_field:
+            raise ValueError('value_field [{}] can only be [{}] in ckg_graph.'.format(
+                value_field, self.relation_field
+            ))
+        show_relation = value_field is not None
+
+        if form in ['coo', 'csr']:
+            return self._create_ckg_sparse_matrix(form, show_relation)
+        elif form in ['dgl', 'pyg']:
+            return self._create_ckg_graph(form, show_relation)
+        else:
+            raise NotImplementedError('ckg graph format [{}] has not been implemented.')
