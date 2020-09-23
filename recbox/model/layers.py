@@ -5,9 +5,9 @@
 # @File   : layers.py
 
 # UPDATE:
-# @Time   : 2020/8/24 14:58, 2020/9/16
-# @Author : Yujie Lu, Xingyu Pan
-# @Email  : yujielu1998@gmail.com, panxy@ruc.edu.cn
+# @Time   : 2020/8/24 14:58, 2020/9/16, 2020/9/21
+# @Author : Yujie Lu, Xingyu Pan, Zhichao Feng
+# @Email  : yujielu1998@gmail.com, panxy@ruc.edu.cn, fzcbupt@gmail.com
 
 """
 Common Layers in recommender system
@@ -121,7 +121,6 @@ class BaseFactorizationMachine(nn.Module):
 class BiGNNLayer(nn.Module):
 
     def __init__(self, in_dim, out_dim):
-
         super(BiGNNLayer, self).__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -150,7 +149,6 @@ class AttLayer(nn.Module):
     """
 
     def __init__(self, in_dim, att_dim):
-
         super(AttLayer, self).__init__()
         self.in_dim = in_dim
         self.att_dim = att_dim
@@ -167,6 +165,7 @@ class AttLayer(nn.Module):
 
         return att_singal
 
+
 class MultiHeadAttention(nn.Module):
     def __init__(self, n_head, d_model, d_k, d_v):
         super(MultiHeadAttention, self).__init__()
@@ -182,28 +181,48 @@ class MultiHeadAttention(nn.Module):
         self.fc = nn.Linear(self.n_head * self.d_v, self.d_model, bias=False)
         self.layernorm = nn.LayerNorm(self.d_model)
 
-
     def scale_dot_product_attention(self, Q, K, V, mask=None):
         d_k = Q.size(-1)
         scores = torch.matmul(Q, K.transpose(-1, -2)) / np.sqrt(d_k)
         if mask is not None:
-            scores.masked_fill_(mask, -1e9) # Fills elements of self tensor with value where mask is True.
+            scores.masked_fill_(mask, -1e9)  # Fills elements of self tensor with value where mask is True.
         attn = nn.Softmax(dim=-1)(scores)
         context = torch.matmul(attn, V)
         return context, attn
 
-
-    def forward(self, input_Q, input_K, input_V, mask = None):
+    def forward(self, input_Q, input_K, input_V, mask=None):
         residual, batch_size = input_Q, input_Q.size(0)
 
-        Q = self.W_Q(input_Q).view(batch_size, -1, self.n_head, self.d_k).transpose(1,2)
-        K = self.W_K(input_K).view(batch_size, -1, self.n_head, self.d_k).transpose(1,2)
-        V = self.W_V(input_V).view(batch_size, -1, self.n_head, self.d_v).transpose(1,2)
+        Q = self.W_Q(input_Q).view(batch_size, -1, self.n_head, self.d_k).transpose(1, 2)
+        K = self.W_K(input_K).view(batch_size, -1, self.n_head, self.d_k).transpose(1, 2)
+        V = self.W_V(input_V).view(batch_size, -1, self.n_head, self.d_v).transpose(1, 2)
 
         if mask is not None:
             mask = mask.unsqueeze(1).repeat(1, self.n_head, 1, 1)
 
         context, attn = self.scale_dot_product_attention(Q, K, V, mask)
-        context = context.transpose(1,2).reshape(batch_size, -1, self.n_head * self.d_v)
+        context = context.transpose(1, 2).reshape(batch_size, -1, self.n_head * self.d_v)
         output = self.fc(context)
         return self.layernorm(output + residual), attn
+
+
+class Dice(nn.Module):
+    """Dice activation function
+
+    .. math::
+        f(s)=p(s) \cdot s+(1-p(s)) \cdot \alpha s,
+        p(s)=\frac{1} {1 + e^{-\frac{s-E[s]} {\sqrt {Var[s] + \epsilon}}}}
+
+    """
+
+    def __init__(self, emb_size):
+        super(Dice, self).__init__()
+
+        self.sigmoid = nn.Sigmoid()
+        self.alpha = torch.zeros((emb_size,))
+
+    def forward(self, score):
+        self.alpha = self.alpha.to(score.device)
+        score_p = self.sigmoid(score)
+
+        return self.alpha * (1 - score_p) * score + score_p * score

@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/17, 2020/9/15, 2020/9/22
+# @Time   : 2020/9/23, 2020/9/15, 2020/9/22
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -779,37 +779,61 @@ class Dataset(object):
         else:
             return self.item_feat
 
-    def _get_inter_by_value_field(self, value_field=None):
-        uids = self.inter_feat[self.uid_field].values
-        iids = self.inter_feat[self.iid_field].values
+    def _create_sparse_matrix(self, df_feat, source_field, target_field, form='coo', value_field=None):
+        src = df_feat[source_field].values
+        tgt = df_feat[target_field].values
         if value_field is None:
-            data = np.ones(len(self.inter_feat))
+            data = np.ones(len(df_feat))
         else:
-            if value_field not in self.field2source:
-                raise ValueError('value_field [{}] not exist.'.format(value_field))
-            if self.field2source[value_field] != FeatureSource.INTERACTION:
-                raise ValueError('value_field [{}] can only be one of the interaction features'.format(value_field))
-            data = self.inter_feat[value_field].values
-        return uids, iids, data
-
-    def inter_matrix(self, form='coo', value_field=None):
-        if not self.uid_field or not self.iid_field:
-            raise ValueError('dataset doesn\'t exist uid/iid, thus can not converted to sparse matrix')
-
-        uids, iids, data = self._get_inter_by_value_field(value_field)
-        mat = coo_matrix((data, (uids, iids)), shape=(self.user_num, self.item_num))
+            if value_field not in df_feat.columns:
+                raise ValueError('value_field [{}] should be one of `df_feat`\'s features.'.format(value_field))
+            data = df_feat[value_field].values
+        mat = coo_matrix((data, (src, tgt)), shape=(self.num(source_field), self.num(target_field)))
 
         if form == 'coo':
             return mat
         elif form == 'csr':
             return mat.tocsr()
         else:
-            raise NotImplementedError('interaction matrix format [{}] has not been implemented.')
+            raise NotImplementedError('sparse matrix format [{}] has not been implemented.'.format(form))
+
+    def _create_graph(self, df_feat, source_field, target_field, form='dgl', value_field=None):
+        tensor_feat = self._dataframe_to_interaction(df_feat)
+        src = tensor_feat[source_field]
+        tgt = tensor_feat[target_field]
+
+        if form == 'dgl':
+            import dgl
+            graph = dgl.graph((src, tgt))
+            if value_field is not None:
+                if isinstance(value_field, str):
+                    value_field = {value_field}
+                for k in value_field:
+                    graph.edata[k] = tensor_feat[k]
+            return graph
+        elif form == 'pyg':
+            from torch_geometric.data import Data
+            edge_attr = tensor_feat[value_field] if value_field else None
+            graph = Data(edge_index=torch.stack([src, tgt]), edge_attr=edge_attr)
+            return graph
+        else:
+            raise NotImplementedError('graph format [{}] has not been implemented.'.format(form))
+
+    def inter_matrix(self, form='coo', value_field=None):
+        if not self.uid_field or not self.iid_field:
+            raise ValueError('dataset doesn\'t exist uid/iid, thus can not converted to sparse matrix')
+        return self._create_sparse_matrix(self.inter_feat, self.uid_field, self.iid_field, form, value_field)
 
     def _history_matrix(self, row, value_field=None):
         self._check_field('uid_field', 'iid_field')
 
-        user_ids, item_ids, values = self._get_inter_by_value_field(value_field)
+        user_ids, item_ids = self.inter_feat[self.uid_field].values, self.inter_feat[self.iid_field].values
+        if value_field is None:
+            values = np.ones(len(self.inter_feat))
+        else:
+            if value_field not in self.inter_feat.columns:
+                raise ValueError('value_field [{}] should be one of `inter_feat`\'s features.'.format(value_field))
+            values = self.inter_feat[value_field].values
 
         if row == 'user':
             row_num, max_col_num = self.user_num, self.item_num
