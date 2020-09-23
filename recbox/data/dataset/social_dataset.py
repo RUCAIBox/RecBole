@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/16, 2020/9/15, 2020/9/22
+# @Time   : 2020/9/23, 2020/9/15, 2020/9/22
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -57,38 +57,14 @@ class SocialDataset(Dataset):
 
         return fields_in_same_space
 
-    def _create_dgl_net_graph(self):
-        import dgl
-        net_tensor = self._dataframe_to_interaction(self.net_feat)
-        source = net_tensor[self.source_field]
-        target = net_tensor[self.target_field]
-        ret = dgl.graph((source, target))
-        for k in net_tensor:
-            if k not in [self.source_field, self.target_field]:
-                ret.edata[k] = net_tensor[k]
-        return ret
-
-    def net_matrix(self, form='coo', value_field=None):
+    def net_graph(self, form='coo', value_field=None):
+        args = [self.net_feat, self.source_field, self.target_field, form, value_field]
         if form in ['coo', 'csr']:
-            sids = self.net_feat[self.source_field].values
-            tids = self.net_feat[self.target_field].values
-            if value_field is None:
-                data = np.ones(len(self.net_feat))
-            else:
-                if value_field not in self.field2source:
-                    raise ValueError('value_field [{}] not exist.'.format(value_field))
-                if self.field2source[value_field] != FeatureSource.NET:
-                    raise ValueError('value_field [{}] can only be one of the net features'.format(value_field))
-                data = self.net_feat[value_field].values
-            mat = coo_matrix((data, (sids, tids)), shape=(self.user_num, self.user_num))
-            if form == 'coo':
-                return mat
-            elif form == 'csr':
-                return mat.tocsr()
-        elif form == 'dgl':
-            return self._create_dgl_net_graph()
+            return self._create_sparse_matrix(*args)
+        elif form in ['dgl', 'pyg']:
+            return self._create_graph(*args)
         else:
-            raise NotImplementedError('net matrix format [{}] has not been implemented.')
+            raise NotImplementedError('net graph format [{}] has not been implemented.')
 
     def __str__(self):
         info = [super().__str__(),
