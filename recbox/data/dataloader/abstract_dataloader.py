@@ -24,7 +24,9 @@ class AbstractDataLoader(object):
         self.dl_format = dl_format
         self.shuffle = shuffle
         self.pr = 0
-        self.real_time = config['real_time_process'] or True
+        self.real_time = config['real_time_process']
+        if self.real_time is None:
+            self.real_time = True
 
         self.join = self.dataset.join
         self.history_item_matrix = self.dataset.history_item_matrix
