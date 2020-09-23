@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/17, 2020/9/15, 2020/9/22
+# @Time   : 2020/9/17, 2020/9/15, 2020/9/23
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -397,15 +397,17 @@ class Dataset(object):
         return ids
 
     def _filter_by_field_value(self):
-        drop_field = self.config['drop_filter_field']
-        changed = False
-        changed |= self._drop_by_value(self.config['lowest_val'], lambda x, y: x < y, drop_field)
-        changed |= self._drop_by_value(self.config['highest_val'], lambda x, y: x > y, drop_field)
-        changed |= self._drop_by_value(self.config['equal_val'], lambda x, y: x != y, drop_field)
-        changed |= self._drop_by_value(self.config['not_equal_val'], lambda x, y: x == y, drop_field)
+        filter_field = []
+        filter_field += self._drop_by_value(self.config['lowest_val'], lambda x, y: x < y)
+        filter_field += self._drop_by_value(self.config['highest_val'], lambda x, y: x > y)
+        filter_field += self._drop_by_value(self.config['equal_val'], lambda x, y: x != y)
+        filter_field += self._drop_by_value(self.config['not_equal_val'], lambda x, y: x == y)
 
-        if not changed:
+        if not filter_field:
             return
+        if self.config['drop_filter_field']:
+            for field in set(filter_field):
+                self._del_col(field)
 
         if self.user_feat is not None:
             remained_uids = set(self.user_feat[self.uid_field].values)
@@ -429,11 +431,12 @@ class Dataset(object):
         for feat in self.feat_list:
             feat.reset_index(drop=True, inplace=True)
 
-    def _drop_by_value(self, val, cmp, drop_field=False):
+    def _drop_by_value(self, val, cmp):
         if val is None:
-            return False
+            return []
 
-        self.logger.debug('drop_by_value: val={}, drop=[{}]'.format(val, drop_field))
+        self.logger.debug('drop_by_value: val={}'.format(val))
+        filter_field = []
         for field in val:
             if field not in self.field2type:
                 raise ValueError('field [{}] not defined in dataset'.format(field))
@@ -442,9 +445,8 @@ class Dataset(object):
             for feat in self.feat_list:
                 if field in feat:
                     feat.drop(feat.index[cmp(feat[field].values, val[field])], inplace=True)
-            if drop_field:
-                self._del_col(field)
-        return True
+            filter_field.append(field)
+        return filter_field
 
     def _del_col(self, field):
         self.logger.debug('delete column [{}]'.format(field))
