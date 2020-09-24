@@ -104,7 +104,7 @@ class CKE(KnowledgeRecommender):
         rec_loss = self.get_rec_loss(user_e, pos_item_final_e, neg_item_final_e)
 
         h_e, r_e, pos_t_e, neg_t_e, r_trans_w = self.get_kg_embedding(h, r, pos_t, neg_t)
-        kg_loss = self.kg_weight * self.get_kg_loss(h_e, r_e, pos_t_e, neg_t_e)
+        kg_loss = self.get_kg_loss(h_e, r_e, pos_t_e, neg_t_e)
 
         reg_loss = self.reg_weights[0] * self.reg_loss(user_e, pos_item_final_e, neg_item_final_e) + \
                    self.reg_weights[1] * self.reg_loss(h_e, r_e, pos_t_e, neg_t_e)
