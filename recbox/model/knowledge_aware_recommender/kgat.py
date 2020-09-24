@@ -79,7 +79,7 @@ class KGAT(KnowledgeRecommender):
         super(KGAT, self).__init__(config, dataset)
 
         # load dataset info
-        self.ckg = dataset.ckg_graph(form='dgl')
+        self.ckg = dataset.ckg_graph(form='dgl', value_field='relation_id')
         self.all_hs = torch.LongTensor(dataset.ckg_graph(form='coo', value_field='relation_id').row).to(self.device)
         self.all_ts = torch.LongTensor(dataset.ckg_graph(form='coo', value_field='relation_id').col).to(self.device)
         self.all_rs = torch.LongTensor(dataset.ckg_graph(form='coo', value_field='relation_id').data).to(self.device)
