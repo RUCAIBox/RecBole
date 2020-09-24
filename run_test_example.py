@@ -265,7 +265,7 @@ test_examples = {
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
-    }
+    },
     'Test Caser': {
         'model': 'Caser',
         'dataset': 'ml-100k',
