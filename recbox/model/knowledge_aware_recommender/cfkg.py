@@ -6,6 +6,12 @@
 """
 Reference:
 Qingyao Ai et al. "Learning heterogeneous knowledge base embeddings for explainable recommendation." in MDPI 2018.
+
+Note:
+In the original paper, CFKG puts recommender data (u-i interaction) and knowledge data (h-r-t) together for sampling and
+mix them for training. In this version, we sample recommender data and knowledge data separately, and put them together
+for training.
+
 """
 
 
@@ -18,14 +24,6 @@ from recbox.model.abstract_recommender import KnowledgeRecommender
 from recbox.model.init import xavier_normal_initialization
 
 
-"""
-Todo:
-The original paper puts rec and kg together for sampling and mix them for training.
-Due to the limitation of the dataloader, it can only be sampled separately at present. 
-Further improved.
-"""
-
-
 class CFKG(KnowledgeRecommender):
     input_type = InputType.PAIRWISE
 
@@ -35,7 +33,6 @@ class CFKG(KnowledgeRecommender):
         # load parameters info
         self.embedding_size = config['embedding_size']
         self.loss_function = config['loss_function']
-        self.p_norm = config['p_norm']
         self.margin = config['margin']
         assert self.loss_function in ['inner_product', 'transe']
 
@@ -43,8 +40,10 @@ class CFKG(KnowledgeRecommender):
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
         self.relation_embedding = nn.Embedding(self.n_relations + 1, self.embedding_size)
-        self.rec_loss = nn.TripletMarginLoss(margin=self.margin, p=self.p_norm, reduction='mean') \
-            if self.loss_function == 'transe' else InnerProductLoss()
+        if self.loss_function == 'transe':
+            self.rec_loss = nn.TripletMarginLoss(margin=self.margin, p=2, reduction='mean')
+        else:
+            self.rec_loss = InnerProductLoss()
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
@@ -73,9 +72,9 @@ class CFKG(KnowledgeRecommender):
         relation_e = self.relation_embedding(relation)
         return head_e, pos_tail_e, neg_tail_e, relation_e
 
-    def get_score(self, h_e, r_e, t_e):
+    def get_score(self, h_e, t_e, r_e):
         if self.loss_function == 'transe':
-            return - torch.norm(h_e + r_e - t_e, p=self.p_norm, dim=1)
+            return - torch.norm(h_e + r_e - t_e, p=2, dim=1)
         else:
             return torch.mul(h_e + r_e, t_e).sum(dim=1)
 
@@ -104,15 +103,6 @@ class CFKG(KnowledgeRecommender):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
         return self.forward(user, item)
-
-    # def full_sort_predict(self, interaction):
-    #     user = interaction[self.USER_ID]
-    #     user_e = self.user_embedding(user)
-    #     rec_r_e = self.relation_embedding.weight[-1]
-    #     rec_r_e = rec_r_e.expand_as(user_e)
-    #     all_item_e = self.entity_embedding.weight[:self.n_items]
-    #     score = torch.matmul(user_e + rec_r_e, all_item_e.transpose(0, 1))
-    #     return score.view(-1)
 
 
 class InnerProductLoss(nn.Module):
