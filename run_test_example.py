@@ -238,7 +238,6 @@ test_examples = {
         'model': 'CKE',
         'dataset': 'kgdata_example',
         'epochs': 1,
-        'train_kg_step': 0,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
@@ -247,7 +246,6 @@ test_examples = {
         'model': 'KTUP',
         'dataset': 'kgdata_example',
         'epochs': 1,
-        'train_kg_step': 1,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
@@ -256,11 +254,18 @@ test_examples = {
         'model': 'CFKG',
         'dataset': 'kgdata_example',
         'epochs': 1,
-        'train_kg_step': 0,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
     },
+    'Test KGAT': {
+        'model': 'KGAT',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    }
     'Test Caser': {
         'model': 'Caser',
         'dataset': 'ml-100k',
