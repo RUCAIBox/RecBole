@@ -6,14 +6,21 @@
 """
 Reference:
 Fuzheng Zhang et al. "Collaborative Knowledge Base Embedding for Recommender Systems." in SIGKDD 2016.
+
+Note:
+In the original paper, CKE used structural knowledge, textual knowledge and visual knowledge. In our version, we only
+used structural knowledge. Meanwhile, the version we implemented uses a simpler regular way which can get almost the
+same result (even better) as the original regular way.
+
 """
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import KnowledgeRecommender
-from recbox.model.loss import BPRLoss
+from recbox.model.loss import BPRLoss, EmbLoss
 from recbox.model.init import xavier_normal_initialization
 
 
@@ -36,6 +43,7 @@ class CKE(KnowledgeRecommender):
         self.trans_w = nn.Embedding(self.n_relations, self.embedding_size * self.kg_embedding_size)
         self.rec_loss = BPRLoss()
         self.kg_loss = BPRLoss()
+        self.reg_loss = EmbLoss()
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
@@ -50,6 +58,11 @@ class CKE(KnowledgeRecommender):
         h_e = torch.bmm(h_e, r_trans_w).squeeze()
         pos_t_e = torch.bmm(pos_t_e, r_trans_w).squeeze()
         neg_t_e = torch.bmm(neg_t_e, r_trans_w).squeeze()
+
+        r_e = F.normalize(r_e, p=2, dim=1)
+        h_e = F.normalize(h_e, p=2, dim=1)
+        pos_t_e = F.normalize(pos_t_e, p=2, dim=1)
+        neg_t_e = F.normalize(neg_t_e, p=2, dim=1)
 
         return h_e, r_e, pos_t_e, neg_t_e, r_trans_w
 
@@ -68,17 +81,8 @@ class CKE(KnowledgeRecommender):
     def get_kg_loss(self, h_e, r_e, pos_e, neg_e):
         pos_tail_score = ((h_e + r_e - pos_e) ** 2).sum(dim=1)
         neg_tail_score = ((h_e + r_e - neg_e) ** 2).sum(dim=1)
-        kg_loss = self.kg_loss(pos_tail_score, neg_tail_score)
+        kg_loss = self.kg_loss(neg_tail_score, pos_tail_score)
         return kg_loss
-
-    def get_reg_loss1(self, final_e, item_e):
-        return ((final_e - item_e) ** 2).sum(dim=1).mean()
-
-    def get_reg_loss2(self, r_e):
-        return (r_e ** 2).sum(dim=1).mean()
-
-    def get_reg_loss3(self, r_trans_w):
-        return (r_trans_w ** 2).sum(dim=1).mean()
 
     def calculate_loss(self, interaction):
         user = interaction[self.USER_ID]
@@ -100,12 +104,10 @@ class CKE(KnowledgeRecommender):
         rec_loss = self.get_rec_loss(user_e, pos_item_final_e, neg_item_final_e)
 
         h_e, r_e, pos_t_e, neg_t_e, r_trans_w = self.get_kg_embedding(h, r, pos_t, neg_t)
-        kg_loss = self.get_kg_loss(h_e, r_e, pos_t_e, neg_t_e)
+        kg_loss = self.kg_weight * self.get_kg_loss(h_e, r_e, pos_t_e, neg_t_e)
 
-        reg_loss1 = self.get_reg_loss1(pos_item_final_e, pos_item_e)
-        reg_loss2 = self.get_reg_loss2(r_e)
-        reg_loss3 = self.get_reg_loss3(r_trans_w)
-        reg_loss = self.reg_weights[0] * reg_loss1 + self.reg_weights[1] * reg_loss2 + self.reg_weights[2] * reg_loss3
+        reg_loss = self.reg_weights[0] * self.reg_loss(user_e, pos_item_final_e, neg_item_final_e) + \
+                   self.reg_weights[1] * self.reg_loss(h_e, r_e, pos_t_e, neg_t_e)
 
         return rec_loss, kg_loss, reg_loss
 
