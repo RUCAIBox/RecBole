@@ -3,8 +3,6 @@
 # @Email  : panxingyu@ruc.edu.cn
 
 from recbox.data.dataset import SequentialDataset, KnowledgeBasedDataset
-from recbox.utils import FeatureSource, FeatureType
-
 
 class Kg_Seq_Dataset(SequentialDataset, KnowledgeBasedDataset):
       def __init__(self, config, saved_dataset=None):
