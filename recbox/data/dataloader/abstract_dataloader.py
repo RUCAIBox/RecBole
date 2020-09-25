@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/16, 2020/9/16
+# @Time   : 2020/9/23, 2020/9/23
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -25,6 +25,8 @@ class AbstractDataLoader(object):
         self.shuffle = shuffle
         self.pr = 0
         self.real_time = config['real_time_process']
+        if self.real_time is None:
+            self.real_time = True
 
         self.join = self.dataset.join
         self.history_item_matrix = self.dataset.history_item_matrix
@@ -34,7 +36,7 @@ class AbstractDataLoader(object):
         optional_attrs = [
             'kg_graph', 'ckg_graph', 'relation_num', 'entity_num',
             'head_entities', 'tail_entities', 'relations', 'entities',
-            'net_matrix'
+            'net_graph'
         ]
         for op_attr in optional_attrs:
             if hasattr(self.dataset, op_attr):
