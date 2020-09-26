@@ -37,7 +37,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None, sav
     """
     生成 训练/验证/测试 数据
     """
-    train_data, test_data, valid_data = data_preparation(config, dataset)
+    train_data, valid_data, test_data = data_preparation(config, dataset)
 
     """
     初始化 model

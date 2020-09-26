@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/9/15, 2020/9/18, 2020/9/20, 2020/9/16
+# @Time   : 2020/8/7 18:38, 2020/9/26, 2020/9/26, 2020/9/20, 2020/9/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -213,7 +213,10 @@ class Trainer(AbstractTrainer):
         else:
             interaction = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
-            scores = self.model.predict(interaction)
+            if batch_size <= self.test_batch_size:
+                scores = self.model.predict(interaction)
+            else:
+                scores = self.spilt_predict(interaction, batch_size)
         pos_idx = pos_idx.to(self.device)
         used_idx = used_idx.to(self.device)
 
