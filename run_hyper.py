@@ -10,8 +10,8 @@
 
 from recbox.config import Config
 from recbox.data import create_dataset, data_preparation
-from recbox.trainer import get_trainer, HyperTuning
-from recbox.utils import init_logger, get_model
+from recbox.trainer import HyperTuning
+from recbox.utils import get_model, get_trainer
 
 
 def objective_function(config_dict=None):
@@ -20,11 +20,11 @@ def objective_function(config_dict=None):
     config.init()
     dataset = create_dataset(config)
 
-    train_data, test_data, valid_data = data_preparation(config, dataset)
+    train_data, valid_data, test_data = data_preparation(config, dataset)
 
     model = get_model(config['model'])(config, train_data).to(config['device'])
 
-    trainer = get_trainer(config['MODEL_TYPE'])(config, model)
+    trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
 
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False)
 

@@ -215,11 +215,29 @@ test_examples = {
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
         'min_user_inter_num': 5
     },
+    'Test DIN': {
+        'model': 'DIN',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, uni100',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'TIME_FIELD': 'timestamp',
+        'LABEL_FIELD': 'label',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                     'user': ['user_id', 'age', 'gender', 'occupation'],
+                     'item': ['item_id', 'release_year']},
+        'threshold': {'rating': 4},
+        'valid_metric': 'AUC',
+        'metrics': ['AUC'],
+        'eval_batch_size': 10000
+    },
     'Test CKE': {
         'model': 'CKE',
         'dataset': 'kgdata_example',
         'epochs': 1,
-        'train_kg_step': 0,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
@@ -228,7 +246,6 @@ test_examples = {
         'model': 'KTUP',
         'dataset': 'kgdata_example',
         'epochs': 1,
-        'train_kg_step': 1,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
@@ -237,10 +254,32 @@ test_examples = {
         'model': 'CFKG',
         'dataset': 'kgdata_example',
         'epochs': 1,
-        'train_kg_step': 0,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
+    },
+    'Test KGAT': {
+        'model': 'KGAT',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test Caser': {
+        'model': 'Caser',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'TO_LS, full',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': None,
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5
     },
 
 }
