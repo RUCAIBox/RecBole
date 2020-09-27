@@ -18,6 +18,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as fn
+from torch.nn.init import normal_
 
 
 class MLPLayers(nn.Module):
@@ -43,12 +44,13 @@ class MLPLayers(nn.Module):
         >> torch.Size([128, 16])
     """
 
-    def __init__(self, layers, dropout=0, activation='relu', bn=False):
+    def __init__(self, layers, dropout=0, activation='relu', bn=False, init_method=None):
         super(MLPLayers, self).__init__()
         self.layers = layers
         self.dropout = dropout
         self.activation = activation
         self.use_bn = bn
+        self.init_method = init_method
         self.logger = getLogger()
 
         mlp_modules = []
@@ -70,6 +72,16 @@ class MLPLayers(nn.Module):
             else:
                 self.logger.warning('Received unrecognized activation function, set default activation function')
         self.mlp_layers = nn.Sequential(*mlp_modules)
+        if self.init_method is not None:
+            self.apply(self.init_weights)
+
+    def init_weights(self, module):
+        # We just initialize the module with normal distribution as the paper said
+        if isinstance(module, nn.Linear):
+            if self.init_method == 'norm':
+                normal_(module.weight.data, 0, 0.01)
+            if module.bias is not None:
+                module.bias.data.fill_(0.0)
 
     def forward(self, input_feature):
         return self.mlp_layers(input_feature)
