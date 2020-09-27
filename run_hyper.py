@@ -20,7 +20,7 @@ def objective_function(config_dict=None):
     config.init()
     dataset = create_dataset(config)
 
-    train_data, test_data, valid_data = data_preparation(config, dataset)
+    train_data, valid_data, test_data = data_preparation(config, dataset)
 
     model = get_model(config['model'])(config, train_data).to(config['device'])
 
