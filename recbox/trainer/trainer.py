@@ -93,6 +93,7 @@ class Trainer(AbstractTrainer):
             self.optimizer.zero_grad()
             losses = self.model.calculate_loss(interaction)
             loss = sum(losses) if isinstance(losses, tuple) else losses
+            self._check_nan(loss)
             loss.backward()
             self.optimizer.step()
             losses_list.append(losses)
@@ -138,6 +139,10 @@ class Trainer(AbstractTrainer):
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         message_output = 'Checkpoint loaded. Resume training from epoch {}'.format(self.start_epoch)
         print(message_output)
+
+    def _check_nan(self, loss):
+        if torch.isnan(loss):
+            raise ValueError('Training loss is nan')
 
     def generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
         train_loss_output = "epoch %d training [time: %.2fs, " % (epoch_idx, e_time - s_time)
@@ -328,6 +333,7 @@ class KGTrainer(Trainer):
                 self.optimizer.zero_grad()
                 losses = self.model.calculate_loss(interaction)
                 loss = sum(losses) if isinstance(losses, tuple) else losses
+                self._check_nan(loss)
                 loss.backward()
                 self.optimizer.step()
                 losses_list.append(losses)
@@ -337,6 +343,7 @@ class KGTrainer(Trainer):
                 self.optimizer.zero_grad()
                 losses = self.model.calculate_kg_loss(interaction)
                 loss = sum(losses) if isinstance(losses, tuple) else losses
+                self._check_nan(loss)
                 loss.backward()
                 self.optimizer.step()
                 losses_list.append(losses)
@@ -364,6 +371,7 @@ class KGATTrainer(KGTrainer):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             loss = self.model.calculate_loss(interaction)
+            self._check_nan(loss)
             loss.backward()
             self.optimizer.step()
             rs_total_loss += loss.item()
@@ -374,6 +382,7 @@ class KGATTrainer(KGTrainer):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             loss = self.model.calculate_kg_loss(interaction)
+            self._check_nan(loss)
             loss.backward()
             self.optimizer.step()
             kg_total_loss += loss.item()
