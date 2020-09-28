@@ -243,7 +243,7 @@ class Trainer(AbstractTrainer):
         final_scores = torch.cat(final_scores)
 
         setattr(interaction, 'pos_len_list', pos_len_list)
-        setattr(interaction, 'user_len_list', len(tmp_len_list) * [self.tot_item_num])  # XXX unused
+        setattr(interaction, 'user_len_list', len(tmp_len_list) * [self.tot_item_num])
 
         return interaction, final_scores
 
