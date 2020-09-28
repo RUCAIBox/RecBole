@@ -13,6 +13,11 @@
 # @Author  :   Zhichao Feng
 # @email   :   fzcbupt@gmail.com
 
+"""
+recbox.evaluator.utils
+################################
+"""
+
 from enum import Enum
 import numpy as np
 
@@ -60,7 +65,7 @@ def trunc(scores, method):
         NotImplementedError: method error
 
     Returns:
-        (np.ndarray): processed scores
+        np.ndarray: processed scores
     """
 
     try:
@@ -79,7 +84,7 @@ def cutoff(scores, threshold):
         threshold (float): between 0 and 1
 
     Returns:
-        (np.ndarray): processed scores
+        np.ndarray: processed scores
     """
     return np.where(scores > threshold, 1, 0)
 

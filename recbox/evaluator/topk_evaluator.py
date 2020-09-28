@@ -8,6 +8,11 @@
 # @Author  :   Kaiyuan Li, Yupeng Hou
 # @email   :   tsotfsk@outlook.com, houyupeng@ruc.edu.cn
 
+"""
+recbox.evaluator.topk_evaluator
+################################
+"""
+
 import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
@@ -51,8 +56,7 @@ class TopKEvaluator(object):
             eval_data (Dataset): the class of test data
 
         Returns:
-            dict: such as { 'Hit@20': 0.3824, 'Recall@20': 0.0527
-                            'Hit@10': 0.3153, 'Recall@10': 0.0329}
+            dict: such as ``{'Hit@20': 0.3824, 'Recall@20': 0.0527}`` or ``{'Hit@10': 0.3153, 'Recall@10': 0.0329}``
         """
         pos_len_list = eval_data.get_pos_len_list()
         topk_index = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
