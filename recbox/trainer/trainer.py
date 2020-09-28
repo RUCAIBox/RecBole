@@ -233,11 +233,17 @@ class Trainer(AbstractTrainer):
         neg_scores = scores.masked_select(used_mask)
         neg_scores = torch.split(neg_scores, neg_len_list, dim=0)
 
-        final_scores = list(itertools.chain.from_iterable(zip(pos_scores, neg_scores)))
+        tmp_len_list = np.add(pos_len_list, neg_len_list).tolist()
+        extra_len_list = np.subtract(self.tot_item_num, tmp_len_list).tolist()
+        padding_nums = self.tot_item_num * len(tmp_len_list) - np.sum(tmp_len_list)
+        padding_tensor = torch.tensor([-np.inf], device=self.device).repeat(padding_nums)
+        padding_scores = torch.split(padding_tensor, extra_len_list)
+
+        final_scores = list(itertools.chain.from_iterable(zip(pos_scores, neg_scores, padding_scores)))
         final_scores = torch.cat(final_scores)
 
         setattr(interaction, 'pos_len_list', pos_len_list)
-        setattr(interaction, 'user_len_list', list(np.add(pos_len_list, neg_len_list)))
+        setattr(interaction, 'user_len_list', len(tmp_len_list) * [self.tot_item_num])  # XXX unused
 
         return interaction, final_scores
 
@@ -266,6 +272,7 @@ class Trainer(AbstractTrainer):
                 if self.eval_type == EvaluatorType.INDIVIDUAL:
                     raise ValueError('full sort can\'t use LossEvaluator')
                 interaction, scores = self._full_sort_batch_eval(batched_data)
+                batch_matrix = self.evaluator.evaluate(interaction, scores, full=True)
             else:
                 interaction = batched_data
                 batch_size = interaction.length
@@ -275,7 +282,7 @@ class Trainer(AbstractTrainer):
                 else:
                     scores = self.spilt_predict(interaction, batch_size)
 
-            batch_matrix = self.evaluator.evaluate(interaction, scores)
+                batch_matrix = self.evaluator.evaluate(interaction, scores)
             batch_matrix_list.append(batch_matrix)
         result = self.evaluator.collect(batch_matrix_list, eval_data)
 
