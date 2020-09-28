@@ -58,7 +58,7 @@ class DMF(GeneralRecommender):
             self.interaction_matrix = dataset.inter_matrix(form='csr', value_field=self.RATING).astype(np.float32)
         else:
             raise ValueError("The inter_matrix_type must in ['01', 'rating'] but get {}".format(self.inter_matrix_type))
-        self.max_rating = self.history_user_value.max()
+        self.max_rating = self.history_user_value.max().double()
 
         # tensor of shape [n_items, H] where H is max length of history interaction.
         self.history_user_id = self.history_user_id.to(self.device)
@@ -101,13 +101,10 @@ class DMF(GeneralRecommender):
         item = self.item_fc_layers(item).double()
 
         # after normalize the vector, cosine distance reduced to dot product.
-        #vector = torch.cosine_similarity(user, item).view(-1)
-        #user.double()
         user = F.normalize(user, p=2, dim=1)
         item = F.normalize(item, p=2, dim=1)
         vector = torch.mul(user, item).sum(dim=1)
 
-        #norm_user_output = torch.sqrt((user**))
         vector = torch.max(vector, self.min_y_hat)  # restrict the result to [0, 1].
         return vector
 
@@ -120,8 +117,10 @@ class DMF(GeneralRecommender):
         item = interaction[self.ITEM_ID]
         if self.inter_matrix_type == '01':
             label = interaction[self.LABEL]
+            label = label.double()
         elif self.inter_matrix_type == 'rating':
             label = interaction[self.RATING] * interaction[self.LABEL]
+            label = label.double()
         output = self.forward(user, item)
 
         label = label / self.max_rating  # normalize the label to calculate BCE loss.
