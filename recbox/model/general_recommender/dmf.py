@@ -44,7 +44,7 @@ class DMF(GeneralRecommender):
         self.item_layers_dim = config['item_layers_dim']
         # The dimensions of the last layer of users and items must be the same
         assert self.user_layers_dim[-1] == self.item_layers_dim[-1]
-        self.min_y_hat = torch.tensor([config['min_y_hat']]).to(self.device)
+        self.min_y_hat = torch.tensor([config['min_y_hat']]).double().to(self.device)
         self.inter_matrix_type = config['inter_matrix_type']
 
         # generate intermediate data
@@ -58,7 +58,7 @@ class DMF(GeneralRecommender):
             self.interaction_matrix = dataset.inter_matrix(form='csr', value_field=self.RATING).astype(np.float32)
         else:
             raise ValueError("The inter_matrix_type must in ['01', 'rating'] but get {}".format(self.inter_matrix_type))
-        self.max_rating = self.history_user_value.max()
+        self.max_rating = self.history_user_value.max().double()
 
         # tensor of shape [n_items, H] where H is max length of history interaction.
         self.history_user_id = self.history_user_id.to(self.device)
@@ -97,10 +97,11 @@ class DMF(GeneralRecommender):
         matrix_01.index_put_((row_indices, col_indices), self.history_user_value[item].flatten())
         item = self.item_linear(matrix_01)
 
-        user = self.user_fc_layers(user)
-        item = self.item_fc_layers(item)
+        user = self.user_fc_layers(user).double()
+        item = self.item_fc_layers(item).double()
 
-        user = F.normalize(user, p=2, dim=1)   # after normalize the vector, cosine distance reduced to dot product.
+        # after normalize the vector, cosine distance reduced to dot product.
+        user = F.normalize(user, p=2, dim=1)
         item = F.normalize(item, p=2, dim=1)
         vector = torch.mul(user, item).sum(dim=1)
 
@@ -116,8 +117,10 @@ class DMF(GeneralRecommender):
         item = interaction[self.ITEM_ID]
         if self.inter_matrix_type == '01':
             label = interaction[self.LABEL]
+            label = label.double()
         elif self.inter_matrix_type == 'rating':
             label = interaction[self.RATING] * interaction[self.LABEL]
+            label = label.double()
         output = self.forward(user, item)
 
         label = label / self.max_rating  # normalize the label to calculate BCE loss.
@@ -171,11 +174,11 @@ class DMF(GeneralRecommender):
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
         u_embedding = self.get_user_embedding(user)
-        u_embedding = self.user_fc_layers(u_embedding)
+        u_embedding = self.user_fc_layers(u_embedding).double()
         u_embedding = F.normalize(u_embedding, p=2, dim=1)
 
         if self.i_embedding is None:
-            self.i_embedding = self.get_item_embedding()
+            self.i_embedding = self.get_item_embedding().double()
             self.i_embedding = F.normalize(self.i_embedding, p=2, dim=1)
 
         cos_similarity = torch.mm(u_embedding, self.i_embedding.t())
