@@ -8,8 +8,13 @@
 # @Author  :   Kaiyuan Li, Zhichao Feng
 # @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com
 
-import itertools
+"""
+recbox.evaluator.utils
+################################
+"""
 
+import itertools
+from enum import Enum
 import numpy as np
 import torch
 
@@ -55,8 +60,7 @@ def trunc(scores, method):
         NotImplementedError: method error
 
     Returns:
-        (np.ndarray): processed scores
-
+        np.ndarray: processed scores
     """
 
     try:
@@ -75,8 +79,7 @@ def cutoff(scores, threshold):
         threshold (float): between 0 and 1
 
     Returns:
-        (np.ndarray): processed scores
-
+        np.ndarray: processed scores
     """
     return np.where(scores > threshold, 1, 0)
 
