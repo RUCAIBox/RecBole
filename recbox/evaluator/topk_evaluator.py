@@ -15,9 +15,8 @@ recbox.evaluator.topk_evaluator
 
 import numpy as np
 import torch
+from recbox.evaluator.metrics import metrics_dict
 from torch.nn.utils.rnn import pad_sequence
-
-from .metrics import metrics_dict
 
 # These metrics are typical in topk recommendations
 topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP']}
@@ -29,19 +28,21 @@ class TopKEvaluator(object):
         self.topk = config['topk']
         self.metrics = config['metrics']
 
-    def evaluate(self, interaction, score_tensor):
+    def evaluate(self, interaction, scores_tensor, full=False):
         """ evalaute the topk metrics
 
         Args:
             interaction (Interaction): Interaction class of the batch
-            score_tensor (tensor): a tensor of scores
+            scores_tensor (tensor): a tensor of scores
+            full (bool, optional): whether it is full sort. Default: 0.
 
         """
-        # intermediate variables
         user_len_list = interaction.user_len_list
-
-        score_list = torch.split(score_tensor, user_len_list, dim=0)
-        scores_matrix = pad_sequence(score_list, batch_first=True, padding_value=-np.inf)  # nusers x items
+        if full is True:
+            scores_matrix = scores_tensor.view(len(user_len_list), -1)
+        else:
+            scores_list = torch.split(scores_tensor, user_len_list, dim=0)
+            scores_matrix = pad_sequence(scores_list, batch_first=True, padding_value=-np.inf)  # nusers x items
 
         # get topk
         _, topk_index = torch.topk(scores_matrix, max(self.topk), dim=-1)  # nusers x k
@@ -105,6 +106,7 @@ class TopKEvaluator(object):
 
         Returns:
             list: a list of metrics result
+
         """
         result_list = []
         for metric in self.metrics:
@@ -122,6 +124,7 @@ class TopKEvaluator(object):
 
         Returns:
             np.ndarray: a matrix which contains the metrics result
+
         """
 
         pos_idx_matrix = (topk_index < pos_len_list.reshape(-1, 1))

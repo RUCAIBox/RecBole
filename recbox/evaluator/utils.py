@@ -4,54 +4,49 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/04
-# @Author  :   Kaiyuan Li
-# @email   :   tsotfsk@outlook.com
-
-# UPDATE
-# @Time    :   2020/08/09
-# @Author  :   Zhichao Feng
-# @email   :   fzcbupt@gmail.com
+# @Time    :   2020/09/28, 2020/08/09
+# @Author  :   Kaiyuan Li, Zhichao Feng
+# @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com
 
 """
 recbox.evaluator.utils
 ################################
 """
 
+import itertools
 from enum import Enum
 import numpy as np
+import torch
 
 
-# class TOPK_ARGS(Enum):
-#     POS_INDEX = 0
-#     POS_LEN = 1
+def pad_sequence(sequences, len_list, pad_to=None, padding_value=0):
+    """pad sequences to a matrix
 
-#     NDCG = (POS_INDEX, POS_LEN)
-#     MAP = (POS_INDEX, POS_LEN)
-#     RECALL = (POS_INDEX, POS_LEN)
-#     MRR = (POS_INDEX)
-#     HIT = (POS_INDEX)
-#     PRECISION = (POS_INDEX)
+    Args:
+        sequences (list): list of variable length sequences.
+        len_list (list): the length of the tensors in the sequences
+        pad_to (int, optional): if pad_to is not None, the sequences will pad to the length you set,
+                                else the sequence will pad to the max length of the sequences.
+        padding_value (int, optional): value for padded elements. Default: 0.
 
+    Returns:
+        torch.Tensor: [seq_num, max_len] or [seq_num, pad_to]
 
-class TOPK_METRICS(Enum):
-    NDCG = 'ndcg'
-    MRR = 'mrr'
-    MAP = 'map'
-    HIT = 'hit'
-    RECALL = 'recall'
-    PRECISION = 'precision'
+    """
+    max_len = np.max(len_list) if pad_to is None else pad_to
+    min_len = np.min(len_list)
+    device = sequences[0].device
+    if max_len == min_len:
+        result = torch.cat(sequences, dim=0).view(-1, max_len)
+    else:
+        extra_len_list = np.subtract(max_len, len_list).tolist()
+        padding_nums = max_len * len(len_list) - np.sum(len_list)
+        padding_tensor = torch.tensor([-np.inf], device=device).repeat(padding_nums)
+        padding_list = torch.split(padding_tensor, extra_len_list)
+        result = list(itertools.chain.from_iterable(zip(sequences, padding_list)))
+        result = torch.cat(result)
 
-
-class LOSS_METRICS(Enum):
-    MAE = 'mae'
-    RMSE = 'rmse'
-    LOGLOSS = 'logloss'
-    AUC = 'auc'
-
-
-class ITEM_METRIC(Enum):
-    pass
+    return result.view(-1, max_len)
 
 
 def trunc(scores, method):
@@ -70,7 +65,7 @@ def trunc(scores, method):
 
     try:
         cut_method = getattr(np, method)
-    except NotImplementedError as e:
+    except NotImplementedError:
         raise NotImplementedError("module 'numpy' has no fuction named '{}'".format(method))
     scores = cut_method(scores)
     return scores
@@ -105,6 +100,7 @@ def _binary_clf_curve(trues, preds):
     Note:
         To improve efficiency, we referred to the source code(which is available at sklearn.metrics.roc_curve)
         in SkLearn and made some optimizations.
+
     """
     trues = (trues == 1)
 

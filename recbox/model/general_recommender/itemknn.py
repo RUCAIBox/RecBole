@@ -71,15 +71,15 @@ class ComputeSimilarity:
             item_data = item_data.toarray().squeeze()
 
             if item_data.ndim == 1:
-                item_data = np.atleast_2d(item_data)
+                item_data = np.expand_dims(item_data, axis=1)
 
             # Compute item similarities
-            this_block_weights = self.dataMatrix.T.dot(item_data)
 
+            this_block_weights = self.dataMatrix.T.dot(item_data)
             for col_index_in_block in range(this_block_size):
 
                 if this_block_size == 1:
-                    this_column_weights = this_block_weights
+                    this_column_weights = this_block_weights.squeeze()
                 else:
                     this_column_weights = this_block_weights[:, col_index_in_block]
 

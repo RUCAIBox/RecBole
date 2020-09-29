@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/9/15, 2020/9/18, 2020/9/20, 2020/9/16
+# @Time   : 2020/8/7 18:38, 2020/9/26, 2020/9/26, 2020/9/20, 2020/9/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -93,6 +93,7 @@ class Trainer(AbstractTrainer):
             self.optimizer.zero_grad()
             losses = self.model.calculate_loss(interaction)
             loss = sum(losses) if isinstance(losses, tuple) else losses
+            self._check_nan(loss)
             loss.backward()
             self.optimizer.step()
             losses_list.append(losses)
@@ -138,6 +139,10 @@ class Trainer(AbstractTrainer):
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         message_output = 'Checkpoint loaded. Resume training from epoch {}'.format(self.start_epoch)
         print(message_output)
+
+    def _check_nan(self, loss):
+        if torch.isnan(loss):
+            raise ValueError('Training loss is nan')
 
     def generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
         train_loss_output = "epoch %d training [time: %.2fs, " % (epoch_idx, e_time - s_time)
@@ -213,7 +218,10 @@ class Trainer(AbstractTrainer):
         else:
             interaction = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
-            scores = self.model.predict(interaction)
+            if batch_size <= self.test_batch_size:
+                scores = self.model.predict(interaction)
+            else:
+                scores = self.spilt_predict(interaction, batch_size)
         pos_idx = pos_idx.to(self.device)
         used_idx = used_idx.to(self.device)
 
@@ -225,11 +233,17 @@ class Trainer(AbstractTrainer):
         neg_scores = scores.masked_select(used_mask)
         neg_scores = torch.split(neg_scores, neg_len_list, dim=0)
 
-        final_scores = list(itertools.chain.from_iterable(zip(pos_scores, neg_scores)))
+        tmp_len_list = np.add(pos_len_list, neg_len_list).tolist()
+        extra_len_list = np.subtract(self.tot_item_num, tmp_len_list).tolist()
+        padding_nums = self.tot_item_num * len(tmp_len_list) - np.sum(tmp_len_list)
+        padding_tensor = torch.tensor([-np.inf], device=self.device).repeat(padding_nums)
+        padding_scores = torch.split(padding_tensor, extra_len_list)
+
+        final_scores = list(itertools.chain.from_iterable(zip(pos_scores, neg_scores, padding_scores)))
         final_scores = torch.cat(final_scores)
 
         setattr(interaction, 'pos_len_list', pos_len_list)
-        setattr(interaction, 'user_len_list', list(np.add(pos_len_list, neg_len_list)))
+        setattr(interaction, 'user_len_list', len(tmp_len_list) * [self.tot_item_num])
 
         return interaction, final_scores
 
@@ -258,6 +272,7 @@ class Trainer(AbstractTrainer):
                 if self.eval_type == EvaluatorType.INDIVIDUAL:
                     raise ValueError('full sort can\'t use LossEvaluator')
                 interaction, scores = self._full_sort_batch_eval(batched_data)
+                batch_matrix = self.evaluator.evaluate(interaction, scores, full=True)
             else:
                 interaction = batched_data
                 batch_size = interaction.length
@@ -267,7 +282,7 @@ class Trainer(AbstractTrainer):
                 else:
                     scores = self.spilt_predict(interaction, batch_size)
 
-            batch_matrix = self.evaluator.evaluate(interaction, scores)
+                batch_matrix = self.evaluator.evaluate(interaction, scores)
             batch_matrix_list.append(batch_matrix)
         result = self.evaluator.collect(batch_matrix_list, eval_data)
 
@@ -325,6 +340,7 @@ class KGTrainer(Trainer):
                 self.optimizer.zero_grad()
                 losses = self.model.calculate_loss(interaction)
                 loss = sum(losses) if isinstance(losses, tuple) else losses
+                self._check_nan(loss)
                 loss.backward()
                 self.optimizer.step()
                 losses_list.append(losses)
@@ -334,6 +350,7 @@ class KGTrainer(Trainer):
                 self.optimizer.zero_grad()
                 losses = self.model.calculate_kg_loss(interaction)
                 loss = sum(losses) if isinstance(losses, tuple) else losses
+                self._check_nan(loss)
                 loss.backward()
                 self.optimizer.step()
                 losses_list.append(losses)
@@ -361,6 +378,7 @@ class KGATTrainer(KGTrainer):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             loss = self.model.calculate_loss(interaction)
+            self._check_nan(loss)
             loss.backward()
             self.optimizer.step()
             rs_total_loss += loss.item()
@@ -371,6 +389,7 @@ class KGATTrainer(KGTrainer):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             loss = self.model.calculate_kg_loss(interaction)
+            self._check_nan(loss)
             loss.backward()
             self.optimizer.step()
             kg_total_loss += loss.item()
