@@ -328,7 +328,6 @@ class KGTrainer(Trainer):
         if self.train_rec_step is None or self.train_kg_step is None:
             interaction_state = KGDataLoaderState.RSKG
         else:
-            assert self.train_rec_step > 0 and self.train_kg_step > 0
             interaction_state = KGDataLoaderState.RS \
                 if epoch_idx % (self.train_rec_step + self.train_kg_step) < self.train_rec_step \
                 else KGDataLoaderState.KG
