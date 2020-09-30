@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/9, 2020/9/12, 2020/8/31
+# @Time   : 2020/9/9, 2020/9/17, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -11,15 +11,18 @@ import copy
 import os
 from logging import getLogger
 
-from ..config import EvalSetting
-from ..sampler import KGSampler, Sampler
-from ..utils import EvaluatorType, InputType, ModelType
-from .dataloader import *
+from recbox.config import EvalSetting
+from recbox.sampler import KGSampler, Sampler
+from recbox.utils import ModelType
+from recbox.data.dataloader import *
 
 
 def create_dataset(config):
     model_type = config['MODEL_TYPE']
-    if model_type == ModelType.KNOWLEDGE:
+    if model_type == ModelType.SEQUENTIAL:
+        from .dataset import SequentialDataset
+        return SequentialDataset(config)
+    elif model_type == ModelType.KNOWLEDGE:
         from .dataset import KnowledgeBasedDataset
         return KnowledgeBasedDataset(config)
     elif model_type == ModelType.SOCIAL:
@@ -39,8 +42,12 @@ def data_preparation(config, dataset, save=False):
     kwargs = {}
     if 'RS' in es_str[0]:
         kwargs['ratios'] = config['split_ratio']
+        if kwargs['ratios'] is None:
+            raise ValueError('`ratios` should be set if `RS` is set')
     if 'LS' in es_str[0]:
         kwargs['leave_one_num'] = config['leave_one_num']
+        if kwargs['leave_one_num'] is None:
+            raise ValueError('`leave_one_num` should be set if `LS` is set')
     kwargs['group_by_user'] = config['group_by_user']
     getattr(es, es_str[0])(**kwargs)
 
@@ -57,13 +64,11 @@ def data_preparation(config, dataset, save=False):
     kwargs = {}
     if config['training_neg_sample_num']:
         es.neg_sample_by(config['training_neg_sample_num'])
-        sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
-        # TODO 如果model_type是kg, 可能还要设置一个kg的sampler
-        kwargs['sampler'] = sampler
-        kwargs['phase'] = 'train'
+        sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
+        kwargs['sampler'] = sampler.set_phase('train')
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
         if model_type == ModelType.KNOWLEDGE:
-            kg_sampler = KGSampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
+            kg_sampler = KGSampler(dataset, es.neg_sample_args['distribution'])
             kwargs['kg_sampler'] = kg_sampler
     train_data = dataloader_construct(
         name='train',
@@ -80,9 +85,8 @@ def data_preparation(config, dataset, save=False):
     if len(es_str) > 1 and getattr(es, es_str[1], None):
         getattr(es, es_str[1])()
         if 'sampler' not in locals():
-            sampler = Sampler(config, phases, builded_datasets, es.neg_sample_args['distribution'])
-        kwargs['sampler'] = sampler
-        kwargs['phase'] = ['valid', 'test']
+            sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
+        kwargs['sampler'] = [sampler.set_phase('valid'), sampler.set_phase('test')]
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
     valid_data, test_data = dataloader_construct(
         name='evaluation',

@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/8/18 9:21
+# @Time   : 2020/8/18
 # @Author : Zihan Lin
-# @Email  : linzihan.super@foxmail.con
-# @File   : itemknn.py
+# @Email  : linzihan.super@foxmail.com
 
 import numpy as np
 import scipy.sparse as sp
 import torch
 
-from ...utils import InputType
-from ..abstract_recommender import GeneralRecommender
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
 
 
 class ComputeSimilarity:
@@ -72,15 +71,15 @@ class ComputeSimilarity:
             item_data = item_data.toarray().squeeze()
 
             if item_data.ndim == 1:
-                item_data = np.atleast_2d(item_data)
+                item_data = np.expand_dims(item_data, axis=1)
 
             # Compute item similarities
-            this_block_weights = self.dataMatrix.T.dot(item_data)
 
+            this_block_weights = self.dataMatrix.T.dot(item_data)
             for col_index_in_block in range(this_block_size):
 
                 if this_block_size == 1:
-                    this_column_weights = this_block_weights
+                    this_column_weights = this_block_weights.squeeze()
                 else:
                     this_column_weights = this_block_weights[:, col_index_in_block]
 

@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/8/31 11:30
+# @Time   : 2020/8/31
 # @Author : Changxin Tian
 # @Email  : cx.tian@outlook.con
-# @File   : lightgcn.py
+
+# UPDATE:
+# @Time   : 2020/9/16
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
 
 """
 Reference:
@@ -12,13 +16,11 @@ Xiangnan He et al. "LightGCN: Simplifying and Powering Graph Convolution Network
 import numpy as np
 import scipy.sparse as sp
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
-from ...utils import InputType
-from ..abstract_recommender import GeneralRecommender
-from ..loss import BPRLoss, EmbLoss
-from ..utils import xavier_uniform_initialization
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
+from recbox.model.loss import BPRLoss, EmbLoss
+from recbox.model.init import xavier_uniform_initialization
 
 
 class LightGCN(GeneralRecommender):
@@ -69,7 +71,7 @@ class LightGCN(GeneralRecommender):
         col = L.col
         i = torch.LongTensor([row, col])
         data = torch.FloatTensor(L.data)
-        SparseL = torch.sparse.FloatTensor(i, data)
+        SparseL = torch.sparse.FloatTensor(i, data, torch.Size(L.shape))
         return SparseL
 
     def get_eye_mat(self):
@@ -108,17 +110,15 @@ class LightGCN(GeneralRecommender):
         u_embeddings = user_all_embeddings[user]
         posi_embeddings = item_all_embeddings[pos_item]
         negi_embeddings = item_all_embeddings[neg_item]
-        pos_scores = torch.sum(torch.mul(u_embeddings, posi_embeddings), axis=1)
-        neg_scores = torch.sum(torch.mul(u_embeddings, negi_embeddings), axis=1)
+        pos_scores = torch.mul(u_embeddings, posi_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)
 
         u_ego_embeddings = self.user_embedding(user)
         posi_ego_embeddings = self.item_embedding(pos_item)
         negi_ego_embeddings = self.item_embedding(neg_item)
-        # reg_loss = (1 / 2) * (u_ego_embeddings.norm(2).pow(2) +
-        #                       posi_ego_embeddings.norm(2).pow(2) +
-        #                       negi_ego_embeddings.norm(2).pow(2)) / float(len(user))
-        reg_loss = self.reg_loss([u_ego_embeddings, posi_ego_embeddings, negi_ego_embeddings])
+
+        reg_loss = self.reg_loss(u_ego_embeddings, posi_ego_embeddings, negi_ego_embeddings)
         loss = mf_loss + self.reg_weight * reg_loss
 
         return loss
@@ -131,7 +131,7 @@ class LightGCN(GeneralRecommender):
 
         u_embeddings = user_all_embeddings[user]
         i_embeddings = item_all_embeddings[item]
-        scores = torch.sum(torch.mul(u_embeddings, i_embeddings), axis=1)
+        scores = torch.mul(u_embeddings, i_embeddings).sum(dim=1)
         return scores
 
     def full_sort_predict(self, interaction):

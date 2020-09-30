@@ -3,12 +3,13 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/3, 2020/9/10
+# @Time   : 2020/9/16, 2020/9/10
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import traceback
 from run_test import whole_process
+from time import time
 
 
 """
@@ -115,8 +116,48 @@ test_examples = {
         'metrics': ["Recall"],
         'topk': [10]
     },
+    'Test GCMC': {
+        'model': 'GCMC',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test NGCF': {
+        'model': 'NGCF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test LightGCN': {
+        'model': 'LightGCN',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test DGCF': {
+        'model': 'DGCF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
     'Test POP': {
         'model': 'Pop',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test ItemKNN': {
+        'model': 'ItemKNN',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -158,7 +199,7 @@ test_examples = {
         'NEG_PREFIX': None,
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
-        'load_col': {'inter': ['rating', 'timestamp']},
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
         'min_user_inter_num': 5
     },
     'Test FPMC': {
@@ -171,14 +212,32 @@ test_examples = {
         'leave_one_num': 2,
         'real_time_process': True,
         'TIME_FIELD': 'timestamp',
-        'load_col': {'inter': ['rating', 'timestamp']},
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
         'min_user_inter_num': 5
+    },
+    'Test DIN': {
+        'model': 'DIN',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, uni100',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'TIME_FIELD': 'timestamp',
+        'LABEL_FIELD': 'label',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                     'user': ['user_id', 'age', 'gender', 'occupation'],
+                     'item': ['item_id', 'release_year']},
+        'threshold': {'rating': 4},
+        'valid_metric': 'AUC',
+        'metrics': ['AUC'],
+        'eval_batch_size': 10000
     },
     'Test CKE': {
         'model': 'CKE',
         'dataset': 'kgdata_example',
         'epochs': 1,
-        'train_kg_step': 0,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
@@ -187,27 +246,61 @@ test_examples = {
         'model': 'KTUP',
         'dataset': 'kgdata_example',
         'epochs': 1,
-        'train_kg_step': 1,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
-    }
+    },
+    'Test CFKG': {
+        'model': 'CFKG',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test KGAT': {
+        'model': 'KGAT',
+        'dataset': 'kgdata_example',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10]
+    },
+    'Test Caser': {
+        'model': 'Caser',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'TO_LS, full',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': None,
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5
+    },
+
 }
 
 
 def run_test_examples():
 
+    test_start_time = time()
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
-            whole_process(config_file='properties/overall.config', config_dict=test_examples[example])
+            whole_process(config_file='properties/overall.config', config_dict=test_examples[example], saved=False)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:
             print(traceback.format_exc())
             fail_examples.append(example)
+    test_end_time = time()
+    print('total test time: ', test_end_time - test_start_time)
     print('success examples: ', success_examples)
     print('fail examples: ', fail_examples)
     print('\n')

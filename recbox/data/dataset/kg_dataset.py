@@ -3,42 +3,27 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/8
-# @Author : Yupeng Hou
-# @Email  : houyupeng@ruc.edu.cn
+# @Time   : 2020/9/23, 2020/9/15, 2020/9/22
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import os
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import coo_matrix
+import torch
 
-from .dataset import Dataset
-from ...utils import FeatureSource, FeatureType
+from recbox.data.dataset import Dataset
+from recbox.utils import FeatureSource, FeatureType
 
 
 class KnowledgeBasedDataset(Dataset):
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
-    def _from_scratch(self, config):
-        self.logger.debug('Loading kg dataset from scratch')
-
-        self.dataset_path = config['data_path']
-        self._fill_nan_flag = self.config['fill_nan']
-
-        self.field2type = {}
-        self.field2source = {}
-        self.field2id_token = {}
-        self.field2seqlen = config['seq_len'] or {}
-
-        self.model_type = self.config['MODEL_TYPE']
-        self.uid_field = self.config['USER_ID_FIELD']
-        self.iid_field = self.config['ITEM_ID_FIELD']
-        self.label_field = self.config['LABEL_FIELD']
-        self.time_field = self.config['TIME_FIELD']
-
-        self.logger.debug('uid_field: {}'.format(self.uid_field))
-        self.logger.debug('iid_field: {}'.format(self.iid_field))
+    def _get_field_from_config(self):
+        super()._get_field_from_config()
 
         self.head_entity_field = self.config['HEAD_ENTITY_ID_FIELD']
         self.tail_entity_field = self.config['TAIL_ENTITY_ID_FIELD']
@@ -49,22 +34,18 @@ class KnowledgeBasedDataset(Dataset):
         self.logger.debug('relation_field: {}'.format(self.relation_field))
         self.logger.debug('entity_field: {}'.format(self.entity_field))
 
-        self._preloaded_weight = {}
-
-        self.inter_feat, self.user_feat, self.item_feat = self._load_data(self.dataset_name, self.dataset_path)
+    def _load_data(self, token, dataset_path):
+        super()._load_data(token, dataset_path)
         self.kg_feat = self._load_kg(self.dataset_name, self.dataset_path)
         self.item2entity, self.entity2item = self._load_link(self.dataset_name, self.dataset_path)
-        self.feat_list = self._build_feat_list()
 
-        self._filter_by_inter_num()
-        self._filter_by_field_value()
-        self._reset_index()
-        self._remap_ID_all()
-        self._user_item_feat_preparation()
-        self._fill_nan()
-        self._set_label_by_threshold()
-        self._normalize()
-        self._preload_weight_matrix()
+    def __str__(self):
+        info = [super().__str__(),
+                'The number of entities: {}'.format(self.entity_num),
+                'The number of relations: {}'.format(self.relation_num),
+                'The number of triples: {}'.format(len(self.kg_feat)),
+                'The number of items that have been linked to KG: {}'.format(len(self.item2entity))]
+        return '\n'.join(info)
 
     def _build_feat_list(self):
         return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.kg_feat] if feat is not None]
@@ -86,9 +67,7 @@ class KnowledgeBasedDataset(Dataset):
             field, ftype = field_type.split(':')
             field_names.append(field)
             assert ftype == 'token', 'kg data requires fields with type token'
-            self.field2source[field] = FeatureSource.KG
-            self.field2type[field] = FeatureType.TOKEN
-            self.field2seqlen[field] = 1
+            self.set_field_property(field, FeatureType.TOKEN, FeatureSource.KG, 1)
         df.columns = field_names
         self._check_kg(df)
         return df
@@ -143,9 +122,10 @@ class KnowledgeBasedDataset(Dataset):
 
         for ent_field in [self.head_entity_field, self.tail_entity_field]:
             entity_list = self.kg_feat[ent_field].values
-            entity_list = [item2id[self.entity2item[_]] if (_ in self.entity2item) and
-                                                           (self.entity2item[_] in item2id)
-                                                        else _ for _ in entity_list]
+            entity_list = [item2id[self.entity2item[_]]
+                           if (_ in self.entity2item) and (self.entity2item[_] in item2id)
+                           else _
+                           for _ in entity_list]
             self.kg_feat[ent_field] = entity_list
 
         fields_in_same_space = self._get_fields_in_same_space()
@@ -170,14 +150,15 @@ class KnowledgeBasedDataset(Dataset):
         entity_id_token = self.field2id_token[self.head_entity_field]
         id2item = self.field2id_token[self.iid_field]
         for i in range(1, self.item_num):
-            entity_id_token[i] = self.item2entity[id2item[entity_id_token[i]]]
+            tmp_item_id = id2item[entity_id_token[i]]
+            if tmp_item_id in self.item2entity:
+                entity_id_token[i] = self.item2entity[tmp_item_id]
 
         for ent_field in [self.head_entity_field, self.tail_entity_field, self.entity_field]:
             self.field2id_token[ent_field] = entity_id_token
 
-        self.field2source[self.entity_field] = FeatureSource.KG
-        self.field2type[self.entity_field] = FeatureType.TOKEN
-        self.field2seqlen[self.entity_field] = 1
+        self.set_field_property(self.entity_field, FeatureType.TOKEN, FeatureSource.KG, 1)
+        self.field2id_token[self.relation_field].append('[UI-Relation]')
 
     @property
     def relation_num(self):
@@ -192,5 +173,104 @@ class KnowledgeBasedDataset(Dataset):
         return self.kg_feat[self.head_entity_field].values
 
     @property
-    def entities_list(self):
+    def tail_entities(self):
+        return self.kg_feat[self.tail_entity_field].values
+
+    @property
+    def relations(self):
+        return self.kg_feat[self.relation_field].values
+
+    @property
+    def entities(self):
         return np.arange(self.entity_num)
+
+    def kg_graph(self, form='coo', value_field=None):
+        args = [self.kg_feat, self.head_entity_field, self.tail_entity_field, form, value_field]
+        if form in ['coo', 'csr']:
+            return self._create_sparse_matrix(*args)
+        elif form in ['dgl', 'pyg']:
+            return self._create_graph(*args)
+        else:
+            raise NotImplementedError('kg graph format [{}] has not been implemented.')
+
+    def _create_ckg_sparse_matrix(self, form='coo', show_relation=False):
+        user_num = self.user_num
+
+        hids = self.kg_feat[self.head_entity_field].values + user_num
+        tids = self.kg_feat[self.tail_entity_field].values + user_num
+
+        uids = self.inter_feat[self.uid_field].values
+        iids = self.inter_feat[self.iid_field].values + user_num
+
+        ui_rel_num = len(uids)
+        ui_rel_id = self.relation_num - 1
+        assert self.field2id_token[self.relation_field][ui_rel_id] == '[UI-Relation]'
+
+        src = np.concatenate([uids, iids, hids])
+        tgt = np.concatenate([iids, uids, tids])
+
+        if not show_relation:
+            data = np.ones(len(src))
+        else:
+            kg_rel = self.kg_feat[self.relation_field].values
+            ui_rel = np.full(2 * ui_rel_num, ui_rel_id, dtype=kg_rel.dtype)
+            data = np.concatenate([ui_rel, kg_rel])
+        node_num = self.entity_num + self.user_num
+        mat = coo_matrix((data, (src, tgt)), shape=(node_num, node_num))
+        if form == 'coo':
+            return mat
+        elif form == 'csr':
+            return mat.tocsr()
+        else:
+            raise NotImplementedError('sparse matrix format [{}] has not been implemented.'.format(form))
+
+    def _create_ckg_graph(self, form='dgl', show_relation=False):
+        user_num = self.user_num
+
+        kg_tensor = self._dataframe_to_interaction(self.kg_feat)
+        inter_tensor = self._dataframe_to_interaction(self.inter_feat)
+
+        head_entity = kg_tensor[self.head_entity_field] + user_num
+        tail_entity = kg_tensor[self.tail_entity_field] + user_num
+
+        user = inter_tensor[self.uid_field]
+        item = inter_tensor[self.iid_field] + user_num
+
+        src = torch.cat([user, item, head_entity])
+        tgt = torch.cat([item, user, tail_entity])
+
+        if show_relation:
+            ui_rel_num = user.shape[0]
+            ui_rel_id = self.relation_num - 1
+            assert self.field2id_token[self.relation_field][ui_rel_id] == '[UI-Relation]'
+            kg_rel = kg_tensor[self.relation_field]
+            ui_rel = torch.full((2 * ui_rel_num,), ui_rel_id, dtype=kg_rel.dtype)
+            edge = torch.cat([ui_rel, kg_rel])
+
+        if form == 'dgl':
+            import dgl
+            graph = dgl.graph((src, tgt))
+            if show_relation:
+                graph.edata[self.relation_field] = edge
+            return graph
+        elif form == 'pyg':
+            from torch_geometric.data import Data
+            edge_attr = edge if show_relation else None
+            graph = Data(edge_index=torch.stack([src, tgt]), edge_attr=edge_attr)
+            return graph
+        else:
+            raise NotImplementedError('graph format [{}] has not been implemented.'.format(form))
+
+    def ckg_graph(self, form='coo', value_field=None):
+        if value_field is not None and value_field != self.relation_field:
+            raise ValueError('value_field [{}] can only be [{}] in ckg_graph.'.format(
+                value_field, self.relation_field
+            ))
+        show_relation = value_field is not None
+
+        if form in ['coo', 'csr']:
+            return self._create_ckg_sparse_matrix(form, show_relation)
+        elif form in ['dgl', 'pyg']:
+            return self._create_ckg_graph(form, show_relation)
+        else:
+            raise NotImplementedError('ckg graph format [{}] has not been implemented.')

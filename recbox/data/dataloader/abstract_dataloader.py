@@ -3,15 +3,13 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/12
+# @Time   : 2020/9/23, 2020/9/23
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import math
 
-from ...utils import (
-    DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType,
-    KGDataLoaderState)
+from recbox.utils import InputType
 
 
 class AbstractDataLoader(object):
@@ -27,12 +25,24 @@ class AbstractDataLoader(object):
         self.shuffle = shuffle
         self.pr = 0
         self.real_time = config['real_time_process']
+        if self.real_time is None:
+            self.real_time = True
 
         self.join = self.dataset.join
+        self.history_item_matrix = self.dataset.history_item_matrix
+        self.history_user_matrix = self.dataset.history_user_matrix
         self.inter_matrix = self.dataset.inter_matrix
-        if hasattr(self.dataset, 'net_matrix'):
-            self.net_matrix = self.dataset.net_matrix
 
+        optional_attrs = [
+            'kg_graph', 'ckg_graph', 'relation_num', 'entity_num',
+            'head_entities', 'tail_entities', 'relations', 'entities',
+            'net_graph'
+        ]
+        for op_attr in optional_attrs:
+            if hasattr(self.dataset, op_attr):
+                setattr(self, op_attr, getattr(self.dataset, op_attr))
+
+        self.logger = self.dataset.logger
         self.num = self.dataset.num
         self.fields = self.dataset.fields
         self.get_preload_weight = self.dataset.get_preload_weight
@@ -80,12 +90,12 @@ class AbstractDataLoader(object):
     def _next_batch_data(self):
         raise NotImplementedError('Method [next_batch_data] should be implemented.')
 
-    def set_batch_size(self, batch_size):  # TODO batch size is useless...
+    def set_batch_size(self, batch_size):
         if self.pr != 0:
             raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
         if self.batch_size != batch_size:
             self.batch_size = batch_size
-            # TODO  batch size is changed
+            self.logger.warning('Batch size is changed to {}'.format(batch_size))
 
     def get_user_feature(self):
         user_df = self.dataset.get_user_feature()
