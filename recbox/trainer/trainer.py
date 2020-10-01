@@ -131,7 +131,6 @@ class Trainer(AbstractTrainer):
             multiple parts and the model return these multiple parts loss instead of the sum of loss, It will return a
             tuple which includes the sum of loss in each part.
         """
-        print(type(train_data))
         self.model.train()
         total_loss = None
         for batch_idx, interaction in enumerate(train_data):
@@ -148,7 +147,6 @@ class Trainer(AbstractTrainer):
             self._check_nan(loss)
             loss.backward()
             self.optimizer.step()
-        print(type(total_loss))
         return total_loss
 
     def _valid_epoch(self, valid_data):
@@ -204,7 +202,7 @@ class Trainer(AbstractTrainer):
         # load optimizer state from checkpoint only when optimizer type is not changed
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         message_output = 'Checkpoint loaded. Resume training from epoch {}'.format(self.start_epoch)
-        print(message_output)
+        self.logger.info(message_output)
 
     def _check_nan(self, loss):
         if torch.isnan(loss):
