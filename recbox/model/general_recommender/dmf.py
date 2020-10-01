@@ -14,6 +14,7 @@ recbox.model.general_recommender.dmf
 Reference:
 Hong-Jian Xue et al. "Deep Matrix Factorization Models for Recommender Systems." in IJCAI 2017.
 """
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -30,6 +31,7 @@ class DMF(GeneralRecommender):
     The original interaction matrix of :math:`n_{users} \times n_{items}` is set as model input,
     we carefully design the data interface and use sparse tensor to train and test efficiently.
     We just implement the model following the original author with a pointwise training mode.
+
     Note:
 
             Our implementation is a improved version which is different from the original paper.
@@ -141,10 +143,10 @@ class DMF(GeneralRecommender):
         r"""Get a batch of user's embedding with the user's id and history interaction matrix.
 
         Args:
-            user (torch.LongTensor): The input tensor that contains user's id. shape of [B, ]
+            user (torch.LongTensor): The input tensor that contains user's id, shape: [batch_size, ]
 
         Returns:
-            output(torch.FloatTensor): The embedding tensor of a batch of user. shape of [B, embedding_size]
+            torch.FloatTensor: The embedding tensor of a batch of user, shape: [batch_size, embedding_size]
         """
         # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
         col_indices = self.history_item_id[user].flatten()
@@ -162,7 +164,7 @@ class DMF(GeneralRecommender):
         Considering the RAM of device, we use matrix multiply on sparse tensor for generalization.
 
         Returns:
-            output(torch.FloatTensor): The embedding tensor of all item. shape of [n_items, embedding_size]
+            torch.FloatTensor: The embedding tensor of all item, shape of [n_items, embedding_size]
         """
         interaction_matrix = self.interaction_matrix.tocoo()
         row = interaction_matrix.row
