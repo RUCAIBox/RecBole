@@ -164,7 +164,7 @@ class DMF(GeneralRecommender):
         Considering the RAM of device, we use matrix multiply on sparse tensor for generalization.
 
         Returns:
-            torch.FloatTensor: The embedding tensor of all item, shape of [n_items, embedding_size]
+            torch.FloatTensor: The embedding tensor of all item, shape: [n_items, embedding_size]
         """
         interaction_matrix = self.interaction_matrix.tocoo()
         row = interaction_matrix.row
