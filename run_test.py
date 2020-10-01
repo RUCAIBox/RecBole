@@ -5,22 +5,23 @@
 # @File   : run_test.py
 
 # UPDATE
-# @Time   : 2020/8/29
-# @Author : Yupeng Hou
-# @Email  : houyupeng@ruc.edu.cn
+# @Time   : 2020/8/29 2020/10/1
+# @Author : Yupeng Hou Zihan Lin
+# @Email  : houyupeng@ruc.edu.cn  zhlin@ruc.edu.cn
 
 from logging import getLogger
-from recbox.utils import init_logger, get_model, get_trainer
+from recbox.utils import init_logger, get_model, get_trainer, init_seed
 from recbox.config import Config
 from recbox.data import create_dataset, data_preparation
 
 
-def whole_process(config_file='properties/overall.config', config_dict=None, saved=True):
+def whole_process(config_file='properties/overall.yaml', config_dict=None, saved=True):
     """
     初始化 config
     """
     config = Config(config_file, config_dict)
-    config.init()
+    print(config['lowest_val'])
+    init_seed(config['seed'])
 
     """
     初始化 logger
@@ -62,7 +63,7 @@ def whole_process(config_file='properties/overall.config', config_dict=None, sav
 
     logger.info('best valid result: {}'.format(best_valid_result))
     logger.info('test result: {}'.format(test_result))
-    #model.dump_paramaters()
+    #model.dump_parameters()
 
 
 def run_test():
