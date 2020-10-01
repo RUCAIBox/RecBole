@@ -3,11 +3,10 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/9/26, 2020/9/26, 2020/9/20, 2020/9/16
+# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
 
-import sys
 import os
 import itertools
 import torch
@@ -20,8 +19,8 @@ from logging import getLogger
 
 from recbox.evaluator import TopKEvaluator, LossEvaluator
 from recbox.data.interaction import Interaction
-from recbox.utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType
-from recbox.trainer.utils import early_stopping, calculate_valid_score, dict2str
+from recbox.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
+    DataLoaderType, KGDataLoaderState, EvaluatorType
 
 
 class AbstractTrainer(object):
