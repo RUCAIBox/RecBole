@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/9/26, 2020/9/26, 2020/9/20, 2020/9/16
+# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
 
@@ -19,8 +19,8 @@ from logging import getLogger
 
 from recbox.evaluator import TopKEvaluator, LossEvaluator
 from recbox.data.interaction import Interaction
-from recbox.utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType
-from recbox.trainer.utils import early_stopping, calculate_valid_score, dict2str
+from recbox.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
+    DataLoaderType, KGDataLoaderState, EvaluatorType
 
 
 class AbstractTrainer(object):
@@ -87,24 +87,22 @@ class Trainer(AbstractTrainer):
 
     def _train_epoch(self, train_data, epoch_idx):
         self.model.train()
-        losses_list = []
+        total_loss = None
         for batch_idx, interaction in enumerate(train_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             losses = self.model.calculate_loss(interaction)
-            loss = sum(losses) if isinstance(losses, tuple) else losses
+            if isinstance(losses, tuple):
+                loss = sum(losses)
+                loss_tuple = tuple(per_loss.item() for per_loss in losses)
+                total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+            else:
+                loss = losses
+                total_loss = losses.item() if total_loss is None else total_loss + losses.item()
             self._check_nan(loss)
             loss.backward()
             self.optimizer.step()
-            losses_list.append(losses)
-        if isinstance(losses_list[0], tuple):
-            total_losses = []
-            for j in range(len(losses_list[0])):
-                total_losses.append(sum([losses[j] for losses in losses_list]).item())
-            return tuple(total_losses)
-
-        else:
-            return sum(losses_list).item()
+        return total_loss
 
     def _valid_epoch(self, valid_data):
         valid_result = self.evaluate(valid_data, load_best_model=False)
@@ -325,11 +323,10 @@ class KGTrainer(Trainer):
 
     def _train_epoch(self, train_data, epoch_idx):
         self.model.train()
-        losses_list = []
+        total_loss = None
         if self.train_rec_step is None or self.train_kg_step is None:
             interaction_state = KGDataLoaderState.RSKG
         else:
-            assert self.train_rec_step > 0 and self.train_kg_step > 0
             interaction_state = KGDataLoaderState.RS \
                 if epoch_idx % (self.train_rec_step + self.train_kg_step) < self.train_rec_step \
                 else KGDataLoaderState.KG
@@ -339,29 +336,32 @@ class KGTrainer(Trainer):
                 interaction = interaction.to(self.device)
                 self.optimizer.zero_grad()
                 losses = self.model.calculate_loss(interaction)
-                loss = sum(losses) if isinstance(losses, tuple) else losses
+                if isinstance(losses, tuple):
+                    loss = sum(losses)
+                    loss_tuple = tuple(per_loss.item() for per_loss in losses)
+                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+                else:
+                    loss = losses
+                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
                 self._check_nan(loss)
                 loss.backward()
                 self.optimizer.step()
-                losses_list.append(losses)
         elif interaction_state in [KGDataLoaderState.KG]:
             for bath_idx, interaction in enumerate(train_data):
                 interaction = interaction.to(self.device)
                 self.optimizer.zero_grad()
                 losses = self.model.calculate_kg_loss(interaction)
-                loss = sum(losses) if isinstance(losses, tuple) else losses
+                if isinstance(losses, tuple):
+                    loss = sum(losses)
+                    loss_tuple = tuple(per_loss.item() for per_loss in losses)
+                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+                else:
+                    loss = losses
+                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
                 self._check_nan(loss)
                 loss.backward()
                 self.optimizer.step()
-                losses_list.append(losses)
-        if isinstance(losses_list[0], tuple):
-            total_losses = []
-            for j in range(len(losses_list[0])):
-                total_losses.append(sum([losses[j] for losses in losses_list]).item())
-            return tuple(total_losses)
-
-        else:
-            return sum(losses_list).item()
+        return total_loss
 
 
 class KGATTrainer(KGTrainer):

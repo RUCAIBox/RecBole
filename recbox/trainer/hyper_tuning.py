@@ -14,7 +14,7 @@ from hyperopt.pyll.base import dfs, as_apply
 from hyperopt.pyll.stochastic import implicit_stochastic_symbols
 from hyperopt.pyll.base import Apply
 
-from recbox.trainer.utils import dict2str
+from recbox.utils.utils import dict2str
 
 
 """
