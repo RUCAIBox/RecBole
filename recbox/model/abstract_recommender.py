@@ -14,31 +14,28 @@ from recbox.utils import ModelType
 
 
 class AbstractRecommender(nn.Module):
-    """
-    Base class for all models
+    r"""Base class for all models
     """
 
-    def forward(self, *inputs):
-        """
-        Forward pass logic
+    def calculate_loss(self, interaction):
+        r"""Calculate the training loss for a batch data.
 
-        :return: Model output
+        Args:
+            interaction (Interaction): Interaction class of the batch.
+
+        Returns:
+            torch.Tensor: Training loss, shape: []
         """
         raise NotImplementedError
 
-    def calculate_loss(self, *inputs):
-        """
-         Calculate Train loss
+    def predict(self, interaction):
+        r"""Predict the scores between users and items.
 
-        :return: Model train loss
-        """
-        raise NotImplementedError
+        Args:
+            interaction (Interaction): Interaction class of the batch.
 
-    def predict(self, *inputs):
-        """
-         Result prediction for testing and evaluating
-
-        :return: Model predict
+        Returns:
+            torch.Tensor: Predicted scores for given users and items, shape: [batch_size]
         """
         raise NotImplementedError
 
