@@ -72,7 +72,7 @@ class LightGCN(GeneralRecommender):
         self.apply(xavier_uniform_initialization)
 
     def get_norm_adj_mat(self):
-        """Get the normalized interaction matrix of users and items.
+        r"""Get the normalized interaction matrix of users and items.
 
         Construct the square matrix from the training data and normalize it
         using the laplace matrix.
@@ -107,10 +107,10 @@ class LightGCN(GeneralRecommender):
         return SparseL
 
     def get_ego_embeddings(self):
-        """Get the embedding of users and items and combine to an embedding matrix.
+        r"""Get the embedding of users and items and combine to an embedding matrix.
 
         Returns:
-            Tensor of the embedding matrix. Shape of (n_items+n_users, embedding_dim)
+            Tensor of the embedding matrix. Shape of [n_items+n_users, embedding_dim]
         """
         user_embeddings = self.user_embedding.weight
         item_embeddings = self.item_embedding.weight
