@@ -8,10 +8,13 @@
 # @Author : Kaiyuan Li  Zihan Lin
 # @email  : tsotfsk@outlook.com  linzihan.super@foxmail.con
 
-"""
+r"""
+recbox.model.general_recommender.dmf
+################################################
 Reference:
 Hong-Jian Xue et al. "Deep Matrix Factorization Models for Recommender Systems." in IJCAI 2017.
 """
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -24,11 +27,16 @@ from recbox.model.layers import MLPLayers
 
 
 class DMF(GeneralRecommender):
-    """DMF is an neural network enhanced matrix factorization model.
-    The original interaction matrix of n_users × n_items is set as model input,
+    r"""DMF is an neural network enhanced matrix factorization model.
+    The original interaction matrix of :math:`n_{users} \times n_{items}` is set as model input,
     we carefully design the data interface and use sparse tensor to train and test efficiently.
     We just implement the model following the original author with a pointwise training mode.
 
+    Note:
+
+            Our implementation is a improved version which is different from the original paper.
+            For a better performance and stability, we replace cosine similarity to inner-product when calculate
+            final score of user's and item's embedding.
     """
     input_type = InputType.POINTWISE
 
@@ -44,7 +52,7 @@ class DMF(GeneralRecommender):
         self.item_layers_dim = config['item_layers_dim']
         # The dimensions of the last layer of users and items must be the same
         assert self.user_layers_dim[-1] == self.item_layers_dim[-1]
-        self.min_y_hat = torch.tensor([config['min_y_hat']]).double().to(self.device)
+        self.min_y_hat = torch.tensor([config['min_y_hat']]).to(self.device)
         self.inter_matrix_type = config['inter_matrix_type']
 
         # generate intermediate data
@@ -58,7 +66,7 @@ class DMF(GeneralRecommender):
             self.interaction_matrix = dataset.inter_matrix(form='csr', value_field=self.RATING).astype(np.float32)
         else:
             raise ValueError("The inter_matrix_type must in ['01', 'rating'] but get {}".format(self.inter_matrix_type))
-        self.max_rating = self.history_user_value.max().double()
+        self.max_rating = self.history_user_value.max()
 
         # tensor of shape [n_items, H] where H is max length of history interaction.
         self.history_user_id = self.history_user_id.to(self.device)
@@ -71,6 +79,9 @@ class DMF(GeneralRecommender):
         self.item_linear = nn.Linear(in_features=self.n_users, out_features=self.item_layers_dim[0], bias=False)
         self.user_fc_layers = MLPLayers(self.user_layers_dim)
         self.item_fc_layers = MLPLayers(self.item_layers_dim)
+        self.sigmoid = nn.Sigmoid()
+        self.bce_loss = nn.BCELoss()
+
         # Save the item embedding before dot product layer to speed up evaluation
         self.i_embedding = None
 
@@ -97,15 +108,13 @@ class DMF(GeneralRecommender):
         matrix_01.index_put_((row_indices, col_indices), self.history_user_value[item].flatten())
         item = self.item_linear(matrix_01)
 
-        user = self.user_fc_layers(user).double()
-        item = self.item_fc_layers(item).double()
+        user = self.user_fc_layers(user)
+        item = self.item_fc_layers(item)
 
-        # after normalize the vector, cosine distance reduced to dot product.
-        user = F.normalize(user, p=2, dim=1)
-        item = F.normalize(item, p=2, dim=1)
+        # cosine distance is replaced by dot product according the result of our experiments.
         vector = torch.mul(user, item).sum(dim=1)
+        vector = self.sigmoid(vector)
 
-        vector = torch.max(vector, self.min_y_hat)  # restrict the result to [0, 1].
         return vector
 
     def calculate_loss(self, interaction):
@@ -117,14 +126,12 @@ class DMF(GeneralRecommender):
         item = interaction[self.ITEM_ID]
         if self.inter_matrix_type == '01':
             label = interaction[self.LABEL]
-            label = label.double()
         elif self.inter_matrix_type == 'rating':
             label = interaction[self.RATING] * interaction[self.LABEL]
-            label = label.double()
         output = self.forward(user, item)
 
         label = label / self.max_rating  # normalize the label to calculate BCE loss.
-        loss = -(label * (output.log()) + (1 - label) * ((1 - output).log())).mean()
+        loss = self.bce_loss(output, label)
         return loss
 
     def predict(self, interaction):
@@ -133,13 +140,13 @@ class DMF(GeneralRecommender):
         return self.forward(user, item)
 
     def get_user_embedding(self, user):
-        """Get a batch of user's embedding with the user's id and history interaction matrix.
+        r"""Get a batch of user's embedding with the user's id and history interaction matrix.
 
         Args:
-            user (torch.LongTensor): The input tensor that contains user's id. shape of [B, ]
+            user (torch.LongTensor): The input tensor that contains user's id, shape: [batch_size, ]
 
         Returns:
-            output(torch.FloatTensor): The embedding tensor of a batch of user. shape of [B, embedding_size]
+            torch.FloatTensor: The embedding tensor of a batch of user, shape: [batch_size, embedding_size]
         """
         # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
         col_indices = self.history_item_id[user].flatten()
@@ -152,12 +159,12 @@ class DMF(GeneralRecommender):
         return user
 
     def get_item_embedding(self):
-        """Get all item's embedding with history interaction matrix.
+        r"""Get all item's embedding with history interaction matrix.
 
         Considering the RAM of device, we use matrix multiply on sparse tensor for generalization.
 
         Returns:
-            output(torch.FloatTensor): The embedding tensor of all item. shape of [n_items, embedding_size]
+            torch.FloatTensor: The embedding tensor of all item, shape: [n_items, embedding_size]
         """
         interaction_matrix = self.interaction_matrix.tocoo()
         row = interaction_matrix.row
@@ -174,13 +181,11 @@ class DMF(GeneralRecommender):
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
         u_embedding = self.get_user_embedding(user)
-        u_embedding = self.user_fc_layers(u_embedding).double()
-        u_embedding = F.normalize(u_embedding, p=2, dim=1)
+        u_embedding = self.user_fc_layers(u_embedding)
 
         if self.i_embedding is None:
-            self.i_embedding = self.get_item_embedding().double()
-            self.i_embedding = F.normalize(self.i_embedding, p=2, dim=1)
+            self.i_embedding = self.get_item_embedding()
 
-        cos_similarity = torch.mm(u_embedding, self.i_embedding.t())
-        cos_similarity = torch.max(cos_similarity, self.min_y_hat)
-        return cos_similarity.view(-1)
+        similarity = torch.mm(u_embedding, self.i_embedding.t())
+        similarity = self.sigmoid(similarity)
+        return similarity.view(-1)

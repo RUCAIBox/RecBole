@@ -245,7 +245,9 @@ test_examples = {
     'Test KTUP': {
         'model': 'KTUP',
         'dataset': 'kgdata_example',
-        'epochs': 1,
+        'train_rec_step': 1,
+        'train_kg_step': 1,
+        'epochs': 2,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
