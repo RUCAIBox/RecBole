@@ -7,6 +7,11 @@
 # @Author  : Yupeng Hou, Yushuo Chen, Xingyu Pan
 # @email   : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, panxy@ruc.edu.cn
 
+"""
+recbox.data.interaction
+############################
+"""
+
 import numpy as np
 
 
@@ -22,37 +27,48 @@ class Interaction(object):
         **earlier** than this user's negative cases.
 
         A correct example:
+            =======     =======     =======
             user_id     item_id     label
+            =======     =======     =======
             1           2           1
             1           6           1
             1           3           1
             1           1           0
             2           3           1
             ...         ...         ...
+            =======     =======     =======
 
         Some wrong examples for Interaction objects used in testing:
+
         1.
+            =======     =======     =======     ============
             user_id     item_id     label
+            =======     =======     =======     ============
             1           2           1
-            1           6           0       # positive cases of one user always need to
-                                            occur earlier than this user's negative cases
+            1           6           0           # positive cases of one user always need to
+
+                                                occur earlier than this user's negative cases
             1           3           1
             1           1           0
             2           3           1
             ...         ...         ...
+            =======     =======     =======     ============
 
         2.
+            =======     =======     =======     ========
             user_id     item_id     label
+            =======     =======     =======     ========
             1           2           1
             1           6           1
             1           3           1
-            2           3           1       # records of the same user should be continuous.
+            2           3           1           # records of the same user should be continuous.
             1           1           0
             ...         ...         ...
+            =======     =======     =======     ========
 
     Attributes:
         interaction (dict): keys are meaningful str (also can be called field name),
-            and values are Torch Tensor of numpy Array with shape (batch_size, *).
+            and values are Torch Tensor of numpy Array with shape (batch_size, \\*).
 
         pos_len_list (list, optional): length of the list is the number of users in this batch,
             each value represents the number of a user's **positive** records. The order of the
@@ -183,6 +199,7 @@ class Interaction(object):
         """Similar to repeat_interleave of PyTorch.
 
         Details can be found in:
+
             https://pytorch.org/docs/stable/tensors.html?highlight=repeat#torch.Tensor.repeat_interleave
 
         Note:
