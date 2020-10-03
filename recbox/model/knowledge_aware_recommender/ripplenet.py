@@ -6,7 +6,7 @@
 
 r"""
 recbox.model.knowledge_aware_recommender.ripplenet
-################################################
+#####################################################
 Reference:
 Hongwei Wang et al. "RippleNet: Propagating User Preferences on the Knowledge Graph for Recommender Systems."
 in CIKM 2018.
@@ -71,7 +71,7 @@ class RippleNet(KnowledgeRecommender):
         # self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         # self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
-        self.relation_embedding = nn.Embedding(self.n_relations + 1, self.embedding_size * self.embedding_size)
+        self.relation_embedding = nn.Embedding(self.n_relations, self.embedding_size * self.embedding_size)
         self.transform_matrix = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         self.softmax = torch.nn.Softmax(dim=1)
         self.sigmoid = torch.nn.Sigmoid()
@@ -118,7 +118,7 @@ class RippleNet(KnowledgeRecommender):
                         # raise AssertionError("User without facts in 1st hop")
                         n_padding += 1
                         memories_h = [0 for i in range(self.n_memory)]
-                        memories_r = [self.n_relations for i in range(self.n_memory)]
+                        memories_r = [0 for i in range(self.n_memory)]
                         memories_t = [0 for i in range(self.n_memory)]
                         memories_h = torch.LongTensor(memories_h).to(self.device)
                         memories_r = torch.LongTensor(memories_r).to(self.device)
