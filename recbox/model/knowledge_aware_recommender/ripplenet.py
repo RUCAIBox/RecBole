@@ -3,7 +3,10 @@
 # @Author : gaole he
 # @Email  : hegaole@ruc.edu.cn
 
-"""
+
+r"""
+recbox.model.knowledge_aware_recommender.ripplenet
+################################################
 Reference:
 Hongwei Wang et al. "RippleNet: Propagating User Preferences on the Knowledge Graph for Recommender Systems."
 in CIKM 2018.
@@ -20,8 +23,12 @@ from recbox.model.loss import BPRLoss, EmbLoss
 from recbox.model.init import xavier_normal_initialization
 
 
-# todo: L2 regularization
 class RippleNet(KnowledgeRecommender):
+    r"""RippleNet is an knowledge enhanced matrix factorization model.
+    The original interaction matrix of :math:`n_{users} \times n_{items}` and related knowledge graph is set as model input,
+    we carefully design the data interface and use ripple set to train and test efficiently.
+    We just implement the model following the original author with a pointwise training mode.
+    """
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
@@ -63,7 +70,7 @@ class RippleNet(KnowledgeRecommender):
         # define layers and loss
         # self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         # self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
-        self.entity_embedding = nn.Embedding(self.n_entities + 1, self.embedding_size, padding_idx=-1)
+        self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
         self.relation_embedding = nn.Embedding(self.n_relations + 1, self.embedding_size * self.embedding_size)
         self.transform_matrix = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         self.softmax = torch.nn.Softmax(dim=1)
@@ -76,11 +83,11 @@ class RippleNet(KnowledgeRecommender):
         self.apply(xavier_normal_initialization)
 
     def _build_ripple_set(self):
-        """Get the normalized interaction matrix of users and items according to A_values.
+        r"""Get the normalized interaction matrix of users and items according to A_values.
         Get the ripple hop-wise ripple set for every user, w.r.t. their interaction history
 
         Returns:
-            dict: ripple_set, user_id is key
+            ripple_set (dict)
         """
         ripple_set = collections.defaultdict(list)
         n_padding = 0
@@ -110,9 +117,9 @@ class RippleNet(KnowledgeRecommender):
                         # print("user {} without 1-hop kg facts, fill with padding".format(user))
                         # raise AssertionError("User without facts in 1st hop")
                         n_padding += 1
-                        memories_h = [self.n_entities for i in range(self.n_memory)]
+                        memories_h = [0 for i in range(self.n_memory)]
                         memories_r = [self.n_relations for i in range(self.n_memory)]
-                        memories_t = [self.n_entities for i in range(self.n_memory)]
+                        memories_t = [0 for i in range(self.n_memory)]
                         memories_h = torch.LongTensor(memories_h).to(self.device)
                         memories_r = torch.LongTensor(memories_r).to(self.device)
                         memories_t = torch.LongTensor(memories_t).to(self.device)
@@ -175,10 +182,10 @@ class RippleNet(KnowledgeRecommender):
         return scores
 
     def _key_addressing(self):
-        """Conduct reasoning for specific item and user ripple set
+        r"""Conduct reasoning for specific item and user ripple set
 
         Returns:
-            dict: o_list list of torch.cuda.FloatTensor n_hop * [batch_size, embedding_size]
+            o_list (dict -> torch.cuda.FloatTensor): list of torch.cuda.FloatTensor n_hop * [batch_size, embedding_size]
         """
         o_list = []
         for hop in range(self.n_hop):
@@ -251,10 +258,12 @@ class RippleNet(KnowledgeRecommender):
         return scores
 
     def _key_addressing_full(self):
-        """Conduct reasoning for specific item and user ripple set
+        r"""Conduct reasoning for specific item and user ripple set
 
         Returns:
-            dict: o_list list of torch.cuda.FloatTensor n_hop * [batch_size, n_item, embedding_size]
+        
+        Returns:
+            o_list (dict -> torch.cuda.FloatTensor): list of torch.cuda.FloatTensor n_hop * [batch_size, n_item, embedding_size]
         """
         o_list = []
         for hop in range(self.n_hop):
