@@ -21,6 +21,6 @@ with open('presets.yaml', 'r', encoding='utf-8') as preset_file:
 token = '-'.join([args.model, args.dataset])
 if token in presets_dict:
     print('Hit preset: [{}]'.format(token))
-    args_dict.update(presets_dict)
+    args_dict.update(presets_dict[token])
 
 whole_process(config_dict=args_dict)
