@@ -6,7 +6,7 @@
 
 r"""
 recbox.model.knowledge_aware_recommender.ripplenet
-################################################
+#####################################################
 Reference:
 Hongwei Wang et al. "RippleNet: Propagating User Preferences on the Knowledge Graph for Recommender Systems."
 in CIKM 2018.
