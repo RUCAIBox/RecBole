@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/23, 2020/9/15, 2020/9/22
+# @Time   : 2020/10/3, 2020/9/15, 2020/9/22
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -22,6 +22,7 @@ from sklearn.impute import SimpleImputer
 
 from recbox.utils import FeatureSource, FeatureType
 from recbox.data.interaction import Interaction
+from recbox.data.utils import dlapi
 
 
 class Dataset(object):
@@ -29,6 +30,8 @@ class Dataset(object):
         self.config = config
         self.dataset_name = config['dataset']
         self.logger = getLogger()
+        self._dataloader_apis = {'field2type', 'field2source', 'field2id_token'}
+        self._dataloader_apis.update(dlapi.dataloader_apis)
 
         if saved_dataset is None:
             self._from_scratch()
@@ -539,6 +542,7 @@ class Dataset(object):
                 split_point = np.cumsum(feat[field].agg(len))[:-1]
                 feat[field] = np.split(new_ids, split_point)
 
+    @dlapi.set()
     def num(self, field):
         if field not in self.field2type:
             raise ValueError('field [{}] not defined in dataset'.format(field))
@@ -547,6 +551,7 @@ class Dataset(object):
         else:
             return len(self.field2id_token[field])
 
+    @dlapi.set()
     def fields(self, ftype=None):
         ftype = set(ftype) if ftype is not None else set(FeatureType)
         ret = []
@@ -583,11 +588,13 @@ class Dataset(object):
         self.field2seqlen[dest_field] = self.field2seqlen[source_field]
 
     @property
+    @dlapi.set()
     def user_num(self):
         self._check_field('uid_field')
         return self.num(self.uid_field)
 
     @property
+    @dlapi.set()
     def item_num(self):
         self._check_field('iid_field')
         return self.num(self.iid_field)
@@ -868,15 +875,18 @@ class Dataset(object):
     def history_user_matrix(self, value_field=None):
         return self._history_matrix(row='item', value_field=value_field)
 
+    @dlapi.set()
     def get_preload_weight(self, field):
         if field not in self._preloaded_weight:
             raise ValueError('field [{}] not in preload_weight'.format(field))
         return self._preloaded_weight[field]
 
+    @dlapi.set()
     def _dataframe_to_interaction(self, data, *args):
         data = data.to_dict(orient='list')
         return self._dict_to_interaction(data, *args)
 
+    @dlapi.set()
     def _dict_to_interaction(self, data, *args):
         for k in data:
             ftype = self.field2type[k]

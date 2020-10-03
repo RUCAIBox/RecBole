@@ -3,11 +3,12 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/23, 2020/9/16
+# @Time   : 2020/10/3, 2020/9/16
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import math
+from logging import getLogger
 
 from recbox.utils import InputType
 
@@ -18,6 +19,7 @@ class AbstractDataLoader(object):
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.config = config
+        self.logger = getLogger()
         self.dataset = dataset
         self.batch_size = batch_size
         self.step = batch_size
@@ -31,28 +33,9 @@ class AbstractDataLoader(object):
         self.history_user_matrix = self.dataset.history_user_matrix
         self.inter_matrix = self.dataset.inter_matrix
 
-        optional_attrs = [
-            'kg_graph', 'ckg_graph', 'relation_num', 'entity_num',
-            'head_entities', 'tail_entities', 'relations', 'entities',
-            'net_graph'
-        ]
-        for op_attr in optional_attrs:
-            if hasattr(self.dataset, op_attr):
-                setattr(self, op_attr, getattr(self.dataset, op_attr))
-
-        self.logger = self.dataset.logger
-        self.num = self.dataset.num
-        self.fields = self.dataset.fields
-        self.get_preload_weight = self.dataset.get_preload_weight
-        self.field2type = self.dataset.field2type
-        self.field2source = self.dataset.field2source
-        self.field2id_token = self.dataset.field2id_token
-        if self.dataset.uid_field:
-            self.user_num = self.dataset.user_num
-        if self.dataset.iid_field:
-            self.item_num = self.dataset.item_num
-        self._dataframe_to_interaction = self.dataset._dataframe_to_interaction
-        self._dict_to_interaction = self.dataset._dict_to_interaction
+        for dataset_attr in self.dataset._dataloader_apis:
+            if hasattr(self.dataset, dataset_attr):
+                setattr(self, dataset_attr, getattr(self.dataset, dataset_attr))
 
         self.setup()
         if not self.real_time:

@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/9, 2020/9/17, 2020/8/31
+# @Time   : 2020/10/3, 2020/9/17, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -219,3 +219,19 @@ def _get_DIN_data_loader(name, config, eval_setting):
         return SequentialNegSampleDataLoader
     elif neg_sample_strategy == 'full':
         return SequentialFullDataLoader
+
+
+class DLFriendlyAPI(object):
+    def __init__(self):
+        self.dataloader_apis = set()
+
+    def __iter__(self):
+        return self.dataloader_apis
+
+    def set(self):
+        def decorator(f):
+            self.dataloader_apis.add(f.__name__)
+            return f
+        return decorator
+
+dlapi = DLFriendlyAPI()
