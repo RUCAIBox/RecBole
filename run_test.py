@@ -5,9 +5,9 @@
 # @File   : run_test.py
 
 # UPDATE
-# @Time   : 2020/8/29 2020/10/1
-# @Author : Yupeng Hou Zihan Lin
-# @Email  : houyupeng@ruc.edu.cn  zhlin@ruc.edu.cn
+# @Time   : 2020/10/3, 2020/10/1
+# @Author : Yupeng Hou, Zihan Lin
+# @Email  : houyupeng@ruc.edu.cn, zhlin@ruc.edu.cn
 
 from logging import getLogger
 from recbox.utils import init_logger, get_model, get_trainer, init_seed
@@ -20,7 +20,6 @@ def whole_process(config_file='properties/overall.yaml', config_dict=None, saved
     初始化 config
     """
     config = Config(config_file, config_dict)
-    print(config['lowest_val'])
     init_seed(config['seed'])
 
     """

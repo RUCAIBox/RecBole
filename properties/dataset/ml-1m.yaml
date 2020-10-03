@@ -1,5 +1,3 @@
-[data]
-
 ########define the UIRT columns
 USER_ID_FIELD : user_id
 ITEM_ID_FIELD : item_id
