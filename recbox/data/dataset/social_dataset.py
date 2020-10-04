@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/23, 2020/9/15, 2020/9/22
+# @Time   : 2020/10/3, 2020/9/15, 2020/9/22
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -13,6 +13,7 @@ import numpy as np
 from scipy.sparse import coo_matrix
 
 from recbox.data.dataset import Dataset
+from recbox.data.utils import dlapi
 from recbox.utils import FeatureSource
 
 
@@ -57,6 +58,7 @@ class SocialDataset(Dataset):
 
         return fields_in_same_space
 
+    @dlapi.set()
     def net_graph(self, form='coo', value_field=None):
         args = [self.net_feat, self.source_field, self.target_field, form, value_field]
         if form in ['coo', 'csr']:
