@@ -1,4 +1,4 @@
-import json
+import yaml
 from argparse import ArgumentParser
 from run_test import whole_process
 
@@ -15,12 +15,12 @@ args_dict = {
     'epochs': args.epochs
 }
 
-with open('presets.json', 'r', encoding='utf-8') as preset_file:
-    presets_dict = json.load(preset_file)
+with open('presets.yaml', 'r', encoding='utf-8') as preset_file:
+    presets_dict = yaml.load(preset_file.read(), Loader=yaml.FullLoader)
 
 token = '-'.join([args.model, args.dataset])
 if token in presets_dict:
     print('Hit preset: [{}]'.format(token))
-    args_dict.update(presets_dict)
+    args_dict.update(presets_dict[token])
 
 whole_process(config_dict=args_dict)
