@@ -1,6 +1,6 @@
-embedding_size : 10
-mlp_hidden_size : [128, 256, 128]
-dropout : 0.0
-weight_decay : 0
-use_inner : True
-use_outer : False
+embedding_size: 10
+mlp_hidden_size: [128, 256, 128]
+dropout: 0.0
+weight_decay: 0
+use_inner: True
+use_outer: False

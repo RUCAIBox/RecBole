@@ -1,5 +1,3 @@
-[model]
-
-embedding_size=64
-mlp_hidden_size=[64, 64, 64]
-dropout=0.0
+embedding_size: 64
+mlp_hidden_size: [64, 64, 64]
+dropout: 0.0

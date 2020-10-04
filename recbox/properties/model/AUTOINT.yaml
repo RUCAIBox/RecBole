@@ -1,9 +1,7 @@
-[model]
-embedding_size=10
-attention_size=16
-num_layers=3
-num_heads=2
-dropout=[0.2,0.2,0.2]
-mlp_hidden_size = [128,128]
-
-weight_decay=100
+embedding_size: 10
+attention_size: 16
+num_layers: 3
+num_heads: 2
+dropout: [0.2,0.2,0.2]
+mlp_hidden_size: [128,128]
+weight_decay: 100
