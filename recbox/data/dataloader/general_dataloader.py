@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/17
+# @Time   : 2020/9/9, 2020/9/29
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -68,14 +68,21 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
 
     def _batch_size_adaptation(self):
         if self.user_inter_in_one_batch:
-            grouped_inter_num = max(self.uid2items_num) * self.times
+            inters_num = sorted(self.uid2items_num * self.times, reverse=True)
+            batch_num = 1
+            new_batch_size = inters_num[0]
+            for i in range(1, len(inters_num)):
+                if new_batch_size + inters_num[i] > self.batch_size:
+                    break
+                batch_num = i
+                new_batch_size += inters_num[i]
+            self.step = batch_num
+            self.set_batch_size(new_batch_size)
         else:
-            grouped_inter_num = self.times
-
-        batch_num = max(self.batch_size // grouped_inter_num, 1)
-        new_batch_size = batch_num * grouped_inter_num
-        self.step = batch_num if self.real_time else new_batch_size
-        self.set_batch_size(new_batch_size)
+            batch_num = max(self.batch_size // self.times, 1)
+            new_batch_size = batch_num * self.times
+            self.step = batch_num if self.real_time else new_batch_size
+            self.set_batch_size(new_batch_size)
 
     @property
     def pr_end(self):
