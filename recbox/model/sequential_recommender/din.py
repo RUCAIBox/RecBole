@@ -4,7 +4,7 @@
 # @Email  : fzcbupt@gmai.com
 
 r"""
-recbox.model.context_recommender.din
+recbox.model.context_aware_recommender.din
 ##############################################
 Reference:
 Guorui Zhou et al. "Deep Interest Network for Click-Through Rate Prediction" in ACM SIGKDD 2018
@@ -33,8 +33,8 @@ class DIN(SequentialRecommender):
 
     Note:
         In the official source code, unlike the paper, user features and context features are not input into DNN.
-        Considering the actual performance, we adopt the methods in the official source code.
-        But You can get user features embedding from user_feat_list
+        We just migrated and changed the official source code.
+        But You can get user features embedding from user_feat_list.
         Besides, in order to compare with other models, we use AUC instead of GAUC to evaluate the model.
 
     """
@@ -202,8 +202,8 @@ class DIN(SequentialRecommender):
     # TODO: 加入抽象类中
     def embed_float_fields(self, float_fields, type, embed=True):
         """Get the embedding of float fields.
-            In the following three functions("embed_float_fields" "embed_token_fields" "embed_token_seq_fields")
-            when the type is user, [batch_ size, max_item_length] should be recognised as [batch_size]
+        In the following three functions("embed_float_fields" "embed_token_fields" "embed_token_seq_fields")
+        when the type is user, [batch_ size, max_item_length] should be recognised as [batch_size]
 
         Args:
             float_fields(torch.Tensor): [batch_size, max_item_length, num_float_field]
