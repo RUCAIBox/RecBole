@@ -219,7 +219,7 @@ class MultiHeadAttention(nn.Module):
 
 
 class Dice(nn.Module):
-    """Dice activation function
+    r"""Dice activation function
 
     .. math::
         f(s)=p(s) \cdot s+(1-p(s)) \cdot \alpha s,
@@ -238,3 +238,67 @@ class Dice(nn.Module):
         score_p = self.sigmoid(score)
 
         return self.alpha * (1 - score_p) * score + score_p * score
+
+
+class SequenceAttLayer(nn.Module):
+    """attention Layer. Get the representation of each user in the batch.
+
+    Args:
+        queries(torch.Tensor): candidate ads, [B, H], H means embedding_size * feat_num
+        keys(torch.Tensor): user_hist, [B, T, H]
+        keys_length(torch.Tensor): mask, [B]
+
+    Returns:
+        torch.Tensor: result
+
+    """
+
+    def __init__(self, mask_mat, att_hidden_size=(80, 40), activation='sigmoid', softmax_stag=False,
+                 return_seq_weight=True):
+        super(SequenceAttLayer, self).__init__()
+        self.att_hidden_size = att_hidden_size
+        self.activation = activation
+        self.softmax_stag = softmax_stag
+        self.return_seq_weight = return_seq_weight
+        self.mask_mat = mask_mat
+        self.att_mlp_layers = MLPLayers(self.att_hidden_size, activation='Sigmoid', bn=False)
+        self.dense = nn.Linear(self.att_hidden_size[-1], 1)
+
+    def forward(self, queries, keys, keys_length):
+        embbedding_size = queries.shape[-1]  # H
+        hist_len = keys.shape[1]  # T
+        queries = queries.repeat(1, hist_len)
+
+        queries = queries.view(-1, hist_len, embbedding_size)
+
+        # MLP Layer
+        input_tensor = torch.cat([queries, keys, queries - keys, queries * keys], dim=-1)
+        output = self.att_mlp_layers(input_tensor)
+        output = torch.transpose(self.dense(output), -1, -2)
+
+        # get mask
+        output = output.squeeze(1)
+        mask = self.mask_mat.repeat(output.size(0), 1)
+        mask = (mask >= keys_length.unsqueeze(1))
+
+        # mask
+        if self.softmax_stag:
+            mask_value = -np.inf
+        else:
+            mask_value = 0.0
+
+        output = output.masked_fill(mask=mask, value=torch.tensor(mask_value))
+        output = output.unsqueeze(1)
+        output = output / (embbedding_size ** 0.5)
+
+        # get the weight of each user's history list about the target item
+        if self.softmax_stag:
+            output = fn.softmax(output, dim=2)  # [B, 1, T]
+
+        if not self.return_seq_weight:
+            output = torch.matmul(output, keys)  # [B, 1, H]
+
+        return output
+
+
+
