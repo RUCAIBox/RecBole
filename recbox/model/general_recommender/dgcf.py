@@ -135,8 +135,7 @@ class DGCF(GeneralRecommender):
             A_{hat} = D^{-0.5} \times A \times D^{-0.5}
 
         Returns:
-            factor_edge_weight (torch.cuda.FloatTensor): (num_edge, n_factors)
-            Sparse tensor of the normalized interaction matrix.
+            torch.cuda.FloatTensor: Sparse tensor of the normalized interaction matrix. shape: (num_edge, n_factors)
         """
         norm_A_values = self.softmax(A_values)
         factor_edge_weight = []
@@ -282,8 +281,7 @@ class DGCF(GeneralRecommender):
             cor_i_embeddings (torch.cuda.FloatTensor): (cor_batch_size, n_factors)
 
         Returns:
-            cor_loss (torch.Tensor)
-            Sparse tensor of the normalized interaction matrix.
+            torch.Tensor : correlation loss.
         """
         cor_loss = None
 
