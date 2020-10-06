@@ -33,6 +33,7 @@ setup(
         package for package in find_packages()
         if package.startswith('recbox')
     ],
+    include_package_data=True,
     install_requires=install_requires,
     setup_requires=setup_requires,
     extras_require=extras_require,

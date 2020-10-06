@@ -15,11 +15,12 @@ from recbox.config import Config
 from recbox.data import create_dataset, data_preparation
 
 
-def whole_process(config_file='properties/overall.yaml', config_dict=None, saved=True):
+def whole_process(model, dataset, config_file_list=None, config_dict=None, saved=True):
     """
     初始化 config
     """
-    config = Config(config_file, config_dict)
+    config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
+    print(config)
     init_seed(config['seed'])
 
     """
@@ -62,11 +63,10 @@ def whole_process(config_file='properties/overall.yaml', config_dict=None, saved
 
     logger.info('best valid result: {}'.format(best_valid_result))
     logger.info('test result: {}'.format(test_result))
-    #model.dump_parameters()
 
 
 def run_test():
-    whole_process()
+    whole_process('BPRMF', 'ml-100k')
 
 
 if __name__ == '__main__':
