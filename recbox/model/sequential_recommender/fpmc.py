@@ -106,7 +106,7 @@ class FPMC(SequentialRecommender):
             Vli(torch.FloatTensor): The embedding matrix of last click item, shape of [batch_size, 1, embedding_size]
 
         Returns:
-            output:score, shape of [batch_size, 1]
+            torch.Tensor:score, shape of [batch_size, 1]
         """
     #     MF
         mf = torch.matmul(Vui, Viu.permute(0, 2, 1))
