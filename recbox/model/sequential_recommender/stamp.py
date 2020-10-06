@@ -101,7 +101,7 @@ class STAMP(SequentialRecommender):
             output(torch.FloatTensor): The average of the context, shape of [batch_size, emb]
 
         Returns:
-            alpha(torch.FloatTensor):attention weights, shape of [batch_size, time_steps]
+            torch.Tensor:attention weights, shape of [batch_size, time_steps]
         """
         timesteps = context.size(1)
         aspect_3dim = aspect.repeat(1, timesteps).view(-1, timesteps, self.embedding_size)
