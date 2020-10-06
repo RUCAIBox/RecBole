@@ -1,7 +1,21 @@
+# -*- coding: utf-8 -*-
 # @Time   : 2020/9/8 19:24
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
 
+# UPDATE
+# @Time   : 2020/10/2
+# @Author : Yujie Lu
+# @Email  : yujielu1998@gmail.com
+
+r"""
+recbox.model.sequential_recommender.stamp
+################################################
+
+Reference:
+Qiao Liu et al. "STAMP: Short-Term Attention/Memory Priority Model for Session-based Recommendation." in KDD 2018.
+
+"""
 
 import torch
 from torch import nn
@@ -11,10 +25,20 @@ from recbox.model.abstract_recommender import SequentialRecommender
 
 
 class STAMP(SequentialRecommender):
+    r"""STAMP is capable of capturing users’ general interests from the long-term memory of a session context,
+    whilst taking into account users’ current interests from the short-term memory of the last-clicks.
+
+
+    Note:
+
+            According to the test results, we made a little modification to the score function mentioned in the paper,
+            and did not use the final sigmoid activation function.
+
+    """
     input_type = InputType.POINTWISE
     def __init__(self, config, dataset):
         super(STAMP, self).__init__()
-
+        # load parameters info
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
@@ -24,20 +48,21 @@ class STAMP(SequentialRecommender):
 
         self.embedding_size = config['embedding_size']
         self.item_count = dataset.item_num
-
+        # item embeddings
         self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
+        # define weights and bias
         self.w1 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         self.w2 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         self.w3 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         self.w0 = nn.Linear(self.embedding_size, 1, bias=False)
-        self.b_a = nn.Parameter(torch.zeros(self.embedding_size))
-
-        self.mlp_a = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
-        self.mlp_b = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
+        self.b_a = nn.Parameter(torch.zeros(self.embedding_size), requires_grad=True)
+        # define layers,activation and loss
+        self.mlp_a = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
+        self.mlp_b = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
         self.criterion = nn.CrossEntropyLoss()
-
+        # weight initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):
@@ -49,6 +74,9 @@ class STAMP(SequentialRecommender):
                 module.bias.data.fill_(0.0)
 
     def get_item_lookup_table(self):
+        r"""Get the transpose of item_list_embedding.weight，Shape of (embedding_size, item_count+padding_id)
+        Used to calculate the score for each item with the predict_behavior_emb
+        """
         return self.item_list_embedding.weight.t()
 
     def forward(self, interaction):
@@ -65,11 +93,15 @@ class STAMP(SequentialRecommender):
         return predict_behavior_emb
 
     def count_alpha(self, context, aspect, output):
-        """
-        :param context: org_memory [batch_size, seq_len, emb]
-        :param aspect: last_inputs [batch_size, emb]
-        :param output: ms [batch_size, emb]
-        :return: attention weights
+        r"""This is a function that count the attention weights
+
+        Args:
+            context(torch.FloatTensor): Item list embedding matrix, shape of [batch_size, time_steps, emb]
+            aspect(torch.FloatTensor): The embedding matrix of the last click item, shape of [batch_size, emb]
+            output(torch.FloatTensor): The average of the context, shape of [batch_size, emb]
+
+        Returns:
+            torch.Tensor:attention weights, shape of [batch_size, time_steps]
         """
         timesteps = context.size(1)
         aspect_3dim = aspect.repeat(1, timesteps).view(-1, timesteps, self.embedding_size)
@@ -77,7 +109,7 @@ class STAMP(SequentialRecommender):
         res_ctx = self.w1(context)
         res_asp = self.w2(aspect_3dim)
         res_output = self.w3(output_3dim)
-        res_sum = res_ctx + res_asp + res_output
+        res_sum = res_ctx + res_asp + res_output + self.b_a
         res_act = self.w0(self.sigmoid(res_sum))
         alpha = res_act.squeeze(2)
         return alpha
