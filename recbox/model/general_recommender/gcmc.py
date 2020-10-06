@@ -33,11 +33,14 @@ from recbox.model.abstract_recommender import GeneralRecommender
 class GCMC(GeneralRecommender):
     r"""GCMC is a model that incorporate graph autoencoders for recommendation.
 
-    Graph autoencoders are comprised of 1) a graph encoder model :math:`Z = f(X; A)`, 
-    which take as input an :math:`N \times D` feature matrix X and a graph adjacency matrix A, 
-    and produce an :math:`N \times E` node embedding matrix :math:`Z = [z_1^T,..., z_N^T ]^T `,
-    and 2) a pairwise decoder model :math:`\hat A = g(Z)`, which takes pairs of node embeddings 
-    :math:`(z_i, z_j)` and predicts respective entries :math:`\hat A_{ij}` in the adjacency matrix. 
+    Graph autoencoders are comprised of: 
+
+    1) a graph encoder model :math:`Z = f(X; A)`, which take as input an :math:`N \times D` feature matrix X and 
+    a graph adjacency matrix A, and produce an :math:`N \times E` node embedding matrix :math:`Z = [z_1^T,..., z_N^T ]^T`;
+
+    2) a pairwise decoder model :math:`\hat A = g(Z)`, which takes pairs of node embeddings :math:`(z_i, z_j)` and 
+    predicts respective entries :math:`\hat A_{ij}` in the adjacency matrix. 
+
     Note that N denotes the number of nodes, D the number of input features, and E the embedding size.
 
     We implement the model following the original author with a pairwise training mode.
@@ -107,12 +110,12 @@ class GCMC(GeneralRecommender):
         self.loss_function = nn.CrossEntropyLoss()
 
     def get_sparse_eye_mat(self, num):
-        """Get the normalized sparse eye matrix.
+        r"""Get the normalized sparse eye matrix.
 
         Construct the sparse eye matrix as node feature.
 
         Args:
-            num: 
+            num: the number of rows
 
         Returns:
             Sparse tensor of the normalized interaction matrix.
@@ -122,7 +125,7 @@ class GCMC(GeneralRecommender):
         return torch.sparse.FloatTensor(i, val)
 
     def get_norm_adj_mat(self):
-        """Get the normalized interaction matrix of users and items.
+        r"""Get the normalized interaction matrix of users and items.
 
         Construct the square matrix from the training data and normalize it
         using the laplace matrix.
@@ -443,6 +446,7 @@ class SparseDropout(nn.Module):
 
 def orthogonal(shape, scale=1.1):
     """
+    Initialization function for weights in class GCMC.
     From Lasagne. Reference: Saxe et al., http://arxiv.org/abs/1312.6120
     """
     flat_shape = (shape[0], np.prod(shape[1:]))
