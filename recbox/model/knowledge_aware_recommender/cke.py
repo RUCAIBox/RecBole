@@ -3,15 +3,11 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
-"""
+r"""
+recbox.model.knowledge_aware_recommender.cke
+##################################################
 Reference:
 Fuzheng Zhang et al. "Collaborative Knowledge Base Embedding for Recommender Systems." in SIGKDD 2016.
-
-Note:
-In the original paper, CKE used structural knowledge, textual knowledge and visual knowledge. In our version, we only
-used structural knowledge. Meanwhile, the version we implemented uses a simpler regular way which can get almost the
-same result (even better) as the original regular way.
-
 """
 
 import torch
@@ -25,6 +21,15 @@ from recbox.model.init import xavier_normal_initialization
 
 
 class CKE(KnowledgeRecommender):
+    r"""CKE is a knowledge-based recommendation model, it can incorporate KG and other information such as corresponding
+    images to enrich the representation of items for item recommendations.
+
+    Note:
+            In the original paper, CKE used structural knowledge, textual knowledge and visual knowledge. In our
+            implementation, we only used structural knowledge. Meanwhile, the version we implemented uses a simpler
+            regular way which can get almost the same result (even better) as the original regular way.
+    """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
@@ -48,7 +53,7 @@ class CKE(KnowledgeRecommender):
         # parameters initialization
         self.apply(xavier_normal_initialization)
 
-    def get_kg_embedding(self, h, r, pos_t, neg_t):
+    def _get_kg_embedding(self, h, r, pos_t, neg_t):
         h_e = self.entity_embedding(h).unsqueeze(1)
         pos_t_e = self.entity_embedding(pos_t).unsqueeze(1)
         neg_t_e = self.entity_embedding(neg_t).unsqueeze(1)
@@ -72,13 +77,13 @@ class CKE(KnowledgeRecommender):
         score = torch.mul(u_e, i_e).sum(dim=1)
         return score
 
-    def get_rec_loss(self, user_e, pos_e, neg_e):
+    def _get_rec_loss(self, user_e, pos_e, neg_e):
         pos_score = torch.mul(user_e, pos_e).sum(dim=1)
         neg_score = torch.mul(user_e, neg_e).sum(dim=1)
         rec_loss = self.rec_loss(pos_score, neg_score)
         return rec_loss
 
-    def get_kg_loss(self, h_e, r_e, pos_e, neg_e):
+    def _get_kg_loss(self, h_e, r_e, pos_e, neg_e):
         pos_tail_score = ((h_e + r_e - pos_e) ** 2).sum(dim=1)
         neg_tail_score = ((h_e + r_e - neg_e) ** 2).sum(dim=1)
         kg_loss = self.kg_loss(neg_tail_score, pos_tail_score)
@@ -101,10 +106,10 @@ class CKE(KnowledgeRecommender):
         pos_item_final_e = pos_item_e + pos_item_kg_e
         neg_item_final_e = neg_item_e + neg_item_kg_e
 
-        rec_loss = self.get_rec_loss(user_e, pos_item_final_e, neg_item_final_e)
+        rec_loss = self._get_rec_loss(user_e, pos_item_final_e, neg_item_final_e)
 
-        h_e, r_e, pos_t_e, neg_t_e, r_trans_w = self.get_kg_embedding(h, r, pos_t, neg_t)
-        kg_loss = self.get_kg_loss(h_e, r_e, pos_t_e, neg_t_e)
+        h_e, r_e, pos_t_e, neg_t_e, r_trans_w = self._get_kg_embedding(h, r, pos_t, neg_t)
+        kg_loss = self._get_kg_loss(h_e, r_e, pos_t_e, neg_t_e)
 
         reg_loss = self.reg_weights[0] * self.reg_loss(user_e, pos_item_final_e, neg_item_final_e) + \
                    self.reg_weights[1] * self.reg_loss(h_e, r_e, pos_t_e, neg_t_e)
