@@ -27,8 +27,6 @@ from recbox.data.interaction import Interaction
 from recbox.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
     DataLoaderType, KGDataLoaderState, EvaluatorType
 
-import torch.backends.cudnn as cudnn
-cudnn.deterministic=False
 
 class AbstractTrainer(object):
     r"""Trainer Class is used to manage the training and evaluation processes of recommender system models.
