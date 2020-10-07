@@ -149,7 +149,7 @@ class NAIS(GeneralRecommender):
         weights = torch.div(exp_logits, exp_sum)
 
         coeff = torch.pow(item_num.squeeze(1), -self.alpha)
-        output = torch.sigmoid(coeff * torch.sum(weights * similarity, dim=1) + bias)
+        output = torch.sigmoid(coeff.float() * torch.sum(weights * similarity, dim=1) + bias)
 
         return output
 
@@ -171,7 +171,7 @@ class NAIS(GeneralRecommender):
         exp_sum = torch.pow(exp_sum, self.beta)
         weights = torch.div(exp_logits, exp_sum)
         coeff = torch.pow(item_num.squeeze(1), -self.alpha)
-        output = torch.sigmoid(coeff * torch.sum(weights * similarity, dim=1) + bias)
+        output = torch.sigmoid(coeff.float() * torch.sum(weights * similarity, dim=1) + bias)
 
         return output
 

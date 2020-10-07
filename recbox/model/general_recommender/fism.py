@@ -111,7 +111,7 @@ class FISM(GeneralRecommender):
         similarity = torch.bmm(user_history, target.unsqueeze(2)).squeeze(2)  # batch_size x max_len
         similarity = batch_mask_mat * similarity
         coeff = torch.pow(item_num.squeeze(1), -self.alpha)
-        scores = torch.sigmoid(coeff * torch.sum(similarity, dim=1) + user_bias + item_bias)
+        scores = torch.sigmoid(coeff.float() * torch.sum(similarity, dim=1) + user_bias + item_bias)
         return scores
 
     def user_forward(self, user_input, item_num, user_bias, repeats=None, pred_slc=None):
@@ -139,7 +139,7 @@ class FISM(GeneralRecommender):
             item_bias = self.item_bias[pred_slc]
         similarity = torch.bmm(user_history, targets.unsqueeze(2)).squeeze(2)  # inter_num x target_items
         coeff = torch.pow(item_num.squeeze(1), -self.alpha)
-        scores = torch.sigmoid(coeff * torch.sum(similarity, dim=1) + user_bias + item_bias)
+        scores = torch.sigmoid(coeff.float() * torch.sum(similarity, dim=1) + user_bias + item_bias)
         return scores
 
     def forward(self, user, item):
