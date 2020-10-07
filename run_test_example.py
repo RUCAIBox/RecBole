@@ -11,15 +11,6 @@ import traceback
 from time import time
 from recbox.quick_start import run_unirec
 
-"""
-乞丐版代码测试程序，防止bug越写越多，尤其是后期model多起来，一不小心就会使某些model run不起来
-
-代码提交前，请运行一下这个程序，保证无误后再提交
-
-有必要加入测试例子的，请尽量添加！按照格式添加到 `test_examples` 中
-
-"""
-
 
 test_examples = {
     'Test Eval Metric': {
