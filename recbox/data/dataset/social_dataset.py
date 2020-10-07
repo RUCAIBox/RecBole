@@ -36,22 +36,31 @@ class SocialDataset(Dataset):
         self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
 
     def _build_feat_list(self):
-        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.net_feat] if feat is not None]
+        return [
+            feat for feat in
+            [self.inter_feat, self.user_feat, self.item_feat, self.net_feat]
+            if feat is not None
+        ]
 
-    def _load_net(self, dataset_name, dataset_path): 
-        net_file_path = os.path.join(dataset_path, '{}.{}'.format(dataset_name, 'net'))
+    def _load_net(self, dataset_name, dataset_path):
+        net_file_path = os.path.join(dataset_path,
+                                     '{}.{}'.format(dataset_name, 'net'))
         if os.path.isfile(net_file_path):
             net_feat = self._load_feat(net_file_path, FeatureSource.NET)
             if net_feat is None:
-                raise ValueError('.net file exist, but net_feat is None, please check your load_col')
+                raise ValueError(
+                    '.net file exist, but net_feat is None, please check your load_col'
+                )
             return net_feat
         else:
             raise ValueError('File {} not exist'.format(net_file_path))
-            
+
     def _get_fields_in_same_space(self):
         fields_in_same_space = super()._get_fields_in_same_space()
-        fields_in_same_space = [_ for _ in fields_in_same_space if (self.source_field not in _) and
-                                                                   (self.target_field not in _)]
+        fields_in_same_space = [
+            _ for _ in fields_in_same_space
+            if (self.source_field not in _) and (self.target_field not in _)
+        ]
         for field_set in fields_in_same_space:
             if self.uid_field in field_set:
                 field_set.update({self.source_field, self.target_field})
@@ -60,15 +69,22 @@ class SocialDataset(Dataset):
 
     @dlapi.set()
     def net_graph(self, form='coo', value_field=None):
-        args = [self.net_feat, self.source_field, self.target_field, form, value_field]
+        args = [
+            self.net_feat, self.source_field, self.target_field, form,
+            value_field
+        ]
         if form in ['coo', 'csr']:
             return self._create_sparse_matrix(*args)
         elif form in ['dgl', 'pyg']:
             return self._create_graph(*args)
         else:
-            raise NotImplementedError('net graph format [{}] has not been implemented.')
+            raise NotImplementedError(
+                'net graph format [{}] has not been implemented.')
 
     def __str__(self):
-        info = [super().__str__(),
-                'The number of connections of social network: {}'.format(len(self.net_feat))]
+        info = [
+            super().__str__(),
+            'The number of connections of social network: {}'.format(
+                len(self.net_feat))
+        ]
         return '\n'.join(info)

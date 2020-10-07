@@ -48,17 +48,24 @@ class SequentialDataset(Dataset):
         return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
     def leave_one_out(self, group_by, leave_one_num=1):
-        self.logger.debug('leave one out, group_by=[{}], leave_one_num=[{}]'.format(group_by, leave_one_num))
+        self.logger.debug(
+            'leave one out, group_by=[{}], leave_one_num=[{}]'.format(
+                group_by, leave_one_num))
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 
         self.prepare_data_augmentation()
-        grouped_index = pd.DataFrame(self.uid_list).groupby(by=0).groups.values()
-        next_index = self._split_index_by_leave_one_out(grouped_index, leave_one_num)
+        grouped_index = pd.DataFrame(
+            self.uid_list).groupby(by=0).groups.values()
+        next_index = self._split_index_by_leave_one_out(
+            grouped_index, leave_one_num)
         next_ds = []
         for index in next_index:
             ds = copy.copy(self)
-            for field in ['uid_list', 'item_list_index', 'target_index', 'item_list_length']:
+            for field in [
+                    'uid_list', 'item_list_index', 'target_index',
+                    'item_list_length'
+            ]:
                 setattr(ds, field, np.array(getattr(ds, field)[index]))
             next_ds.append(ds)
         return next_ds

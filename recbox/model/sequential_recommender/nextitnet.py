@@ -2,8 +2,6 @@
 # @Time   : 2020/10/2
 # @Author : Jingsen Zhang
 # @Email  : zhangjingsen@ruc.edu.cn
-
-
 r"""
 recbox.model.sequential_recommender.nextitnet
 ################################################
@@ -62,15 +60,21 @@ class NextItNet(SequentialRecommender):
         self.reg_loss = RegLoss()
 
         # item embeddings
-        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size)
+        self.item_list_embedding = nn.Embedding(self.item_count,
+                                                self.embedding_size)
 
         # residual blocks    dilations in blocks:[1,2,4,8,1,2,4,8,...]
-        rb = [ResidualBlock_b(self.residual_channels, self.residual_channels, kernel_size=self.kernel_size,
-                            dilation=dilation) for dilation in self.dilations]
+        rb = [
+            ResidualBlock_b(self.residual_channels,
+                            self.residual_channels,
+                            kernel_size=self.kernel_size,
+                            dilation=dilation) for dilation in self.dilations
+        ]
         self.residual_blocks = nn.Sequential(*rb)
 
         # fully-connected layer
-        self.final_layer = nn.Linear(self.residual_channels, self.embedding_size)
+        self.final_layer = nn.Linear(self.residual_channels,
+                                     self.embedding_size)
 
         # weight initialization
         self.apply(self.init_weights)
@@ -86,17 +90,21 @@ class NextItNet(SequentialRecommender):
 
     def forward(self, interaction):
         # Embedding Look-up
-        inputs = self.item_list_embedding(interaction[self.ITEM_ID_LIST]) # [batch_size, seq_len, embed_size]
+        inputs = self.item_list_embedding(interaction[
+            self.ITEM_ID_LIST])  # [batch_size, seq_len, embed_size]
 
         # Residual locks
         dilate_outputs = self.residual_blocks(inputs)
 
-        if self.onecall:   # Extract the last item
-            hidden = dilate_outputs[:, -1, :].view(-1, self.residual_channels)  # [batch_size, embed_size]
+        if self.onecall:  # Extract the last item
+            hidden = dilate_outputs[:, -1, :].view(
+                -1, self.residual_channels)  # [batch_size, embed_size]
         else:
-            hidden = dilate_outputs.view(-1, self.residual_channels)  # [batch_size*seq_len, embed_size]
+            hidden = dilate_outputs.view(
+                -1, self.residual_channels)  # [batch_size*seq_len, embed_size]
 
-        pred_item_emb = self.final_layer(hidden)   # [batch_size, embedding_size]
+        pred_item_emb = self.final_layer(
+            hidden)  # [batch_size, embedding_size]
 
         return pred_item_emb
 
@@ -114,7 +122,7 @@ class NextItNet(SequentialRecommender):
         if self.reg_weight > 0.0:
             for name, parm in self.residual_blocks.named_parameters():
                 if name.endswith('weight'):
-                    loss_rb += torch.norm(parm,2)
+                    loss_rb += torch.norm(parm, 2)
         return self.reg_weight * loss_rb
 
     def calculate_loss(self, interaction):
@@ -122,7 +130,8 @@ class NextItNet(SequentialRecommender):
         pred = self.forward(interaction)
         logits = torch.matmul(pred, self.get_item_lookup_table())
         loss = self.criterion(logits, target_id)
-        reg_loss = self.reg_loss([self.item_list_embedding.weight,self.final_layer.weight])
+        reg_loss = self.reg_loss(
+            [self.item_list_embedding.weight, self.final_layer.weight])
         loss = loss + self.reg_weight * reg_loss + self.reg_loss_rb()
         return loss
 
@@ -142,16 +151,25 @@ class ResidualBlock_a(nn.Module):
     def __init__(self, in_channel, out_channel, kernel_size=3, dilation=None):
         super(ResidualBlock_a, self).__init__()
 
-        half_channel = out_channel//2
+        half_channel = out_channel // 2
         self.ln1 = nn.LayerNorm(out_channel, eps=1e-8)
-        self.conv1 = nn.Conv2d(in_channel, half_channel, kernel_size=(1, 1), padding=0)
-
+        self.conv1 = nn.Conv2d(in_channel,
+                               half_channel,
+                               kernel_size=(1, 1),
+                               padding=0)
 
         self.ln2 = nn.LayerNorm(half_channel, eps=1e-8)
-        self.conv2 = nn.Conv2d(half_channel, half_channel, kernel_size=(1, kernel_size), padding=0, dilation=dilation)
+        self.conv2 = nn.Conv2d(half_channel,
+                               half_channel,
+                               kernel_size=(1, kernel_size),
+                               padding=0,
+                               dilation=dilation)
 
         self.ln3 = nn.LayerNorm(half_channel, eps=1e-8)
-        self.conv3 = nn.Conv2d(half_channel, out_channel, kernel_size=(1, 1), padding=0)
+        self.conv3 = nn.Conv2d(half_channel,
+                               out_channel,
+                               kernel_size=(1, 1),
+                               padding=0)
 
         self.dilation = dilation
         self.kernel_size = kernel_size
@@ -176,10 +194,15 @@ class ResidualBlock_a(nn.Module):
         trick for the 1D dilated convolution to prevent the network from seeing the future items.
         Also the One-dimensional transformation is completed in this funtion.
         """
-        inputs_pad = x.permute(0, 2, 1)       # [batch_size, embed_size, seq_len]
-        inputs_pad = inputs_pad.unsqueeze(2)  # [batch_size, embed_size, 1, seq_len]
-        pad = nn.ZeroPad2d(((self.kernel_size - 1) * dilation, 0, 0, 0))  # padding opration  args：(left,right,top,bottom)
-        inputs_pad = pad(inputs_pad)          # [batch_size, embed_size, 1, seq_len+(self.kernel_size-1)*dilations]
+        inputs_pad = x.permute(0, 2, 1)  # [batch_size, embed_size, seq_len]
+        inputs_pad = inputs_pad.unsqueeze(
+            2)  # [batch_size, embed_size, 1, seq_len]
+        pad = nn.ZeroPad2d(
+            ((self.kernel_size - 1) * dilation, 0, 0,
+             0))  # padding opration  args：(left,right,top,bottom)
+        inputs_pad = pad(
+            inputs_pad
+        )  # [batch_size, embed_size, 1, seq_len+(self.kernel_size-1)*dilations]
         return inputs_pad
 
 
@@ -190,19 +213,31 @@ class ResidualBlock_b(nn.Module):
     def __init__(self, in_channel, out_channel, kernel_size=3, dilation=None):
         super(ResidualBlock_b, self).__init__()
 
-        self.conv1 = nn.Conv2d(in_channel, out_channel, kernel_size=(1, kernel_size), padding=0, dilation=dilation)
+        self.conv1 = nn.Conv2d(in_channel,
+                               out_channel,
+                               kernel_size=(1, kernel_size),
+                               padding=0,
+                               dilation=dilation)
         self.ln1 = nn.LayerNorm(out_channel, eps=1e-8)
-        self.conv2 = nn.Conv2d(out_channel, out_channel, kernel_size=(1, kernel_size), padding=0, dilation=dilation*2)
+        self.conv2 = nn.Conv2d(out_channel,
+                               out_channel,
+                               kernel_size=(1, kernel_size),
+                               padding=0,
+                               dilation=dilation * 2)
         self.ln2 = nn.LayerNorm(out_channel, eps=1e-8)
 
         self.dilation = dilation
         self.kernel_size = kernel_size
 
     def forward(self, x):  # x: [batch_size, seq_len, embed_size]
-        x_pad = self.conv_pad(x, self.dilation)   # [batch_size, embed_size, 1, seq_len+(self.kernel_size-1)*dilations]
-        out = self.conv1(x_pad).squeeze(2).permute(0, 2, 1)  # [batch_size, seq_len+(self.kernel_size-1)*dilations-kernel_size+1, embed_size]
+        x_pad = self.conv_pad(
+            x, self.dilation
+        )  # [batch_size, embed_size, 1, seq_len+(self.kernel_size-1)*dilations]
+        out = self.conv1(x_pad).squeeze(2).permute(
+            0, 2, 1
+        )  # [batch_size, seq_len+(self.kernel_size-1)*dilations-kernel_size+1, embed_size]
         out = F.relu(self.ln1(out))
-        out_pad = self.conv_pad(out, self.dilation*2)
+        out_pad = self.conv_pad(out, self.dilation * 2)
         out2 = self.conv2(out_pad).squeeze(2).permute(0, 2, 1)
         out2 = F.relu(self.ln2(out2))
         return out2 + x

@@ -35,12 +35,16 @@ class RunningConfig(AbstractConfig):
         for metric in self['metrics']:
             if metric.lower() in loss_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.RANKING:
-                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
+                    raise RuntimeError(
+                        'Ranking metrics and other metrics can not be used at the same time!'
+                    )
                 else:
                     eval_type = EvaluatorType.INDIVIDUAL
             if metric.lower() in topk_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.INDIVIDUAL:
-                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
+                    raise RuntimeError(
+                        'Ranking metrics and other metrics can not be used at the same time!'
+                    )
                 else:
                     eval_type = EvaluatorType.RANKING
         self['eval_type'] = eval_type

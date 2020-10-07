@@ -12,7 +12,6 @@ from recbox.model.abstract_recommender import GeneralRecommender
 
 
 class ComputeSimilarity:
-
     def __init__(self, dataMatrix, topk=100, shrink=0, normalize=True):
         """
         Computes the cosine similarity on the columns of dataMatrix
@@ -81,15 +80,18 @@ class ComputeSimilarity:
                 if this_block_size == 1:
                     this_column_weights = this_block_weights.squeeze()
                 else:
-                    this_column_weights = this_block_weights[:, col_index_in_block]
+                    this_column_weights = this_block_weights[:,
+                                                             col_index_in_block]
 
                 columnIndex = col_index_in_block + start_col_block
                 this_column_weights[columnIndex] = 0.0
 
                 # Apply normalization and shrinkage, ensure denominator != 0
                 if self.normalize:
-                    denominator = sumOfSquared[columnIndex] * sumOfSquared + self.shrink + 1e-6
-                    this_column_weights = np.multiply(this_column_weights, 1 / denominator)
+                    denominator = sumOfSquared[
+                        columnIndex] * sumOfSquared + self.shrink + 1e-6
+                    this_column_weights = np.multiply(this_column_weights,
+                                                      1 / denominator)
 
                 elif self.shrink != 0:
                     this_column_weights = this_column_weights / self.shrink
@@ -99,9 +101,13 @@ class ComputeSimilarity:
                 # - Partition the data to extract the set of relevant items
                 # - Sort only the relevant items
                 # - Get the original item index
-                relevant_items_partition = (-this_column_weights).argpartition(self.TopK - 1)[0:self.TopK]
-                relevant_items_partition_sorting = np.argsort(-this_column_weights[relevant_items_partition])
-                top_k_idx = relevant_items_partition[relevant_items_partition_sorting]
+                relevant_items_partition = (
+                    -this_column_weights).argpartition(self.TopK -
+                                                       1)[0:self.TopK]
+                relevant_items_partition_sorting = np.argsort(
+                    -this_column_weights[relevant_items_partition])
+                top_k_idx = relevant_items_partition[
+                    relevant_items_partition_sorting]
 
                 # Incrementally build sparse matrix, do not add zeros
                 notZerosMask = this_column_weights[top_k_idx] != 0.0
@@ -130,10 +136,13 @@ class ItemKNN(GeneralRecommender):
         self.k = config['k']
         self.shrink = config['shrink'] if 'shrink' in config else 0.0
 
-        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(
+            np.float32)
         shape = self.interaction_matrix.shape
         assert self.n_users == shape[0] and self.n_items == shape[1]
-        self.w = ComputeSimilarity(self.interaction_matrix, topk=self.k, shrink=self.shrink).compute_similarity()
+        self.w = ComputeSimilarity(self.interaction_matrix,
+                                   topk=self.k,
+                                   shrink=self.shrink).compute_similarity()
         self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
 
         self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))

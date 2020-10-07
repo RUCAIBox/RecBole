@@ -15,8 +15,6 @@ from hyperopt.pyll.stochastic import implicit_stochastic_symbols
 from hyperopt.pyll.base import Apply
 
 from recbox.utils.utils import dict2str
-
-
 """
 Thanks to sbrodeur for the exhaustive search code.
 https://github.com/hyperopt/hyperopt/issues/200
@@ -73,18 +71,30 @@ class ExhaustiveSearchError(Exception):
 
 
 def validate_space_exhaustive_search(space):
-    supported_stochastic_symbols = ['randint', 'quniform', 'qloguniform', 'qnormal', 'qlognormal', 'categorical']
+    supported_stochastic_symbols = [
+        'randint', 'quniform', 'qloguniform', 'qnormal', 'qlognormal',
+        'categorical'
+    ]
     for node in dfs(as_apply(space)):
         if node.name in implicit_stochastic_symbols:
             if node.name not in supported_stochastic_symbols:
-                raise ExhaustiveSearchError('Exhaustive search is only possible with the following stochastic symbols: '
-                                            '' + ', '.join(supported_stochastic_symbols))
+                raise ExhaustiveSearchError(
+                    'Exhaustive search is only possible with the following stochastic symbols: '
+                    '' + ', '.join(supported_stochastic_symbols))
 
 
-def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000):
+def exhaustive_search(new_ids,
+                      domain,
+                      trials,
+                      seed,
+                      nbMaxSucessiveFailures=1000):
     # Build a hash set for previous trials
-    hashset = set([hash(frozenset([(key, value[0]) if len(value) > 0 else ((key, None))
-                                   for key, value in trial['misc']['vals'].items()])) for trial in trials.trials])
+    hashset = set([
+        hash(
+            frozenset([(key, value[0]) if len(value) > 0 else ((key, None))
+                       for key, value in trial['misc']['vals'].items()]))
+        for trial in trials.trials
+    ])
 
     rng = np.random.RandomState(seed)
     rval = []
@@ -93,19 +103,19 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
         nbSucessiveFailures = 0
         while not newSample:
             # -- sample new specs, idxs, vals
-            idxs, vals = pyll.rec_eval(
-                domain.s_idxs_vals,
-                memo={
-                    domain.s_new_ids: [new_id],
-                    domain.s_rng: rng,
-                })
+            idxs, vals = pyll.rec_eval(domain.s_idxs_vals,
+                                       memo={
+                                           domain.s_new_ids: [new_id],
+                                           domain.s_rng: rng,
+                                       })
             new_result = domain.new_result()
             new_misc = dict(tid=new_id, cmd=domain.cmd, workdir=domain.workdir)
             miscs_update_idxs_vals([new_misc], idxs, vals)
 
             # Compare with previous hashes
-            h = hash(frozenset([(key, value[0]) if len(value) > 0 else (
-                (key, None)) for key, value in vals.items()]))
+            h = hash(
+                frozenset([(key, value[0]) if len(value) > 0 else ((key, None))
+                           for key, value in vals.items()]))
             if h not in hashset:
                 newSample = True
             else:
@@ -116,13 +126,18 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
                 # No more samples to produce
                 return []
 
-        rval.extend(trials.new_trial_docs([new_id],
-                                          [None], [new_result], [new_misc]))
+        rval.extend(
+            trials.new_trial_docs([new_id], [None], [new_result], [new_misc]))
     return rval
 
 
 class HyperTuning(object):
-    def __init__(self, objective_function, space=None, params_file=None, algo=tpe.suggest, max_evals=100):
+    def __init__(self,
+                 objective_function,
+                 space=None,
+                 params_file=None,
+                 algo=tpe.suggest,
+                 max_evals=100):
         self.best_score = None
         self.best_params = None
         self.best_test_result = None
@@ -135,10 +150,12 @@ class HyperTuning(object):
         elif params_file:
             self.space = self._build_space_from_file(params_file)
         else:
-            raise ValueError('at least one of `space` and `params_file` is provided')
+            raise ValueError(
+                'at least one of `space` and `params_file` is provided')
         if isinstance(algo, str):
             if algo == 'exhaustive':
-                self.algo = partial(exhaustive_search, nbMaxSucessiveFailures=1000)
+                self.algo = partial(exhaustive_search,
+                                    nbMaxSucessiveFailures=1000)
                 self.max_evals = spacesize(self.space)
             else:
                 raise ValueError('Illegal algo [{}]'.format(algo))
@@ -153,21 +170,26 @@ class HyperTuning(object):
                 para_list = line.strip().split(' ')
                 if len(para_list) < 3:
                     continue
-                para_name, para_type, para_value = para_list[0], para_list[1], "".join(para_list[2:])
+                para_name, para_type, para_value = para_list[0], para_list[
+                    1], "".join(para_list[2:])
                 if para_type == 'choice':
                     para_value = eval(para_value)
                     space[para_name] = hp.choice(para_name, para_value)
                 elif para_type == 'uniform':
                     low, high = para_value.strip().split(',')
-                    space[para_name] = hp.uniform(para_name, float(low), float(high))
+                    space[para_name] = hp.uniform(para_name, float(low),
+                                                  float(high))
                 elif para_type == 'quniform':
                     low, high, q = para_value.strip().split(',')
-                    space[para_name] = hp.quniform(para_name, float(low), float(high), float(q))
+                    space[para_name] = hp.quniform(para_name, float(low),
+                                                   float(high), float(q))
                 elif para_type == 'loguniform':
                     low, high = para_value.strip().split(',')
-                    space[para_name] = hp.loguniform(para_name, float(low), float(high))
+                    space[para_name] = hp.loguniform(para_name, float(low),
+                                                     float(high))
                 else:
-                    raise ValueError('Illegal param type [{}]'.format(para_type))
+                    raise ValueError(
+                        'Illegal param type [{}]'.format(para_type))
         return space
 
     @staticmethod
@@ -179,7 +201,8 @@ class HyperTuning(object):
 
     @staticmethod
     def print_result(result_dict: dict):
-        print('current best valid score: %.4f' % result_dict['best_valid_score'])
+        print('current best valid score: %.4f' %
+              result_dict['best_valid_score'])
         print('current best valid result:')
         print(result_dict['best_valid_result'])
         print('current test result:')
@@ -190,8 +213,13 @@ class HyperTuning(object):
         with open(output_file, 'w') as fp:
             for params in self.params2result:
                 fp.write(params + '\n')
-                fp.write('Valid result:\n' + dict2str(self.params2result[params]['best_valid_result']) + '\n')
-                fp.write('Test result:\n' + dict2str(self.params2result[params]['test_result']) + '\n\n')
+                fp.write(
+                    'Valid result:\n' +
+                    dict2str(self.params2result[params]['best_valid_result']) +
+                    '\n')
+                fp.write('Test result:\n' +
+                         dict2str(self.params2result[params]['test_result']) +
+                         '\n\n')
 
     def trial(self, params):
         config_dict = params
@@ -199,7 +227,8 @@ class HyperTuning(object):
         print('running parameters:', config_dict)
         result_dict = self.objective_function(config_dict)
         self.params2result[params_str] = result_dict
-        score, bigger = result_dict['best_valid_score'], result_dict['valid_score_bigger']
+        score, bigger = result_dict['best_valid_score'], result_dict[
+            'valid_score_bigger']
 
         if not self.best_score:
             self.best_score = score
@@ -218,7 +247,7 @@ class HyperTuning(object):
                     self.print_result(result_dict)
 
         if bigger:
-            score = - score
+            score = -score
         return {'loss': score, 'status': hyperopt.STATUS_OK}
 
     def run(self):

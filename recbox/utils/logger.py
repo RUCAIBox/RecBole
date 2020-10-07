@@ -46,8 +46,4 @@ def init_logger(config):
     sh.setLevel(logging.INFO)
     sh.setFormatter(sformatter)
 
-    logging.basicConfig(
-        level=logging.INFO,
-        handlers=[fh, sh]
-    )
-
+    logging.basicConfig(level=logging.INFO, handlers=[fh, sh])

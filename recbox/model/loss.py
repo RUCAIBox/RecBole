@@ -6,19 +6,15 @@
 # @Time   : 2020/8/7
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-
-
 """
 Common Loss in recommender system
 """
-
 
 import torch
 import torch.nn as nn
 
 
 class BPRLoss(nn.Module):
-
     """ BPRLoss, based on Bayesian Personalized Ranking
     Args:
         - gamma(float):
@@ -41,12 +37,12 @@ class BPRLoss(nn.Module):
         self.gamma = gamma
 
     def forward(self, pos_score, neg_score):
-        loss = - torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
+        loss = -torch.log(self.gamma +
+                          torch.sigmoid(pos_score - neg_score)).mean()
         return loss
 
 
 class RegLoss(nn.Module):
-
     def __init__(self):
         super(RegLoss, self).__init__()
 
@@ -61,7 +57,6 @@ class RegLoss(nn.Module):
 
 
 class EmbLoss(nn.Module):
-
     def __init__(self, norm=2):
         super(EmbLoss, self).__init__()
         self.norm = norm
@@ -75,7 +70,6 @@ class EmbLoss(nn.Module):
 
 
 class EmbMarginLoss(nn.Module):
-
     def __init__(self, power=2):
         super(EmbMarginLoss, self).__init__()
         self.power = power
@@ -86,6 +80,6 @@ class EmbMarginLoss(nn.Module):
         cache_zero = torch.tensor(0.0).to(dev)
         emb_loss = torch.tensor(0.).to(dev)
         for embedding in embeddings:
-            norm_e = torch.sum(embedding ** self.power, dim=1, keepdim=True)
+            norm_e = torch.sum(embedding**self.power, dim=1, keepdim=True)
             emb_loss += torch.sum(torch.max(norm_e - cache_one, cache_zero))
         return emb_loss

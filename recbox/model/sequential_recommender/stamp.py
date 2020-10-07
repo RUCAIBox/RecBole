@@ -7,7 +7,6 @@
 # @Time   : 2020/10/2
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
-
 r"""
 recbox.model.sequential_recommender.stamp
 ################################################
@@ -36,6 +35,7 @@ class STAMP(SequentialRecommender):
 
     """
     input_type = InputType.POINTWISE
+
     def __init__(self, config, dataset):
         super(STAMP, self).__init__()
         # load parameters info
@@ -45,20 +45,32 @@ class STAMP(SequentialRecommender):
         self.TARGET_ITEM_ID = self.ITEM_ID
         self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
 
-
         self.embedding_size = config['embedding_size']
         self.item_count = dataset.item_num
         # item embeddings
-        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
+        self.item_list_embedding = nn.Embedding(self.item_count,
+                                                self.embedding_size,
+                                                padding_idx=0)
         # define weights and bias
-        self.w1 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
-        self.w2 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
-        self.w3 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
+        self.w1 = nn.Linear(self.embedding_size,
+                            self.embedding_size,
+                            bias=False)
+        self.w2 = nn.Linear(self.embedding_size,
+                            self.embedding_size,
+                            bias=False)
+        self.w3 = nn.Linear(self.embedding_size,
+                            self.embedding_size,
+                            bias=False)
         self.w0 = nn.Linear(self.embedding_size, 1, bias=False)
-        self.b_a = nn.Parameter(torch.zeros(self.embedding_size), requires_grad=True)
+        self.b_a = nn.Parameter(torch.zeros(self.embedding_size),
+                                requires_grad=True)
         # define layers,activation and loss
-        self.mlp_a = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
-        self.mlp_b = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
+        self.mlp_a = nn.Linear(self.embedding_size,
+                               self.embedding_size,
+                               bias=True)
+        self.mlp_b = nn.Linear(self.embedding_size,
+                               self.embedding_size,
+                               bias=True)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
         self.criterion = nn.CrossEntropyLoss()
@@ -80,10 +92,13 @@ class STAMP(SequentialRecommender):
         return self.item_list_embedding.weight.t()
 
     def forward(self, interaction):
-        item_list_emb = self.item_list_embedding(interaction[self.ITEM_ID_LIST])
-        last_inputs = self.gather_indexes(item_list_emb, interaction[self.ITEM_LIST_LEN] - 1)
+        item_list_emb = self.item_list_embedding(
+            interaction[self.ITEM_ID_LIST])
+        last_inputs = self.gather_indexes(item_list_emb,
+                                          interaction[self.ITEM_LIST_LEN] - 1)
         org_memory = item_list_emb
-        ms = torch.div(torch.sum(org_memory, dim=1), interaction[self.ITEM_LIST_LEN].unsqueeze(1).float())
+        ms = torch.div(torch.sum(org_memory, dim=1),
+                       interaction[self.ITEM_LIST_LEN].unsqueeze(1).float())
         alpha = self.count_alpha(org_memory, last_inputs, ms)
         vec = torch.matmul(alpha.unsqueeze(1), org_memory)
         ma = vec.squeeze(1) + ms
@@ -104,8 +119,10 @@ class STAMP(SequentialRecommender):
             torch.Tensor:attention weights, shape of [batch_size, time_steps]
         """
         timesteps = context.size(1)
-        aspect_3dim = aspect.repeat(1, timesteps).view(-1, timesteps, self.embedding_size)
-        output_3dim = output.repeat(1, timesteps).view(-1, timesteps, self.embedding_size)
+        aspect_3dim = aspect.repeat(1, timesteps).view(-1, timesteps,
+                                                       self.embedding_size)
+        output_3dim = output.repeat(1, timesteps).view(-1, timesteps,
+                                                       self.embedding_size)
         res_ctx = self.w1(context)
         res_asp = self.w2(aspect_3dim)
         res_output = self.w3(output_3dim)
