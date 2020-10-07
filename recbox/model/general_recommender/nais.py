@@ -62,10 +62,9 @@ class NAIS(GeneralRecommender):
 
         # define layers and loss
 
-        # construct source and destination item embedding matrix, src items is padding at n_items position,
-        # the dst items don't require padding
-        self.item_src_embedding = nn.Embedding(self.n_items + 1, self.embedding_size, padding_idx=self.n_items)
-        self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size)
+        # construct source and destination item embedding matrix
+        self.item_src_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
 
         self.bias = nn.Parameter(torch.zeros(self.n_items))
         if self.algorithm == 'concat':
@@ -150,7 +149,7 @@ class NAIS(GeneralRecommender):
         weights = torch.div(exp_logits, exp_sum)
 
         coeff = torch.pow(item_num.squeeze(1), -self.alpha)
-        output = torch.sigmoid(coeff * torch.sum(weights * similarity, dim=1) + bias)
+        output = torch.sigmoid(coeff.float() * torch.sum(weights * similarity, dim=1) + bias)
 
         return output
 
@@ -172,7 +171,7 @@ class NAIS(GeneralRecommender):
         exp_sum = torch.pow(exp_sum, self.beta)
         weights = torch.div(exp_logits, exp_sum)
         coeff = torch.pow(item_num.squeeze(1), -self.alpha)
-        output = torch.sigmoid(coeff * torch.sum(weights * similarity, dim=1) + bias)
+        output = torch.sigmoid(coeff.float() * torch.sum(weights * similarity, dim=1) + bias)
 
         return output
 

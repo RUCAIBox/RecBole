@@ -14,11 +14,11 @@ recbox.evaluator.metrics
 """
 
 from logging import getLogger
+
 import numpy as np
+from recbox.evaluator.utils import _binary_clf_curve
 from sklearn.metrics import auc as sk_auc
 from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error
-
-from recbox.evaluator.utils import _binary_clf_curve
 
 #    TopK Metrics    #
 
@@ -34,6 +34,7 @@ def hit_(pos_index, pos_len):
 
     :math:`HR` is the number of users with a positive sample in the recommendation list.
     :math:`GT` is the total number of samples in the test set.
+
     """
     result = np.cumsum(pos_index, axis=1)
     return (result > 0).astype(int)
@@ -50,8 +51,8 @@ def mrr_(pos_index, pos_len):
 
     :math:`U` is the number of users, :math:`rank_i` is the rank of the first item in the recommendation list
     in the test set results for user :math:`i`.
-    """
 
+    """
     idxs = pos_index.argmax(axis=1)
     result = np.zeros_like(pos_index, dtype=np.float)
     for row, idx in enumerate(idxs):
@@ -76,6 +77,7 @@ def map_(pos_index, pos_len):
         \mathrm{AP@N} &= \frac{1}{\mathrm{min}(m,N)}\sum_{k=1}^N P(k) \cdot rel(k) \\
         \mathrm{MAP@N}& = \frac{1}{|U|}\sum_{u=1}^{|U|}(\mathrm{AP@N})_u
         \end{align*}
+
     """
     pre = precision_(pos_index, pos_len)
     sum_pre = np.cumsum(pre * pos_index.astype(np.float), axis=1)
@@ -101,6 +103,7 @@ def recall_(pos_index, pos_len):
     :math:`Rel_u` is the set of items relavent to user :math:`U`,
     :math:`Rec_u` is the top K items recommended to users.
     We obtain the result by calculating the average :math:`Recall@K` of each user.
+
     """
     return np.cumsum(pos_index, axis=1) / pos_len.reshape(-1, 1)
 
@@ -123,6 +126,7 @@ def ndcg_(pos_index, pos_len):
     And the :math:`rel_i` is the relevance of the item in position :math:`i` in the recommendation list.
     :math:`2^{rel_i}` equals to 1 if the item hits otherwise 0.
     :math:`U^{te}` is for all users in the test set.
+
     """
 
     len_rank = np.full_like(pos_len, pos_index.shape[1])
@@ -155,6 +159,7 @@ def precision_(pos_index, pos_len):
     :math:`Rel_u` is the set of items relavent to user :math:`U`,
     :math:`Rec_u` is the top K items recommended to users.
     We obtain the result by calculating the average :math:`Precision@K` of each user.
+
     """
     return pos_index.cumsum(axis=1) / np.arange(1, pos_index.shape[1] + 1)
 
@@ -179,6 +184,7 @@ def auc_(trues, preds):
     :math:`M` is the number of positive samples.
     :math:`N` is the number of negative samples.
     :math:`rank_i` is the rank of the ith positive sample.
+
     """
     fps, tps = _binary_clf_curve(trues, preds)
 
@@ -221,8 +227,8 @@ def mae_(trues, preds):
 
     :math:`T` is the test set, :math:`\hat{r}_{u i}` is the score predicted by the model,
     and :math:`r_{u i}` the actual score of the test set.
-    """
 
+    """
     return mean_absolute_error(trues, preds)
 
 
@@ -236,6 +242,7 @@ def rmse_(trues, preds):
 
     :math:`T` is the test set, :math:`\hat{r}_{u i}` is the score predicted by the model,
     and :math:`r_{u i}` the actual score of the test set.
+
     """
     return np.sqrt(mean_squared_error(trues, preds))
 
@@ -250,6 +257,7 @@ def log_loss_(trues, preds):
 
     For a single sample, :math:`y_t` is true label in :math:`\{0,1\}`.
     :math:`y_p` is the estimated probability that :math:`y_t = 1`.
+
     """
     eps = 1e-15
     preds = np.float64(preds)
@@ -261,21 +269,21 @@ def log_loss_(trues, preds):
 
 # Item based Metrics #
 
-
-def coverage_():
-    raise NotImplementedError
-
-
-def gini_index_():
-    raise NotImplementedError
+# TODO
+# def coverage_():
+#     raise NotImplementedError
 
 
-def shannon_entropy_():
-    raise NotImplementedError
+# def gini_index_():
+#     raise NotImplementedError
 
 
-def diversity_():
-    raise NotImplementedError
+# def shannon_entropy_():
+#     raise NotImplementedError
+
+
+# def diversity_():
+#     raise NotImplementedError
 
 
 """Function name and function mapper.
