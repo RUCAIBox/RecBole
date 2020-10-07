@@ -16,10 +16,10 @@ stopping_step: 10
 checkpoint_dir: 'saved'
 
 # evaluation settings
-eval_setting: RO_RS,full   # RO_RS/RO_LS, full/uni100/uni1000
+eval_setting: RO_RS,full
 group_by_user: True
 split_ratio: [0.8,0.1,0.1]
-leave_one_num: None
+leave_one_num: Null
 real_time_process: True
 metrics: ["Recall", "MRR","NDCG","Hit","Precision"]
 topk: [10]
