@@ -7,6 +7,7 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+import re
 import os
 import sys
 import yaml
@@ -21,6 +22,7 @@ class Config(object):
     def __init__(self, model=None, dataset=None, config_file_list=None, config_dict=None):
 
         self._init_parameters_category()
+        self.yaml_loader = self._build_yaml_loader()
         self._load_config_files(config_file_list)
         self._load_variable_config_dict(config_dict)
         self._load_cmd_line()
@@ -41,13 +43,27 @@ class Config(object):
                                          'real_time_process', 'metrics', 'topk', 'eval_batch_size']
         self.parameters['Dataset'] = []
 
+    def _build_yaml_loader(self):
+        loader = yaml.FullLoader
+        loader.add_implicit_resolver(
+            u'tag:yaml.org,2002:float',
+            re.compile(u'''^(?:
+             [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+            |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+            |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+            |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+            |[-+]?\\.(?:inf|Inf|INF)
+            |\\.(?:nan|NaN|NAN))$''', re.X),
+            list(u'-+0123456789.'))
+        return loader
+
     def _load_config_files(self, file_list):
         self.file_config_dict = dict()
         if file_list:
             for file in file_list:
                 if os.path.isfile(file):
                     with open(file, 'r', encoding='utf-8') as f:
-                        self.file_config_dict.update(yaml.load(f.read(), Loader=yaml.FullLoader))
+                        self.file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
 
     def _load_variable_config_dict(self, config_dict):
         self.variable_config_dict = config_dict if config_dict else dict()
@@ -137,7 +153,7 @@ class Config(object):
         for file in [overall_init_file, model_init_file, dataset_init_file]:
             if os.path.isfile(file):
                 with open(file, 'r', encoding='utf-8') as f:
-                    config_dict = yaml.load(f.read(), Loader=yaml.FullLoader)
+                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
                     if file == dataset_init_file:
                         self.parameters['Dataset'] += [key for key in config_dict.keys() if
                                                        key not in self.parameters['Dataset']]
