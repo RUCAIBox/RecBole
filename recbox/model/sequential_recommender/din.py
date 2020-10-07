@@ -245,7 +245,7 @@ class DIN(SequentialRecommender):
             type(str): user or item
             embed(bool): embed or not
 
-        Returns
+        Returns:
             torch.Tensor: float fields embedding. [batch_size, max_item_length, num_float_field, embed_dim]
 
         """
@@ -272,7 +272,7 @@ class DIN(SequentialRecommender):
             type(str): user or item
 
         Returns:
-            token fields embedding(torch.Tensor): [batch_size, max_item_length, num_token_field, embed_dim]
+            torch.Tensor: token fields embedding, [batch_size, max_item_length, num_token_field, embed_dim]
 
         """
         if token_fields is None:
