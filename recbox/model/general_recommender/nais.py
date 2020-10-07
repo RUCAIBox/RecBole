@@ -62,10 +62,9 @@ class NAIS(GeneralRecommender):
 
         # define layers and loss
 
-        # construct source and destination item embedding matrix, src items is padding at n_items position,
-        # the dst items don't require padding
-        self.item_src_embedding = nn.Embedding(self.n_items + 1, self.embedding_size, padding_idx=self.n_items)
-        self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size)
+        # construct source and destination item embedding matrix
+        self.item_src_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
 
         self.bias = nn.Parameter(torch.zeros(self.n_items))
         if self.algorithm == 'concat':
