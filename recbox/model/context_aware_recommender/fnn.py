@@ -3,6 +3,7 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 # @File   : fnn.py
+
 """
 Reference:
 Weinan Zhang1 et al. "Deep Learning over Multi-field Categorical Data" in ECIR 2016
@@ -25,6 +26,7 @@ from .context_recommender import ContextRecommender
 
 
 class FNN(ContextRecommender):
+
     def __init__(self, config, dataset):
         super(FNN, self).__init__(config, dataset)
 
@@ -32,13 +34,9 @@ class FNN(ContextRecommender):
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout = config['dropout']
 
-        size_list = [self.embedding_size * self.num_feature_field
-                     ] + self.mlp_hidden_size
+        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
 
-        self.mlp_layers = MLPLayers(size_list,
-                                    self.dropout,
-                                    activation='tanh',
-                                    bn=False)  # use tanh as activation
+        self.mlp_layers = MLPLayers(size_list, self.dropout, activation='tanh', bn=False)  # use tanh as activation
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1, bias=True)
 
         self.sigmoid = nn.Sigmoid()
@@ -57,19 +55,16 @@ class FNN(ContextRecommender):
     def forward(self, interaction):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(
-            interaction)
+        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
         all_embeddings = []
         if sparse_embedding is not None:
             all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             all_embeddings.append(dense_embedding)
-        fnn_all_embeddings = torch.cat(
-            all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        fnn_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
         batch_size = fnn_all_embeddings.shape[0]
 
-        output = self.predict_layer(
-            self.mlp_layers(fnn_all_embeddings.view(batch_size, -1)))
+        output = self.predict_layer(self.mlp_layers(fnn_all_embeddings.view(batch_size, -1)))
         output = self.sigmoid(output)
         return output.squeeze()
 

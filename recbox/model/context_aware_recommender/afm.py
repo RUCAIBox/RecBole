@@ -3,6 +3,7 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 # @File   : afm.py
+
 """
 Reference:
 Jun Xiao et al. "Attentional Factorization Machines: Learning the Weight of Feature Interactions via Attention Networks" in IJCAI 2017.
@@ -18,6 +19,7 @@ from recbox.model.context_aware_recommender.context_recommender import ContextRe
 
 
 class AFM(ContextRecommender):
+
     def __init__(self, config, dataset):
         super(AFM, self).__init__(config, dataset)
 
@@ -26,11 +28,9 @@ class AFM(ContextRecommender):
         self.attention_size = config['attention_size']
         self.dropout = config['dropout']
         self.weight_decay = config['weight_decay']
-        self.num_pair = self.num_feature_field * (self.num_feature_field -
-                                                  1) / 2
+        self.num_pair = self.num_feature_field * (self.num_feature_field-1) / 2
         self.attlayer = AttLayer(self.embedding_size, self.attention_size)
-        self.p = nn.Parameter(torch.randn(self.embedding_size),
-                              requires_grad=True)
+        self.p = nn.Parameter(torch.randn(self.embedding_size), requires_grad=True)
         self.dropout_layer = nn.Dropout(p=self.dropout)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
@@ -71,33 +71,27 @@ class AFM(ContextRecommender):
         # [batch_size, num_pairs, 1]
         att_signal = self.attlayer(pair_wise_inter).unsqueeze(dim=2)
 
-        att_inter = torch.mul(
-            att_signal, pair_wise_inter)  # [batch_size, num_pairs, emb_dim]
+        att_inter = torch.mul(att_signal, pair_wise_inter)  # [batch_size, num_pairs, emb_dim]
         att_pooling = torch.sum(att_inter, dim=1)  # [batch_size, emb_dim]
         att_pooling = self.dropout_layer(att_pooling)  # [batch_size, emb_dim]
 
         att_pooling = torch.mul(att_pooling, self.p)  # [batch_size, emb_dim]
-        att_pooling = torch.sum(att_pooling, dim=1,
-                                keepdim=True)  # [batch_size, 1]
+        att_pooling = torch.sum(att_pooling, dim=1, keepdim=True)  # [batch_size, 1]
 
         return att_pooling
 
     def forward(self, interaction):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(
-            interaction)
+        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
         all_embeddings = []
         if sparse_embedding is not None:
             all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             all_embeddings.append(dense_embedding)
-        afm_all_embeddings = torch.cat(
-            all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        afm_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
 
-        output = self.sigmoid(
-            self.first_order_linear(interaction) +
-            self.afm_layer(afm_all_embeddings))
+        output = self.sigmoid(self.first_order_linear(interaction) + self.afm_layer(afm_all_embeddings))
         return output.squeeze()
 
     def calculate_loss(self, interaction):

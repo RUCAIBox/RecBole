@@ -7,6 +7,7 @@
 # @Time   : 2020/9/16
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
+
 """
 Reference:
 Steffen Rendle et al. "BPR: Bayesian Personalized Ranking from Implicit Feedback." in UAI 2009.
@@ -56,8 +57,7 @@ class BPRMF(GeneralRecommender):
 
         user_e, pos_e = self.forward(user, pos_item)
         neg_e = self.get_item_embedding(neg_item)
-        pos_item_score, neg_item_score = torch.mul(
-            user_e, pos_e).sum(dim=1), torch.mul(user_e, neg_e).sum(dim=1)
+        pos_item_score, neg_item_score = torch.mul(user_e, pos_e).sum(dim=1), torch.mul(user_e, neg_e).sum(dim=1)
         loss = self.loss(pos_item_score, neg_item_score)
         return loss
 

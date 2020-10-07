@@ -2,6 +2,8 @@
 # @Time   : 2020/9/30 14:07
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
+
+
 r"""
 recbox.model.sequential_recommender.srgnn
 ################################################
@@ -28,6 +30,7 @@ class GNN(nn.Module):
     because it can automatically extract features of session graphs with considerations of rich node connections.
     Gated gnn is a neural unit similar to gru.
     """
+
     def __init__(self, embedding_size, step=1):
         super(GNN, self).__init__()
         self.step = step
@@ -35,19 +38,14 @@ class GNN(nn.Module):
         self.input_size = embedding_size * 2
         self.gate_size = embedding_size * 3
         self.w_ih = Parameter(torch.Tensor(self.gate_size, self.input_size))
-        self.w_hh = Parameter(torch.Tensor(self.gate_size,
-                                           self.embedding_size))
+        self.w_hh = Parameter(torch.Tensor(self.gate_size, self.embedding_size))
         self.b_ih = Parameter(torch.Tensor(self.gate_size))
         self.b_hh = Parameter(torch.Tensor(self.gate_size))
         self.b_iah = Parameter(torch.Tensor(self.embedding_size))
         self.b_ioh = Parameter(torch.Tensor(self.embedding_size))
 
-        self.linear_edge_in = nn.Linear(self.embedding_size,
-                                        self.embedding_size,
-                                        bias=True)
-        self.linear_edge_out = nn.Linear(self.embedding_size,
-                                         self.embedding_size,
-                                         bias=True)
+        self.linear_edge_in = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
+        self.linear_edge_out = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
 
     def GNNCell(self, A, hidden):
         r"""Obtain latent vectors of nodes via graph neural networks.
@@ -61,10 +59,8 @@ class GNN(nn.Module):
 
         """
 
-        input_in = torch.matmul(A[:, :, :A.size(1)],
-                                self.linear_edge_in(hidden)) + self.b_iah
-        input_out = torch.matmul(A[:, :, A.size(1):2 * A.size(1)],
-                                 self.linear_edge_out(hidden)) + self.b_ioh
+        input_in = torch.matmul(A[:, :, :A.size(1)], self.linear_edge_in(hidden)) + self.b_iah
+        input_out = torch.matmul(A[:, :, A.size(1): 2 * A.size(1)], self.linear_edge_out(hidden)) + self.b_ioh
         # [batch_size, max_session_len, embedding_size * 2]
         inputs = torch.cat([input_in, input_out], 2)
 
@@ -128,21 +124,13 @@ class SRGNN(SequentialRecommender):
         self.device = config['device']
         self.item_count = dataset.item_num
         # item embedding
-        self.item_list_embedding = nn.Embedding(self.item_count,
-                                                self.embedding_size,
-                                                padding_idx=0)
+        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
         # define layers and loss
         self.gnn = GNN(self.embedding_size, self.step)
-        self.linear_one = nn.Linear(self.embedding_size,
-                                    self.embedding_size,
-                                    bias=True)
-        self.linear_two = nn.Linear(self.embedding_size,
-                                    self.embedding_size,
-                                    bias=True)
+        self.linear_one = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
+        self.linear_two = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.linear_three = nn.Linear(self.embedding_size, 1, bias=False)
-        self.linear_transform = nn.Linear(self.embedding_size * 2,
-                                          self.embedding_size,
-                                          bias=True)
+        self.linear_transform = nn.Linear(self.embedding_size * 2, self.embedding_size, bias=True)
         self.criterion = nn.CrossEntropyLoss()
         # parameters init
         self.reset_parameters()
@@ -211,8 +199,7 @@ class SRGNN(SequentialRecommender):
         item_list_len = interaction[self.ITEM_LIST_LEN]
         hidden = self.item_list_embedding(items)
         hidden = self.gnn(A, hidden)
-        alias_inputs = alias_inputs.view(-1, alias_inputs.size(1),
-                                         1).expand(-1, -1, self.embedding_size)
+        alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(-1, -1, self.embedding_size)
         seq_hidden = torch.gather(hidden, dim=1, index=alias_inputs)
         # fetch the last hidden state of last timestamp
         ht = self.gather_indexes(seq_hidden, item_list_len - 1)
@@ -220,8 +207,7 @@ class SRGNN(SequentialRecommender):
         q2 = self.linear_two(seq_hidden)
 
         alpha = self.linear_three(torch.sigmoid(q1 + q2))
-        a = torch.sum(
-            alpha * seq_hidden * mask.view(mask.size(0), -1, 1).float(), 1)
+        a = torch.sum(alpha * seq_hidden * mask.view(mask.size(0), -1, 1).float(), 1)
         predict_emb = self.linear_transform(torch.cat([a, ht], dim=1))
         return predict_emb
 
@@ -239,3 +225,8 @@ class SRGNN(SequentialRecommender):
         pred = self.forward(interaction)
         scores = torch.matmul(pred, self.get_item_lookup_table())
         return scores
+
+
+
+
+

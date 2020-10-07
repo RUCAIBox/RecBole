@@ -6,6 +6,7 @@ from recbox.config.abstract_configurator import AbstractConfig
 
 
 class DataConfig(AbstractConfig):
+
     def __init__(self, config_file_name, cmd_args):
         super().__init__()
         self.must_args = []

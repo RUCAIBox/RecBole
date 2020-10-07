@@ -2,6 +2,7 @@
 # @Time : 2020/9/21
 # @Author : Zihan Lin
 # @Email  : zhlin@ruc.edu.cn
+
 """
 Reference:
 Feng Xue et al. "Deep Item-based Collaborative Filtering for Top-N Recommendation." in TOIS 2018.
@@ -42,33 +43,24 @@ class DeepICF(GeneralRecommender):
 
         # split the too large dataset into the specified pieces
         if self.split_to > 0:
-            self.group = torch.chunk(
-                torch.arange(self.n_items).to(self.device), self.split_to)
+            self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
 
         # generate intermediate data
 
-        self.history_item_id, _, self.history_item_len = dataset.history_item_matrix(
-        )
+        self.history_item_id, _, self.history_item_len = dataset.history_item_matrix()
 
         # tensor of shape [n_items, H] where H is max length of history interaction.
         self.history_item_id = self.history_item_id.to(self.device)
         self.history_item_len = self.history_item_len.to(self.device)
         # define layers
 
-        self.item_embedding_q = nn.Embedding(self.n_items,
-                                             self.embedding_dim,
-                                             padding_idx=0)
-        self.item_embedding_p = nn.Embedding(self.n_items,
-                                             self.embedding_dim,
-                                             padding_idx=0)
+        self.item_embedding_q = nn.Embedding(self.n_items, self.embedding_dim, padding_idx=0)
+        self.item_embedding_p = nn.Embedding(self.n_items, self.embedding_dim, padding_idx=0)
         self.att_layers = nn.Linear(self.embedding_dim, self.attention_dim)
         self.h = nn.Linear(self.attention_dim, 1, bias=False)
-        self.mlp_layers = MLPLayers(self.mlp_hidden_size,
-                                    bn=True,
-                                    init_method='norm')
+        self.mlp_layers = MLPLayers(self.mlp_hidden_size, bn=True, init_method='norm')
 
-        self.z = nn.Parameter(torch.randn(self.mlp_hidden_size[-1], 1),
-                              requires_grad=True)
+        self.z = nn.Parameter(torch.randn(self.mlp_hidden_size[-1], 1), requires_grad=True)
         self.bias_u = nn.Embedding(self.n_users, 1)
         self.bias_i = nn.Embedding(self.n_items, 1)
 
@@ -108,8 +100,7 @@ class DeepICF(GeneralRecommender):
         bi_embedding = self.get_bi_inter_embedding(user, item)
         output = self.mlp_layers(bi_embedding)  # [B, mlp_hidden_size[-1]]
 
-        output = torch.matmul(
-            output, self.z) + self.bias_u(user) + self.bias_i(item)  # [B, 1]
+        output = torch.matmul(output, self.z) + self.bias_u(user) + self.bias_i(item)  # [B, 1]
         output = self.sigmoid(output)
         output = output.squeeze()
         return output
@@ -142,28 +133,19 @@ class DeepICF(GeneralRecommender):
             bi_inter_embedding(torch.FloatTensor): The embedding tensor of a batch of user. shape of [B, embedding_size]
         """
         item_embedding = self.item_embedding_p(item)  # [B, embedding_size]
-        user_embedding = self.item_embedding_q(
-            self.history_item_id[user])  # [B,H,embedding_size]
+        user_embedding = self.item_embedding_q(self.history_item_id[user])  # [B,H,embedding_size]
 
-        item_embedding = item_embedding.unsqueeze(1).repeat_interleave(
-            user_embedding.shape[1], dim=1)  # [B,H,embedding_size]
+        item_embedding = item_embedding.unsqueeze(1).repeat_interleave(user_embedding.shape[1], dim=1)  # [B,H,embedding_size]
 
-        pair_wise_inter_embedding = torch.mul(
-            user_embedding, item_embedding)  # [B,H,embedding_size]
+        pair_wise_inter_embedding = torch.mul(user_embedding, item_embedding)  # [B,H,embedding_size]
 
-        arange_tensor = torch.arange(self.history_item_id.shape[1]).to(
-            self.device)
-        mask_mat = (arange_tensor <
-                    self.history_item_len[user].unsqueeze(1)).float()  # [B,H]
-        att_weight = self.get_att_weight(pair_wise_inter_embedding,
-                                         mask_mat)  # [B,H]
+        arange_tensor = torch.arange(self.history_item_id.shape[1]).to(self.device)
+        mask_mat = (arange_tensor < self.history_item_len[user].unsqueeze(1)).float()  # [B,H]
+        att_weight = self.get_att_weight(pair_wise_inter_embedding, mask_mat)  # [B,H]
 
         # [B,embedding_size]
-        bi_inter_embedding = torch.sum(torch.mul(att_weight.unsqueeze(-1),
-                                                 pair_wise_inter_embedding),
-                                       dim=1)
-        coeff = torch.pow(self.history_item_len[user].unsqueeze(1).float() - 1,
-                          self.alpha)
+        bi_inter_embedding = torch.sum(torch.mul(att_weight.unsqueeze(-1), pair_wise_inter_embedding), dim=1)
+        coeff = torch.pow(self.history_item_len[user].unsqueeze(1).float()-1, self.alpha)
         bi_inter_embedding = bi_inter_embedding * coeff
 
         return bi_inter_embedding
@@ -173,12 +155,12 @@ class DeepICF(GeneralRecommender):
 
         """
         input = self.att_layers(input)  # [B,H,attention_dim]
-        input = self.h(input)  # [B,H,1]
-        input = input.squeeze()  # [B,H]
+        input = self.h(input)           # [B,H,1]
+        input = input.squeeze()         # [B,H]
 
         exp_input = torch.exp(input)
         if mask is not None:
-            exp_input = exp_input * mask  # [B,H]
+            exp_input = exp_input * mask                 # [B,H]
         exp_sum = torch.sum(exp_input, dim=1, keepdim=True)  # [B,1]
         exp_sum = torch.pow(exp_sum, self.beta)
 
@@ -193,33 +175,20 @@ class DeepICF(GeneralRecommender):
         scores = []
 
         # test users one by one, if the number of items is too large, we will split it to some pieces
-        for user_id, user_input, item_num in zip(user, user_inters,
-                                                 item_nums.unsqueeze(1)):
+        for user_id, user_input, item_num in zip(user, user_inters, item_nums.unsqueeze(1)):
             if self.split_to <= 0:
-                output = self.user_forward(user_id,
-                                           user_input[:item_num],
-                                           item_num,
-                                           repeats=self.n_items)
+                output = self.user_forward(user_id, user_input[:item_num], item_num, repeats=self.n_items)
             else:
                 output = []
                 for mask in self.group:
-                    tmp_output = self.user_forward(user_id,
-                                                   user_input[:item_num],
-                                                   item_num,
-                                                   repeats=len(mask),
-                                                   pred_slc=mask)
+                    tmp_output = self.user_forward(user_id, user_input[:item_num], item_num, repeats=len(mask), pred_slc=mask)
                     output.append(tmp_output)
                 output = torch.cat(output, dim=0)
             scores.append(output)
         result = torch.cat(scores, dim=0)
         return result
 
-    def user_forward(self,
-                     user_id,
-                     user_input,
-                     inter_num,
-                     repeats,
-                     pred_slc=None):
+    def user_forward(self, user_id, user_input, inter_num, repeats, pred_slc=None):
         """forward the model by user
 
         Args:
@@ -234,37 +203,26 @@ class DeepICF(GeneralRecommender):
             torch.Tensor: result
 
         """
-        user_history = self.item_embedding_q(
-            user_input)  # [inter_num , embedding_size]
-        user_history = user_history.unsqueeze(0).repeat_interleave(
-            repeats, dim=0)  # [target_items,inter_num,embedding_size]
+        user_history = self.item_embedding_q(user_input)  # [inter_num , embedding_size]
+        user_history = user_history.unsqueeze(0).repeat_interleave(repeats, dim=0)  # [target_items,inter_num,embedding_size]
         if pred_slc is None:
             targets = self.item_embedding_p.weight  # [target_items , embedding_size]
             item_bias = self.bias_i.weight
         else:
             targets = self.item_embedding_p(pred_slc)
             item_bias = self.bias_i(pred_slc)
-        targets = targets.unsqueeze(1).repeat_interleave(
-            inter_num, dim=1)  # [target_items , inter_num, embedding_size]
-        pair_wise_inter_embedding = torch.mul(
-            user_history,
-            targets)  # [target_items , inter_num, embedding_size]
-        att_weight = self.get_att_weight(
-            pair_wise_inter_embedding)  # [target_items,inter_num]
+        targets = targets.unsqueeze(1).repeat_interleave(inter_num, dim=1)  # [target_items , inter_num, embedding_size]
+        pair_wise_inter_embedding = torch.mul(user_history, targets)  # [target_items , inter_num, embedding_size]
+        att_weight = self.get_att_weight(pair_wise_inter_embedding)  # [target_items,inter_num]
 
         # [target_items,embedding_size]
-        pair_wise_inter_embedding = torch.sum(torch.mul(
-            att_weight.unsqueeze(-1), pair_wise_inter_embedding),
-                                              dim=1)
-        coeff = torch.pow(self.history_item_len[user_id].float() - 1,
-                          self.alpha)
+        pair_wise_inter_embedding = torch.sum(torch.mul(att_weight.unsqueeze(-1), pair_wise_inter_embedding), dim=1)
+        coeff = torch.pow(self.history_item_len[user_id].float() - 1, self.alpha)
         pair_wise_inter_embedding = pair_wise_inter_embedding * coeff
-        output = self.mlp_layers(
-            pair_wise_inter_embedding)  # [target_items, mlp_hidden_size[-1]]
+        output = self.mlp_layers(pair_wise_inter_embedding)  # [target_items, mlp_hidden_size[-1]]
 
-        output = torch.matmul(
-            output,
-            self.z) + self.bias_u(user_id) + item_bias  # [target_items, 1]
+        output = torch.matmul(output, self.z) + self.bias_u(user_id) + item_bias  # [target_items, 1]
         output = self.sigmoid(output)
         output = output.squeeze()
         return output
+

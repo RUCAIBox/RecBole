@@ -7,6 +7,7 @@
 # @Time    :   2020/08/12, 2020/08/21, 2020/9/16
 # @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan
 # @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, panxy@ruc.edu.cn
+
 """
 recbox.evaluator.metrics
 ############################
@@ -82,7 +83,7 @@ def map_(pos_index, pos_len):
     actual_len = np.where(pos_len > len_rank, len_rank, pos_len)
     result = np.zeros_like(pos_index, dtype=np.float)
     for row, lens in enumerate(actual_len):
-        ranges = np.arange(1, pos_index.shape[1] + 1)
+        ranges = np.arange(1, pos_index.shape[1]+1)
         ranges[lens:] = ranges[lens - 1]
         result[row] = sum_pre[row] / ranges
     return result
@@ -160,7 +161,6 @@ def precision_(pos_index, pos_len):
 
 #    CTR Metrics    #
 
-
 def auc_(trues, preds):
     r"""AUC_ (also known as Area Under Curve) is used to evaluate the two-class model, referring to
     the area under the ROC curve
@@ -183,9 +183,7 @@ def auc_(trues, preds):
     fps, tps = _binary_clf_curve(trues, preds)
 
     if len(fps) > 2:
-        optimal_idxs = np.where(
-            np.r_[True,
-                  np.logical_or(np.diff(fps, 2), np.diff(tps, 2)), True])[0]
+        optimal_idxs = np.where(np.r_[True, np.logical_or(np.diff(fps, 2), np.diff(tps, 2)), True])[0]
         fps = fps[optimal_idxs]
         tps = tps[optimal_idxs]
 
@@ -212,7 +210,6 @@ def auc_(trues, preds):
 
 
 # Loss based Metrics #
-
 
 def mae_(trues, preds):
     r"""`Mean absolute error regression loss`__
@@ -257,7 +254,7 @@ def log_loss_(trues, preds):
     eps = 1e-15
     preds = np.float64(preds)
     preds = np.clip(preds, eps, 1 - eps)
-    loss = np.sum(-trues * np.log(preds) - (1 - trues) * np.log(1 - preds))
+    loss = np.sum(- trues * np.log(preds) - (1 - trues) * np.log(1 - preds))
 
     return loss / len(preds)
 

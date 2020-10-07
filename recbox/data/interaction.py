@@ -6,6 +6,7 @@
 # @Time    : 2020/9/15, 2020/9/16, 2020/8/12
 # @Author  : Yupeng Hou, Yushuo Chen, Xingyu Pan
 # @email   : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, panxy@ruc.edu.cn
+
 """
 recbox.data.interaction
 ############################
@@ -77,14 +78,13 @@ class Interaction(object):
             each value represents the number of a user's **all** records. The order of the
             represented users should correspond to the order in the interaction.
     """
+
     def __init__(self, interaction, pos_len_list=None, user_len_list=None):
         self.interaction = interaction
         self.pos_len_list = pos_len_list
         self.user_len_list = user_len_list
         if (self.pos_len_list is None) ^ (self.user_len_list is None):
-            raise ValueError(
-                'pos_len_list and user_len_list should be both None or valued.'
-            )
+            raise ValueError('pos_len_list and user_len_list should be both None or valued.')
         for k in self.interaction:
             self.length = self.interaction[k].shape[0]
             break
@@ -107,8 +107,7 @@ class Interaction(object):
     def __str__(self):
         info = ['The batch_size of interaction: {}'.format(self.length)]
         for k in self.interaction:
-            temp_str = "    {}, {}, {}".format(k, self.interaction[k].shape,
-                                               self.interaction[k].device.type)
+            temp_str = "    {}, {}, {}".format(k, self.interaction[k].shape, self.interaction[k].device.type)
             info.append(temp_str)
         info.append('\n')
         return '\n'.join(info)
@@ -209,10 +208,8 @@ class Interaction(object):
         ret = {}
         for k in self.interaction:
             ret[k] = self.interaction[k].repeat_interleave(repeats, dim=dim)
-        new_pos_len_list = list(np.multiply(
-            self.pos_len_list, repeats)) if self.pos_len_list else None
-        new_user_len_list = list(np.multiply(
-            self.user_len_list, repeats)) if self.user_len_list else None
+        new_pos_len_list = list(np.multiply(self.pos_len_list, repeats)) if self.pos_len_list else None
+        new_user_len_list = list(np.multiply(self.user_len_list, repeats)) if self.user_len_list else None
         return Interaction(ret, new_pos_len_list, new_user_len_list)
 
     def update(self, new_inter):

@@ -2,6 +2,8 @@
 # @Time   : 2020/10/4 16:55
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
+
+
 r"""
 recbox.model.sequential_recommender.gcsan
 ################################################
@@ -27,6 +29,7 @@ class GNN(nn.Module):
     because it can automatically extract features of session graphs with considerations of rich node connections.
     Gated gnn is a neural unit similar to gru.
     """
+
     def __init__(self, embedding_size, step=1):
         super(GNN, self).__init__()
         self.step = step
@@ -34,24 +37,22 @@ class GNN(nn.Module):
         self.input_size = embedding_size * 2
         self.gate_size = embedding_size * 3
         self.w_ih = Parameter(torch.Tensor(self.gate_size, self.input_size))
-        self.w_hh = Parameter(torch.Tensor(self.gate_size,
-                                           self.embedding_size))
+        self.w_hh = Parameter(torch.Tensor(self.gate_size, self.embedding_size))
         self.b_ih = Parameter(torch.Tensor(self.gate_size))
         self.b_hh = Parameter(torch.Tensor(self.gate_size))
 
-        self.linear_edge_in = nn.Linear(self.embedding_size,
-                                        self.embedding_size,
-                                        bias=True)
-        self.linear_edge_out = nn.Linear(self.embedding_size,
-                                         self.embedding_size,
-                                         bias=True)
+        self.linear_edge_in = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
+        self.linear_edge_out = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         # parameters initialization
         self.reset_parameters()
+
+
 
     def reset_parameters(self):
         stdv = 1.0 / math.sqrt(self.embedding_size)
         for weight in self.parameters():
             weight.data.uniform_(-stdv, stdv)
+
 
     def GNNCell(self, A, hidden):
         r"""Obtain latent vectors of nodes via graph neural networks.
@@ -65,10 +66,8 @@ class GNN(nn.Module):
 
         """
 
-        input_in = torch.matmul(A[:, :, :A.size(1)],
-                                self.linear_edge_in(hidden))
-        input_out = torch.matmul(A[:, :, A.size(1):2 * A.size(1)],
-                                 self.linear_edge_out(hidden))
+        input_in = torch.matmul(A[:, :, :A.size(1)], self.linear_edge_in(hidden))
+        input_out = torch.matmul(A[:, :, A.size(1): 2 * A.size(1)], self.linear_edge_out(hidden))
         # [batch_size, max_session_len, embedding_size * 2]
         inputs = torch.cat([input_in, input_out], 2)
 
@@ -89,7 +88,6 @@ class GNN(nn.Module):
             hidden = self.GNNCell(A, hidden)
         return hidden
 
-
 class SelfAttention(nn.Module):
     r"""Self-Attention is a special case of the attention mechanism, it can draw global dependencies
     between input and output, and capture item-item transitions across the entire input and output
@@ -109,15 +107,9 @@ class SelfAttention(nn.Module):
         self.embedding_size = embedding_size
         self.hidden_size = hidden_size
         self.dropout = dropout
-        self.W_Q = nn.Linear(self.embedding_size,
-                             self.embedding_size,
-                             bias=False)
-        self.W_K = nn.Linear(self.embedding_size,
-                             self.embedding_size,
-                             bias=False)
-        self.W_V = nn.Linear(self.embedding_size,
-                             self.embedding_size,
-                             bias=False)
+        self.W_Q = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
+        self.W_K = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
+        self.W_V = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
 
         self.fc1 = nn.Linear(self.embedding_size, self.hidden_size, bias=True)
         self.drop1 = nn.Dropout(self.dropout[0])
@@ -139,13 +131,14 @@ class SelfAttention(nn.Module):
            torch.Tensor:attn, shape of [batch_size, time_steps, time_steps]
         """
         d = Q.size(2)
-        scores = torch.matmul(Q, K.permute(0, 2, 1)) / torch.sqrt(
-            torch.tensor(d, dtype=torch.float))
+        scores = torch.matmul(Q, K.permute(0, 2, 1)) / torch.sqrt(torch.tensor(d, dtype=torch.float))
         if mask is not None:
             scores.masked_fill_(mask, -1e9)
         attn = nn.Softmax(dim=-1)(scores)
         context = torch.matmul(attn, V)
         return context, attn
+
+
 
     def feedforward(self, x):
         residual = x
@@ -192,13 +185,10 @@ class GCSAN(SequentialRecommender):
         self.reg_weight = config['reg_weight']
         self.item_count = dataset.item_num
         # item embedding
-        self.item_list_embedding = nn.Embedding(self.item_count,
-                                                self.embedding_size,
-                                                padding_idx=0)
+        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
         # define layers and loss
         self.gnn = GNN(self.embedding_size, self.step)
-        self.self_attention = SelfAttention(self.embedding_size,
-                                            self.hidden_size, self.dropout)
+        self.self_attention = SelfAttention(self.embedding_size, self.hidden_size, self.dropout)
         self.criterion = nn.CrossEntropyLoss()
         self.reg_loss = EmbLoss()
         # parameters initialization
@@ -266,6 +256,7 @@ class GCSAN(SequentialRecommender):
         """
         return self.item_list_embedding.weight.t()
 
+
     def get_attn_pad_mask(self, seq_q, seq_k):
         batch_size, len_q = seq_q.size()
         batch_size, len_k = seq_k.size()
@@ -278,8 +269,7 @@ class GCSAN(SequentialRecommender):
         item_list_len = interaction[self.ITEM_LIST_LEN]
         hidden = self.item_list_embedding(items)
         hidden = self.gnn(A, hidden)
-        alias_inputs = alias_inputs.view(-1, alias_inputs.size(1),
-                                         1).expand(-1, -1, self.embedding_size)
+        alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(-1, -1, self.embedding_size)
         seq_hidden = torch.gather(hidden, dim=1, index=alias_inputs)
         # fetch the last hidden state of last timestamp
         ht = self.gather_indexes(seq_hidden, item_list_len - 1)
@@ -307,3 +297,8 @@ class GCSAN(SequentialRecommender):
         pred = self.forward(interaction)
         scores = torch.matmul(pred, self.get_item_lookup_table())
         return scores
+
+
+
+
+

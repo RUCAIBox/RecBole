@@ -71,8 +71,7 @@ class NGCF(GeneralRecommender):
         super(NGCF, self).__init__(config, dataset)
 
         # load dataset info
-        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(
-            np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
 
         # load parameters info
         self.embedding_size = config['embedding_size']
@@ -86,8 +85,7 @@ class NGCF(GeneralRecommender):
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.GNNlayers = torch.nn.ModuleList()
-        for idx, (input_size, output_size) in enumerate(
-                zip(self.layers[:-1], self.layers[1:])):
+        for idx, (input_size, output_size) in enumerate(zip(self.layers[:-1], self.layers[1:])):
             self.GNNlayers.append(BiGNNLayer(input_size, output_size))
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
@@ -116,17 +114,14 @@ class NGCF(GeneralRecommender):
             Sparse tensor of the normalized interaction matrix.
         """
         # build adj matrix
-        A = sp.dok_matrix(
-            (self.n_users + self.n_items, self.n_users + self.n_items),
-            dtype=np.float32)
+        A = sp.dok_matrix((self.n_users + self.n_items, self.n_users + self.n_items), dtype=np.float32)
         A = A.tolil()
         A[:self.n_users, self.n_users:] = self.interaction_matrix
         A[self.n_users:, :self.n_users] = self.interaction_matrix.transpose()
         A = A.todok()
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)
-        diag = np.array(sumArr.flatten(
-        ))[0] + 1e-7  # add epsilon to avoid Devide by zero Warning
+        diag = np.array(sumArr.flatten())[0] + 1e-7     # add epsilon to avoid Devide by zero Warning
         diag = np.power(diag, -0.5)
         D = sp.diags(diag)
         L = D * A * D
@@ -163,9 +158,8 @@ class NGCF(GeneralRecommender):
 
     def forward(self):
         # A_hat: spare tensor with shape of [n_items+n_users,n_items+n_users]
-        A_hat = sparse_dropout(
-            self.norm_adj_matrix, self.node_dropout, self.norm_adj_matrix._nnz(
-            )) if self.node_dropout != 0 else self.norm_adj_matrix
+        A_hat = sparse_dropout(self.norm_adj_matrix, self.node_dropout,
+                               self.norm_adj_matrix._nnz()) if self.node_dropout != 0 else self.norm_adj_matrix
         all_embeddings = self.get_ego_embeddings()
         embeddings_list = [all_embeddings]
         for gnn in self.GNNlayers:
@@ -173,12 +167,10 @@ class NGCF(GeneralRecommender):
             all_embeddings = nn.LeakyReLU(negative_slope=0.2)(all_embeddings)
             all_embeddings = nn.Dropout(self.message_dropout)(all_embeddings)
             all_embeddings = F.normalize(all_embeddings, p=2, dim=1)
-            embeddings_list += [all_embeddings
-                                ]  # storage output embedding of each layer
+            embeddings_list += [all_embeddings]  # storage output embedding of each layer
         ngcf_all_embeddings = torch.cat(embeddings_list, dim=1)
 
-        user_all_embeddings, item_all_embeddings = torch.split(
-            ngcf_all_embeddings, [self.n_users, self.n_items])
+        user_all_embeddings, item_all_embeddings = torch.split(ngcf_all_embeddings, [self.n_users, self.n_items])
 
         return user_all_embeddings, item_all_embeddings
 
@@ -200,9 +192,7 @@ class NGCF(GeneralRecommender):
         neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)  # calculate BPR Loss
 
-        reg_loss = self.reg_loss(
-            u_embeddings, posi_embeddings,
-            negi_embeddings)  # L2 regularization of embeddings
+        reg_loss = self.reg_loss(u_embeddings, posi_embeddings, negi_embeddings)  # L2 regularization of embeddings
 
         return mf_loss + self.reg_weight * reg_loss
 
@@ -226,7 +216,6 @@ class NGCF(GeneralRecommender):
         u_embeddings = self.restore_user_e[user]
 
         # dot with all item embedding to accelerate
-        scores = torch.matmul(u_embeddings,
-                              self.restore_item_e.transpose(0, 1))
+        scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
 
         return scores.view(-1)

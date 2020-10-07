@@ -7,6 +7,7 @@
 # @Time   : 2020/10/2
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
+
 r"""
 recbox.model.sequential_recommender.fpmc
 ################################################
@@ -35,7 +36,6 @@ class FPMC(SequentialRecommender):
 
     """
     input_type = InputType.PAIRWISE
-
     def __init__(self, config, dataset):
         super(FPMC, self).__init__()
         # load parameters info
@@ -56,9 +56,7 @@ class FPMC(SequentialRecommender):
         # label embedding matrix
         self.IU_emb = nn.Embedding(self.item_count, self.embedding_size)
         # last click item embedding matrix
-        self.LI_emb = nn.Embedding(self.item_count,
-                                   self.embedding_size,
-                                   padding_idx=0)
+        self.LI_emb = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
         # label embedding matrix
         self.IL_emb = nn.Embedding(self.item_count, self.embedding_size)
         # define loss
@@ -71,27 +69,31 @@ class FPMC(SequentialRecommender):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
 
+
     def forward(self, interaction):
         item_id_list = interaction[self.ITEM_ID_LIST]
         item_list_len = interaction[self.ITEM_LIST_LEN]
         item_last_click_index = item_list_len - 1
-        item_last_click = torch.gather(
-            item_id_list, dim=1, index=item_last_click_index.unsqueeze(1))
-        item_list_emb = self.LI_emb(item_last_click)  # [b,1,emb]
+        item_last_click = torch.gather(item_id_list, dim=1, index=item_last_click_index.unsqueeze(1))
+        item_list_emb = self.LI_emb(item_last_click) # [b,1,emb]
 
         user_emb = self.UI_emb(interaction[self.USER_ID])
-        user_emb = torch.unsqueeze(user_emb, dim=1)  # [b,1,emb]
+        user_emb = torch.unsqueeze(user_emb, dim=1) # [b,1,emb]
 
         pos_iu = self.IU_emb(interaction[self.TARGET_ITEM_ID])
-        pos_iu = torch.unsqueeze(pos_iu, dim=1)  # [b,1,emb]
+        pos_iu = torch.unsqueeze(pos_iu, dim=1) # [b,1,emb]
 
         pos_il = self.IL_emb(interaction[self.TARGET_ITEM_ID])
-        pos_il = torch.unsqueeze(pos_il, dim=1)  # [b,1,emb]
+        pos_il = torch.unsqueeze(pos_il, dim=1) # [b,1,emb]
+
+
 
         pos_score = self.pmfc(user_emb, pos_iu, pos_il, item_list_emb)
 
         pos_score = torch.squeeze(pos_score)
         return pos_score
+
+
 
     def pmfc(self, Vui, Viu, Vil, Vli):
         r"""This is the core part of the FPMC model,can be expressed by a combination of a MF and a FMC model.
@@ -106,15 +108,17 @@ class FPMC(SequentialRecommender):
         Returns:
             torch.Tensor:score, shape of [batch_size, 1]
         """
-        #     MF
+    #     MF
         mf = torch.matmul(Vui, Viu.permute(0, 2, 1))
-        mf = torch.squeeze(mf, dim=1)  #[B,1]
+        mf = torch.squeeze(mf, dim=1)#[B,1]
 
-        #     FMC
+    #     FMC
         fmc = torch.matmul(Vil, Vli.permute(0, 2, 1))
-        fmc = torch.squeeze(fmc, dim=1)  #[B,1]
+        fmc = torch.squeeze(fmc, dim=1)#[B,1]
         x = mf + fmc
         return x
+
+
 
     def calculate_loss(self, interaction):
         user_emb = self.UI_emb(interaction[self.USER_ID])
@@ -123,8 +127,7 @@ class FPMC(SequentialRecommender):
         item_id_list = interaction[self.ITEM_ID_LIST]
         item_list_len = interaction[self.ITEM_LIST_LEN]
         item_last_click_index = item_list_len - 1
-        item_last_click = torch.gather(
-            item_id_list, dim=1, index=item_last_click_index.unsqueeze(1))
+        item_last_click = torch.gather(item_id_list, dim=1, index=item_last_click_index.unsqueeze(1))
         item_list_emb = self.LI_emb(item_last_click)  # [b,1,emb]
 
         neg_item = interaction[self.NEG_ITEM_ID]
@@ -148,15 +151,14 @@ class FPMC(SequentialRecommender):
         user = interaction[self.USER_ID]
         user_emb = self.UI_emb(user)
         all_iu_emb = self.IU_emb.weight
-        mf = torch.matmul(user_emb, all_iu_emb.transpose(0, 1))
+        mf = torch.matmul(user_emb, all_iu_emb.transpose(0,1))
         all_il_emb = self.IL_emb.weight
         item_list = interaction[self.ITEM_ID_LIST]
         item_list_len = interaction[self.ITEM_LIST_LEN]
         item_last_click_index = item_list_len - 1
-        item_last_click = torch.gather(
-            item_list, dim=1, index=item_last_click_index.unsqueeze(1))
+        item_last_click = torch.gather(item_list, dim=1, index=item_last_click_index.unsqueeze(1))
         item_list_emb = self.LI_emb(item_last_click)  # [b,1,emb]
-        fmc = torch.matmul(item_list_emb, all_il_emb.transpose(0, 1))
+        fmc = torch.matmul(item_list_emb, all_il_emb.transpose(0,1))
         fmc = torch.squeeze(fmc, dim=1)
         score = mf + fmc
         return score

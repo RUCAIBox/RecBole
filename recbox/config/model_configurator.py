@@ -13,3 +13,4 @@ class ModelConfig(AbstractConfig):
 
         self._check_args()
         self._replace_args(cmd_args)
+
