@@ -1,0 +1,3 @@
+include recbox/properties/overall.yaml
+include recbox/properties/model/*.yaml
+include recbox/properties/dataset/*.yaml

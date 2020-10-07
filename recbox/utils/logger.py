@@ -38,12 +38,24 @@ def init_logger(config):
     sdatefmt = "%d %b %H:%M"
     sformatter = logging.Formatter(sfmt, sdatefmt)
 
+    if config['state'] is None:
+        level = logging.INFO
+    elif config['state'].lower() == 'debug':
+        level = logging.DEBUG
+    elif config['state'].lower() == 'error':
+        level = logging.ERROR
+    elif config['state'].lower() == 'warning':
+        level = logging.WARNING
+    elif config['state'].lower() == 'critical':
+        level = logging.CRITICAL
+    else:
+        level = logging.INFO
     fh = logging.FileHandler(logfilepath)
-    fh.setLevel(logging.INFO)
+    fh.setLevel(level)
     fh.setFormatter(fileformatter)
 
     sh = logging.StreamHandler()
-    sh.setLevel(logging.INFO)
+    sh.setLevel(level)
     sh.setFormatter(sformatter)
 
     logging.basicConfig(
