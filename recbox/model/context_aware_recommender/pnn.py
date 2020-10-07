@@ -3,6 +3,7 @@
 # @Author : Zihan Lin
 # @Email  : zhlin@ruc.edu.cn
 # @File   : pnn.py
+
 """
 Reference:
 Qu Y et al. "Product-based neural networks for user response prediction." in ICDM 2016
@@ -23,6 +24,7 @@ from .context_recommender import ContextRecommender
 
 
 class PNN(ContextRecommender):
+
     def __init__(self, config, dataset):
         super(PNN, self).__init__(config, dataset)
 
@@ -33,20 +35,17 @@ class PNN(ContextRecommender):
         self.use_outer = config['use_outer']
         self.reg = config['weight_decay']
 
-        self.num_pair = int(self.num_feature_field *
-                            (self.num_feature_field - 1) / 2)
+        self.num_pair = int(self.num_feature_field * (self.num_feature_field - 1) / 2)
 
         product_out_dim = self.num_feature_field * self.embedding_size
         if self.use_inner:
             product_out_dim += self.num_pair
-            self.inner_product = InnerProductLayer(self.num_feature_field,
-                                                   device=self.device)
+            self.inner_product = InnerProductLayer(self.num_feature_field, device=self.device)
 
         if self.use_outer:
             product_out_dim += self.num_pair
-            self.outer_product = OuterProductLayer(self.num_feature_field,
-                                                   self.embedding_size,
-                                                   device=self.device)
+            self.outer_product = OuterProductLayer(
+                self.num_feature_field, self.embedding_size, device=self.device)
         size_list = [product_out_dim] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, self.dropout, bn=False)
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
@@ -80,30 +79,25 @@ class PNN(ContextRecommender):
     def forward(self, interaction):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(
-            interaction)
+        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
         all_embeddings = []
         if sparse_embedding is not None:
             all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             all_embeddings.append(dense_embedding)
-        pnn_all_embeddings = torch.cat(
-            all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        pnn_all_embeddings = torch.cat(all_embeddings, dim=1)   # [batch_size, num_field, embed_dim]
         batch_size = pnn_all_embeddings.shape[0]
         # linear part
-        linear_part = pnn_all_embeddings.view(
-            batch_size, -1)  # [batch_size,num_field*embed_dim]
+        linear_part = pnn_all_embeddings.view(batch_size, -1)  # [batch_size,num_field*embed_dim]
         output = [linear_part]
         # second order part
         if self.use_inner:
-            inner_product = self.inner_product(pnn_all_embeddings).view(
-                batch_size, -1)  # [batch_size,num_pairs]
+            inner_product = self.inner_product(pnn_all_embeddings).view(batch_size, -1)  # [batch_size,num_pairs]
             output.append(inner_product)
         if self.use_outer:
-            outer_product = self.outer_product(pnn_all_embeddings).view(
-                batch_size, -1)  # [batch_size,num_pairs]
+            outer_product = self.outer_product(pnn_all_embeddings).view(batch_size, -1)  # [batch_size,num_pairs]
             output.append(outer_product)
-        output = torch.cat(output, dim=1)  # [batch_size,d]
+        output = torch.cat(output, dim=1)   # [batch_size,d]
 
         output = self.predict_layer(self.mlp_layers(output))  # [batch_size,1]
         output = self.sigmoid(output)
@@ -161,6 +155,7 @@ class OuterProductLayer(nn.Module):
     """OutterProduct Layer used in PNN.This implemention is
     adapted from code that the author of the paper published on https://github.com/Atomu2014/product-nets.
     """
+
     def __init__(self, num_feature_field, embedding_size, device):
         """
         Args:
@@ -174,9 +169,7 @@ class OuterProductLayer(nn.Module):
         num_pairs = int(num_feature_field * (num_feature_field - 1) / 2)
         embed_size = embedding_size
 
-        self.kernel = nn.Parameter(torch.rand(embed_size, num_pairs,
-                                              embed_size),
-                                   requires_grad=True)
+        self.kernel = nn.Parameter(torch.rand(embed_size, num_pairs, embed_size), requires_grad=True)
         nn.init.xavier_uniform_(self.kernel)
 
         self.to(device)
@@ -202,9 +195,7 @@ class OuterProductLayer(nn.Module):
 
         p.unsqueeze_(dim=1)  # [batch_size, 1, num_pairs, emb_dim]
 
-        p = torch.mul(
-            p,
-            self.kernel.unsqueeze(0))  # [batch_size,emb_dim,num_pairs,emb_dim]
+        p = torch.mul(p, self.kernel.unsqueeze(0))  # [batch_size,emb_dim,num_pairs,emb_dim]
         p = torch.sum(p, dim=-1)  # [batch_size,emb_dim,num_pairs]
         p = torch.transpose(p, 2, 1)  # [batch_size,num_pairs,emb_dim]
 

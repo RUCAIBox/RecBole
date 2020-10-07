@@ -3,10 +3,13 @@
 # @Author : Yingqian Min
 # @Email  : gmqszyq@qq.com
 # @File   : dssm.py
+
+
 """
 Reference:
 PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
 """
+
 
 import torch
 import torch.nn as nn
@@ -17,6 +20,7 @@ from recbox.model.context_aware_recommender.context_recommender import ContextRe
 
 
 class DSSM(ContextRecommender):
+
     def __init__(self, config, dataset):
         super(DSSM, self).__init__(config, dataset)
 
@@ -25,19 +29,11 @@ class DSSM(ContextRecommender):
         self.dropout = config['dropout']
         self.user_feature_num = self.user_token_field_num + self.user_float_field_num + self.user_token_seq_field_num
         self.item_feature_num = self.item_token_field_num + self.item_float_field_num + self.item_token_seq_field_num
-        user_size_list = [self.embedding_size * self.user_feature_num
-                          ] + self.mlp_hidden_size
-        item_size_list = [self.embedding_size * self.item_feature_num
-                          ] + self.mlp_hidden_size
+        user_size_list = [self.embedding_size * self.user_feature_num] + self.mlp_hidden_size
+        item_size_list = [self.embedding_size * self.item_feature_num] + self.mlp_hidden_size
 
-        self.user_mlp_layers = MLPLayers(user_size_list,
-                                         self.dropout,
-                                         activation='tanh',
-                                         bn=True)
-        self.item_mlp_layers = MLPLayers(item_size_list,
-                                         self.dropout,
-                                         activation='tanh',
-                                         bn=True)
+        self.user_mlp_layers = MLPLayers(user_size_list, self.dropout, activation='tanh', bn=True)
+        self.item_mlp_layers = MLPLayers(item_size_list, self.dropout, activation='tanh', bn=True)
 
         self.loss = nn.BCELoss()
         self.sigmod = nn.Sigmoid()
@@ -60,8 +56,7 @@ class DSSM(ContextRecommender):
         user = []
         if user_sparse_embedding is not None:
             user.append(user_sparse_embedding)
-        if user_dense_embedding is not None and len(
-                user_dense_embedding.shape) == 3:
+        if user_dense_embedding is not None and len(user_dense_embedding.shape) == 3:
             user.append(user_dense_embedding)
 
         embed_user = torch.cat(user, dim=1)
@@ -69,8 +64,7 @@ class DSSM(ContextRecommender):
         item = []
         if item_sparse_embedding is not None:
             item.append(item_sparse_embedding)
-        if item_dense_embedding is not None and len(
-                item_dense_embedding.shape) == 3:
+        if item_dense_embedding is not None and len(item_dense_embedding.shape) == 3:
             item.append(item_dense_embedding)
 
         embed_item = torch.cat(item, dim=1)
@@ -90,3 +84,15 @@ class DSSM(ContextRecommender):
 
     def predict(self, interaction):
         return self.forward(interaction)
+
+
+
+
+
+    
+
+
+
+
+
+

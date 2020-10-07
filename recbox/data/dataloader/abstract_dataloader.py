@@ -16,12 +16,8 @@ from recbox.utils import InputType
 class AbstractDataLoader(object):
     dl_type = None
 
-    def __init__(self,
-                 config,
-                 dataset,
-                 batch_size=1,
-                 dl_format=InputType.POINTWISE,
-                 shuffle=False):
+    def __init__(self, config, dataset,
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.config = config
         self.logger = getLogger()
         self.dataset = dataset
@@ -43,8 +39,7 @@ class AbstractDataLoader(object):
             try:
                 flag = hasattr(self.dataset, dataset_attr)
                 if flag:
-                    setattr(self, dataset_attr,
-                            getattr(self.dataset, dataset_attr))
+                    setattr(self, dataset_attr, getattr(self.dataset, dataset_attr))
             except:
                 continue
 
@@ -80,17 +75,14 @@ class AbstractDataLoader(object):
         raise NotImplementedError('Method [shuffle] should be implemented.')
 
     def _next_batch_data(self):
-        raise NotImplementedError(
-            'Method [next_batch_data] should be implemented.')
+        raise NotImplementedError('Method [next_batch_data] should be implemented.')
 
     def set_batch_size(self, batch_size):
         if self.pr != 0:
-            raise PermissionError(
-                'Cannot change dataloader\'s batch_size while iteration')
+            raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
         if self.batch_size != batch_size:
             self.batch_size = batch_size
-            self.logger.warning(
-                'Batch size is changed to {}'.format(batch_size))
+            self.logger.warning('Batch size is changed to {}'.format(batch_size))
 
     def get_user_feature(self):
         user_df = self.dataset.get_user_feature()

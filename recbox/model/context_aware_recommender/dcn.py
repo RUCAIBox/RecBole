@@ -18,22 +18,15 @@ class DCN(ContextRecommender):
         self.weight_decay = config['weight_decay']
         self.dropout = config['dropout']
 
-        self.cross_layer_parameter = [
-            nn.Parameter(
-                torch.empty(self.num_feature_field * self.embedding_size,
-                            device=self.device))
-            for _ in range(self.cross_layer_num * 2)
-        ]
+        self.cross_layer_parameter = [nn.Parameter(torch.empty(self.num_feature_field * self.embedding_size,
+                                                               device=self.device))
+                                      for _ in range(self.cross_layer_num * 2)]
 
-        self.cross_layer_w = nn.ParameterList(
-            self.cross_layer_parameter[:self.cross_layer_num])
-        self.cross_layer_b = nn.ParameterList(
-            self.cross_layer_parameter[self.cross_layer_num:])
+        self.cross_layer_w = nn.ParameterList(self.cross_layer_parameter[: self.cross_layer_num])
+        self.cross_layer_b = nn.ParameterList(self.cross_layer_parameter[self.cross_layer_num:])
 
-        size_list = [self.embedding_size * self.num_feature_field
-                     ] + self.mlp_hidden_size
-        in_feature_num = self.embedding_size * self.num_feature_field + self.mlp_hidden_size[
-            -1]
+        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
+        in_feature_num = self.embedding_size * self.num_feature_field + self.mlp_hidden_size[-1]
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout, bn=True)
         self.deep_predict_layer = nn.Linear(in_feature_num, 1, bias=True)
         self.reg_loss = RegLoss()
@@ -71,16 +64,14 @@ class DCN(ContextRecommender):
     def forward(self, interaction):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(
-            interaction)
+        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
         all_embeddings = []
         if sparse_embedding is not None:
             all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             all_embeddings.append(dense_embedding)
 
-        dcn_all_embeddings = torch.cat(
-            all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        dcn_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
         batch_size = dcn_all_embeddings.shape[0]
         dcn_all_embeddings = dcn_all_embeddings.view(batch_size, -1)
 

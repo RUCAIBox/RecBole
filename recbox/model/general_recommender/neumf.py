@@ -7,6 +7,7 @@
 # @Time   : 2020/8/22,
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmain.com
+
 """
 Reference:
 Xiangnan He et al. "Neural Collaborative Filtering." in WWW 2017.
@@ -40,21 +41,14 @@ class NeuMF(GeneralRecommender):
         self.use_pretrain = config['use_pretrain']
 
         # define layers and loss
-        self.user_mf_embedding = nn.Embedding(self.n_users,
-                                              self.mf_embedding_size)
-        self.item_mf_embedding = nn.Embedding(self.n_items,
-                                              self.mf_embedding_size)
-        self.user_mlp_embedding = nn.Embedding(self.n_users,
-                                               self.mlp_embedding_size)
-        self.item_mlp_embedding = nn.Embedding(self.n_items,
-                                               self.mlp_embedding_size)
-        self.mlp_layers = MLPLayers([2 * self.mlp_embedding_size] +
-                                    self.mlp_hidden_size)
+        self.user_mf_embedding = nn.Embedding(self.n_users, self.mf_embedding_size)
+        self.item_mf_embedding = nn.Embedding(self.n_items, self.mf_embedding_size)
+        self.user_mlp_embedding = nn.Embedding(self.n_users, self.mlp_embedding_size)
+        self.item_mlp_embedding = nn.Embedding(self.n_items, self.mlp_embedding_size)
+        self.mlp_layers = MLPLayers([2 * self.mlp_embedding_size] + self.mlp_hidden_size)
         self.mlp_layers.logger = None  # remove logger to use torch.save()
         if self.mf_train and self.mlp_train:
-            self.predict_layer = nn.Linear(
-                self.mf_embedding_size + self.mlp_hidden_size[-1], 1,
-                self.dropout)
+            self.predict_layer = nn.Linear(self.mf_embedding_size + self.mlp_hidden_size[-1], 1, self.dropout)
         elif self.mf_train:
             self.predict_layer = nn.Linear(self.mf_embedding_size, 1)
         elif self.mlp_train:
@@ -73,19 +67,16 @@ class NeuMF(GeneralRecommender):
         mlp = torch.load('./saved/NeuMF-mlp.pth')
         self.user_mf_embedding.weight.data.copy_(mf.user_mf_embedding.weight)
         self.item_mf_embedding.weight.data.copy_(mf.item_mf_embedding.weight)
-        self.user_mlp_embedding.weight.data.copy_(
-            mlp.user_mlp_embedding.weight)
-        self.item_mlp_embedding.weight.data.copy_(
-            mlp.item_mlp_embedding.weight)
+        self.user_mlp_embedding.weight.data.copy_(mlp.user_mlp_embedding.weight)
+        self.item_mlp_embedding.weight.data.copy_(mlp.item_mlp_embedding.weight)
 
-        for (m1, m2) in zip(self.mlp_layers.mlp_layers,
-                            mlp.mlp_layers.mlp_layers):
+        for (m1, m2) in zip(self.mlp_layers.mlp_layers, mlp.mlp_layers.mlp_layers):
             if isinstance(m1, nn.Linear) and isinstance(m2, nn.Linear):
                 m1.weight.data.copy_(m2.weight)
                 m1.bias.data.copy_(m2.bias)
 
-        predict_weight = torch.cat(
-            [mf.predict_layer.weight, mlp.predict_layer.weight], dim=1)
+        predict_weight = torch.cat([mf.predict_layer.weight,
+                                    mlp.predict_layer.weight], dim=1)
         predict_bias = mf.predict_layer.bias + mlp.predict_layer.bias
 
         self.predict_layer.weight.data.copy_(0.5 * predict_weight)
@@ -101,21 +92,17 @@ class NeuMF(GeneralRecommender):
         user_mlp_e = self.user_mlp_embedding(user)
         item_mlp_e = self.item_mlp_embedding(item)
         if self.mf_train:
-            mf_output = torch.mul(user_mf_e,
-                                  item_mf_e)  # (batch, embedding_size)
+            mf_output = torch.mul(user_mf_e, item_mf_e)     # (batch, embedding_size)
         if self.mlp_train:
-            mlp_output = self.mlp_layers(
-                torch.cat((user_mlp_e, item_mlp_e), -1))  # (batch, layers[-1])
+            mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))   # (batch, layers[-1])
         if self.mf_train and self.mlp_train:
-            output = self.sigmoid(
-                self.predict_layer(torch.cat((mf_output, mlp_output), -1)))
+            output = self.sigmoid(self.predict_layer(torch.cat((mf_output, mlp_output), -1)))
         elif self.mf_train:
             output = self.sigmoid(self.predict_layer(mf_output))
         elif self.mlp_train:
             output = self.sigmoid(self.predict_layer(mlp_output))
         else:
-            raise RuntimeError(
-                'mf_train and mlp_train can not be False at the same time')
+            raise RuntimeError('mf_train and mlp_train can not be False at the same time')
         return output.squeeze()
 
     def calculate_loss(self, interaction):

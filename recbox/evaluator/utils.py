@@ -7,6 +7,7 @@
 # @Time    :   2020/09/28, 2020/08/09
 # @Author  :   Kaiyuan Li, Zhichao Feng
 # @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com
+
 """
 recbox.evaluator.utils
 ################################
@@ -40,11 +41,9 @@ def pad_sequence(sequences, len_list, pad_to=None, padding_value=0):
     else:
         extra_len_list = np.subtract(max_len, len_list).tolist()
         padding_nums = max_len * len(len_list) - np.sum(len_list)
-        padding_tensor = torch.tensor([-np.inf],
-                                      device=device).repeat(padding_nums)
+        padding_tensor = torch.tensor([-np.inf], device=device).repeat(padding_nums)
         padding_list = torch.split(padding_tensor, extra_len_list)
-        result = list(
-            itertools.chain.from_iterable(zip(sequences, padding_list)))
+        result = list(itertools.chain.from_iterable(zip(sequences, padding_list)))
         result = torch.cat(result)
 
     return result.view(-1, max_len)
@@ -67,8 +66,7 @@ def trunc(scores, method):
     try:
         cut_method = getattr(np, method)
     except NotImplementedError:
-        raise NotImplementedError(
-            "module 'numpy' has no fuction named '{}'".format(method))
+        raise NotImplementedError("module 'numpy' has no fuction named '{}'".format(method))
     scores = cut_method(scores)
     return scores
 

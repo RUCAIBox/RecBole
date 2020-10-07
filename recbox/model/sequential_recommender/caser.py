@@ -7,6 +7,7 @@
 # @Time   : 2020/10/2
 # @Author : Jingsen Zhang
 # @Email  : zhangjingsen@ruc.edu.cn
+
 r"""
 recbox.model.sequential_recommender.caser
 ################################################
@@ -64,31 +65,22 @@ class Caser(SequentialRecommender):
         self.reg_loss = RegLoss()
 
         # user and item embeddings
-        self.user_embedding = nn.Embedding(self.user_count,
-                                           self.embedding_size)
-        self.item_list_embedding = nn.Embedding(self.item_count,
-                                                self.embedding_size)
+        self.user_embedding = nn.Embedding(self.user_count, self.embedding_size)
+        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size)
 
         # vertical conv layer
-        self.conv_v = nn.Conv2d(in_channels=1,
-                                out_channels=self.n_v,
-                                kernel_size=(self.L, 1))
+        self.conv_v = nn.Conv2d(in_channels=1, out_channels=self.n_v, kernel_size=(self.L, 1))
 
         # horizontal conv layer
         lengths = [i + 1 for i in range(self.L)]
-        self.conv_h = nn.ModuleList([
-            nn.Conv2d(in_channels=1,
-                      out_channels=self.n_h,
-                      kernel_size=(i, self.embedding_size)) for i in lengths
-        ])
+        self.conv_h = nn.ModuleList([nn.Conv2d(in_channels=1, out_channels=self.n_h, kernel_size=(i, self.embedding_size)) for i in lengths])
 
         # fully-connected layer
         self.fc1_dim_v = self.n_v * self.embedding_size
         self.fc1_dim_h = self.n_h * len(lengths)
         fc1_dim_in = self.fc1_dim_v + self.fc1_dim_h
         self.fc1 = nn.Linear(fc1_dim_in, self.embedding_size)
-        self.fc2 = nn.Linear(self.embedding_size + self.embedding_size,
-                             self.embedding_size)
+        self.fc2 = nn.Linear(self.embedding_size + self.embedding_size, self.embedding_size)
 
         # dropout
         self.dropout = nn.Dropout(self.dropout)
@@ -107,8 +99,7 @@ class Caser(SequentialRecommender):
     def forward(self, interaction):
         # Embedding Look-up
         # use unsqueeze() to get a 4-D input for convolution layers. (batchsize * 1 * max_length * embedding_size)
-        item_list_emb = self.item_list_embedding(
-            interaction[self.ITEM_ID_LIST]).unsqueeze(1)
+        item_list_emb = self.item_list_embedding(interaction[self.ITEM_ID_LIST]).unsqueeze(1)
         user_emb = self.user_embedding(interaction[self.USER_ID]).squeeze(1)
 
         # Convolutional Layers
@@ -161,10 +152,8 @@ class Caser(SequentialRecommender):
         pred = self.forward(interaction)
         logits = torch.matmul(pred, self.get_item_lookup_table())
         loss = self.criterion(logits, target_id)
-        reg_loss = self.reg_loss([
-            self.user_embedding.weight, self.item_list_embedding.weight,
-            self.conv_v.weight, self.fc1.weight, self.fc2.weight
-        ])
+        reg_loss = self.reg_loss([self.user_embedding.weight, self.item_list_embedding.weight,
+                                 self.conv_v.weight,self.fc1.weight, self.fc2.weight])
         loss = loss + self.reg_weight * reg_loss + self.reg_loss_conv_h()
         return loss
 

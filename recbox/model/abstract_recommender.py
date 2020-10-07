@@ -16,6 +16,7 @@ from recbox.utils import ModelType
 class AbstractRecommender(nn.Module):
     r"""Base class for all models
     """
+
     def calculate_loss(self, interaction):
         r"""Calculate the training loss for a batch data.
 
@@ -73,8 +74,7 @@ class SequentialRecommender(AbstractRecommender):
 
     def gather_indexes(self, output, gather_index):
         "Gathers the vectors at the spexific positions over a minibatch"
-        gather_index = gather_index.view(-1, 1,
-                                         1).expand(-1, -1, output.shape[-1])
+        gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.shape[-1])
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)
 

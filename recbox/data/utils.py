@@ -51,8 +51,7 @@ def data_preparation(config, dataset, save=False):
     kwargs['group_by_user'] = config['group_by_user']
     getattr(es, es_str[0])(**kwargs)
 
-    if es.split_args[
-            'strategy'] != 'loo' and model_type == ModelType.SEQUENTIAL:
+    if es.split_args['strategy'] != 'loo' and model_type == ModelType.SEQUENTIAL:
         raise ValueError('Sequential models require "loo" split strategy.')
 
     builded_datasets = dataset.build(es)
@@ -60,43 +59,37 @@ def data_preparation(config, dataset, save=False):
     phases = ['train', 'valid', 'test']
 
     if save:
-        save_datasets(config['checkpoint_dir'],
-                      name=phases,
-                      dataset=builded_datasets)
+        save_datasets(config['checkpoint_dir'], name=phases, dataset=builded_datasets)
 
     kwargs = {}
     if config['training_neg_sample_num']:
         es.neg_sample_by(config['training_neg_sample_num'])
         if model_type != ModelType.SEQUENTIAL:
-            sampler = Sampler(phases, builded_datasets,
-                              es.neg_sample_args['distribution'])
+            sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
         else:
-            sampler = RepeatableSampler(phases, dataset,
-                                        es.neg_sample_args['distribution'])
+            sampler = RepeatableSampler(phases, dataset, es.neg_sample_args['distribution'])
         kwargs['sampler'] = sampler.set_phase('train')
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
         if model_type == ModelType.KNOWLEDGE:
             kg_sampler = KGSampler(dataset, es.neg_sample_args['distribution'])
             kwargs['kg_sampler'] = kg_sampler
-    train_data = dataloader_construct(name='train',
-                                      config=config,
-                                      eval_setting=es,
-                                      dataset=train_dataset,
-                                      dl_format=config['MODEL_INPUT_TYPE'],
-                                      batch_size=config['train_batch_size'],
-                                      shuffle=True,
-                                      **kwargs)
+    train_data = dataloader_construct(
+        name='train',
+        config=config,
+        eval_setting=es,
+        dataset=train_dataset,
+        dl_format=config['MODEL_INPUT_TYPE'],
+        batch_size=config['train_batch_size'],
+        shuffle=True,
+        **kwargs
+    )
 
     kwargs = {}
     if len(es_str) > 1 and getattr(es, es_str[1], None):
         getattr(es, es_str[1])()
         if 'sampler' not in locals():
-            sampler = Sampler(phases, builded_datasets,
-                              es.neg_sample_args['distribution'])
-        kwargs['sampler'] = [
-            sampler.set_phase('valid'),
-            sampler.set_phase('test')
-        ]
+            sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
+        kwargs['sampler'] = [sampler.set_phase('valid'), sampler.set_phase('test')]
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
     valid_data, test_data = dataloader_construct(
         name='evaluation',
@@ -104,19 +97,15 @@ def data_preparation(config, dataset, save=False):
         eval_setting=es,
         dataset=[valid_dataset, test_dataset],
         batch_size=config['eval_batch_size'],
-        **kwargs)
+        **kwargs
+    )
 
     return train_data, valid_data, test_data
 
 
-def dataloader_construct(name,
-                         config,
-                         eval_setting,
-                         dataset,
+def dataloader_construct(name, config, eval_setting, dataset,
                          dl_format=InputType.POINTWISE,
-                         batch_size=1,
-                         shuffle=False,
-                         **kwargs):
+                         batch_size=1, shuffle=False, **kwargs):
     if not isinstance(dataset, list):
         dataset = [dataset]
 
@@ -124,9 +113,7 @@ def dataloader_construct(name,
         batch_size = [batch_size] * len(dataset)
 
     if len(dataset) != len(batch_size):
-        raise ValueError(
-            'dataset {} and batch_size {} should have the same length'.format(
-                dataset, batch_size))
+        raise ValueError('dataset {} and batch_size {} should have the same length'.format(dataset, batch_size))
 
     kwargs_list = [{} for i in range(len(dataset))]
     for key, value in kwargs.items():
@@ -134,31 +121,28 @@ def dataloader_construct(name,
         if not isinstance(value, list):
             value = [value] * len(dataset)
         if len(dataset) != len(value):
-            raise ValueError(
-                'dataset {} and {} {} should have the same length'.format(
-                    dataset, key, value))
+            raise ValueError('dataset {} and {} {} should have the same length'.format(dataset, key, value))
         for kw, k, w in zip(kwargs_list, key, value):
             kw[k] = w
 
     model_type = config['MODEL_TYPE']
     logger = getLogger()
-    logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(
-        model_type, name, dl_format))
+    logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(model_type, name, dl_format))
     logger.info(eval_setting)
-    logger.info('batch_size = [{}], shuffle = [{}]\n'.format(
-        batch_size, shuffle))
+    logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
 
     DataLoader = get_data_loader(name, config, eval_setting)
 
     try:
         ret = [
-            DataLoader(config=config,
-                       dataset=ds,
-                       batch_size=bs,
-                       dl_format=dl_format,
-                       shuffle=shuffle,
-                       **kw)
-            for ds, bs, kw in zip(dataset, batch_size, kwargs_list)
+            DataLoader(
+                config=config,
+                dataset=ds,
+                batch_size=bs,
+                dl_format=dl_format,
+                shuffle=shuffle,
+                **kw
+            ) for ds, bs, kw in zip(dataset, batch_size, kwargs_list)
         ]
     except TypeError:
         raise ValueError('training_neg_sample_num should be 0')
@@ -174,9 +158,7 @@ def save_datasets(save_path, name, dataset):
         name = [name]
         dataset = [dataset]
     if len(name) != len(dataset):
-        raise ValueError(
-            'len of name {} should equal to len of dataset'.format(
-                name, dataset))
+        raise ValueError('len of name {} should equal to len of dataset'.format(name, dataset))
     for i, d in enumerate(dataset):
         cur_path = os.path.join(save_path, name[i])
         if not os.path.isdir(cur_path):
@@ -185,7 +167,9 @@ def save_datasets(save_path, name, dataset):
 
 
 def get_data_loader(name, config, eval_setting):
-    register_table = {'DIN': _get_DIN_data_loader}
+    register_table = {
+        'DIN': _get_DIN_data_loader
+    }
 
     if config['model'] in register_table:
         return register_table[config['model']](name, config, eval_setting)
@@ -205,8 +189,7 @@ def get_data_loader(name, config, eval_setting):
         elif neg_sample_strategy == 'by':
             return ContextNegSampleDataLoader
         elif neg_sample_strategy == 'full':
-            raise NotImplementedError(
-                'context model\'s full_sort has not been implemented')
+            raise NotImplementedError('context model\'s full_sort has not been implemented')
     elif model_type == ModelType.SEQUENTIAL:
         if neg_sample_strategy == 'none':
             return SequentialDataLoader
@@ -225,12 +208,10 @@ def get_data_loader(name, config, eval_setting):
         elif neg_sample_strategy == 'none':
             # return GeneralDataLoader
             # TODO 训练也可以为none? 看general的逻辑似乎是都可以为None
-            raise NotImplementedError(
-                'The use of external negative sampling for knowledge model '
-                'has not been implemented')
+            raise NotImplementedError('The use of external negative sampling for knowledge model '
+                                      'has not been implemented')
     else:
-        raise NotImplementedError(
-            'model_type [{}] has not been implemented'.format(model_type))
+        raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
 
 
 def _get_DIN_data_loader(name, config, eval_setting):
@@ -254,8 +235,6 @@ class DLFriendlyAPI(object):
         def decorator(f):
             self.dataloader_apis.add(f.__name__)
             return f
-
         return decorator
-
 
 dlapi = DLFriendlyAPI()

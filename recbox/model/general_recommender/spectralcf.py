@@ -2,6 +2,7 @@
 # @Time   : 2020/10/2
 # @Author : Changxin Tian
 # @Email  : cx.tian@outlook.com
+
 """
 recbox.model.general_recommender.spectralcf
 ################################################
@@ -56,27 +57,24 @@ class SpectralCF(GeneralRecommender):
         self.reg_weight = config['reg_weight']
 
         # "A_hat = I + L" is equivalent to "A_hat = U U^T + U \Lambda U^T"
-        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(
-            np.float32)
+        self.interaction_matrix = dataset.inter_matrix(
+            form='coo').astype(np.float32)
         I = self.get_eye_mat(self.n_items + self.n_users)
         L = self.get_laplacian_matrix()
         A_hat = I + L
         self.A_hat = A_hat.to(self.device)
 
         # embedding
-        self.user_embedding = torch.nn.Embedding(num_embeddings=self.n_users,
-                                                 embedding_dim=self.emb_dim)
-        self.item_embedding = torch.nn.Embedding(num_embeddings=self.n_items,
-                                                 embedding_dim=self.emb_dim)
+        self.user_embedding = torch.nn.Embedding(
+            num_embeddings=self.n_users, embedding_dim=self.emb_dim)
+        self.item_embedding = torch.nn.Embedding(
+            num_embeddings=self.n_items, embedding_dim=self.emb_dim)
 
         # filters
-        self.filters = torch.nn.ParameterList([
-            torch.nn.Parameter(torch.normal(
-                mean=0.01, std=0.02,
-                size=(self.emb_dim, self.emb_dim)).to(self.device),
-                               requires_grad=True)
-            for _ in range(self.n_layers)
-        ])
+        self.filters = torch.nn.ParameterList(
+            [torch.nn.Parameter(torch.normal(mean=0.01, std=0.02, size=(self.emb_dim, self.emb_dim)).to(self.device),
+                                requires_grad=True)
+             for _ in range(self.n_layers)])
 
         self.sigmoid = torch.nn.Sigmoid()
         self.mf_loss = BPRLoss()
@@ -97,9 +95,8 @@ class SpectralCF(GeneralRecommender):
             Sparse tensor of the laplacian matrix.
         """
         # build adj matrix
-        A = sp.dok_matrix(
-            (self.n_users + self.n_items, self.n_users + self.n_items),
-            dtype=np.float32)
+        A = sp.dok_matrix((self.n_users + self.n_items,
+                           self.n_users + self.n_items), dtype=np.float32)
         A = A.tolil()
         A[:self.n_users, self.n_users:] = self.interaction_matrix
         A[self.n_users:, :self.n_users] = self.interaction_matrix.transpose()
@@ -179,8 +176,8 @@ class SpectralCF(GeneralRecommender):
         neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
 
         mf_loss = self.mf_loss(pos_scores, neg_scores)
-        reg_loss = self.reg_loss(u_embeddings, posi_embeddings,
-                                 negi_embeddings)
+        reg_loss = self.reg_loss(
+            u_embeddings, posi_embeddings, negi_embeddings)
         loss = mf_loss + self.reg_weight * reg_loss
 
         return loss
@@ -202,6 +199,6 @@ class SpectralCF(GeneralRecommender):
             self.restore_user_e, self.restore_item_e = self.forward()
         u_embeddings = self.restore_user_e[user]
 
-        scores = torch.matmul(u_embeddings,
-                              self.restore_item_e.transpose(0, 1))
+        scores = torch.matmul(
+            u_embeddings, self.restore_item_e.transpose(0, 1))
         return scores.view(-1)

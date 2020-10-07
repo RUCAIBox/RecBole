@@ -59,6 +59,7 @@ class EvalSetting(object):
                 neg_sample_by:  sample several negative records for each positive records.
                 full_sort:      don't negative sample, while all unused items are used for evaluation.
     """
+
     def __init__(self, config):
         self.config = config
 
@@ -67,9 +68,7 @@ class EvalSetting(object):
         self.split_args = None
         self.neg_sample_args = {'strategy': 'none'}
 
-        presetting_args = [
-            'group_field', 'ordering_args', 'split_args', 'neg_sample_args'
-        ]
+        presetting_args = ['group_field', 'ordering_args', 'split_args', 'neg_sample_args']
         for args in presetting_args:
             if config[args] is not None:
                 setattr(self, args, config[args])
@@ -82,20 +81,17 @@ class EvalSetting(object):
         else:
             info.append('No Grouping')
 
-        if self.ordering_args is not None and self.ordering_args[
-                'strategy'] != 'none':
+        if self.ordering_args is not None and self.ordering_args['strategy'] != 'none':
             info.append('Ordering: {}'.format(self.ordering_args))
         else:
             info.append('No Ordering')
 
-        if self.split_args is not None and self.split_args[
-                'strategy'] != 'none':
+        if self.split_args is not None and self.split_args['strategy'] != 'none':
             info.append('Splitting: {}'.format(self.split_args))
         else:
             info.append('No Splitting')
 
-        if self.neg_sample_args is not None and self.neg_sample_args[
-                'strategy'] != 'none':
+        if self.neg_sample_args is not None and self.neg_sample_args['strategy'] != 'none':
             info.append('Negative Sampling: {}'.format(self.neg_sample_args))
         else:
             info.append('No Negative Sampling')
@@ -146,8 +142,7 @@ class EvalSetting(object):
         """
         legal_strategy = {'none', 'shuffle', 'by'}
         if strategy not in legal_strategy:
-            raise ValueError('Ordering Strategy [{}] should in {}'.format(
-                strategy, list(legal_strategy)))
+            raise ValueError('Ordering Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
         self.ordering_args = {'strategy': strategy}
         self.ordering_args.update(kwargs)
 
@@ -200,8 +195,7 @@ class EvalSetting(object):
         """
         legal_strategy = {'none', 'by_ratio', 'by_value', 'loo'}
         if strategy not in legal_strategy:
-            raise ValueError('Split Strategy [{}] should in {}'.format(
-                strategy, list(legal_strategy)))
+            raise ValueError('Split Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
         if strategy == 'loo' and self.group_by is None:
             raise ValueError('Leave-One-Out request group firstly')
         self.split_args = {'strategy': strategy}
@@ -218,9 +212,7 @@ class EvalSetting(object):
                 E.g. leave_one_num=2 if you have one validation dataset and one test dataset.
         """
         if self.group_field is None:
-            raise ValueError(
-                'Leave one out request grouped dataset, please set group field.'
-            )
+            raise ValueError('Leave one out request grouped dataset, please set group field.')
         self.set_splitting(strategy='loo', leave_one_num=leave_one_num)
 
     def split_by_ratio(self, ratios):
@@ -241,14 +233,9 @@ class EvalSetting(object):
         if not isinstance(values, list):
             values = [values]
         values.sort(reverse=(not ascending))
-        self.set_splitting(strategy='by_value',
-                           values=values,
-                           ascending=ascending)
+        self.set_splitting(strategy='by_value', values=values, ascending=ascending)
 
-    def set_neg_sampling(self,
-                         strategy='none',
-                         distribution='uniform',
-                         **kwargs):
+    def set_neg_sampling(self, strategy='none', distribution='uniform', **kwargs):
         """Setting about negative sampling
 
         Args:
@@ -262,17 +249,10 @@ class EvalSetting(object):
         """
         legal_strategy = {'none', 'full', 'by'}
         if strategy not in legal_strategy:
-            raise ValueError(
-                'Negative Sampling Strategy [{}] should in {}'.format(
-                    strategy, list(legal_strategy)))
+            raise ValueError('Negative Sampling Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
         if strategy == 'full' and distribution != 'uniform':
-            raise ValueError(
-                'Full Sort can not be sampled by distribution [{}]'.format(
-                    distribution))
-        self.neg_sample_args = {
-            'strategy': strategy,
-            'distribution': distribution
-        }
+            raise ValueError('Full Sort can not be sampled by distribution [{}]'.format(distribution))
+        self.neg_sample_args = {'strategy': strategy, 'distribution': distribution}
         self.neg_sample_args.update(kwargs)
 
     def neg_sample_by(self, by, distribution='uniform'):

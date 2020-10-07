@@ -10,6 +10,7 @@ from .context_recommender import ContextRecommender
 
 
 class LR(ContextRecommender):
+
     def __init__(self, config, dataset):
         super(LR, self).__init__(config, dataset)
 

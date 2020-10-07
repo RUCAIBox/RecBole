@@ -7,6 +7,7 @@
 # @Time   : 2020/9/16
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
+
 r"""
 recbox.model.general_recommender.dgcf
 ################################################
@@ -63,8 +64,7 @@ class DGCF(GeneralRecommender):
         super(DGCF, self).__init__(config, dataset)
 
         # load dataset info
-        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(
-            np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
 
         # load parameters info
         self.embedding_size = config['embedding_size']
@@ -74,8 +74,7 @@ class DGCF(GeneralRecommender):
         self.reg_weight = config['reg_weight']
         self.cor_weight = config['cor_weight']
         n_batch = dataset.dataset.inter_num // self.batch_size + 1
-        self.cor_batch_size = int(
-            max(self.n_users / n_batch, self.n_items / n_batch))
+        self.cor_batch_size = int(max(self.n_users / n_batch, self.n_items / n_batch))
         # ensure embedding can be divided into <n_factors> intent
         assert self.embedding_size % self.n_factors == 0
 
@@ -89,20 +88,14 @@ class DGCF(GeneralRecommender):
         edge_ids = range(num_edge)
         self.all_h_list = torch.LongTensor(all_h_list).to(self.device)
         self.all_t_list = torch.LongTensor(all_t_list).to(self.device)
-        self.edge2head = torch.LongTensor([all_h_list,
-                                           edge_ids]).to(self.device)
-        self.head2edge = torch.LongTensor([edge_ids,
-                                           all_h_list]).to(self.device)
-        self.tail2edge = torch.LongTensor([edge_ids,
-                                           all_t_list]).to(self.device)
+        self.edge2head = torch.LongTensor([all_h_list, edge_ids]).to(self.device)
+        self.head2edge = torch.LongTensor([edge_ids, all_h_list]).to(self.device)
+        self.tail2edge = torch.LongTensor([edge_ids, all_t_list]).to(self.device)
         val_one = torch.ones_like(self.all_h_list).float().to(self.device)
         num_node = self.n_users + self.n_items
-        self.edge2head_mat = self._build_sparse_tensor(self.edge2head, val_one,
-                                                       (num_node, num_edge))
-        self.head2edge_mat = self._build_sparse_tensor(self.head2edge, val_one,
-                                                       (num_edge, num_node))
-        self.tail2edge_mat = self._build_sparse_tensor(self.tail2edge, val_one,
-                                                       (num_edge, num_node))
+        self.edge2head_mat = self._build_sparse_tensor(self.edge2head, val_one, (num_node, num_edge))
+        self.head2edge_mat = self._build_sparse_tensor(self.head2edge, val_one, (num_edge, num_node))
+        self.tail2edge_mat = self._build_sparse_tensor(self.tail2edge, val_one, (num_edge, num_node))
         self.num_edge = num_edge
         self.num_node = num_node
 
@@ -177,8 +170,7 @@ class DGCF(GeneralRecommender):
 
             # split the input embedding table
             # .... ego_layer_embeddings is a (n_factors)-leng list of embeddings [n_users+n_items, embed_size/n_factors]
-            ego_layer_embeddings = torch.chunk(ego_embeddings, self.n_factors,
-                                               1)
+            ego_layer_embeddings = torch.chunk(ego_embeddings, self.n_factors, 1)
             for t in range(0, self.n_iterations):
                 iter_embeddings = []
                 A_iter_values = []
@@ -187,14 +179,12 @@ class DGCF(GeneralRecommender):
                     # update the embeddings via simplified graph convolution layer
                     edge_weight = factor_edge_weight[i]
                     # (num_edge, 1)
-                    edge_val = torch.sparse.mm(self.tail2edge_mat,
-                                               ego_layer_embeddings[i])
+                    edge_val = torch.sparse.mm(self.tail2edge_mat, ego_layer_embeddings[i])
                     # (num_edge, dim / n_factors)
                     edge_val = edge_val * edge_weight
                     # (num_edge, dim / n_factors)
                     # factor_embeddings = torch.sparse.mm(tp_matrix, ego_layer_embeddings[i])
-                    factor_embeddings = torch.sparse.mm(
-                        self.edge2head_mat, edge_val)
+                    factor_embeddings = torch.sparse.mm(self.edge2head_mat, edge_val)
                     # (num_node, num_edge) (num_edge, dim) -> (num_node, dim)
 
                     iter_embeddings.append(factor_embeddings)
@@ -205,30 +195,21 @@ class DGCF(GeneralRecommender):
                     # get the factor-wise embeddings
                     # .... head_factor_embeddings is a dense tensor with the size of [all_h_list, embed_size/n_factors]
                     # .... analogous to tail_factor_embeddings
-                    head_factor_embedings = torch.index_select(
-                        factor_embeddings, dim=0, index=self.all_h_list)
-                    tail_factor_embedings = torch.index_select(
-                        ego_layer_embeddings[i], dim=0, index=self.all_t_list)
+                    head_factor_embedings = torch.index_select(factor_embeddings, dim=0, index=self.all_h_list)
+                    tail_factor_embedings = torch.index_select(ego_layer_embeddings[i], dim=0, index=self.all_t_list)
 
                     # .... constrain the vector length
                     # .... make the following attentive weights within the range of (0,1)
                     # to adapt to torch version
                     # head_factor_embedings = tf.math.l2_normalize(head_factor_embedings, axis=1)
                     # tail_factor_embedings = tf.math.l2_normalize(tail_factor_embedings, axis=1)
-                    head_factor_embedings = F.normalize(head_factor_embedings,
-                                                        p=2,
-                                                        dim=1)
-                    tail_factor_embedings = F.normalize(tail_factor_embedings,
-                                                        p=2,
-                                                        dim=1)
+                    head_factor_embedings = F.normalize(head_factor_embedings, p=2, dim=1)
+                    tail_factor_embedings = F.normalize(tail_factor_embedings, p=2, dim=1)
 
                     # get the attentive weights
                     # .... A_factor_values is a dense tensor with the size of [num_edge, 1]
-                    A_factor_values = torch.sum(
-                        head_factor_embedings *
-                        torch.tanh(tail_factor_embedings),
-                        dim=1,
-                        keepdim=True)
+                    A_factor_values = torch.sum(head_factor_embedings * torch.tanh(tail_factor_embedings),
+                                                dim=1, keepdim=True)
 
                     # update the attentive weights
                     A_iter_values.append(A_factor_values)
@@ -278,13 +259,10 @@ class DGCF(GeneralRecommender):
         u_ego_embeddings = self.user_embedding(user)
         posi_ego_embeddings = self.item_embedding(pos_item)
         negi_ego_embeddings = self.item_embedding(neg_item)
-        reg_loss = self.reg_loss(u_ego_embeddings, posi_ego_embeddings,
-                                 negi_ego_embeddings)
+        reg_loss = self.reg_loss(u_ego_embeddings, posi_ego_embeddings, negi_ego_embeddings)
 
         if self.n_factors > 1 and self.cor_weight > 1e-9:
-            cor_users, cor_items = sample_cor_samples(self.n_users,
-                                                      self.n_items,
-                                                      self.cor_batch_size)
+            cor_users, cor_items = sample_cor_samples(self.n_users, self.n_items, self.cor_batch_size)
             cor_users = torch.LongTensor(cor_users).to(self.device)
             cor_items = torch.LongTensor(cor_items).to(self.device)
             cor_u_embeddings = user_all_embeddings[cor_users]
@@ -326,6 +304,7 @@ class DGCF(GeneralRecommender):
         return cor_loss
 
     def _create_distance_correlation(self, X1, X2):
+
         def _create_centered_distance(X):
             '''
             X: (batch_size, dim)
@@ -349,8 +328,7 @@ class DGCF(GeneralRecommender):
             # matrix - average over row - average over col + average over matrix
             # D = D - tf.reduce_mean(D, axis=0, keepdims=True) - tf.reduce_mean(D, axis=1, keepdims=True) \
             #     + tf.reduce_mean(D)
-            D = D - torch.mean(D, dim=0, keepdim=True) - torch.mean(
-                D, dim=1, keepdim=True) + torch.mean(D)
+            D = D - torch.mean(D, dim=0, keepdim=True) - torch.mean(D, dim=1, keepdim=True) + torch.mean(D)
             return D
 
         def _create_distance_covariance(D1, D2):
@@ -397,7 +375,7 @@ class DGCF(GeneralRecommender):
             self.restore_user_e, self.restore_item_e = self.forward()
         u_embeddings = self.restore_user_e[user]
 
-        scores = torch.matmul(u_embeddings,
-                              self.restore_item_e.transpose(0, 1))
+        scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
 
         return scores.view(-1)
+
