@@ -157,7 +157,8 @@ class Config(object):
                     if file == dataset_init_file:
                         self.parameters['Dataset'] += [key for key in config_dict.keys() if
                                                        key not in self.parameters['Dataset']]
-                    self.internal_config_dict.update(config_dict)
+                    if config_dict is not None:
+                        self.internal_config_dict.update(config_dict)
 
     def _get_final_config_dict(self):
         final_config_dict = dict()
