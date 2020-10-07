@@ -1,16 +1,3 @@
-# ml-1m
-  # mlp_hidden_size=[512, 512, 512]
-  # cross_layer_num=6
-  # weight_decay=2
-  # learning_rate=0.0005
-  # dropout=0.2
-
-# criteo
-  # mlp_hidden_size=[]
-  # cross_layer_num=
-  # weight_decay=
-  # learning_rate=
-
 embedding_size: 10
 mlp_hidden_size: [512, 512, 512]
 cross_layer_num: 6
