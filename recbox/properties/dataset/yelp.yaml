@@ -1,9 +1,11 @@
-# define the UIRT columns
-USER_ID_FIELD: user_id
-ITEM_ID_FIELD: item_id
-NEG_PREFIX: neg_
-LABEL_FIELD: label
-RATING_FIELD: rating
+USER_ID_FIELD: 'user_id'
+ITEM_ID_FIELD: 'business'
+NEG_PREFIX: 'neg_'
+LABEL_FIELD: 'label'
+RATING_FIELD: 'stars'
+
+SOURCE_ID_FIELD: 'source'
+TARGET_ID_FIELD: 'target'
 
 # select load columns
 load_col:
