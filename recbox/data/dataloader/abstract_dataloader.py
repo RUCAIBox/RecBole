@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/10/3, 2020/9/23
+# @Time   : 2020/10/6, 2020/9/23
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -36,8 +36,12 @@ class AbstractDataLoader(object):
         self.inter_matrix = self.dataset.inter_matrix
 
         for dataset_attr in self.dataset._dataloader_apis:
-            if hasattr(self.dataset, dataset_attr):
-                setattr(self, dataset_attr, getattr(self.dataset, dataset_attr))
+            try:
+                flag = hasattr(self.dataset, dataset_attr)
+                if flag:
+                    setattr(self, dataset_attr, getattr(self.dataset, dataset_attr))
+            except:
+                continue
 
         self.setup()
         if not self.real_time:
