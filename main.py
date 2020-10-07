@@ -1,6 +1,6 @@
 import yaml
 from argparse import ArgumentParser
-from run_test import whole_process
+from recbox.quick_start import run_unirec
 
 parser = ArgumentParser()
 parser.add_argument('--model', '-m', type=str, default='BPRMF', help='name of models')
@@ -23,4 +23,4 @@ if token in presets_dict:
     print('Hit preset: [{}]'.format(token))
     args_dict.update(presets_dict[token])
 
-whole_process(config_dict=args_dict)
+run_unirec(config_dict=args_dict)

@@ -7,6 +7,7 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+import re
 import os
 import sys
 import yaml
@@ -18,34 +19,43 @@ from recbox.utils import get_model, Enum, EvaluatorType
 
 
 class Config(object):
-    def __init__(self, model, dataset, config_file_list=None, config_dict=None):
+    def __init__(self, model=None, dataset=None, config_file_list=None, config_dict=None):
 
-        self.model, self.dataset = model, dataset
         self._init_parameters_category()
-        self._load_init_config_dict(model, dataset)
+        self.yaml_loader = self._build_yaml_loader()
         self._load_config_files(config_file_list)
-        self.variable_config_dict = config_dict if config_dict else dict()
-        self._read_cmd_line()
-
-        self.final_config_dict = self._merge_config_dict()
+        self._load_variable_config_dict(config_dict)
+        self._load_cmd_line()
+        self._merge_external_config_dict()
+        self.model, self.dataset = self._get_model_and_dataset(model, dataset)
+        self._load_internal_config_dict(self.model, self.dataset)
+        self.final_config_dict = self._get_final_config_dict()
         self._set_default_parameters()
         self._init_device()
 
-    def _load_init_config_dict(self, model, dataset):
-        data_path = os.path.dirname(os.path.realpath(__file__))
-        overall_init_file = os.path.join(data_path, '../properties/overall.yaml')
-        model_init_file = os.path.join(data_path, '../properties/model/' + model + '.yaml')
-        dataset_init_file = os.path.join(data_path, '../properties/dataset/' + dataset + '.yaml')
+    def _init_parameters_category(self):
+        self.parameters = dict()
+        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path']
+        self.parameters['Training'] = ['epochs', 'train_batch_size', 'learner', 'learning_rate',
+                                       'training_neg_sample_num', 'eval_step', 'valid_metric',
+                                       'stopping_step', 'checkpoint_dir']
+        self.parameters['Evaluation'] = ['eval_setting', 'group_by_user', 'split_ratio', 'leave_one_num',
+                                         'real_time_process', 'metrics', 'topk', 'eval_batch_size']
+        self.parameters['Dataset'] = []
 
-        self.init_config_dict = dict()
-        for file in [overall_init_file, model_init_file, dataset_init_file]:
-            if os.path.isfile(file):
-                with open(file, 'r', encoding='utf-8') as f:
-                    config_dict = yaml.load(f.read(), Loader=yaml.FullLoader)
-                    if file == dataset_init_file:
-                        self.parameters['Dataset'] += [key for key in config_dict.keys() if
-                                                       key not in self.parameters['Dataset']]
-                    self.init_config_dict.update(config_dict)
+    def _build_yaml_loader(self):
+        loader = yaml.FullLoader
+        loader.add_implicit_resolver(
+            u'tag:yaml.org,2002:float',
+            re.compile(u'''^(?:
+             [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+            |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+            |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+            |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+            |[-+]?\\.(?:inf|Inf|INF)
+            |\\.(?:nan|NaN|NAN))$''', re.X),
+            list(u'-+0123456789.'))
+        return loader
 
     def _load_config_files(self, file_list):
         self.file_config_dict = dict()
@@ -53,36 +63,40 @@ class Config(object):
             for file in file_list:
                 if os.path.isfile(file):
                     with open(file, 'r', encoding='utf-8') as f:
-                        self.file_config_dict.update(yaml.load(f.read(), Loader=yaml.FullLoader))
+                        self.file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
 
-    def convert_cmd_args(self):
-        r"""This function convert the str parameters to their original type.
+    def _load_variable_config_dict(self, config_dict):
+        self.variable_config_dict = config_dict if config_dict else dict()
 
-        """
-        for key in self.cmd_config_dict:
-            param = self.cmd_config_dict[key]
-            if not isinstance(param, str):
-                continue
-            try:
-                value = eval(param)
-                if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
-                    value = param
-            except (NameError, SyntaxError, TypeError):
-                if isinstance(param, str):
-                    if param.lower() == "true":
-                        value = True
-                    elif param.lower() == "false":
-                        value = False
-                    else:
-                        value = param
-                else:
-                    value = param
-            self.cmd_config_dict[key] = value
-
-    def _read_cmd_line(self):
+    def _load_cmd_line(self):
         r""" Read parameters from command line and convert it to str.
 
         """
+
+        def convert_cmd_args():
+            r"""This function convert the str parameters to their original type.
+
+            """
+            for key in self.cmd_config_dict:
+                param = self.cmd_config_dict[key]
+                if not isinstance(param, str):
+                    continue
+                try:
+                    value = eval(param)
+                    if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
+                        value = param
+                except (NameError, SyntaxError, TypeError):
+                    if isinstance(param, str):
+                        if param.lower() == "true":
+                            value = True
+                        elif param.lower() == "false":
+                            value = False
+                        else:
+                            value = param
+                    else:
+                        value = param
+                self.cmd_config_dict[key] = value
+
         self.cmd_config_dict = dict()
         unrecognized_args = []
         if "ipykernel_launcher" not in sys.argv[0]:
@@ -99,14 +113,57 @@ class Config(object):
             logger = getLogger()
             logger.warning('command line args [{}] will not be used in RecBox'.format(' '.join(unrecognized_args)))
 
-        self.convert_cmd_args()
+        convert_cmd_args()
 
-    def _merge_config_dict(self):
+    def _merge_external_config_dict(self):
+        external_config_dict = dict()
+        external_config_dict.update(self.file_config_dict)
+        external_config_dict.update(self.variable_config_dict)
+        external_config_dict.update(self.cmd_config_dict)
+        self.external_config_dict = external_config_dict
+
+    def _get_model_and_dataset(self, model, dataset):
+        if model is None:
+            try:
+                final_model = self.external_config_dict['model']
+            except KeyError:
+                raise KeyError('model need to be specified in at least one of the these ways: '
+                               '[model variable, config file, config dict, command line] ')
+        else:
+            final_model = model
+
+        if dataset is None:
+            try:
+                final_dataset = self.external_config_dict['dataset']
+            except KeyError:
+                raise KeyError('dataset need to be specified in at least one of the these ways: '
+                               '[dataset variable, config file, config dict, command line] ')
+        else:
+            final_dataset = dataset
+
+        return final_model, final_dataset
+
+    def _load_internal_config_dict(self, model, dataset):
+        data_path = os.path.dirname(os.path.realpath(__file__))
+        overall_init_file = os.path.join(data_path, '../properties/overall.yaml')
+        model_init_file = os.path.join(data_path, '../properties/model/' + model + '.yaml')
+        dataset_init_file = os.path.join(data_path, '../properties/dataset/' + dataset + '.yaml')
+
+        self.internal_config_dict = dict()
+        for file in [overall_init_file, model_init_file, dataset_init_file]:
+            if os.path.isfile(file):
+                with open(file, 'r', encoding='utf-8') as f:
+                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+                    if file == dataset_init_file:
+                        self.parameters['Dataset'] += [key for key in config_dict.keys() if
+                                                       key not in self.parameters['Dataset']]
+                    if config_dict is not None:
+                        self.internal_config_dict.update(config_dict)
+
+    def _get_final_config_dict(self):
         final_config_dict = dict()
-        final_config_dict.update(self.init_config_dict)
-        final_config_dict.update(self.file_config_dict)
-        final_config_dict.update(self.variable_config_dict)
-        final_config_dict.update(self.cmd_config_dict)
+        final_config_dict.update(self.internal_config_dict)
+        final_config_dict.update(self.external_config_dict)
         return final_config_dict
 
     def _set_default_parameters(self):
@@ -142,16 +199,6 @@ class Config(object):
         if use_gpu:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self.final_config_dict['gpu_id'])
         self.final_config_dict['device'] = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
-
-    def _init_parameters_category(self):
-        self.parameters = dict()
-        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path']
-        self.parameters['Training'] = ['epochs', 'train_batch_size', 'learner', 'learning_rate',
-                                       'training_neg_sample_num', 'eval_step', 'valid_metric',
-                                       'stopping_step', 'checkpoint_dir']
-        self.parameters['Evaluation'] = ['eval_setting', 'group_by_user', 'split_ratio', 'leave_one_num',
-                                         'real_time_process', 'metrics', 'topk', 'eval_batch_size']
-        self.parameters['Dataset'] = []
 
     def __setitem__(self, key, value):
         if not isinstance(key, str):
