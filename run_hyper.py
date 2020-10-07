@@ -15,7 +15,7 @@ from recbox.quick_start import objective_function
 
 def main():
     # plz set algo='exhaustive' to use exhaustive search, in this case, max_evals is auto set
-    hp = HyperTuning(objective_function, algo='exhaustive', params_file='hyper2.test')
+    hp = HyperTuning(objective_function, algo='exhaustive', params_file='hyper.test')
     hp.run()
     hp.export_result(output_file='hyper_example.result')
     print('best params: ', hp.best_params)
