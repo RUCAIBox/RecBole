@@ -2,11 +2,13 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
-"""
+r"""
+recbox.model.knowledge_aware_recommender.ktup
+##################################################
 Reference:
 Yixin Cao et al. "Unifying Knowledge Graph Learning and Recommendation:Towards a Better Understanding of User Preferences." in WWW 2019.
 
-Code Reference:
+Reference code:
 https://github.com/TaoMiner/joint-kg-recommender
 """
 
@@ -22,6 +24,11 @@ from recbox.model.init import xavier_uniform_initialization
 
 
 class KTUP(KnowledgeRecommender):
+    r"""KTUP is a knowledge-based recommendation model. It adopts the strategy of multi-task learning to jointly learn
+    recommendation and KG-related tasks, with the goal of understanding the reasons that a user interacts with an item.
+    This method utilizes an attention mechanism to combine all preferences into a single-vector representation.
+    """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
@@ -63,20 +70,21 @@ class KTUP(KnowledgeRecommender):
         self.relation_embedding.weight.data = normalize_rel_emb
         self.relation_norm_embedding.weight.data = normalize_rel_norm_emb
 
-    def masked_softmax(self, logits):
+    def _masked_softmax(self, logits):
         probs = F.softmax(logits, dim=len(logits.shape)-1)
         return probs
 
     def convert_to_one_hot(self, indices, num_classes):
-        """
+        r"""
         Args:
             indices (Variable): A vector containing indices,
                 whose size is (batch_size,).
             num_classes (Variable): The number of classes, which would be
                 the second dimension of the resulting one-hot matrix.
         Returns:
-            result: The one-hot matrix of size (batch_size, num_classes).
+            torch.Tensor: The one-hot matrix of size (batch_size, num_classes).
         """
+
         old_shape = indices.shape
         new_shape = torch.Size([i for i in old_shape] + [num_classes])
         indices = indices.unsqueeze(len(old_shape))
@@ -85,27 +93,27 @@ class KTUP(KnowledgeRecommender):
         return one_hot
 
     def st_gumbel_softmax(self, logits, temperature=1.0):
-        """
-        Return the result of Straight-Through Gumbel-Softmax Estimation.
+        r"""Return the result of Straight-Through Gumbel-Softmax Estimation.
         It approximates the discrete sampling via Gumbel-Softmax trick
         and applies the biased ST estimator.
         In the forward propagation, it emits the discrete one-hot result,
         and in the backward propagation it approximates the categorical
         distribution via smooth Gumbel-Softmax distribution.
+
         Args:
             logits (Variable): A un-normalized probability values,
                 which has the size (batch_size, num_classes)
             temperature (float): A temperature parameter. The higher
                 the value is, the smoother the distribution is.
         Returns:
-            y: The sampled output, which has the property explained above.
+            torch.Tensor: The sampled output, which has the property explained above.
         """
 
         eps = 1e-20
         u = logits.data.new(*logits.size()).uniform_()
         gumbel_noise = Variable(-torch.log(-torch.log(u + eps) + eps))
         y = logits + gumbel_noise
-        y = self.masked_softmax(logits=y / temperature)
+        y = self._masked_softmax(logits=y / temperature)
         y_argmax = y.max(len(y.shape) - 1)[1]
         y_hard = self.convert_to_one_hot(
             indices=y_argmax,
@@ -113,7 +121,7 @@ class KTUP(KnowledgeRecommender):
         y = (y_hard - y).detach() + y
         return y
 
-    def get_preferences(self, user_e, item_e, use_st_gumbel=False):
+    def _get_preferences(self, user_e, item_e, use_st_gumbel=False):
         pref_probs = torch.matmul(user_e + item_e, torch.t(self.pref_embedding.weight + self.relation_embedding.weight)) / 2
         if use_st_gumbel:
             # todo: different torch versions may cause the st_gumbel_softmax to report errors, wait to be test
@@ -123,10 +131,10 @@ class KTUP(KnowledgeRecommender):
         return pref_probs, relation_e, norm_e
 
     @staticmethod
-    def transH_projection(original, norm):
+    def _transH_projection(original, norm):
         return original - torch.sum(original * norm, dim=len(original.size()) - 1, keepdim=True) * norm
 
-    def get_score(self, h_e, r_e, t_e):
+    def _get_score(self, h_e, r_e, t_e):
         if self.L1_flag:
             score = - torch.sum(torch.abs(h_e + r_e - t_e), 1)
         else:
@@ -139,9 +147,9 @@ class KTUP(KnowledgeRecommender):
         entity_e = self.entity_embedding(item)
         item_e = item_e + entity_e
 
-        _, relation_e, norm_e = self.get_preferences(user_e, item_e, use_st_gumbel=self.use_st_gumbel)
-        proj_user_e = self.transH_projection(user_e, norm_e)
-        proj_item_e = self.transH_projection(item_e, norm_e)
+        _, relation_e, norm_e = self._get_preferences(user_e, item_e, use_st_gumbel=self.use_st_gumbel)
+        proj_user_e = self._transH_projection(user_e, norm_e)
+        proj_item_e = self._transH_projection(item_e, norm_e)
 
         return proj_user_e, relation_e, proj_item_e
 
@@ -152,8 +160,8 @@ class KTUP(KnowledgeRecommender):
         proj_pos_user_e, pos_relation_e, proj_pos_item_e = self.forward(user, pos_item)
         proj_neg_user_e, neg_relation_e, proj_neg_item_e = self.forward(user, neg_item)
 
-        pos_item_score = self.get_score(proj_pos_user_e, pos_relation_e, proj_pos_item_e)
-        neg_item_score = self.get_score(proj_neg_user_e, neg_relation_e, proj_neg_item_e)
+        pos_item_score = self._get_score(proj_pos_user_e, pos_relation_e, proj_pos_item_e)
+        neg_item_score = self._get_score(proj_neg_user_e, neg_relation_e, proj_neg_item_e)
 
         rec_loss = self.rec_loss(pos_item_score, neg_item_score)
         orthogonal_loss = orthogonalLoss(self.pref_embedding.weight, self.pref_norm_embedding.weight)
@@ -163,6 +171,15 @@ class KTUP(KnowledgeRecommender):
         return rec_loss, orthogonal_loss, align_loss
 
     def calculate_kg_loss(self, interaction):
+        r"""Calculate the training loss for a batch data of KG.
+
+        Args:
+            interaction (Interaction): Interaction class of the batch.
+
+        Returns:
+            torch.Tensor: Training loss, shape: []
+        """
+
         h = interaction[self.HEAD_ENTITY_ID]
         r = interaction[self.RELATION_ID]
         pos_t = interaction[self.TAIL_ENTITY_ID]
@@ -174,12 +191,12 @@ class KTUP(KnowledgeRecommender):
         r_e = self.relation_embedding(r)
         norm_e = self.relation_norm_embedding(r)
 
-        proj_h_e = self.transH_projection(h_e, norm_e)
-        proj_pos_t_e = self.transH_projection(pos_t_e, norm_e)
-        proj_neg_t_e = self.transH_projection(neg_t_e, norm_e)
+        proj_h_e = self._transH_projection(h_e, norm_e)
+        proj_pos_t_e = self._transH_projection(pos_t_e, norm_e)
+        proj_neg_t_e = self._transH_projection(neg_t_e, norm_e)
 
-        pos_tail_score = self.get_score(proj_h_e, r_e, proj_pos_t_e)
-        neg_tail_score = self.get_score(proj_h_e, r_e, proj_neg_t_e)
+        pos_tail_score = self._get_score(proj_h_e, r_e, proj_pos_t_e)
+        neg_tail_score = self._get_score(proj_h_e, r_e, proj_neg_t_e)
 
         kg_loss = self.kg_loss(pos_tail_score, neg_tail_score, torch.ones(h.size(0)).to(self.device))
         orthogonal_loss = orthogonalLoss(r_e, norm_e)
@@ -195,7 +212,7 @@ class KTUP(KnowledgeRecommender):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
         proj_user_e, relation_e, proj_item_e = self.forward(user, item)
-        return self.get_score(proj_user_e, relation_e, proj_item_e)
+        return self._get_score(proj_user_e, relation_e, proj_item_e)
 
 
 def orthogonalLoss(rel_embeddings, norm_embeddings):

@@ -283,6 +283,21 @@ test_examples = {
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
         'min_user_inter_num': 5
     },
+    'Test NextItNet': {
+        'model': 'NextItNet',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'TO_LS, full',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': None,
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5
+    },
 
 }
 

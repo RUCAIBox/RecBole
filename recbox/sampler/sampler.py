@@ -4,7 +4,7 @@
 # @File   : sampler.py
 
 # UPDATE
-# @Time   : 2020/8/17, 2020/8/31, 2020/9/18, 2020/9/18
+# @Time   : 2020/8/17, 2020/8/31, 2020/10/6, 2020/9/18
 # @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou, Yushuo Chen
 # @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -141,3 +141,43 @@ class KGSampler(AbstractSampler):
             for head_entity_id in head_entity_ids:
                 if head_entity_id not in self.head_entities:
                     raise ValueError('head_entity_id [{}] not exist'.format(head_entity_id))
+
+
+class RepeatableSampler(AbstractSampler):
+    def __init__(self, phases, dataset, distribution='uniform'):
+        if not isinstance(phases, list):
+            phases = [phases]
+        self.phases = phases
+        self.dataset = dataset
+
+        self.iid_field = dataset.iid_field
+        self.user_num = dataset.user_num
+        self.item_num = dataset.item_num
+
+        super().__init__(distribution=distribution)
+
+    def get_random_list(self):
+        if self.distribution == 'uniform':
+            return list(range(1, self.item_num))
+        elif self.distribution == 'popularity':
+            return self.dataset.inter_feat[self.iid_field].values
+        else:
+            raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
+
+    def get_used_ids(self):
+        return np.array([set() for i in range(self.user_num)])
+
+    def sample_by_user_ids(self, user_ids, num):
+        try:
+            return self._sample_by_key_ids(user_ids, num, self.used_ids[user_ids])
+        except IndexError:
+            for user_id in user_ids:
+                if user_id < 0 or user_id >= self.n_users:
+                    raise ValueError('user_id [{}] not exist'.format(user_id))
+
+    def set_phase(self, phase):
+        if phase not in self.phases:
+            raise ValueError('phase [{}] not exist'.format(phase))
+        new_sampler = copy.copy(self)
+        new_sampler.phase = phase
+        return new_sampler

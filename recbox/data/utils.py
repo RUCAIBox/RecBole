@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/3, 2020/9/17, 2020/8/31
+# @Time   : 2020/10/6, 2020/9/17, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
@@ -12,7 +12,7 @@ import os
 from logging import getLogger
 
 from recbox.config import EvalSetting
-from recbox.sampler import KGSampler, Sampler
+from recbox.sampler import KGSampler, Sampler, RepeatableSampler
 from recbox.utils import ModelType
 from recbox.data.dataloader import *
 
@@ -64,7 +64,10 @@ def data_preparation(config, dataset, save=False):
     kwargs = {}
     if config['training_neg_sample_num']:
         es.neg_sample_by(config['training_neg_sample_num'])
-        sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
+        if model_type != ModelType.SEQUENTIAL:
+            sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
+        else:
+            sampler = RepeatableSampler(phases, dataset, es.neg_sample_args['distribution'])
         kwargs['sampler'] = sampler.set_phase('train')
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
         if model_type == ModelType.KNOWLEDGE:
