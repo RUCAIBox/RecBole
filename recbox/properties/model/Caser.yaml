@@ -1,6 +1,5 @@
 # Note: MAX_ITEM_LIST_LENGTH needs to be consistent with L
 MAX_ITEM_LIST_LENGTH: 10
-TARGET_PREFIX: 'target_'
 LIST_SUFFIX: '_list'
 ITEM_LIST_LENGTH_FIELD: 'item_length'
 

@@ -1,4 +1,3 @@
-TARGET_PREFIX: 'target_'
 LIST_SUFFIX: '_list'
 ITEM_LIST_LENGTH_FIELD: 'item_length'
 MAX_ITEM_LIST_LENGTH: 50
