@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/9/21
+# @Time   : 2020/10/4
 # @Author : Zhichao Feng
 # @Email  : fzcbupt@gmai.com
 
-"""
+r"""
+recbox.model.context_aware_recommender.din
+##############################################
 Reference:
 Guorui Zhou et al. "Deep Interest Network for Click-Through Rate Prediction" in ACM SIGKDD 2018
 
@@ -22,8 +24,7 @@ import torch.nn.functional as F
 from torch.nn.init import xavier_normal_, constant_
 
 from recbox.utils import ModelType, InputType, FeatureType
-from recbox.model.layers import FMEmbedding
-from recbox.model.layers import MLPLayers
+from recbox.model.layers import FMEmbedding, MLPLayers, SequenceAttLayer
 from recbox.model.abstract_recommender import SequentialRecommender
 
 class DIN(SequentialRecommender):
@@ -31,15 +32,9 @@ class DIN(SequentialRecommender):
     and finally gets the user representation
 
     Note:
-        In this implementation, dropout is used instead of mini batch aware regularizat.
-
         In the official source code, unlike the paper, user features and context features are not input into DNN.
-        In addition, the paper mentioned that the weights of items in the user history list will not go through softmax,
-        but this operation is carried out in the official code.
-
-        Considering the actual performance, we adopt the methods in the official source code for the above two points.
+        We just migrated and changed the official source code.
         But You can get user features embedding from user_feat_list.
-
         Besides, in order to compare with other models, we use AUC instead of GAUC to evaluate the model.
 
     """
@@ -54,17 +49,14 @@ class DIN(SequentialRecommender):
         self.LABEL_FIELD = config['LABEL_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
+        self.TARGET_ITEM_ID = self.ITEM_ID
         self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
         self.embedding_size = config['embedding_size']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.device = config['device']
         self.embedding_size = config['embedding_size']
-        self.dropout = config['dropout']
         self.max_len = config['MAX_ITEM_LIST_LENGTH']
         self.dataset = dataset
-
-        self.mask_mat = torch.arange(self.max_len).to(self.device).view(1, -1) # init mask
 
         self.user_feat = self.dataset.get_user_feature()
         self.item_feat = self.dataset.get_item_feature()
@@ -78,13 +70,13 @@ class DIN(SequentialRecommender):
         # self.dnn_list = [(3 * self.num_feature_field['item'] + self.num_feature_field['user'])
         #                  * self.embedding_size] + self.mlp_hidden_size
         self.dnn_list = [(3 * self.num_feature_field['item']) * self.embedding_size] + self.mlp_hidden_size
-
         self.att_list = [4 * self.num_feature_field['item'] * self.embedding_size] + self.mlp_hidden_size
-        self.dnn_mlp_layers = MLPLayers(self.dnn_list, activation='Dice', dropout=self.dropout, bn=True)
-        self.att_mlp_layers = MLPLayers(self.att_list, activation='Sigmoid', dropout=self.dropout, bn=False)
+
+        mask_mat = torch.arange(self.max_len).to(self.device).view(1, -1) # init mask
+        self.attention = SequenceAttLayer(mask_mat, self.att_list, activation='Sigmoid',
+                                          softmax_stag=False, return_seq_weight=False)
+        self.dnn_mlp_layers = MLPLayers(self.dnn_list, activation='Dice', bn=True)
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
-        self.dense = nn.Linear(self.mlp_hidden_size[-1], 1)
-        self.PredictionLayer = PredictionLayer()
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
@@ -99,7 +91,7 @@ class DIN(SequentialRecommender):
                 constant_(module.bias.data, 0)
 
     def init_fields_name_dim(self):
-        """get user feature field and item feature field
+        """get user feature field and item feature field.
 
         """
         self.token_field_offsets = {}
@@ -132,7 +124,7 @@ class DIN(SequentialRecommender):
                 self.num_feature_field[type] += 1
 
     def init_embedding(self):
-        """get embedding of all features
+        """get embedding of all features.
 
         """
         for type in self.types:
@@ -192,7 +184,7 @@ class DIN(SequentialRecommender):
                             user_emb * target_item_feat_emb], dim=-1)
         din_out = self.dnn_mlp_layers(din_in)
         preds = self.dnn_predict_layers(din_out)
-        preds = self.PredictionLayer(preds)
+        preds = self.sigmoid(preds)
 
         return preds.squeeze(1)
 
@@ -210,8 +202,8 @@ class DIN(SequentialRecommender):
     # TODO: 加入抽象类中
     def embed_float_fields(self, float_fields, type, embed=True):
         """Get the embedding of float fields.
-            In the following three functions, when the type is user, [batch_ size, max_ item_length] should be recognised
-        to [batch_ size]
+        In the following three functions("embed_float_fields" "embed_token_fields" "embed_token_seq_fields")
+        when the type is user, [batch_ size, max_item_length] should be recognised as [batch_size]
 
         Args:
             float_fields(torch.Tensor): [batch_size, max_item_length, num_float_field]
@@ -239,7 +231,7 @@ class DIN(SequentialRecommender):
         """Get the embedding of toekn fields
 
         Args:
-            token_fields(torch.Tensor): input,[batch_size, max_item_length, num_token_field]
+            token_fields(torch.Tensor): input, [batch_size, max_item_length, num_token_field]
             type(str): user or item
 
         Returns:
@@ -367,56 +359,3 @@ class DIN(SequentialRecommender):
         # sparse_embedding[type] shape: [batch_size, max_item_length, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding[type] shape: [batch_size, max_item_length, num_float_field] or [batch_size, max_item_length, num_float_field, embed_dim] or None
         return sparse_embedding, dense_embedding
-
-    def attention(self, queries, keys, keys_length):
-        """attention Layer. Get the representation of each user in the batch.
-
-        Args:
-            queries(torch.Tensor): candidate ads, [B, H], H means embedding_size * feat_num
-            keys(torch.Tensor): user_hist, [B, T, H]
-            keys_length(torch.Tensor): mask, [B]
-
-        Returns:
-            torch.Tensor: result
-
-        """
-        embbedding_size = queries.shape[-1]  # H
-        hist_len = keys.shape[1]  # T
-        queries = queries.repeat(1, hist_len)
-
-        queries = queries.view(-1, hist_len, embbedding_size)
-
-        # MLP Layer
-        input_tensor = torch.cat([queries, keys, queries - keys, queries * keys], dim=-1)
-        output = self.att_mlp_layers(input_tensor)
-        output = torch.transpose(self.dense(output), -1, -2)
-
-        # get mask
-        output = output.squeeze(1)
-        mask = self.mask_mat.repeat(output.size(0), 1)
-        mask = (mask >= keys_length.unsqueeze(1))
-
-        # mask
-        output = output.masked_fill(mask=mask, value=torch.tensor(-np.inf))
-        output = output.unsqueeze(1)
-        output = output / (embbedding_size ** 0.5)
-
-        # get the weight of each user's history list about the target item
-        output = F.softmax(output, dim=2)  # [B, 1, T]
-        output = torch.matmul(output, keys)  # [B, 1, H]
-
-        return output
-
-
-class PredictionLayer(nn.Module):
-    """Predict Layer.Get the possibilities that user clicks the candidate item.
-    """
-    def __init__(self):
-        super(PredictionLayer, self).__init__()
-        self.bias = nn.Parameter(torch.zeros((1,)))
-
-    def forward(self, preds):
-        output = preds + self.bias
-        output = torch.sigmoid(output)
-
-        return output

@@ -8,7 +8,9 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
-"""
+r"""
+recbox.model.general_recommender.dgcf
+################################################
 Reference:
 Wang Xiang et al. "Disentangled Graph Collaborative Filtering." in SIGIR 2020.
 
@@ -30,7 +32,7 @@ from recbox.model.init import xavier_normal_initialization
 
 
 def sample_cor_samples(n_users, n_items, cor_batch_size):
-    """This is a function that sample item ids and user ids.
+    r"""This is a function that sample item ids and user ids.
 
     Args:
         n_users (int): number of users in total
@@ -51,8 +53,10 @@ def sample_cor_samples(n_users, n_items, cor_batch_size):
 
 
 class DGCF(GeneralRecommender):
-    """DGCF is a model that incorporate disentangled representation for recommendation.
-        We implement the model following the original author with a pairwise training mode.
+    r"""DGCF is a disentangled representation enhanced matrix factorization model.
+    The interaction matrix of :math:`n_{users} \times n_{items}` is decomposed to math:`n_{factors}` intent graph,
+    we carefully design the data interface and use sparse tensor to train and test efficiently.
+    We implement the model following the original author with a pairwise training mode.
     """
     input_type = InputType.PAIRWISE
 
@@ -108,25 +112,18 @@ class DGCF(GeneralRecommender):
         self.apply(xavier_normal_initialization)
 
     def _build_sparse_tensor(self, indices, values, size):
-        """Construct the sparse matrix with indices, values and size.
-
-        Returns:
-            Sparse tensor of the identity matrix. Shape of (size)
-        """
+        # Construct the sparse matrix with indices, values and size.
         return torch.sparse.FloatTensor(indices, values, size).to(self.device)
 
     def get_ego_embeddings(self):
-        """
-        Returns:
-            concat of user embeddings and item embeddings
-        """
+        # concat of user embeddings and item embeddings
         user_embd = self.user_embedding.weight
         item_embd = self.item_embedding.weight
         ego_embeddings = torch.cat([user_embd, item_embd], dim=0)
         return ego_embeddings
 
     def build_matrix(self, A_values):
-        """Get the normalized interaction matrix of users and items according to A_values.
+        r"""Get the normalized interaction matrix of users and items according to A_values.
 
         Construct the square matrix from the training data and normalize it
         using the laplace matrix.
@@ -138,8 +135,7 @@ class DGCF(GeneralRecommender):
             A_{hat} = D^{-0.5} \times A \times D^{-0.5}
 
         Returns:
-            factor_edge_weight (torch.cuda.FloatTensor): (num_edge, n_factors)
-            Sparse tensor of the normalized interaction matrix.
+            torch.cuda.FloatTensor: Sparse tensor of the normalized interaction matrix. shape: (num_edge, n_factors)
         """
         norm_A_values = self.softmax(A_values)
         factor_edge_weight = []
@@ -278,6 +274,15 @@ class DGCF(GeneralRecommender):
         return loss
 
     def create_cor_loss(self, cor_u_embeddings, cor_i_embeddings):
+        r"""Calculate the correlation loss for a sampled users and items.
+
+        Args:
+            cor_u_embeddings (torch.cuda.FloatTensor): (cor_batch_size, n_factors)
+            cor_i_embeddings (torch.cuda.FloatTensor): (cor_batch_size, n_factors)
+
+        Returns:
+            torch.Tensor : correlation loss.
+        """
         cor_loss = None
 
         ui_embeddings = torch.cat((cor_u_embeddings, cor_i_embeddings), dim=0)

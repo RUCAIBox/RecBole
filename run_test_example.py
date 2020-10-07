@@ -245,7 +245,9 @@ test_examples = {
     'Test KTUP': {
         'model': 'KTUP',
         'dataset': 'kgdata_example',
-        'epochs': 1,
+        'train_rec_step': 1,
+        'train_kg_step': 1,
+        'epochs': 2,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
@@ -268,6 +270,21 @@ test_examples = {
     },
     'Test Caser': {
         'model': 'Caser',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'TO_LS, full',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': None,
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5
+    },
+    'Test NextItNet': {
+        'model': 'NextItNet',
         'dataset': 'ml-100k',
         'epochs': 1,
         'training_neg_sample_num': 0,

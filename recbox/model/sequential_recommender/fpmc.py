@@ -1,7 +1,21 @@
+# -*- coding: utf-8 -*-
 # @Time   : 2020/8/28 14:32
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
 
+# UPDATE
+# @Time   : 2020/10/2
+# @Author : Yujie Lu
+# @Email  : yujielu1998@gmail.com
+
+r"""
+recbox.model.sequential_recommender.fpmc
+################################################
+
+Reference:
+Steffen Rendle et al. "Factorizing Personalized Markov Chains for Next-Basket Recommendation." in WWW 2010.
+
+"""
 import torch
 from torch import nn
 from torch.nn.init import xavier_normal_
@@ -11,14 +25,25 @@ from recbox.model.abstract_recommender import SequentialRecommender
 
 
 class FPMC(SequentialRecommender):
+    r"""The FPMC model is mainly used in the recommendation system to predict the possibility of unknown items arousing user interest,
+     and to discharge the item recommendation list.
+
+     Note:
+
+            In order that the generation method we used is common to other sequential models,
+            We set the size of the basket mentioned in the paper equal to 1.
+            For comparison with other models, the loss function used is BPR.
+
+    """
     input_type = InputType.PAIRWISE
     def __init__(self, config, dataset):
         super(FPMC, self).__init__()
+        # load parameters info
         self.USER_ID = config['USER_ID_FIELD']
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
         self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
-        self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
+        self.TARGET_ITEM_ID = self.ITEM_ID
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
 
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
@@ -26,14 +51,18 @@ class FPMC(SequentialRecommender):
         self.item_count = dataset.item_num
 
         self.embedding_size = config['embedding_size']
-
-        self.UI_emb = nn.Embedding(self.user_count, self.embedding_size)                # user emb
-        self.IU_emb = nn.Embedding(self.item_count, self.embedding_size)                # pred emb
-        self.LI_emb = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0) # item list emb
-        self.IL_emb = nn.Embedding(self.item_count, self.embedding_size)                # pred emb
+        # user embedding matrix
+        self.UI_emb = nn.Embedding(self.user_count, self.embedding_size)
+        # label embedding matrix
+        self.IU_emb = nn.Embedding(self.item_count, self.embedding_size)
+        # last click item embedding matrix
+        self.LI_emb = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
+        # label embedding matrix
+        self.IL_emb = nn.Embedding(self.item_count, self.embedding_size)
+        # define loss
         self.loss = BPRLoss()
 
-
+        # weight initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):
@@ -43,11 +72,6 @@ class FPMC(SequentialRecommender):
 
     def forward(self, interaction):
         item_id_list = interaction[self.ITEM_ID_LIST]
-        # index = interaction[self.ITEM_LIST_LEN]
-        # index = index.view(item_id_list.size(0), 1)
-        # # reset masked_id to 0
-        # item_id_list.scatter_(dim=1, index=index, src=torch.zeros_like(item_id_list))
-
         item_list_len = interaction[self.ITEM_LIST_LEN]
         item_last_click_index = item_list_len - 1
         item_last_click = torch.gather(item_id_list, dim=1, index=item_last_click_index.unsqueeze(1))
@@ -72,12 +96,17 @@ class FPMC(SequentialRecommender):
 
 
     def pmfc(self, Vui, Viu, Vil, Vli):
-        """
-        :param Vui: user embedding:[B,1,E]
-        :param Viu: pos or neg:[B,1,E]
-        :param Vil: pos or neg:[B,1,E]
-        :param Vli: item_list :[B,1,E]
-        :return:
+        r"""This is the core part of the FPMC model,can be expressed by a combination of a MF and a FMC model.
+
+
+        Args:
+            Vui(torch.FloatTensor): The embedding tensor of a batch of user, shape of [batch_size, 1, embedding_size]
+            Viu(torch.FloatTensor): The embedding matrix of pos item or neg item, shape of [batch_size, n, embedding_size]
+            Vil(torch.FloatTensor): The embedding matrix of pos item or neg item, shape of [batch_size, n, embedding_size]
+            Vli(torch.FloatTensor): The embedding matrix of last click item, shape of [batch_size, 1, embedding_size]
+
+        Returns:
+            torch.Tensor:score, shape of [batch_size, 1]
         """
     #     MF
         mf = torch.matmul(Vui, Viu.permute(0, 2, 1))
@@ -96,10 +125,6 @@ class FPMC(SequentialRecommender):
         user_emb = torch.unsqueeze(user_emb, dim=1)  # [b,1,emb]
 
         item_id_list = interaction[self.ITEM_ID_LIST]
-        # index = interaction[self.ITEM_LIST_LEN]
-        # index = index.view(item_id_list.size(0), 1)
-        # reset masked_id to 0
-        # item_id_list.scatter_(dim=1, index=index, src=torch.zeros_like(item_id_list))
         item_list_len = interaction[self.ITEM_LIST_LEN]
         item_last_click_index = item_list_len - 1
         item_last_click = torch.gather(item_id_list, dim=1, index=item_last_click_index.unsqueeze(1))
