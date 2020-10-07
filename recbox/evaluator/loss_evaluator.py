@@ -15,14 +15,14 @@ recbox.evaluator.loss_evaluator
 
 import numpy as np
 import torch
-
-from .metrics import metrics_dict
+from recbox.evaluator.abstract_evaluator import AbstractEvaluator
+from recbox.evaluator.metrics import metrics_dict
 
 # These metrics are typical in loss recommendations
 loss_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOGLOSS']}
 
 
-class LossEvaluator(object):
+class LossEvaluator(AbstractEvaluator):
     r"""Loss Evaluator is mainly used in rating prediction and click through rate prediction.
     The metrics used do not calculate group-based metrics which considers the metrics scores averaged across users.
     It is also not limited to k. Instead, it calculates the scores on the entire prediction results regardless the users.
@@ -30,9 +30,9 @@ class LossEvaluator(object):
 
     """
     def __init__(self, config):
-        self.metrics = config['metrics']
+        super().__init__(config)
+        
         self.label_field = config['LABEL_FIELD']
-
         self._check_args()
 
     def evaluate(self, interaction, pred_scores):

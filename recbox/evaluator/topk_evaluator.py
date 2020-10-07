@@ -15,6 +15,7 @@ recbox.evaluator.topk_evaluator
 
 import numpy as np
 import torch
+from recbox.evaluator.abstract_evaluator import AbstractEvaluator
 from recbox.evaluator.metrics import metrics_dict
 from torch.nn.utils.rnn import pad_sequence
 
@@ -22,16 +23,16 @@ from torch.nn.utils.rnn import pad_sequence
 topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP']}
 
 
-class TopKEvaluator(object):
+class TopKEvaluator(AbstractEvaluator):
     r"""TopK Evaluator is mainly used in ranking tasks. The metrics used calculate group-based metrics 
     which considers the metrics scores averaged across users. some of them are also limited to k. 
     Now, we support six topk metrics which contain `'Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP'`.
     
     """
     def __init__(self, config):
-        self.topk = config['topk']
-        self.metrics = config['metrics']
+        super().__init__(config)
 
+        self.topk = config['topk']
         self._check_args()
 
     def evaluate(self, interaction, scores_tensor, full=False):

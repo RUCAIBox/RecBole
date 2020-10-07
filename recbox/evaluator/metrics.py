@@ -14,11 +14,11 @@ recbox.evaluator.metrics
 """
 
 from logging import getLogger
+
 import numpy as np
+from recbox.evaluator.utils import _binary_clf_curve
 from sklearn.metrics import auc as sk_auc
 from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error
-
-from recbox.evaluator.utils import _binary_clf_curve
 
 #    TopK Metrics    #
 
