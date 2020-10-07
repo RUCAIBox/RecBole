@@ -7,7 +7,6 @@
 # @Time    :   2020/08/04   2020/08/09
 # @Author  :   Kaiyuan Li   Zhichao Feng
 # @email   :   tsotfsk@outlook.com  fzcbupt@gmail.com
-
 """
 recbox.evaluator.loss_evaluator
 ################################
@@ -19,11 +18,13 @@ import torch
 from .metrics import metrics_dict
 
 # These metrics are typical in loss recommendations
-loss_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOGLOSS']}
+loss_metrics = {
+    metric.lower(): metric
+    for metric in ['AUC', 'RMSE', 'MAE', 'LOGLOSS']
+}
 
 
 class LossEvaluator(object):
-
     def __init__(self, config):
         self.metrics = config['metrics']
         self.label_field = config['LABEL_FIELD']
@@ -92,5 +93,6 @@ class LossEvaluator(object):
         return self.metrics_info(trues, preds)
 
     def __str__(self):
-        mesg = 'The Loss Evaluator Info:\n' + '\tMetrics' + ','.join([loss_metrics[metric.lower()] for metric in self.metrics])
+        mesg = 'The Loss Evaluator Info:\n' + '\tMetrics' + ','.join(
+            [loss_metrics[metric.lower()] for metric in self.metrics])
         return mesg

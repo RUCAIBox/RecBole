@@ -15,7 +15,11 @@ class Pop(GeneralRecommender):
     def __init__(self, config, dataset):
         super(Pop, self).__init__(config, dataset)
 
-        self.item_cnt = torch.zeros(self.n_items, 1, dtype=torch.long, device=self.device, requires_grad=False)
+        self.item_cnt = torch.zeros(self.n_items,
+                                    1,
+                                    dtype=torch.long,
+                                    device=self.device,
+                                    requires_grad=False)
         self.max_cnt = None
 
         self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))
@@ -40,6 +44,9 @@ class Pop(GeneralRecommender):
 
     def full_sort_predict(self, interaction):
         batch_user_num = interaction[self.USER_ID].shape[0]
-        result = self.item_cnt.to(torch.float64) / self.max_cnt.to(torch.float64)
-        result = torch.repeat_interleave(result.unsqueeze(0), batch_user_num, dim=0)
+        result = self.item_cnt.to(torch.float64) / self.max_cnt.to(
+            torch.float64)
+        result = torch.repeat_interleave(result.unsqueeze(0),
+                                         batch_user_num,
+                                         dim=0)
         return result.view(-1)

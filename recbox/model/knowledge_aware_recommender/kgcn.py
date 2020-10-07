@@ -2,7 +2,6 @@
 # @Time   : 2020/10/6
 # @Author : Changxin Tian
 # @Email  : cx.tian@outlook.com
-
 r"""
 recbox.model.knowledge_aware_recommender.kgcn
 ################################################
@@ -39,28 +38,34 @@ class KGCN(KnowledgeRecommender):
         # load parameters info
         self.embedding_size = config['embedding_size']
         self.full_sort_batch_size = config['full_sort_batch_size']
-        self.n_iter = config['n_iter']  # number of iterations when computing entity representation
+        self.n_iter = config[
+            'n_iter']  # number of iterations when computing entity representation
         self.aggregator_class = config['aggregator']  # which aggregator to use
         self.l2_weight = config['l2_weight']  # weight of l2 regularization
         self.neighbor_sample_size = config['neighbor_sample_size']
 
         # define embedding
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
-        self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
-        self.relation_embedding = nn.Embedding(self.n_relations + 1, self.embedding_size)
+        self.entity_embedding = nn.Embedding(self.n_entities,
+                                             self.embedding_size)
+        self.relation_embedding = nn.Embedding(self.n_relations + 1,
+                                               self.embedding_size)
 
         # sample neighbors
         kg_graph = dataset.kg_graph(form='coo', value_field='relation_id')
         adj_entity, adj_relation = self.construct_adj(kg_graph)
-        self.adj_entity, self.adj_relation = adj_entity.to(self.device), adj_relation.to(self.device)
+        self.adj_entity, self.adj_relation = adj_entity.to(
+            self.device), adj_relation.to(self.device)
 
         # define function
         self.softmax = nn.Softmax(dim=-1)
         self.linear_layers = torch.nn.ModuleList()
         for i in range(self.n_iter):
-            self.linear_layers.append(nn.Linear(
-                self.embedding_size if not self.aggregator_class == 'concat' else self.embedding_size * 2,
-                self.embedding_size))
+            self.linear_layers.append(
+                nn.Linear(
+                    self.embedding_size
+                    if not self.aggregator_class == 'concat' else
+                    self.embedding_size * 2, self.embedding_size))
         self.ReLU = nn.ReLU()
         self.Tanh = nn.Tanh()
 
@@ -100,24 +105,34 @@ class KGCN(KnowledgeRecommender):
         # each line of adj_entity stores the sampled neighbor entities for a given entity
         # each line of adj_relation stores the corresponding sampled neighbor relations
         entity_num = kg_graph.shape[0]
-        adj_entity = np.zeros([entity_num, self.neighbor_sample_size], dtype=np.int64)
-        adj_relation = np.zeros([entity_num, self.neighbor_sample_size], dtype=np.int64)
+        adj_entity = np.zeros([entity_num, self.neighbor_sample_size],
+                              dtype=np.int64)
+        adj_relation = np.zeros([entity_num, self.neighbor_sample_size],
+                                dtype=np.int64)
         for entity in range(entity_num):
             if entity not in kg_dict.keys():
-                adj_entity[entity] = np.array([entity] * self.neighbor_sample_size)
-                adj_relation[entity] = np.array([0] * self.neighbor_sample_size)
+                adj_entity[entity] = np.array([entity] *
+                                              self.neighbor_sample_size)
+                adj_relation[entity] = np.array([0] *
+                                                self.neighbor_sample_size)
                 continue
 
             neighbors = kg_dict[entity]
             n_neighbors = len(neighbors)
             if n_neighbors >= self.neighbor_sample_size:
-                sampled_indices = np.random.choice(list(range(n_neighbors)), size=self.neighbor_sample_size,
-                                                   replace=False)
+                sampled_indices = np.random.choice(
+                    list(range(n_neighbors)),
+                    size=self.neighbor_sample_size,
+                    replace=False)
             else:
-                sampled_indices = np.random.choice(list(range(n_neighbors)), size=self.neighbor_sample_size,
-                                                   replace=True)
-            adj_entity[entity] = np.array([neighbors[i][0] for i in sampled_indices])
-            adj_relation[entity] = np.array([neighbors[i][1] for i in sampled_indices])
+                sampled_indices = np.random.choice(
+                    list(range(n_neighbors)),
+                    size=self.neighbor_sample_size,
+                    replace=True)
+            adj_entity[entity] = np.array(
+                [neighbors[i][0] for i in sampled_indices])
+            adj_relation[entity] = np.array(
+                [neighbors[i][1] for i in sampled_indices])
 
         return torch.from_numpy(adj_entity), torch.from_numpy(adj_relation)
 
@@ -142,13 +157,18 @@ class KGCN(KnowledgeRecommender):
         relations = []
         for i in range(self.n_iter):
             index = torch.flatten(entities[i])
-            neighbor_entities = torch.reshape(torch.index_select(self.adj_entity, 0, index), (self.batch_size, -1))
-            neighbor_relations = torch.reshape(torch.index_select(self.adj_relation, 0, index), (self.batch_size, -1))
+            neighbor_entities = torch.reshape(
+                torch.index_select(self.adj_entity, 0, index),
+                (self.batch_size, -1))
+            neighbor_relations = torch.reshape(
+                torch.index_select(self.adj_relation, 0, index),
+                (self.batch_size, -1))
             entities.append(neighbor_entities)
             relations.append(neighbor_relations)
         return entities, relations
 
-    def mix_neighbor_vectors(self, neighbor_vectors, neighbor_relations, user_embeddings):
+    def mix_neighbor_vectors(self, neighbor_vectors, neighbor_relations,
+                             user_embeddings):
         r"""Mix neighbor vectors on user-specific graph.
 
         Args:
@@ -165,18 +185,25 @@ class KGCN(KnowledgeRecommender):
         """
         avg = False
         if not avg:
-            user_embeddings = torch.reshape(user_embeddings,
-                                            (self.batch_size, 1, 1, self.embedding_size))  # [batch_size, 1, 1, dim]
-            user_relation_scores = torch.mean(user_embeddings * neighbor_relations,
-                                              dim=-1)  # [batch_size, -1, n_neighbor]
-            user_relation_scores_normalized = self.softmax(user_relation_scores)  # [batch_size, -1, n_neighbor]
+            user_embeddings = torch.reshape(
+                user_embeddings,
+                (self.batch_size, 1, 1,
+                 self.embedding_size))  # [batch_size, 1, 1, dim]
+            user_relation_scores = torch.mean(
+                user_embeddings * neighbor_relations,
+                dim=-1)  # [batch_size, -1, n_neighbor]
+            user_relation_scores_normalized = self.softmax(
+                user_relation_scores)  # [batch_size, -1, n_neighbor]
 
-            user_relation_scores_normalized = torch.unsqueeze(user_relation_scores_normalized,
-                                                              dim=-1)  # [batch_size, -1, n_neighbor, 1]
-            neighbors_aggregated = torch.mean(user_relation_scores_normalized * neighbor_vectors,
+            user_relation_scores_normalized = torch.unsqueeze(
+                user_relation_scores_normalized,
+                dim=-1)  # [batch_size, -1, n_neighbor, 1]
+            neighbors_aggregated = torch.mean(user_relation_scores_normalized *
+                                              neighbor_vectors,
                                               dim=2)  # [batch_size, -1, dim]
         else:
-            neighbors_aggregated = torch.mean(neighbor_vectors, dim=2)  # [batch_size, -1, dim]
+            neighbors_aggregated = torch.mean(neighbor_vectors,
+                                              dim=2)  # [batch_size, -1, dim]
         return neighbors_aggregated
 
     def aggregate(self, user_embeddings, entities, relations):
@@ -203,26 +230,38 @@ class KGCN(KnowledgeRecommender):
         for i in range(self.n_iter):
             entity_vectors_next_iter = []
             for hop in range(self.n_iter - i):
-                shape = (self.batch_size, -1, self.neighbor_sample_size, self.embedding_size)
+                shape = (self.batch_size, -1, self.neighbor_sample_size,
+                         self.embedding_size)
                 self_vectors = entity_vectors[hop]
-                neighbor_vectors = torch.reshape(entity_vectors[hop + 1], shape)
-                neighbor_relations = torch.reshape(relation_vectors[hop], shape)
+                neighbor_vectors = torch.reshape(entity_vectors[hop + 1],
+                                                 shape)
+                neighbor_relations = torch.reshape(relation_vectors[hop],
+                                                   shape)
 
-                neighbors_agg = self.mix_neighbor_vectors(neighbor_vectors, neighbor_relations,
-                                                          user_embeddings)  # [batch_size, -1, dim]
+                neighbors_agg = self.mix_neighbor_vectors(
+                    neighbor_vectors, neighbor_relations,
+                    user_embeddings)  # [batch_size, -1, dim]
 
                 if self.aggregator_class == 'sum':
-                    output = torch.reshape(self_vectors + neighbors_agg, (-1, self.embedding_size))  # [-1, dim]
+                    output = torch.reshape(
+                        self_vectors + neighbors_agg,
+                        (-1, self.embedding_size))  # [-1, dim]
                 elif self.aggregator_class == 'neighbor':
-                    output = torch.reshape(neighbors_agg, (-1, self.embedding_size))  # [-1, dim]
+                    output = torch.reshape(
+                        neighbors_agg, (-1, self.embedding_size))  # [-1, dim]
                 elif self.aggregator_class == 'concat':
-                    output = torch.cat([self_vectors, neighbors_agg], dim=-1)  # [batch_size, -1, dim * 2]
-                    output = torch.reshape(output, (-1, self.embedding_size * 2))  # [-1, dim * 2]
+                    output = torch.cat([self_vectors, neighbors_agg],
+                                       dim=-1)  # [batch_size, -1, dim * 2]
+                    output = torch.reshape(
+                        output, (-1, self.embedding_size * 2))  # [-1, dim * 2]
                 else:
-                    raise Exception("Unknown aggregator: " + self.aggregator_class)
+                    raise Exception("Unknown aggregator: " +
+                                    self.aggregator_class)
 
                 output = self.linear_layers[i](output)
-                output = torch.reshape(output, [self.batch_size, -1, self.embedding_size])  # [batch_size, -1, dim]
+                output = torch.reshape(
+                    output, [self.batch_size, -1, self.embedding_size
+                             ])  # [batch_size, -1, dim]
 
                 if i == self.n_iter - 1:
                     vector = self.Tanh(output)
@@ -232,7 +271,8 @@ class KGCN(KnowledgeRecommender):
                 entity_vectors_next_iter.append(vector)
             entity_vectors = entity_vectors_next_iter
 
-        item_embeddings = torch.reshape(entity_vectors[0], (self.batch_size, self.embedding_size))
+        item_embeddings = torch.reshape(entity_vectors[0],
+                                        (self.batch_size, self.embedding_size))
 
         return item_embeddings
 
@@ -260,7 +300,8 @@ class KGCN(KnowledgeRecommender):
         neg_item_score = torch.mul(user_e, neg_item_e).sum(dim=1)
 
         predict = torch.cat((pos_item_score, neg_item_score))
-        target = torch.zeros(len(user) * 2, dtype=torch.float32).to(self.device)
+        target = torch.zeros(len(user) * 2,
+                             dtype=torch.float32).to(self.device)
         target[:len(user)] = 1
         rec_loss = self.bce_loss(predict, target)
 
@@ -279,13 +320,16 @@ class KGCN(KnowledgeRecommender):
         user = interaction[self.USER_ID]
         item = torch.tensor(range(self.n_items)).to(self.device)
 
-        full_sort_batch_list = [user[i:i + self.full_sort_batch_size]
-                                for i in range(0, user.shape[0], self.full_sort_batch_size)]
+        full_sort_batch_list = [
+            user[i:i + self.full_sort_batch_size]
+            for i in range(0, user.shape[0], self.full_sort_batch_size)
+        ]
         score_list = []
         for user_batch in full_sort_batch_list:
             user = torch.unsqueeze(user_batch, dim=1).repeat(1, item.shape[0])
             user = torch.flatten(user)
-            item = torch.unsqueeze(item, dim=0).repeat(self.full_sort_batch_size, 1)
+            item = torch.unsqueeze(item,
+                                   dim=0).repeat(self.full_sort_batch_size, 1)
             item = torch.flatten(item)
 
             self.batch_size = item.shape[0]

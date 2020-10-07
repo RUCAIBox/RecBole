@@ -12,7 +12,9 @@ setup_requires = []
 
 extras_require = {
     'matplotlib': ['matplotlib>=3.1.3'],
-    'hyperopt': ['hyperopt>=0.2.4']
+    'hyperopt': ['hyperopt>=0.2.4'],
+    'yapf': ['yapf==0.30.0'],
+    'flake8': ['flake8==3.7.7', 'flake8-quotes==2.1.0']
 }
 
 # Readthedocs requires Sphinx extensions to be specified as part of

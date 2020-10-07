@@ -8,7 +8,6 @@
 # @Time   : 2020/8/24 14:58, 2020/9/16, 2020/9/21
 # @Author : Yujie Lu, Xingyu Pan, Zhichao Feng
 # @Email  : yujielu1998@gmail.com, panxy@ruc.edu.cn, fzcbupt@gmail.com
-
 """
 Common Layers in recommender system
 """
@@ -43,8 +42,12 @@ class MLPLayers(nn.Module):
         >> print(output.size())
         >> torch.Size([128, 16])
     """
-
-    def __init__(self, layers, dropout=0, activation='relu', bn=False, init_method=None):
+    def __init__(self,
+                 layers,
+                 dropout=0,
+                 activation='relu',
+                 bn=False,
+                 init_method=None):
         super(MLPLayers, self).__init__()
         self.layers = layers
         self.dropout = dropout
@@ -54,7 +57,8 @@ class MLPLayers(nn.Module):
         self.logger = getLogger()
 
         mlp_modules = []
-        for idx, (input_size, output_size) in enumerate(zip(self.layers[:-1], self.layers[1:])):
+        for idx, (input_size, output_size) in enumerate(
+                zip(self.layers[:-1], self.layers[1:])):
             mlp_modules.append(nn.Dropout(p=self.dropout))
             mlp_modules.append(nn.Linear(input_size, output_size))
             if self.use_bn:
@@ -70,7 +74,9 @@ class MLPLayers(nn.Module):
             elif self.activation.lower() == 'none':
                 pass
             else:
-                self.logger.warning('Received unrecognized activation function, set default activation function')
+                self.logger.warning(
+                    'Received unrecognized activation function, set default activation function'
+                )
         self.mlp_layers = nn.Sequential(*mlp_modules)
         if self.init_method is not None:
             self.apply(self.init_weights)
@@ -95,7 +101,6 @@ class FMEmbedding(nn.Module):
         Output shape
         - 3D tensor with shape: ``(batch_size,field_size,embed_dim)``.
     """
-
     def __init__(self, field_dims, offsets, embed_dim):
         super(FMEmbedding, self).__init__()
         self.embedding = nn.Embedding(sum(field_dims), embed_dim)
@@ -115,14 +120,13 @@ class BaseFactorizationMachine(nn.Module):
         Output shape
         - 3D tensor with shape: ``(batch_size,1)`` or (batch_size, embed_dim).
     """
-
     def __init__(self, reduce_sum=True):
         super(BaseFactorizationMachine, self).__init__()
         self.reduce_sum = reduce_sum
 
     def forward(self, input_x):
-        square_of_sum = torch.sum(input_x, dim=1) ** 2
-        sum_of_square = torch.sum(input_x ** 2, dim=1)
+        square_of_sum = torch.sum(input_x, dim=1)**2
+        sum_of_square = torch.sum(input_x**2, dim=1)
         output = square_of_sum - sum_of_square
         if self.reduce_sum:
             output = torch.sum(output, dim=1, keepdim=True)
@@ -131,13 +135,13 @@ class BaseFactorizationMachine(nn.Module):
 
 
 class BiGNNLayer(nn.Module):
-
     def __init__(self, in_dim, out_dim):
         super(BiGNNLayer, self).__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.linear = torch.nn.Linear(in_features=in_dim, out_features=out_dim)
-        self.interActTransform = torch.nn.Linear(in_features=in_dim, out_features=out_dim)
+        self.interActTransform = torch.nn.Linear(in_features=in_dim,
+                                                 out_features=out_dim)
 
     def forward(self, lap_matrix, eye_matrix, features):
         # for GCF ajdMat is a (N+M) by (N+M) mat
@@ -159,12 +163,13 @@ class AttLayer(nn.Module):
         Output shape
         - 3D tensor with shape: ``(batch_size, M)`` .
     """
-
     def __init__(self, in_dim, att_dim):
         super(AttLayer, self).__init__()
         self.in_dim = in_dim
         self.att_dim = att_dim
-        self.w = torch.nn.Linear(in_features=in_dim, out_features=att_dim, bias=False)
+        self.w = torch.nn.Linear(in_features=in_dim,
+                                 out_features=att_dim,
+                                 bias=False)
         self.h = nn.Parameter(torch.randn(att_dim), requires_grad=True)
 
     def forward(self, infeatures):
@@ -197,7 +202,9 @@ class MultiHeadAttention(nn.Module):
         d_k = Q.size(-1)
         scores = torch.matmul(Q, K.transpose(-1, -2)) / np.sqrt(d_k)
         if mask is not None:
-            scores.masked_fill_(mask, -1e9)  # Fills elements of self tensor with value where mask is True.
+            scores.masked_fill_(
+                mask, -1e9
+            )  # Fills elements of self tensor with value where mask is True.
         attn = nn.Softmax(dim=-1)(scores)
         context = torch.matmul(attn, V)
         return context, attn
@@ -205,15 +212,19 @@ class MultiHeadAttention(nn.Module):
     def forward(self, input_Q, input_K, input_V, mask=None):
         residual, batch_size = input_Q, input_Q.size(0)
 
-        Q = self.W_Q(input_Q).view(batch_size, -1, self.n_head, self.d_k).transpose(1, 2)
-        K = self.W_K(input_K).view(batch_size, -1, self.n_head, self.d_k).transpose(1, 2)
-        V = self.W_V(input_V).view(batch_size, -1, self.n_head, self.d_v).transpose(1, 2)
+        Q = self.W_Q(input_Q).view(batch_size, -1, self.n_head,
+                                   self.d_k).transpose(1, 2)
+        K = self.W_K(input_K).view(batch_size, -1, self.n_head,
+                                   self.d_k).transpose(1, 2)
+        V = self.W_V(input_V).view(batch_size, -1, self.n_head,
+                                   self.d_v).transpose(1, 2)
 
         if mask is not None:
             mask = mask.unsqueeze(1).repeat(1, self.n_head, 1, 1)
 
         context, attn = self.scale_dot_product_attention(Q, K, V, mask)
-        context = context.transpose(1, 2).reshape(batch_size, -1, self.n_head * self.d_v)
+        context = context.transpose(1, 2).reshape(batch_size, -1,
+                                                  self.n_head * self.d_v)
         output = self.fc(context)
         return self.layernorm(output + residual), attn
 
@@ -226,12 +237,11 @@ class Dice(nn.Module):
         p(s)=\frac{1} {1 + e^{-\frac{s-E[s]} {\sqrt {Var[s] + \epsilon}}}}
 
     """
-
     def __init__(self, emb_size):
         super(Dice, self).__init__()
 
         self.sigmoid = nn.Sigmoid()
-        self.alpha = torch.zeros((emb_size,))
+        self.alpha = torch.zeros((emb_size, ))
 
     def forward(self, score):
         self.alpha = self.alpha.to(score.device)
@@ -252,8 +262,11 @@ class SequenceAttLayer(nn.Module):
         torch.Tensor: result
 
     """
-
-    def __init__(self, mask_mat, att_hidden_size=(80, 40), activation='sigmoid', softmax_stag=False,
+    def __init__(self,
+                 mask_mat,
+                 att_hidden_size=(80, 40),
+                 activation='sigmoid',
+                 softmax_stag=False,
                  return_seq_weight=True):
         super(SequenceAttLayer, self).__init__()
         self.att_hidden_size = att_hidden_size
@@ -261,7 +274,9 @@ class SequenceAttLayer(nn.Module):
         self.softmax_stag = softmax_stag
         self.return_seq_weight = return_seq_weight
         self.mask_mat = mask_mat
-        self.att_mlp_layers = MLPLayers(self.att_hidden_size, activation='Sigmoid', bn=False)
+        self.att_mlp_layers = MLPLayers(self.att_hidden_size,
+                                        activation='Sigmoid',
+                                        bn=False)
         self.dense = nn.Linear(self.att_hidden_size[-1], 1)
 
     def forward(self, queries, keys, keys_length):
@@ -272,7 +287,8 @@ class SequenceAttLayer(nn.Module):
         queries = queries.view(-1, hist_len, embbedding_size)
 
         # MLP Layer
-        input_tensor = torch.cat([queries, keys, queries - keys, queries * keys], dim=-1)
+        input_tensor = torch.cat(
+            [queries, keys, queries - keys, queries * keys], dim=-1)
         output = self.att_mlp_layers(input_tensor)
         output = torch.transpose(self.dense(output), -1, -2)
 
@@ -289,7 +305,7 @@ class SequenceAttLayer(nn.Module):
 
         output = output.masked_fill(mask=mask, value=torch.tensor(mask_value))
         output = output.unsqueeze(1)
-        output = output / (embbedding_size ** 0.5)
+        output = output / (embbedding_size**0.5)
 
         # get the weight of each user's history list about the target item
         if self.softmax_stag:
@@ -299,6 +315,3 @@ class SequenceAttLayer(nn.Module):
             output = torch.matmul(output, keys)  # [B, 1, H]
 
         return output
-
-
-

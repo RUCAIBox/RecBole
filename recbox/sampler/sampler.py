@@ -25,10 +25,12 @@ class AbstractSampler(object):
         self.used_ids = self.get_used_ids()
 
     def get_random_list(self):
-        raise NotImplementedError('method [get_random_list] should be implemented')
+        raise NotImplementedError(
+            'method [get_random_list] should be implemented')
 
     def get_used_ids(self):
-        raise NotImplementedError('method [get_used_ids] should be implemented')
+        raise NotImplementedError(
+            'method [get_used_ids] should be implemented')
 
     def random(self):
         item = self.random_list[self.random_pr % self.random_list_length]
@@ -55,7 +57,9 @@ class Sampler(AbstractSampler):
         if not isinstance(datasets, list):
             datasets = [datasets]
         if len(phases) != len(datasets):
-            raise ValueError('phases {} and datasets {} should have the same length'.format(phases, datasets))
+            raise ValueError(
+                'phases {} and datasets {} should have the same length'.format(
+                    phases, datasets))
 
         self.phases = phases
         self.datasets = datasets
@@ -74,17 +78,22 @@ class Sampler(AbstractSampler):
         elif self.distribution == 'popularity':
             random_item_list = []
             for dataset in self.datasets:
-                random_item_list.extend(dataset.inter_feat[self.iid_field].values)
+                random_item_list.extend(
+                    dataset.inter_feat[self.iid_field].values)
             return random_item_list
         else:
-            raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
+            raise NotImplementedError(
+                'Distribution [{}] has not been implemented'.format(
+                    self.distribution))
 
     def get_used_ids(self):
         used_item_id = dict()
         last = [set() for i in range(self.n_users)]
         for phase, dataset in zip(self.phases, self.datasets):
             cur = np.array([set(s) for s in last])
-            for uid, iid in dataset.inter_feat[[self.uid_field, self.iid_field]].values:
+            for uid, iid in dataset.inter_feat[[
+                    self.uid_field, self.iid_field
+            ]].values:
                 cur[uid].add(iid)
             last = used_item_id[phase] = cur
         return used_item_id
@@ -99,7 +108,8 @@ class Sampler(AbstractSampler):
 
     def sample_by_user_ids(self, user_ids, num):
         try:
-            return self._sample_by_key_ids(user_ids, num, self.used_ids[user_ids])
+            return self._sample_by_key_ids(user_ids, num,
+                                           self.used_ids[user_ids])
         except IndexError:
             for user_id in user_ids:
                 if user_id < 0 or user_id >= self.n_users:
@@ -126,7 +136,9 @@ class KGSampler(AbstractSampler):
         elif self.distribution == 'popularity':
             return list(self.hid_list) + list(self.tid_list)
         else:
-            raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
+            raise NotImplementedError(
+                'Distribution [{}] has not been implemented'.format(
+                    self.distribution))
 
     def get_used_ids(self):
         used_tail_entity_id = np.array([set() for i in range(self.entity_num)])
@@ -136,11 +148,13 @@ class KGSampler(AbstractSampler):
 
     def sample_by_entity_ids(self, head_entity_ids, num=1):
         try:
-            return self._sample_by_key_ids(head_entity_ids, num, self.used_ids[head_entity_ids])
+            return self._sample_by_key_ids(head_entity_ids, num,
+                                           self.used_ids[head_entity_ids])
         except IndexError:
             for head_entity_id in head_entity_ids:
                 if head_entity_id not in self.head_entities:
-                    raise ValueError('head_entity_id [{}] not exist'.format(head_entity_id))
+                    raise ValueError(
+                        'head_entity_id [{}] not exist'.format(head_entity_id))
 
 
 class RepeatableSampler(AbstractSampler):
@@ -162,14 +176,17 @@ class RepeatableSampler(AbstractSampler):
         elif self.distribution == 'popularity':
             return self.dataset.inter_feat[self.iid_field].values
         else:
-            raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
+            raise NotImplementedError(
+                'Distribution [{}] has not been implemented'.format(
+                    self.distribution))
 
     def get_used_ids(self):
         return np.array([set() for i in range(self.user_num)])
 
     def sample_by_user_ids(self, user_ids, num):
         try:
-            return self._sample_by_key_ids(user_ids, num, self.used_ids[user_ids])
+            return self._sample_by_key_ids(user_ids, num,
+                                           self.used_ids[user_ids])
         except IndexError:
             for user_id in user_ids:
                 if user_id < 0 or user_id >= self.n_users:

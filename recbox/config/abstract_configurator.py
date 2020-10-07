@@ -9,7 +9,6 @@ from recbox.utils import *
 
 
 class AbstractConfig(object):
-
     def __init__(self, ):
         self.args = dict()
         self.must_args = []
@@ -22,7 +21,8 @@ class AbstractConfig(object):
         :return: A dict whose key and value are both str.
         """
         if not os.path.isfile(file_name):
-            raise FileNotFoundError("There is no config file named '%s'!" % file_name)
+            raise FileNotFoundError("There is no config file named '%s'!" %
+                                    file_name)
         config = ConfigParser()
         config.optionxform = str
         config.read(file_name, encoding="utf-8")
@@ -64,7 +64,8 @@ class AbstractConfig(object):
         # convert param from str to value, i.e. int, float or list etc.
         try:
             value = eval(param)
-            if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum, None.__class__)):
+            if not isinstance(value, (str, int, float, list, tuple, dict, bool,
+                                      Enum, None.__class__)):
                 value = param
         except (NameError, SyntaxError, TypeError):
             if isinstance(param, str):

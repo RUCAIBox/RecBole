@@ -6,7 +6,6 @@
 # @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
-
 r"""
 recbox.trainer.trainer
 ################################
@@ -33,7 +32,6 @@ class AbstractTrainer(object):
     AbstractTrainer is an abstract class in which the fit() and evaluate() method should be implemented according
     to different training and evaluation strategies.
     """
-
     def __init__(self, config, model):
         self.config = config
         self.model = model
@@ -81,8 +79,10 @@ class Trainer(AbstractTrainer):
         self.device = config['device']
         self.checkpoint_dir = config['checkpoint_dir']
         ensure_dir(self.checkpoint_dir)
-        saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
-        self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
+        saved_model_file = '{}-{}.pth'.format(self.config['model'],
+                                              get_local_time())
+        self.saved_model_file = os.path.join(self.checkpoint_dir,
+                                             saved_model_file)
 
         self.start_epoch = 0
         self.cur_step = 0
@@ -107,16 +107,22 @@ class Trainer(AbstractTrainer):
             torch.optim: the optimizer
         """
         if self.learner.lower() == 'adam':
-            optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.Adam(self.model.parameters(),
+                                   lr=self.learning_rate)
         elif self.learner.lower() == 'sgd':
-            optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.SGD(self.model.parameters(),
+                                  lr=self.learning_rate)
         elif self.learner.lower() == 'adagrad':
-            optimizer = optim.Adagrad(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.Adagrad(self.model.parameters(),
+                                      lr=self.learning_rate)
         elif self.learner.lower() == 'rmsprop':
-            optimizer = optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.RMSprop(self.model.parameters(),
+                                      lr=self.learning_rate)
         else:
-            self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
-            optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+            self.logger.warning(
+                'Received unrecognized optimizer, set default Adam optimizer')
+            optimizer = optim.Adam(self.model.parameters(),
+                                   lr=self.learning_rate)
         return optimizer
 
     def _train_epoch(self, train_data, epoch_idx):
@@ -140,10 +146,12 @@ class Trainer(AbstractTrainer):
             if isinstance(losses, tuple):
                 loss = sum(losses)
                 loss_tuple = tuple(per_loss.item() for per_loss in losses)
-                total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+                total_loss = loss_tuple if total_loss is None else tuple(
+                    map(sum, zip(total_loss, loss_tuple)))
             else:
                 loss = losses
-                total_loss = losses.item() if total_loss is None else total_loss + losses.item()
+                total_loss = losses.item(
+                ) if total_loss is None else total_loss + losses.item()
             self._check_nan(loss)
             loss.backward()
             self.optimizer.step()
@@ -194,14 +202,18 @@ class Trainer(AbstractTrainer):
         self.best_valid_score = checkpoint['best_valid_score']
 
         # load architecture params from checkpoint
-        if checkpoint['config']['model'].lower() != self.config['model'].lower():
-            self.logger.warning('Architecture configuration given in config file is different from that of checkpoint. '
-                                'This may yield an exception while state_dict is being loaded.')
+        if checkpoint['config']['model'].lower() != self.config['model'].lower(
+        ):
+            self.logger.warning(
+                'Architecture configuration given in config file is different from that of checkpoint. '
+                'This may yield an exception while state_dict is being loaded.'
+            )
         self.model.load_state_dict(checkpoint['state_dict'])
 
         # load optimizer state from checkpoint only when optimizer type is not changed
         self.optimizer.load_state_dict(checkpoint['optimizer'])
-        message_output = 'Checkpoint loaded. Resume training from epoch {}'.format(self.start_epoch)
+        message_output = 'Checkpoint loaded. Resume training from epoch {}'.format(
+            self.start_epoch)
         self.logger.info(message_output)
 
     def _check_nan(self, loss):
@@ -209,7 +221,8 @@ class Trainer(AbstractTrainer):
             raise ValueError('Training loss is nan')
 
     def _generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
-        train_loss_output = "epoch %d training [time: %.2fs, " % (epoch_idx, e_time - s_time)
+        train_loss_output = "epoch %d training [time: %.2fs, " % (
+            epoch_idx, e_time - s_time)
         if isinstance(losses, tuple):
             for idx, loss in enumerate(losses):
                 train_loss_output += 'train_loss%d: %.4f, ' % (idx + 1, loss)
@@ -231,12 +244,14 @@ class Trainer(AbstractTrainer):
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
         """
         if hasattr(self.model, 'train_preparation'):
-            self.model.train_preparation(train_data=train_data, valid_data=valid_data)
+            self.model.train_preparation(train_data=train_data,
+                                         valid_data=valid_data)
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
             train_loss = self._train_epoch(train_data, epoch_idx)
-            self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
+            self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(
+                train_loss, tuple) else train_loss
             training_end_time = time()
             train_loss_output = \
                 self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
@@ -255,12 +270,16 @@ class Trainer(AbstractTrainer):
                 valid_start_time = time()
                 valid_score, valid_result = self._valid_epoch(valid_data)
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
-                    valid_score, self.best_valid_score, self.cur_step,
-                    max_step=self.stopping_step, bigger=self.valid_metric_bigger)
+                    valid_score,
+                    self.best_valid_score,
+                    self.cur_step,
+                    max_step=self.stopping_step,
+                    bigger=self.valid_metric_bigger)
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                valid_result_output = 'valid result: \n' + dict2str(
+                    valid_result)
                 if verbose:
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
@@ -285,13 +304,18 @@ class Trainer(AbstractTrainer):
         interaction, pos_idx, used_idx, pos_len_list, neg_len_list = batched_data
 
         batch_size = interaction.length * self.tot_item_num
-        used_idx = torch.cat([used_idx, torch.arange(interaction.length) * self.tot_item_num])  # remove [pad] item
+        used_idx = torch.cat([
+            used_idx,
+            torch.arange(interaction.length) * self.tot_item_num
+        ])  # remove [pad] item
         neg_len_list = list(np.subtract(neg_len_list, 1))
         if hasattr(self.model, 'full_sort_predict'):
             # Note: interaction without item ids
-            scores = self.model.full_sort_predict(interaction.to(self.device)).flatten()
+            scores = self.model.full_sort_predict(interaction.to(
+                self.device)).flatten()
         else:
-            interaction = interaction.to(self.device).repeat_interleave(self.tot_item_num)
+            interaction = interaction.to(self.device).repeat_interleave(
+                self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
             if batch_size <= self.test_batch_size:
                 scores = self.model.predict(interaction)
@@ -303,22 +327,29 @@ class Trainer(AbstractTrainer):
         pos_scores = scores.index_select(dim=0, index=pos_idx)
         pos_scores = torch.split(pos_scores, pos_len_list, dim=0)
 
-        ones_tensor = torch.ones(batch_size, dtype=torch.bool, device=self.device)
+        ones_tensor = torch.ones(batch_size,
+                                 dtype=torch.bool,
+                                 device=self.device)
         used_mask = ones_tensor.index_fill(dim=0, index=used_idx, value=0)
         neg_scores = scores.masked_select(used_mask)
         neg_scores = torch.split(neg_scores, neg_len_list, dim=0)
 
         tmp_len_list = np.add(pos_len_list, neg_len_list).tolist()
         extra_len_list = np.subtract(self.tot_item_num, tmp_len_list).tolist()
-        padding_nums = self.tot_item_num * len(tmp_len_list) - np.sum(tmp_len_list)
-        padding_tensor = torch.tensor([-np.inf], device=self.device).repeat(padding_nums)
+        padding_nums = self.tot_item_num * len(tmp_len_list) - np.sum(
+            tmp_len_list)
+        padding_tensor = torch.tensor([-np.inf],
+                                      device=self.device).repeat(padding_nums)
         padding_scores = torch.split(padding_tensor, extra_len_list)
 
-        final_scores = list(itertools.chain.from_iterable(zip(pos_scores, neg_scores, padding_scores)))
+        final_scores = list(
+            itertools.chain.from_iterable(
+                zip(pos_scores, neg_scores, padding_scores)))
         final_scores = torch.cat(final_scores)
 
         setattr(interaction, 'pos_len_list', pos_len_list)
-        setattr(interaction, 'user_len_list', len(tmp_len_list) * [self.tot_item_num])
+        setattr(interaction, 'user_len_list',
+                len(tmp_len_list) * [self.tot_item_num])
 
         return interaction, final_scores
 
@@ -343,14 +374,16 @@ class Trainer(AbstractTrainer):
                 checkpoint_file = self.saved_model_file
             checkpoint = torch.load(checkpoint_file)
             self.model.load_state_dict(checkpoint['state_dict'])
-            message_output = 'Loading model structure and parameters from {}'.format(checkpoint_file)
+            message_output = 'Loading model structure and parameters from {}'.format(
+                checkpoint_file)
             self.logger.info(message_output)
 
         self.model.eval()
 
         if eval_data.dl_type == DataLoaderType.FULL:
             if not hasattr(self.model, 'full_sort_predict'):
-                self.item_tensor = eval_data.get_item_feature().to(self.device).repeat(eval_data.step)
+                self.item_tensor = eval_data.get_item_feature().to(
+                    self.device).repeat(eval_data.step)
             self.tot_item_num = eval_data.dataset.item_num
 
         batch_matrix_list = []
@@ -359,7 +392,9 @@ class Trainer(AbstractTrainer):
                 if self.eval_type == EvaluatorType.INDIVIDUAL:
                     raise ValueError('full sort can\'t use LossEvaluator')
                 interaction, scores = self._full_sort_batch_eval(batched_data)
-                batch_matrix = self.evaluator.evaluate(interaction, scores, full=True)
+                batch_matrix = self.evaluator.evaluate(interaction,
+                                                       scores,
+                                                       full=True)
             else:
                 interaction = batched_data
                 batch_size = interaction.length
@@ -379,13 +414,15 @@ class Trainer(AbstractTrainer):
         spilt_interaction = dict()
         for key, tensor in interaction.interaction.items():
             spilt_interaction[key] = tensor.split(self.test_batch_size, dim=0)
-        num_block = (batch_size+self.test_batch_size-1)//self.test_batch_size
+        num_block = (batch_size + self.test_batch_size -
+                     1) // self.test_batch_size
         result_list = []
         for i in range(num_block):
             current_interaction = dict()
             for key, spilt_tensor in spilt_interaction.items():
                 current_interaction[key] = spilt_tensor[i]
-            result = self.model.predict(Interaction(current_interaction).to(self.device))
+            result = self.model.predict(
+                Interaction(current_interaction).to(self.device))
             result_list.append(result)
         return torch.cat(result_list, dim=0)
 
@@ -414,7 +451,6 @@ class KGTrainer(Trainer):
     recommendation related task and knowledge related task alternately.
 
     """
-
     def __init__(self, config, model):
         super(KGTrainer, self).__init__(config, model)
 
@@ -439,10 +475,12 @@ class KGTrainer(Trainer):
                 if isinstance(losses, tuple):
                     loss = sum(losses)
                     loss_tuple = tuple(per_loss.item() for per_loss in losses)
-                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+                    total_loss = loss_tuple if total_loss is None else tuple(
+                        map(sum, zip(total_loss, loss_tuple)))
                 else:
                     loss = losses
-                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
+                    total_loss = losses.item(
+                    ) if total_loss is None else total_loss + losses.item()
                 self._check_nan(loss)
                 loss.backward()
                 self.optimizer.step()
@@ -454,10 +492,12 @@ class KGTrainer(Trainer):
                 if isinstance(losses, tuple):
                     loss = sum(losses)
                     loss_tuple = tuple(per_loss.item() for per_loss in losses)
-                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+                    total_loss = loss_tuple if total_loss is None else tuple(
+                        map(sum, zip(total_loss, loss_tuple)))
                 else:
                     loss = losses
-                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
+                    total_loss = losses.item(
+                    ) if total_loss is None else total_loss + losses.item()
                 self._check_nan(loss)
                 loss.backward()
                 self.optimizer.step()
@@ -468,7 +508,6 @@ class KGATTrainer(Trainer):
     r"""KGATTrainer is designed for KGAT, which is a knowledge-aware recommendation method.
 
     """
-
     def __init__(self, config, model):
         super(KGATTrainer, self).__init__(config, model)
 

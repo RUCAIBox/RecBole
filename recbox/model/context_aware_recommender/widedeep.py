@@ -8,7 +8,6 @@
 # @Time   : 2020/8/16
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
-
 """
 Reference:
 Cheng H T, Koc L, Harmsen J, et al. "Wide & deep learning for recommender systems." in RecSys 2016.
@@ -22,7 +21,6 @@ from .context_recommender import ContextRecommender
 
 
 class WideDeep(ContextRecommender):
-
     def __init__(self, config, dataset):
         super(WideDeep, self).__init__(config, dataset)
 
@@ -30,7 +28,8 @@ class WideDeep(ContextRecommender):
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout = config['dropout']
 
-        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
+        size_list = [self.embedding_size * self.num_feature_field
+                     ] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, self.dropout)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
@@ -49,13 +48,15 @@ class WideDeep(ContextRecommender):
     def forward(self, interaction):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
+        sparse_embedding, dense_embedding = self.embed_input_fields(
+            interaction)
         all_embeddings = []
         if sparse_embedding is not None:
             all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             all_embeddings.append(dense_embedding)
-        widedeep_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        widedeep_all_embeddings = torch.cat(
+            all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
         batch_size = widedeep_all_embeddings.shape[0]
         fm_output = self.first_order_linear(interaction)
 

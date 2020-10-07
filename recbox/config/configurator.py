@@ -37,7 +37,6 @@ class Config(object):
 
     support parameter type: str, int, float, list, tuple, bool, None
     """
-
     def __init__(self, config_file_name, config_dict=None):
         """
 
@@ -63,9 +62,12 @@ class Config(object):
         self.model_args = ModelConfig(model_arg_file_name, self.cmd_args_dict)
 
         dataset_name = self.run_args['dataset']
-        dataset_dir = os.path.join(os.path.dirname(config_file_name), 'dataset')
-        dataset_arg_file_name = os.path.join(dataset_dir, dataset_name + '.config')
-        self.dataset_args = DataConfig(dataset_arg_file_name, self.cmd_args_dict)
+        dataset_dir = os.path.join(os.path.dirname(config_file_name),
+                                   'dataset')
+        dataset_arg_file_name = os.path.join(dataset_dir,
+                                             dataset_name + '.config')
+        self.dataset_args = DataConfig(dataset_arg_file_name,
+                                       self.cmd_args_dict)
 
         self.device = None
         self._init_device()
@@ -79,7 +81,8 @@ class Config(object):
             gpu_id = self.run_args['gpu_id']
             os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
         # Get the device that run on.
-        self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() and use_gpu else "cpu")
 
     def init(self):
         init_seed = self.run_args['seed']
@@ -99,18 +102,24 @@ class Config(object):
                     unrecognized_args.append(arg)
                     continue
                 cmd_arg_name, cmd_arg_value = arg[2:].split("=")
-                if cmd_arg_name in self.cmd_args_dict and cmd_arg_value != self.cmd_args_dict[cmd_arg_name]:
-                    raise SyntaxError("There are duplicate commend arg '%s' with different value!" % arg)
+                if cmd_arg_name in self.cmd_args_dict and cmd_arg_value != self.cmd_args_dict[
+                        cmd_arg_name]:
+                    raise SyntaxError(
+                        "There are duplicate commend arg '%s' with different value!"
+                        % arg)
                 else:
                     self.cmd_args_dict[cmd_arg_name] = cmd_arg_value
         if len(unrecognized_args) > 0:
             logger = getLogger()
-            logger.warning('command line args [{}] will not be used in RecBox'.format(' '.join(unrecognized_args)))
+            logger.warning(
+                'command line args [{}] will not be used in RecBox'.format(
+                    ' '.join(unrecognized_args)))
 
     def _read_config_dict(self):
         for dict_arg_name in self.config_dict:
             if dict_arg_name not in self.cmd_args_dict:
-                self.cmd_args_dict[dict_arg_name] = self.config_dict[dict_arg_name]
+                self.cmd_args_dict[dict_arg_name] = self.config_dict[
+                    dict_arg_name]
 
     def __getitem__(self, item):
         if item == "device":

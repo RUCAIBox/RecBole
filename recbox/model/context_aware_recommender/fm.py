@@ -22,7 +22,6 @@ from recbox.model.context_aware_recommender.context_recommender import ContextRe
 
 
 class FM(ContextRecommender):
-
     def __init__(self, config, dataset):
         super(FM, self).__init__(config, dataset)
 
@@ -40,14 +39,16 @@ class FM(ContextRecommender):
     def forward(self, interaction):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
+        sparse_embedding, dense_embedding = self.embed_input_fields(
+            interaction)
         all_embeddings = []
         if sparse_embedding is not None:
             all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             all_embeddings.append(dense_embedding)
         fm_all_embeddings = torch.cat(all_embeddings, dim=1)
-        y = self.sigmoid(self.first_order_linear(interaction) + self.fm(fm_all_embeddings))
+        y = self.sigmoid(
+            self.first_order_linear(interaction) + self.fm(fm_all_embeddings))
         return y.squeeze()
 
     def calculate_loss(self, interaction):

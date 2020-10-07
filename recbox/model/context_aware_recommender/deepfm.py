@@ -22,7 +22,6 @@ from recbox.model.context_aware_recommender.context_recommender import ContextRe
 
 
 class DeepFM(ContextRecommender):
-
     def __init__(self, config, dataset):
         super(DeepFM, self).__init__(config, dataset)
 
@@ -31,7 +30,8 @@ class DeepFM(ContextRecommender):
         self.dropout = config['dropout']
 
         self.fm = BaseFactorizationMachine(reduce_sum=True)
-        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
+        size_list = [self.embedding_size * self.num_feature_field
+                     ] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, self.dropout)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
@@ -50,15 +50,18 @@ class DeepFM(ContextRecommender):
     def forward(self, interaction):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
+        sparse_embedding, dense_embedding = self.embed_input_fields(
+            interaction)
         all_embeddings = []
         if sparse_embedding is not None:
             all_embeddings.append(sparse_embedding)
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             all_embeddings.append(dense_embedding)
-        deepfm_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        deepfm_all_embeddings = torch.cat(
+            all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
         batch_size = deepfm_all_embeddings.shape[0]
-        y_fm = self.first_order_linear(interaction) + self.fm(deepfm_all_embeddings)
+        y_fm = self.first_order_linear(interaction) + self.fm(
+            deepfm_all_embeddings)
 
         y_deep = self.deep_predict_layer(
             self.mlp_layers(deepfm_all_embeddings.view(batch_size, -1)))

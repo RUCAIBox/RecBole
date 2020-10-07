@@ -7,7 +7,6 @@
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
-
 from recbox.data.dataloader.general_dataloader import GeneralDataLoader, GeneralNegSampleDataLoader
 
 

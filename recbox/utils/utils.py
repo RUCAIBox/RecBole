@@ -24,10 +24,8 @@ def ensure_dir(dir_path):
 
 def get_model(model_name):
     model_submodule = [
-        'general_recommender',
-        'context_aware_recommender',
-        'sequential_recommender',
-        'knowledge_aware_recommender'
+        'general_recommender', 'context_aware_recommender',
+        'sequential_recommender', 'knowledge_aware_recommender'
     ]
 
     model_file_name = model_name.lower()
@@ -42,12 +40,15 @@ def get_model(model_name):
 
 def get_trainer(model_type, model_name):
     try:
-        return getattr(importlib.import_module('recbox.trainer'), model_name + 'Trainer')
+        return getattr(importlib.import_module('recbox.trainer'),
+                       model_name + 'Trainer')
     except AttributeError:
         if model_type == ModelType.KNOWLEDGE:
-            return getattr(importlib.import_module('recbox.trainer'), 'KGTrainer')
+            return getattr(importlib.import_module('recbox.trainer'),
+                           'KGTrainer')
         else:
-            return getattr(importlib.import_module('recbox.trainer'), 'Trainer')
+            return getattr(importlib.import_module('recbox.trainer'),
+                           'Trainer')
 
 
 def early_stopping(value, best, cur_step, max_step, bigger=True):

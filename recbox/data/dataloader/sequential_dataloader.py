@@ -18,8 +18,12 @@ from recbox.utils import DataLoaderType, FeatureSource, FeatureType, InputType
 class SequentialDataLoader(AbstractDataLoader):
     dl_type = DataLoaderType.ORIGIN
 
-    def __init__(self, config, dataset,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(self,
+                 config,
+                 dataset,
+                 batch_size=1,
+                 dl_format=InputType.POINTWISE,
+                 shuffle=False):
         self.uid_field = dataset.uid_field
         self.iid_field = dataset.iid_field
         self.time_field = dataset.time_field
@@ -33,27 +37,40 @@ class SequentialDataLoader(AbstractDataLoader):
         self.target_time_field = self.time_field
         self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
 
-        dataset.set_field_property(self.item_list_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
+        dataset.set_field_property(self.item_list_field, FeatureType.TOKEN_SEQ,
+                                   FeatureSource.INTERACTION,
                                    self.max_item_list_len)
-        dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION,
+        dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ,
+                                   FeatureSource.INTERACTION,
                                    self.max_item_list_len)
         if self.position_field:
-            dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
+            dataset.set_field_property(self.position_field,
+                                       FeatureType.TOKEN_SEQ,
+                                       FeatureSource.INTERACTION,
                                        self.max_item_list_len)
-        dataset.set_field_property(self.target_iid_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
-        dataset.set_field_property(self.target_time_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
-        dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
+        dataset.set_field_property(self.target_iid_field, FeatureType.TOKEN,
+                                   FeatureSource.INTERACTION, 1)
+        dataset.set_field_property(self.target_time_field, FeatureType.FLOAT,
+                                   FeatureSource.INTERACTION, 1)
+        dataset.set_field_property(self.item_list_length_field,
+                                   FeatureType.TOKEN,
+                                   FeatureSource.INTERACTION, 1)
 
         self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
             dataset.prepare_data_augmentation()
         self.pre_processed_data = None
 
-        super().__init__(config, dataset,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config,
+                         dataset,
+                         batch_size=batch_size,
+                         dl_format=dl_format,
+                         shuffle=shuffle)
 
     def data_preprocess(self):
-        self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
-                                                    self.target_index, self.item_list_length)
+        self.pre_processed_data = self.augmentation(self.uid_list,
+                                                    self.item_list_field,
+                                                    self.target_index,
+                                                    self.item_list_length)
 
     @property
     def pr_end(self):
@@ -86,39 +103,60 @@ class SequentialDataLoader(AbstractDataLoader):
         self.pr += self.step
         return self._dict_to_interaction(cur_data)
 
-    def augmentation(self, uid_list, item_list_index, target_index, item_list_length):
+    def augmentation(self, uid_list, item_list_index, target_index,
+                     item_list_length):
         new_length = len(item_list_index)
         new_dict = {
             self.uid_field: uid_list,
-            self.item_list_field: np.zeros((new_length, self.max_item_list_len), dtype=np.int64),
-            self.time_list_field: np.zeros((new_length, self.max_item_list_len), dtype=np.int64),
-            self.target_iid_field: self.dataset.inter_feat[self.iid_field][target_index].values,
-            self.target_time_field: self.dataset.inter_feat[self.time_field][target_index].values,
+            self.item_list_field: np.zeros(
+                (new_length, self.max_item_list_len), dtype=np.int64),
+            self.time_list_field: np.zeros(
+                (new_length, self.max_item_list_len), dtype=np.int64),
+            self.target_iid_field: self.dataset.inter_feat[
+                self.iid_field][target_index].values,
+            self.target_time_field: self.dataset.inter_feat[self.time_field]
+            [target_index].values,
             self.item_list_length_field: item_list_length,
         }
         for field in self.dataset.inter_feat:
             if field != self.iid_field and field != self.time_field:
-                new_dict[field] = self.dataset.inter_feat[field][target_index].values
+                new_dict[field] = self.dataset.inter_feat[field][
+                    target_index].values
         if self.position_field:
-            new_dict[self.position_field] = np.tile(np.arange(self.max_item_list_len), (new_length, 1))
+            new_dict[self.position_field] = np.tile(
+                np.arange(self.max_item_list_len), (new_length, 1))
 
         iid_value = self.dataset.inter_feat[self.iid_field].values
         time_value = self.dataset.inter_feat[self.time_field].values
-        for i, (index, length) in enumerate(zip(item_list_index, item_list_length)):
+        for i, (index,
+                length) in enumerate(zip(item_list_index, item_list_length)):
             new_dict[self.item_list_field][i][:length] = iid_value[index]
             new_dict[self.time_list_field][i][:length] = time_value[index]
         return new_dict
 
 
 class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
-    def __init__(self, config, dataset, sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        super().__init__(config, dataset, sampler, neg_sample_args,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+    def __init__(self,
+                 config,
+                 dataset,
+                 sampler,
+                 neg_sample_args,
+                 batch_size=1,
+                 dl_format=InputType.POINTWISE,
+                 shuffle=False):
+        super().__init__(config,
+                         dataset,
+                         sampler,
+                         neg_sample_args,
+                         batch_size=batch_size,
+                         dl_format=dl_format,
+                         shuffle=shuffle)
 
     def data_preprocess(self):
-        self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
-                                                    self.target_index, self.item_list_length)
+        self.pre_processed_data = self.augmentation(self.uid_list,
+                                                    self.item_list_field,
+                                                    self.target_index,
+                                                    self.item_list_length)
         self.pre_processed_data = self._neg_sampling(self.pre_processed_data)
 
     def _batch_size_adaptation(self):
@@ -145,7 +183,8 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
             cur_data_len = len(cur_data[self.uid_field])
             pos_len_list = np.ones(cur_data_len // self.times, dtype=np.int64)
             user_len_list = pos_len_list * self.times
-            return self._dict_to_interaction(cur_data, list(pos_len_list), list(user_len_list))
+            return self._dict_to_interaction(cur_data, list(pos_len_list),
+                                             list(user_len_list))
         else:
             return self._dict_to_interaction(cur_data)
 
@@ -154,15 +193,19 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
             data_len = len(data[self.uid_field])
             data_list = []
             for i in range(data_len):
-                uids = data[self.uid_field][i: i + 1]
-                neg_iids = self.sampler.sample_by_user_ids(uids, self.neg_sample_by)
-                cur_data = {field: data[field][i: i + 1] for field in data}
+                uids = data[self.uid_field][i:i + 1]
+                neg_iids = self.sampler.sample_by_user_ids(
+                    uids, self.neg_sample_by)
+                cur_data = {field: data[field][i:i + 1] for field in data}
                 data_list.append(self.sampling_func(cur_data, neg_iids))
-            return {field: np.concatenate([d[field] for d in data_list])
-                    for field in data}
+            return {
+                field: np.concatenate([d[field] for d in data_list])
+                for field in data
+            }
         else:
             uids = data[self.uid_field]
-            neg_iids = self.sampler.sample_by_user_ids(uids, self.neg_sample_by)
+            neg_iids = self.sampler.sample_by_user_ids(uids,
+                                                       self.neg_sample_by)
             return self.sampling_func(data, neg_iids)
 
     def _neg_sample_by_pair_wise_sampling(self, data, neg_iids):
@@ -189,10 +232,19 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
 class SequentialFullDataLoader(SequentialDataLoader):
     dl_type = DataLoaderType.FULL
 
-    def __init__(self, config, dataset, sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        super().__init__(config, dataset,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+    def __init__(self,
+                 config,
+                 dataset,
+                 sampler,
+                 neg_sample_args,
+                 batch_size=1,
+                 dl_format=InputType.POINTWISE,
+                 shuffle=False):
+        super().__init__(config,
+                         dataset,
+                         batch_size=batch_size,
+                         dl_format=dl_format,
+                         shuffle=shuffle)
 
     def _shuffle(self):
         self.logger.warnning('SequentialFullDataLoader can\'t shuffle')
@@ -201,7 +253,8 @@ class SequentialFullDataLoader(SequentialDataLoader):
         interaction = super()._next_batch_data()
         tot_item_num = self.dataset.item_num
         inter_num = len(interaction)
-        pos_idx = used_idx = interaction[self.target_iid_field] + torch.arange(inter_num) * tot_item_num
+        pos_idx = used_idx = interaction[
+            self.target_iid_field] + torch.arange(inter_num) * tot_item_num
         pos_len_list = [1] * inter_num
         neg_len_list = [tot_item_num - 1] * inter_num
         return interaction, pos_idx, used_idx, pos_len_list, neg_len_list
