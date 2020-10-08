@@ -1,0 +1,8 @@
+train_rec_step: 5
+train_kg_step: 5
+embedding_size: 64
+use_st_gumbel: True
+L1_flag: False
+margin: 1.0
+kg_weight: 1.0
+align_weight: 1.0

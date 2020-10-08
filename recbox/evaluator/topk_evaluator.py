@@ -15,6 +15,7 @@ recbox.evaluator.topk_evaluator
 
 import numpy as np
 import torch
+from recbox.evaluator.abstract_evaluator import AbstractEvaluator
 from recbox.evaluator.metrics import metrics_dict
 from torch.nn.utils.rnn import pad_sequence
 
@@ -22,11 +23,17 @@ from torch.nn.utils.rnn import pad_sequence
 topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP']}
 
 
-class TopKEvaluator(object):
-
+class TopKEvaluator(AbstractEvaluator):
+    r"""TopK Evaluator is mainly used in ranking tasks. The metrics used calculate group-based metrics 
+    which considers the metrics scores averaged across users. some of them are also limited to k. 
+    Now, we support six topk metrics which contain `'Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP'`.
+    
+    """
     def __init__(self, config):
+        super().__init__(config)
+
         self.topk = config['topk']
-        self.metrics = config['metrics']
+        self._check_args()
 
     def evaluate(self, interaction, scores_tensor, full=False):
         """ evalaute the topk metrics
@@ -90,12 +97,12 @@ class TopKEvaluator(object):
         # Check topk:
         if isinstance(self.topk, (int, list)):
             if isinstance(self.topk, int):
-                assert self.topk > 0, 'topk must be a positive integer or a list of positive integers'
                 self.topk = [self.topk]
             for topk in self.topk:
-                assert topk > 0, 'topk must be a positive integer or a list of positive integers'
+                if topk <= 0:
+                    raise ValueError('topk must be a positive integer or a list of positive integers, but get `{}`'.format(topk))
         else:
-            raise TypeError('The topk must be a integer, list or None')
+            raise TypeError('The topk must be a integer, list')
 
     def metrics_info(self, pos_idx, pos_len):
         """get one users's metrics result

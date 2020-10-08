@@ -6,7 +6,9 @@
 import os
 import datetime
 import importlib
-
+import random
+import torch
+import numpy as np
 from recbox.utils.enum_type import ModelType
 
 
@@ -86,3 +88,13 @@ def dict2str(result_dict):
     for metric, value in result_dict.items():
         result_str += str(metric) + ' : ' + '%.04f' % value + '    '
     return result_str
+
+
+def init_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True

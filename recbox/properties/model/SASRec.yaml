@@ -1,0 +1,10 @@
+MAX_ITEM_LIST_LENGTH: 50
+LIST_SUFFIX: '_list'
+POSITION_FIELD: 'position_id'
+ITEM_LIST_LENGTH_FIELD: 'item_length'
+
+embedding_size: 64
+n_head: 1
+d_ff: 128
+dropout: [0.0,0.5,0.5]
+num_blocks: 1

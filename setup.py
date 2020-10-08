@@ -6,7 +6,8 @@ import os
 
 from setuptools import setup, find_packages
 
-install_requires = ['numpy>=1.17.2', 'torch>=1.2.0', 'scipy>=1.1.0', 'pandas>=1.1.2', 'tqdm>=4.48.2', 'scikit_learn>=0.20.3']
+install_requires = ['numpy>=1.17.2', 'torch>=1.2.0', 'scipy>=1.1.0', 'pandas>=1.0.5', 'tqdm>=4.48.2',
+                    'scikit_learn>=0.20.3', 'pyyaml>=5.3.1']
 
 setup_requires = []
 
@@ -24,7 +25,7 @@ if on_rtd:
 setup(
     name='recbox',
     version=
-    '0.0.1',  # please remember to edit recbox/__init__.py in response, once updating the version
+    '0.1.0',  # please remember to edit recbox/__init__.py in response, once updating the version
     description='A package for building recommender systems',
     url='https://github.com/RUCAIBox/RecBox',
     author='RecBoxTeam',
@@ -33,6 +34,7 @@ setup(
         package for package in find_packages()
         if package.startswith('recbox')
     ],
+    include_package_data=True,
     install_requires=install_requires,
     setup_requires=setup_requires,
     extras_require=extras_require,

@@ -1,0 +1,19 @@
+# define the UIRT columns
+USER_ID_FIELD: 'reviewerID'
+ITEM_ID_FIELD: 'asin'
+RATING_FIELD: 'overall'
+NEG_PREFIX: neg_
+TIMESTAMP_FIELD: 'unixReviewTime'
+seq_len:
+  description: 128
+  reviewText: 256
+
+# select load columns
+load_col:
+    inter: [asin, reviewerID, overall]
+unload_col:
+    inter: [unixReviewTime, price]
+
+# data separator
+field_separator: "\t"
+seq_separator: " "

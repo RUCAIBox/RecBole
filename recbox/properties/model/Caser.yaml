@@ -1,0 +1,11 @@
+# Note: MAX_ITEM_LIST_LENGTH needs to be consistent with L
+MAX_ITEM_LIST_LENGTH: 10
+LIST_SUFFIX: '_list'
+ITEM_LIST_LENGTH_FIELD: 'item_length'
+
+embedding_size: 64
+dropout: 0.4
+reg_weight: 1e-4
+L: 10
+nv: 8
+nh: 16
