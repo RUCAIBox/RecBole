@@ -1,0 +1,10 @@
+# WARNING:
+# if your dataset has too many items and you dont't have enough GPU memory to evaluate it
+# by using full sort, you should set 'split_to' > 0 and try again. Otherwise, you should
+# set 'split_to'=0 which has the fastest speed.
+
+embedding_size: 64
+# when evaluate the model by full sort, one user will be divide into the number of slices you set
+split_to: 0
+regs: [0, 0]
+alpha: 0

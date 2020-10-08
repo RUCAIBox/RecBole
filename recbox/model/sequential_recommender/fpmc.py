@@ -43,7 +43,7 @@ class FPMC(SequentialRecommender):
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
         self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
-        self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
+        self.TARGET_ITEM_ID = self.ITEM_ID
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
 
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
@@ -106,7 +106,7 @@ class FPMC(SequentialRecommender):
             Vli(torch.FloatTensor): The embedding matrix of last click item, shape of [batch_size, 1, embedding_size]
 
         Returns:
-            output:score, shape of [batch_size, 1]
+            torch.Tensor:score, shape of [batch_size, 1]
         """
     #     MF
         mf = torch.matmul(Vui, Viu.permute(0, 2, 1))

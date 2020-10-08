@@ -42,7 +42,7 @@ class STAMP(SequentialRecommender):
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
+        self.TARGET_ITEM_ID = self.ITEM_ID
         self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
 
 
@@ -101,7 +101,7 @@ class STAMP(SequentialRecommender):
             output(torch.FloatTensor): The average of the context, shape of [batch_size, emb]
 
         Returns:
-            alpha(torch.FloatTensor):attention weights, shape of [batch_size, time_steps]
+            torch.Tensor:attention weights, shape of [batch_size, time_steps]
         """
         timesteps = context.size(1)
         aspect_3dim = aspect.repeat(1, timesteps).view(-1, timesteps, self.embedding_size)
