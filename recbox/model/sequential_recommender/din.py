@@ -3,14 +3,11 @@
 # @Author : Zhichao Feng
 # @Email  : fzcbupt@gmai.com
 
-<<<<<<< HEAD
-=======
 # UPDATE
 # @Time   : 2020/10/6
 # @Author : Zhichao Feng
 # @email  : fzcbupt@gmai.com
 
->>>>>>> 18db9b3ab0... FEA: add DCN comments & update DIN comments
 r"""
 recbox.model.context_aware_recommender.din
 ##############################################
@@ -94,6 +91,7 @@ class DIN(SequentialRecommender):
                                           return_seq_weight=False)
         self.dnn_mlp_layers = MLPLayers(self.dnn_list,
                                         activation='Dice',
+                                        dropout=self.dropout,
                                         bn=True)
 
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
