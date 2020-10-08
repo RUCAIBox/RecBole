@@ -7,6 +7,11 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+"""
+recbox.config.configurator
+################################
+"""
+
 import re
 import os
 import sys
@@ -19,8 +24,45 @@ from recbox.utils import get_model, Enum, EvaluatorType
 
 
 class Config(object):
-    def __init__(self, model=None, dataset=None, config_file_list=None, config_dict=None):
+    """ Configurator module that load the defined parameters.
 
+    Configurator module will first load the default parameters from the fixed properties in UniRec and then
+    load parameters from the external input.
+
+    External input supports three kind of forms: config file, command line and parameter dictionaries.
+
+    - config file: It's a file that record the parameters to be modified or added. It should be in ``yaml`` format,
+      e.g. a config file is 'example.yaml', the content is:
+                learning_rate: 0.001
+
+                train_batch_size: 2048
+
+    - command line: It should be in the format as '---learning_rate=0.001'
+
+    - parameter dictionaries: It should be a dict, where the key is parameter name and the value is parameter value,
+      e.g. config_dict = {'learning_rate': 0.001}
+
+    Configuration module allows the above three kind of external input format to be used together,
+    the priority order is as following:
+
+    command line > parameter dictionaries > config file
+
+    e.g. If we set learning_rate=0.01 in config file, learning_rate=0.02 in command line,
+    learning_rate=0.03 in parameter dictionaries.
+
+    Finally the learning_rate is equal to 0.02.
+    """
+
+    def __init__(self, model=None, dataset=None, config_file_list=None, config_dict=None):
+        """
+        Args:
+            model (str): the model name, default is None, if it is None, config will search the parameter 'model'
+            from the external input as the model name.
+            dataset (str): the dataset name, default is None, if it is None, config will search the parameter 'dataset'
+            from the external input as the dataset name.
+            config_file_list (list of str): the external config file, it allows multiple config files, default is None.
+            config_dict (dict): the external parameter dictionaries, default is None.
+        """
         self._init_parameters_category()
         self.yaml_loader = self._build_yaml_loader()
         self._load_config_files(config_file_list)
@@ -144,10 +186,10 @@ class Config(object):
         return final_model, final_dataset
 
     def _load_internal_config_dict(self, model, dataset):
-        data_path = os.path.dirname(os.path.realpath(__file__))
-        overall_init_file = os.path.join(data_path, '../properties/overall.yaml')
-        model_init_file = os.path.join(data_path, '../properties/model/' + model + '.yaml')
-        dataset_init_file = os.path.join(data_path, '../properties/dataset/' + dataset + '.yaml')
+        current_path = os.path.dirname(os.path.realpath(__file__))
+        overall_init_file = os.path.join(current_path, '../properties/overall.yaml')
+        model_init_file = os.path.join(current_path, '../properties/model/' + model + '.yaml')
+        dataset_init_file = os.path.join(current_path, '../properties/dataset/' + dataset + '.yaml')
 
         self.internal_config_dict = dict()
         for file in [overall_init_file, model_init_file, dataset_init_file]:
@@ -170,7 +212,11 @@ class Config(object):
 
         self.final_config_dict['dataset'] = self.dataset
         self.final_config_dict['model'] = self.model
-        self.final_config_dict['data_path'] = os.path.join(self.final_config_dict['data_path'], self.dataset)
+        if self.dataset == 'ml-100k':
+            current_path = os.path.dirname(os.path.realpath(__file__))
+            self.final_config_dict['data_path'] = os.path.join(current_path, '../dataset_example/' + self.dataset)
+        else:
+            self.final_config_dict['data_path'] = os.path.join(self.final_config_dict['data_path'], self.dataset)
 
         eval_type = None
         for metric in self.final_config_dict['metrics']:
