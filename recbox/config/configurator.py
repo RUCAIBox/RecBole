@@ -144,10 +144,10 @@ class Config(object):
         return final_model, final_dataset
 
     def _load_internal_config_dict(self, model, dataset):
-        data_path = os.path.dirname(os.path.realpath(__file__))
-        overall_init_file = os.path.join(data_path, '../properties/overall.yaml')
-        model_init_file = os.path.join(data_path, '../properties/model/' + model + '.yaml')
-        dataset_init_file = os.path.join(data_path, '../properties/dataset/' + dataset + '.yaml')
+        current_path = os.path.dirname(os.path.realpath(__file__))
+        overall_init_file = os.path.join(current_path, '../properties/overall.yaml')
+        model_init_file = os.path.join(current_path, '../properties/model/' + model + '.yaml')
+        dataset_init_file = os.path.join(current_path, '../properties/dataset/' + dataset + '.yaml')
 
         self.internal_config_dict = dict()
         for file in [overall_init_file, model_init_file, dataset_init_file]:
@@ -170,7 +170,11 @@ class Config(object):
 
         self.final_config_dict['dataset'] = self.dataset
         self.final_config_dict['model'] = self.model
-        self.final_config_dict['data_path'] = os.path.join(self.final_config_dict['data_path'], self.dataset)
+        if self.dataset == 'ml-100k':
+            current_path = os.path.dirname(os.path.realpath(__file__))
+            self.final_config_dict['data_path'] = os.path.join(current_path, '../dataset_example/' + self.dataset)
+        else:
+            self.final_config_dict['data_path'] = os.path.join(self.final_config_dict['data_path'], self.dataset)
 
         eval_type = None
         for metric in self.final_config_dict['metrics']:
