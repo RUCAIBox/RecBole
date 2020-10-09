@@ -25,31 +25,21 @@ from recbox.utils import get_model, Enum, EvaluatorType
 
 class Config(object):
     """ Configurator module that load the defined parameters.
-
     Configurator module will first load the default parameters from the fixed properties in UniRec and then
     load parameters from the external input.
-
     External input supports three kind of forms: config file, command line and parameter dictionaries.
-
     - config file: It's a file that record the parameters to be modified or added. It should be in ``yaml`` format,
       e.g. a config file is 'example.yaml', the content is:
                 learning_rate: 0.001
-
                 train_batch_size: 2048
-
     - command line: It should be in the format as '---learning_rate=0.001'
-
     - parameter dictionaries: It should be a dict, where the key is parameter name and the value is parameter value,
       e.g. config_dict = {'learning_rate': 0.001}
-
     Configuration module allows the above three kind of external input format to be used together,
     the priority order is as following:
-
     command line > parameter dictionaries > config file
-
     e.g. If we set learning_rate=0.01 in config file, learning_rate=0.02 in command line,
     learning_rate=0.03 in parameter dictionaries.
-
     Finally the learning_rate is equal to 0.02.
     """
 
@@ -112,12 +102,10 @@ class Config(object):
 
     def _load_cmd_line(self):
         r""" Read parameters from command line and convert it to str.
-
         """
 
         def convert_cmd_args():
             r"""This function convert the str parameters to their original type.
-
             """
             for key in self.cmd_config_dict:
                 param = self.cmd_config_dict[key]
