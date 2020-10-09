@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/3, 2020/9/15, 2020/9/23
+# @Time   : 2020/10/9, 2020/9/15, 2020/9/23
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -82,7 +82,10 @@ class Dataset(object):
         self._preload_weight_matrix()
 
     def _build_feat_list(self):
-        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+
+
+        return feat_list
 
     def _restore_saved_dataset(self, saved_dataset):
         self.logger.debug('Restoring dataset from [{}]'.format(saved_dataset))
@@ -232,7 +235,6 @@ class Dataset(object):
             flag = True
             self.logger.debug('ordering item features by user id.')
         if flag:
-            self.feat_list = self._build_feat_list()
             self._fill_nan_flag = True
 
     def _preload_weight_matrix(self):
