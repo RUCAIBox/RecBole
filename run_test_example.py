@@ -8,18 +8,8 @@
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import traceback
-from run_test import whole_process
 from time import time
-
-
-"""
-乞丐版代码测试程序，防止bug越写越多，尤其是后期model多起来，一不小心就会使某些model run不起来
-
-代码提交前，请运行一下这个程序，保证无误后再提交
-
-有必要加入测试例子的，请尽量添加！按照格式添加到 `test_examples` 中
-
-"""
+from recbox.quick_start import run_unirec
 
 
 test_examples = {
@@ -28,6 +18,8 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
+        'eval_setting': 'RO_RS, full',
+        'training_neg_sample_num': 1,
         'metrics': ['Recall', 'MRR', 'NDCG'],
         'topk': [5, 10, 20],
     },
@@ -310,7 +302,7 @@ def run_test_examples():
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
-            whole_process(config_file='properties/overall.config', config_dict=test_examples[example], saved=False)
+            run_unirec(config_dict=test_examples[example], saved=False)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:

@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/10/4
+# @Time   : 2020/9/21
 # @Author : Zhichao Feng
 # @Email  : fzcbupt@gmai.com
+
+# UPDATE
+# @Time   : 2020/10/6
+# @Author : Zhichao Feng
+# @email  : fzcbupt@gmai.com
 
 r"""
 recbox.model.context_aware_recommender.din
@@ -28,8 +33,8 @@ from recbox.model.layers import FMEmbedding, MLPLayers, SequenceAttLayer
 from recbox.model.abstract_recommender import SequentialRecommender
 
 class DIN(SequentialRecommender):
-    """Din utilizes the attention mechanism to get the weight of each user's behavior according to the target items,
-    and finally gets the user representation
+    """Deep Interest Network utilizes the attention mechanism to get the weight of each user's behavior according to the target items,
+    and finally gets the user representation.
 
     Note:
         In the official source code, unlike the paper, user features and context features are not input into DNN.
@@ -56,6 +61,7 @@ class DIN(SequentialRecommender):
         self.device = config['device']
         self.embedding_size = config['embedding_size']
         self.max_len = config['MAX_ITEM_LIST_LENGTH']
+        self.dropout = config['dropout']
         self.dataset = dataset
 
         self.user_feat = self.dataset.get_user_feature()
@@ -69,13 +75,25 @@ class DIN(SequentialRecommender):
         # init MLP layers
         # self.dnn_list = [(3 * self.num_feature_field['item'] + self.num_feature_field['user'])
         #                  * self.embedding_size] + self.mlp_hidden_size
-        self.dnn_list = [(3 * self.num_feature_field['item']) * self.embedding_size] + self.mlp_hidden_size
-        self.att_list = [4 * self.num_feature_field['item'] * self.embedding_size] + self.mlp_hidden_size
+        self.dnn_list = [
+            (3 * self.num_feature_field['item']) * self.embedding_size
+        ] + self.mlp_hidden_size
+        self.att_list = [
+            4 * self.num_feature_field['item'] * self.embedding_size
+        ] + self.mlp_hidden_size
 
-        mask_mat = torch.arange(self.max_len).to(self.device).view(1, -1) # init mask
-        self.attention = SequenceAttLayer(mask_mat, self.att_list, activation='Sigmoid',
-                                          softmax_stag=False, return_seq_weight=False)
-        self.dnn_mlp_layers = MLPLayers(self.dnn_list, activation='Dice', bn=True)
+        mask_mat = torch.arange(self.max_len).to(self.device).view(
+            1, -1)  # init mask
+        self.attention = SequenceAttLayer(mask_mat,
+                                          self.att_list,
+                                          activation='Sigmoid',
+                                          softmax_stag=False,
+                                          return_seq_weight=False)
+        self.dnn_mlp_layers = MLPLayers(self.dnn_list,
+                                        activation='Dice',
+                                        dropout=self.dropout,
+                                        bn=True)
+
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
@@ -210,7 +228,7 @@ class DIN(SequentialRecommender):
             type(str): user or item
             embed(bool): embed or not
 
-        Returns
+        Returns:
             torch.Tensor: float fields embedding. [batch_size, max_item_length, num_float_field, embed_dim]
 
         """
@@ -235,7 +253,7 @@ class DIN(SequentialRecommender):
             type(str): user or item
 
         Returns:
-            token fields embedding(torch.Tensor): [batch_size, max_item_length, num_token_field, embed_dim]
+            torch.Tensor: token fields embedding, [batch_size, max_item_length, num_token_field, embed_dim]
 
         """
         if token_fields is None:

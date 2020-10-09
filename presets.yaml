@@ -1,0 +1,13 @@
+BPRMF-ml-1m:
+    train_batch_size: 4096
+    metrics: ['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']
+    valid_metric: MRR@10
+    topk: [10]
+
+BPRMF-yelp:
+    train_batch_size: 4096
+    metrics: ['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']
+    min_user_inter_num: 25
+    max_user_inter_num: 25
+    valid_metric: MRR@10
+    topk: [10]
