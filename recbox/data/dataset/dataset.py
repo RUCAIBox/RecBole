@@ -83,8 +83,10 @@ class Dataset(object):
 
     def _build_feat_list(self):
         feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
-
-
+        if self.config['additional_feat_suffix'] is not None:
+            for suf in self.config['additional_feat_suffix']:
+                if hasattr(self, '{}_feat'.format(suf)):
+                    feat_list.append(getattr(self, '{}_feat'.format(suf)))
         return feat_list
 
     def _restore_saved_dataset(self, saved_dataset):
@@ -114,6 +116,7 @@ class Dataset(object):
         self._load_inter_feat(token, dataset_path)
         self.user_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.USER, 'uid_field')
         self.item_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.ITEM, 'iid_field')
+        self._load_additional_feat(token, dataset_path)
 
     def _load_inter_feat(self, token, dataset_path):
         if self.benchmark_filename_list is None:
@@ -156,6 +159,19 @@ class Dataset(object):
         if field in self.field2source:
             self.field2source[field] = FeatureSource(source.value + '_id')
         return feat
+
+    def _load_additional_feat(self, token, dataset_path):
+        if self.config['additional_feat_suffix'] is None:
+            return
+        for suf in self.config['additional_feat_suffix']:
+            if hasattr(self, '{}_feat'.format(suf)):
+                raise ValueError('{}_feat already exist'.format(suf))
+            feat_path = os.path.join(dataset_path, '{}.{}'.format(token, suf))
+            if os.path.isfile(feat_path):
+                feat = self._load_feat(feat_path, suf)
+            else:
+                raise ValueError('Additional feature file [{}] not found'.format(feat_path))
+            setattr(self, '{}_feat'.format(suf), feat)
 
     def _get_load_and_unload_col(self, filepath, source):
         if isinstance(source, FeatureSource):
