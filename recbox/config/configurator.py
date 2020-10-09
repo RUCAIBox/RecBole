@@ -1,112 +1,133 @@
-# -*- coding: utf-8 -*-
 # @Time   : 2020/6/28
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
+
+# UPDATE
+# @Time   : 2020/10/04
+# @Author : Shanlei Mu
+# @Email  : slmu@ruc.edu.cn
+
+"""
+recbox.config.configurator
+################################
+"""
+
+import re
 import os
 import sys
-from logging import getLogger
-from recbox.evaluator import loss_metrics, topk_metrics
-
+import yaml
 import torch
-from recbox.utils import *
-from recbox.config.config_file_reader import ConfigFileReader
+from logging import getLogger
+
+from recbox.evaluator import loss_metrics, topk_metrics
+from recbox.utils import get_model, Enum, EvaluatorType
 
 
 class Config(object):
-    r"""A configuration class that load predefined hyper parameters.
-
-    This class can read arguments from ini-style configuration file. There are two type
-    of config file can be defined: running config file and model config file. Each file should
-    be named as XXX.config, and model config file MUST be named as the model name.
-    In the ini-style config file, only one section is cared. For running config file, the section
-    MUST be [default] . For model config file, it MUST be [model]
-
-    There are three parameter MUST be included in config file: model, data.name, data.path
-
-    After initialization successful, the objective of this class can be used as
-    a dictionary:
-        config = Configurator("./overall.config")
-        ratio = config["ratio"]
-        metric = config["metric"]
-    All the parameter key MUST be str, but returned value is exactly the corresponding type
-
-    support parameter type: str, int, float, list, tuple, bool, None
+    """ Configurator module that load the defined parameters.
+    Configurator module will first load the default parameters from the fixed properties in UniRec and then
+    load parameters from the external input.
+    External input supports three kind of forms: config file, command line and parameter dictionaries.
+    - config file: It's a file that record the parameters to be modified or added. It should be in ``yaml`` format,
+      e.g. a config file is 'example.yaml', the content is:
+                learning_rate: 0.001
+                train_batch_size: 2048
+    - command line: It should be in the format as '---learning_rate=0.001'
+    - parameter dictionaries: It should be a dict, where the key is parameter name and the value is parameter value,
+      e.g. config_dict = {'learning_rate': 0.001}
+    Configuration module allows the above three kind of external input format to be used together,
+    the priority order is as following:
+    command line > parameter dictionaries > config file
+    e.g. If we set learning_rate=0.01 in config file, learning_rate=0.02 in command line,
+    learning_rate=0.03 in parameter dictionaries.
+    Finally the learning_rate is equal to 0.02.
     """
 
-    def __init__(self, config_file_name, config_dict=None):
+    def __init__(self, model=None, dataset=None, config_file_list=None, config_dict=None):
         """
         Args:
-            config_file_name(str): The path of ini-style configuration file.
-            config_dict(dict) : The parameters dict if you want to transmit a dict to get a `Config` object.
-
-        Raises:
-            FileNotFoundError: If `config_file` is not existing.
-            ValueError: If `config_file` is not in correct format or
-                        MUST parameter are not defined
+            model (str): the model name, default is None, if it is None, config will search the parameter 'model'
+            from the external input as the model name.
+            dataset (str): the dataset name, default is None, if it is None, config will search the parameter 'dataset'
+            from the external input as the dataset name.
+            config_file_list (list of str): the external config file, it allows multiple config files, default is None.
+            config_dict (dict): the external parameter dictionaries, default is None.
         """
-        self.config_dict = config_dict
-        self.cmd_args_dict = {}
-        self._read_cmd_line()
-        if self.config_dict:
-            self._read_config_dict()
-        self.convert_cmd_args()
-
-        self.run_args = ConfigFileReader(config_file_name, must_args=['model', 'dataset'])
-
-        model_name = self['model']
-        model_dir = os.path.join(os.path.dirname(config_file_name), 'model')
-        model_arg_file_name = os.path.join(model_dir, model_name + '.yaml')
-        self.model_args = ConfigFileReader(model_arg_file_name)
-
-        dataset_name = self['dataset']
-        dataset_dir = os.path.join(os.path.dirname(config_file_name), 'dataset')
-        dataset_arg_file_name = os.path.join(dataset_dir, dataset_name + '.yaml')
-        self.dataset_args = ConfigFileReader(dataset_arg_file_name)
-
+        self._init_parameters_category()
+        self.yaml_loader = self._build_yaml_loader()
+        self._load_config_files(config_file_list)
+        self._load_variable_config_dict(config_dict)
+        self._load_cmd_line()
+        self._merge_external_config_dict()
+        self.model, self.dataset = self._get_model_and_dataset(model, dataset)
+        self._load_internal_config_dict(self.model, self.dataset)
+        self.final_config_dict = self._get_final_config_dict()
         self._set_default_parameters()
-
-        self.device = None
         self._init_device()
 
-    def convert_cmd_args(self):
-        r"""This function convert the str parameters to their original type.
+    def _init_parameters_category(self):
+        self.parameters = dict()
+        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path']
+        self.parameters['Training'] = ['epochs', 'train_batch_size', 'learner', 'learning_rate',
+                                       'training_neg_sample_num', 'eval_step', 'valid_metric',
+                                       'stopping_step', 'checkpoint_dir']
+        self.parameters['Evaluation'] = ['eval_setting', 'group_by_user', 'split_ratio', 'leave_one_num',
+                                         'real_time_process', 'metrics', 'topk', 'eval_batch_size']
+        self.parameters['Dataset'] = []
 
+    def _build_yaml_loader(self):
+        loader = yaml.FullLoader
+        loader.add_implicit_resolver(
+            u'tag:yaml.org,2002:float',
+            re.compile(u'''^(?:
+             [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+            |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+            |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+            |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+            |[-+]?\\.(?:inf|Inf|INF)
+            |\\.(?:nan|NaN|NAN))$''', re.X),
+            list(u'-+0123456789.'))
+        return loader
+
+    def _load_config_files(self, file_list):
+        self.file_config_dict = dict()
+        if file_list:
+            for file in file_list:
+                if os.path.isfile(file):
+                    with open(file, 'r', encoding='utf-8') as f:
+                        self.file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
+
+    def _load_variable_config_dict(self, config_dict):
+        self.variable_config_dict = config_dict if config_dict else dict()
+
+    def _load_cmd_line(self):
+        r""" Read parameters from command line and convert it to str.
         """
-        for key in self.cmd_args_dict:
-            param = self.cmd_args_dict[key]
-            if not isinstance(param, str):
-                continue
-            try:
-                value = eval(param)
-                if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
-                    value = param
-            except (NameError, SyntaxError, TypeError):
-                if isinstance(param, str):
-                    if param.lower() == "true":
-                        value = True
-                    elif param.lower() == "false":
-                        value = False
+
+        def convert_cmd_args():
+            r"""This function convert the str parameters to their original type.
+            """
+            for key in self.cmd_config_dict:
+                param = self.cmd_config_dict[key]
+                if not isinstance(param, str):
+                    continue
+                try:
+                    value = eval(param)
+                    if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
+                        value = param
+                except (NameError, SyntaxError, TypeError):
+                    if isinstance(param, str):
+                        if param.lower() == "true":
+                            value = True
+                        elif param.lower() == "false":
+                            value = False
+                        else:
+                            value = param
                     else:
                         value = param
-                else:
-                    value = param
-            self.cmd_args_dict[key] = value
+                self.cmd_config_dict[key] = value
 
-    def _init_device(self):
-        r"""This function is a global initialization function that fix random seed and gpu device.
-
-        """
-        use_gpu = self.cmd_args_dict['use_gpu']
-        if use_gpu:
-            gpu_id = self['gpu_id']
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-        # Get the device that run on.
-        self.device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
-
-    def _read_cmd_line(self):
-        r""" Read parameters from command line and convert it to str.
-
-        """
+        self.cmd_config_dict = dict()
         unrecognized_args = []
         if "ipykernel_launcher" not in sys.argv[0]:
             for arg in sys.argv[1:]:
@@ -114,42 +135,79 @@ class Config(object):
                     unrecognized_args.append(arg)
                     continue
                 cmd_arg_name, cmd_arg_value = arg[2:].split("=")
-                if cmd_arg_name in self.cmd_args_dict and cmd_arg_value != self.cmd_args_dict[cmd_arg_name]:
+                if cmd_arg_name in self.cmd_config_dict and cmd_arg_value != self.cmd_config_dict[cmd_arg_name]:
                     raise SyntaxError("There are duplicate commend arg '%s' with different value!" % arg)
                 else:
-                    self.cmd_args_dict[cmd_arg_name] = cmd_arg_value
+                    self.cmd_config_dict[cmd_arg_name] = cmd_arg_value
         if len(unrecognized_args) > 0:
             logger = getLogger()
             logger.warning('command line args [{}] will not be used in RecBox'.format(' '.join(unrecognized_args)))
 
-    def _read_config_dict(self):
-        r"""Convert parameters in dict into cmd parameters to keep the priority.
+        convert_cmd_args()
 
-        """
-        for dict_arg_name in self.config_dict:
-            if dict_arg_name not in self.cmd_args_dict:
-                if isinstance(self.config_dict[dict_arg_name], str):
-                    self.cmd_args_dict[dict_arg_name] = self.config_dict[dict_arg_name]
-                else:
-                    self.cmd_args_dict[dict_arg_name] = str(self.config_dict[dict_arg_name])
+    def _merge_external_config_dict(self):
+        external_config_dict = dict()
+        external_config_dict.update(self.file_config_dict)
+        external_config_dict.update(self.variable_config_dict)
+        external_config_dict.update(self.cmd_config_dict)
+        self.external_config_dict = external_config_dict
+
+    def _get_model_and_dataset(self, model, dataset):
+        if model is None:
+            try:
+                final_model = self.external_config_dict['model']
+            except KeyError:
+                raise KeyError('model need to be specified in at least one of the these ways: '
+                               '[model variable, config file, config dict, command line] ')
+        else:
+            final_model = model
+
+        if dataset is None:
+            try:
+                final_dataset = self.external_config_dict['dataset']
+            except KeyError:
+                raise KeyError('dataset need to be specified in at least one of the these ways: '
+                               '[dataset variable, config file, config dict, command line] ')
+        else:
+            final_dataset = dataset
+
+        return final_model, final_dataset
+
+    def _load_internal_config_dict(self, model, dataset):
+        current_path = os.path.dirname(os.path.realpath(__file__))
+        overall_init_file = os.path.join(current_path, '../properties/overall.yaml')
+        model_init_file = os.path.join(current_path, '../properties/model/' + model + '.yaml')
+        dataset_init_file = os.path.join(current_path, '../properties/dataset/' + dataset + '.yaml')
+
+        self.internal_config_dict = dict()
+        for file in [overall_init_file, model_init_file, dataset_init_file]:
+            if os.path.isfile(file):
+                with open(file, 'r', encoding='utf-8') as f:
+                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+                    if file == dataset_init_file:
+                        self.parameters['Dataset'] += [key for key in config_dict.keys() if
+                                                       key not in self.parameters['Dataset']]
+                    if config_dict is not None:
+                        self.internal_config_dict.update(config_dict)
+
+    def _get_final_config_dict(self):
+        final_config_dict = dict()
+        final_config_dict.update(self.internal_config_dict)
+        final_config_dict.update(self.external_config_dict)
+        return final_config_dict
 
     def _set_default_parameters(self):
-        r"""This function can automatically set some parameters that don't need be set by user.
-        """
-        if 'gpu_id' in self:
-            self['use_gpu'] = True
+
+        self.final_config_dict['dataset'] = self.dataset
+        self.final_config_dict['model'] = self.model
+        if self.dataset == 'ml-100k':
+            current_path = os.path.dirname(os.path.realpath(__file__))
+            self.final_config_dict['data_path'] = os.path.join(current_path, '../dataset_example/' + self.dataset)
         else:
-            self['use_gpu'] = False
-
-        if 'data_path' not in self:
-            data_path = os.path.join('dataset', self['dataset'])
-            self['data_path'] = data_path
-
-        if 'checkpoint_dir' not in self:
-            self['checkpoint_dir'] = 'saved'
+            self.final_config_dict['data_path'] = os.path.join(self.final_config_dict['data_path'], self.dataset)
 
         eval_type = None
-        for metric in self['metrics']:
+        for metric in self.final_config_dict['metrics']:
             if metric.lower() in loss_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.RANKING:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
@@ -160,63 +218,46 @@ class Config(object):
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
                 else:
                     eval_type = EvaluatorType.RANKING
-        self['eval_type'] = eval_type
+        self.final_config_dict['eval_type'] = eval_type
 
         smaller_metric = ['rmse', 'mae', 'logloss']
+        valid_metric = self.final_config_dict['valid_metric'].split('@')[0]
+        self.final_config_dict['valid_metric_bigger'] = False if valid_metric in smaller_metric else True
 
-        if 'valid_metric' not in self:
-            valid_metric = self['metric'][0]
-            if 'topk' in self:
-                valid_metric += '@' + self['topk'][0]
-            self['valid_metric'] = valid_metric
+        model = get_model(self.model)
+        self.final_config_dict['MODEL_TYPE'] = model.type
+        self.final_config_dict['MODEL_INPUT_TYPE'] = model.input_type
 
-        if 'valid_metric_bigger' not in self:
-            valid_metric = self['valid_metric'].split('@')[0]
-            if valid_metric in smaller_metric:
-                self['valid_metric_bigger'] = False
-            else:
-                self['valid_metric_bigger'] = True
-
-        model = get_model(self['model'])
-        self['MODEL_TYPE'] = model.type
-        self['MODEL_INPUT_TYPE'] = model.input_type
+    def _init_device(self):
+        use_gpu = self.final_config_dict['use_gpu']
+        if use_gpu:
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(self.final_config_dict['gpu_id'])
+        self.final_config_dict['device'] = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
 
     def __setitem__(self, key, value):
-
         if not isinstance(key, str):
             raise TypeError("index must be a str")
-
-        self.cmd_args_dict[key] = value
+        self.final_config_dict[key] = value
 
     def __getitem__(self, item):
-        if item == "device":
-            return self.device
-        elif item in self.cmd_args_dict:
-            return self.cmd_args_dict[item]
-        elif item in self.run_args:
-            return self.run_args[item]
-        elif item in self.model_args:
-            return self.model_args[item]
-        elif item in self.dataset_args:
-            return self.dataset_args[item]
+        if item in self.final_config_dict:
+            return self.final_config_dict[item]
         else:
             return None
 
-    def __contains__(self, o):
-        if not isinstance(o, str):
+    def __contains__(self, key):
+        if not isinstance(key, str):
             raise TypeError("index must be a str!")
-        return o in self.run_args or o in self.model_args or o in self.dataset_args
+        return key in self.final_config_dict
 
     def __str__(self):
-
-        run_args_info = str(self.run_args)
-        model_args_info = str(self.model_args)
-        dataset_args_info = str(self.dataset_args)
-        info = "\nRunning Hyper Parameters:\n%s\n\nRunning Model:%s\n\nDataset Hyper Parameters:%s\n\n" \
-               "Model Hyper Parameters:\n%s\n" % \
-               (run_args_info, self.run_args['model'], dataset_args_info, model_args_info)
-        return info
+        args_info = ''
+        for category in self.parameters:
+            args_info += category + ' Hyper Parameters: \n'
+            args_info += '\n'.join(
+                ["{}={}".format(arg, value) for arg, value in self.final_config_dict.items() if arg in self.parameters[category]])
+            args_info += '\n\n'
+        return args_info
 
     def __repr__(self):
-
         return self.__str__()

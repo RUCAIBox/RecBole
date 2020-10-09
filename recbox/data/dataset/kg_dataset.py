@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/23, 2020/9/15, 2020/9/22
+# @Time   : 2020/10/3, 2020/9/15, 2020/9/22
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -15,6 +15,7 @@ from scipy.sparse import coo_matrix
 import torch
 
 from recbox.data.dataset import Dataset
+from recbox.data.utils import dlapi
 from recbox.utils import FeatureSource, FeatureType
 
 
@@ -161,29 +162,36 @@ class KnowledgeBasedDataset(Dataset):
         self.field2id_token[self.relation_field].append('[UI-Relation]')
 
     @property
+    @dlapi.set()
     def relation_num(self):
         return self.num(self.relation_field)
 
     @property
+    @dlapi.set()
     def entity_num(self):
         return self.num(self.entity_field)
 
     @property
+    @dlapi.set()
     def head_entities(self):
         return self.kg_feat[self.head_entity_field].values
 
     @property
+    @dlapi.set()
     def tail_entities(self):
         return self.kg_feat[self.tail_entity_field].values
 
     @property
+    @dlapi.set()
     def relations(self):
         return self.kg_feat[self.relation_field].values
 
     @property
+    @dlapi.set()
     def entities(self):
         return np.arange(self.entity_num)
 
+    @dlapi.set()
     def kg_graph(self, form='coo', value_field=None):
         args = [self.kg_feat, self.head_entity_field, self.tail_entity_field, form, value_field]
         if form in ['coo', 'csr']:
@@ -261,6 +269,7 @@ class KnowledgeBasedDataset(Dataset):
         else:
             raise NotImplementedError('graph format [{}] has not been implemented.'.format(form))
 
+    @dlapi.set()
     def ckg_graph(self, form='coo', value_field=None):
         if value_field is not None and value_field != self.relation_field:
             raise ValueError('value_field [{}] can only be [{}] in ckg_graph.'.format(

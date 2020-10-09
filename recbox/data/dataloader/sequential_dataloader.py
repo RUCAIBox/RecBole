@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/17
+# @Time   : 2020/10/6, 2020/9/17
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -25,13 +25,12 @@ class SequentialDataLoader(AbstractDataLoader):
         self.time_field = dataset.time_field
         self.max_item_list_len = config['MAX_ITEM_LIST_LENGTH']
 
-        target_prefix = config['TARGET_PREFIX']
         list_suffix = config['LIST_SUFFIX']
         self.item_list_field = self.iid_field + list_suffix
         self.time_list_field = self.time_field + list_suffix
         self.position_field = config['POSITION_FIELD']
-        self.target_iid_field = target_prefix + self.iid_field
-        self.target_time_field = target_prefix + self.time_field
+        self.target_iid_field = self.iid_field
+        self.target_time_field = self.time_field
         self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
 
         dataset.set_field_property(self.item_list_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
