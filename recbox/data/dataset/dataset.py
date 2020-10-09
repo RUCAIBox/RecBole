@@ -158,17 +158,19 @@ class Dataset(object):
         return feat
 
     def _get_load_and_unload_col(self, filepath, source):
+        if isinstance(source, FeatureSource):
+            source = source.value
         if self.config['load_col'] is None:
             load_col = None
-        elif source.value not in self.config['load_col']:
+        elif source not in self.config['load_col']:
             load_col = set()
-        elif self.config['load_col'][source.value] == '*':
+        elif self.config['load_col'][source] == '*':
             load_col = None
         else:
-            load_col = set(self.config['load_col'][source.value])
+            load_col = set(self.config['load_col'][source])
 
-        if self.config['unload_col'] is not None and source.value in self.config['unload_col']:
-            unload_col = set(self.config['unload_col'][source.value])
+        if self.config['unload_col'] is not None and source in self.config['unload_col']:
+            unload_col = set(self.config['unload_col'][source])
         else:
             unload_col = None
 
@@ -519,7 +521,9 @@ class Dataset(object):
                         remap_list.append((feat, field, FeatureType.TOKEN))
             for field in field_set:
                 source = self.field2source[field]
-                feat = getattr(self, '{}_feat'.format(source.value))
+                if isinstance(source, FeatureSource):
+                    source = source.value
+                feat = getattr(self, '{}_feat'.format(source))
                 ftype = self.field2type[field]
                 remap_list.append((feat, field, ftype))
             self._remap(remap_list)
