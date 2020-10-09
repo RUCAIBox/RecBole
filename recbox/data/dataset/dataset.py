@@ -139,7 +139,7 @@ class Dataset(object):
         feat_path = os.path.join(dataset_path, '{}.{}'.format(token, source.value))
         if os.path.isfile(feat_path):
             feat = self._load_feat(feat_path, source)
-            self.logger.debug('user feature loaded successfully from [{}]'.format(feat_path))
+            self.logger.debug('user/item feature loaded successfully from [{}]'.format(feat_path))
         else:
             feat = None
             self.logger.debug('[{}] not found, user features are not loaded'.format(feat_path))
