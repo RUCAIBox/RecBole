@@ -1,0 +1,6 @@
+embedding_size: 64
+kg_embedding_size: 64
+layers: [64]
+mess_dropout: 0.1
+reg_weight: 1e-5
+aggregator_type: 'bi'
