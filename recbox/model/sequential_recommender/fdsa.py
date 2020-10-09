@@ -38,7 +38,7 @@ class FDSA(SequentialRecommender):
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
+        self.TARGET_ITEM_ID = self.ITEM_ID
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
         self.FEATURE_FIELD = config['FEATURE_FIELD']
         self.FEATURE_LIST = self.FEATURE_FIELD + config['LIST_SUFFIX']

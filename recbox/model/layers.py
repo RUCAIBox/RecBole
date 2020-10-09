@@ -5,9 +5,9 @@
 # @File   : layers.py
 
 # UPDATE:
-# @Time   : 2020/8/24 14:58, 2020/9/16, 2020/9/21
-# @Author : Yujie Lu, Xingyu Pan, Zhichao Feng
-# @Email  : yujielu1998@gmail.com, panxy@ruc.edu.cn, fzcbupt@gmail.com
+# @Time   : 2020/8/24 14:58, 2020/9/16, 2020/9/21, 2020/10/9
+# @Author : Yujie Lu, Xingyu Pan, Zhichao Feng, Hui Wang
+# @Email  : yujielu1998@gmail.com, panxy@ruc.edu.cn, fzcbupt@gmail.com, hui.wang@ruc.edu.cn
 
 """
 Common Layers in recommender system
@@ -15,6 +15,8 @@ Common Layers in recommender system
 
 from logging import getLogger
 import numpy as np
+import copy
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as fn
