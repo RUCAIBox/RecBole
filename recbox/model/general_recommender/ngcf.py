@@ -7,7 +7,9 @@
 # @Time   : 2020/9/16
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-"""
+r"""
+recbox.model.general_recommender.ngcf
+################################################
 Reference:
 Xiang Wang et al. "Neural Graph Collaborative Filtering." in SIGIR 2019.
 
@@ -30,7 +32,7 @@ from recbox.model.init import xavier_normal_initialization
 
 
 def sparse_dropout(x, rate, noise_shape):
-    """This is a function that execute Dropout on Pytorch sparse tensor.
+    r"""This is a function that execute Dropout on Pytorch sparse tensor.
 
     A random dropout will be applied to the input sparse tensor.
 
@@ -44,8 +46,7 @@ def sparse_dropout(x, rate, noise_shape):
         noise_shape(tuple): Shape of the input sparse tensor. suggest '._nnz()'
 
     Returns:
-        output(torch.sparse.FloatTensor): The result sparse tensor after dropout.
-
+        torch.sparse.FloatTensor: The result sparse tensor after dropout.
 
     """
     random_tensor = 1 - rate
@@ -62,7 +63,7 @@ def sparse_dropout(x, rate, noise_shape):
 
 
 class NGCF(GeneralRecommender):
-    """NGCF is a model that incorporate GNN for recommendation.
+    r"""NGCF is a model that incorporate GNN for recommendation.
     We implement the model following the original author with a pairwise training mode.
     """
     input_type = InputType.PAIRWISE
@@ -102,7 +103,7 @@ class NGCF(GeneralRecommender):
         self.apply(xavier_normal_initialization)
 
     def get_norm_adj_mat(self):
-        """Get the normalized interaction matrix of users and items.
+        r"""Get the normalized interaction matrix of users and items.
 
         Construct the square matrix from the training data and normalize it
         using the laplace matrix.
@@ -135,7 +136,7 @@ class NGCF(GeneralRecommender):
         return SparseL
 
     def get_eye_mat(self):
-        """Construct the identity matrix with the size of  n_items+n_users.
+        r"""Construct the identity matrix with the size of  n_items+n_users.
 
         Returns:
             Sparse tensor of the identity matrix. Shape of (n_items+n_users, n_items+n_users)
@@ -146,7 +147,7 @@ class NGCF(GeneralRecommender):
         return torch.sparse.FloatTensor(i, val)
 
     def get_ego_embeddings(self):
-        """Get the embedding of users and items and combine to an embedding matrix.
+        r"""Get the embedding of users and items and combine to an embedding matrix.
 
         Returns:
             Tensor of the embedding matrix. Shape of (n_items+n_users, embedding_dim)

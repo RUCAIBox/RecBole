@@ -275,8 +275,23 @@ test_examples = {
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
         'min_user_inter_num': 5
     },
-    'Test NextItNet': {
-        'model': 'NextItNet',
+    'Test TransRec': {
+        'model': 'TransRec',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5
+    },
+    'Test GRU4RecF': {
+        'model': 'GRU4RecF',
         'dataset': 'ml-100k',
         'epochs': 1,
         'training_neg_sample_num': 0,
@@ -284,12 +299,72 @@ test_examples = {
         'split_ratio': None,
         'leave_one_num': 2,
         'real_time_process': True,
-        'NEG_PREFIX': None,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
+        'min_user_inter_num': 5
+    },
+    'Test SASRec': {
+        'model': 'SASRec',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'TO_LS, full',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
         'min_user_inter_num': 5
     },
+    'Test SASRecF': {
+        'model': 'SASRecF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'TO_LS, full',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
+        'min_user_inter_num': 5
+    },
+    'Test FDSA': {
+        'model': 'FDSA',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'TO_LS, full',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
+        'min_user_inter_num': 5
+    },
+    'Test BERT4Rec': {
+        'model': 'BERT4Rec',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'TO_LS, full',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5
+    }
 
 }
 
