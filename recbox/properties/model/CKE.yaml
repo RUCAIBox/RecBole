@@ -1,0 +1,3 @@
+embedding_size: 64
+kg_embedding_size: 64
+reg_weights: [1e-2,1e-2]
