@@ -15,8 +15,8 @@ load_col:
   link: [item_id, entity_id]
 
 # data separator
-field_separator: '\t'
-seq_separator: ' '
+field_separator: "\t"
+seq_separator: " "
 
 # data filter
 lowest_val:
