@@ -103,9 +103,8 @@ class Config(object):
         self.file_config_dict = dict()
         if file_list:
             for file in file_list:
-                if os.path.isfile(file):
-                    with open(file, 'r', encoding='utf-8') as f:
-                        self.file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
+                with open(file, 'r', encoding='utf-8') as f:
+                    self.file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
 
     def _load_variable_config_dict(self, config_dict):
         self.variable_config_dict = config_dict if config_dict else dict()

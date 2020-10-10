@@ -8,7 +8,9 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmain.com
 
-"""
+r"""
+recbox.model.general_recommender.neumf
+################################################
 Reference:
 Xiangnan He et al. "Neural Collaborative Filtering." in WWW 2017.
 """
@@ -23,6 +25,14 @@ from recbox.model.layers import MLPLayers
 
 
 class NeuMF(GeneralRecommender):
+    r"""NeuMF is an neural network enhanced matrix factorization model.
+        It replace the dot product to mlp for a more precise user-item interaction.
+
+    Note:
+
+            Our implementation only contains a rough pretraining function.
+
+    """
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
@@ -63,6 +73,9 @@ class NeuMF(GeneralRecommender):
             self.apply(self.init_weights)
 
     def load_pretrain(self):
+        r"""A simple implementation of loading pretrained parameters.
+
+        """
         mf = torch.load('./saved/NeuMF-mf.pth')
         mlp = torch.load('./saved/NeuMF-mlp.pth')
         self.user_mf_embedding.weight.data.copy_(mf.user_mf_embedding.weight)
@@ -92,9 +105,9 @@ class NeuMF(GeneralRecommender):
         user_mlp_e = self.user_mlp_embedding(user)
         item_mlp_e = self.item_mlp_embedding(item)
         if self.mf_train:
-            mf_output = torch.mul(user_mf_e, item_mf_e)     # (batch, embedding_size)
+            mf_output = torch.mul(user_mf_e, item_mf_e)     # [batch_size, embedding_size]
         if self.mlp_train:
-            mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))   # (batch, layers[-1])
+            mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))   # [batch_size, layers[-1]]
         if self.mf_train and self.mlp_train:
             output = self.sigmoid(self.predict_layer(torch.cat((mf_output, mlp_output), -1)))
         elif self.mf_train:
@@ -119,6 +132,9 @@ class NeuMF(GeneralRecommender):
         return self.forward(user, item)
 
     def dump_parameters(self):
+        r"""A simple implementation of dumping model parameters for pretrain.
+
+        """
         if self.mf_train and not self.mlp_train:
             save_path = './saved/NeuMF-mf.pth'
         elif self.mlp_train and not self.mf_train:

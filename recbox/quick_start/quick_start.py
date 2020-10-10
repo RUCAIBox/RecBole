@@ -51,9 +51,9 @@ def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None
     }
 
 
-def objective_function(config_dict=None):
+def objective_function(config_dict=None, config_file_list=None):
 
-    config = Config(config_dict=config_dict)
+    config = Config(config_dict=config_dict, config_file_list=config_file_list)
     init_seed(config['seed'])
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)
