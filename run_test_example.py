@@ -8,18 +8,8 @@
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 import traceback
-from run_test import whole_process
 from time import time
-
-
-"""
-乞丐版代码测试程序，防止bug越写越多，尤其是后期model多起来，一不小心就会使某些model run不起来
-
-代码提交前，请运行一下这个程序，保证无误后再提交
-
-有必要加入测试例子的，请尽量添加！按照格式添加到 `test_examples` 中
-
-"""
+from recbox.quick_start import run_unirec
 
 
 test_examples = {
@@ -28,6 +18,8 @@ test_examples = {
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
+        'eval_setting': 'RO_RS, full',
+        'training_neg_sample_num': 1,
         'metrics': ['Recall', 'MRR', 'NDCG'],
         'topk': [5, 10, 20],
     },
@@ -245,7 +237,9 @@ test_examples = {
     'Test KTUP': {
         'model': 'KTUP',
         'dataset': 'kgdata_example',
-        'epochs': 1,
+        'train_rec_step': 1,
+        'train_kg_step': 1,
+        'epochs': 2,
         'valid_metric': 'Recall@10',
         'metrics': ['Recall'],
         'topk': [10]
@@ -281,6 +275,106 @@ test_examples = {
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
         'min_user_inter_num': 5
     },
+    'Test TransRec': {
+        'model': 'TransRec',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'loss_type': 'CE',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5
+    },
+    'Test GRU4RecF': {
+        'model': 'GRU4RecF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'loss_type': 'CE',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'FEATURE_FIELD': 'class',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
+        'min_user_inter_num': 5
+    },
+    'Test SASRec': {
+        'model': 'SASRec',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'loss_type': 'CE',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'FEATURE_FIELD': 'class',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5
+    },
+    'Test SASRecF': {
+        'model': 'SASRecF',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'loss_type': 'CE',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'FEATURE_FIELD': 'class',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
+        'min_user_inter_num': 5
+    },
+    'Test FDSA': {
+        'model': 'FDSA',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'loss_type': 'CE',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'FEATURE_FIELD': 'class',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
+        'min_user_inter_num': 5
+    },
+    'Test BERT4Rec': {
+        'model': 'BERT4Rec',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'loss_type': 'CE',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5
+    }
 
 }
 
@@ -293,7 +387,7 @@ def run_test_examples():
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
-            whole_process(config_file='properties/overall.config', config_dict=test_examples[example], saved=False)
+            run_unirec(config_dict=test_examples[example], saved=False)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:

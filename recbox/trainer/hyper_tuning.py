@@ -14,7 +14,7 @@ from hyperopt.pyll.base import dfs, as_apply
 from hyperopt.pyll.stochastic import implicit_stochastic_symbols
 from hyperopt.pyll.base import Apply
 
-from recbox.trainer.utils import dict2str
+from recbox.utils.utils import dict2str
 
 
 """
@@ -122,7 +122,8 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
 
 
 class HyperTuning(object):
-    def __init__(self, objective_function, space=None, params_file=None, algo=tpe.suggest, max_evals=100):
+    def __init__(self, objective_function, space=None, params_file=None, fixed_config_file_list=None,
+                 algo=tpe.suggest, max_evals=100):
         self.best_score = None
         self.best_params = None
         self.best_test_result = None
@@ -130,6 +131,7 @@ class HyperTuning(object):
 
         self.objective_function = objective_function
         self.max_evals = max_evals
+        self.fixed_config_file_list = fixed_config_file_list
         if space:
             self.space = space
         elif params_file:
@@ -197,7 +199,7 @@ class HyperTuning(object):
         config_dict = params
         params_str = self.params2str(params)
         print('running parameters:', config_dict)
-        result_dict = self.objective_function(config_dict)
+        result_dict = self.objective_function(config_dict, self.fixed_config_file_list)
         self.params2result[params_str] = result_dict
         score, bigger = result_dict['best_valid_score'], result_dict['valid_score_bigger']
 

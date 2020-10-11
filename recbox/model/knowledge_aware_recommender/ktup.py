@@ -2,11 +2,13 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
-"""
+r"""
+recbox.model.knowledge_aware_recommender.ktup
+##################################################
 Reference:
 Yixin Cao et al. "Unifying Knowledge Graph Learning and Recommendation:Towards a Better Understanding of User Preferences." in WWW 2019.
 
-Code Reference:
+Reference code:
 https://github.com/TaoMiner/joint-kg-recommender
 """
 
@@ -18,32 +20,26 @@ from torch.autograd import Variable
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import KnowledgeRecommender
 from recbox.model.loss import BPRLoss, EmbMarginLoss
-from recbox.model.init import xavier_normal_initialization
+from recbox.model.init import xavier_uniform_initialization
 
 
-def orthogonalLoss(rel_embeddings, norm_embeddings):
-    return torch.sum(torch.sum(norm_embeddings * rel_embeddings, dim=1, keepdim=True) ** 2 /
-                     torch.sum(rel_embeddings ** 2, dim=1, keepdim=True))
-
-
-def alignLoss(emb1, emb2):
-    distance = torch.sum((emb1 - emb2) ** 2, 1).mean()
-    return distance
-
-
-# todo: L2 regularization
 class KTUP(KnowledgeRecommender):
+    r"""KTUP is a knowledge-based recommendation model. It adopts the strategy of multi-task learning to jointly learn
+    recommendation and KG-related tasks, with the goal of understanding the reasons that a user interacts with an item.
+    This method utilizes an attention mechanism to combine all preferences into a single-vector representation.
+    """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(KTUP, self).__init__(config, dataset)
 
         self.embedding_size = config['embedding_size']
+        self.L1_flag = config['L1_flag']
         self.use_st_gumbel = config['use_st_gumbel']
         self.kg_weight = config['kg_weight']
         self.align_weight = config['align_weight']
         self.margin = config['margin']
-        self.p_norm = config['p_norm']
 
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
@@ -54,25 +50,41 @@ class KTUP(KnowledgeRecommender):
         self.relation_norm_embedding = nn.Embedding(self.n_relations, self.embedding_size)
 
         self.rec_loss = BPRLoss()
-        self.kg_loss = nn.TripletMarginLoss(margin=self.margin, p=self.p_norm, reduction='mean')
+        self.kg_loss = nn.MarginRankingLoss(margin=self.margin)
         self.reg_loss = EmbMarginLoss()
 
-        self.apply(xavier_normal_initialization)
+        # parameters initialization
+        self.apply(xavier_uniform_initialization)
+        normalize_user_emb = F.normalize(self.user_embedding.weight.data, p=2, dim=1)
+        normalize_item_emb = F.normalize(self.item_embedding.weight.data, p=2, dim=1)
+        normalize_pref_emb = F.normalize(self.pref_embedding.weight.data, p=2, dim=1)
+        normalize_pref_norm_emb = F.normalize(self.pref_norm_embedding.weight.data, p=2, dim=1)
+        normalize_entity_emb = F.normalize(self.entity_embedding.weight.data, p=2, dim=1)
+        normalize_rel_emb = F.normalize(self.relation_embedding.weight.data, p=2, dim=1)
+        normalize_rel_norm_emb = F.normalize(self.relation_norm_embedding.weight.data, p=2, dim=1)
+        self.user_embedding.weight.data = normalize_user_emb
+        self.item_embedding.weight_data = normalize_item_emb
+        self.pref_embedding.weight.data = normalize_pref_emb
+        self.pref_norm_embedding.weight.data = normalize_pref_norm_emb
+        self.entity_embedding.weight.data = normalize_entity_emb
+        self.relation_embedding.weight.data = normalize_rel_emb
+        self.relation_norm_embedding.weight.data = normalize_rel_norm_emb
 
-    def masked_softmax(self, logits):
+    def _masked_softmax(self, logits):
         probs = F.softmax(logits, dim=len(logits.shape)-1)
         return probs
 
     def convert_to_one_hot(self, indices, num_classes):
-        """
+        r"""
         Args:
             indices (Variable): A vector containing indices,
                 whose size is (batch_size,).
             num_classes (Variable): The number of classes, which would be
                 the second dimension of the resulting one-hot matrix.
         Returns:
-            result: The one-hot matrix of size (batch_size, num_classes).
+            torch.Tensor: The one-hot matrix of size (batch_size, num_classes).
         """
+
         old_shape = indices.shape
         new_shape = torch.Size([i for i in old_shape] + [num_classes])
         indices = indices.unsqueeze(len(old_shape))
@@ -81,27 +93,27 @@ class KTUP(KnowledgeRecommender):
         return one_hot
 
     def st_gumbel_softmax(self, logits, temperature=1.0):
-        """
-        Return the result of Straight-Through Gumbel-Softmax Estimation.
+        r"""Return the result of Straight-Through Gumbel-Softmax Estimation.
         It approximates the discrete sampling via Gumbel-Softmax trick
         and applies the biased ST estimator.
         In the forward propagation, it emits the discrete one-hot result,
         and in the backward propagation it approximates the categorical
         distribution via smooth Gumbel-Softmax distribution.
+
         Args:
             logits (Variable): A un-normalized probability values,
                 which has the size (batch_size, num_classes)
             temperature (float): A temperature parameter. The higher
                 the value is, the smoother the distribution is.
         Returns:
-            y: The sampled output, which has the property explained above.
+            torch.Tensor: The sampled output, which has the property explained above.
         """
 
         eps = 1e-20
         u = logits.data.new(*logits.size()).uniform_()
         gumbel_noise = Variable(-torch.log(-torch.log(u + eps) + eps))
         y = logits + gumbel_noise
-        y = self.masked_softmax(logits=y / temperature)
+        y = self._masked_softmax(logits=y / temperature)
         y_argmax = y.max(len(y.shape) - 1)[1]
         y_hard = self.convert_to_one_hot(
             indices=y_argmax,
@@ -109,7 +121,7 @@ class KTUP(KnowledgeRecommender):
         y = (y_hard - y).detach() + y
         return y
 
-    def get_prefernces(self, user_e, item_e, use_st_gumbel=False):
+    def _get_preferences(self, user_e, item_e, use_st_gumbel=False):
         pref_probs = torch.matmul(user_e + item_e, torch.t(self.pref_embedding.weight + self.relation_embedding.weight)) / 2
         if use_st_gumbel:
             # todo: different torch versions may cause the st_gumbel_softmax to report errors, wait to be test
@@ -119,8 +131,15 @@ class KTUP(KnowledgeRecommender):
         return pref_probs, relation_e, norm_e
 
     @staticmethod
-    def transH_projection(original, norm):
+    def _transH_projection(original, norm):
         return original - torch.sum(original * norm, dim=len(original.size()) - 1, keepdim=True) * norm
+
+    def _get_score(self, h_e, r_e, t_e):
+        if self.L1_flag:
+            score = - torch.sum(torch.abs(h_e + r_e - t_e), 1)
+        else:
+            score = - torch.sum((h_e + r_e - t_e) ** 2, 1)
+        return score
 
     def forward(self, user, item):
         user_e = self.user_embedding(user)
@@ -128,9 +147,9 @@ class KTUP(KnowledgeRecommender):
         entity_e = self.entity_embedding(item)
         item_e = item_e + entity_e
 
-        _, relation_e, norm_e = self.get_prefernces(user_e, item_e, use_st_gumbel=self.use_st_gumbel)
-        proj_user_e = self.transH_projection(user_e, norm_e)
-        proj_item_e = self.transH_projection(item_e, norm_e)
+        _, relation_e, norm_e = self._get_preferences(user_e, item_e, use_st_gumbel=self.use_st_gumbel)
+        proj_user_e = self._transH_projection(user_e, norm_e)
+        proj_item_e = self._transH_projection(item_e, norm_e)
 
         return proj_user_e, relation_e, proj_item_e
 
@@ -138,22 +157,29 @@ class KTUP(KnowledgeRecommender):
         user = interaction[self.USER_ID]
         pos_item = interaction[self.ITEM_ID]
         neg_item = interaction[self.NEG_ITEM_ID]
-        proj_user_e, pos_relation_e, proj_pos_item_e = self.forward(user, pos_item)
-        proj_user_e, neg_relation_e, proj_neg_item_e = self.forward(user, neg_item)
+        proj_pos_user_e, pos_relation_e, proj_pos_item_e = self.forward(user, pos_item)
+        proj_neg_user_e, neg_relation_e, proj_neg_item_e = self.forward(user, neg_item)
 
-        pos_item_score = ((proj_user_e + pos_relation_e - proj_pos_item_e) ** 2).sum(dim=1)
-        neg_item_score = ((proj_user_e + neg_relation_e - proj_neg_item_e) ** 2).sum(dim=1)
+        pos_item_score = self._get_score(proj_pos_user_e, pos_relation_e, proj_pos_item_e)
+        neg_item_score = self._get_score(proj_neg_user_e, neg_relation_e, proj_neg_item_e)
 
         rec_loss = self.rec_loss(pos_item_score, neg_item_score)
         orthogonal_loss = orthogonalLoss(self.pref_embedding.weight, self.pref_norm_embedding.weight)
-        loss = rec_loss + orthogonal_loss
         item = torch.cat([pos_item, neg_item])
-        align_loss = alignLoss(self.item_embedding(item), self.entity_embedding(item))
-        loss += self.align_weight * align_loss
+        align_loss = self.align_weight * alignLoss(self.item_embedding(item), self.entity_embedding(item), self.L1_flag)
 
-        return loss
+        return rec_loss, orthogonal_loss, align_loss
 
     def calculate_kg_loss(self, interaction):
+        r"""Calculate the training loss for a batch data of KG.
+
+        Args:
+            interaction (Interaction): Interaction class of the batch.
+
+        Returns:
+            torch.Tensor: Training loss, shape: []
+        """
+
         h = interaction[self.HEAD_ENTITY_ID]
         r = interaction[self.RELATION_ID]
         pos_t = interaction[self.TAIL_ENTITY_ID]
@@ -165,23 +191,38 @@ class KTUP(KnowledgeRecommender):
         r_e = self.relation_embedding(r)
         norm_e = self.relation_norm_embedding(r)
 
-        proj_h_e = self.transH_projection(h_e, norm_e)
-        proj_pos_t_e = self.transH_projection(pos_t_e, norm_e)
-        proj_neg_t_e = self.transH_projection(neg_t_e, norm_e)
+        proj_h_e = self._transH_projection(h_e, norm_e)
+        proj_pos_t_e = self._transH_projection(pos_t_e, norm_e)
+        proj_neg_t_e = self._transH_projection(neg_t_e, norm_e)
 
-        kg_loss = self.kg_loss(proj_h_e + r_e, proj_pos_t_e, proj_neg_t_e)
+        pos_tail_score = self._get_score(proj_h_e, r_e, proj_pos_t_e)
+        neg_tail_score = self._get_score(proj_h_e, r_e, proj_neg_t_e)
+
+        kg_loss = self.kg_loss(pos_tail_score, neg_tail_score, torch.ones(h.size(0)).to(self.device))
         orthogonal_loss = orthogonalLoss(r_e, norm_e)
         reg_loss = self.reg_loss(h_e, pos_t_e, neg_t_e, r_e)
         loss = self.kg_weight * (kg_loss + orthogonal_loss + reg_loss)
         entity = torch.cat([h, pos_t, neg_t])
         entity = entity[entity < self.n_items]
-        align_loss = alignLoss(self.item_embedding(entity), self.entity_embedding(entity))
-        loss += self.align_weight * align_loss
+        align_loss = self.align_weight * alignLoss(self.item_embedding(entity), self.entity_embedding(entity), self.L1_flag)
 
-        return loss
+        return loss, align_loss
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
         proj_user_e, relation_e, proj_item_e = self.forward(user, item)
-        return ((proj_user_e + relation_e - proj_item_e) ** 2).sum(dim=1)
+        return self._get_score(proj_user_e, relation_e, proj_item_e)
+
+
+def orthogonalLoss(rel_embeddings, norm_embeddings):
+    return torch.sum(torch.sum(norm_embeddings * rel_embeddings, dim=1, keepdim=True) ** 2 /
+                     torch.sum(rel_embeddings ** 2, dim=1, keepdim=True))
+
+
+def alignLoss(emb1, emb2, L1_flag=False):
+    if L1_flag:
+        distance = torch.sum(torch.abs(emb1 - emb2), 1)
+    else:
+        distance = torch.sum((emb1 - emb2) ** 2, 1)
+    return distance.mean()

@@ -8,7 +8,10 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
-"""
+
+r"""
+recbox.model.general_recommender.bprmf
+################################################
 Reference:
 Steffen Rendle et al. "BPR: Bayesian Personalized Ranking from Implicit Feedback." in UAI 2009.
 """
@@ -23,6 +26,9 @@ from recbox.model.init import xavier_normal_initialization
 
 
 class BPRMF(GeneralRecommender):
+    r"""BPRMF is a basic matrix factorization model that be trained in the pairwise way.
+
+    """
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
@@ -40,9 +46,23 @@ class BPRMF(GeneralRecommender):
         self.apply(xavier_normal_initialization)
 
     def get_user_embedding(self, user):
+        r""" Get a batch of user embedding tensor according to input user's id.
+        Args:
+            user (torch.LongTensor): The input tensor that contains user's id, shape: [batch_size, ]
+
+        Returns:
+            torch.FloatTensor: The embedding tensor of a batch of user, shape: [batch_size, embedding_size]
+        """
         return self.user_embedding(user)
 
     def get_item_embedding(self, item):
+        r""" Get a batch of item embedding tensor according to input item's id.
+        Args:
+            item (torch.LongTensor): The input tensor that contains item's id, shape: [batch_size, ]
+
+        Returns:
+            torch.FloatTensor: The embedding tensor of a batch of item, shape: [batch_size, embedding_size]
+        """
         return self.item_embedding(item)
 
     def forward(self, user, item):

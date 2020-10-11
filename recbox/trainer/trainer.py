@@ -3,9 +3,14 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7 18:38, 2020/9/26, 2020/9/26, 2020/9/20, 2020/9/16
+# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
+
+r"""
+recbox.trainer.trainer
+################################
+"""
 
 import os
 import itertools
@@ -19,23 +24,48 @@ from logging import getLogger
 
 from recbox.evaluator import TopKEvaluator, LossEvaluator
 from recbox.data.interaction import Interaction
-from recbox.utils import ensure_dir, get_local_time, DataLoaderType, KGDataLoaderState, EvaluatorType
-from recbox.trainer.utils import early_stopping, calculate_valid_score, dict2str
+from recbox.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
+    DataLoaderType, KGDataLoaderState, EvaluatorType
 
 
 class AbstractTrainer(object):
+    r"""Trainer Class is used to manage the training and evaluation processes of recommender system models.
+    AbstractTrainer is an abstract class in which the fit() and evaluate() method should be implemented according
+    to different training and evaluation strategies.
+    """
+
     def __init__(self, config, model):
         self.config = config
         self.model = model
 
     def fit(self, train_data):
+        r"""Train the model based on the train data.
+
+        """
         raise NotImplementedError('Method [next] should be implemented.')
 
     def evaluate(self, eval_data):
+        r"""Evaluate the model based on the eval data.
+
+        """
+
         raise NotImplementedError('Method [next] should be implemented.')
 
 
 class Trainer(AbstractTrainer):
+    r"""The basic Trainer for basic training and evaluation strategies in recommender systems. This class defines common
+    functions for training and evaluation processes of most recommender system models, including fit(), evalute(),
+    resume_checkpoint() and some other features helpful for model training and evaluation.
+
+    Generally speaking, this class can serve most recommender system models, If the training process of the model is to
+    simply optimize a single loss without involving any complex training strategies, such as adversarial learning,
+    pre-training and so on.
+
+    Initializing the Trainer needs two parameters: `config` and `model`. `config` records the parameters information for controlling
+    training and evaluation, such as `learning_rate`, `epochs`, `eval_step` and so on. More information can be found in [placeholder].
+    `model` is the instantiated object of a Model Class.
+
+    """
     def __init__(self, config, model):
         super(Trainer, self).__init__(config, model)
 
@@ -45,7 +75,7 @@ class Trainer(AbstractTrainer):
         self.epochs = config['epochs']
         self.eval_step = min(config['eval_step'], self.epochs)
         self.stopping_step = config['stopping_step']
-        self.valid_metric = config['valid_metric']
+        self.valid_metric = config['valid_metric'].lower()
         self.valid_metric_bigger = config['valid_metric_bigger']
         self.test_batch_size = config['eval_batch_size']
         self.device = config['device']
@@ -71,7 +101,11 @@ class Trainer(AbstractTrainer):
         self.iid_field = config['ITEM_ID_FIELD']
 
     def _build_optimizer(self):
-        # todo: Avoid clear text strings
+        r"""Init the Optimizer
+
+        Returns:
+            torch.optim: the optimizer
+        """
         if self.learner.lower() == 'adam':
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         elif self.learner.lower() == 'sgd':
@@ -86,32 +120,56 @@ class Trainer(AbstractTrainer):
         return optimizer
 
     def _train_epoch(self, train_data, epoch_idx):
+        r"""Train the model in an epoch
+
+        Args:
+            train_data (DataLoader): the train data
+            epoch_idx (int): the current epoch id
+
+        Returns:
+            float/tuple: The sum of loss returned by all batches in this epoch. If the loss in each batch contains
+            multiple parts and the model return these multiple parts loss instead of the sum of loss, It will return a
+            tuple which includes the sum of loss in each part.
+        """
         self.model.train()
-        losses_list = []
+        total_loss = None
         for batch_idx, interaction in enumerate(train_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             losses = self.model.calculate_loss(interaction)
-            loss = sum(losses) if isinstance(losses, tuple) else losses
+            if isinstance(losses, tuple):
+                loss = sum(losses)
+                loss_tuple = tuple(per_loss.item() for per_loss in losses)
+                total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+            else:
+                loss = losses
+                total_loss = losses.item() if total_loss is None else total_loss + losses.item()
             self._check_nan(loss)
             loss.backward()
             self.optimizer.step()
-            losses_list.append(losses)
-        if isinstance(losses_list[0], tuple):
-            total_losses = []
-            for j in range(len(losses_list[0])):
-                total_losses.append(sum([losses[j] for losses in losses_list]).item())
-            return tuple(total_losses)
-
-        else:
-            return sum(losses_list).item()
+        return total_loss
 
     def _valid_epoch(self, valid_data):
+        r"""Valid the model with valid data
+
+        Args:
+            valid_data (DataLoader): the valid data
+
+        Returns:
+            float: valid score
+            dict: valid result
+        """
         valid_result = self.evaluate(valid_data, load_best_model=False)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_score, valid_result
 
     def _save_checkpoint(self, epoch):
+        r"""Store the model parameters information and training information.
+
+        Args:
+            epoch (int): the current epoch id
+
+        """
         state = {
             'config': self.config,
             'epoch': epoch,
@@ -123,6 +181,12 @@ class Trainer(AbstractTrainer):
         torch.save(state, self.saved_model_file)
 
     def resume_checkpoint(self, resume_file):
+        r"""Load the model parameters information and training information.
+
+        Args:
+            resume_file (file): the checkpoint file
+
+        """
         resume_file = str(resume_file)
         checkpoint = torch.load(resume_file)
         self.start_epoch = checkpoint['epoch'] + 1
@@ -138,13 +202,13 @@ class Trainer(AbstractTrainer):
         # load optimizer state from checkpoint only when optimizer type is not changed
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         message_output = 'Checkpoint loaded. Resume training from epoch {}'.format(self.start_epoch)
-        print(message_output)
+        self.logger.info(message_output)
 
     def _check_nan(self, loss):
         if torch.isnan(loss):
             raise ValueError('Training loss is nan')
 
-    def generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
+    def _generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
         train_loss_output = "epoch %d training [time: %.2fs, " % (epoch_idx, e_time - s_time)
         if isinstance(losses, tuple):
             for idx, loss in enumerate(losses):
@@ -155,6 +219,17 @@ class Trainer(AbstractTrainer):
         return train_loss_output + ']'
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+        r"""Train the model based on the train data and the valid data.
+
+        Args:
+            train_data (DataLoader): the train data
+            valid_data (DataLoader, optional): the valid data, default: None. If it's None, the early_stopping is invalid.
+            verbose (bool, optional): whether to write training and evaluation information to logger, default: True
+            saved (bool, optional): whether to save the model parameters, default: True
+
+        Returns:
+             (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
+        """
         if hasattr(self.model, 'train_preparation'):
             self.model.train_preparation(train_data=train_data, valid_data=valid_data)
         for epoch_idx in range(self.start_epoch, self.epochs):
@@ -164,7 +239,7 @@ class Trainer(AbstractTrainer):
             self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
             training_end_time = time()
             train_loss_output = \
-                self.generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
+                self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
             if verbose:
                 self.logger.info(train_loss_output)
 
@@ -221,7 +296,7 @@ class Trainer(AbstractTrainer):
             if batch_size <= self.test_batch_size:
                 scores = self.model.predict(interaction)
             else:
-                scores = self.spilt_predict(interaction, batch_size)
+                scores = self._spilt_predict(interaction, batch_size)
         pos_idx = pos_idx.to(self.device)
         used_idx = used_idx.to(self.device)
 
@@ -249,6 +324,18 @@ class Trainer(AbstractTrainer):
 
     @torch.no_grad()
     def evaluate(self, eval_data, load_best_model=True, model_file=None):
+        r"""Evaluate the model based on the eval data.
+
+        Args:
+            eval_data (DataLoader): the eval data
+            load_best_model (bool, optional): whether load the best model in the training process, default: True.
+                                                It should be set True, if users want to test the model after training.
+            model_file (str, optional): the saved model file, default: None. If users want to test the previously
+                                        trained model file, they can set this parameter.
+
+        Returns:
+            dict: eval result, key is the eval metric and value in the corresponding metric value
+        """
         if load_best_model:
             if model_file:
                 checkpoint_file = model_file
@@ -257,7 +344,7 @@ class Trainer(AbstractTrainer):
             checkpoint = torch.load(checkpoint_file)
             self.model.load_state_dict(checkpoint['state_dict'])
             message_output = 'Loading model structure and parameters from {}'.format(checkpoint_file)
-            #print(message_output)
+            self.logger.info(message_output)
 
         self.model.eval()
 
@@ -280,7 +367,7 @@ class Trainer(AbstractTrainer):
                 if batch_size <= self.test_batch_size:
                     scores = self.model.predict(interaction.to(self.device))
                 else:
-                    scores = self.spilt_predict(interaction, batch_size)
+                    scores = self._spilt_predict(interaction, batch_size)
 
                 batch_matrix = self.evaluator.evaluate(interaction, scores)
             batch_matrix_list.append(batch_matrix)
@@ -288,7 +375,7 @@ class Trainer(AbstractTrainer):
 
         return result
 
-    def spilt_predict(self, interaction, batch_size):
+    def _spilt_predict(self, interaction, batch_size):
         spilt_interaction = dict()
         for key, tensor in interaction.interaction.items():
             spilt_interaction[key] = tensor.split(self.test_batch_size, dim=0)
@@ -303,6 +390,12 @@ class Trainer(AbstractTrainer):
         return torch.cat(result_list, dim=0)
 
     def plot_train_loss(self, show=True, save_path=None):
+        r"""Plot the train loss in each epoch
+
+        Args:
+            show (bool, optional): whether to show this figure, default: True
+            save_path (str, optional): the data path to save the figure, default: None. If it's None, it will not be saved.
+        """
         epochs = list(self.train_loss_dict.keys())
         epochs.sort()
         values = [float(self.train_loss_dict[epoch]) for epoch in epochs]
@@ -317,6 +410,11 @@ class Trainer(AbstractTrainer):
 
 
 class KGTrainer(Trainer):
+    r"""KGTrainer is designed for Knowledge-aware recommendation methods. Some of these models need to train the
+    recommendation related task and knowledge related task alternately.
+
+    """
+
     def __init__(self, config, model):
         super(KGTrainer, self).__init__(config, model)
 
@@ -325,11 +423,10 @@ class KGTrainer(Trainer):
 
     def _train_epoch(self, train_data, epoch_idx):
         self.model.train()
-        losses_list = []
+        total_loss = None
         if self.train_rec_step is None or self.train_kg_step is None:
             interaction_state = KGDataLoaderState.RSKG
         else:
-            assert self.train_rec_step > 0 and self.train_kg_step > 0
             interaction_state = KGDataLoaderState.RS \
                 if epoch_idx % (self.train_rec_step + self.train_kg_step) < self.train_rec_step \
                 else KGDataLoaderState.KG
@@ -339,32 +436,39 @@ class KGTrainer(Trainer):
                 interaction = interaction.to(self.device)
                 self.optimizer.zero_grad()
                 losses = self.model.calculate_loss(interaction)
-                loss = sum(losses) if isinstance(losses, tuple) else losses
+                if isinstance(losses, tuple):
+                    loss = sum(losses)
+                    loss_tuple = tuple(per_loss.item() for per_loss in losses)
+                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+                else:
+                    loss = losses
+                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
                 self._check_nan(loss)
                 loss.backward()
                 self.optimizer.step()
-                losses_list.append(losses)
         elif interaction_state in [KGDataLoaderState.KG]:
             for bath_idx, interaction in enumerate(train_data):
                 interaction = interaction.to(self.device)
                 self.optimizer.zero_grad()
                 losses = self.model.calculate_kg_loss(interaction)
-                loss = sum(losses) if isinstance(losses, tuple) else losses
+                if isinstance(losses, tuple):
+                    loss = sum(losses)
+                    loss_tuple = tuple(per_loss.item() for per_loss in losses)
+                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+                else:
+                    loss = losses
+                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
                 self._check_nan(loss)
                 loss.backward()
                 self.optimizer.step()
-                losses_list.append(losses)
-        if isinstance(losses_list[0], tuple):
-            total_losses = []
-            for j in range(len(losses_list[0])):
-                total_losses.append(sum([losses[j] for losses in losses_list]).item())
-            return tuple(total_losses)
-
-        else:
-            return sum(losses_list).item()
+        return total_loss
 
 
-class KGATTrainer(KGTrainer):
+class KGATTrainer(Trainer):
+    r"""KGATTrainer is designed for KGAT, which is a knowledge-aware recommendation method.
+
+    """
+
     def __init__(self, config, model):
         super(KGATTrainer, self).__init__(config, model)
 

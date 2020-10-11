@@ -1,0 +1,9 @@
+embedding_size: 64
+n_factors: 4
+n_iterations: 2
+n_layers: 1
+layers: [64,64,64]
+node_dropout: 0.0
+message_dropout: 0.1
+reg_weight: 1e-3
+cor_weight: 0.01

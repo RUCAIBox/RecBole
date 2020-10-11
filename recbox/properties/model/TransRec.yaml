@@ -1,0 +1,9 @@
+MAX_ITEM_LIST_LENGTH: 50
+TARGET_PREFIX: 'target_'
+LIST_SUFFIX: '_list'
+ITEM_LIST_LENGTH_FIELD: 'item_length'
+USER_ID_FIELD: 'user_id'
+NEG_PREFIX: 'neg_'
+
+embedding_size: 64
+hidden_size: 64
