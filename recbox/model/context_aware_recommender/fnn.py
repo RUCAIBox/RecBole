@@ -4,17 +4,11 @@
 # @Email  : linzihan.super@foxmail.com
 # @File   : fnn.py
 
-"""
+r"""
+recbox.model.context_aware_recommender.fnn
+################################################
 Reference:
 Weinan Zhang1 et al. "Deep Learning over Multi-field Categorical Data" in ECIR 2016
-
-Note:
-    Based on the experiments in the paper above, This implementation incorporate
-    Dropout instead of L2 normalization to relieve over-fitting.
-    Our implementation of FNN is a basic version without pretrain support.
-    If you want to pretrain the feature embedding as the original paper,
-    we suggest you to construct a advanced FNN model and train it in two-stage
-    process with our FM model.
 """
 
 import torch
@@ -26,6 +20,16 @@ from .context_recommender import ContextRecommender
 
 
 class FNN(ContextRecommender):
+    """FNN which also called DNN is a basic version of CTR model that use mlp from field features to predict score.
+
+    Note:
+            Based on the experiments in the paper above, This implementation incorporate
+            Dropout instead of L2 normalization to relieve over-fitting.
+            Our implementation of FNN is a basic version without pretrain support.
+            If you want to pretrain the feature embedding as the original paper,
+            we suggest you to construct a advanced FNN model and train it in two-stage
+            process with our FM model.
+    """
 
     def __init__(self, config, dataset):
         super(FNN, self).__init__(config, dataset)

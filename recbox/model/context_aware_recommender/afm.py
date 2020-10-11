@@ -4,13 +4,14 @@
 # @Email  : linzihan.super@foxmail.com
 # @File   : afm.py
 
-"""
+r"""
+recbox.model.context_aware_recommender.afm
+################################################
 Reference:
 Jun Xiao et al. "Attentional Factorization Machines: Learning the Weight of Feature Interactions via Attention Networks" in IJCAI 2017.
 """
 
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
@@ -19,6 +20,9 @@ from recbox.model.context_aware_recommender.context_recommender import ContextRe
 
 
 class AFM(ContextRecommender):
+    """ AFM is a attention based FM model that predict the final score with the attention of input feature.
+
+    """
 
     def __init__(self, config, dataset):
         super(AFM, self).__init__(config, dataset)
@@ -46,6 +50,14 @@ class AFM(ContextRecommender):
                 constant_(module.bias.data, 0)
 
     def build_cross(self, feat_emb):
+        """ Build the cross feature columns of feature columns
+        Args:
+            feat_emb (torch.FloatTensor): input feature embedding tensor. shape of[batch_size,field_size,embed_dim].
+
+        Returns:
+            torch.FloatTensor: Left part of the cross feature. shape of [batch_size, num_pairs, emb_dim].
+            torch.FloatTensor: Right part of the cross feature. shape of [batch_size, num_pairs, emb_dim] .
+        """
         # num_pairs = num_feature_field * (num_feature_field-1) / 2
         row = []
         col = []
@@ -58,12 +70,12 @@ class AFM(ContextRecommender):
         return p, q
 
     def afm_layer(self, infeature):
-        """
-        Input shape
-        - A 3D tensor with shape:``(batch_size,field_size,embed_dim)``.
+        """ Get the attention-based feature interaction score
+        Args:
+            infeature (torch.FloatTensor): input feature embedding tensor. shape of[batch_size,field_size,embed_dim].
 
-        Output shape
-        - 3D tensor with shape: ``(batch_size,1)`` .
+        Returns:
+            torch.FloatTensor: Result of score. shape of [batch_size,1] .
         """
         p, q = self.build_cross(infeature)
         pair_wise_inter = torch.mul(p, q)  # [batch_size, num_pairs, emb_dim]

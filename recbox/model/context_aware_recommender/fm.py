@@ -8,7 +8,9 @@
 # @Time   : 2020/8/13,
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmain.com
-"""
+r"""
+recbox.model.context_aware_recommender.fm
+################################################
 Reference:
 Steffen Rendle et al. "Factorization Machines." in ICDM 2010.
 """
@@ -22,8 +24,12 @@ from recbox.model.context_aware_recommender.context_recommender import ContextRe
 
 
 class FM(ContextRecommender):
+    """Factorization Machine considers the second-order interaction with features to predict the final score.
+
+    """
 
     def __init__(self, config, dataset):
+
         super(FM, self).__init__(config, dataset)
 
         self.LABEL = config['LABEL_FIELD']
