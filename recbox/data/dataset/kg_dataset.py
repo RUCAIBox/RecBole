@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/3, 2020/9/15, 2020/9/22
+# @Time   : 2020/10/9, 2020/9/15, 2020/9/22
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -49,7 +49,10 @@ class KnowledgeBasedDataset(Dataset):
         return '\n'.join(info)
 
     def _build_feat_list(self):
-        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.kg_feat] if feat is not None]
+        feat_list = super()._build_feat_list()
+        if self.kg_feat is not None:
+            feat_list.append(self.kg_feat)
+        return feat_list
 
     def _restore_saved_dataset(self, saved_dataset):
         raise NotImplementedError()
