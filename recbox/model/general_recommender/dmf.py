@@ -52,7 +52,6 @@ class DMF(GeneralRecommender):
         self.item_layers_dim = config['item_layers_dim']
         # The dimensions of the last layer of users and items must be the same
         assert self.user_layers_dim[-1] == self.item_layers_dim[-1]
-        self.min_y_hat = torch.tensor([config['min_y_hat']]).to(self.device)
         self.inter_matrix_type = config['inter_matrix_type']
 
         # generate intermediate data
