@@ -77,7 +77,7 @@ class Config(object):
 
     def _init_parameters_category(self):
         self.parameters = dict()
-        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path']
+        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path', 'state']
         self.parameters['Training'] = ['epochs', 'train_batch_size', 'learner', 'learning_rate',
                                        'training_neg_sample_num', 'eval_step', 'valid_metric',
                                        'stopping_step', 'checkpoint_dir']
