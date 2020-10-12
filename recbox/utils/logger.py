@@ -37,7 +37,6 @@ def init_logger(config):
     sfmt = "%(asctime)-15s %(levelname)s %(message)s"
     sdatefmt = "%d %b %H:%M"
     sformatter = logging.Formatter(sfmt, sdatefmt)
-    print(config['state'])
     if config['state'] is None or config['state'].lower() == 'info':
         level = logging.INFO
     elif config['state'].lower() == 'debug':
