@@ -166,7 +166,7 @@ class AttLayer(nn.Module):
         super(AttLayer, self).__init__()
         self.in_dim = in_dim
         self.att_dim = att_dim
-        self.w = torch.nn.Linear(in_features=in_dim, out_features=att_dim, bias=False)
+        self.w = nn.Linear(in_features=in_dim, out_features=att_dim, bias=False)
         self.h = nn.Parameter(torch.randn(att_dim), requires_grad=True)
 
     def forward(self, infeatures):
@@ -302,24 +302,26 @@ class SequenceAttLayer(nn.Module):
 
         return output
 
+# mainly for feature-rich sequential recommenders
+class VanillaAttention(nn.Module):
+    def __init__(self, hidden_dim, attn_dim):
+        super().__init__()
+        self.projection = nn.Sequential(
+            nn.Linear(hidden_dim, attn_dim),
+            nn.ReLU(True),
+            nn.Linear(attn_dim, 1)
+        )
+
+    def forward(self, output):
+        # (B, Len, num, H) -> (B, Len, num, 1)
+        energy = self.projection(output)
+        weights = torch.softmax(energy.squeeze(-1), dim=-1)
+        # (B, Len, num, H) * (B, Len, num, 1) -> (B, len, H)
+        outputs = (output * weights.unsqueeze(-1)).sum(dim=-2)
+        return outputs, weights
+
 # Transformer Layers
 # Adapted from https://github.com/huggingface/transformers/blob/master/src/transformers/modeling_bert.py
-def gelu(x):
-    """Implementation of the gelu activation function.
-        For information: OpenAI GPT's gelu is slightly different
-        (and gives slightly different results):
-        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) *
-        (x + 0.044715 * torch.pow(x, 3))))
-        Also see https://arxiv.org/abs/1606.08415
-    """
-    return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
-
-def swish(x):
-    return x * torch.sigmoid(x)
-
-
-ACT2FN = {"gelu": gelu, "relu": fn.relu, "swish": swish}
-
 
 class SelfAttention(nn.Module):
     def __init__(self, config):
@@ -387,14 +389,34 @@ class Intermediate(nn.Module):
     def __init__(self, config):
         super(Intermediate, self).__init__()
         self.dense_1 = nn.Linear(config['hidden_size'], config['hidden_size'] * 4)
-        if isinstance(config['hidden_act'], str):
-            self.intermediate_act_fn = ACT2FN[config['hidden_act']]
-        else:
-            self.intermediate_act_fn = config['hidden_act']
+        self.intermediate_act_fn = self.get_hidden_act(config['hidden_act'])
 
         self.dense_2 = nn.Linear(config['hidden_size'] * 4, config['hidden_size'])
         self.LayerNorm = nn.LayerNorm(config['hidden_size'], eps=1e-12)
         self.dropout = nn.Dropout(config['dropout_prob'])
+
+    def get_hidden_act(self, act):
+        ACT2FN = {
+            "gelu": self.gelu,
+            "relu": fn.relu,
+            "swish": self.swish,
+            "tanh": torch.tanh,
+            "sigmoid": torch.sigmoid,
+        }
+        return ACT2FN[act]
+
+    def gelu(self, x):
+        """Implementation of the gelu activation function.
+            For information: OpenAI GPT's gelu is slightly different
+            (and gives slightly different results):
+            0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) *
+            (x + 0.044715 * torch.pow(x, 3))))
+            Also see https://arxiv.org/abs/1606.08415
+        """
+        return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
+
+    def swish(self, x):
+        return x * torch.sigmoid(x)
 
     def forward(self, input_tensor):
         hidden_states = self.dense_1(input_tensor)
