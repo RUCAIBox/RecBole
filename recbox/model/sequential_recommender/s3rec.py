@@ -45,7 +45,7 @@ class S3Rec(SequentialRecommender):
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
+        self.TARGET_ITEM_ID = self.ITEM_ID
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
         self.FEATURE_FIELD = config['FEATURE_FIELD']
         self.FEATURE_LIST = self.FEATURE_FIELD + config['LIST_SUFFIX']
@@ -90,16 +90,17 @@ class S3Rec(SequentialRecommender):
         self.ce_loss = nn.CrossEntropyLoss()
         self.initializer_range = config['initializer_range']
 
+        assert config['train_stage'] in ['pretrain', 'finetune']
 
         if config['train_stage'] == 'pretrain':
-            self.apply(self._init_weights)
+            self.apply(self.init_weights)
         else:
             # load pretrained model for finetune
             pretrained = torch.load(self.pre_model_path)
             print('Load pretrained model from', self.pre_model_path)
             self.load_state_dict(pretrained['state_dict'])
 
-    def _init_weights(self, module):
+    def init_weights(self, module):
         """ Initialize the weights """
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization
@@ -255,7 +256,7 @@ class S3Rec(SequentialRecommender):
             loss = self.ce_loss(logits, pos_items)
             return loss
         else:
-            raise NotImplementedError
+            raise NotImplementedError("We support two training losses: 'BRP' and 'CE'")
 
     def gather_indexes(self, output, gather_index):
         "Gathers the vectors at the spexific positions over a minibatch"
@@ -378,6 +379,7 @@ class S3Rec(SequentialRecommender):
                                  masked_segment_sequence, pos_segment, neg_segment)
         else:
             loss = self.finetune(interaction)
+
         return loss
 
     def predict(self, interaction):
