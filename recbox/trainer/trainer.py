@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
+# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/12
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Xinyan Fan
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, xinyan.fan@ruc.edu.cn
 
 r"""
 recbox.trainer.trainer
@@ -501,4 +501,57 @@ class KGATTrainer(Trainer):
         # update A
         self.model.update_attentive_A()
 
+        return rs_total_loss, kg_total_loss
+
+class MKRTrainer(Trainer):
+    r"""MKRTrainer is designed for MKR, which is a Multi-task feature learning approach for Knowledge graph enhanced Recommendation.
+
+    """
+
+    def __init__(self, config, model):
+        super(MKRTrainer, self).__init__(config, model)
+        self.kge_interval = config['kge_interval']
+
+    def _train_epoch(self, train_data, epoch_idx):
+        self.model.train()
+        rs_total_loss, kg_total_loss = 0., 0.
+
+        # train rs
+        print('Train RS')
+        train_data.set_mode(KGDataLoaderState.RS)
+        for batch_idx, interaction in enumerate(train_data):
+            interaction = interaction.to(self.device)
+            self.optimizer.zero_grad()
+            user_embeddings, item_embeddings, neg_item_embeddings, scores, labels, loss_rs = self.model.calculate_rs_loss(interaction)
+            
+            self._check_nan(loss_rs)
+            loss_rs.backward()
+            self.optimizer.step()
+            rs_total_loss += loss_rs
+            
+            loss_rs.detach()
+            user_embeddings.detach()
+            item_embeddings.detach()
+            scores.detach()
+            labels.detach()
+            
+        # train kg
+        if epoch_idx % self.kge_interval == 0:
+            print('Train KG')
+            train_data.set_mode(KGDataLoaderState.KG)
+            for batch_idx, interaction in enumerate(train_data):
+                interaction = interaction.to(self.device)
+                self.optimizer.zero_grad()
+                head_embeddings, tail_embeddings, scores_kge, rmse, loss_kge = self.model.calculate_kg_loss(interaction)
+                
+                self._check_nan(loss_kge)
+                loss_kge.sum().backward()
+                self.optimizer.step()
+                kg_total_loss += loss_kge.sum()
+                
+                loss_kge.detach()
+                head_embeddings.detach()
+                tail_embeddings.detach()
+                scores_kge.detach()
+                rmse.detach()
         return rs_total_loss, kg_total_loss
