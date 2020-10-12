@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/10/6
+# @Time   : 2020/10/3
 # @Author : Changxin Tian
 # @Email  : cx.tian@outlook.com
 
 r"""
-recbox.model.knowledge_aware_recommender.kgcn
+recbox.model.knowledge_aware_recommender.kgnnls
 ################################################
 
 Reference:
-Hongwei Wang et al. "Knowledge graph convolution networks for recommender systems." in WWW 2019.
+Hongwei Wang et al. "Knowledge-aware Graph Neural Networks with Label Smoothness Regularization for Recommender Systems." in KDD 2019.
 
 Reference code:
-https://github.com/hwwang55/KGCN
+https://github.com/hwwang55/KGNN-LS
 """
 
 import torch
 import torch.nn as nn
 import numpy as np
+import random
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import KnowledgeRecommender
@@ -24,35 +25,44 @@ from recbox.model.loss import BPRLoss, EmbLoss
 from recbox.model.init import xavier_normal_initialization
 
 
-class KGCN(KnowledgeRecommender):
-    r"""KGCN is a knowledge-based recommendation model that captures inter-item relatedness effectively by mining their
-    associated attributes on the KG. To automatically discover both high-order structure information and semantic
-    information of the KG, we treat KG as an undirected graph and sample from the neighbors for each entity in the KG
-    as their receptive field, then combine neighborhood information with bias when calculating the representation of a
-    given entity.
+class KGNNLS(KnowledgeRecommender):
+    r"""KGNN-LS is a knowledge-based recommendation model.
+    KGNN-LS transforms the knowledge graph into a user-specific weighted graph and then apply a graph neural network to
+    compute personalized item embeddings. To provide better inductive bias, KGNN-LS relies on label smoothness
+    assumption, which posits that adjacent items in the knowledge graph are likely to have similar user relevance
+    labels/scores. Label smoothness provides regularization over the edge weights and it is equivalent  to a label
+    propagation scheme on a graph.
     """
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
-        super(KGCN, self).__init__(config, dataset)
+        super(KGNNLS, self).__init__(config, dataset)
 
         # load parameters info
         self.embedding_size = config['embedding_size']
         self.full_sort_batch_size = config['full_sort_batch_size']
-        self.n_iter = config['n_iter']  # number of iterations when computing entity representation
-        self.aggregator_class = config['aggregator']  # which aggregator to use
-        self.l2_weight = config['l2_weight']  # weight of l2 regularization
         self.neighbor_sample_size = config['neighbor_sample_size']
+        self.aggregator_class = config['aggregator']  # which aggregator to use
+        self.n_iter = config['n_iter']  # number of iterations when computing entity representation
+        self.l2_weight = config['l2_weight']  # weight of l2 regularization
+        self.ls_weight = config['ls_weight']  # weight of label Smoothness regularization
 
         # define embedding
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
         self.relation_embedding = nn.Embedding(self.n_relations + 1, self.embedding_size)
 
-        # sample neighbors
+        # sample neighbors and construct interaction table
         kg_graph = dataset.kg_graph(form='coo', value_field='relation_id')
         adj_entity, adj_relation = self.construct_adj(kg_graph)
         self.adj_entity, self.adj_relation = adj_entity.to(self.device), adj_relation.to(self.device)
+
+        inter_feat = dataset.dataset.inter_feat.values
+        pos_users = torch.from_numpy(inter_feat[:, 0])
+        pos_items = torch.from_numpy(inter_feat[:, 1])
+        pos_label = torch.ones(pos_items.shape)
+        pos_interaction_table, self.offset = self.get_interaction_table(pos_users, pos_items, pos_label)
+        self.interaction_table = self.sample_neg_interaction(pos_interaction_table, self.offset)
 
         # define function
         self.softmax = nn.Softmax(dim=-1)
@@ -69,6 +79,48 @@ class KGCN(KnowledgeRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
+
+    def get_interaction_table(self, user_id, item_id, y):
+        r"""Get interaction_table that is used for fetching user-item interaction label in LS regularization.
+        Args:
+            user_id(torch.Tensor): the user id in user-item interactions, shape: [n_interactions, 1]
+            item_id(torch.Tensor): the item id in user-item interactions, shape: [n_interactions, 1]
+            y(torch.Tensor): the label in user-item interactions, shape: [n_interactions, 1]
+        Returns:
+            interaction_table(dict): key: user_id * 10^offset + item_id;
+                                     value: y_{user_id, item_id}
+            offset(int): The offset that is used for calculating the key(index) in interaction_table
+        """
+        offset = len(str(self.n_entities))
+        offset = 10 ** offset
+        keys = user_id * offset + item_id
+        keys = keys.int().cpu().numpy().tolist()
+        values = y.float().cpu().numpy().tolist()
+
+        interaction_table = dict(zip(keys, values))
+        return interaction_table, offset
+
+    def sample_neg_interaction(self, pos_interaction_table, offset):
+        r"""Sample neg_interaction to construct train data.
+         Args:
+             pos_interaction_table(dict): the interaction_table that only contains pos_interaction.
+             offset(int): The offset that is used for calculating the key(index) in interaction_table
+         Returns:
+             interaction_table(dict): key: user_id * 10^offset + item_id;
+                                      value: y_{user_id, item_id}
+         """
+        pos_num = len(pos_interaction_table)
+        neg_num = 0
+        neg_interaction_table = {}
+        while neg_num < pos_num:
+            user_id = random.randint(0, self.n_users)
+            item_id = random.randint(0, self.n_items)
+            keys = user_id * offset + item_id
+            if keys not in pos_interaction_table:
+                neg_interaction_table[keys] = 0.
+                neg_num += 1
+        interaction_table = {**pos_interaction_table, **neg_interaction_table}
+        return interaction_table
 
     def construct_adj(self, kg_graph):
         r"""Get neighbors and corresponding relations for each entity in the KG.
@@ -148,37 +200,6 @@ class KGCN(KnowledgeRecommender):
             relations.append(neighbor_relations)
         return entities, relations
 
-    def mix_neighbor_vectors(self, neighbor_vectors, neighbor_relations, user_embeddings):
-        r"""Mix neighbor vectors on user-specific graph.
-
-        Args:
-            neighbor_vectors(torch.FloatTensor): The embeddings of neighbor entities(items),
-                                                 shape: [batch_size, -1, neighbor_sample_size, embedding_size]
-            neighbor_relations(torch.FloatTensor): The embeddings of neighbor relations,
-                                                   shape: [batch_size, -1, neighbor_sample_size, embedding_size]
-            user_embeddings(torch.FloatTensor): The embeddings of users, shape: [batch_size, embedding_size]
-
-        Returns:
-            neighbors_aggregated(torch.FloatTensor): The neighbors aggregated embeddings,
-                                                     shape: [batch_size, -1, embedding_size]
-
-        """
-        avg = False
-        if not avg:
-            user_embeddings = torch.reshape(user_embeddings,
-                                            (self.batch_size, 1, 1, self.embedding_size))  # [batch_size, 1, 1, dim]
-            user_relation_scores = torch.mean(user_embeddings * neighbor_relations,
-                                              dim=-1)  # [batch_size, -1, n_neighbor]
-            user_relation_scores_normalized = self.softmax(user_relation_scores)  # [batch_size, -1, n_neighbor]
-
-            user_relation_scores_normalized = torch.unsqueeze(user_relation_scores_normalized,
-                                                              dim=-1)  # [batch_size, -1, n_neighbor, 1]
-            neighbors_aggregated = torch.mean(user_relation_scores_normalized * neighbor_vectors,
-                                              dim=2)  # [batch_size, -1, dim]
-        else:
-            neighbors_aggregated = torch.mean(neighbor_vectors, dim=2)  # [batch_size, -1, dim]
-        return neighbors_aggregated
-
     def aggregate(self, user_embeddings, entities, relations):
         r"""For each item, aggregate the entity representation and its neighborhood representation into a single vector.
 
@@ -208,8 +229,15 @@ class KGCN(KnowledgeRecommender):
                 neighbor_vectors = torch.reshape(entity_vectors[hop + 1], shape)
                 neighbor_relations = torch.reshape(relation_vectors[hop], shape)
 
-                neighbors_agg = self.mix_neighbor_vectors(neighbor_vectors, neighbor_relations,
-                                                          user_embeddings)  # [batch_size, -1, dim]
+                # mix_neighbor_vectors
+                user_embeddings = torch.reshape(user_embeddings,
+                                                (self.batch_size, 1, 1, self.embedding_size))  # [batch_size, 1, 1, dim]
+                user_relation_scores = torch.mean(user_embeddings * neighbor_relations,
+                                                  dim=-1)  # [batch_size, -1, n_neighbor]
+                user_relation_scores_normalized = torch.unsqueeze(self.softmax(user_relation_scores),
+                                                                  dim=-1)  # [batch_size, -1, n_neighbor, 1]
+                neighbors_agg = torch.mean(user_relation_scores_normalized * neighbor_vectors,
+                                           dim=2)  # [batch_size, -1, dim]
 
                 if self.aggregator_class == 'sum':
                     output = torch.reshape(self_vectors + neighbors_agg, (-1, self.embedding_size))  # [-1, dim]
@@ -232,9 +260,71 @@ class KGCN(KnowledgeRecommender):
                 entity_vectors_next_iter.append(vector)
             entity_vectors = entity_vectors_next_iter
 
-        item_embeddings = torch.reshape(entity_vectors[0], (self.batch_size, self.embedding_size))
+        res = torch.reshape(entity_vectors[0], (self.batch_size, self.embedding_size))
+        return res
 
-        return item_embeddings
+    def label_smoothness_loss(self, user_embeddings, user, entities, relations):
+        # calculate initial labels; calculate updating masks for label propagation
+        entity_labels = []
+        reset_masks = []  # True means the label of this item is reset to initial value during label propagation
+        holdout_item_for_user = None
+
+        for entities_per_iter in entities:
+            users = torch.unsqueeze(user, dim=1)  # [batch_size, 1]
+            user_entity_concat = users * self.offset + entities_per_iter  # [batch_size, n_neighbor^i]
+
+            # the first one in entities is the items to be held out
+            if holdout_item_for_user is None:
+                holdout_item_for_user = user_entity_concat
+
+            def lookup_interaction_table(x, _):
+                x = int(x)
+                label = self.interaction_table.setdefault(x, 0.5)
+                return label
+
+            initial_label = user_entity_concat.clone().cpu().double()
+            initial_label.map_(initial_label, lookup_interaction_table)
+            initial_label = initial_label.float().to(self.device)
+
+            holdout_mask = (holdout_item_for_user - user_entity_concat).bool()  # False if the item is held out
+            reset_mask = (initial_label - 0.5).bool()  # True if the entity is a labeled item
+            reset_mask = torch.logical_and(reset_mask, holdout_mask)  # remove held-out items
+            initial_label = holdout_mask.float() * initial_label + torch.logical_not(
+                holdout_mask).float() * 0.5  # label initialization
+
+            reset_masks.append(reset_mask)
+            entity_labels.append(initial_label)
+        reset_masks = reset_masks[:-1]  # we do not need the reset_mask for the last iteration
+
+        # label propagation
+        relation_vectors = [self.relation_embedding(i) for i in relations]
+        for i in range(self.n_iter):
+            entity_labels_next_iter = []
+            for hop in range(self.n_iter - i):
+                masks = reset_masks[hop]
+                self_labels = entity_labels[hop]
+                neighbor_labels = torch.reshape(entity_labels[hop + 1],
+                                                [self.batch_size, -1, self.neighbor_sample_size])
+                neighbor_relations = torch.reshape(relation_vectors[hop],
+                                                   [self.batch_size, -1, self.neighbor_sample_size,
+                                                    self.embedding_size])
+
+                # mix_neighbor_labels
+                user_embeddings = torch.reshape(user_embeddings,
+                                                [self.batch_size, 1, 1, self.embedding_size])  # [batch_size, 1, 1, dim]
+                user_relation_scores = torch.mean(user_embeddings * neighbor_relations,
+                                                  dim=-1)  # [batch_size, -1, n_neighbor]
+                user_relation_scores_normalized = self.softmax(user_relation_scores)  # [batch_size, -1, n_neighbor]
+
+                neighbors_aggregated_label = torch.mean(user_relation_scores_normalized * neighbor_labels,
+                                                        dim=2)  # [batch_size, -1, dim] # [batch_size, -1]
+                output = masks.float() * self_labels + torch.logical_not(masks).float() * neighbors_aggregated_label
+
+                entity_labels_next_iter.append(output)
+            entity_labels = entity_labels_next_iter
+
+        predicted_labels = entity_labels[0].squeeze(-1)
+        return predicted_labels
 
     def forward(self, user, item):
         self.batch_size = item.shape[0]
@@ -248,25 +338,32 @@ class KGCN(KnowledgeRecommender):
 
         return user_e, item_e
 
+    def calculate_ls_loss(self, user, item, target):
+        user_e = self.user_embedding(user)
+        entities, relations = self.get_neighbors(item)
+
+        predicted_labels = self.label_smoothness_loss(user_e, user, entities, relations)
+        ls_loss = self.bce_loss(predicted_labels, target)
+        return ls_loss
+
     def calculate_loss(self, interaction):
         user = interaction[self.USER_ID]
         pos_item = interaction[self.ITEM_ID]
         neg_item = interaction[self.NEG_ITEM_ID]
-
-        user_e, pos_item_e = self.forward(user, pos_item)
-        user_e, neg_item_e = self.forward(user, neg_item)
-
-        pos_item_score = torch.mul(user_e, pos_item_e).sum(dim=1)
-        neg_item_score = torch.mul(user_e, neg_item_e).sum(dim=1)
-
-        predict = torch.cat((pos_item_score, neg_item_score))
         target = torch.zeros(len(user) * 2, dtype=torch.float32).to(self.device)
         target[:len(user)] = 1
+
+        users = torch.cat((user, user))
+        items = torch.cat((pos_item, neg_item))
+
+        user_e, item_e = self.forward(users, items)
+        predict = torch.mul(user_e, item_e).sum(dim=1)
         rec_loss = self.bce_loss(predict, target)
 
-        l2_loss = self.l2_loss(user_e, pos_item_e, neg_item_e)
-        loss = rec_loss + self.l2_weight * l2_loss
+        ls_loss = self.calculate_ls_loss(users, items, target)
+        l2_loss = self.l2_loss(user_e, item_e)
 
+        loss = rec_loss + self.ls_weight * ls_loss + self.l2_weight * l2_loss
         return loss
 
     def predict(self, interaction):

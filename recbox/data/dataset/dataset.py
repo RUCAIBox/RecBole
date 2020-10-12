@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/3, 2020/9/15, 2020/9/23
+# @Time   : 2020/10/12, 2020/9/15, 2020/9/23
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -82,7 +82,12 @@ class Dataset(object):
         self._preload_weight_matrix()
 
     def _build_feat_list(self):
-        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        if self.config['additional_feat_suffix'] is not None:
+            for suf in self.config['additional_feat_suffix']:
+                if hasattr(self, '{}_feat'.format(suf)):
+                    feat_list.append(getattr(self, '{}_feat'.format(suf)))
+        return feat_list
 
     def _restore_saved_dataset(self, saved_dataset):
         self.logger.debug('Restoring dataset from [{}]'.format(saved_dataset))
@@ -111,6 +116,7 @@ class Dataset(object):
         self._load_inter_feat(token, dataset_path)
         self.user_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.USER, 'uid_field')
         self.item_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.ITEM, 'iid_field')
+        self._load_additional_feat(token, dataset_path)
 
     def _load_inter_feat(self, token, dataset_path):
         if self.benchmark_filename_list is None:
@@ -139,10 +145,10 @@ class Dataset(object):
         feat_path = os.path.join(dataset_path, '{}.{}'.format(token, source.value))
         if os.path.isfile(feat_path):
             feat = self._load_feat(feat_path, source)
-            self.logger.debug('user feature loaded successfully from [{}]'.format(feat_path))
+            self.logger.debug('[{}] feature loaded successfully from [{}]'.format(source.value, feat_path))
         else:
             feat = None
-            self.logger.debug('[{}] not found, user features are not loaded'.format(feat_path))
+            self.logger.debug('[{}] not found, [{}] features are not loaded'.format(feat_path, source.value))
 
         field = getattr(self, field_name, None)
         if feat is not None and field is None:
@@ -154,18 +160,33 @@ class Dataset(object):
             self.field2source[field] = FeatureSource(source.value + '_id')
         return feat
 
+    def _load_additional_feat(self, token, dataset_path):
+        if self.config['additional_feat_suffix'] is None:
+            return
+        for suf in self.config['additional_feat_suffix']:
+            if hasattr(self, '{}_feat'.format(suf)):
+                raise ValueError('{}_feat already exist'.format(suf))
+            feat_path = os.path.join(dataset_path, '{}.{}'.format(token, suf))
+            if os.path.isfile(feat_path):
+                feat = self._load_feat(feat_path, suf)
+            else:
+                raise ValueError('Additional feature file [{}] not found'.format(feat_path))
+            setattr(self, '{}_feat'.format(suf), feat)
+
     def _get_load_and_unload_col(self, filepath, source):
+        if isinstance(source, FeatureSource):
+            source = source.value
         if self.config['load_col'] is None:
             load_col = None
-        elif source.value not in self.config['load_col']:
+        elif source not in self.config['load_col']:
             load_col = set()
-        elif self.config['load_col'][source.value] == '*':
+        elif self.config['load_col'][source] == '*':
             load_col = None
         else:
-            load_col = set(self.config['load_col'][source.value])
+            load_col = set(self.config['load_col'][source])
 
-        if self.config['unload_col'] is not None and source.value in self.config['unload_col']:
-            unload_col = set(self.config['unload_col'][source.value])
+        if self.config['unload_col'] is not None and source in self.config['unload_col']:
+            unload_col = set(self.config['unload_col'][source])
         else:
             unload_col = None
 
@@ -232,6 +253,8 @@ class Dataset(object):
             flag = True
             self.logger.debug('ordering item features by user id.')
         if flag:
+            # CANNOT be removed
+            # user/item feat has been updated, thus feat_list should be updated too.
             self.feat_list = self._build_feat_list()
             self._fill_nan_flag = True
 
@@ -517,7 +540,9 @@ class Dataset(object):
                         remap_list.append((feat, field, FeatureType.TOKEN))
             for field in field_set:
                 source = self.field2source[field]
-                feat = getattr(self, '{}_feat'.format(source.value))
+                if isinstance(source, FeatureSource):
+                    source = source.value
+                feat = getattr(self, '{}_feat'.format(source))
                 ftype = self.field2type[field]
                 remap_list.append((feat, field, ftype))
             self._remap(remap_list)

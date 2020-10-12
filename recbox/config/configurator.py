@@ -3,9 +3,9 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04
-# @Author : Shanlei Mu
-# @Email  : slmu@ruc.edu.cn
+# @Time   : 2020/10/04, 2020/10/9
+# @Author : Shanlei Mu, Yupeng Hou
+# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
 
 """
 recbox.config.configurator
@@ -103,9 +103,8 @@ class Config(object):
         self.file_config_dict = dict()
         if file_list:
             for file in file_list:
-                if os.path.isfile(file):
-                    with open(file, 'r', encoding='utf-8') as f:
-                        self.file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
+                with open(file, 'r', encoding='utf-8') as f:
+                    self.file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
 
     def _load_variable_config_dict(self, config_dict):
         self.variable_config_dict = config_dict if config_dict else dict()
@@ -239,6 +238,11 @@ class Config(object):
         model = get_model(self.model)
         self.final_config_dict['MODEL_TYPE'] = model.type
         self.final_config_dict['MODEL_INPUT_TYPE'] = model.input_type
+
+        if 'additional_feat_suffix' in self.final_config_dict:
+            ad_suf = self.final_config_dict['additional_feat_suffix']
+            if isinstance(ad_suf, str):
+                self.final_config_dict['additional_feat_suffix'] = [ad_suf]
 
     def _init_device(self):
         use_gpu = self.final_config_dict['use_gpu']
