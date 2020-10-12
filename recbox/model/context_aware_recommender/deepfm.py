@@ -8,7 +8,9 @@
 # @Time   : 2020/8/14
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmain.com
-"""
+r"""
+recbox.model.context_aware_recommender.deepfm
+################################################
 Reference:
 Huifeng Guo et al. "DeepFM: A Factorization-Machine based Neural Network for CTR Prediction." in IJCAI 2017.
 """
@@ -22,7 +24,10 @@ from recbox.model.context_aware_recommender.context_recommender import ContextRe
 
 
 class DeepFM(ContextRecommender):
+    """DeepFM is a DNN enhanced FM which both use a DNN and a FM to calculate feature interaction.
+    Also DeepFM can be seen as a combination of FNN and FM.
 
+    """
     def __init__(self, config, dataset):
         super(DeepFM, self).__init__(config, dataset)
 
@@ -33,7 +38,7 @@ class DeepFM(ContextRecommender):
         self.fm = BaseFactorizationMachine(reduce_sum=True)
         size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, self.dropout)
-        self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
+        self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)  # Linear product to the final score
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 

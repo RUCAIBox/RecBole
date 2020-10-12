@@ -4,15 +4,16 @@
 # @Email  : zhlin@ruc.edu.cn
 # @File   : pnn.py
 
-"""
+r"""
+recbox.model.context_aware_recommender.pnn
+################################################
 Reference:
 Qu Y et al. "Product-based neural networks for user response prediction." in ICDM 2016
-
-Note:
 
 Reference code:
 https://github.com/shenweichen/DeepCTR-Torch/blob/master/deepctr_torch/models/pnn.py
 https://github.com/Atomu2014/product-nets/blob/master/python/models.py
+
 """
 
 import torch
@@ -24,6 +25,10 @@ from .context_recommender import ContextRecommender
 
 
 class PNN(ContextRecommender):
+    """"PNN calculate inner and outer product of feature embedding.
+    You can choose the product option with the parameter of use_inner and use_outer
+
+    """
 
     def __init__(self, config, dataset):
         super(PNN, self).__init__(config, dataset)
