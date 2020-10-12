@@ -69,6 +69,8 @@ class MLPLayers(nn.Module):
                 mlp_modules.append(nn.ReLU())
             elif self.activation.lower() == 'leakyrelu':
                 mlp_modules.append(nn.LeakyReLU())
+            elif self.activation.lower() == 'dice':
+                mlp_modules.append(Dice(output_size))
             elif self.activation.lower() == 'none':
                 pass
             else:
