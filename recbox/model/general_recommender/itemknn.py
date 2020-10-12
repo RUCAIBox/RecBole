@@ -9,25 +9,26 @@ import torch
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import GeneralRecommender
+r"""
+recbox.model.general_recommender.itemknn
+################################################
+Reference:
+Aiolli,F et al. Efficient top-n recommendation for very large scale binary rated datasets. 
+In Proceedings of the 7th ACM conference on Recommender systems (pp. 273-280). ACM.
+"""
 
 
 class ComputeSimilarity:
 
     def __init__(self, dataMatrix, topk=100, shrink=0, normalize=True):
-        """
-        Computes the cosine similarity on the columns of dataMatrix
-        If it is computed on URM=|users|x|items|, pass the URM as is.
-        If it is computed on ICM=|items|x|features|, pass the ICM transposed.
-        :param dataMatrix:
-        :param topK:
-        :param shrink:
-        :param normalize:           If True divide the dot product by the product of the norms
-        """
-        """
-        Asymmetric Cosine as described in: 
-        Aiolli, F. (2013, October). Efficient top-n recommendation for very large scale binary rated datasets. 
-        In Proceedings of the 7th ACM conference on Recommender systems (pp. 273-280). ACM.
-
+        r"""Computes the cosine similarity on the columns of dataMatrix
+        If it is computed on :math:`URM=|users| \times |items|`, pass the URM .
+        If it is computed on :math:`ICM=|items| \times |features|`, pass the ICM transposed.
+        Args:
+            dataMatrix (scipy.sparse.csr_matrix): The sparse data matrix.
+            topk (int) : The k value in KNN.
+            shrink(int) :  hyper-parameter in calculate cosine distance.
+            normalize (bool):   If True divide the dot product by the product of the norms.
         """
 
         super(ComputeSimilarity, self).__init__()
@@ -41,10 +42,11 @@ class ComputeSimilarity:
         self.dataMatrix = dataMatrix.copy()
 
     def compute_similarity(self, block_size=100):
-        """
-        Compute the similarity for the given dataset
-        :param block_size: divide matrix to n_columns/block_size to calculate cosine_distance
-        :return: sparse matrix W shape of (self.n_columns, self.n_columns)
+        r"""Compute the similarity for the given dataset
+        Args:
+            block_size(int): divide matrix to :math:`n_columns \div block_size` to calculate cosine_distance
+        Returns:
+            scipy.sparse.csr_matrix: sparse matrix W shape of (self.n_columns, self.n_columns)
         """
 
         values = []
@@ -71,15 +73,15 @@ class ComputeSimilarity:
             item_data = item_data.toarray().squeeze()
 
             if item_data.ndim == 1:
-                item_data = np.atleast_2d(item_data)
+                item_data = np.expand_dims(item_data, axis=1)
 
             # Compute item similarities
-            this_block_weights = self.dataMatrix.T.dot(item_data)
 
+            this_block_weights = self.dataMatrix.T.dot(item_data)
             for col_index_in_block in range(this_block_size):
 
                 if this_block_size == 1:
-                    this_column_weights = this_block_weights
+                    this_column_weights = this_block_weights.squeeze()
                 else:
                     this_column_weights = this_block_weights[:, col_index_in_block]
 
@@ -122,6 +124,10 @@ class ComputeSimilarity:
 
 
 class ItemKNN(GeneralRecommender):
+
+    r"""ItemKNN is a basic model that compute item similarity with the interaction matrix.
+
+    """
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):

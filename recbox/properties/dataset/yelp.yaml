@@ -1,0 +1,21 @@
+USER_ID_FIELD: 'user_id'
+ITEM_ID_FIELD: 'business'
+NEG_PREFIX: 'neg_'
+LABEL_FIELD: 'label'
+RATING_FIELD: 'stars'
+
+SOURCE_ID_FIELD: 'source'
+TARGET_ID_FIELD: 'target'
+
+# select load columns
+load_col:
+    inter: [user_id, item_id, rating]
+
+# data separator
+field_separator: "\t"
+seq_separator: " "
+
+# data filter
+lowest_val:
+    rating: 3
+drop_filter_field: True

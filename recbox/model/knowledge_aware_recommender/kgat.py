@@ -3,13 +3,13 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
-"""
+r"""
+recbox.model.knowledge_aware_recommender.kgat
+##################################################
 Reference:
 Xiang Wang et al. "KGAT: Knowledge Graph Attention Network for Recommendation." in SIGKDD 2019.
-
 Reference code:
 https://github.com/xiangwang1223/knowledge_graph_attention_network
-
 """
 
 import dgl
@@ -73,6 +73,11 @@ class Aggregator(nn.Module):
 
 
 class KGAT(KnowledgeRecommender):
+    r"""KGAT is a knowledge-based recommendation model. It combines knowledge graph and the user-item interaction
+    graph to a new graph called collaborative knowledge graph (CKG). This model learns the representations of users and
+    items by exploiting the structure of CKG. It adopts a GNN-based architecture and define the attention on the CKG.
+    """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
@@ -114,11 +119,12 @@ class KGAT(KnowledgeRecommender):
         self.apply(xavier_normal_initialization)
 
     def init_graph(self):
-        """Get the initial attention matrix through the collaborative knowledge graph
+        r"""Get the initial attention matrix through the collaborative knowledge graph
 
         Returns:
-            Sparse tensor of the attention matrix
+            torch.spares.FloatTensor: Sparse tensor of the attention matrix
         """
+
         adj_list = []
         for rel_type in range(1, self.n_relations, 1):
             edge_idxs = self.ckg.filter_edges(lambda edge: edge.data['relation_id'] == rel_type)
@@ -137,14 +143,14 @@ class KGAT(KnowledgeRecommender):
         adj_matrix_tensor = torch.sparse.FloatTensor(indices, values, self.matrix_size)
         return adj_matrix_tensor.to(self.device)
 
-    def get_ego_embeddings(self):
+    def _get_ego_embeddings(self):
         user_embeddings = self.user_embedding.weight
         entity_embeddings = self.entity_embedding.weight
         ego_embeddings = torch.cat([user_embeddings, entity_embeddings], dim=0)
         return ego_embeddings
 
     def forward(self):
-        ego_embeddings = self.get_ego_embeddings()
+        ego_embeddings = self._get_ego_embeddings()
         embeddings_list = [ego_embeddings]
         for aggregator in self.aggregator_layers:
             ego_embeddings = aggregator(self.A_in, ego_embeddings)
@@ -154,7 +160,7 @@ class KGAT(KnowledgeRecommender):
         user_all_embeddings, entity_all_embeddings = torch.split(kgat_all_embeddings, [self.n_users, self.n_entities])
         return user_all_embeddings, entity_all_embeddings
 
-    def get_kg_embedding(self, h, r, pos_t, neg_t):
+    def _get_kg_embedding(self, h, r, pos_t, neg_t):
         h_e = self.entity_embedding(h).unsqueeze(1)
         pos_t_e = self.entity_embedding(pos_t).unsqueeze(1)
         neg_t_e = self.entity_embedding(neg_t).unsqueeze(1)
@@ -190,6 +196,15 @@ class KGAT(KnowledgeRecommender):
         return loss
 
     def calculate_kg_loss(self, interaction):
+        r"""Calculate the training loss for a batch data of KG.
+
+        Args:
+            interaction (Interaction): Interaction class of the batch.
+
+        Returns:
+            torch.Tensor: Training loss, shape: []
+        """
+
         if self.restore_user_e is not None or self.restore_entity_e is not None:
             self.restore_user_e, self.restore_entity_e = None, None
 
@@ -199,7 +214,7 @@ class KGAT(KnowledgeRecommender):
         pos_t = interaction[self.TAIL_ENTITY_ID]
         neg_t = interaction[self.NEG_TAIL_ENTITY_ID]
 
-        h_e, r_e, pos_t_e, neg_t_e = self.get_kg_embedding(h, r, pos_t, neg_t)
+        h_e, r_e, pos_t_e, neg_t_e = self._get_kg_embedding(h, r, pos_t, neg_t)
         pos_tail_score = ((h_e + r_e - pos_t_e) ** 2).sum(dim=1)
         neg_tail_score = ((h_e + r_e - neg_t_e) ** 2).sum(dim=1)
         kg_loss = F.softplus(pos_tail_score - neg_tail_score).mean()
@@ -209,7 +224,7 @@ class KGAT(KnowledgeRecommender):
         return loss
 
     def generate_transE_score(self, hs, ts, r):
-        """Calculating scores for triples in KG.
+        r"""Calculating scores for triples in KG.
 
         Args:
             hs (torch.Tensor): head entities
@@ -217,9 +232,10 @@ class KGAT(KnowledgeRecommender):
             r (int): the relation id between hs and ts
 
         Returns:
-            output (torch.Tensor): the scores of (hs, r, ts)
+            torch.Tensor: the scores of (hs, r, ts)
         """
-        all_embeddings = self.get_ego_embeddings()
+
+        all_embeddings = self._get_ego_embeddings()
         h_e = all_embeddings[hs]
         t_e = all_embeddings[ts]
         r_e = self.relation_embedding.weight[r]
@@ -233,9 +249,10 @@ class KGAT(KnowledgeRecommender):
         return kg_score
 
     def update_attentive_A(self):
-        """Update the attention matrix using the updated embedding matrix
+        r"""Update the attention matrix using the updated embedding matrix
 
         """
+
         kg_score_list, row_list, col_list = [], [], []
         # To reduce the GPU memory consumption, we calculate the scores of KG triples according to the type of relation
         for rel_idx in range(1, self.n_relations, 1):

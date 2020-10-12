@@ -8,20 +8,32 @@
 # @Author  :   Kaiyuan Li   Zhichao Feng
 # @email   :   tsotfsk@outlook.com  fzcbupt@gmail.com
 
+"""
+recbox.evaluator.loss_evaluator
+################################
+"""
+
 import numpy as np
 import torch
-
-from .metrics import metrics_dict
+from recbox.evaluator.abstract_evaluator import AbstractEvaluator
+from recbox.evaluator.metrics import metrics_dict
 
 # These metrics are typical in loss recommendations
 loss_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOGLOSS']}
 
 
-class LossEvaluator(object):
+class LossEvaluator(AbstractEvaluator):
+    r"""Loss Evaluator is mainly used in rating prediction and click through rate prediction.
+    The metrics used do not calculate group-based metrics which considers the metrics scores averaged across users.
+    It is also not limited to k. Instead, it calculates the scores on the entire prediction results regardless the users.
+    Now, we support four loss metrics which contain `'AUC', 'RMSE', 'MAE', 'LOGLOSS'`.
 
+    """
     def __init__(self, config):
-        self.metrics = config['metrics']
+        super().__init__(config)
+        
         self.label_field = config['LABEL_FIELD']
+        self._check_args()
 
     def evaluate(self, interaction, pred_scores):
         """evalaute the loss metrics
@@ -32,8 +44,8 @@ class LossEvaluator(object):
 
         Returns:
             tensor : a batch of socres
-        """
 
+        """
         true_scores = interaction[self.label_field].to(pred_scores.device)
         assert len(true_scores) == len(pred_scores)
         return torch.stack((true_scores, pred_scores.detach()), dim=1)
@@ -46,6 +58,7 @@ class LossEvaluator(object):
 
         Returns:
             dict: such as {'AUC': 0.83}
+
         """
         concat = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
 
@@ -76,6 +89,16 @@ class LossEvaluator(object):
         self.metrics = [metric.lower() for metric in self.metrics]
 
     def metrics_info(self, trues, preds):
+        """get metrics result
+
+        Args:
+            trues (np.ndarray): the true scores' list
+            preds (np.ndarray): the predict scores' list
+
+        Returns:
+            list: a list of metrics result
+
+        """
         result_list = []
         for metric in self.metrics:
             metric_fuc = metrics_dict[metric.lower()]

@@ -8,35 +8,48 @@
 # @Author  :   Kaiyuan Li, Yupeng Hou
 # @email   :   tsotfsk@outlook.com, houyupeng@ruc.edu.cn
 
+"""
+recbox.evaluator.topk_evaluator
+################################
+"""
+
 import numpy as np
 import torch
+from recbox.evaluator.abstract_evaluator import AbstractEvaluator
+from recbox.evaluator.metrics import metrics_dict
 from torch.nn.utils.rnn import pad_sequence
-
-from .metrics import metrics_dict
 
 # These metrics are typical in topk recommendations
 topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP']}
 
 
-class TopKEvaluator(object):
-
+class TopKEvaluator(AbstractEvaluator):
+    r"""TopK Evaluator is mainly used in ranking tasks. The metrics used calculate group-based metrics 
+    which considers the metrics scores averaged across users. some of them are also limited to k. 
+    Now, we support six topk metrics which contain `'Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP'`.
+    
+    """
     def __init__(self, config):
-        self.topk = config['topk']
-        self.metrics = config['metrics']
+        super().__init__(config)
 
-    def evaluate(self, interaction, score_tensor):
+        self.topk = config['topk']
+        self._check_args()
+
+    def evaluate(self, interaction, scores_tensor, full=False):
         """ evalaute the topk metrics
 
         Args:
             interaction (Interaction): Interaction class of the batch
-            score_tensor (tensor): a tensor of scores
+            scores_tensor (tensor): a tensor of scores
+            full (bool, optional): whether it is full sort. Default: 0.
 
         """
-        # intermediate variables
         user_len_list = interaction.user_len_list
-
-        score_list = torch.split(score_tensor, user_len_list, dim=0)
-        scores_matrix = pad_sequence(score_list, batch_first=True, padding_value=-np.inf)  # nusers x items
+        if full is True:
+            scores_matrix = scores_tensor.view(len(user_len_list), -1)
+        else:
+            scores_list = torch.split(scores_tensor, user_len_list, dim=0)
+            scores_matrix = pad_sequence(scores_list, batch_first=True, padding_value=-np.inf)  # nusers x items
 
         # get topk
         _, topk_index = torch.topk(scores_matrix, max(self.topk), dim=-1)  # nusers x k
@@ -51,8 +64,7 @@ class TopKEvaluator(object):
             eval_data (Dataset): the class of test data
 
         Returns:
-            dict: such as { 'Hit@20': 0.3824, 'Recall@20': 0.0527
-                            'Hit@10': 0.3153, 'Recall@10': 0.0329}
+            dict: such as ``{'Hit@20': 0.3824, 'Recall@20': 0.0527}`` or ``{'Hit@10': 0.3153, 'Recall@10': 0.0329}``
         """
         pos_len_list = eval_data.get_pos_len_list()
         topk_index = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
@@ -85,12 +97,12 @@ class TopKEvaluator(object):
         # Check topk:
         if isinstance(self.topk, (int, list)):
             if isinstance(self.topk, int):
-                assert self.topk > 0, 'topk must be a positive integer or a list of positive integers'
                 self.topk = [self.topk]
             for topk in self.topk:
-                assert topk > 0, 'topk must be a positive integer or a list of positive integers'
+                if topk <= 0:
+                    raise ValueError('topk must be a positive integer or a list of positive integers, but get `{}`'.format(topk))
         else:
-            raise TypeError('The topk must be a integer, list or None')
+            raise TypeError('The topk must be a integer, list')
 
     def metrics_info(self, pos_idx, pos_len):
         """get one users's metrics result
@@ -101,6 +113,7 @@ class TopKEvaluator(object):
 
         Returns:
             list: a list of metrics result
+
         """
         result_list = []
         for metric in self.metrics:
@@ -118,6 +131,7 @@ class TopKEvaluator(object):
 
         Returns:
             np.ndarray: a matrix which contains the metrics result
+
         """
 
         pos_idx_matrix = (topk_index < pos_len_list.reshape(-1, 1))

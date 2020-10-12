@@ -8,9 +8,14 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
-"""
+r"""
+recbox.model.general_recommender.dgcf
+################################################
 Reference:
 Wang Xiang et al. "Disentangled Graph Collaborative Filtering." in SIGIR 2020.
+
+Reference code:
+https://github.com/xiangwang1223/disentangled_graph_collaborative_filtering
 """
 
 import numpy as np
@@ -27,10 +32,20 @@ from recbox.model.init import xavier_normal_initialization
 
 
 def sample_cor_samples(n_users, n_items, cor_batch_size):
-    '''
+    r"""This is a function that sample item ids and user ids.
+
+    Args:
+        n_users (int): number of users in total
+        n_items (float): number of items in total
+        cor_batch_size (int): number of id to sample
+
+    Returns:
+        cor_users, cor_items(list): The result sampled ids with both as cor_batch_size long.
+
+    Note:
         We have to sample some embedded representations out of all nodes.
         Becasue we have no way to store cor-distance for each pair.
-    '''
+    """
     cor_users = rd.sample(list(range(n_users)), cor_batch_size)
     cor_items = rd.sample(list(range(n_items)), cor_batch_size)
 
@@ -38,6 +53,11 @@ def sample_cor_samples(n_users, n_items, cor_batch_size):
 
 
 class DGCF(GeneralRecommender):
+    r"""DGCF is a disentangled representation enhanced matrix factorization model.
+    The interaction matrix of :math:`n_{users} \times n_{items}` is decomposed to math:`n_{factors}` intent graph,
+    we carefully design the data interface and use sparse tensor to train and test efficiently.
+    We implement the model following the original author with a pairwise training mode.
+    """
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
@@ -92,20 +112,31 @@ class DGCF(GeneralRecommender):
         self.apply(xavier_normal_initialization)
 
     def _build_sparse_tensor(self, indices, values, size):
+        # Construct the sparse matrix with indices, values and size.
         return torch.sparse.FloatTensor(indices, values, size).to(self.device)
 
     def get_ego_embeddings(self):
+        # concat of user embeddings and item embeddings
         user_embd = self.user_embedding.weight
         item_embd = self.item_embedding.weight
         ego_embeddings = torch.cat([user_embd, item_embd], dim=0)
         return ego_embeddings
 
     def build_matrix(self, A_values):
-        '''
+        r"""Get the normalized interaction matrix of users and items according to A_values.
 
-        :param A_values: (num_edge, n_factors)
-        :return: (num_edge) * n_factor
-        '''
+        Construct the square matrix from the training data and normalize it
+        using the laplace matrix.
+
+        Args:
+            A_values (torch.cuda.FloatTensor): (num_edge, n_factors)
+
+        .. math::
+            A_{hat} = D^{-0.5} \times A \times D^{-0.5}
+
+        Returns:
+            torch.cuda.FloatTensor: Sparse tensor of the normalized interaction matrix. shape: (num_edge, n_factors)
+        """
         norm_A_values = self.softmax(A_values)
         factor_edge_weight = []
         for i in range(self.n_factors):
@@ -131,6 +162,7 @@ class DGCF(GeneralRecommender):
     def forward(self):
         ego_embeddings = self.get_ego_embeddings()
         all_embeddings = [ego_embeddings.unsqueeze(1)]
+        # initialize with every factor value as 1
         A_values = torch.ones((self.num_edge, self.n_factors)).to(self.device)
         A_values = Variable(A_values, requires_grad=True)
         for k in range(self.n_layers):
@@ -206,6 +238,7 @@ class DGCF(GeneralRecommender):
         return u_g_embeddings, i_g_embeddings
 
     def calculate_loss(self, interaction):
+        # clear the storage variable when training
         if self.restore_user_e is not None or self.restore_item_e is not None:
             self.restore_user_e, self.restore_item_e = None, None
 
@@ -241,6 +274,15 @@ class DGCF(GeneralRecommender):
         return loss
 
     def create_cor_loss(self, cor_u_embeddings, cor_i_embeddings):
+        r"""Calculate the correlation loss for a sampled users and items.
+
+        Args:
+            cor_u_embeddings (torch.cuda.FloatTensor): (cor_batch_size, n_factors)
+            cor_i_embeddings (torch.cuda.FloatTensor): (cor_batch_size, n_factors)
+
+        Returns:
+            torch.Tensor : correlation loss.
+        """
         cor_loss = None
 
         ui_embeddings = torch.cat((cor_u_embeddings, cor_i_embeddings), dim=0)

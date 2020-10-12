@@ -3,10 +3,22 @@
 # @Author : Changxin Tian
 # @Email  : cx.tian@outlook.com
 
-"""
+# UPDATE
+# @Time   : 2020/10/1
+# @Author : Changxin Tian
+# @Email  : cx.tian@outlook.com
+
+r"""
+recbox.model.general_recommender.gcmc
+################################################
+
 Reference:
 van den Berg et al. "Graph Convolutional Matrix Completion." in SIGKDD 2018.
+
+Reference code:
+https://github.com/riannevdberg/gc-mc
 """
+
 
 import math
 import torch
@@ -19,6 +31,20 @@ from recbox.model.abstract_recommender import GeneralRecommender
 
 
 class GCMC(GeneralRecommender):
+    r"""GCMC is a model that incorporate graph autoencoders for recommendation.
+
+    Graph autoencoders are comprised of: 
+
+    1) a graph encoder model :math:`Z = f(X; A)`, which take as input an :math:`N \times D` feature matrix X and 
+    a graph adjacency matrix A, and produce an :math:`N \times E` node embedding matrix :math:`Z = [z_1^T,..., z_N^T ]^T`;
+
+    2) a pairwise decoder model :math:`\hat A = g(Z)`, which takes pairs of node embeddings :math:`(z_i, z_j)` and 
+    predicts respective entries :math:`\hat A_{ij}` in the adjacency matrix. 
+
+    Note that N denotes the number of nodes, D the number of input features, and E the embedding size.
+
+    We implement the model following the original author with a pairwise training mode.
+    """
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
@@ -26,8 +52,8 @@ class GCMC(GeneralRecommender):
 
         # load dataset info
         self.num_all = self.n_users + self.n_items
-        # 原文处理multi-relation场景，该场景下self.support中存放每个relation对应的adj
-        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)  # csr
+        self.interaction_matrix = dataset.inter_matrix(
+            form='coo').astype(np.float32)  # csr
 
         # load parameters info
         self.drop_prob = config['drop_prob']
@@ -36,7 +62,7 @@ class GCMC(GeneralRecommender):
         self.n_class = config['class_num']
         self.num_basis_functions = config['num_basis_functions']
 
-        # generate intermediate data
+        # generate node feature
         if self.sparse_feature:
             features = self.get_sparse_eye_mat(self.num_all)
             i = features._indices()
@@ -49,12 +75,15 @@ class GCMC(GeneralRecommender):
                                                           torch.Size([self.n_items, self.num_all])).to(self.device)
         else:
             features = torch.eye(self.num_all).to(self.device)
-            self.user_features, self.item_features = torch.split(features, [self.n_users, self.n_items])
+            self.user_features, self.item_features = torch.split(
+                features, [self.n_users, self.n_items])
         self.input_dim = self.user_features.shape[1]
 
+        # adj matrixs for each relation are stored in self.support
         self.Graph = self.get_norm_adj_mat().to(self.device)
         self.support = [self.Graph]
 
+        # accumulation operation
         self.accum = config['accum']
         if self.accum == 'stack':
             div = self.hidden_dim[0] // len(self.support)
@@ -81,20 +110,43 @@ class GCMC(GeneralRecommender):
         self.loss_function = nn.CrossEntropyLoss()
 
     def get_sparse_eye_mat(self, num):
+        r"""Get the normalized sparse eye matrix.
+
+        Construct the sparse eye matrix as node feature.
+
+        Args:
+            num: the number of rows
+
+        Returns:
+            Sparse tensor of the normalized interaction matrix.
+        """
         i = torch.LongTensor([range(0, num), range(0, num)])
         val = torch.FloatTensor([1] * num)
         return torch.sparse.FloatTensor(i, val)
 
     def get_norm_adj_mat(self):
+        r"""Get the normalized interaction matrix of users and items.
+
+        Construct the square matrix from the training data and normalize it
+        using the laplace matrix.
+
+        .. math::
+            A_{hat} = D^{-0.5} \times A \times D^{-0.5}
+
+        Returns:
+            Sparse tensor of the normalized interaction matrix.
+        """
         # build adj matrix
-        A = sp.dok_matrix((self.n_users + self.n_items, self.n_users + self.n_items), dtype=np.float32)
+        A = sp.dok_matrix((self.n_users + self.n_items,
+                           self.n_users + self.n_items), dtype=np.float32)
         A = A.tolil()
         A[:self.n_users, self.n_users:] = self.interaction_matrix
         A[self.n_users:, :self.n_users] = self.interaction_matrix.transpose()
         A = A.todok()
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)
-        diag = np.array(sumArr.flatten())[0] + 1e-7  # add epsilon to avoid Devide by zero Warning
+        # add epsilon to avoid Devide by zero Warning
+        diag = np.array(sumArr.flatten())[0] + 1e-7
         diag = np.power(diag, -0.5)
         D = sp.diags(diag)
         L = D * A * D
@@ -108,10 +160,10 @@ class GCMC(GeneralRecommender):
         return SparseL
 
     def forward(self, user_X, item_X, user, item):
-        # GCN编码器: 包括GCN层和Dense层，输入(A,X),返回embedding Z；
-        # 双线性解码器: 用user embedding和item embedding执行链接预测任务，return shape (user.shape[0],2)
+        # Graph autoencoders are comprised of a graph encoder model and a pairwise decoder model.
         user_embedding, item_embedding = self.GcEncoder(user_X, item_X)
-        predict_score = self.BiDecoder(user_embedding, item_embedding, user, item)
+        predict_score = self.BiDecoder(
+            user_embedding, item_embedding, user, item)
         return predict_score
 
     def calculate_loss(self, interaction):
@@ -151,6 +203,11 @@ class GCMC(GeneralRecommender):
 
 
 class GcEncoder(nn.Module):
+    '''Graph Convolutional Encoder
+    GcEncoder take as input an N ×D feature matrix X and a graph adjacency matrix A, and produce an N × E node embedding matrix;
+    Note that N denotes the number of nodes, D the number of input features, and E the embedding size.   
+    '''
+
     def __init__(self, accum, num_user, num_item, support, input_dim, hidden_dim, drop_prob, device,
                  sparse_feature=True, act_dense=lambda x: x, share_user_item_weights=True, bias=False):
         super(GcEncoder, self).__init__()
@@ -206,26 +263,32 @@ class GcEncoder(nn.Module):
                                   requires_grad=True) for _ in range(self.num_support)])
 
         # dense layer
-        self.dense_layer_u = nn.Linear(self.gcn_output_dim, self.dense_output_dim, bias=self.bias)
+        self.dense_layer_u = nn.Linear(
+            self.gcn_output_dim, self.dense_output_dim, bias=self.bias)
         if share_user_item_weights:
             self.dense_layer_v = self.dense_layer_u
         else:
-            self.dense_layer_v = nn.Linear(self.gcn_output_dim, self.dense_output_dim, bias=self.bias)
+            self.dense_layer_v = nn.Linear(
+                self.gcn_output_dim, self.dense_output_dim, bias=self.bias)
 
         self.init_weights()
 
     def init_weights(self):
-        init_range = math.sqrt((self.num_support + 1) / (self.input_dim + self.gcn_output_dim))
+        init_range = math.sqrt((self.num_support + 1) /
+                               (self.input_dim + self.gcn_output_dim))
         for w in range(self.num_support):
             self.weights_u[w].data.uniform_(-init_range, init_range)
         if not self.share_weights:
             for w in range(self.num_support):
                 self.weights_v[w].data.uniform_(-init_range, init_range)
 
-        dense_init_range = math.sqrt((self.num_support + 1) / (self.dense_output_dim + self.gcn_output_dim))
-        self.dense_layer_u.weight.data.uniform_(-dense_init_range, dense_init_range)
+        dense_init_range = math.sqrt(
+            (self.num_support + 1) / (self.dense_output_dim + self.gcn_output_dim))
+        self.dense_layer_u.weight.data.uniform_(
+            -dense_init_range, dense_init_range)
         if not self.share_weights:
-            self.dense_layer_v.weight.data.uniform_(-dense_init_range, dense_init_range)
+            self.dense_layer_v.weight.data.uniform_(
+                -dense_init_range, dense_init_range)
 
         if self.bias:
             self.dense_layer_u.bias.data.fill_(0)
@@ -281,7 +344,8 @@ class GcEncoder(nn.Module):
 
             embeddings = torch.cat(embeddings, dim=1)
 
-        users, items = torch.split(embeddings, [self.num_users, self.num_items])
+        users, items = torch.split(
+            embeddings, [self.num_users, self.num_items])
 
         u_hidden = self.activate(users)
         v_hidden = self.activate(items)
@@ -301,12 +365,16 @@ class GcEncoder(nn.Module):
 
 
 class BiDecoder(nn.Module):
+    '''Bilinear decoder
+    BiDecoder takes pairs of node embeddings and predicts respective entries in the adjacency matrix. 
+    '''
+
     def __init__(self, input_dim, output_dim, drop_prob, device,
                  num_weights=3, act=lambda x: x):
         super(BiDecoder, self).__init__()
         self.input_dim = input_dim
-        self.output_dim = output_dim  # default:2
-        self.num_weights = num_weights  # default:2
+        self.output_dim = output_dim
+        self.num_weights = num_weights
         self.device = device
 
         self.activate = act
@@ -316,12 +384,15 @@ class BiDecoder(nn.Module):
         self.weights = nn.ParameterList(
             [nn.Parameter(orthogonal([self.input_dim, self.input_dim]).to(self.device))
              for _ in range(self.num_weights)])
-        self.dense_layer = nn.Linear(self.num_weights, self.output_dim, bias=False)
+        self.dense_layer = nn.Linear(
+            self.num_weights, self.output_dim, bias=False)
         self.init_weights()
 
     def init_weights(self):
-        dense_init_range = math.sqrt(self.output_dim / (self.num_weights + self.output_dim))
-        self.dense_layer.weight.data.uniform_(-dense_init_range, dense_init_range)
+        dense_init_range = math.sqrt(
+            self.output_dim / (self.num_weights + self.output_dim))
+        self.dense_layer.weight.data.uniform_(
+            -dense_init_range, dense_init_range)
 
     def forward(self, u_inputs, i_inputs, users, items=None):
         u_inputs = self.dropout(u_inputs)
@@ -355,6 +426,10 @@ class BiDecoder(nn.Module):
 
 
 class SparseDropout(nn.Module):
+    """
+    This is a Module that execute Dropout on Pytorch sparse tensor.
+    """
+
     def __init__(self, p=0.5):
         super(SparseDropout, self).__init__()
         # p is ratio of dropout
@@ -362,7 +437,8 @@ class SparseDropout(nn.Module):
         self.kprob = 1 - p
 
     def forward(self, x):
-        mask = ((torch.rand(x._values().size()) + self.kprob).floor()).type(torch.bool)
+        mask = ((torch.rand(x._values().size()) +
+                 self.kprob).floor()).type(torch.bool)
         rc = x._indices()[:, mask]
         val = x._values()[mask] * (1.0 / self.kprob)
         return torch.sparse.FloatTensor(rc, val, x.shape)
@@ -370,6 +446,7 @@ class SparseDropout(nn.Module):
 
 def orthogonal(shape, scale=1.1):
     """
+    Initialization function for weights in class GCMC.
     From Lasagne. Reference: Saxe et al., http://arxiv.org/abs/1312.6120
     """
     flat_shape = (shape[0], np.prod(shape[1:]))
