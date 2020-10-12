@@ -19,10 +19,10 @@ import torch.nn as nn
 import numpy as np
 import random
 
-from ...utils import InputType
-from ..abstract_recommender import KnowledgeRecommender
-from ..loss import EmbLoss
-from ..utils import xavier_normal_initialization
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import KnowledgeRecommender
+from recbox.model.loss import BPRLoss, EmbLoss
+from recbox.model.init import xavier_normal_initialization
 
 
 class KGNNLS(KnowledgeRecommender):

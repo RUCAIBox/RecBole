@@ -133,6 +133,11 @@ class BaseFactorizationMachine(nn.Module):
 
 
 class BiGNNLayer(nn.Module):
+    """Propagate a layer of Bi-interaction GNN
+
+    .. math::
+            output = (L+I)EW_1 + LE \otimes EW_2
+    """
 
     def __init__(self, in_dim, out_dim):
         super(BiGNNLayer, self).__init__()
@@ -154,12 +159,13 @@ class BiGNNLayer(nn.Module):
 
 
 class AttLayer(nn.Module):
-    """
-        Input shape
-        - A 3D tensor with shape:``(batch_size, M, embed_dim)``.
+    """Calculate the attention signal(weight) according the input tensor.
+    Args:
+        infeatures (torch.FloatTensor): A 3D input tensor with shape of[batch_size, M, embed_dim].
 
-        Output shape
-        - 3D tensor with shape: ``(batch_size, M)`` .
+    Returns:
+        torch.FloatTensor: Attention weight of input. shape of [batch_size, M].
+
     """
 
     def __init__(self, in_dim, att_dim):
