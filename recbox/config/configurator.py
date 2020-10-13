@@ -153,13 +153,12 @@ class Config(object):
         if len(unrecognized_args) > 0:
             logger = getLogger()
             logger.warning('command line args [{}] will not be used in RecBox'.format(' '.join(unrecognized_args)))
-
+        self.cmd_config_dict.update(self.variable_config_dict)
         convert_cmd_args()
 
     def _merge_external_config_dict(self):
         external_config_dict = dict()
         external_config_dict.update(self.file_config_dict)
-        external_config_dict.update(self.variable_config_dict)
         external_config_dict.update(self.cmd_config_dict)
         self.external_config_dict = external_config_dict
 
