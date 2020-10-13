@@ -10,6 +10,8 @@
 # @Email  : yujielu1998@gmail.com, panxy@ruc.edu.cn, fzcbupt@gmail.com, hui.wang@ruc.edu.cn
 
 """
+recbox.model.layers
+#############################
 Common Layers in recommender system
 """
 
@@ -24,7 +26,7 @@ from torch.nn.init import normal_
 
 
 class MLPLayers(nn.Module):
-    """ MLPLayers
+    r""" MLPLayers
 
     Args:
         - layers(list): a list contains the size of each layer in mlp layers
@@ -33,9 +35,9 @@ class MLPLayers(nn.Module):
                       candidates: 'sigmoid', 'tanh', 'relu', 'leekyrelu', 'none'
 
     Shape:
-        - Input: (N, *, H_{in}) where * means any number of additional dimensions
-          H_{in} must equal to the first value in `layers`
-        - Output: (N, *, H_{out}) where H_{out} equals to the last value in `layers`
+        - Input: (:math:`N`, \*, :math:`H_{in}`) where \* means any number of additional dimensions
+          :math:`H_{in}` must equal to the first value in `layers`
+        - Output: (:math:`N`, \*, :math:`H_{out}`) where :math:`H_{out}` equals to the last value in `layers`
 
     Examples::
 
@@ -115,7 +117,7 @@ class BaseFactorizationMachine(nn.Module):
         - A 3D tensor with shape:``(batch_size,field_size,embed_dim)``.
 
         Output shape
-        - 3D tensor with shape: ``(batch_size,1)`` or (batch_size, embed_dim).
+        - 3D tensor with shape: ``(batch_size,1)`` or ``(batch_size, embed_dim)``.
     """
 
     def __init__(self, reduce_sum=True):
@@ -133,10 +135,10 @@ class BaseFactorizationMachine(nn.Module):
 
 
 class BiGNNLayer(nn.Module):
-    """Propagate a layer of Bi-interaction GNN
+    r"""Propagate a layer of Bi-interaction GNN
 
     .. math::
-            output = (L+I)EW_1 + LE \otimes EW_2
+        output = (L+I)EW_1 + LE \otimes EW_2
     """
 
     def __init__(self, in_dim, out_dim):
@@ -160,6 +162,7 @@ class BiGNNLayer(nn.Module):
 
 class AttLayer(nn.Module):
     """Calculate the attention signal(weight) according the input tensor.
+
     Args:
         infeatures (torch.FloatTensor): A 3D input tensor with shape of[batch_size, M, embed_dim].
 
@@ -230,7 +233,9 @@ class Dice(nn.Module):
     r"""Dice activation function
 
     .. math::
-        f(s)=p(s) \cdot s+(1-p(s)) \cdot \alpha s,
+        f(s)=p(s) \cdot s+(1-p(s)) \cdot \alpha s
+
+    .. math::
         p(s)=\frac{1} {1 + e^{-\frac{s-E[s]} {\sqrt {Var[s] + \epsilon}}}}
 
     """
@@ -249,7 +254,7 @@ class Dice(nn.Module):
 
 
 class SequenceAttLayer(nn.Module):
-    """attention Layer. Get the representation of each user in the batch.
+    """Attention Layer. Get the representation of each user in the batch.
 
     Args:
         queries(torch.Tensor): candidate ads, [B, H], H means embedding_size * feat_num
@@ -310,15 +315,19 @@ class SequenceAttLayer(nn.Module):
 
 # Transformer Layers
 # Adapted from https://github.com/huggingface/transformers/blob/master/src/transformers/modeling_bert.py
+
+
 def gelu(x):
     """Implementation of the gelu activation function.
-        For information: OpenAI GPT's gelu is slightly different
-        (and gives slightly different results):
-        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) *
-        (x + 0.044715 * torch.pow(x, 3))))
-        Also see https://arxiv.org/abs/1606.08415
+
+    For information: OpenAI GPT's gelu is slightly different (and gives slightly different results)::
+
+        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
+
+    Also see https://arxiv.org/abs/1606.08415
     """
     return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
+
 
 def swish(x):
     return x * torch.sigmoid(x)
