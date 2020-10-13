@@ -40,7 +40,7 @@ def sample_cor_samples(n_users, n_items, cor_batch_size):
         cor_batch_size (int): number of id to sample
 
     Returns:
-        cor_users, cor_items(list): The result sampled ids with both as cor_batch_size long.
+        list: cor_users, cor_items. The result sampled ids with both as cor_batch_size long.
 
     Note:
         We have to sample some embedded representations out of all nodes.
@@ -54,7 +54,7 @@ def sample_cor_samples(n_users, n_items, cor_batch_size):
 
 class DGCF(GeneralRecommender):
     r"""DGCF is a disentangled representation enhanced matrix factorization model.
-    The interaction matrix of :math:`n_{users} \times n_{items}` is decomposed to math:`n_{factors}` intent graph,
+    The interaction matrix of :math:`n_{users} \times n_{items}` is decomposed to :math:`n_{factors}` intent graph,
     we carefully design the data interface and use sparse tensor to train and test efficiently.
     We implement the model following the original author with a pairwise training mode.
     """

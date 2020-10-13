@@ -9,6 +9,8 @@
 # @Email  : tsotfsk@outlook.com
 
 """
+recbox.model.general_recommender.nais
+######################################
 Reference:
 Xiangnan He et al. "NAIS: Neural Attentive Item Similarity Model for Recommendation." in TKDE 2018.
 
