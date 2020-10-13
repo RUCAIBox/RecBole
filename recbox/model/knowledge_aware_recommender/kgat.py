@@ -8,6 +8,7 @@ recbox.model.knowledge_aware_recommender.kgat
 ##################################################
 Reference:
 Xiang Wang et al. "KGAT: Knowledge Graph Attention Network for Recommendation." in SIGKDD 2019.
+
 Reference code:
 https://github.com/xiangwang1223/knowledge_graph_attention_network
 """
