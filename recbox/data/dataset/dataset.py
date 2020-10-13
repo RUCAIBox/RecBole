@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/12, 2020/9/15, 2020/9/23
+# @Time   : 2020/10/12, 2020/10/13, 2020/9/23
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -401,11 +401,16 @@ class Dataset(object):
             dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
         self.logger.debug('[{}] dropped interactions'.format(len(dropped_inter)))
         self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
+        ids = self.inter_feat[self.iid_field].values
+        inter_num = Counter(ids)
 
     def _get_illegal_ids_by_inter_num(self, field, max_num=None, min_num=None):
         self.logger.debug('\n get_illegal_ids_by_inter_num:\n\t field=[{}], max_num=[{}], min_num=[{}]'.format(
             field, max_num, min_num
         ))
+        legal_field = [self.uid_field, self.iid_field]
+        if field not in legal_field:
+            raise ValueError('field [{}] is not in legal_field list {}'.format(field, legal_field))
 
         if field is None:
             return set()
@@ -419,6 +424,13 @@ class Dataset(object):
         inter_num = Counter(ids)
         ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
 
+        if min_num >0:
+            if self.user_feat is not None and field == self.uid_field:
+                ids_add = {id_ for id_ in self.user_feat[field].values if id_ not in self.inter_feat[field].values}
+                ids = ids | ids_add 
+            if self.item_feat is not None and field == self.iid_field:
+                ids_add = {id_ for id_ in self.item_feat[field].values if id_ not in self.inter_feat[field].values}
+                ids = ids | ids_add
         self.logger.debug('[{}] illegal_ids_by_inter_num, field=[{}]'.format(len(ids), field))
         return ids
 
@@ -435,15 +447,15 @@ class Dataset(object):
             for field in set(filter_field):
                 self._del_col(field)
 
-        if self.user_feat is not None:
-            remained_uids = set(self.user_feat[self.uid_field].values)
-        elif self.uid_field is not None:
+        if self.uid_field is not None:
             remained_uids = set(self.inter_feat[self.uid_field].values)
+            if self.user_feat is not None:
+                self.user_feat.drop(self.user_feat.index[~self.user_feat[self.uid_field].isin(remained_uids)], inplace=True)
 
-        if self.item_feat is not None:
-            remained_iids = set(self.item_feat[self.iid_field].values)
-        elif self.iid_field is not None:
+        if self.iid_field is not None:
             remained_iids = set(self.inter_feat[self.iid_field].values)
+            if self.item_feat is not None:
+                self.item_feat.drop(self.item_feat.index[~self.item_feat[self.iid_field].isin(remained_iids)], inplace=True)
 
         remained_inter = pd.Series(True, index=self.inter_feat.index)
         if self.uid_field is not None:
