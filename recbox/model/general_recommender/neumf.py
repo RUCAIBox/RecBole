@@ -26,11 +26,11 @@ from recbox.model.layers import MLPLayers
 
 class NeuMF(GeneralRecommender):
     r"""NeuMF is an neural network enhanced matrix factorization model.
-        It replace the dot product to mlp for a more precise user-item interaction.
+    It replace the dot product to mlp for a more precise user-item interaction.
 
     Note:
 
-            Our implementation only contains a rough pretraining function.
+        Our implementation only contains a rough pretraining function.
 
     """
     input_type = InputType.POINTWISE

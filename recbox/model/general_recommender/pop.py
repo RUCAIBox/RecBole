@@ -3,15 +3,17 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 
-import torch
-
-from recbox.utils import InputType
-from recbox.model.abstract_recommender import GeneralRecommender
 r"""
 recbox.model.general_recommender.pop
 ################################################
 
 """
+
+import torch
+
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import GeneralRecommender
+
 
 class Pop(GeneralRecommender):
     r"""Pop is an fundamental model that always recommend the most popular item.
