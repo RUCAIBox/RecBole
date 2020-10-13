@@ -42,9 +42,9 @@ class SpectralCF(GeneralRecommender):
 
     Note:
 
-            Our implementation is a improved version which is different from the original paper.
-            For a better stability, we replace :math:`U U^T` with identity matrix :math:`I` and 
-            replace :math:`U \Lambda U^T` with laplace matrix :math:`L`.
+        Our implementation is a improved version which is different from the original paper.
+        For a better stability, we replace :math:`U U^T` with identity matrix :math:`I` and
+        replace :math:`U \Lambda U^T` with laplace matrix :math:`L`.
     """
     input_type = InputType.PAIRWISE
 

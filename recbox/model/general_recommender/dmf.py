@@ -34,9 +34,9 @@ class DMF(GeneralRecommender):
 
     Note:
 
-            Our implementation is a improved version which is different from the original paper.
-            For a better performance and stability, we replace cosine similarity to inner-product when calculate
-            final score of user's and item's embedding.
+        Our implementation is a improved version which is different from the original paper.
+        For a better performance and stability, we replace cosine similarity to inner-product when calculate
+        final score of user's and item's embedding.
     """
     input_type = InputType.POINTWISE
 

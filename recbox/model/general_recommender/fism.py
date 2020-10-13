@@ -5,6 +5,8 @@
 
 
 """
+recbox.model.general_recommender.fism
+#######################################
 Reference:
 S. Kabbur et al. "FISM: Factored item similarity models for top-n recommender systems" in KDD 2013
 
