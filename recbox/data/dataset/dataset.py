@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/12, 2020/10/13, 2020/9/23
+# @Time   : 2020/10/13, 2020/10/13, 2020/9/23
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -422,12 +422,14 @@ class Dataset(object):
         inter_num = Counter(ids)
         ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
 
-        if min_num >0:
+        if min_num > 0:
             if self.user_feat is not None and field == self.uid_field:
-                ids_add = {id_ for id_ in self.user_feat[field].values if id_ not in self.inter_feat[field].values}
+                legal_ids = set(self.inter_feat[field].values)
+                ids_add = {id_ for id_ in self.user_feat[field].values if id_ not in legal_ids}
                 ids = ids | ids_add 
             if self.item_feat is not None and field == self.iid_field:
-                ids_add = {id_ for id_ in self.item_feat[field].values if id_ not in self.inter_feat[field].values}
+                legal_ids = set(self.inter_feat[field].values)
+                ids_add = {id_ for id_ in self.item_feat[field].values if id_ not in legal_ids}
                 ids = ids | ids_add
         self.logger.debug('[{}] illegal_ids_by_inter_num, field=[{}]'.format(len(ids), field))
         return ids
