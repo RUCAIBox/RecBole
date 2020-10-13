@@ -8,8 +8,6 @@ RATING_FIELD: rating
 # select load columns
 load_col:
     inter: [user_id, item_id, rating]
-    #item: [item_id, genre]
-    #user: [user_id, age]
 
 # data separator
 field_separator: "\t"

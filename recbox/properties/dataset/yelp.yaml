@@ -9,7 +9,7 @@ TARGET_ID_FIELD: 'target'
 
 # select load columns
 load_col:
-    inter: [user_id, item_id, rating]
+    inter: [user_id, business, star]
 
 # data separator
 field_separator: "\t"
