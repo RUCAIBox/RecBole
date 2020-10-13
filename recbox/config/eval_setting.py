@@ -47,23 +47,26 @@ class EvalSetting(object):
     Wayne Xin Zhao et.al. CIKM 2020 to figure out the details about presets of evaluation settings.
 
     Attributes:
-        config (Config): global configuration object.
+        config (Config): Global configuration object.
 
-        group_field (str or None): don't group if None,else group by field before splitting.
-            usually records are grouped by user id.
+        group_field (str or None): Don't group if None,else group by field before splitting.
+            Usually records are grouped by user id.
 
-        ordering_args (dict): args about ordering.
-            usually records are sorted by time, or shuffled.
+        ordering_args (dict): Args about ordering.
+            Usually records are sorted by time, or shuffled.
 
-        split_args (dict): args about splitting.
+        split_args (dict): Args about splitting.
             usually records are splitted by ratio (eg. 8:1:1),
             or by 'leave one out' strategy, which means the last purchase record
             of one user is used for evaluation.
 
-        neg_sample_args (dict): args about negative sampling.
-            negative sample is used wildly in training and evaluating.
-            we provide two strategies:
+        neg_sample_args (dict): Args about negative sampling.
+            Negative sample is used wildly in training and evaluating.
+
+            We provide two strategies:
+
                 neg_sample_by:  sample several negative records for each positive records.
+
                 full_sort:      don't negative sample, while all unused items are used for evaluation.
     """
 
@@ -195,7 +198,7 @@ class EvalSetting(object):
             ratios (list of float): Dataset will be splited into `len(ratios)` parts.
             field (str): Split by values of field.
             values (list of float or float): Dataset will be splited into `len(values) + 1` parts.
-                The first part will be interactions whose field value in (*, values[0]].
+                The first part will be interactions whose field value in (\\*, values[0]].
             ascending (bool): Order of values after splitting.
 
         Example:
