@@ -401,8 +401,6 @@ class Dataset(object):
             dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
         self.logger.debug('[{}] dropped interactions'.format(len(dropped_inter)))
         self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
-        ids = self.inter_feat[self.iid_field].values
-        inter_num = Counter(ids)
 
     def _get_illegal_ids_by_inter_num(self, field, max_num=None, min_num=None):
         self.logger.debug('\n get_illegal_ids_by_inter_num:\n\t field=[{}], max_num=[{}], min_num=[{}]'.format(
