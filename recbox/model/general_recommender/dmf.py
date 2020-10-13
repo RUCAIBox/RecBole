@@ -34,9 +34,9 @@ class DMF(GeneralRecommender):
 
     Note:
 
-            Our implementation is a improved version which is different from the original paper.
-            For a better performance and stability, we replace cosine similarity to inner-product when calculate
-            final score of user's and item's embedding.
+        Our implementation is a improved version which is different from the original paper.
+        For a better performance and stability, we replace cosine similarity to inner-product when calculate
+        final score of user's and item's embedding.
     """
     input_type = InputType.POINTWISE
 
@@ -52,7 +52,6 @@ class DMF(GeneralRecommender):
         self.item_layers_dim = config['item_layers_dim']
         # The dimensions of the last layer of users and items must be the same
         assert self.user_layers_dim[-1] == self.item_layers_dim[-1]
-        self.min_y_hat = torch.tensor([config['min_y_hat']]).to(self.device)
         self.inter_matrix_type = config['inter_matrix_type']
 
         # generate intermediate data

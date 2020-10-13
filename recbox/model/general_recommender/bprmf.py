@@ -47,6 +47,7 @@ class BPRMF(GeneralRecommender):
 
     def get_user_embedding(self, user):
         r""" Get a batch of user embedding tensor according to input user's id.
+
         Args:
             user (torch.LongTensor): The input tensor that contains user's id, shape: [batch_size, ]
 
@@ -57,6 +58,7 @@ class BPRMF(GeneralRecommender):
 
     def get_item_embedding(self, item):
         r""" Get a batch of item embedding tensor according to input item's id.
+
         Args:
             item (torch.LongTensor): The input tensor that contains item's id, shape: [batch_size, ]
 

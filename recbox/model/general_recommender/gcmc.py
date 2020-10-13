@@ -36,12 +36,14 @@ class GCMC(GeneralRecommender):
     Graph autoencoders are comprised of: 
 
     1) a graph encoder model :math:`Z = f(X; A)`, which take as input an :math:`N \times D` feature matrix X and 
-    a graph adjacency matrix A, and produce an :math:`N \times E` node embedding matrix :math:`Z = [z_1^T,..., z_N^T ]^T`;
+    a graph adjacency matrix A, and produce an :math:`N \times E` node embedding matrix
+    :math:`Z = [z_1^T,..., z_N^T ]^T`;
 
     2) a pairwise decoder model :math:`\hat A = g(Z)`, which takes pairs of node embeddings :math:`(z_i, z_j)` and 
     predicts respective entries :math:`\hat A_{ij}` in the adjacency matrix. 
 
-    Note that N denotes the number of nodes, D the number of input features, and E the embedding size.
+    Note that :math:`N` denotes the number of nodes, :math:`D` the number of input features,
+    and :math:`E` the embedding size.
 
     We implement the model following the original author with a pairwise training mode.
     """
@@ -203,10 +205,12 @@ class GCMC(GeneralRecommender):
 
 
 class GcEncoder(nn.Module):
-    '''Graph Convolutional Encoder
-    GcEncoder take as input an N ×D feature matrix X and a graph adjacency matrix A, and produce an N × E node embedding matrix;
-    Note that N denotes the number of nodes, D the number of input features, and E the embedding size.   
-    '''
+    """Graph Convolutional Encoder
+    GcEncoder take as input an :math:`N \times D` feature matrix :math:`X` and a graph adjacency matrix :math:`A`,
+    and produce an :math:`N \times E` node embedding matrix;
+    Note that :math:`N` denotes the number of nodes, :math:`D` the number of input features,
+    and :math:`E` the embedding size.
+    """
 
     def __init__(self, accum, num_user, num_item, support, input_dim, hidden_dim, drop_prob, device,
                  sparse_feature=True, act_dense=lambda x: x, share_user_item_weights=True, bias=False):
@@ -365,9 +369,9 @@ class GcEncoder(nn.Module):
 
 
 class BiDecoder(nn.Module):
-    '''Bilinear decoder
-    BiDecoder takes pairs of node embeddings and predicts respective entries in the adjacency matrix. 
-    '''
+    """Bilinear decoder
+    BiDecoder takes pairs of node embeddings and predicts respective entries in the adjacency matrix.
+    """
 
     def __init__(self, input_dim, output_dim, drop_prob, device,
                  num_weights=3, act=lambda x: x):

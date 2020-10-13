@@ -1,4 +1,4 @@
-embedding_size: 64
-attention_size: 32
-dropout: [0.0,0.5]
-weight_decay: 100
+embedding_size: 10
+attention_size: 25
+dropout: 0.3
+weight_decay: 2
