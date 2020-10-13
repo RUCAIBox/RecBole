@@ -271,7 +271,9 @@ class Config(object):
         for category in self.parameters:
             args_info += category + ' Hyper Parameters: \n'
             args_info += '\n'.join(
-                ["{}={}".format(arg, value) for arg, value in self.final_config_dict.items() if arg in self.parameters[category]])
+                ["{}={}".format(arg, value)
+                 for arg, value in self.final_config_dict.items()
+                 if arg in self.parameters[category]])
             args_info += '\n\n'
         return args_info
 
