@@ -8,6 +8,8 @@ RATING_FIELD: rating
 # select load columns
 load_col:
     inter: [user_id, item_id, rating]
+    #item: [item_id, genre]
+    #user: [user_id, age]
 
 # data separator
 field_separator: "\t"
@@ -17,3 +19,5 @@ seq_separator: " "
 lowest_val:
     rating: 3
 drop_filter_field: True
+min_item_inter_num: 0
+min_user_inter_num: 0
