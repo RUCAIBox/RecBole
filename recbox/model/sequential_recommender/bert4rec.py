@@ -55,14 +55,13 @@ class BERT4Rec(SequentialRecommender):
         self.loss_type = config['loss_type']
         try:
             assert self.loss_type in ['BPR', 'CE']
-        except:
+        except AssertionError:
             raise AssertionError("Make sure 'loss_type' in ['BPR', 'CE']!")
         # we only need compute the loss at the masked position
 
         self.mask_item_length = int(self.mask_ratio * self.max_item_list_length)
         self.initializer_range = config['initializer_range']
         self.apply(self._init_weights)
-
 
     def _init_weights(self, module):
         """ Initialize the weights """
