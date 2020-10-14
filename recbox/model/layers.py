@@ -42,11 +42,11 @@ class MLPLayers(nn.Module):
 
     Examples::
 
-        >> m = MLPLayers([64, 32, 16], 0.2, 'relu')
-        >> input = torch.randn(128, 64)
-        >> output = m(input)
-        >> print(output.size())
-        >> torch.Size([128, 16])
+        >>> m = MLPLayers([64, 32, 16], 0.2, 'relu')
+        >>> input = torch.randn(128, 64)
+        >>> output = m(input)
+        >>> print(output.size())
+        >>> torch.Size([128, 16])
     """
 
     def __init__(self, layers, dropout=0, activation='relu', bn=False, init_method=None):
@@ -527,7 +527,7 @@ class ContextSeqEmbLayer(nn.Module):
     def embed_float_fields(self, float_fields, type, embed=True):
         """Get the embedding of float fields.
         In the following three functions("embed_float_fields" "embed_token_fields" "embed_token_seq_fields")
-        when the type is user, [batch_ size, max_item_length] should be recognised as [batch_size]
+        when the type is user, [batch_size, max_item_length] should be recognised as [batch_size]
 
         Args:
             float_fields(torch.Tensor): [batch_size, max_item_length, num_float_field]
