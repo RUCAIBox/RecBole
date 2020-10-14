@@ -56,6 +56,7 @@ class SpectralCF(GeneralRecommender):
         self.emb_dim = config['embedding_size']
         self.reg_weight = config['reg_weight']
 
+        # generate intermediate data
         # "A_hat = I + L" is equivalent to "A_hat = U U^T + U \Lambda U^T"
         self.interaction_matrix = dataset.inter_matrix(
             form='coo').astype(np.float32)
@@ -64,13 +65,11 @@ class SpectralCF(GeneralRecommender):
         A_hat = I + L
         self.A_hat = A_hat.to(self.device)
 
-        # embedding
+        # define layers and loss
         self.user_embedding = torch.nn.Embedding(
             num_embeddings=self.n_users, embedding_dim=self.emb_dim)
         self.item_embedding = torch.nn.Embedding(
             num_embeddings=self.n_items, embedding_dim=self.emb_dim)
-
-        # filters
         self.filters = torch.nn.ParameterList(
             [torch.nn.Parameter(torch.normal(mean=0.01, std=0.02, size=(self.emb_dim, self.emb_dim)).to(self.device),
                                 requires_grad=True)
@@ -79,11 +78,11 @@ class SpectralCF(GeneralRecommender):
         self.sigmoid = torch.nn.Sigmoid()
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
+        self.restore_user_e = None
+        self.restore_item_e = None
 
         # parameters initialization
         self.apply(xavier_uniform_initialization)
-        self.restore_user_e = None
-        self.restore_item_e = None
 
     def get_laplacian_matrix(self):
         r"""Get the laplacian matrix of users and items.
