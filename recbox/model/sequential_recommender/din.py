@@ -91,7 +91,7 @@ class DIN(SequentialRecommender):
                                         dropout=self.dropout,
                                         bn=True)
 
-        self.embedding_layer = ContextSeqEmbLayer(dataset, config)
+        self.embedding_layer = ContextSeqEmbLayer(config, dataset)
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
