@@ -300,6 +300,25 @@ class SequenceAttLayer(nn.Module):
 
         return output
 
+
+class VanillaAttention(nn.Module):
+    def __init__(self, hidden_dim, attn_dim):
+        super().__init__()
+        self.projection = nn.Sequential(
+            nn.Linear(hidden_dim, attn_dim),
+            nn.ReLU(True),
+            nn.Linear(attn_dim, 1)
+        )
+
+    def forward(self, output):
+        # (B, Len, num, H) -> (B, Len, num, 1)
+        energy = self.projection(output)
+        weights = torch.softmax(energy.squeeze(-1), dim=-1)
+        # (B, Len, num, H) * (B, Len, num, 1) -> (B, len, H)
+        outputs = (output * weights.unsqueeze(-1)).sum(dim=-2)
+        return outputs, weights
+
+
 """
     Transformer modules
     Adapted from https://github.com/huggingface/transformers/blob/master/src/transformers/modeling_bert.py
