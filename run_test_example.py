@@ -227,6 +227,30 @@ test_examples = {
         'metrics': ['AUC'],
         'eval_batch_size': 10000
     },
+    'Test DCN':{
+        'model': 'FM',
+        'dataset': 'ml-100k',
+        'lowest_val': None,
+        'threshold': {'rating': 3},
+        'group_by_user': False,
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
+        'valid_metric': 'AUC',
+        'metrics': ['AUC']
+    },
+    'Test xDeepFM':{
+        'model': 'FM',
+        'dataset': 'ml-100k',
+        'lowest_val': None,
+        'threshold': {'rating': 3},
+        'group_by_user': False,
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
+        'valid_metric': 'AUC',
+        'metrics': ['AUC']
+    },
     'Test CKE': {
         'model': 'CKE',
         'dataset': 'kgdata_example',
