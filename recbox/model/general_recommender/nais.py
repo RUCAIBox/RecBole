@@ -9,6 +9,8 @@
 # @Email  : tsotfsk@outlook.com
 
 """
+recbox.model.general_recommender.nais
+######################################
 Reference:
 Xiangnan He et al. "NAIS: Neural Attentive Item Similarity Model for Recommendation." in TKDE 2018.
 
@@ -42,7 +44,6 @@ class NAIS(GeneralRecommender):
 
         # load dataset info
         self.LABEL = config['LABEL_FIELD']
-
         # get all users's history interaction information.the history item 
         # matrix is padding by the maximum number of a user's interactions
         self.history_item_matrix, self.history_lens, self.mask_mat = self.get_history_info(dataset)
@@ -61,11 +62,9 @@ class NAIS(GeneralRecommender):
             self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
 
         # define layers and loss
-
         # construct source and destination item embedding matrix
         self.item_src_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-
         self.bias = nn.Parameter(torch.zeros(self.n_items))
         if self.algorithm == 'concat':
             self.mlp_layers = MLPLayers([self.embedding_size*2, self.weight_size])
@@ -77,7 +76,7 @@ class NAIS(GeneralRecommender):
         self.bceloss = nn.BCELoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
     def get_history_info(self, dataset):
         """get the user history interaction information
@@ -89,7 +88,7 @@ class NAIS(GeneralRecommender):
             tuple: (history_item_matrix, history_lens, mask_mat)
 
         """
-        history_item_matrix, _ , history_lens = dataset.history_item_matrix()
+        history_item_matrix, _, history_lens = dataset.history_item_matrix()
         history_item_matrix = history_item_matrix.to(self.device)
         history_lens = history_lens.to(self.device)
         arange_tensor = torch.arange(history_item_matrix.shape[1]).to(self.device)
@@ -140,7 +139,6 @@ class NAIS(GeneralRecommender):
             torch.Tensor: final output
 
         """
-        batch_size, max_len = logits.size()
         exp_logits = torch.exp(logits)  # batch_size x max_len
 
         exp_logits = batch_mask_mat * exp_logits   # batch_size x max_len
@@ -175,7 +173,7 @@ class NAIS(GeneralRecommender):
 
         return output
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         """Initialize the module's parameters
 
         Note:
