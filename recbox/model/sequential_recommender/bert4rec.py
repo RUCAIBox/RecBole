@@ -31,6 +31,7 @@ from recbox.model.loss import BPRLoss
 from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
 
+
 class BERT4Rec(SequentialRecommender):
     input_type = InputType.PAIRWISE
 

@@ -5,7 +5,7 @@
 
 r"""
 
-recbox.model.sequential_recommender.gru4recf
+recbox.model.sequential_recommender.sasrecf
 ################################################
 
 This is an extension of SASRec, which concatenates
@@ -24,8 +24,10 @@ from recbox.model.loss import BPRLoss
 from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
 
+
 class SASRecF(SequentialRecommender):
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(SASRecF, self).__init__()
 

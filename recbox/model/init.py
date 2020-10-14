@@ -3,6 +3,11 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+"""
+recbox.model.init
+########################
+"""
+
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, xavier_uniform_, constant_
 

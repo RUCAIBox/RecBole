@@ -30,15 +30,18 @@ from recbox.model.loss import BPRLoss
 from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
 
+
 class S3Rec(SequentialRecommender):
     r"""
     S3Rec is the first work to incorporate self-supervised learning in
     sequential recommendation.
 
-    NOTE: Under this framework, we need reconstruct the pretraining data,
-    which would affect the pre-training speed.
+    NOTE:
+        Under this framework, we need reconstruct the pretraining data,
+        which would affect the pre-training speed.
     """
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(S3Rec, self).__init__()
 
@@ -258,7 +261,7 @@ class S3Rec(SequentialRecommender):
             raise NotImplementedError
 
     def gather_indexes(self, output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
+        """Gathers the vectors at the spexific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.size(-1))
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)

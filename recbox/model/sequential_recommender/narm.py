@@ -26,13 +26,13 @@ from recbox.model.abstract_recommender import SequentialRecommender
 from torch.nn.init import xavier_normal_, constant_
 
 
-
 class NARM(SequentialRecommender):
     r"""NARM explores a hybrid encoder with an attention mechanism to model the user’s sequential behavior,
     and capture the user’s main purpose in the current session.
 
     """
     input_type = InputType.POINTWISE
+
     def __init__(self, config, dataset):
         super(NARM, self).__init__()
         # load parameters info

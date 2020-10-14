@@ -8,22 +8,24 @@ r"""
 recbox.model.context_aware_recommender.fwfm
 #####################################################
 Reference:
-Junwei Pan et al. "Field-weighted Factorization Machines for Click-Through Rate Prediction in Display Advertising." in WWW 2018.
+Junwei Pan et al. "Field-weighted Factorization Machines for Click-Through Rate Prediction in Display Advertising."
+in WWW 2018.
 """
 
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_normal_
+from torch.nn.init import xavier_normal_, constant_
 
-from recbox.model.layers import FieldAwareFactorizationMachine
 from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
 class FwFM(ContextRecommender):
     r"""FwFM is a context-based recommendation model.
     It aims to model the different feature interactions between different fields in a much more memory-efficient way.
-    It proposes a field pair weight matrix r_{F(i),F(j)}, to capture the heterogeneity of field pair interactions.
+    It proposes a field pair weight matrix :math:`r_{F(i),F(j)}`,
+    to capture the heterogeneity of field pair interactions.
     The model defines as follows:
+
     .. math::
        y = w_0 + \sum_{i=1}^{m}x_{i}w_{i} + \sum_{i=1}^{m}\sum_{j=i+1}^{m}x_{i}x_{j}<v_{i}, v_{j}>r_{F(i),F(j)}
     """
@@ -60,9 +62,10 @@ class FwFM(ContextRecommender):
         return p, q
 
     def fwfm_layer(self, infeature):
-        r"""Get the field pair weight matrix r_{F(i),F(j)}.
+        r"""Get the field pair weight matrix :math:`r_{F(i),F(j)}`.
         And model the different interaction strengths of different field pairs 
-        \sum_{i=1}^{m}\sum_{j=i+1}^{m}x_{i}x_{j}<v_{i}, v_{j}>r_{F(i),F(j)}.
+        :math:`\sum_{i=1}^{m}\sum_{j=i+1}^{m}x_{i}x_{j}<v_{i}, v_{j}>r_{F(i),F(j)}`.
+
         Args:
             infeature (torch.cuda.FloatTensor): (batch_size,field_size,embed_dim)
 
