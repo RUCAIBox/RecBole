@@ -35,10 +35,12 @@ class S3Rec(SequentialRecommender):
     S3Rec is the first work to incorporate self-supervised learning in
     sequential recommendation.
 
-    NOTE: Under this framework, we need reconstruct the pretraining data,
-    which would affect the pre-training speed.
+    NOTE:
+        Under this framework, we need reconstruct the pretraining data,
+        which would affect the pre-training speed.
     """
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(S3Rec, self).__init__()
 
@@ -86,8 +88,13 @@ class S3Rec(SequentialRecommender):
         # For finetune
 
         self.loss_type = config['loss_type']
-        self.bpr_loss = BPRLoss()
-        self.ce_loss = nn.CrossEntropyLoss()
+        if self.loss_type == 'BPR':
+            self.loss_fct = BPRLoss()
+        elif self.loss_type == 'CE':
+            self.loss_fct = nn.CrossEntropyLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
+
         self.initializer_range = config['initializer_range']
 
         assert config['train_stage'] in ['pretrain', 'finetune']
@@ -256,10 +263,10 @@ class S3Rec(SequentialRecommender):
             loss = self.ce_loss(logits, pos_items)
             return loss
         else:
-            raise NotImplementedError("We support two training losses: 'BRP' and 'CE'")
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
     def gather_indexes(self, output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
+        """Gathers the vectors at the spexific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.size(-1))
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)

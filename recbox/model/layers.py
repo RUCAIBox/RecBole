@@ -467,22 +467,11 @@ class TransformerEncoder(nn.Module):
         return all_encoder_layers
 
 
-class ContextSeqEmbLayer(nn.Module):
-    def __init__(self, dataset, config):
-        super(ContextSeqEmbLayer, self).__init__()
+class ContextSeqEmbAbstractLayer(nn.Module):
+    def __init__(self):
+        super(ContextSeqEmbAbstractLayer, self).__init__()
 
-        self.device = config['device']
-        self.embedding_size = config['embedding_size']
-        self.dataset = dataset
-        self.user_feat = self.dataset.get_user_feature()
-        self.item_feat = self.dataset.get_item_feature()
-        self.user_feat = self.user_feat.to(self.device)
-        self.item_feat = self.item_feat.to(self.device)
-
-        self.init_fields_name_dim()
-        self.init_embedding()
-
-    def init_fields_name_dim(self):
+    def get_fields_name_dim(self):
         """get user feature field and item feature field.
 
         """
@@ -490,10 +479,6 @@ class ContextSeqEmbLayer(nn.Module):
         self.token_embedding_table = {}
         self.float_embedding_table = {}
         self.token_seq_embedding_table = {}
-        self.field_names = {'user': list(self.user_feat.interaction.keys()),
-                            'item': list(self.item_feat.interaction.keys())}
-
-        self.types = ['user', 'item']
         self.token_field_names = {type: [] for type in self.types}
         self.token_field_dims = {type: [] for type in self.types}
         self.float_field_names = {type: [] for type in self.types}
@@ -515,7 +500,7 @@ class ContextSeqEmbLayer(nn.Module):
                     self.float_field_dims[type].append(self.dataset.num(field_name))
                 self.num_feature_field[type] += 1
 
-    def init_embedding(self):
+    def get_embedding(self):
         """get embedding of all features.
 
         """
@@ -587,7 +572,7 @@ class ContextSeqEmbLayer(nn.Module):
             token_embedding = self.token_embedding_table[type](token_fields)
         return token_embedding
 
-    def embed_token_seq_fields(self, token_seq_fields, type, mode='mean'):
+    def embed_token_seq_fields(self, token_seq_fields, type):
         """Get the embedding of token_seq fields.
 
         Args:
@@ -608,13 +593,13 @@ class ContextSeqEmbLayer(nn.Module):
             token_seq_embedding = embedding_table(token_seq_field)  # [batch_size, max_item_length, seq_len, embed_dim]
             mask = mask.unsqueeze(-1).expand_as(
                 token_seq_embedding)  # [batch_size, max_item_length, seq_len, embed_dim]
-            if mode == 'max':
+            if self.pooling_mode == 'max':
                 masked_token_seq_embedding = token_seq_embedding - (
                         1 - mask) * 1e9  # [batch_size, max_item_length, seq_len, embed_dim]
                 result = torch.max(masked_token_seq_embedding, dim=-2,
                                    keepdim=True)  # [batch_size, max_item_length, 1, embed_dim]
                 # result = result.values
-            elif mode == 'sum':
+            elif self.pooling_mode == 'sum':
                 masked_token_seq_embedding = token_seq_embedding * mask.float()
                 result = torch.sum(masked_token_seq_embedding, dim=-2,
                                    keepdim=True)  # [batch_size, max_item_length, 1, embed_dim]
@@ -624,6 +609,7 @@ class ContextSeqEmbLayer(nn.Module):
                 eps = torch.FloatTensor([1e-8]).to(self.device)
                 result = torch.div(result, value_cnt + eps)  # [batch_size, max_item_length, embed_dim]
                 result = result.unsqueeze(-2)  # [batch_size, max_item_length, 1, embed_dim]
+
             fields_result.append(result)
         if len(fields_result) == 0:
             return None
@@ -698,3 +684,47 @@ class ContextSeqEmbLayer(nn.Module):
 
     def forward(self, user_idx, item_idx):
         return self.embed_input_fields(user_idx, item_idx)
+
+# For DIN
+class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
+    def __init__(self, config, dataset):
+        super(ContextSeqEmbLayer, self).__init__()
+        self.device = config['device']
+        self.embedding_size = config['embedding_size']
+        self.dataset = dataset
+        self.user_feat = self.dataset.get_user_feature().to(self.device)
+        self.item_feat = self.dataset.get_item_feature().to(self.device)
+
+        self.field_names = {'user': list(self.user_feat.interaction.keys()),
+                            'item': list(self.item_feat.interaction.keys())}
+
+        self.types = ['user', 'item']
+        self.pooling_mode = config['pooling_mode']
+        try:
+            assert self.pooling_mode in ['mean', 'max', 'sum']
+        except:
+            raise AssertionError("Make sure 'pooling_mode' in ['mean', 'max', 'sum']!")
+        self.get_fields_name_dim()
+        self.get_embedding()
+
+# For feature-rich sequential recommenders
+class FeatureSeqEmbLayer(ContextSeqEmbAbstractLayer):
+    def __init__(self, config, dataset):
+        super(FeatureSeqEmbLayer, self).__init__()
+
+        self.device = config['device']
+        self.embedding_size = config['embedding_size']
+        self.dataset = dataset
+        self.user_feat = None
+        self.item_feat = self.dataset.get_item_feature().to(self.device)
+
+        self.field_names = {'item': config['selected_features']}
+
+        self.types = ['item']
+        self.pooling_mode = config['pooling_mode']
+        try:
+            assert self.pooling_mode in ['mean', 'max', 'sum']
+        except:
+            raise AssertionError("Make sure 'pooling_mode' in ['mean', 'max', 'sum']!")
+        self.get_fields_name_dim()
+        self.get_embedding()
