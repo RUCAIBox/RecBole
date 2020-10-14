@@ -21,14 +21,10 @@ https://github.com/FeiSun/BERT4Rec
 import random
 
 import torch
-import time
 from torch import nn
-from torch.nn.init import xavier_uniform_, xavier_normal_
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import SequentialRecommender
-from recbox.model.loss import BPRLoss
-from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
 
 
@@ -57,11 +53,15 @@ class BERT4Rec(SequentialRecommender):
         self.dropout = nn.Dropout(config['dropout_prob'])
 
         self.loss_type = config['loss_type']
-        self.ce_loss = nn.CrossEntropyLoss(reduction='none') # we only need compute the loss at the masked position
+        try:
+            assert self.loss_type in ['BPR', 'CE']
+        except AssertionError:
+            raise AssertionError("Make sure 'loss_type' in ['BPR', 'CE']!")
+        # we only need compute the loss at the masked position
+
         self.mask_item_length = int(self.mask_ratio * self.max_item_list_length)
         self.initializer_range = config['initializer_range']
         self.apply(self._init_weights)
-
 
     def _init_weights(self, module):
         """ Initialize the weights """
@@ -81,8 +81,8 @@ class BERT4Rec(SequentialRecommender):
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)
 
-    def get_attention_mask(self, item_list):
-        attention_mask = (item_list > 0).long()
+    def get_attention_mask(self, item_seq):
+        attention_mask = (item_seq > 0).long()
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
         # bidirectional mask
         extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
@@ -105,21 +105,11 @@ class BERT4Rec(SequentialRecommender):
     # 0.1s/batch for reconstruction
     def reconstruct_train_data(self, interaction):
         # concat target at the last position, but the last position is not at the 'last'
-        item_list = interaction[self.ITEM_ID_LIST]
-        device = item_list.device
-        batch_size = item_list.size(0)
+        item_seq = interaction[self.ITEM_ID_LIST]
+        device = item_seq.device
+        batch_size = item_seq.size(0)
 
-        targets = interaction[self.TARGET_ITEM_ID].cpu().numpy().tolist()
-        end_index = interaction[self.ITEM_LIST_LEN]
-        item_list = item_list.cpu().numpy().tolist()
-
-        # we will padding zeros at the left side
-        # these will be train_instances, after will be reshaped to batch
-        sequence_instances = []
-        for i, (end_i, target) in enumerate(zip(end_index, targets)):
-            instance = item_list[i][:end_i]
-            instance.append(target)
-            sequence_instances.append(instance)
+        sequence_instances = item_seq.cpu().numpy().tolist()
 
         # Masked Item Prediction
         # [B * Len]
@@ -134,15 +124,17 @@ class BERT4Rec(SequentialRecommender):
             neg_item = []
             index_ids = []
             for index_id, item in enumerate(instance):
+                # padding is 0, the sequence is end
+                if item == 0:
+                    break
                 prob = random.random()
                 if prob < self.mask_ratio:
                     pos_item.append(item)
                     neg_item.append(self.neg_sample(instance))
                     masked_sequence[index_id] = self.mask_token
-                    # padding is zero, we will -1 later
+                    # padding is 0, we will -1 later
                     index_ids.append(index_id+1)
-
-            masked_item_sequence.append(self.padding_zero_at_left(masked_sequence, self.max_item_list_length))
+            masked_item_sequence.append(masked_sequence)
             pos_items.append(self.padding_zero_at_left(pos_item, self.mask_item_length))
             neg_items.append(self.padding_zero_at_left(neg_item, self.mask_item_length))
             masked_index.append(self.padding_zero_at_left(index_ids, self.mask_item_length))
@@ -155,31 +147,29 @@ class BERT4Rec(SequentialRecommender):
         neg_items = torch.tensor(neg_items, dtype=torch.long, device=device).view(batch_size, -1)
         # [B mask_len]
         masked_index = torch.tensor(masked_index, dtype=torch.long, device=device).view(batch_size, -1)
-
         return masked_item_sequence, pos_items, neg_items, masked_index
 
     # we need add mask_token at the last position according to the lengths of item_list
     def reconstruct_test_data(self, interaction):
 
         # concat target at the last position, but the last position is not at the 'last'
-        item_list = interaction[self.ITEM_ID_LIST]
-        padding = torch.zeros(item_list.size(0), dtype=torch.long, device=item_list.device)  # [B]
-        item_list = torch.cat((item_list, padding.unsqueeze(-1)), dim=-1)  # [B max_len+1]
+        item_seq = interaction[self.ITEM_ID_LIST]
+        padding = torch.zeros(item_seq.size(0), dtype=torch.long, device=item_seq.device)  # [B]
+        item_seq = torch.cat((item_seq, padding.unsqueeze(-1)), dim=-1)  # [B max_len+1]
         for batch_id, last_position in enumerate(interaction[self.ITEM_LIST_LEN]):
-            item_list[batch_id][last_position] = self.mask_token
-        return item_list
+            item_seq[batch_id][last_position] = self.mask_token
+        return item_seq[:, -self.max_item_list_length:]
 
-    def forward(self, item_list):
+    def forward(self, item_seq):
 
-        position_ids = torch.arange(item_list.size(1), dtype=torch.long, device=item_list.device)
-        position_ids = position_ids.unsqueeze(0).expand_as(item_list)
+        position_ids = torch.arange(item_seq.size(1), dtype=torch.long, device=item_seq.device)
+        position_ids = position_ids.unsqueeze(0).expand_as(item_seq)
         position_embedding = self.position_embedding(position_ids)
-
-        item_emb = self.item_embedding(item_list)
+        item_emb = self.item_embedding(item_seq)
         input_emb = item_emb + position_embedding
         input_emb = self.LayerNorm(input_emb)
         input_emb = self.dropout(input_emb)
-        extended_attention_mask = self.get_attention_mask(item_list)
+        extended_attention_mask = self.get_attention_mask(item_seq)
         trm_output = self.trm_encoder(input_emb,
                                       extended_attention_mask,
                                       output_all_encoded_layers=True)
@@ -203,7 +193,7 @@ class BERT4Rec(SequentialRecommender):
         masked_item_list, pos_items, neg_items, masked_index = self.reconstruct_train_data(interaction)
         seq_output = self.forward(masked_item_list)
         # we add 1 to the index before.
-        pred_index_map = self.multi_hot_embed(masked_index - 1, masked_item_list.size(-1))
+        pred_index_map = self.multi_hot_embed(masked_index-1, masked_item_list.size(-1))
         # [B mask_len] -> [B mask_len max_len] multi hot
         pred_index_map = pred_index_map.view(masked_index.size(0), masked_index.size(1), -1)
         # [B max_len H] -> [B mask_len H]
@@ -221,23 +211,25 @@ class BERT4Rec(SequentialRecommender):
             return loss
 
         elif self.loss_type == 'CE':
-            test_item_emb = self.item_embedding.weight # [num H]
-            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1)) # [B mask_len item_num]
+            loss_fct = nn.CrossEntropyLoss(reduction='none')
+            test_item_emb = self.item_embedding.weight  # [num H]
+            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B mask_len item_num]
             targets = (masked_index > 0).float().view(-1) # [B*mask_len]
-            loss = torch.sum(self.ce_loss(logits.view(-1, test_item_emb.size(0)), pos_items.view(-1)) * targets) \
+
+            loss = torch.sum(loss_fct(logits.view(-1, test_item_emb.size(0)), pos_items.view(-1)) * targets) \
                    / torch.sum(targets)
             return loss
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
     # TODO implemented after the data interface is ready
     def predict(self, interaction):
         pass
 
     def full_sort_predict(self, interaction):
-        item_list = self.reconstruct_test_data(interaction)
-        seq_output = self.forward(item_list)
-        seq_output = self.gather_indexes(seq_output, interaction[self.ITEM_LIST_LEN]) # [B H]
-        test_item_emb = self.item_embedding.weight[:self.item_count-1] # delete masked token
+        item_seq = self.reconstruct_test_data(interaction)
+        seq_output = self.forward(item_seq)
+        seq_output = self.gather_indexes(seq_output, interaction[self.ITEM_LIST_LEN] - 1)  # [B H]
+        test_item_emb = self.item_embedding.weight[:self.item_count-1]  # delete masked token
         scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
         return scores

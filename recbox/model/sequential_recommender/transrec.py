@@ -14,9 +14,7 @@ Ruining He et al. "Translation-based Recommendation." In RecSys 2017.
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 
-from torch.nn.init import xavier_uniform_, xavier_normal_
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import SequentialRecommender
 from recbox.model.loss import BPRLoss, EmbLoss, RegLoss

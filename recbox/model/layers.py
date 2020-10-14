@@ -28,20 +28,16 @@ from recbox.utils import ModelType, InputType, FeatureType
 
 class MLPLayers(nn.Module):
     r""" MLPLayers
-
     Args:
         - layers(list): a list contains the size of each layer in mlp layers
         - dropout(float): probability of an element to be zeroed. Default: 0
         - activation(str): activation function after each layer in mlp layers. Default: 'relu'
                       candidates: 'sigmoid', 'tanh', 'relu', 'leekyrelu', 'none'
-
     Shape:
         - Input: (:math:`N`, \*, :math:`H_{in}`) where \* means any number of additional dimensions
           :math:`H_{in}` must equal to the first value in `layers`
         - Output: (:math:`N`, \*, :math:`H_{out}`) where :math:`H_{out}` equals to the last value in `layers`
-
     Examples::
-
         >>> m = MLPLayers([64, 32, 16], 0.2, 'relu')
         >>> input = torch.randn(128, 64)
         >>> output = m(input)
@@ -98,7 +94,6 @@ class FMEmbedding(nn.Module):
     """
         Input shape
         - A 3D tensor with shape:``(batch_size,field_size)``.
-
         Output shape
         - 3D tensor with shape: ``(batch_size,field_size,embed_dim)``.
     """
@@ -118,7 +113,6 @@ class BaseFactorizationMachine(nn.Module):
     """
         Input shape
         - A 3D tensor with shape:``(batch_size,field_size,embed_dim)``.
-
         Output shape
         - 3D tensor with shape: ``(batch_size,1)`` or ``(batch_size, embed_dim)``.
     """
@@ -139,7 +133,6 @@ class BaseFactorizationMachine(nn.Module):
 
 class BiGNNLayer(nn.Module):
     r"""Propagate a layer of Bi-interaction GNN
-
     .. math::
         output = (L+I)EW_1 + LE \otimes EW_2
     """
@@ -165,13 +158,10 @@ class BiGNNLayer(nn.Module):
 
 class AttLayer(nn.Module):
     """Calculate the attention signal(weight) according the input tensor.
-
     Args:
         infeatures (torch.FloatTensor): A 3D input tensor with shape of[batch_size, M, embed_dim].
-
     Returns:
         torch.FloatTensor: Attention weight of input. shape of [batch_size, M].
-
     """
 
     def __init__(self, in_dim, att_dim):
@@ -234,13 +224,10 @@ class MultiHeadAttention(nn.Module):
 
 class Dice(nn.Module):
     r"""Dice activation function
-
     .. math::
         f(s)=p(s) \cdot s+(1-p(s)) \cdot \alpha s
-
     .. math::
         p(s)=\frac{1} {1 + e^{-\frac{s-E[s]} {\sqrt {Var[s] + \epsilon}}}}
-
     """
 
     def __init__(self, emb_size):
@@ -258,15 +245,12 @@ class Dice(nn.Module):
 
 class SequenceAttLayer(nn.Module):
     """Attention Layer. Get the representation of each user in the batch.
-
     Args:
         queries(torch.Tensor): candidate ads, [B, H], H means embedding_size * feat_num
         keys(torch.Tensor): user_hist, [B, T, H]
         keys_length(torch.Tensor): mask, [B]
-
     Returns:
         torch.Tensor: result
-
     """
 
     def __init__(self, mask_mat, att_hidden_size=(80, 40), activation='sigmoid', softmax_stag=False,
@@ -316,29 +300,29 @@ class SequenceAttLayer(nn.Module):
 
         return output
 
-# Transformer Layers
-# Adapted from https://github.com/huggingface/transformers/blob/master/src/transformers/modeling_bert.py
+
+class VanillaAttention(nn.Module):
+    def __init__(self, hidden_dim, attn_dim):
+        super().__init__()
+        self.projection = nn.Sequential(
+            nn.Linear(hidden_dim, attn_dim),
+            nn.ReLU(True),
+            nn.Linear(attn_dim, 1)
+        )
+
+    def forward(self, output):
+        # (B, Len, num, H) -> (B, Len, num, 1)
+        energy = self.projection(output)
+        weights = torch.softmax(energy.squeeze(-1), dim=-1)
+        # (B, Len, num, H) * (B, Len, num, 1) -> (B, len, H)
+        outputs = (output * weights.unsqueeze(-1)).sum(dim=-2)
+        return outputs, weights
 
 
-def gelu(x):
-    """Implementation of the gelu activation function.
-
-    For information: OpenAI GPT's gelu is slightly different (and gives slightly different results)::
-
-        0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
-
-    Also see https://arxiv.org/abs/1606.08415
-    """
-    return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
-
-
-def swish(x):
-    return x * torch.sigmoid(x)
-
-
-ACT2FN = {"gelu": gelu, "relu": fn.relu, "swish": swish}
-
-
+"""
+    Transformer modules
+    Adapted from https://github.com/huggingface/transformers/blob/master/src/transformers/modeling_bert.py
+"""
 class SelfAttention(nn.Module):
     def __init__(self, config):
         super(SelfAttention, self).__init__()
@@ -405,14 +389,34 @@ class Intermediate(nn.Module):
     def __init__(self, config):
         super(Intermediate, self).__init__()
         self.dense_1 = nn.Linear(config['hidden_size'], config['hidden_size'] * 4)
-        if isinstance(config['hidden_act'], str):
-            self.intermediate_act_fn = ACT2FN[config['hidden_act']]
-        else:
-            self.intermediate_act_fn = config['hidden_act']
+        self.intermediate_act_fn = self.get_hidden_act(config['hidden_act'])
 
         self.dense_2 = nn.Linear(config['hidden_size'] * 4, config['hidden_size'])
         self.LayerNorm = nn.LayerNorm(config['hidden_size'], eps=1e-12)
         self.dropout = nn.Dropout(config['dropout_prob'])
+
+    def get_hidden_act(self, act):
+        ACT2FN = {
+            "gelu": self.gelu,
+            "relu": fn.relu,
+            "swish": self.swish,
+            "tanh": torch.tanh,
+            "sigmoid": torch.sigmoid,
+        }
+        return ACT2FN[act]
+
+    def gelu(self, x):
+        """Implementation of the gelu activation function.
+            For information: OpenAI GPT's gelu is slightly different
+            (and gives slightly different results):
+            0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) *
+            (x + 0.044715 * torch.pow(x, 3))))
+            Also see https://arxiv.org/abs/1606.08415
+        """
+        return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
+
+    def swish(self, x):
+        return x * torch.sigmoid(x)
 
     def forward(self, input_tensor):
         hidden_states = self.dense_1(input_tensor)
@@ -455,22 +459,11 @@ class TransformerEncoder(nn.Module):
         return all_encoder_layers
 
 
-class ContextSeqEmbLayer(nn.Module):
-    def __init__(self, dataset, config):
-        super(ContextSeqEmbLayer, self).__init__()
+class ContextSeqEmbAbstractLayer(nn.Module):
+    def __init__(self):
+        super(ContextSeqEmbAbstractLayer, self).__init__()
 
-        self.device = config['device']
-        self.embedding_size = config['embedding_size']
-        self.dataset = dataset
-        self.user_feat = self.dataset.get_user_feature()
-        self.item_feat = self.dataset.get_item_feature()
-        self.user_feat = self.user_feat.to(self.device)
-        self.item_feat = self.item_feat.to(self.device)
-
-        self.init_fields_name_dim()
-        self.init_embedding()
-
-    def init_fields_name_dim(self):
+    def get_fields_name_dim(self):
         """get user feature field and item feature field.
 
         """
@@ -478,10 +471,6 @@ class ContextSeqEmbLayer(nn.Module):
         self.token_embedding_table = {}
         self.float_embedding_table = {}
         self.token_seq_embedding_table = {}
-        self.field_names = {'user': list(self.user_feat.interaction.keys()),
-                            'item': list(self.item_feat.interaction.keys())}
-
-        self.types = ['user', 'item']
         self.token_field_names = {type: [] for type in self.types}
         self.token_field_dims = {type: [] for type in self.types}
         self.float_field_names = {type: [] for type in self.types}
@@ -503,7 +492,7 @@ class ContextSeqEmbLayer(nn.Module):
                     self.float_field_dims[type].append(self.dataset.num(field_name))
                 self.num_feature_field[type] += 1
 
-    def init_embedding(self):
+    def get_embedding(self):
         """get embedding of all features.
 
         """
@@ -527,7 +516,7 @@ class ContextSeqEmbLayer(nn.Module):
     def embed_float_fields(self, float_fields, type, embed=True):
         """Get the embedding of float fields.
         In the following three functions("embed_float_fields" "embed_token_fields" "embed_token_seq_fields")
-        when the type is user, [batch_size, max_item_length] should be recognised as [batch_size]
+        when the type is user, [batch_ size, max_item_length] should be recognised as [batch_size]
 
         Args:
             float_fields(torch.Tensor): [batch_size, max_item_length, num_float_field]
@@ -575,7 +564,7 @@ class ContextSeqEmbLayer(nn.Module):
             token_embedding = self.token_embedding_table[type](token_fields)
         return token_embedding
 
-    def embed_token_seq_fields(self, token_seq_fields, type, mode='mean'):
+    def embed_token_seq_fields(self, token_seq_fields, type):
         """Get the embedding of token_seq fields.
 
         Args:
@@ -596,13 +585,13 @@ class ContextSeqEmbLayer(nn.Module):
             token_seq_embedding = embedding_table(token_seq_field)  # [batch_size, max_item_length, seq_len, embed_dim]
             mask = mask.unsqueeze(-1).expand_as(
                 token_seq_embedding)  # [batch_size, max_item_length, seq_len, embed_dim]
-            if mode == 'max':
+            if self.pooling_mode == 'max':
                 masked_token_seq_embedding = token_seq_embedding - (
                         1 - mask) * 1e9  # [batch_size, max_item_length, seq_len, embed_dim]
                 result = torch.max(masked_token_seq_embedding, dim=-2,
                                    keepdim=True)  # [batch_size, max_item_length, 1, embed_dim]
                 # result = result.values
-            elif mode == 'sum':
+            elif self.pooling_mode == 'sum':
                 masked_token_seq_embedding = token_seq_embedding * mask.float()
                 result = torch.sum(masked_token_seq_embedding, dim=-2,
                                    keepdim=True)  # [batch_size, max_item_length, 1, embed_dim]
@@ -612,6 +601,7 @@ class ContextSeqEmbLayer(nn.Module):
                 eps = torch.FloatTensor([1e-8]).to(self.device)
                 result = torch.div(result, value_cnt + eps)  # [batch_size, max_item_length, embed_dim]
                 result = result.unsqueeze(-2)  # [batch_size, max_item_length, 1, embed_dim]
+
             fields_result.append(result)
         if len(fields_result) == 0:
             return None
@@ -686,3 +676,49 @@ class ContextSeqEmbLayer(nn.Module):
 
     def forward(self, user_idx, item_idx):
         return self.embed_input_fields(user_idx, item_idx)
+
+
+class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
+    """For DIN"""
+    def __init__(self, config, dataset):
+        super(ContextSeqEmbLayer, self).__init__()
+        self.device = config['device']
+        self.embedding_size = config['embedding_size']
+        self.dataset = dataset
+        self.user_feat = self.dataset.get_user_feature().to(self.device)
+        self.item_feat = self.dataset.get_item_feature().to(self.device)
+
+        self.field_names = {'user': list(self.user_feat.interaction.keys()),
+                            'item': list(self.item_feat.interaction.keys())}
+
+        self.types = ['user', 'item']
+        self.pooling_mode = config['pooling_mode']
+        try:
+            assert self.pooling_mode in ['mean', 'max', 'sum']
+        except:
+            raise AssertionError("Make sure 'pooling_mode' in ['mean', 'max', 'sum']!")
+        self.get_fields_name_dim()
+        self.get_embedding()
+
+
+class FeatureSeqEmbLayer(ContextSeqEmbAbstractLayer):
+    """For feature-rich sequential recommenders"""
+    def __init__(self, config, dataset):
+        super(FeatureSeqEmbLayer, self).__init__()
+
+        self.device = config['device']
+        self.embedding_size = config['embedding_size']
+        self.dataset = dataset
+        self.user_feat = None
+        self.item_feat = self.dataset.get_item_feature().to(self.device)
+
+        self.field_names = {'item': config['selected_features']}
+
+        self.types = ['item']
+        self.pooling_mode = config['pooling_mode']
+        try:
+            assert self.pooling_mode in ['mean', 'max', 'sum']
+        except:
+            raise AssertionError("Make sure 'pooling_mode' in ['mean', 'max', 'sum']!")
+        self.get_fields_name_dim()
+        self.get_embedding()
