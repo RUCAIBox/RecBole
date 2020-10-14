@@ -31,9 +31,11 @@ class NextItNet(SequentialRecommender):
     r"""The network architecture of the NextItNet model is formed of a stack of holed convolutional layers, which can
     efficiently increase the receptive fields without relying on the pooling operation.
     Also residual block structure is used to ease the optimization for much deeper networks.
+
     Note:
-        As paper said, for comparison purpose, we only predict the next one item in our evaluation, and then stop the generating process.
-        Although the number of parameters in residual block (a) is less than it in residual block (b), the performance of b is better than a.
+        As paper said, for comparison purpose, we only predict the next one item in our evaluation,
+        and then stop the generating process. Although the number of parameters in residual block (a) is less
+        than it in residual block (b), the performance of b is better than a.
         So in our model, we use residual block (b).
     """
     input_type = InputType.POINTWISE

@@ -32,9 +32,10 @@ from recbox.utils import ModelType, InputType, FeatureType
 from recbox.model.layers import FMEmbedding, MLPLayers, SequenceAttLayer
 from recbox.model.abstract_recommender import SequentialRecommender
 
+
 class DIN(SequentialRecommender):
-    """Deep Interest Network utilizes the attention mechanism to get the weight of each user's behavior according to the target items,
-    and finally gets the user representation.
+    """Deep Interest Network utilizes the attention mechanism to get the weight of each user's behavior according
+    to the target items, and finally gets the user representation.
 
     Note:
         In the official source code, unlike the paper, user features and context features are not input into DNN.
@@ -221,7 +222,7 @@ class DIN(SequentialRecommender):
     def embed_float_fields(self, float_fields, type, embed=True):
         """Get the embedding of float fields.
         In the following three functions("embed_float_fields" "embed_token_fields" "embed_token_seq_fields")
-        when the type is user, [batch_ size, max_item_length] should be recognised as [batch_size]
+        when the type is user, [batch_size, max_item_length] should be recognised as [batch_size]
 
         Args:
             float_fields(torch.Tensor): [batch_size, max_item_length, num_float_field]

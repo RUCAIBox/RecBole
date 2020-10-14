@@ -26,15 +26,19 @@ class GRU4RecF(SequentialRecommender):
     r"""
     In the original paper, the authors proposed several architectures. We compared 3 different
     architectures:
-    (1)  Concatenate item input and feature input and use single RNN,
-    (2)  Concatenate outputs from two different RNNs,
-    (3)  Weighted sum of outputs from two different RNNs.
+
+        (1)  Concatenate item input and feature input and use single RNN,
+
+        (2)  Concatenate outputs from two different RNNs,
+
+        (3)  Weighted sum of outputs from two different RNNs.
 
     We implemented the optimal parallel version(2), which uses different RNNs to
     encode items and features respectively and concatenates the two subparts's
     outputs as the final output. The different RNN encoders are trained simultaneously.
     """
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(GRU4RecF, self).__init__()
 
@@ -86,7 +90,7 @@ class GRU4RecF(SequentialRecommender):
         self.apply(xavier_normal_initialization)
 
     def gather_indexes(self, gru_output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
+        """Gathers the vectors at the spexific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, gru_output.size(-1))
         output_tensor = gru_output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)

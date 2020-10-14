@@ -24,6 +24,7 @@ from recbox.model.loss import BPRLoss
 from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
 
+
 class FDSA(SequentialRecommender):
     r"""
     FDSA is similar with the GRU4RecF implemented in RecBox, which uses two different Transformer encoders to
@@ -32,6 +33,7 @@ class FDSA(SequentialRecommender):
     """
 
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(FDSA, self).__init__()
 
@@ -83,7 +85,7 @@ class FDSA(SequentialRecommender):
             module.bias.data.zero_()
 
     def gather_indexes(self, output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
+        """Gathers the vectors at the spexific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.size(-1))
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)

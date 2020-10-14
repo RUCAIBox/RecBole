@@ -25,15 +25,18 @@ from recbox.model.loss import BPRLoss
 from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
 
+
 class SASRec(SequentialRecommender):
     r"""
-        SASRec is the first sequential recommender based on self-attentive mechanism.
-        NOTE:
-             In the author's implementation, the Point-Wise Feed-Forward Network (PFFN) is implemented
-             by CNN with 1x1 kernel. In this implementation, we follows the original BERT implmentation
-             using Fully Connected Layer to implement the PFFN.
-        """
+    SASRec is the first sequential recommender based on self-attentive mechanism.
+
+    NOTE:
+         In the author's implementation, the Point-Wise Feed-Forward Network (PFFN) is implemented
+         by CNN with 1x1 kernel. In this implementation, we follows the original BERT implmentation
+         using Fully Connected Layer to implement the PFFN.
+    """
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(SASRec, self).__init__()
 
@@ -74,7 +77,7 @@ class SASRec(SequentialRecommender):
             module.bias.data.zero_()
 
     def gather_indexes(self, output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
+        """Gathers the vectors at the spexific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.size(-1))
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)
