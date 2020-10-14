@@ -75,8 +75,8 @@ class Dataset(object):
         self.feat_list = self._build_feat_list()
         if self.benchmark_filename_list is None:
             self._filter_nan_user_or_item()
-            self._filter_by_inter_num()
             self._filter_by_field_value()
+            self._filter_by_inter_num()
             self._reset_index()
 
         self._remap_ID_all()
@@ -381,39 +381,37 @@ class Dataset(object):
                     self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
     def _filter_by_inter_num(self):
-        ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field,
-                                                       max_num=self.config['max_user_inter_num'],
-                                                       min_num=self.config['min_user_inter_num'])
-        ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field,
-                                                       max_num=self.config['max_item_inter_num'],
-                                                       min_num=self.config['min_item_inter_num'])
+        while True:
+            ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field, feat=self.user_feat,
+                                                           max_num=self.config['max_user_inter_num'],
+                                                           min_num=self.config['min_user_inter_num'])
+            ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field, feat=self.item_feat,
+                                                           max_num=self.config['max_item_inter_num'],
+                                                           min_num=self.config['min_item_inter_num'])
 
-        if len(ban_users) == 0 and len(ban_items) == 0:
-            return
+            if len(ban_users) == 0 and len(ban_items) == 0:
+                return
 
-        if self.user_feat is not None:
-            dropped_user = self.user_feat[self.uid_field].isin(ban_users)
-            self.user_feat.drop(self.user_feat.index[dropped_user], inplace=True)
+            if self.user_feat is not None:
+                dropped_user = self.user_feat[self.uid_field].isin(ban_users)
+                self.user_feat.drop(self.user_feat.index[dropped_user], inplace=True)
 
-        if self.item_feat is not None:
-            dropped_item = self.item_feat[self.iid_field].isin(ban_items)
-            self.item_feat.drop(self.item_feat.index[dropped_item], inplace=True)
+            if self.item_feat is not None:
+                dropped_item = self.item_feat[self.iid_field].isin(ban_items)
+                self.item_feat.drop(self.item_feat.index[dropped_item], inplace=True)
 
-        dropped_inter = pd.Series(False, index=self.inter_feat.index)
-        if self.uid_field:
-            dropped_inter |= self.inter_feat[self.uid_field].isin(ban_users)
-        if self.iid_field:
-            dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
-        self.logger.debug('[{}] dropped interactions'.format(len(dropped_inter)))
-        self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
+            dropped_inter = pd.Series(False, index=self.inter_feat.index)
+            if self.uid_field:
+                dropped_inter |= self.inter_feat[self.uid_field].isin(ban_users)
+            if self.iid_field:
+                dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
+            self.logger.debug('[{}] dropped interactions'.format(len(dropped_inter)))
+            self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
-    def _get_illegal_ids_by_inter_num(self, field, max_num=None, min_num=None):
+    def _get_illegal_ids_by_inter_num(self, field, feat, max_num=None, min_num=None):
         self.logger.debug('\n get_illegal_ids_by_inter_num:\n\t field=[{}], max_num=[{}], min_num=[{}]'.format(
             field, max_num, min_num
         ))
-        legal_field = [self.uid_field, self.iid_field]
-        if field not in legal_field:
-            raise ValueError('field [{}] is not in legal_field list {}'.format(field, legal_field))
 
         if field is None:
             return set()
@@ -427,15 +425,10 @@ class Dataset(object):
         inter_num = Counter(ids)
         ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
 
-        if min_num > 0:
-            if self.user_feat is not None and field == self.uid_field:
-                legal_ids = set(self.inter_feat[field].values)
-                ids_add = {id_ for id_ in self.user_feat[field].values if id_ not in legal_ids}
-                ids = ids | ids_add 
-            if self.item_feat is not None and field == self.iid_field:
-                legal_ids = set(self.inter_feat[field].values)
-                ids_add = {id_ for id_ in self.item_feat[field].values if id_ not in legal_ids}
-                ids = ids | ids_add
+        if feat is not None:
+            for id_ in feat[field].values:
+                if inter_num[id_] < min_num:
+                    ids.add(id_)
         self.logger.debug('[{}] illegal_ids_by_inter_num, field=[{}]'.format(len(ids), field))
         return ids
 
@@ -451,24 +444,6 @@ class Dataset(object):
         if self.config['drop_filter_field']:
             for field in set(filter_field):
                 self._del_col(field)
-
-        if self.uid_field is not None:
-            remained_uids = set(self.inter_feat[self.uid_field].values)
-            if self.user_feat is not None:
-                self.user_feat.drop(self.user_feat.index[~self.user_feat[self.uid_field].isin(remained_uids)], inplace=True)
-
-        if self.iid_field is not None:
-            remained_iids = set(self.inter_feat[self.iid_field].values)
-            if self.item_feat is not None:
-                self.item_feat.drop(self.item_feat.index[~self.item_feat[self.iid_field].isin(remained_iids)], inplace=True)
-
-        remained_inter = pd.Series(True, index=self.inter_feat.index)
-        if self.uid_field is not None:
-            remained_inter &= self.inter_feat[self.uid_field].isin(remained_uids)
-        if self.iid_field is not None:
-            remained_inter &= self.inter_feat[self.iid_field].isin(remained_iids)
-        self.logger.debug('[{}] interactions are remained after filtering'.format(len(remained_inter)))
-        self.inter_feat.drop(self.inter_feat.index[~remained_inter], inplace=True)
 
     def _reset_index(self):
         for feat in self.feat_list:
