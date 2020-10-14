@@ -20,14 +20,11 @@ https://github.com/RUCAIBox/CIKM2020-S3Rec
 import random
 
 import torch
-import time
 from torch import nn
-from torch.nn.init import xavier_uniform_, xavier_normal_
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import SequentialRecommender
 from recbox.model.loss import BPRLoss
-from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
 
 
@@ -101,14 +98,14 @@ class S3Rec(SequentialRecommender):
         assert config['train_stage'] in ['pretrain', 'finetune']
 
         if config['train_stage'] == 'pretrain':
-            self.apply(self.init_weights)
+            self.apply(self._init_weights)
         else:
             # load pretrained model for finetune
             pretrained = torch.load(self.pre_model_path)
             print('Load pretrained model from', self.pre_model_path)
             self.load_state_dict(pretrained['state_dict'])
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         """ Initialize the weights """
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization

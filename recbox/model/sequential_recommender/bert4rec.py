@@ -21,14 +21,10 @@ https://github.com/FeiSun/BERT4Rec
 import random
 
 import torch
-import time
 from torch import nn
-from torch.nn.init import xavier_uniform_, xavier_normal_
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import SequentialRecommender
-from recbox.model.loss import BPRLoss
-from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
 
 
@@ -65,10 +61,10 @@ class BERT4Rec(SequentialRecommender):
 
         self.mask_item_length = int(self.mask_ratio * self.max_item_list_length)
         self.initializer_range = config['initializer_range']
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         """ Initialize the weights """
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization

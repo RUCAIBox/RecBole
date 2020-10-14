@@ -12,11 +12,9 @@ Balázs Hidasi et al. "Parallel Recurrent Neural Network Architectures for
 Feature-rich Session-based Recommendations." in RecSys 2016.
 
 """
-import numpy as np
 
 import torch
 from torch import nn
-from torch.nn.init import xavier_uniform_, xavier_normal_
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import SequentialRecommender

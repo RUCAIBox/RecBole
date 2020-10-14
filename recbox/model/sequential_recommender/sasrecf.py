@@ -16,8 +16,6 @@ to the model.
 
 import torch
 from torch import nn
-import numpy as np
-from torch.nn.init import xavier_uniform_, xavier_normal_
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import SequentialRecommender
@@ -69,10 +67,9 @@ class SASRecF(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         self.initializer_range = config['initializer_range']
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-
-    def init_weights(self, module):
+    def _init_weights(self, module):
         """ Initialize the weights """
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization
