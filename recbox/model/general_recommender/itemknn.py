@@ -139,6 +139,7 @@ class ItemKNN(GeneralRecommender):
     def __init__(self, config, dataset):
         super(ItemKNN, self).__init__(config, dataset)
 
+        # load parameters info
         self.k = config['k']
         self.shrink = config['shrink'] if 'shrink' in config else 0.0
 

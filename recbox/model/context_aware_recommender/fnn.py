@@ -23,12 +23,12 @@ class FNN(ContextRecommender):
     """FNN which also called DNN is a basic version of CTR model that use mlp from field features to predict score.
 
     Note:
-            Based on the experiments in the paper above, This implementation incorporate
-            Dropout instead of L2 normalization to relieve over-fitting.
-            Our implementation of FNN is a basic version without pretrain support.
-            If you want to pretrain the feature embedding as the original paper,
-            we suggest you to construct a advanced FNN model and train it in two-stage
-            process with our FM model.
+        Based on the experiments in the paper above, This implementation incorporate
+        Dropout instead of L2 normalization to relieve over-fitting.
+        Our implementation of FNN is a basic version without pretrain support.
+        If you want to pretrain the feature embedding as the original paper,
+        we suggest you to construct a advanced FNN model and train it in two-stage
+        process with our FM model.
     """
 
     def __init__(self, config, dataset):

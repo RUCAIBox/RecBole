@@ -17,15 +17,17 @@ https://github.com/rixwew/pytorch-fm
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_normal_
+from torch.nn.init import xavier_normal_, constant_
 from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
 class FFM(ContextRecommender):
-    r"""FFM is a context-based recommendation model.
-    It aims to model the different feature interactions between different fields. 
-    Each feature has several latent vectors v_{i,F(j)}, which depend on the field of other features, and one of them is used to do the inner product.
+    r"""FFM is a context-based recommendation model. It aims to model the different feature interactions
+    between different fields. Each feature has several latent vectors :math:`v_{i,F(j)}`,
+    which depend on the field of other features, and one of them is used to do the inner product.
+
     The model defines as follows:
+
     .. math::
        y = w_0 + \sum_{i=1}^{m}x_{i}w_{i} + \sum_{i=1}^{m}\sum_{j=i+1}^{m}x_{i}x_{j}<v_{i,F(j)}, v_{j,F(i)}>
     """
@@ -62,7 +64,7 @@ class FFM(ContextRecommender):
             if len(float_ffm_input) > 0:
                 float_ffm_input = torch.cat(float_ffm_input, dim=1) # [batch_size, num_float_fields]
 
-        return (token_ffm_input, float_ffm_input)
+        return token_ffm_input, float_ffm_input
 
     def forward(self, interaction):
         # ffm_input: [batch_size, num_token_fields] or [batch_size, num_float_fields]
@@ -115,10 +117,11 @@ class FieldAwareFactorizationMachine(nn.Module):
     def forward(self, input_x):
         r"""
         Args:
-            input_x (torch.cuda.FloatTensor): (batch_size, num_token_fields)`` or ``(batch_size, num_token_fields)``
+            input_x (torch.cuda.FloatTensor): ``(batch_size, num_token_fields)`` or ``(batch_size, num_token_fields)``
 
         Returns:
-            torch.cuda.FloatTensor: The result of all features' field-aware interaction. shape: (batch_size, num_fields, emb_dim)
+            torch.cuda.FloatTensor: The result of all features' field-aware interaction.
+            shape: (batch_size, num_fields, emb_dim)
         """
         token_ffm_input, float_ffm_input = input_x[0], input_x[1] # [batch_size, num_fields]
 
@@ -150,4 +153,3 @@ class FieldAwareFactorizationMachine(nn.Module):
         output = torch.stack(output, dim=1)
 
         return output
-    

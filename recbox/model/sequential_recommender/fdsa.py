@@ -23,6 +23,7 @@ from recbox.model.loss import BPRLoss
 from recbox.model.layers import TransformerEncoder, FeatureSeqEmbLayer, VanillaAttention
 
 
+
 class FDSA(SequentialRecommender):
     r"""
     FDSA is similar with the GRU4RecF implemented in RecBox, which uses two different Transformer encoders to

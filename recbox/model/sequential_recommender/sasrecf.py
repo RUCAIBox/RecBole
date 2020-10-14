@@ -25,6 +25,7 @@ from recbox.model.loss import BPRLoss
 from recbox.model.layers import TransformerEncoder, FeatureSeqEmbLayer
 
 
+
 class SASRecF(SequentialRecommender):
     input_type = InputType.PAIRWISE
 

@@ -6,7 +6,8 @@ r"""
 recbox.model.knowledge_aware_recommender.ktup
 ##################################################
 Reference:
-Yixin Cao et al. "Unifying Knowledge Graph Learning and Recommendation:Towards a Better Understanding of User Preferences." in WWW 2019.
+Yixin Cao et al. "Unifying Knowledge Graph Learning and Recommendation:Towards a Better Understanding
+of User Preferences." in WWW 2019.
 
 Reference code:
 https://github.com/TaoMiner/joint-kg-recommender
@@ -81,6 +82,7 @@ class KTUP(KnowledgeRecommender):
                 whose size is (batch_size,).
             num_classes (Variable): The number of classes, which would be
                 the second dimension of the resulting one-hot matrix.
+
         Returns:
             torch.Tensor: The one-hot matrix of size (batch_size, num_classes).
         """
@@ -105,6 +107,7 @@ class KTUP(KnowledgeRecommender):
                 which has the size (batch_size, num_classes)
             temperature (float): A temperature parameter. The higher
                 the value is, the smoother the distribution is.
+
         Returns:
             torch.Tensor: The sampled output, which has the property explained above.
         """

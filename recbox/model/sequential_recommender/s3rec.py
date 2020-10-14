@@ -30,6 +30,7 @@ from recbox.model.loss import BPRLoss
 from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
 
+
 class S3Rec(SequentialRecommender):
     r"""
     S3Rec is the first work to incorporate self-supervised learning in

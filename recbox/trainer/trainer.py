@@ -61,9 +61,9 @@ class Trainer(AbstractTrainer):
     simply optimize a single loss without involving any complex training strategies, such as adversarial learning,
     pre-training and so on.
 
-    Initializing the Trainer needs two parameters: `config` and `model`. `config` records the parameters information for controlling
-    training and evaluation, such as `learning_rate`, `epochs`, `eval_step` and so on. More information can be found in [placeholder].
-    `model` is the instantiated object of a Model Class.
+    Initializing the Trainer needs two parameters: `config` and `model`. `config` records the parameters information
+    for controlling training and evaluation, such as `learning_rate`, `epochs`, `eval_step` and so on.
+    More information can be found in [placeholder]. `model` is the instantiated object of a Model Class.
 
     """
     def __init__(self, config, model):
@@ -223,7 +223,8 @@ class Trainer(AbstractTrainer):
 
         Args:
             train_data (DataLoader): the train data
-            valid_data (DataLoader, optional): the valid data, default: None. If it's None, the early_stopping is invalid.
+            valid_data (DataLoader, optional): the valid data, default: None.
+                                               If it's None, the early_stopping is invalid.
             verbose (bool, optional): whether to write training and evaluation information to logger, default: True
             saved (bool, optional): whether to save the model parameters, default: True
 
@@ -329,7 +330,7 @@ class Trainer(AbstractTrainer):
         Args:
             eval_data (DataLoader): the eval data
             load_best_model (bool, optional): whether load the best model in the training process, default: True.
-                                                It should be set True, if users want to test the model after training.
+                                              It should be set True, if users want to test the model after training.
             model_file (str, optional): the saved model file, default: None. If users want to test the previously
                                         trained model file, they can set this parameter.
 
@@ -394,7 +395,8 @@ class Trainer(AbstractTrainer):
 
         Args:
             show (bool, optional): whether to show this figure, default: True
-            save_path (str, optional): the data path to save the figure, default: None. If it's None, it will not be saved.
+            save_path (str, optional): the data path to save the figure, default: None.
+                                       If it's None, it will not be saved.
         """
         epochs = list(self.train_loss_dict.keys())
         epochs.sort()

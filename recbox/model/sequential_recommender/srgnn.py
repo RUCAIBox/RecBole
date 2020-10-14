@@ -55,7 +55,8 @@ class GNN(nn.Module):
 
             hidden(torch.FloatTensor):The item node embedding matrix, shape of [batch_size, max_session_len, embedding_size]
 
-        Returns:hy(torch.FloatTensor):Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
+        Returns:
+            hy(torch.FloatTensor):Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
 
         """
 
@@ -87,26 +88,28 @@ class SRGNN(SequentialRecommender):
     In addition to considering the connection between the item and the adjacent item,
     it also considers the connection with other interactive items.
 
-    Such as:A example of a session sequence and the connecion matrix A
+    Such as: A example of a session sequence and the connecion matrix A
     session sequence :item1, item2, item3, item2, item4
 
     Outgoing edges:
-         1     2    3   4
-        ===== ===== ===== =====
-    1     0    1     0    0
-    2     0    0    1/2  1/2
-    3     0    1     0    0
-    4     0    0     0    0
-        ===== ===== ===== =====
+        === ===== ===== ===== =====
+         \    1     2     3     4
+        === ===== ===== ===== =====
+         1    0     1     0     0
+         2    0     0    1/2   1/2
+         3    0     1     0     0
+         4    0     0     0     0
+        === ===== ===== ===== =====
 
     Incoming edges:
-         1     2    3   4
-        ===== ===== ===== =====
-    1     0    0      0     0
-    2    1/2   0    1/2     0
-    3     0    1      0     0
-    4     0    1      0     0
-        ===== ===== ===== =====
+        === ===== ===== ===== =====
+         \    1     2     3     4
+        === ===== ===== ===== =====
+         1    0     0     0     0
+         2   1/2    0    1/2    0
+         3    0     1     0     0
+         4    0     1     0     0
+        === ===== ===== ===== =====
     """
     input_type = InputType.POINTWISE
 
@@ -225,8 +228,3 @@ class SRGNN(SequentialRecommender):
         pred = self.forward(interaction)
         scores = torch.matmul(pred, self.get_item_lookup_table())
         return scores
-
-
-
-
-

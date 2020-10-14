@@ -7,6 +7,12 @@
 # @Author : Shanlei Mu, Yupeng Hou
 # @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
 
+
+"""
+recbox.model.abstract_recommender
+##################################
+"""
+
 import numpy as np
 import torch.nn as nn
 

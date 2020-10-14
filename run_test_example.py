@@ -106,7 +106,8 @@ test_examples = {
         'valid_metric': 'Recall@10',
         'leave_one_num': 2,
         'metrics': ["Recall"],
-        'topk': [10]
+        'topk': [10],
+        'eval_batch_size': 20000
     },
     'Test GCMC': {
         'model': 'GCMC',

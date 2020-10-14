@@ -25,6 +25,7 @@ from recbox.model.loss import BPRLoss
 from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
 
+
 class SASRec(SequentialRecommender):
     r"""
     SASRec is the first sequential recommender based on self-attentive mechanism.

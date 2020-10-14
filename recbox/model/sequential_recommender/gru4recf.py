@@ -28,12 +28,11 @@ class GRU4RecF(SequentialRecommender):
     r"""
     In the original paper, the authors proposed several architectures. We compared 3 different
     architectures:
+        (1)  Concatenate item input and feature input and use single RNN,
 
-    (1)  Concatenate item input and feature input and use single RNN,
+        (2)  Concatenate outputs from two different RNNs,
 
-    (2)  Concatenate outputs from two different RNNs,
-
-    (3)  Weighted sum of outputs from two different RNNs.
+        (3)  Weighted sum of outputs from two different RNNs.
 
     We implemented the optimal parallel version(2), which uses different RNNs to
     encode items and features respectively and concatenates the two subparts's

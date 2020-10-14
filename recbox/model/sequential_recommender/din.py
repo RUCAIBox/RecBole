@@ -32,9 +32,10 @@ from recbox.utils import ModelType, InputType, FeatureType
 from recbox.model.layers import FMEmbedding, MLPLayers, SequenceAttLayer, ContextSeqEmbLayer
 from recbox.model.abstract_recommender import SequentialRecommender
 
+
 class DIN(SequentialRecommender):
-    """Deep Interest Network utilizes the attention mechanism to get the weight of each user's behavior according to the target items,
-    and finally gets the user representation.
+    """Deep Interest Network utilizes the attention mechanism to get the weight of each user's behavior according
+    to the target items, and finally gets the user representation.
 
     Note:
         In the official source code, unlike the paper, user features and context features are not input into DNN.
