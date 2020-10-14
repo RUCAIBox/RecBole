@@ -7,6 +7,11 @@
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
+"""
+recbox.data.dataloader.sequential_dataloader
+################################################
+"""
+
 import numpy as np
 import torch
 
