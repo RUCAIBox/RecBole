@@ -163,7 +163,7 @@ class BERT4Rec(SequentialRecommender):
         item_seq = torch.cat((item_seq, padding.unsqueeze(-1)), dim=-1)  # [B max_len+1]
         for batch_id, last_position in enumerate(interaction[self.ITEM_LIST_LEN]):
             item_seq[batch_id][last_position] = self.mask_token
-        return item_seq[-self.max_item_list_length:]
+        return item_seq[:, -self.max_item_list_length:]
 
     def forward(self, item_seq):
 
