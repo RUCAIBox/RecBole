@@ -39,9 +39,7 @@ class xDeepFM(ContextRecommender):
         self.direct = config['direct']
         self.cin_layer_size = temp_cin_size = list(config['cin_layer_size'])
 
-        self.conv1d_list = []
-        self.field_nums = [self.num_feature_field]
-
+        # Check whether the size of the CIN layer is legal.
         if not self.direct:
             self.cin_layer_size = list(map(lambda x: int(x // 2 * 2), temp_cin_size))
             if self.cin_layer_size[:-1] != temp_cin_size[:-1]:
@@ -49,19 +47,23 @@ class xDeepFM(ContextRecommender):
                 logger.warning('Layer size of CIN should be even except for the last layer when direct is True.'
                                'It is changed to {}'.format(self.cin_layer_size))
 
+        # Create a convolutional layer for each CIN layer
+        self.conv1d_list = []
+        self.field_nums = [self.num_feature_field]
         for i, layer_size in enumerate(self.cin_layer_size):
             conv1d = nn.Conv1d(self.field_nums[-1] * self.field_nums[0], layer_size, 1).to(self.device)
             self.conv1d_list.append(conv1d)
-
             if self.direct:
                 self.field_nums.append(layer_size)
             else:
                 self.field_nums.append(layer_size // 2)
 
+        # Create MLP layer
         size_list = [self.embedding_size * self.num_feature_field
                      ] + self.mlp_hidden_size + [1]
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout)
 
+        # Get the output size of CIN
         if self.direct:
             self.final_len = sum(self.cin_layer_size)
         else:
@@ -108,23 +110,22 @@ class xDeepFM(ContextRecommender):
         batch_size, _, embedding_size = input_features.shape
         hidden_nn_layers = [input_features]
         final_result = []
-
         for i, layer_size in enumerate(self.cin_layer_size):
             z_i = torch.einsum('bmd,bhd->bhmd', hidden_nn_layers[0], hidden_nn_layers[-1])
-
             z_i = z_i.view(batch_size, self.field_nums[0] * self.field_nums[i], embedding_size)
-
             z_i = self.conv1d_list[i](z_i)
 
+            # Pass the CIN intermediate result through the activation function.
             if activation.lower() == 'identity':
                 output = z_i
             else:
-                activate_fun = activation_layer(activation)
-                if activate_fun is None:
+                activate_func = activation_layer(activation)
+                if activate_func is None:
                     output = z_i
                 else:
-                    output = activate_fun(z_i)
+                    output = activate_func(z_i)
 
+            # Get the output of the hidden layer.
             if self.direct:
                 direct_connect = output
                 next_hidden = output
@@ -138,7 +139,6 @@ class xDeepFM(ContextRecommender):
 
             final_result.append(direct_connect)
             hidden_nn_layers.append(next_hidden)
-
         result = torch.cat(final_result, dim=1)
         result = torch.sum(result, -1)
         return result
@@ -151,14 +151,16 @@ class xDeepFM(ContextRecommender):
         if dense_embedding is not None and len(dense_embedding.shape) == 3:
             all_embeddings.append(dense_embedding)
 
+        # Get the output of CIN.
         xdeepfm_input = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
-
         cin_output = self.compressed_interaction_network(xdeepfm_input)
         cin_output = self.cin_linear(cin_output)
 
+        # Get the output of MLP layer.
         batch_size = xdeepfm_input.shape[0]
         dnn_output = self.mlp_layers(xdeepfm_input.view(batch_size, -1))
 
+        # Get predicted score.
         y_p = self.first_order_linear(interaction) + cin_output + dnn_output
         y = self.sigmoid(y_p)
 
@@ -176,7 +178,6 @@ class xDeepFM(ContextRecommender):
         label = interaction[self.LABEL]
         output = self.forward(interaction)
         l2_reg = self.calculate_reg_loss()
-
         return self.loss(output, label) + self.reg_weight * l2_reg
 
     def predict(self, interaction):

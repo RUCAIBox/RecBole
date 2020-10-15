@@ -59,9 +59,9 @@ class MLPLayers(nn.Module):
             mlp_modules.append(nn.Linear(input_size, output_size))
             if self.use_bn:
                 mlp_modules.append(nn.BatchNorm1d(num_features=output_size))
-            activation_fun = activation_layer(self.activation, output_size)
-            if activation_fun is not None:
-                mlp_modules.append(activation_fun)
+            activation_func = activation_layer(self.activation, output_size)
+            if activation_func is not None:
+                mlp_modules.append(activation_func)
 
         self.mlp_layers = nn.Sequential(*mlp_modules)
         if self.init_method is not None:
@@ -88,22 +88,25 @@ def activation_layer(activation_name='relu', emb_dim=None):
     Return:
         activation: activation layer
     """
-    logger = getLogger()
-    if activation_name.lower() == 'sigmoid':
-        activation = nn.Sigmoid()
-    elif activation_name.lower() == 'tanh':
-        activation = nn.Tanh()
-    elif activation_name.lower() == 'relu':
-        activation = nn.ReLU()
-    elif activation_name.lower() == 'leakyrelu':
-        activation = nn.LeakyReLU()
-    elif activation_name.lower() == 'dice':
-        activation = Dice(emb_dim)
-    elif activation_name.lower() == 'none':
+    if activation_name is None:
         activation = None
+    elif isinstance(activation_name, str):
+        if activation_name.lower() == 'sigmoid':
+            activation = nn.Sigmoid()
+        elif activation_name.lower() == 'tanh':
+            activation = nn.Tanh()
+        elif activation_name.lower() == 'relu':
+            activation = nn.ReLU()
+        elif activation_name.lower() == 'leakyrelu':
+            activation = nn.LeakyReLU()
+        elif activation_name.lower() == 'dice':
+            activation = Dice(emb_dim)
+        elif activation_name.lower() == 'none':
+            activation = None
+    elif issubclass(activation_name, nn.Module):
+        activation = activation_name()
     else:
-        logger.warning('Received unrecognized activation function, set default activation function')
-        activation = None
+        raise NotImplementedError("activation function {} is not implemented".format(activation_name))
 
     return activation
 
