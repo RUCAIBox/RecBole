@@ -1,7 +1,7 @@
 # _*_ coding: utf-8 _*_
 # @Time : 2020/10/4
 # @Author : Zhichao Feng
-# @Email  : fzcbupt@gmai.com
+# @Email  : fzcbupt@gmail.com
 
 r"""
 recbox.model.context_aware_recommender.dcn

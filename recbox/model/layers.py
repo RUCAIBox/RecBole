@@ -52,7 +52,6 @@ class MLPLayers(nn.Module):
         self.activation = activation
         self.use_bn = bn
         self.init_method = init_method
-        self.logger = getLogger()
 
         mlp_modules = []
         for idx, (input_size, output_size) in enumerate(zip(self.layers[:-1], self.layers[1:])):
@@ -60,20 +59,10 @@ class MLPLayers(nn.Module):
             mlp_modules.append(nn.Linear(input_size, output_size))
             if self.use_bn:
                 mlp_modules.append(nn.BatchNorm1d(num_features=output_size))
-            if self.activation.lower() == 'sigmoid':
-                mlp_modules.append(nn.Sigmoid())
-            elif self.activation.lower() == 'tanh':
-                mlp_modules.append(nn.Tanh())
-            elif self.activation.lower() == 'relu':
-                mlp_modules.append(nn.ReLU())
-            elif self.activation.lower() == 'leakyrelu':
-                mlp_modules.append(nn.LeakyReLU())
-            elif self.activation.lower() == 'dice':
-                mlp_modules.append(Dice(output_size))
-            elif self.activation.lower() == 'none':
-                pass
-            else:
-                self.logger.warning('Received unrecognized activation function, set default activation function')
+            activation_func = activation_layer(self.activation, output_size)
+            if activation_func is not None:
+                mlp_modules.append(activation_func)
+
         self.mlp_layers = nn.Sequential(*mlp_modules)
         if self.init_method is not None:
             self.apply(self.init_weights)
@@ -88,6 +77,38 @@ class MLPLayers(nn.Module):
 
     def forward(self, input_feature):
         return self.mlp_layers(input_feature)
+
+
+def activation_layer(activation_name='relu', emb_dim=None):
+    """Construct activation layers
+
+    Args:
+        activation_name: str, name of activation function
+        emb_dim: int, used for Dice activation
+    Return:
+        activation: activation layer
+    """
+    if activation_name is None:
+        activation = None
+    elif isinstance(activation_name, str):
+        if activation_name.lower() == 'sigmoid':
+            activation = nn.Sigmoid()
+        elif activation_name.lower() == 'tanh':
+            activation = nn.Tanh()
+        elif activation_name.lower() == 'relu':
+            activation = nn.ReLU()
+        elif activation_name.lower() == 'leakyrelu':
+            activation = nn.LeakyReLU()
+        elif activation_name.lower() == 'dice':
+            activation = Dice(emb_dim)
+        elif activation_name.lower() == 'none':
+            activation = None
+    elif issubclass(activation_name, nn.Module):
+        activation = activation_name()
+    else:
+        raise NotImplementedError("activation function {} is not implemented".format(activation_name))
+
+    return activation
 
 
 class FMEmbedding(nn.Module):
@@ -323,6 +344,8 @@ class VanillaAttention(nn.Module):
     Transformer modules
     Adapted from https://github.com/huggingface/transformers/blob/master/src/transformers/modeling_bert.py
 """
+
+
 class SelfAttention(nn.Module):
     def __init__(self, config):
         super(SelfAttention, self).__init__()
@@ -667,7 +690,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
                     sparse_embedding[type] = token_fields_embedding[type]
                 else:
                     sparse_embedding[type] = torch.cat([token_fields_embedding[type],
-                                                          token_seq_fields_embedding[type]], dim=-2)
+                                                        token_seq_fields_embedding[type]], dim=-2)
             dense_embedding[type] = float_fields_embedding[type]
 
         # sparse_embedding[type] shape: [batch_size, max_item_length, num_token_seq_field+num_token_field, embed_dim] or None
@@ -680,6 +703,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
 
 class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
     """For DIN"""
+
     def __init__(self, config, dataset):
         super(ContextSeqEmbLayer, self).__init__()
         self.device = config['device']
@@ -703,6 +727,7 @@ class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
 
 class FeatureSeqEmbLayer(ContextSeqEmbAbstractLayer):
     """For feature-rich sequential recommenders"""
+
     def __init__(self, config, dataset):
         super(FeatureSeqEmbLayer, self).__init__()
 
