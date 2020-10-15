@@ -106,7 +106,8 @@ test_examples = {
         'valid_metric': 'Recall@10',
         'leave_one_num': 2,
         'metrics': ["Recall"],
-        'topk': [10]
+        'topk': [10],
+        'eval_batch_size': 20000
     },
     'Test GCMC': {
         'model': 'GCMC',
@@ -302,9 +303,9 @@ test_examples = {
         'leave_one_num': 2,
         'real_time_process': True,
         'NEG_PREFIX': '_neg',
-        'FEATURE_FIELD': 'class',
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
+        'selected_features': ['class'],
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
         'min_user_inter_num': 5
     },
@@ -319,7 +320,6 @@ test_examples = {
         'leave_one_num': 2,
         'real_time_process': True,
         'NEG_PREFIX': '_neg',
-        'FEATURE_FIELD': 'class',
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
@@ -336,7 +336,7 @@ test_examples = {
         'leave_one_num': 2,
         'real_time_process': True,
         'NEG_PREFIX': '_neg',
-        'FEATURE_FIELD': 'class',
+        'selected_features': ['class'],
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
@@ -353,7 +353,7 @@ test_examples = {
         'leave_one_num': 2,
         'real_time_process': True,
         'NEG_PREFIX': '_neg',
-        'FEATURE_FIELD': 'class',
+        'selected_features': ['class'],
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},

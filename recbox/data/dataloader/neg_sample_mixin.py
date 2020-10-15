@@ -7,6 +7,11 @@
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
+"""
+recbox.data.dataloader.neg_sample_mixin
+################################################
+"""
+
 from recbox.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbox.utils import DataLoaderType, EvaluatorType, FeatureSource, FeatureType, InputType
 

@@ -62,7 +62,8 @@ class GNN(nn.Module):
 
             hidden(torch.FloatTensor):The item node embedding matrix, shape of [batch_size, max_session_len, embedding_size]
 
-        Returns:hy(torch.FloatTensor):Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
+        Returns:
+            hy(torch.FloatTensor):Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
 
         """
 
@@ -88,6 +89,7 @@ class GNN(nn.Module):
             hidden = self.GNNCell(A, hidden)
         return hidden
 
+
 class SelfAttention(nn.Module):
     r"""Self-Attention is a special case of the attention mechanism, it can draw global dependencies
     between input and output, and capture item-item transitions across the entire input and output
@@ -96,7 +98,8 @@ class SelfAttention(nn.Module):
     Self-Attention mechanism are comprised of:
 
     1) self-attention layer :math:`F = softmax(\frac{(HW^Q)(HW^k)^T}{\sqrt{d}})(HW^V)`,
-    which takes the latent vectors of all noeds involved in the session graph as an input, such as :math:`H = [h_1, h_2,...,h_n]`
+    which takes the latent vectors of all noeds involved in the session graph as an input, such as
+    :math:`H = [h_1, h_2,...,h_n]`
 
     2) point-wise feed-forward network :math:`E = ReLU(FW_1 + b_1)W_2+b_2+F`, which takes the result of
     the self-attention layer :math:`F` as an input
@@ -297,8 +300,3 @@ class GCSAN(SequentialRecommender):
         pred = self.forward(interaction)
         scores = torch.matmul(pred, self.get_item_lookup_table())
         return scores
-
-
-
-
-

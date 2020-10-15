@@ -2,6 +2,11 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+"""
+recbox.quick_start
+########################
+"""
+
 from logging import getLogger
 from recbox.utils import init_logger, get_model, get_trainer, init_seed
 from recbox.config import Config

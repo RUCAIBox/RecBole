@@ -8,7 +8,8 @@ r"""
 recbox.model.context_aware_recommender.afm
 ################################################
 Reference:
-Jun Xiao et al. "Attentional Factorization Machines: Learning the Weight of Feature Interactions via Attention Networks" in IJCAI 2017.
+Jun Xiao et al. "Attentional Factorization Machines: Learning the Weight of Feature Interactions via Attention Networks"
+in IJCAI 2017.
 """
 
 import torch
@@ -51,12 +52,13 @@ class AFM(ContextRecommender):
 
     def build_cross(self, feat_emb):
         """ Build the cross feature columns of feature columns
+
         Args:
             feat_emb (torch.FloatTensor): input feature embedding tensor. shape of[batch_size,field_size,embed_dim].
 
         Returns:
             torch.FloatTensor: Left part of the cross feature. shape of [batch_size, num_pairs, emb_dim].
-            torch.FloatTensor: Right part of the cross feature. shape of [batch_size, num_pairs, emb_dim] .
+            torch.FloatTensor: Right part of the cross feature. shape of [batch_size, num_pairs, emb_dim].
         """
         # num_pairs = num_feature_field * (num_feature_field-1) / 2
         row = []
@@ -71,6 +73,7 @@ class AFM(ContextRecommender):
 
     def afm_layer(self, infeature):
         """ Get the attention-based feature interaction score
+
         Args:
             infeature (torch.FloatTensor): input feature embedding tensor. shape of[batch_size,field_size,embed_dim].
 

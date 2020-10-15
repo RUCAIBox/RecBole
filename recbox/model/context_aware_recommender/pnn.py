@@ -12,6 +12,7 @@ Qu Y et al. "Product-based neural networks for user response prediction." in ICD
 
 Reference code:
 https://github.com/shenweichen/DeepCTR-Torch/blob/master/deepctr_torch/models/pnn.py
+
 https://github.com/Atomu2014/product-nets/blob/master/python/models.py
 
 """
@@ -25,7 +26,7 @@ from .context_recommender import ContextRecommender
 
 
 class PNN(ContextRecommender):
-    """"PNN calculate inner and outer product of feature embedding.
+    """PNN calculate inner and outer product of feature embedding.
     You can choose the product option with the parameter of use_inner and use_outer
 
     """
@@ -157,7 +158,7 @@ class InnerProductLayer(nn.Module):
 
 
 class OuterProductLayer(nn.Module):
-    """OutterProduct Layer used in PNN.This implemention is
+    """OutterProduct Layer used in PNN. This implemention is
     adapted from code that the author of the paper published on https://github.com/Atomu2014/product-nets.
     """
 

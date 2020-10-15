@@ -7,6 +7,11 @@
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
+"""
+recbox.data.dataloader.abstract_dataloader
+################################################
+"""
+
 import math
 from logging import getLogger
 
@@ -14,10 +19,16 @@ from recbox.utils import InputType
 
 
 class AbstractDataLoader(object):
+    """AbstractDataLoader is an abstract object which would return a batch of data which is loaded by Interaction
+    when it is iterated. And it is also the ancestor of all other dataloader.
+    """
     dl_type = None
 
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+        """
+
+        """
         self.config = config
         self.logger = getLogger()
         self.dataset = dataset
@@ -48,9 +59,15 @@ class AbstractDataLoader(object):
             self.data_preprocess()
 
     def setup(self):
+        """
+
+        """
         pass
 
     def data_preprocess(self):
+        """
+
+        """
         pass
 
     def __len__(self):
@@ -69,6 +86,9 @@ class AbstractDataLoader(object):
 
     @property
     def pr_end(self):
+        """
+
+        """
         raise NotImplementedError('Method [pr_end] should be implemented')
 
     def _shuffle(self):
@@ -78,6 +98,12 @@ class AbstractDataLoader(object):
         raise NotImplementedError('Method [next_batch_data] should be implemented.')
 
     def set_batch_size(self, batch_size):
+        """This function could reset the batch_size of the dataloader, but it can't be called when dataloader is being
+        iterated.
+
+        :param int batch_size: the new batch_size of dataloader
+        :return:
+        """
         if self.pr != 0:
             raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
         if self.batch_size != batch_size:
@@ -85,9 +111,15 @@ class AbstractDataLoader(object):
             self.logger.warning('Batch size is changed to {}'.format(batch_size))
 
     def get_user_feature(self):
+        """
+
+        """
         user_df = self.dataset.get_user_feature()
         return self._dataframe_to_interaction(user_df)
 
     def get_item_feature(self):
+        """
+
+        """
         item_df = self.dataset.get_item_feature()
         return self._dataframe_to_interaction(item_df)

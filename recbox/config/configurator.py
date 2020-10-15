@@ -33,9 +33,10 @@ class Config(object):
 
     - config file: It's a file that record the parameters to be modified or added. It should be in ``yaml`` format,
       e.g. a config file is 'example.yaml', the content is:
-                learning_rate: 0.001
 
-                train_batch_size: 2048
+        learning_rate: 0.001
+
+        train_batch_size: 2048
 
     - command line: It should be in the format as '---learning_rate=0.001'
 
@@ -270,7 +271,9 @@ class Config(object):
         for category in self.parameters:
             args_info += category + ' Hyper Parameters: \n'
             args_info += '\n'.join(
-                ["{}={}".format(arg, value) for arg, value in self.final_config_dict.items() if arg in self.parameters[category]])
+                ["{}={}".format(arg, value)
+                 for arg, value in self.final_config_dict.items()
+                 if arg in self.parameters[category]])
             args_info += '\n\n'
         return args_info
 

@@ -7,6 +7,12 @@
 # @Author : Shanlei Mu, Yupeng Hou
 # @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
 
+
+"""
+recbox.model.abstract_recommender
+##################################
+"""
+
 import numpy as np
 import torch.nn as nn
 
@@ -73,7 +79,7 @@ class SequentialRecommender(AbstractRecommender):
         super(SequentialRecommender, self).__init__()
 
     def gather_indexes(self, output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
+        """Gathers the vectors at the spexific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.shape[-1])
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)

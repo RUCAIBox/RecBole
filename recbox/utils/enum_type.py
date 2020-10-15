@@ -3,6 +3,11 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
+"""
+recbox.utils.enum_type
+#######################
+"""
+
 from enum import Enum
 
 

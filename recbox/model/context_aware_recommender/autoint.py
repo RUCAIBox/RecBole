@@ -5,6 +5,8 @@
 # @File   : autoint.py
 
 """
+recbox.model.context_aware_recommender.autoint
+################################################
 Reference:
 Weiping Song et al. "AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks" in CIKM 2018.
 """
@@ -41,7 +43,8 @@ class AUTOINT(ContextRecommender):
         size_list = [self.embed_output_dim] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout[1])
         self.self_attns = nn.ModuleList([
-                nn.MultiheadAttention(self.attention_size, self.num_heads, dropout=self.dropout[0]) for _ in range(self.num_layers)
+            nn.MultiheadAttention(self.attention_size, self.num_heads, dropout=self.dropout[0])
+            for _ in range(self.num_layers)
         ])
         self.attn_fc = torch.nn.Linear(self.atten_output_dim, 1)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)

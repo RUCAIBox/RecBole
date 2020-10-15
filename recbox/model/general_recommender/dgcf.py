@@ -36,11 +36,11 @@ def sample_cor_samples(n_users, n_items, cor_batch_size):
 
     Args:
         n_users (int): number of users in total
-        n_items (float): number of items in total
+        n_items (int): number of items in total
         cor_batch_size (int): number of id to sample
 
     Returns:
-        cor_users, cor_items(list): The result sampled ids with both as cor_batch_size long.
+        list: cor_users, cor_items. The result sampled ids with both as cor_batch_size long.
 
     Note:
         We have to sample some embedded representations out of all nodes.
@@ -54,7 +54,7 @@ def sample_cor_samples(n_users, n_items, cor_batch_size):
 
 class DGCF(GeneralRecommender):
     r"""DGCF is a disentangled representation enhanced matrix factorization model.
-    The interaction matrix of :math:`n_{users} \times n_{items}` is decomposed to math:`n_{factors}` intent graph,
+    The interaction matrix of :math:`n_{users} \times n_{items}` is decomposed to :math:`n_{factors}` intent graph,
     we carefully design the data interface and use sparse tensor to train and test efficiently.
     We implement the model following the original author with a pairwise training mode.
     """
@@ -183,7 +183,6 @@ class DGCF(GeneralRecommender):
                     # (num_edge, dim / n_factors)
                     edge_val = edge_val * edge_weight
                     # (num_edge, dim / n_factors)
-                    # factor_embeddings = torch.sparse.mm(tp_matrix, ego_layer_embeddings[i])
                     factor_embeddings = torch.sparse.mm(self.edge2head_mat, edge_val)
                     # (num_node, num_edge) (num_edge, dim) -> (num_node, dim)
 
@@ -201,8 +200,6 @@ class DGCF(GeneralRecommender):
                     # .... constrain the vector length
                     # .... make the following attentive weights within the range of (0,1)
                     # to adapt to torch version
-                    # head_factor_embedings = tf.math.l2_normalize(head_factor_embedings, axis=1)
-                    # tail_factor_embedings = tf.math.l2_normalize(tail_factor_embedings, axis=1)
                     head_factor_embedings = F.normalize(head_factor_embedings, p=2, dim=1)
                     tail_factor_embedings = F.normalize(tail_factor_embedings, p=2, dim=1)
 
@@ -219,7 +216,6 @@ class DGCF(GeneralRecommender):
                 A_values = A_values + A_iter_values
 
             # sum messages of neighbors, [n_users+n_items, embed_size]
-            # side_embeddings = tf.concat(layer_embeddings, 1)
             side_embeddings = torch.cat(layer_embeddings, dim=1)
 
             ego_embeddings = side_embeddings
@@ -231,7 +227,6 @@ class DGCF(GeneralRecommender):
         all_embeddings = torch.mean(all_embeddings, dim=1, keepdim=False)
         # (num_node, embedding_size)
 
-        # u_g_embeddings, i_g_embeddings = tf.split(all_embeddings, (self.n_users, self.n_items), 0)
         u_g_embeddings = all_embeddings[:self.n_users, :]
         i_g_embeddings = all_embeddings[self.n_users:, :]
 
@@ -286,7 +281,6 @@ class DGCF(GeneralRecommender):
         cor_loss = None
 
         ui_embeddings = torch.cat((cor_u_embeddings, cor_i_embeddings), dim=0)
-        # ui_factor_embeddings = tf.split(ui_embeddings, self.n_factors, 1)
         ui_factor_embeddings = torch.chunk(ui_embeddings, self.n_factors, 1)
 
         for i in range(0, self.n_factors - 1):
@@ -313,10 +307,8 @@ class DGCF(GeneralRecommender):
             # calculate the pairwise distance of X
             # .... A with the size of [batch_size, embed_size/n_factors]
             # .... D with the size of [batch_size, batch_size]
-            # X = tf.math.l2_normalize(XX, axis=1)
             r = torch.sum(X * X, dim=1, keepdim=True)
             # (N, 1)
-            # D = tf.sqrt(tf.maximum(r - 2 * tf.matmul(a=X, b=X, transpose_b=True) + tf.transpose(r), 0.0) + 1e-8)
             # (x^2 - 2xy + y^2) -> l2 distance between all vectors
             value = r - 2 * torch.mm(X, X.T + r.T)
             zero_value = torch.zeros_like(value)
@@ -326,16 +318,12 @@ class DGCF(GeneralRecommender):
             # # calculate the centered distance of X
             # # .... D with the size of [batch_size, batch_size]
             # matrix - average over row - average over col + average over matrix
-            # D = D - tf.reduce_mean(D, axis=0, keepdims=True) - tf.reduce_mean(D, axis=1, keepdims=True) \
-            #     + tf.reduce_mean(D)
             D = D - torch.mean(D, dim=0, keepdim=True) - torch.mean(D, dim=1, keepdim=True) + torch.mean(D)
             return D
 
         def _create_distance_covariance(D1, D2):
             # calculate distance covariance between D1 and D2
-            # n_samples = tf.dtypes.cast(tf.shape(D1)[0], tf.float32)
             n_samples = float(D1.size(0))
-            # dcov = tf.sqrt(tf.maximum(tf.reduce_sum(D1 * D2) / (n_samples * n_samples), 0.0) + 1e-8)
             value = torch.sum(D1 * D2) / (n_samples * n_samples)
             zero_value = torch.zeros_like(value)
             value = torch.where(value > 0.0, value, zero_value)
@@ -350,12 +338,10 @@ class DGCF(GeneralRecommender):
         dcov_22 = _create_distance_covariance(D2, D2)
 
         # calculate the distance correlation
-        # dcor = dcov_12 / (tf.sqrt(tf.maximum(dcov_11 * dcov_22, 0.0)) + 1e-10)
         value = dcov_11 * dcov_22
         zero_value = torch.zeros_like(value)
         value = torch.where(value > 0.0, value, zero_value)
         dcor = dcov_12 / (torch.sqrt(value) + 1e-10)
-        # return tf.reduce_sum(D1) + tf.reduce_sum(D2)
         return dcor
 
     def predict(self, interaction):
@@ -378,4 +364,3 @@ class DGCF(GeneralRecommender):
         scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
 
         return scores.view(-1)
-
