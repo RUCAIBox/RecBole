@@ -16,13 +16,12 @@ to the model.
 
 import torch
 from torch import nn
-from torch.nn.init import xavier_uniform_, xavier_normal_
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import SequentialRecommender
 from recbox.model.loss import BPRLoss
-from recbox.model.init import xavier_normal_initialization
-from recbox.model.layers import TransformerEncoder
+from recbox.model.layers import TransformerEncoder, FeatureSeqEmbLayer
+
 
 
 class SASRecF(SequentialRecommender):
@@ -36,33 +35,37 @@ class SASRecF(SequentialRecommender):
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
         self.TARGET_ITEM_ID = self.ITEM_ID
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
-        self.FEATURE_FIELD = config['FEATURE_FIELD']
-        self.FEATURE_LIST = self.FEATURE_FIELD + config['LIST_SUFFIX']
 
         self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
         self.item_count = dataset.item_num
-        self.feature_count = dataset.num(self.FEATURE_FIELD)
-        self.item_feat = dataset.get_item_feature()
-        print(self.item_feat.interaction.keys()) # ['item_id' 'class']
 
-        # todo: now only consider movie category in ml-100k dataset
-        # consider city in yelp dataset
+        # need change the 'load_col' config
+        self.hidden_size = config['hidden_size']
+        self.embedding_size = self.hidden_size
+
         # embedding_size is same as hidden_size
         self.item_embedding = nn.Embedding(self.item_count, config['hidden_size'], padding_idx=0)
-        self.feature_embedding = nn.Embedding(self.feature_count, config['hidden_size'], padding_idx=0)
         self.position_embedding = nn.Embedding(self.max_item_list_length, config['hidden_size'], padding_idx=0)
+        self.feature_embed_layer = FeatureSeqEmbLayer(config, dataset)
 
         # For simplicity, we use same architecture for item_trm and feature_trm
         self.trm_encoder = TransformerEncoder(config)
 
         # For input
-        self.concat_layer = nn.Linear(config['hidden_size'] * 2, config['hidden_size'])
+        self.num_feature_field = len(config['selected_features'])
+
+        self.concat_layer = nn.Linear(config['hidden_size'] * (1 + self.num_feature_field), config['hidden_size'])
         self.LayerNorm = nn.LayerNorm(config['hidden_size'], eps=1e-12)
         self.dropout = nn.Dropout(config['dropout_prob'])
 
         self.loss_type = config['loss_type']
-        self.bpr_loss = BPRLoss()
-        self.ce_loss = nn.CrossEntropyLoss()
+        if self.loss_type == 'BPR':
+            self.loss_fct = BPRLoss()
+        elif self.loss_type == 'CE':
+            self.loss_fct = nn.CrossEntropyLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
+
         self.initializer_range = config['initializer_range']
         self.apply(self._init_weights)
 
@@ -101,29 +104,31 @@ class SASRecF(SequentialRecommender):
 
     def forward(self, interaction):
         item_seq = interaction[self.ITEM_ID_LIST]
+        item_emb = self.item_embedding(item_seq)
 
         # position embedding
         position_ids = torch.arange(item_seq.size(1), dtype=torch.long, device=item_seq.device)
         position_ids = position_ids.unsqueeze(0).expand_as(item_seq)
         position_embedding = self.position_embedding(position_ids)
 
-        feature_seq = self.item_feat[self.FEATURE_FIELD][item_seq].to(item_seq.device)
+        sparse_embedding, dense_embedding = self.feature_embed_layer(None, item_seq)
+        sparse_embedding = sparse_embedding['item']
+        dense_embedding = dense_embedding['item']
 
-        # 1. shape [B Len num] means the item has multi-feature, i.e. one movie may be classified
-        # into multi-class. We would use sum of the features as the input.
+        # concat the sparse embedding and float embedding
+        feature_table = []
+        if sparse_embedding is not None:
+            feature_table.append(sparse_embedding)
+        if dense_embedding is not None:
+            feature_table.append(dense_embedding)
 
-        # 2. shape [B Len] means the item has single-feature, i.e. one store could only in one city.
+        feature_table = torch.cat(feature_table, dim=1)
+        table_shape = feature_table.shape
 
-        item_emb = self.item_embedding(item_seq)
-        feature_emb = self.feature_embedding(feature_seq)
+        feat_num, embedding_size = table_shape[-2], table_shape[-1]
+        feature_emb = feature_table.view(table_shape[:-2] + (feat_num * embedding_size,))
 
-        if feature_seq.dim() == 3:  # pos_features [B Len Num]
-            feature_mask = (feature_seq != 0).float()
-            # set the padding as zero
-            feature_mask = feature_mask.unsqueeze(-1).expand_as(feature_emb)
-            feature_emb = (feature_emb * feature_mask).sum(dim=-2)  # [B Len H]
-
-        input_concat = torch.cat((item_emb, feature_emb), -1)  # [B 2*H]
+        input_concat = torch.cat((item_emb, feature_emb), -1)  # [B 1+field_num*H]
         # TODO whether need layer_norm drouout
         input_emb = self.concat_layer(input_concat)
 
@@ -148,15 +153,15 @@ class SASRecF(SequentialRecommender):
             neg_items_emb = self.item_embedding(neg_items) # [B H]
             pos_score = torch.sum(seq_output*pos_items_emb, dim=-1) # [B]
             neg_score = torch.sum(seq_output*neg_items_emb, dim=-1) # [B]
-            loss = self.bpr_loss(pos_score, neg_score)
+            loss = self.loss_fct(pos_score, neg_score)
             return loss
         elif self.loss_type == 'CE':
             test_item_emb = self.item_embedding.weight
             logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
-            loss = self.ce_loss(logits, pos_items)
+            loss = self.loss_fct(logits, pos_items)
             return loss
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
     # TODO implemented after the data interface is ready
     def predict(self, interaction):
