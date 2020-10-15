@@ -4,7 +4,7 @@
 # @Email  : shuqingbian@gmail.com
 # @File   : autoint.py
 
-"""
+r"""
 recbox.model.context_aware_recommender.autoint
 ################################################
 Reference:
@@ -21,6 +21,9 @@ from recbox.model.context_aware_recommender.context_recommender import ContextRe
 
 
 class AUTOINT(ContextRecommender):
+    """ AUTOINT is a novel CTR prediction model based on self-attention mechanism, which can automatically learn high-order feature interactions in an explicit fashion.
+
+    """
 
     def __init__(self, config, dataset):
         super(AUTOINT, self).__init__(config, dataset)
@@ -67,12 +70,13 @@ class AUTOINT(ContextRecommender):
 
 
     def autoint_layer(self, infeature):
-        """
-        Input shape
-        - A 3D tensor with shape:``(batch_size,field_size,embed_dim)``.
+        """ Get the attention-based feature interaction score
 
-        Output shape
-        - 3D tensor with shape: ``(batch_size,1)`` .
+        Args:
+            infeature (torch.FloatTensor): input feature embedding tensor. shape of[batch_size,field_size,embed_dim].
+
+        Returns:
+            torch.FloatTensor: Result of score. shape of [batch_size,1] .
         """
 
         att_infeature = self.att_embedding(infeature)
