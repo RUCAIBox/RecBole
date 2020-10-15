@@ -45,6 +45,7 @@ class AUTOINT(ContextRecommender):
 
         size_list = [self.embed_output_dim] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout[1])
+        # multi-head self-attention network
         self.self_attns = nn.ModuleList([
             nn.MultiheadAttention(self.attention_size, self.num_heads, dropout=self.dropout[0])
             for _ in range(self.num_layers)
@@ -84,9 +85,11 @@ class AUTOINT(ContextRecommender):
         for self_attn in self.self_attns:
             cross_term, _ = self_attn(cross_term, cross_term, cross_term)
         cross_term = cross_term.transpose(0, 1)
+        # Residual connection
         if self.has_residual:
             v_res = self.v_res_embedding(infeature)
             cross_term += v_res
+        # Interacting layer
         cross_term = F.relu(cross_term).contiguous().view(-1, self.atten_output_dim)
         batch_size = infeature.shape[0]
         att_output = self.attn_fc(cross_term) + self.deep_predict_layer(self.mlp_layers(infeature.view(batch_size, -1)))
