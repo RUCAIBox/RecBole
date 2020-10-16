@@ -279,7 +279,7 @@ class KnowledgeBasedDataset(Dataset):
             self._reset_ent_remapID(field, new_id_token)
             self.field2id_token[field] = new_id_token
         new_id_token = item_ent_token_list[:layered_num[-1]]
-        new_id_token = [_ if _ in self.item2entity else _ for _ in new_id_token]
+        new_id_token = [self.item2entity[_] if _ in self.item2entity else _ for _ in new_id_token]
         for field in self.ent_level_ent_fields:
             self._reset_ent_remapID(field, item_ent_token_list[:layered_num[-1]])
             self.field2id_token[field] = new_id_token
