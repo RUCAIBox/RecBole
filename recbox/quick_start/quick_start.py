@@ -7,16 +7,40 @@ recbox.quick_start
 ########################
 """
 
+import os
+import yaml
+
 from logging import getLogger
 from recbox.utils import init_logger, get_model, get_trainer, init_seed
 from recbox.config import Config
 from recbox.data import create_dataset, data_preparation
 
 
-def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
+def load_presets():
+    current_path = os.path.dirname(os.path.realpath(__file__))
+    presets_file = os.path.join(current_path, '../properties/presets.yaml')
+    with open(presets_file, 'r', encoding='utf-8') as fp:
+        presets_dict = yaml.load(fp.read(), Loader=yaml.FullLoader)
+    return presets_dict
+
+
+def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True, quick_start=False):
 
     # configurations initialization
-    config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
+    if quick_start:
+        try:
+            assert model is not None and dataset is not None
+        except AssertionError:
+            raise AssertionError("Quick-start required positional arguments: 'model' and 'dataset'")
+        presets_dict = load_presets()
+        try:
+            config_dict = presets_dict['-'.join([model, dataset])]
+        except KeyError:
+            raise KeyError('UniRec only support quick-start of the following combinations:  '
+                           + str(list(presets_dict.keys())))
+        config = Config(model=model, dataset=dataset, config_dict=config_dict)
+    else:
+        config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
     init_seed(config['seed'])
 
     # logger initialization
