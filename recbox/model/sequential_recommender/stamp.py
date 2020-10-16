@@ -31,11 +31,12 @@ class STAMP(SequentialRecommender):
 
     Note:
 
-            According to the test results, we made a little modification to the score function mentioned in the paper,
-            and did not use the final sigmoid activation function.
+        According to the test results, we made a little modification to the score function mentioned in the paper,
+        and did not use the final sigmoid activation function.
 
     """
     input_type = InputType.POINTWISE
+
     def __init__(self, config, dataset):
         super(STAMP, self).__init__()
         # load parameters info
@@ -44,7 +45,6 @@ class STAMP(SequentialRecommender):
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
         self.TARGET_ITEM_ID = self.ITEM_ID
         self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
-
 
         self.embedding_size = config['embedding_size']
         self.item_count = dataset.item_num

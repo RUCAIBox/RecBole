@@ -20,32 +20,32 @@ https://github.com/RUCAIBox/CIKM2020-S3Rec
 import random
 
 import torch
-import time
 from torch import nn
-from torch.nn.init import xavier_uniform_, xavier_normal_
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import SequentialRecommender
 from recbox.model.loss import BPRLoss
-from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
+
 
 class S3Rec(SequentialRecommender):
     r"""
     S3Rec is the first work to incorporate self-supervised learning in
     sequential recommendation.
 
-    NOTE: Under this framework, we need reconstruct the pretraining data,
-    which would affect the pre-training speed.
+    NOTE:
+        Under this framework, we need reconstruct the pretraining data,
+        which would affect the pre-training speed.
     """
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(S3Rec, self).__init__()
 
         self.ITEM_ID = config['ITEM_ID_FIELD']
         self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
         self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
+        self.TARGET_ITEM_ID = self.ITEM_ID
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
         self.FEATURE_FIELD = config['FEATURE_FIELD']
         self.FEATURE_LIST = self.FEATURE_FIELD + config['LIST_SUFFIX']
@@ -86,10 +86,16 @@ class S3Rec(SequentialRecommender):
         # For finetune
 
         self.loss_type = config['loss_type']
-        self.bpr_loss = BPRLoss()
-        self.ce_loss = nn.CrossEntropyLoss()
+        if self.loss_type == 'BPR':
+            self.loss_fct = BPRLoss()
+        elif self.loss_type == 'CE':
+            self.loss_fct = nn.CrossEntropyLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
+
         self.initializer_range = config['initializer_range']
 
+        assert config['train_stage'] in ['pretrain', 'finetune']
 
         if config['train_stage'] == 'pretrain':
             self.apply(self._init_weights)
@@ -255,10 +261,10 @@ class S3Rec(SequentialRecommender):
             loss = self.ce_loss(logits, pos_items)
             return loss
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
     def gather_indexes(self, output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
+        """Gathers the vectors at the spexific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.size(-1))
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)
@@ -378,6 +384,7 @@ class S3Rec(SequentialRecommender):
                                  masked_segment_sequence, pos_segment, neg_segment)
         else:
             loss = self.finetune(interaction)
+
         return loss
 
     def predict(self, interaction):

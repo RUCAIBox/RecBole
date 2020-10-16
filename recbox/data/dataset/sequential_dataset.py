@@ -7,6 +7,11 @@
 # @Author : Yushuo Chen
 # @Email  : chenyushuo@ruc.edu.cn
 
+"""
+recbox.data.sequential_dataset
+###############################
+"""
+
 import numpy as np
 import pandas as pd
 import copy
