@@ -265,38 +265,56 @@ class Dataset(object):
         drop_flag = self.config['drop_preload_weight']
         if drop_flag is None:
             drop_flag = True
-        if not isinstance(preload_fields, list):
-            preload_fields = [preload_fields]
 
         self.logger.debug('preload weight matrix for {}, drop=[{}]'.format(preload_fields, drop_flag))
 
-        feats = [feat for feat in [self.user_feat, self.item_feat] if feat is not None]
-        for field in preload_fields:
-            used_flag = False
-            for feat in feats:
-                if field in feat:
-                    used_flag = True
-                    ftype = self.field2type[field]
-                    if ftype == FeatureType.FLOAT:
-                        matrix = feat[field].values
-                    elif ftype == FeatureType.FLOAT_SEQ:
-                        max_len = self.field2seqlen[field]
-                        matrix = np.zeros((len(feat[field]), max_len))
-                        for i, row in enumerate(feat[field].to_list()):
-                            length = len(row)
+        for preload_id_field in preload_fields:
+            preload_value_field = preload_fields[preload_id_field]
+            if preload_id_field not in self.field2source:
+                raise ValueError('prelaod id field [{}] not exist'.format(preload_id_field))
+            if preload_value_field not in self.field2source:
+                raise ValueError('prelaod value field [{}] not exist'.format(preload_value_field))
+            pid_source = self.field2source[preload_id_field]
+            pv_source = self.field2source[preload_value_field]
+            if pid_source != pv_source:
+                raise ValueError('preload id field [{}] is from source [{}],'
+                    'while prelaod value field [{}] is from source [{}], which should be the same'.format(
+                        preload_id_field, pid_source, preload_value_field, pv_source
+                    ))
+            for feat in self.feat_list:
+                if preload_id_field in feat:
+                    id_ftype = self.field2type[preload_id_field]
+                    if id_ftype != FeatureType.TOKEN:
+                        raise ValueError('prelaod id field [{}] should be type token, but is [{}]'.format(
+                            preload_id_field, id_ftype
+                        ))
+                    value_ftype = self.field2type[preload_value_field]
+                    token_num = self.num(preload_id_field)
+                    if value_ftype == FeatureType.FLOAT:
+                        matrix = np.zeros(token_num)
+                        preload_ids = feat[preload_id_field].values
+                        preload_values = feat[preload_value_field].values
+                        for pid, pv in zip(preload_ids, preload_values):
+                            matrix[pid] = pv
+                    elif value_ftype == FeatureType.FLOAT_SEQ:
+                        max_len = self.field2seqlen[preload_value_field]
+                        matrix = np.zeros((token_num, max_len))
+                        preload_ids = feat[preload_id_field].values
+                        preload_values = feat[preload_value_field].to_list()
+                        for pid, prow in zip(preload_ids, preload_values):
+                            length = len(prow)
                             if length <= max_len:
-                                matrix[i, length] = row
+                                matrix[pid, :length] = prow
                             else:
-                                matrix[i] = row[:max_len]
+                                matrix[pid] = prow[:max_len]
                     else:
                         self.logger.warning('Field [{}] with type [{}] is not \'float\' or \'float_seq\', \
-                                             which will not be handled by preload matrix.'.format(field, ftype))
+                                             which will not be handled by preload matrix.'.format(preload_value_field, value_ftype))
                         continue
-                    self._preloaded_weight[field] = matrix
+                    self._preloaded_weight[preload_id_field] = matrix
                     if drop_flag:
-                        self._del_col(field)
-            if not used_flag:
-                self.logger.warning('Field [{}] doesn\'t exist, thus not been handled.'.format(field))
+                        self._del_col(preload_id_field)
+                        self._del_col(preload_value_field)
 
     def _fill_nan(self):
         self.logger.debug('Filling nan')
