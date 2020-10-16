@@ -4,7 +4,7 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE:
-# @Time   : 2020/9/17
+# @Time   : 2020/10/14
 # @Author : Kaiyuan Li
 # @Email  : tsotfsk@outlook.com
 
@@ -18,13 +18,14 @@ Reference code:
 https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
 """
 
+from logging import getLogger
+
 import torch
 import torch.nn as nn
-from torch.nn.init import constant_, normal_, xavier_normal_
-
 from recbox.model.abstract_recommender import GeneralRecommender
 from recbox.model.layers import MLPLayers
 from recbox.utils import InputType
+from torch.nn.init import constant_, normal_, xavier_normal_
 
 
 class NAIS(GeneralRecommender):
@@ -44,6 +45,7 @@ class NAIS(GeneralRecommender):
 
         # load dataset info
         self.LABEL = config['LABEL_FIELD']
+        self.logger = getLogger()
 
         # get all users's history interaction information.the history item 
         # matrix is padding by the maximum number of a user's interactions
@@ -57,9 +59,11 @@ class NAIS(GeneralRecommender):
         self.alpha = config['alpha']
         self.beta = config['beta']
         self.split_to = config['split_to']
+        self.pretrain_path = config['pretrain_path']
 
         # split the too large dataset into the specified pieces
         if self.split_to > 0:
+            self.logger.info('split the n_items to {} pieces'.format(self.split_to))
             self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
 
         # define layers and loss
@@ -79,7 +83,40 @@ class NAIS(GeneralRecommender):
         self.bceloss = nn.BCELoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        if self.pretrain_path is not None:
+            self.logger.info('use pretrain from [{}]...'.format(self.pretrain_path))
+            self._load_pretrain()
+        else:
+            self.logger.info('unuse pretrain...')
+            self.apply(self._init_weights)
+
+    def _init_weights(self, module):
+        """Initialize the module's parameters
+
+        Note:
+            It's a little different from the source code, because pytorch has no function to initialize
+            the parameters by truncated normal distribution, so we replace it with xavier normal distribution
+
+        """
+        if isinstance(module, nn.Embedding):
+            normal_(module.weight.data, 0, 0.01)
+        elif isinstance(module, nn.Linear):
+            xavier_normal_(module.weight.data)
+            if module.bias is not None:
+                constant_(module.bias.data, 0)
+
+    def _load_pretrain(self):
+        """A simple implementation of loading pretrained parameters.
+
+        """
+        fism = torch.load(self.pretrain_path)['state_dict']
+        self.item_src_embedding.weight.data.copy_(fism['item_src_embedding.weight'])
+        self.item_dst_embedding.weight.data.copy_(fism['item_dst_embedding.weight'])
+        for name, parm in self.mlp_layers.named_parameters():
+            if name.endswith('weight'):
+                xavier_normal_(parm.data)
+            elif name.endswith('bias'):
+                constant_(parm.data, 0)
 
     def get_history_info(self, dataset):
         """get the user history interaction information
@@ -176,21 +213,6 @@ class NAIS(GeneralRecommender):
         output = torch.sigmoid(coeff.float() * torch.sum(weights * similarity, dim=1) + bias)
 
         return output
-
-    def init_weights(self, module):
-        """Initialize the module's parameters
-
-        Note:
-            It's a little different from the source code, because pytorch has no function to initialize
-            the parameters by truncated normal distribution, so we replace it with xavier normal distribution
-
-        """
-        if isinstance(module, nn.Embedding):
-            normal_(module.weight.data, 0, 0.01)
-        elif isinstance(module, nn.Linear):
-            xavier_normal_(module.weight.data)
-            if module.bias is not None:
-                constant_(module.bias.data, 0)
 
     def inter_forward(self, user, item):
         """forward the model by interaction
