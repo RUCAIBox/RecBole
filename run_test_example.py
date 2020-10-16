@@ -227,6 +227,30 @@ test_examples = {
         'metrics': ['AUC'],
         'eval_batch_size': 10000
     },
+    'Test DCN':{
+        'model': 'DCN',
+        'dataset': 'ml-100k',
+        'lowest_val': None,
+        'threshold': {'rating': 3},
+        'group_by_user': False,
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
+        'valid_metric': 'AUC',
+        'metrics': ['AUC']
+    },
+    'Test xDeepFM':{
+        'model': 'xDeepFM',
+        'dataset': 'ml-100k',
+        'lowest_val': None,
+        'threshold': {'rating': 3},
+        'group_by_user': False,
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
+        'valid_metric': 'AUC',
+        'metrics': ['AUC']
+    },
     'Test CKE': {
         'model': 'CKE',
         'dataset': 'kgdata_example',
@@ -387,7 +411,7 @@ def run_test_examples():
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
-            run_unirec(config_dict=test_examples[example], saved=False)
+            run_unirec(config_dict=test_examples[example], config_file_list=['./myconfig/my_overall.yaml'], saved=False)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:
