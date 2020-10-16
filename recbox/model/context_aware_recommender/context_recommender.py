@@ -7,6 +7,12 @@
 # @Time   : 2020/9/8
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
+
+r"""
+recbox.model.context_aware_recommender.context_recommender
+#################################################################
+"""
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -14,10 +20,6 @@ import torch.nn as nn
 from recbox.utils import ModelType, InputType, FeatureType, FeatureSource
 from recbox.model.layers import FMEmbedding
 from recbox.model.abstract_recommender import AbstractRecommender
-r"""
-recbox.model.context_aware_recommender.context_recommender
-################################################
-"""
 
 
 class ContextRecommender(AbstractRecommender):
@@ -105,6 +107,7 @@ class ContextRecommender(AbstractRecommender):
 
     def embed_float_fields(self, float_fields, embed=True):
         """Embed the float feature columns
+
         Args:
             float_fields (torch.FloatTensor): The input dense tensor. shape of [batch_size, num_float_field]
             embed (bool): Return the embedding of columns or just the columns itself. default=True
@@ -128,6 +131,7 @@ class ContextRecommender(AbstractRecommender):
 
     def embed_token_fields(self, token_fields):
         """Embed the token feature columns
+
         Args:
             token_fields (torch.LongTensor): The input tensor. shape of [batch_size, num_token_field]
 
@@ -144,9 +148,11 @@ class ContextRecommender(AbstractRecommender):
 
     def embed_token_seq_fields(self, token_seq_fields, mode='mean'):
         """Embed the token feature columns
+
         Args:
             token_seq_fields (torch.LongTensor): The input tensor. shape of [batch_size, seq_len]
             mode (str): How to aggregate the embedding of feature in this field. default=mean
+
         Returns:
             torch.FloatTensor: The result embedding tensor of token sequence columns.
         """
@@ -181,6 +187,7 @@ class ContextRecommender(AbstractRecommender):
 
     def double_tower_embed_input_fields(self, interaction):
         """Embed the whole feature columns in a double tower way.
+
         Args:
             interaction (Interaction): The input data collection.
 
@@ -190,7 +197,7 @@ class ContextRecommender(AbstractRecommender):
             torch.FloatTensor: The embedding tensor of token sequence columns in the second part.
             torch.FloatTensor: The embedding tensor of float sequence columns in the second part.
 
-         """
+        """
         if not self.double_tower:
             raise RuntimeError('Please check your model hyper parameters and set \'double tower\' as True')
         sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
@@ -214,6 +221,7 @@ class ContextRecommender(AbstractRecommender):
 
     def embed_input_fields(self, interaction):
         """Embed the whole feature columns.
+
         Args:
             interaction (Interaction): The input data collection.
 
@@ -307,6 +315,7 @@ class FMFirstOrderLinear(nn.Module):
 
     def embed_float_fields(self, float_fields, embed=True):
         """Calculate the first order score of float feature columns
+
         Args:
             float_fields (torch.FloatTensor): The input tensor. shape of [batch_size, num_float_field]
 
@@ -332,6 +341,7 @@ class FMFirstOrderLinear(nn.Module):
 
     def embed_token_fields(self, token_fields):
         """Calculate the first order score of token feature columns
+
         Args:
             token_fields (torch.LongTensor): The input tensor. shape of [batch_size, num_token_field]
 
@@ -350,6 +360,7 @@ class FMFirstOrderLinear(nn.Module):
 
     def embed_token_seq_fields(self, token_seq_fields):
         """Calculate the first order score of token sequence feature columns
+
         Args:
             token_seq_fields (torch.LongTensor): The input tensor. shape of [batch_size, seq_len]
 

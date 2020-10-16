@@ -17,23 +17,24 @@ https://github.com/kang205/SASRec
 
 import torch
 from torch import nn
-from torch.nn.init import xavier_uniform_, xavier_normal_
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import SequentialRecommender
 from recbox.model.loss import BPRLoss
-from recbox.model.init import xavier_normal_initialization
 from recbox.model.layers import TransformerEncoder
+
 
 class SASRec(SequentialRecommender):
     r"""
-        SASRec is the first sequential recommender based on self-attentive mechanism.
-        NOTE:
-             In the author's implementation, the Point-Wise Feed-Forward Network (PFFN) is implemented
-             by CNN with 1x1 kernel. In this implementation, we follows the original BERT implmentation
-             using Fully Connected Layer to implement the PFFN.
-        """
+    SASRec is the first sequential recommender based on self-attentive mechanism.
+
+    NOTE:
+        In the author's implementation, the Point-Wise Feed-Forward Network (PFFN) is implemented
+        by CNN with 1x1 kernel. In this implementation, we follows the original BERT implmentation
+        using Fully Connected Layer to implement the PFFN.
+    """
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(SASRec, self).__init__()
 
@@ -55,8 +56,12 @@ class SASRec(SequentialRecommender):
         self.dropout = nn.Dropout(config['dropout_prob'])
 
         self.loss_type = config['loss_type']
-        self.bpr_loss = BPRLoss()
-        self.ce_loss = nn.CrossEntropyLoss()
+        if self.loss_type == 'BPR':
+            self.loss_fct = BPRLoss()
+        elif self.loss_type == 'CE':
+            self.loss_fct = nn.CrossEntropyLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         self.initializer_range = config['initializer_range']
         self.apply(self._init_weights)
@@ -74,7 +79,7 @@ class SASRec(SequentialRecommender):
             module.bias.data.zero_()
 
     def gather_indexes(self, output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
+        """Gathers the vectors at the spexific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.size(-1))
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)
@@ -123,15 +128,15 @@ class SASRec(SequentialRecommender):
             neg_items_emb = self.item_embedding(neg_items) # [B H]
             pos_score = torch.sum(seq_output*pos_items_emb, dim=-1) # [B]
             neg_score = torch.sum(seq_output*neg_items_emb, dim=-1) # [B]
-            loss = self.bpr_loss(pos_score, neg_score)
+            loss = self.loss_fct(pos_score, neg_score)
             return loss
         elif self.loss_type == 'CE':
             test_item_emb = self.item_embedding.weight
             logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
-            loss = self.ce_loss(logits, pos_items)
+            loss = self.loss_fct(logits, pos_items)
             return loss
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
     # TODO implemented after the data interface is ready
     def predict(self, interaction):

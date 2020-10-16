@@ -5,6 +5,8 @@
 
 
 """
+recbox.model.general_recommender.fism
+#######################################
 Reference:
 S. Kabbur et al. "FISM: Factored item similarity models for top-n recommender systems" in KDD 2013
 
@@ -34,7 +36,6 @@ class FISM(GeneralRecommender):
 
         # load dataset info
         self.LABEL = config['LABEL_FIELD']
-
         # get all users's history interaction information.the history item 
         # matrix is padding by the maximum number of a user's interactions
         self.history_item_matrix, self.history_lens, self.mask_mat = self.get_history_info(dataset)
@@ -50,17 +51,15 @@ class FISM(GeneralRecommender):
             self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
 
         # define layers and loss
-
         # construct source and destination item embedding matrix
         self.item_src_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-
         self.user_bias = nn.Parameter(torch.zeros(self.n_users))
         self.item_bias = nn.Parameter(torch.zeros(self.n_items))
         self.bceloss = nn.BCELoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
     def get_history_info(self, dataset):
         """get the user history interaction information
@@ -86,7 +85,7 @@ class FISM(GeneralRecommender):
 
         return loss_1 + loss_2
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         """Initialize the module's parameters
 
         Note:

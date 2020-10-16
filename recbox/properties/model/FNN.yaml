@@ -1,0 +1,3 @@
+embedding_size: 10
+mlp_hidden_size: [256, 256, 256]
+dropout: 0.2

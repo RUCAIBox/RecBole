@@ -15,12 +15,15 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_
 from .context_recommender import ContextRecommender
 
+
 class LR(ContextRecommender):
     r"""LR is a context-based recommendation model.
     It aims to predict the CTR given a set of features by using logistic regression,
-    which is ideally suited for probabilities as it always predicts a value between 0 and 1: 
+    which is ideally suited for probabilities as it always predicts a value between 0 and 1:
+
     .. math::
         CTR = \frac{1}{1+e^{-Z}}
+
         Z = \sum_{i} {w_i}{x_i}
     """
     def __init__(self, config, dataset):

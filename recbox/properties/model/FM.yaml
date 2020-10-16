@@ -1,2 +1,2 @@
-embedding_size: 64
+embedding_size: 10
 reg_weight: 0.0

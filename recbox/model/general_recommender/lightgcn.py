@@ -49,9 +49,9 @@ class LightGCN(GeneralRecommender):
             form='coo').astype(np.float32)
 
         # load parameters info
-        self.latent_dim = config['embedding_size'] # int type:the embedding size of lightGCN
+        self.latent_dim = config['embedding_size']  # int type:the embedding size of lightGCN
         self.n_layers = config['layers']  # int type:the layer num of lightGCN
-        self.reg_weight = config['reg_weight'] # float32 type: the weight decay for l2 normalizaton
+        self.reg_weight = config['reg_weight']  # float32 type: the weight decay for l2 normalizaton
 
         # define layers and loss
         self.user_embedding = torch.nn.Embedding(

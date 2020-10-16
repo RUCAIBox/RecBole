@@ -7,6 +7,11 @@
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
+"""
+recbox.data.kg_dataset
+##########################
+"""
+
 import os
 from collections import Counter
 

@@ -33,9 +33,10 @@ class Config(object):
 
     - config file: It's a file that record the parameters to be modified or added. It should be in ``yaml`` format,
       e.g. a config file is 'example.yaml', the content is:
-                learning_rate: 0.001
 
-                train_batch_size: 2048
+        learning_rate: 0.001
+
+        train_batch_size: 2048
 
     - command line: It should be in the format as '---learning_rate=0.001'
 
@@ -77,7 +78,7 @@ class Config(object):
 
     def _init_parameters_category(self):
         self.parameters = dict()
-        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path']
+        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path', 'state']
         self.parameters['Training'] = ['epochs', 'train_batch_size', 'learner', 'learning_rate',
                                        'training_neg_sample_num', 'eval_step', 'valid_metric',
                                        'stopping_step', 'checkpoint_dir']
@@ -153,13 +154,12 @@ class Config(object):
         if len(unrecognized_args) > 0:
             logger = getLogger()
             logger.warning('command line args [{}] will not be used in RecBox'.format(' '.join(unrecognized_args)))
-
+        self.cmd_config_dict.update(self.variable_config_dict)
         convert_cmd_args()
 
     def _merge_external_config_dict(self):
         external_config_dict = dict()
         external_config_dict.update(self.file_config_dict)
-        external_config_dict.update(self.variable_config_dict)
         external_config_dict.update(self.cmd_config_dict)
         self.external_config_dict = external_config_dict
 
@@ -271,7 +271,9 @@ class Config(object):
         for category in self.parameters:
             args_info += category + ' Hyper Parameters: \n'
             args_info += '\n'.join(
-                ["{}={}".format(arg, value) for arg, value in self.final_config_dict.items() if arg in self.parameters[category]])
+                ["{}={}".format(arg, value)
+                 for arg, value in self.final_config_dict.items()
+                 if arg in self.parameters[category]])
             args_info += '\n\n'
         return args_info
 

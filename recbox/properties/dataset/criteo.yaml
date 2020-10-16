@@ -12,3 +12,5 @@ seq_separator: " "
 
 fill_nan: True
 normalize_all: True
+min_item_inter_num: 0
+min_user_inter_num: 0
