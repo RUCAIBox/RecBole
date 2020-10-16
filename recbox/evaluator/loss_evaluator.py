@@ -110,5 +110,5 @@ class LossEvaluator(AbstractEvaluator):
         return self.metrics_info(trues, preds)
 
     def __str__(self):
-        mesg = 'The Loss Evaluator Info:\n' + '\tMetrics' + ','.join([loss_metrics[metric.lower()] for metric in self.metrics])
+        mesg = 'The Loss Evaluator Info:\n' + '\tMetrics:[' + ', '.join([loss_metrics[metric.lower()] for metric in self.metrics]) + ']'
         return mesg

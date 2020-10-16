@@ -140,6 +140,6 @@ class TopKEvaluator(AbstractEvaluator):
         return result
 
     def __str__(self):
-        mesg = 'The TopK Evaluator Info:\n' + '\tMetrics' + ','.join([topk_metrics[metric.lower()] for metric in self.metrics]) \
-                + '\tTopK:' + ','.join(map(str, self.topk))
+        mesg = 'The TopK Evaluator Info:\n' + '\tMetrics:[' + ', '.join([topk_metrics[metric.lower()] for metric in self.metrics]) \
+                + '], TopK:[' + ', '.join(map(str, self.topk)) +']'
         return mesg
