@@ -411,7 +411,7 @@ def run_test_examples():
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
-            run_unirec(config_dict=test_examples[example], config_file_list=['./myconfig/my_overall.yaml'], saved=False)
+            run_unirec(config_dict=test_examples[example], saved=False)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:
