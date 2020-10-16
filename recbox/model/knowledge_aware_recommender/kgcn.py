@@ -160,7 +160,7 @@ class KGCN(KnowledgeRecommender):
 
         Returns:
             neighbors_aggregated(torch.FloatTensor): The neighbors aggregated embeddings,
-                                                     shape: [batch_size, -1, embedding_size]
+            shape: [batch_size, -1, embedding_size]
 
         """
         avg = False

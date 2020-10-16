@@ -4,6 +4,11 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : hyper_tuning.py
 
+"""
+recbox.trainer.hyper_tuning
+############################
+"""
+
 import numpy as np
 
 import hyperopt

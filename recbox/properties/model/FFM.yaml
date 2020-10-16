@@ -1,0 +1,2 @@
+embedding_size: 64
+fields: {0:['user_id','age','gender','occupation'],1:['item_id','genre'],2:['rating']}

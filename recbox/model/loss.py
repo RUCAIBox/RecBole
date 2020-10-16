@@ -9,6 +9,8 @@
 
 
 """
+recbox.model.loss
+#######################
 Common Loss in recommender system
 """
 
@@ -20,6 +22,7 @@ import torch.nn as nn
 class BPRLoss(nn.Module):
 
     """ BPRLoss, based on Bayesian Personalized Ranking
+
     Args:
         - gamma(float):
 
@@ -28,13 +31,13 @@ class BPRLoss(nn.Module):
         - Neg_score: (N), same shape as the Pos_score
         - Output: scalar.
 
-     Examples::
+    Examples::
 
-        >> loss = BPRLoss()
-        >> pos_score = torch.randn(3, requires_grad=True)
-        >> neg_score = torch.randn(3, requires_grad=True)
-        >> output = loss(pos_score, neg_score)
-        >> output.backward()
+        >>> loss = BPRLoss()
+        >>> pos_score = torch.randn(3, requires_grad=True)
+        >>> neg_score = torch.randn(3, requires_grad=True)
+        >>> output = loss(pos_score, neg_score)
+        >>> output.backward()
     """
     def __init__(self, gamma=1e-10):
         super(BPRLoss, self).__init__()

@@ -32,6 +32,7 @@ from recbox.model.abstract_recommender import SequentialRecommender
 
 class Caser(SequentialRecommender):
     r"""Caser is a model that incorporate CNN for recommendation.
+
     Note:
         We did not use the sliding window to generate training instances as in the paper, in order that
         the generation method we used is common to other sequential models.
@@ -133,6 +134,7 @@ class Caser(SequentialRecommender):
 
     def get_item_lookup_table(self):
         r"""Get the transpose of item_list_embedding.weight，size: (embedding_size * item_count)
+
         Used to calculate the score for each item with the predict_behavior_emb
         """
         return self.item_list_embedding.weight.t()

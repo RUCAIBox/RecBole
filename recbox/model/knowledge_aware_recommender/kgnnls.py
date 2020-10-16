@@ -8,7 +8,8 @@ recbox.model.knowledge_aware_recommender.kgnnls
 ################################################
 
 Reference:
-Hongwei Wang et al. "Knowledge-aware Graph Neural Networks with Label Smoothness Regularization for Recommender Systems." in KDD 2019.
+Hongwei Wang et al. "Knowledge-aware Graph Neural Networks with Label Smoothness Regularization
+for Recommender Systems." in KDD 2019.
 
 Reference code:
 https://github.com/hwwang55/KGNN-LS
@@ -82,10 +83,12 @@ class KGNNLS(KnowledgeRecommender):
 
     def get_interaction_table(self, user_id, item_id, y):
         r"""Get interaction_table that is used for fetching user-item interaction label in LS regularization.
+
         Args:
             user_id(torch.Tensor): the user id in user-item interactions, shape: [n_interactions, 1]
             item_id(torch.Tensor): the item id in user-item interactions, shape: [n_interactions, 1]
             y(torch.Tensor): the label in user-item interactions, shape: [n_interactions, 1]
+
         Returns:
             interaction_table(dict): key: user_id * 10^offset + item_id;
                                      value: y_{user_id, item_id}
@@ -102,13 +105,14 @@ class KGNNLS(KnowledgeRecommender):
 
     def sample_neg_interaction(self, pos_interaction_table, offset):
         r"""Sample neg_interaction to construct train data.
-         Args:
-             pos_interaction_table(dict): the interaction_table that only contains pos_interaction.
-             offset(int): The offset that is used for calculating the key(index) in interaction_table
-         Returns:
-             interaction_table(dict): key: user_id * 10^offset + item_id;
-                                      value: y_{user_id, item_id}
-         """
+
+        Args:
+            pos_interaction_table(dict): the interaction_table that only contains pos_interaction.
+            offset(int): The offset that is used for calculating the key(index) in interaction_table
+
+        Returns:
+            interaction_table(dict): key: user_id * 10^offset + item_id; value: y_{user_id, item_id}
+        """
         pos_num = len(pos_interaction_table)
         neg_num = 0
         neg_interaction_table = {}

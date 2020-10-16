@@ -25,17 +25,18 @@ from recbox.model.abstract_recommender import SequentialRecommender
 
 
 class FPMC(SequentialRecommender):
-    r"""The FPMC model is mainly used in the recommendation system to predict the possibility of unknown items arousing user interest,
-     and to discharge the item recommendation list.
+    r"""The FPMC model is mainly used in the recommendation system to predict the possibility of
+    unknown items arousing user interest, and to discharge the item recommendation list.
 
-     Note:
+    Note:
 
-            In order that the generation method we used is common to other sequential models,
-            We set the size of the basket mentioned in the paper equal to 1.
-            For comparison with other models, the loss function used is BPR.
+        In order that the generation method we used is common to other sequential models,
+        We set the size of the basket mentioned in the paper equal to 1.
+        For comparison with other models, the loss function used is BPR.
 
     """
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(FPMC, self).__init__()
         # load parameters info
@@ -97,7 +98,6 @@ class FPMC(SequentialRecommender):
 
     def pmfc(self, Vui, Viu, Vil, Vli):
         r"""This is the core part of the FPMC model,can be expressed by a combination of a MF and a FMC model.
-
 
         Args:
             Vui(torch.FloatTensor): The embedding tensor of a batch of user, shape of [batch_size, 1, embedding_size]
