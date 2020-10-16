@@ -524,18 +524,12 @@ class MKRTrainer(Trainer):
         for batch_idx, interaction in enumerate(train_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
-            user_embeddings, item_embeddings, scores, labels, loss_rs = self.model.calculate_rs_loss(interaction)
+            loss_rs = self.model.calculate_rs_loss(interaction)
             
             self._check_nan(loss_rs)
             loss_rs.backward()
             self.optimizer.step()
             rs_total_loss += loss_rs
-            
-            loss_rs.detach()
-            user_embeddings.detach()
-            item_embeddings.detach()
-            scores.detach()
-            labels.detach()
             
         # train kg
         if epoch_idx % self.kge_interval == 0:
@@ -544,18 +538,13 @@ class MKRTrainer(Trainer):
             for batch_idx, interaction in enumerate(train_data):
                 interaction = interaction.to(self.device)
                 self.optimizer.zero_grad()
-                head_embeddings, tail_embeddings, scores_kge, rmse, loss_kge = self.model.calculate_kg_loss(interaction)
+                loss_kge = self.model.calculate_kg_loss(interaction)
                 
                 self._check_nan_kge_loss(loss_kge)
                 loss_kge.sum().backward()
                 self.optimizer.step()
                 kg_total_loss += loss_kge.sum()
-                
-                loss_kge.detach()
-                head_embeddings.detach()
-                tail_embeddings.detach()
-                scores_kge.detach()
-                rmse.detach()
+
         return rs_total_loss, kg_total_loss
 
     def _check_nan_kge_loss(self, loss_kge):

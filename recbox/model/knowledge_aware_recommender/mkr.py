@@ -16,16 +16,17 @@ https://github.com/hsientzucheng/MKR.PyTorch
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from ..layers import MLPLayers
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import KnowledgeRecommender
 from recbox.model.init import xavier_normal_initialization
 
 class MKR(KnowledgeRecommender):
-    r"""MKR is a Multi-task feature learning approach for Knowledge graph enhanced Recommendation. It is a deep end-to-end framework 
-    that utilizes knowledge graph embedding task to assist recommendation task. The two tasks are associated by cross&compress units, 
-    which automatically share latent features and learn high-order interactions between items in recommender systems and entities 
-    in the knowledge graph.
+    r"""MKR is a Multi-task feature learning approach for Knowledge graph enhanced Recommendation. It is a deep 
+    end-to-end framework that utilizes knowledge graph embedding task to assist recommendation task. The two 
+    tasks are associated by cross&compress units, which automatically share latent features and learn high-order 
+    interactions between items in recommender systems and entities in the knowledge graph.
     """
 
     input_type = InputType.POINTWISE
@@ -48,34 +49,29 @@ class MKR(KnowledgeRecommender):
         self.relation_embeddings_lookup = nn.Embedding(self.n_relations, self.embedding_size)
 
         # define layers
-        self.user_mlp = nn.Sequential()
-        self.tail_mlp = nn.Sequential()
+        lower_mlp_layers = []
+        high_mlp_layers = []
+        for i in range(self.L + 1):
+            lower_mlp_layers.append(self.embedding_size)
+        for i in range(self.H):
+            high_mlp_layers.append(self.embedding_size * 2)
+
+        self.user_mlp = MLPLayers(lower_mlp_layers, self.dropout, 'sigmoid')
+        self.tail_mlp = MLPLayers(lower_mlp_layers, self.dropout, 'sigmoid')
         self.cc_unit = nn.Sequential()
-        self.kge_mlp = nn.Sequential()
-        self.kge_pred_mlp = Dense(self.embedding_size * 2, self.embedding_size, self.dropout)
-        self._init_layers()
-        
+        for i_cnt in range(self.L):
+            self.cc_unit.add_module('cc_unit{}'.format(i_cnt), CrossCompressUnit(self.embedding_size))
+        self.kge_mlp = MLPLayers(high_mlp_layers, self.dropout, 'sigmoid')
+        self.kge_pred_mlp = MLPLayers([self.embedding_size * 2, self.embedding_size], self.dropout, 'sigmoid')
+        if self.use_inner_product == False:
+            self.rs_pred_mlp = MLPLayers([self.embedding_size * 2, 1], self.dropout, 'sigmoid')
+            self.rs_mlp = MLPLayers(high_mlp_layers, self.dropout, 'sigmoid')
+
         # loss
         self.sigmoid_BCE = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
-        
-    def _init_layers(self):
-        r"""Initial lower layers and higher layers of MKR model.
-
-        """
-        for i_cnt in range(self.L):
-            self.user_mlp.add_module('user_mlp{}'.format(i_cnt), Dense(self.embedding_size, self.embedding_size, self.dropout))
-            self.tail_mlp.add_module('tail_mlp{}'.format(i_cnt), Dense(self.embedding_size, self.embedding_size, self.dropout))
-            self.cc_unit.add_module('cc_unit{}'.format(i_cnt), CrossCompressUnit(self.embedding_size))
-        for i_cnt in range(self.H - 1):
-            self.kge_mlp.add_module('kge_mlp{}'.format(i_cnt), Dense(self.embedding_size * 2, self.embedding_size * 2, self.dropout))
-        if self.use_inner_product == False:
-            self.rs_pred_mlp = Dense(self.embedding_size * 2, 1, self.dropout)
-            self.rs_mlp = nn.Sequential()
-            for i_cnt in range(self.H - 1):
-                self.rs_mlp.add_module('rs_mlp{}'.format(i_cnt), Dense(self.embedding_size * 2, self.embedding_size * 2, self.dropout))
 
     def forward(self, user_indices=None, item_indices=None, head_indices=None,
                 relation_indices=None, tail_indices=None):
@@ -141,7 +137,7 @@ class MKR(KnowledgeRecommender):
         l2_loss_rs = self.l2_loss(user_embeddings) + self.l2_loss(item_embeddings)
         loss_rs = base_loss_rs + l2_loss_rs * self.l2_weight
 
-        return user_embeddings, item_embeddings, scores, self.labels, loss_rs
+        return loss_rs
 
     def calculate_kg_loss(self, interaction):
         r"""Calculate the training loss for a batch data of KG.
@@ -164,7 +160,7 @@ class MKR(KnowledgeRecommender):
         l2_loss_kge = self.l2_loss(head_embeddings) + self.l2_loss(tail_embeddings)
         loss_kge = base_loss_kge + l2_loss_kge * self.l2_weight
 
-        return head_embeddings, tail_embeddings, scores_kge, rmse, loss_kge
+        return loss_kge
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
@@ -175,25 +171,6 @@ class MKR(KnowledgeRecommender):
         _, _, scores, _ = outputs
 
         return scores
-
-class Dense(nn.Module):
-    r"""This is MLP layers for MKR model.
-
-    """
-    def __init__(self, input_dim, output_dim, dropout=0.0, chnl=8):
-        super(Dense, self).__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-        self.dropout = dropout
-        self.act = nn.Sigmoid()
-        self.drop_layer = nn.Dropout(p=self.dropout)
-        self.fc = nn.Linear(self.input_dim, self.output_dim)
-
-    def forward(self, inputs):
-        x = self.drop_layer(inputs)
-        output = self.fc(x)
-        
-        return self.act(output)
 
 class CrossCompressUnit(nn.Module):
     r"""This is Cross&Compress Unit for MKR model to model feature interactions between items and entities.
