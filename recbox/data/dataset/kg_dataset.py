@@ -282,7 +282,6 @@ class KnowledgeBasedDataset(Dataset):
         self.field2id_token[self.entity_field] = item_ent_token_list[:layered_num[-1]]
 
     def _remap_ID_all(self):
-        # import ipdb; ipdb.set_trace()
         self._remap_entities_by_link()
         item_tokens = self._get_rec_item_token()
         super()._remap_ID_all()
