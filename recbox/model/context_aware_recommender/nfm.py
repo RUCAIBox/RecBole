@@ -4,7 +4,9 @@
 # @Email  : linzihan.super@foxmail.com
 # @File   : nfm.py
 
-"""
+r"""
+recbox.model.context_aware_recommender.nfm
+################################################
 Reference:
 He X, Chua T S. "Neural factorization machines for sparse predictive analytics" in SIGIR 2017
 """
@@ -18,7 +20,9 @@ from .context_recommender import ContextRecommender
 
 
 class NFM(ContextRecommender):
+    """ NFM replace the fm part as a mlp to model the feature interaction.
 
+    """
     def __init__(self, config, dataset):
         super(NFM, self).__init__(config, dataset)
 

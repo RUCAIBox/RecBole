@@ -15,10 +15,12 @@ load_col:
   link: [item_id, entity_id]
 
 # data separator
-field_separator: '\t'
-seq_separator: ' '
+field_separator: "\t"
+seq_separator: " "
 
 # data filter
 lowest_val:
     rating: 3
 drop_filter_field: True
+min_item_inter_num: 0
+min_user_inter_num: 0

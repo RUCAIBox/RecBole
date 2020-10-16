@@ -8,6 +8,12 @@
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
 
+"""
+recbox.config.eval_setting
+################################
+"""
+
+
 class EvalSetting(object):
     """Class containing settings about model evaluation.
 
@@ -34,29 +40,33 @@ class EvalSetting(object):
 
     Note that records are grouped by user_id by default if you use these presets.
 
-    Thus you can use `RO_RS, full` to represent Shuffle, Grouped by user, Ratio-based Splitting and Evaluate all non-ground-truth items.
+    Thus you can use `RO_RS, full` to represent Shuffle, Grouped by user, Ratio-based Splitting
+    and Evaluate all non-ground-truth items.
 
-    Check out *Revisiting Alternative Experimental Settings for Evaluating Top-N Item Recommendation Algorithms* Wayne Xin Zhao et.al. CIKM 2020
-    to figure out the details about presets of evaluation settings.
+    Check out *Revisiting Alternative Experimental Settings for Evaluating Top-N Item Recommendation Algorithms*
+    Wayne Xin Zhao et.al. CIKM 2020 to figure out the details about presets of evaluation settings.
 
     Attributes:
-        config (Config): global configuration object.
+        config (Config): Global configuration object.
 
-        group_field (str or None): don't group if None,else group by field before splitting.
-            usually records are grouped by user id.
+        group_field (str or None): Don't group if None,else group by field before splitting.
+            Usually records are grouped by user id.
 
-        ordering_args (dict): args about ordering.
-            usually records are sorted by time, or shuffled.
+        ordering_args (dict): Args about ordering.
+            Usually records are sorted by time, or shuffled.
 
-        split_args (dict): args about splitting.
+        split_args (dict): Args about splitting.
             usually records are splitted by ratio (eg. 8:1:1),
             or by 'leave one out' strategy, which means the last purchase record
             of one user is used for evaluation.
 
-        neg_sample_args (dict): args about negative sampling.
-            negative sample is used wildly in training and evaluating.
-            we provide two strategies:
+        neg_sample_args (dict): Args about negative sampling.
+            Negative sample is used wildly in training and evaluating.
+
+            We provide two strategies:
+
                 neg_sample_by:  sample several negative records for each positive records.
+
                 full_sort:      don't negative sample, while all unused items are used for evaluation.
     """
 
@@ -136,6 +146,7 @@ class EvalSetting(object):
             >>> es.set_ordering('by', field=['timestamp', 'price'], ascending=[True, False])
 
         or
+
             >>> es.random_ordering()
             >>> es.sort_by('timestamp') # ascending default
             >>> es.sort_by(field=['timestamp', 'price'], ascending=[True, False])
@@ -154,7 +165,9 @@ class EvalSetting(object):
     def sort_by(self, field, ascending=None):
         """Setting about Sorting.
 
-        Similar with pandas' [sort_values](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_values.html?highlight=sort_values#pandas.DataFrame.sort_values)
+        Similar with pandas' sort_values_
+
+        .. _sort_values: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_values.html?highlight=sort_values#pandas.DataFrame.sort_values
 
         Args:
             field (str or list of str): Name or list of names
@@ -185,7 +198,7 @@ class EvalSetting(object):
             ratios (list of float): Dataset will be splited into `len(ratios)` parts.
             field (str): Split by values of field.
             values (list of float or float): Dataset will be splited into `len(values) + 1` parts.
-                The first part will be interactions whose field value in (*, values[0]].
+                The first part will be interactions whose field value in (\\*, values[0]].
             ascending (bool): Order of values after splitting.
 
         Example:

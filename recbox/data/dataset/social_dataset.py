@@ -3,9 +3,14 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/3, 2020/9/15, 2020/9/22
+# @Time   : 2020/10/9, 2020/9/15, 2020/9/22
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
+
+"""
+recbox.data.social_dataset
+##########################
+"""
 
 import os
 
@@ -36,7 +41,10 @@ class SocialDataset(Dataset):
         self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
 
     def _build_feat_list(self):
-        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat, self.net_feat] if feat is not None]
+        feat_list = super()._build_feat_list()
+        if self.net_feat is not None:
+            feat_list.append(self.net_feat)
+        return feat_list
 
     def _load_net(self, dataset_name, dataset_path): 
         net_file_path = os.path.join(dataset_path, '{}.{}'.format(dataset_name, 'net'))

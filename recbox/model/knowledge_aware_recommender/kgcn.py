@@ -18,10 +18,10 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from ...utils import InputType
-from ..abstract_recommender import KnowledgeRecommender
-from ..loss import BPRLoss, EmbLoss
-from ..utils import xavier_normal_initialization
+from recbox.utils import InputType
+from recbox.model.abstract_recommender import KnowledgeRecommender
+from recbox.model.loss import BPRLoss, EmbLoss
+from recbox.model.init import xavier_normal_initialization
 
 
 class KGCN(KnowledgeRecommender):
@@ -160,7 +160,7 @@ class KGCN(KnowledgeRecommender):
 
         Returns:
             neighbors_aggregated(torch.FloatTensor): The neighbors aggregated embeddings,
-                                                     shape: [batch_size, -1, embedding_size]
+            shape: [batch_size, -1, embedding_size]
 
         """
         avg = False

@@ -3,6 +3,12 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 
+r"""
+recbox.model.general_recommender.pop
+################################################
+
+"""
+
 import torch
 
 from recbox.utils import InputType
@@ -10,6 +16,9 @@ from recbox.model.abstract_recommender import GeneralRecommender
 
 
 class Pop(GeneralRecommender):
+    r"""Pop is an fundamental model that always recommend the most popular item.
+
+    """
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
@@ -18,7 +27,7 @@ class Pop(GeneralRecommender):
         self.item_cnt = torch.zeros(self.n_items, 1, dtype=torch.long, device=self.device, requires_grad=False)
         self.max_cnt = None
 
-        self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))
+        self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))  # fake loss used for trainer to backward
 
     def forward(self):
         pass

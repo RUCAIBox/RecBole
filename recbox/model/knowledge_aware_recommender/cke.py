@@ -25,9 +25,9 @@ class CKE(KnowledgeRecommender):
     images to enrich the representation of items for item recommendations.
 
     Note:
-            In the original paper, CKE used structural knowledge, textual knowledge and visual knowledge. In our
-            implementation, we only used structural knowledge. Meanwhile, the version we implemented uses a simpler
-            regular way which can get almost the same result (even better) as the original regular way.
+        In the original paper, CKE used structural knowledge, textual knowledge and visual knowledge. In our
+        implementation, we only used structural knowledge. Meanwhile, the version we implemented uses a simpler
+        regular way which can get almost the same result (even better) as the original regular way.
     """
 
     input_type = InputType.PAIRWISE

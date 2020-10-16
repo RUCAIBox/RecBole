@@ -25,7 +25,8 @@ from recbox.model.init import xavier_normal_initialization
 
 class RippleNet(KnowledgeRecommender):
     r"""RippleNet is an knowledge enhanced matrix factorization model.
-    The original interaction matrix of :math:`n_{users} \times n_{items}` and related knowledge graph is set as model input,
+    The original interaction matrix of :math:`n_{users} \times n_{items}`
+    and related knowledge graph is set as model input,
     we carefully design the data interface and use ripple set to train and test efficiently.
     We just implement the model following the original author with a pointwise training mode.
     """

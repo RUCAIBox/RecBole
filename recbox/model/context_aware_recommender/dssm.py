@@ -6,6 +6,8 @@
 
 
 """
+recbox.model.context_aware_recommender.dssm
+################################################
 Reference:
 PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
 """
@@ -84,15 +86,3 @@ class DSSM(ContextRecommender):
 
     def predict(self, interaction):
         return self.forward(interaction)
-
-
-
-
-
-    
-
-
-
-
-
-

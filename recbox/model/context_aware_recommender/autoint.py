@@ -4,7 +4,9 @@
 # @Email  : shuqingbian@gmail.com
 # @File   : autoint.py
 
-"""
+r"""
+recbox.model.context_aware_recommender.autoint
+################################################
 Reference:
 Weiping Song et al. "AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks" in CIKM 2018.
 """
@@ -19,6 +21,9 @@ from recbox.model.context_aware_recommender.context_recommender import ContextRe
 
 
 class AUTOINT(ContextRecommender):
+    """ AUTOINT is a novel CTR prediction model based on self-attention mechanism, which can automatically learn high-order feature interactions in an explicit fashion.
+
+    """
 
     def __init__(self, config, dataset):
         super(AUTOINT, self).__init__(config, dataset)
@@ -40,8 +45,10 @@ class AUTOINT(ContextRecommender):
 
         size_list = [self.embed_output_dim] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout[1])
+        # multi-head self-attention network
         self.self_attns = nn.ModuleList([
-                nn.MultiheadAttention(self.attention_size, self.num_heads, dropout=self.dropout[0]) for _ in range(self.num_layers)
+            nn.MultiheadAttention(self.attention_size, self.num_heads, dropout=self.dropout[0])
+            for _ in range(self.num_layers)
         ])
         self.attn_fc = torch.nn.Linear(self.atten_output_dim, 1)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
@@ -64,12 +71,13 @@ class AUTOINT(ContextRecommender):
 
 
     def autoint_layer(self, infeature):
-        """
-        Input shape
-        - A 3D tensor with shape:``(batch_size,field_size,embed_dim)``.
+        """ Get the attention-based feature interaction score
 
-        Output shape
-        - 3D tensor with shape: ``(batch_size,1)`` .
+        Args:
+            infeature (torch.FloatTensor): input feature embedding tensor. shape of[batch_size,field_size,embed_dim].
+
+        Returns:
+            torch.FloatTensor: Result of score. shape of [batch_size,1] .
         """
 
         att_infeature = self.att_embedding(infeature)
@@ -77,9 +85,11 @@ class AUTOINT(ContextRecommender):
         for self_attn in self.self_attns:
             cross_term, _ = self_attn(cross_term, cross_term, cross_term)
         cross_term = cross_term.transpose(0, 1)
+        # Residual connection
         if self.has_residual:
             v_res = self.v_res_embedding(infeature)
             cross_term += v_res
+        # Interacting layer
         cross_term = F.relu(cross_term).contiguous().view(-1, self.atten_output_dim)
         batch_size = infeature.shape[0]
         att_output = self.attn_fc(cross_term) + self.deep_predict_layer(self.mlp_layers(infeature.view(batch_size, -1)))

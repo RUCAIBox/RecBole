@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
+# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn
 
 r"""
 recbox.trainer.trainer
@@ -61,9 +61,9 @@ class Trainer(AbstractTrainer):
     simply optimize a single loss without involving any complex training strategies, such as adversarial learning,
     pre-training and so on.
 
-    Initializing the Trainer needs two parameters: `config` and `model`. `config` records the parameters information for controlling
-    training and evaluation, such as `learning_rate`, `epochs`, `eval_step` and so on. More information can be found in [placeholder].
-    `model` is the instantiated object of a Model Class.
+    Initializing the Trainer needs two parameters: `config` and `model`. `config` records the parameters information
+    for controlling training and evaluation, such as `learning_rate`, `epochs`, `eval_step` and so on.
+    More information can be found in [placeholder]. `model` is the instantiated object of a Model Class.
 
     """
     def __init__(self, config, model):
@@ -223,7 +223,8 @@ class Trainer(AbstractTrainer):
 
         Args:
             train_data (DataLoader): the train data
-            valid_data (DataLoader, optional): the valid data, default: None. If it's None, the early_stopping is invalid.
+            valid_data (DataLoader, optional): the valid data, default: None.
+                                               If it's None, the early_stopping is invalid.
             verbose (bool, optional): whether to write training and evaluation information to logger, default: True
             saved (bool, optional): whether to save the model parameters, default: True
 
@@ -329,7 +330,7 @@ class Trainer(AbstractTrainer):
         Args:
             eval_data (DataLoader): the eval data
             load_best_model (bool, optional): whether load the best model in the training process, default: True.
-                                                It should be set True, if users want to test the model after training.
+                                              It should be set True, if users want to test the model after training.
             model_file (str, optional): the saved model file, default: None. If users want to test the previously
                                         trained model file, they can set this parameter.
 
@@ -394,7 +395,8 @@ class Trainer(AbstractTrainer):
 
         Args:
             show (bool, optional): whether to show this figure, default: True
-            save_path (str, optional): the data path to save the figure, default: None. If it's None, it will not be saved.
+            save_path (str, optional): the data path to save the figure, default: None.
+                                       If it's None, it will not be saved.
         """
         epochs = list(self.train_loss_dict.keys())
         epochs.sort()
@@ -502,3 +504,124 @@ class KGATTrainer(Trainer):
         self.model.update_attentive_A()
 
         return rs_total_loss, kg_total_loss
+
+
+class S3RecTrainer(Trainer):
+    r"""S3RecTrainer is designed for S3Rec, which is a self-supervised learning based sequentail recommenders.
+        It includes two training stages: pre-training ang fine-tuning.
+
+        """
+
+    def __init__(self, config, model):
+        super(S3RecTrainer, self).__init__(config, model)
+
+    def save_pretrained_model(self, epoch, saved_model_file):
+        r"""Store the model parameters information and training information.
+
+        Args:
+            epoch (int): the current epoch id
+            saved_model_file (str): file name for saved pretrained model
+
+        """
+        state = {
+            'config': self.config,
+            'epoch': epoch,
+            'state_dict': self.model.state_dict(),
+            'optimizer': self.optimizer.state_dict(),
+        }
+        torch.save(state, saved_model_file)
+
+    def pretrain(self, train_data, verbose=True):
+
+        for epoch_idx in range(self.start_epoch, self.epochs):
+            # train
+            training_start_time = time()
+            train_loss = self._train_epoch(train_data, epoch_idx)
+            self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
+            training_end_time = time()
+            train_loss_output = \
+                self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
+            if verbose:
+                self.logger.info(train_loss_output)
+
+            if (epoch_idx + 1) % self.config['save_step'] == 0:
+                saved_model_file = os.path.join(self.checkpoint_dir,
+                                                '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1)))
+                self.save_pretrained_model(epoch_idx, saved_model_file)
+                update_output = 'Saving current: %s' % saved_model_file
+                if verbose:
+                    self.logger.info(update_output)
+
+        return self.best_valid_score, self.best_valid_result
+
+    def finetune(self, train_data, valid_data=None, verbose=True, saved=True):
+
+        for epoch_idx in range(self.start_epoch, self.epochs):
+            # train
+            training_start_time = time()
+            train_loss = self._train_epoch(train_data, epoch_idx)
+            self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
+            training_end_time = time()
+            train_loss_output = \
+                self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
+            if verbose:
+                self.logger.info(train_loss_output)
+
+            # eval
+            if self.eval_step <= 0 or not valid_data:
+                if saved:
+                    self._save_checkpoint(epoch_idx)
+                    update_output = 'Saving current: %s' % self.saved_model_file
+                    if verbose:
+                        self.logger.info(update_output)
+                continue
+            if (epoch_idx + 1) % self.eval_step == 0:
+                valid_start_time = time()
+                valid_score, valid_result = self._valid_epoch(valid_data)
+                self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
+                    valid_score, self.best_valid_score, self.cur_step,
+                    max_step=self.stopping_step, bigger=self.valid_metric_bigger)
+                valid_end_time = time()
+                valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
+                                     (epoch_idx, valid_end_time - valid_start_time, valid_score)
+                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                if verbose:
+                    self.logger.info(valid_score_output)
+                    self.logger.info(valid_result_output)
+                if update_flag:
+                    if saved:
+                        self._save_checkpoint(epoch_idx)
+                        update_output = 'Saving current best: %s' % self.saved_model_file
+                        if verbose:
+                            self.logger.info(update_output)
+                    self.best_valid_result = valid_result
+
+                if stop_flag:
+                    stop_output = 'Finished training, best eval result in epoch %d' % \
+                                  (epoch_idx - self.cur_step * self.eval_step)
+                    if verbose:
+                        self.logger.info(stop_output)
+                    break
+        return self.best_valid_score, self.best_valid_result
+
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+        r"""Train the model based on the train data and the valid data.
+
+        Args:
+            train_data (DataLoader): the train data
+            valid_data (DataLoader, optional): the valid data, default: None. If it's None, the early_stopping is invalid.
+            verbose (bool, optional): whether to write training and evaluation information to logger, default: True
+            saved (bool, optional): whether to save the model parameters, default: True
+
+        Returns:
+             (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
+        """
+        if hasattr(self.model, 'train_preparation'):
+            self.model.train_preparation(train_data=train_data, valid_data=valid_data)
+
+        if self.model.train_stage == 'pretrain':
+            return self.pretrain(train_data, verbose)
+        elif self.model.train_stage == 'finetune':
+            return self.finetune(train_data, valid_data, verbose, saved)
+        else:
+            raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")

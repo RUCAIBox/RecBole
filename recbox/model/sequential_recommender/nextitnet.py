@@ -23,7 +23,7 @@ from torch.nn import functional as F
 from torch.nn.init import uniform_, xavier_normal_, constant_
 
 from recbox.utils import InputType
-from recbox.model.loss import RegLoss
+from recbox.model.loss import RegLoss, BPRLoss
 from recbox.model.abstract_recommender import SequentialRecommender
 
 
@@ -31,23 +31,19 @@ class NextItNet(SequentialRecommender):
     r"""The network architecture of the NextItNet model is formed of a stack of holed convolutional layers, which can
     efficiently increase the receptive fields without relying on the pooling operation.
     Also residual block structure is used to ease the optimization for much deeper networks.
+
     Note:
-        As paper said, for comparison purpose, we only predict the next one item in our evaluation, and then stop the generating process.
-        Although the number of parameters in residual block (a) is less than it in residual block (b), the performance of b is better than a.
+        As paper said, for comparison purpose, we only predict the next one item in our evaluation,
+        and then stop the generating process. Although the number of parameters in residual block (a) is less
+        than it in residual block (b), the performance of b is better than a.
         So in our model, we use residual block (b).
     """
-    input_type = InputType.POINTWISE
+    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
-        super(NextItNet, self).__init__()
+        super(NextItNet, self).__init__(config, dataset)
 
         # load parameters info
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
-        self.TARGET_ITEM_ID = config['TARGET_PREFIX'] + self.ITEM_ID
-        self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
-
         self.embedding_size = config['embedding_size']
         self.residual_channels = config['embedding_size']
         self.block_num = config['block_num']
@@ -55,14 +51,10 @@ class NextItNet(SequentialRecommender):
         self.kernel_size = config['kernel_size']
         self.onecall = config['onecall']
         self.reg_weight = config['reg_weight']
-        self.item_count = dataset.item_num
+        self.loss_type = config['loss_type']
 
-        # define loss function
-        self.criterion = nn.CrossEntropyLoss()
-        self.reg_loss = RegLoss()
-
-        # item embeddings
-        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size)
+        # define layers and loss
+        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
 
         # residual blocks    dilations in blocks:[1,2,4,8,1,2,4,8,...]
         rb = [ResidualBlock_b(self.residual_channels, self.residual_channels, kernel_size=self.kernel_size,
@@ -72,39 +64,38 @@ class NextItNet(SequentialRecommender):
         # fully-connected layer
         self.final_layer = nn.Linear(self.residual_channels, self.embedding_size)
 
-        # weight initialization
+        if self.loss_type == 'BPR':
+            self.loss_fct = BPRLoss()
+        elif self.loss_type == 'CE':
+            self.loss_fct = nn.CrossEntropyLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
+        self.reg_loss = RegLoss()
+
+        # parameters initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):
         if isinstance(module, nn.Embedding):
-            stdv = np.sqrt(1. / self.item_count)
+            stdv = np.sqrt(1. / self.n_items)
             uniform_(module.weight.data, -stdv, stdv)
         elif isinstance(module, nn.Linear):
             xavier_normal_(module.weight.data)
             if module.bias is not None:
                 constant_(module.bias.data, 0.1)
 
-    def forward(self, interaction):
-        # Embedding Look-up
-        inputs = self.item_list_embedding(interaction[self.ITEM_ID_LIST]) # [batch_size, seq_len, embed_size]
-
+    def forward(self, item_seq):
+        item_seq_emb = self.item_embedding(item_seq) # [batch_size, seq_len, embed_size]
         # Residual locks
-        dilate_outputs = self.residual_blocks(inputs)
+        dilate_outputs = self.residual_blocks(item_seq_emb)
 
         if self.onecall:   # Extract the last item
             hidden = dilate_outputs[:, -1, :].view(-1, self.residual_channels)  # [batch_size, embed_size]
         else:
             hidden = dilate_outputs.view(-1, self.residual_channels)  # [batch_size*seq_len, embed_size]
 
-        pred_item_emb = self.final_layer(hidden)   # [batch_size, embedding_size]
-
-        return pred_item_emb
-
-    def get_item_lookup_table(self):
-        r"""Get the transpose of item_list_embedding.weight，size: (embedding_size * item_count)
-        Used to calculate the score for each item with the predict_behavior_emb
-        """
-        return self.item_list_embedding.weight.t()
+        seq_output = self.final_layer(hidden)   # [batch_size, embedding_size]
+        return seq_output
 
     def reg_loss_rb(self):
         r"""
@@ -118,11 +109,22 @@ class NextItNet(SequentialRecommender):
         return self.reg_weight * loss_rb
 
     def calculate_loss(self, interaction):
-        target_id = interaction[self.TARGET_ITEM_ID]
-        pred = self.forward(interaction)
-        logits = torch.matmul(pred, self.get_item_lookup_table())
-        loss = self.criterion(logits, target_id)
-        reg_loss = self.reg_loss([self.item_list_embedding.weight,self.final_layer.weight])
+        item_seq = interaction[self.ITEM_SEQ]
+        # item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq)
+        pos_items = interaction[self.POS_ITEM_ID]
+        if self.loss_type == 'BPR':
+            neg_items = interaction[self.NEG_ITEM_ID]
+            pos_items_emb = self.item_embedding(pos_items)
+            neg_items_emb = self.item_embedding(neg_items)
+            pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)  # [B]
+            neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)  # [B]
+            loss = self.loss_fct(pos_score, neg_score)
+        else:  # self.loss_type = 'CE'
+            test_item_emb = self.item_embedding.weight
+            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
+            loss = self.loss_fct(logits, pos_items)
+        reg_loss = self.reg_loss([self.item_embedding.weight,self.final_layer.weight])
         loss = loss + self.reg_weight * reg_loss + self.reg_loss_rb()
         return loss
 
@@ -130,8 +132,11 @@ class NextItNet(SequentialRecommender):
         pass
 
     def full_sort_predict(self, interaction):
-        pred = self.forward(interaction)
-        scores = torch.matmul(pred, self.get_item_lookup_table())
+        item_seq = interaction[self.ITEM_SEQ]
+        # item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq)
+        test_item_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
         return scores
 
 

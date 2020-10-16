@@ -2,6 +2,11 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+"""
+recbox.quick_start
+########################
+"""
+
 from logging import getLogger
 from recbox.utils import init_logger, get_model, get_trainer, init_seed
 from recbox.config import Config
@@ -51,9 +56,9 @@ def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None
     }
 
 
-def objective_function(config_dict=None):
+def objective_function(config_dict=None, config_file_list=None):
 
-    config = Config(config_dict=config_dict)
+    config = Config(config_dict=config_dict, config_file_list=config_file_list)
     init_seed(config['seed'])
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)

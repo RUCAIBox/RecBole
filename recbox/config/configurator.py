@@ -3,9 +3,9 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04
-# @Author : Shanlei Mu
-# @Email  : slmu@ruc.edu.cn
+# @Time   : 2020/10/04, 2020/10/9
+# @Author : Shanlei Mu, Yupeng Hou
+# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
 
 """
 recbox.config.configurator
@@ -33,9 +33,10 @@ class Config(object):
 
     - config file: It's a file that record the parameters to be modified or added. It should be in ``yaml`` format,
       e.g. a config file is 'example.yaml', the content is:
-                learning_rate: 0.001
 
-                train_batch_size: 2048
+        learning_rate: 0.001
+
+        train_batch_size: 2048
 
     - command line: It should be in the format as '---learning_rate=0.001'
 
@@ -77,7 +78,7 @@ class Config(object):
 
     def _init_parameters_category(self):
         self.parameters = dict()
-        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path']
+        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path', 'state']
         self.parameters['Training'] = ['epochs', 'train_batch_size', 'learner', 'learning_rate',
                                        'training_neg_sample_num', 'eval_step', 'valid_metric',
                                        'stopping_step', 'checkpoint_dir']
@@ -103,9 +104,8 @@ class Config(object):
         self.file_config_dict = dict()
         if file_list:
             for file in file_list:
-                if os.path.isfile(file):
-                    with open(file, 'r', encoding='utf-8') as f:
-                        self.file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
+                with open(file, 'r', encoding='utf-8') as f:
+                    self.file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
 
     def _load_variable_config_dict(self, config_dict):
         self.variable_config_dict = config_dict if config_dict else dict()
@@ -154,13 +154,12 @@ class Config(object):
         if len(unrecognized_args) > 0:
             logger = getLogger()
             logger.warning('command line args [{}] will not be used in RecBox'.format(' '.join(unrecognized_args)))
-
+        self.cmd_config_dict.update(self.variable_config_dict)
         convert_cmd_args()
 
     def _merge_external_config_dict(self):
         external_config_dict = dict()
         external_config_dict.update(self.file_config_dict)
-        external_config_dict.update(self.variable_config_dict)
         external_config_dict.update(self.cmd_config_dict)
         self.external_config_dict = external_config_dict
 
@@ -240,6 +239,11 @@ class Config(object):
         self.final_config_dict['MODEL_TYPE'] = model.type
         self.final_config_dict['MODEL_INPUT_TYPE'] = model.input_type
 
+        if 'additional_feat_suffix' in self.final_config_dict:
+            ad_suf = self.final_config_dict['additional_feat_suffix']
+            if isinstance(ad_suf, str):
+                self.final_config_dict['additional_feat_suffix'] = [ad_suf]
+
     def _init_device(self):
         use_gpu = self.final_config_dict['use_gpu']
         if use_gpu:
@@ -267,7 +271,9 @@ class Config(object):
         for category in self.parameters:
             args_info += category + ' Hyper Parameters: \n'
             args_info += '\n'.join(
-                ["{}={}".format(arg, value) for arg, value in self.final_config_dict.items() if arg in self.parameters[category]])
+                ["{}={}".format(arg, value)
+                 for arg, value in self.final_config_dict.items()
+                 if arg in self.parameters[category]])
             args_info += '\n\n'
         return args_info
 

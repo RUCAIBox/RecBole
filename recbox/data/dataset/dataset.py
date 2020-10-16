@@ -3,9 +3,14 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/3, 2020/9/15, 2020/9/23
+# @Time   : 2020/10/16, 2020/10/13, 2020/9/23
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
+
+"""
+recbox.data.dataset
+##########################
+"""
 
 import copy
 import json
@@ -69,10 +74,7 @@ class Dataset(object):
     def _data_processing(self):
         self.feat_list = self._build_feat_list()
         if self.benchmark_filename_list is None:
-            self._filter_nan_user_or_item()
-            self._filter_by_inter_num()
-            self._filter_by_field_value()
-            self._reset_index()
+            self._data_filtering()
 
         self._remap_ID_all()
         self._user_item_feat_preparation()
@@ -81,8 +83,19 @@ class Dataset(object):
         self._normalize()
         self._preload_weight_matrix()
 
+    def _data_filtering(self):
+        self._filter_nan_user_or_item()
+        self._filter_by_field_value()
+        self._filter_by_inter_num()
+        self._reset_index()
+
     def _build_feat_list(self):
-        return [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        if self.config['additional_feat_suffix'] is not None:
+            for suf in self.config['additional_feat_suffix']:
+                if hasattr(self, '{}_feat'.format(suf)):
+                    feat_list.append(getattr(self, '{}_feat'.format(suf)))
+        return feat_list
 
     def _restore_saved_dataset(self, saved_dataset):
         self.logger.debug('Restoring dataset from [{}]'.format(saved_dataset))
@@ -111,6 +124,7 @@ class Dataset(object):
         self._load_inter_feat(token, dataset_path)
         self.user_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.USER, 'uid_field')
         self.item_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.ITEM, 'iid_field')
+        self._load_additional_feat(token, dataset_path)
 
     def _load_inter_feat(self, token, dataset_path):
         if self.benchmark_filename_list is None:
@@ -139,10 +153,10 @@ class Dataset(object):
         feat_path = os.path.join(dataset_path, '{}.{}'.format(token, source.value))
         if os.path.isfile(feat_path):
             feat = self._load_feat(feat_path, source)
-            self.logger.debug('user feature loaded successfully from [{}]'.format(feat_path))
+            self.logger.debug('[{}] feature loaded successfully from [{}]'.format(source.value, feat_path))
         else:
             feat = None
-            self.logger.debug('[{}] not found, user features are not loaded'.format(feat_path))
+            self.logger.debug('[{}] not found, [{}] features are not loaded'.format(feat_path, source.value))
 
         field = getattr(self, field_name, None)
         if feat is not None and field is None:
@@ -154,18 +168,33 @@ class Dataset(object):
             self.field2source[field] = FeatureSource(source.value + '_id')
         return feat
 
+    def _load_additional_feat(self, token, dataset_path):
+        if self.config['additional_feat_suffix'] is None:
+            return
+        for suf in self.config['additional_feat_suffix']:
+            if hasattr(self, '{}_feat'.format(suf)):
+                raise ValueError('{}_feat already exist'.format(suf))
+            feat_path = os.path.join(dataset_path, '{}.{}'.format(token, suf))
+            if os.path.isfile(feat_path):
+                feat = self._load_feat(feat_path, suf)
+            else:
+                raise ValueError('Additional feature file [{}] not found'.format(feat_path))
+            setattr(self, '{}_feat'.format(suf), feat)
+
     def _get_load_and_unload_col(self, filepath, source):
+        if isinstance(source, FeatureSource):
+            source = source.value
         if self.config['load_col'] is None:
             load_col = None
-        elif source.value not in self.config['load_col']:
+        elif source not in self.config['load_col']:
             load_col = set()
-        elif self.config['load_col'][source.value] == '*':
+        elif self.config['load_col'][source] == '*':
             load_col = None
         else:
-            load_col = set(self.config['load_col'][source.value])
+            load_col = set(self.config['load_col'][source])
 
-        if self.config['unload_col'] is not None and source.value in self.config['unload_col']:
-            unload_col = set(self.config['unload_col'][source.value])
+        if self.config['unload_col'] is not None and source in self.config['unload_col']:
+            unload_col = set(self.config['unload_col'][source])
         else:
             unload_col = None
 
@@ -232,6 +261,8 @@ class Dataset(object):
             flag = True
             self.logger.debug('ordering item features by user id.')
         if flag:
+            # CANNOT be removed
+            # user/item feat has been updated, thus feat_list should be updated too.
             self.feat_list = self._build_feat_list()
             self._fill_nan_flag = True
 
@@ -242,38 +273,56 @@ class Dataset(object):
         drop_flag = self.config['drop_preload_weight']
         if drop_flag is None:
             drop_flag = True
-        if not isinstance(preload_fields, list):
-            preload_fields = [preload_fields]
 
         self.logger.debug('preload weight matrix for {}, drop=[{}]'.format(preload_fields, drop_flag))
 
-        feats = [feat for feat in [self.user_feat, self.item_feat] if feat is not None]
-        for field in preload_fields:
-            used_flag = False
-            for feat in feats:
-                if field in feat:
-                    used_flag = True
-                    ftype = self.field2type[field]
-                    if ftype == FeatureType.FLOAT:
-                        matrix = feat[field].values
-                    elif ftype == FeatureType.FLOAT_SEQ:
-                        max_len = self.field2seqlen[field]
-                        matrix = np.zeros((len(feat[field]), max_len))
-                        for i, row in enumerate(feat[field].to_list()):
-                            length = len(row)
+        for preload_id_field in preload_fields:
+            preload_value_field = preload_fields[preload_id_field]
+            if preload_id_field not in self.field2source:
+                raise ValueError('prelaod id field [{}] not exist'.format(preload_id_field))
+            if preload_value_field not in self.field2source:
+                raise ValueError('prelaod value field [{}] not exist'.format(preload_value_field))
+            pid_source = self.field2source[preload_id_field]
+            pv_source = self.field2source[preload_value_field]
+            if pid_source != pv_source:
+                raise ValueError('preload id field [{}] is from source [{}],'
+                    'while prelaod value field [{}] is from source [{}], which should be the same'.format(
+                        preload_id_field, pid_source, preload_value_field, pv_source
+                    ))
+            for feat in self.feat_list:
+                if preload_id_field in feat:
+                    id_ftype = self.field2type[preload_id_field]
+                    if id_ftype != FeatureType.TOKEN:
+                        raise ValueError('prelaod id field [{}] should be type token, but is [{}]'.format(
+                            preload_id_field, id_ftype
+                        ))
+                    value_ftype = self.field2type[preload_value_field]
+                    token_num = self.num(preload_id_field)
+                    if value_ftype == FeatureType.FLOAT:
+                        matrix = np.zeros(token_num)
+                        preload_ids = feat[preload_id_field].values
+                        preload_values = feat[preload_value_field].values
+                        for pid, pv in zip(preload_ids, preload_values):
+                            matrix[pid] = pv
+                    elif value_ftype == FeatureType.FLOAT_SEQ:
+                        max_len = self.field2seqlen[preload_value_field]
+                        matrix = np.zeros((token_num, max_len))
+                        preload_ids = feat[preload_id_field].values
+                        preload_values = feat[preload_value_field].to_list()
+                        for pid, prow in zip(preload_ids, preload_values):
+                            length = len(prow)
                             if length <= max_len:
-                                matrix[i, length] = row
+                                matrix[pid, :length] = prow
                             else:
-                                matrix[i] = row[:max_len]
+                                matrix[pid] = prow[:max_len]
                     else:
                         self.logger.warning('Field [{}] with type [{}] is not \'float\' or \'float_seq\', \
-                                             which will not be handled by preload matrix.'.format(field, ftype))
+                                             which will not be handled by preload matrix.'.format(preload_value_field, value_ftype))
                         continue
-                    self._preloaded_weight[field] = matrix
+                    self._preloaded_weight[preload_id_field] = matrix
                     if drop_flag:
-                        self._del_col(field)
-            if not used_flag:
-                self.logger.warning('Field [{}] doesn\'t exist, thus not been handled.'.format(field))
+                        self._del_col(preload_id_field)
+                        self._del_col(preload_value_field)
 
     def _fill_nan(self):
         self.logger.debug('Filling nan')
@@ -353,33 +402,34 @@ class Dataset(object):
                     self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
     def _filter_by_inter_num(self):
-        ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field,
-                                                       max_num=self.config['max_user_inter_num'],
-                                                       min_num=self.config['min_user_inter_num'])
-        ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field,
-                                                       max_num=self.config['max_item_inter_num'],
-                                                       min_num=self.config['min_item_inter_num'])
+        while True:
+            ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field, feat=self.user_feat,
+                                                           max_num=self.config['max_user_inter_num'],
+                                                           min_num=self.config['min_user_inter_num'])
+            ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field, feat=self.item_feat,
+                                                           max_num=self.config['max_item_inter_num'],
+                                                           min_num=self.config['min_item_inter_num'])
 
-        if len(ban_users) == 0 and len(ban_items) == 0:
-            return
+            if len(ban_users) == 0 and len(ban_items) == 0:
+                return
 
-        if self.user_feat is not None:
-            dropped_user = self.user_feat[self.uid_field].isin(ban_users)
-            self.user_feat.drop(self.user_feat.index[dropped_user], inplace=True)
+            if self.user_feat is not None:
+                dropped_user = self.user_feat[self.uid_field].isin(ban_users)
+                self.user_feat.drop(self.user_feat.index[dropped_user], inplace=True)
 
-        if self.item_feat is not None:
-            dropped_item = self.item_feat[self.iid_field].isin(ban_items)
-            self.item_feat.drop(self.item_feat.index[dropped_item], inplace=True)
+            if self.item_feat is not None:
+                dropped_item = self.item_feat[self.iid_field].isin(ban_items)
+                self.item_feat.drop(self.item_feat.index[dropped_item], inplace=True)
 
-        dropped_inter = pd.Series(False, index=self.inter_feat.index)
-        if self.uid_field:
-            dropped_inter |= self.inter_feat[self.uid_field].isin(ban_users)
-        if self.iid_field:
-            dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
-        self.logger.debug('[{}] dropped interactions'.format(len(dropped_inter)))
-        self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
+            dropped_inter = pd.Series(False, index=self.inter_feat.index)
+            if self.uid_field:
+                dropped_inter |= self.inter_feat[self.uid_field].isin(ban_users)
+            if self.iid_field:
+                dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
+            self.logger.debug('[{}] dropped interactions'.format(len(dropped_inter)))
+            self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
-    def _get_illegal_ids_by_inter_num(self, field, max_num=None, min_num=None):
+    def _get_illegal_ids_by_inter_num(self, field, feat, max_num=None, min_num=None):
         self.logger.debug('\n get_illegal_ids_by_inter_num:\n\t field=[{}], max_num=[{}], min_num=[{}]'.format(
             field, max_num, min_num
         ))
@@ -396,6 +446,10 @@ class Dataset(object):
         inter_num = Counter(ids)
         ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
 
+        if feat is not None:
+            for id_ in feat[field].values:
+                if inter_num[id_] < min_num:
+                    ids.add(id_)
         self.logger.debug('[{}] illegal_ids_by_inter_num, field=[{}]'.format(len(ids), field))
         return ids
 
@@ -411,24 +465,6 @@ class Dataset(object):
         if self.config['drop_filter_field']:
             for field in set(filter_field):
                 self._del_col(field)
-
-        if self.user_feat is not None:
-            remained_uids = set(self.user_feat[self.uid_field].values)
-        elif self.uid_field is not None:
-            remained_uids = set(self.inter_feat[self.uid_field].values)
-
-        if self.item_feat is not None:
-            remained_iids = set(self.item_feat[self.iid_field].values)
-        elif self.iid_field is not None:
-            remained_iids = set(self.inter_feat[self.iid_field].values)
-
-        remained_inter = pd.Series(True, index=self.inter_feat.index)
-        if self.uid_field is not None:
-            remained_inter &= self.inter_feat[self.uid_field].isin(remained_uids)
-        if self.iid_field is not None:
-            remained_inter &= self.inter_feat[self.iid_field].isin(remained_iids)
-        self.logger.debug('[{}] interactions are remained after filtering'.format(len(remained_inter)))
-        self.inter_feat.drop(self.inter_feat.index[~remained_inter], inplace=True)
 
     def _reset_index(self):
         for feat in self.feat_list:
@@ -480,6 +516,7 @@ class Dataset(object):
 
     def _get_fields_in_same_space(self):
         fields_in_same_space = self.config['fields_in_same_space'] or []
+        fields_in_same_space = [set(_) for _ in fields_in_same_space]
         additional = []
         token_like_fields = self.token_like_fields
         for field in token_like_fields:
@@ -504,25 +541,31 @@ class Dataset(object):
         fields_in_same_space.extend(additional)
         return fields_in_same_space
 
+    def _get_remap_list(self, field_set):
+        remap_list = []
+        for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
+            if field in field_set:
+                field_set.remove(field)
+                remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
+                if feat is not None:
+                    remap_list.append((feat, field, FeatureType.TOKEN))
+        for field in field_set:
+            source = self.field2source[field]
+            if isinstance(source, FeatureSource):
+                source = source.value
+            feat = getattr(self, '{}_feat'.format(source))
+            ftype = self.field2type[field]
+            remap_list.append((feat, field, ftype))
+        return remap_list
+
     def _remap_ID_all(self):
         fields_in_same_space = self._get_fields_in_same_space()
         self.logger.debug('fields_in_same_space: {}'.format(fields_in_same_space))
         for field_set in fields_in_same_space:
-            remap_list = []
-            for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
-                if field in field_set:
-                    field_set.remove(field)
-                    remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
-                    if feat is not None:
-                        remap_list.append((feat, field, FeatureType.TOKEN))
-            for field in field_set:
-                source = self.field2source[field]
-                feat = getattr(self, '{}_feat'.format(source.value))
-                ftype = self.field2type[field]
-                remap_list.append((feat, field, ftype))
+            remap_list = self._get_remap_list(field_set)
             self._remap(remap_list)
 
-    def _remap(self, remap_list, overwrite=True):
+    def _concat_remaped_tokens(self, remap_list):
         tokens = []
         for feat, field, ftype in remap_list:
             if ftype == FeatureType.TOKEN:
@@ -531,6 +574,10 @@ class Dataset(object):
                 tokens.append(feat[field].agg(np.concatenate))
         split_point = np.cumsum(list(map(len, tokens)))[:-1]
         tokens = np.concatenate(tokens)
+        return tokens, split_point
+
+    def _remap(self, remap_list, overwrite=True):
+        tokens, split_point = self._concat_remaped_tokens(remap_list)
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
         mp = ['[PAD]'] + list(mp)

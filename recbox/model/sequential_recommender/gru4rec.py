@@ -21,7 +21,9 @@ Yong Kiam Tan et al. "Improved Recurrent Neural Networks for Session-based Recom
 import torch
 from torch import nn
 from torch.nn.init import xavier_uniform_, xavier_normal_
+
 from recbox.utils import InputType
+from recbox.model.loss import BPRLoss
 from recbox.model.abstract_recommender import SequentialRecommender
 
 
@@ -30,27 +32,24 @@ class GRU4Rec(SequentialRecommender):
 
     Note:
 
-            Regarding the innovation of this article,we can only achieve the data augmentation mentioned in the paper and directly output the embedding of the item,
-            in order that the generation method we used is common to other sequential models.
+        Regarding the innovation of this article,we can only achieve the data augmentation mentioned
+        in the paper and directly output the embedding of the item,
+        in order that the generation method we used is common to other sequential models.
     """
-    input_type = InputType.POINTWISE
+    input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
-        super(GRU4Rec, self).__init__()
+        super(GRU4Rec, self).__init__(config, dataset)
+
         # load parameters info
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
-        self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = self.ITEM_ID
-        self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
-
-
         self.embedding_size = config['embedding_size']
         self.hidden_size = config['hidden_size']
+        self.loss_type = config['loss_type']
         self.num_layers = config['num_layers']
         self.dropout = config['dropout']
-        self.item_count = dataset.item_num
+
         # define layers and loss
-        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.emb_dropout = nn.Dropout(self.dropout)
         self.gru_layers = nn.GRU(
             input_size=self.embedding_size,
@@ -60,7 +59,13 @@ class GRU4Rec(SequentialRecommender):
             batch_first=True,
         )
         self.dense = nn.Linear(self.hidden_size, self.embedding_size)
-        self.criterion = nn.CrossEntropyLoss()
+        if self.loss_type == 'BPR':
+            self.loss_fct = BPRLoss()
+        elif self.loss_type == 'CE':
+            self.loss_fct = nn.CrossEntropyLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
+
         # parameters initialization
         self.apply(self.init_weights)
 
@@ -71,32 +76,41 @@ class GRU4Rec(SequentialRecommender):
             xavier_uniform_(self.gru_layers.weight_hh_l0)
             xavier_uniform_(self.gru_layers.weight_ih_l0)
 
-    def get_item_lookup_table(self):
-        r"""Get the transpose of item_list_embedding.weight，Shape of (embedding_size, item_count+padding_id)
-        Used to calculate the score for each item with the predict_behavior_emb
-        """
-        return self.item_list_embedding.weight.t()
-
-    def forward(self, interaction):
-        item_list_emb = self.item_list_embedding(interaction[self.ITEM_ID_LIST])
-        item_list_emb_dropout = self.emb_dropout(item_list_emb)
-        short_term_intent_temp, _ = self.gru_layers(item_list_emb_dropout)
-        short_term_intent_temp = self.dense(short_term_intent_temp)
+    def forward(self, item_seq, item_seq_len):
+        item_seq_emb = self.item_embedding(item_seq)
+        item_seq_emb_dropout = self.emb_dropout(item_seq_emb)
+        gru_output, _ = self.gru_layers(item_seq_emb_dropout)
+        gru_output = self.dense(gru_output)
         # the embedding of the predicted item, shape of (batch_size, embedding_size)
-        predict_behavior_emb = self.gather_indexes(short_term_intent_temp, interaction[self.ITEM_LIST_LEN] - 1)
-        return predict_behavior_emb
+        seq_output = self.gather_indexes(gru_output, item_seq_len - 1)
+        return seq_output
 
     def calculate_loss(self, interaction):
-        target_id = interaction[self.TARGET_ITEM_ID]
-        pred = self.forward(interaction)
-        logits = torch.matmul(pred, self.get_item_lookup_table())
-        loss = self.criterion(logits, target_id)
-        return loss
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq, item_seq_len)
+        pos_items = interaction[self.POS_ITEM_ID]
+        if self.loss_type == 'BPR':
+            neg_items = interaction[self.NEG_ITEM_ID]
+            pos_items_emb = self.item_embedding(pos_items)
+            neg_items_emb = self.item_embedding(neg_items)
+            pos_score = torch.sum(seq_output * pos_items_emb, dim=-1) # [B]
+            neg_score = torch.sum(seq_output * neg_items_emb, dim=-1) # [B]
+            loss = self.loss_fct(pos_score, neg_score)
+            return loss
+        else:  # self.loss_type = 'CE'
+            test_item_emb = self.item_embedding.weight
+            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
+            loss = self.loss_fct(logits, pos_items)
+            return loss
 
     def predict(self, interaction):
         pass
 
     def full_sort_predict(self, interaction):
-        pred = self.forward(interaction)
-        scores = torch.matmul(pred, self.get_item_lookup_table())
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq, item_seq_len)
+        test_item_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1)) # [B, item_num]
         return scores

@@ -21,9 +21,11 @@ from .context_recommender import ContextRecommender
 
 class WideDeep(ContextRecommender):
     r"""WideDeep is a context-based recommendation model.
-    It jointly trains wide linear models and deep neural networks to combine the benefits of memorization and generalization for recommender systems. 
-    The wide component is a generalized linear model of the form y = w^Tx + b. The deep component is a feed-forward neural network.
-    The wide component and deep component are combined using a weighted sum of their output log odds as the prediction, which is then fed to one common logistic loss function for joint training.
+    It jointly trains wide linear models and deep neural networks to combine the benefits
+    of memorization and generalization for recommender systems. The wide component is a generalized linear model
+    of the form :math:`y = w^Tx + b`. The deep component is a feed-forward neural network. The wide component
+    and deep component are combined using a weighted sum of their output log odds as the prediction,
+    which is then fed to one common logistic loss function for joint training.
     """
 
     def __init__(self, config, dataset):
