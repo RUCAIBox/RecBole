@@ -14,8 +14,6 @@ class TestCases(object):
     preds_1 = np.array([0.7, 0.5, 0.6, 0.2])
     trues_1 = np.array([0, 1, 1, 0])
 
-    preds_2 = np.array([])
-
 
 def get_result(name, case=0):
     func = metrics_dict[name]
