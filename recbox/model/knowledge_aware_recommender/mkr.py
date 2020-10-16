@@ -16,9 +16,9 @@ https://github.com/hsientzucheng/MKR.PyTorch
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from recbox.model.layers import MLPLayers
 
 from recbox.utils import InputType
+from recbox.model.layers import MLPLayers
 from recbox.model.abstract_recommender import KnowledgeRecommender
 from recbox.model.init import xavier_normal_initialization
 
