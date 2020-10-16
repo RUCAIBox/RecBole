@@ -540,13 +540,9 @@ class MKRTrainer(Trainer):
                 self.optimizer.zero_grad()
                 loss_kge = self.model.calculate_kg_loss(interaction)
                 
-                self._check_nan_kge_loss(loss_kge)
-                loss_kge.sum().backward()
+                self._check_nan(loss_kge)
+                loss_kge.backward()
                 self.optimizer.step()
-                kg_total_loss += loss_kge.sum()
+                kg_total_loss += loss_kge
 
         return rs_total_loss, kg_total_loss
-
-    def _check_nan_kge_loss(self, loss_kge):
-        if True in torch.isnan(loss_kge):
-            raise ValueError('Training loss is nan')

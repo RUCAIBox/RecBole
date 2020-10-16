@@ -16,7 +16,7 @@ https://github.com/hsientzucheng/MKR.PyTorch
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..layers import MLPLayers
+from recbox.model.layers import MLPLayers
 
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import KnowledgeRecommender
@@ -160,7 +160,7 @@ class MKR(KnowledgeRecommender):
         l2_loss_kge = self.l2_loss(head_embeddings) + self.l2_loss(tail_embeddings)
         loss_kge = base_loss_kge + l2_loss_kge * self.l2_weight
 
-        return loss_kge
+        return loss_kge.sum()
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
