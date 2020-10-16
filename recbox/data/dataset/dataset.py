@@ -74,10 +74,7 @@ class Dataset(object):
     def _data_processing(self):
         self.feat_list = self._build_feat_list()
         if self.benchmark_filename_list is None:
-            self._filter_nan_user_or_item()
-            self._filter_by_field_value()
-            self._filter_by_inter_num()
-            self._reset_index()
+            self._data_filtering()
 
         self._remap_ID_all()
         self._user_item_feat_preparation()
@@ -85,6 +82,12 @@ class Dataset(object):
         self._set_label_by_threshold()
         self._normalize()
         self._preload_weight_matrix()
+
+    def _data_filtering(self):
+        self._filter_nan_user_or_item()
+        self._filter_by_field_value()
+        self._filter_by_inter_num()
+        self._reset_index()
 
     def _build_feat_list(self):
         feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]

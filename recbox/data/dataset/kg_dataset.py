@@ -46,22 +46,9 @@ class KnowledgeBasedDataset(Dataset):
         self.logger.debug('relation_field: {}'.format(self.relation_field))
         self.logger.debug('entity_field: {}'.format(self.entity_field))
 
-    def _data_processing(self):
-        self._set_field2ent_level()
-        self.feat_list = self._build_feat_list()
-        if self.benchmark_filename_list is None:
-            self._filter_nan_user_or_item()
-            self._filter_by_inter_num()
-            self._filter_by_field_value()
-            self._filter_link()
-            self._reset_index()
-
-        self._remap_ID_all()
-        self._user_item_feat_preparation()
-        self._fill_nan()
-        self._set_label_by_threshold()
-        self._normalize()
-        self._preload_weight_matrix()
+    def _data_filtering(self):
+        super()._data_filtering()
+        self._filter_link()
 
     def _filter_link(self):
         item_tokens = self._get_rec_item_token()
