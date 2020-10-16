@@ -30,10 +30,12 @@ class GRU4Rec(SequentialRecommender):
 
     Note:
 
-            Regarding the innovation of this article,we can only achieve the data augmentation mentioned in the paper and directly output the embedding of the item,
-            in order that the generation method we used is common to other sequential models.
+        Regarding the innovation of this article,we can only achieve the data augmentation mentioned
+        in the paper and directly output the embedding of the item,
+        in order that the generation method we used is common to other sequential models.
     """
     input_type = InputType.POINTWISE
+
     def __init__(self, config, dataset):
         super(GRU4Rec, self).__init__()
         # load parameters info

@@ -14,9 +14,7 @@ Ruining He et al. "Translation-based Recommendation." In RecSys 2017.
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 
-from torch.nn.init import xavier_uniform_, xavier_normal_
 from recbox.utils import InputType
 from recbox.model.abstract_recommender import SequentialRecommender
 from recbox.model.loss import BPRLoss, EmbLoss, RegLoss
@@ -31,6 +29,7 @@ class TransRec(SequentialRecommender):
     """
 
     input_type = InputType.PAIRWISE
+
     def __init__(self, config, dataset):
         super(TransRec, self).__init__()
 
@@ -41,7 +40,6 @@ class TransRec(SequentialRecommender):
         self.TARGET_ITEM_ID = self.ITEM_ID
         self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
         self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
-
 
         self.embedding_size = config['embedding_size']
         self.hidden_size = config['hidden_size']

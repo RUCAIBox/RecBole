@@ -2,8 +2,14 @@
 # @Author : Xingyu Pan
 # @Email  : panxingyu@ruc.edu.cn
 
+"""
+recbox.data.kg_seq_dataset
+##########################
+"""
+
 from recbox.data.dataset import SequentialDataset, KnowledgeBasedDataset
 
+
 class Kg_Seq_Dataset(SequentialDataset, KnowledgeBasedDataset):
-      def __init__(self, config, saved_dataset=None):
-         super().__init__(config, saved_dataset=saved_dataset) 
+    def __init__(self, config, saved_dataset=None):
+        super().__init__(config, saved_dataset=saved_dataset)

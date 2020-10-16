@@ -32,9 +32,10 @@ from recbox.utils import ModelType, InputType, FeatureType
 from recbox.model.layers import FMEmbedding, MLPLayers, SequenceAttLayer, ContextSeqEmbLayer
 from recbox.model.abstract_recommender import SequentialRecommender
 
+
 class DIN(SequentialRecommender):
-    """Deep Interest Network utilizes the attention mechanism to get the weight of each user's behavior according to the target items,
-    and finally gets the user representation.
+    """Deep Interest Network utilizes the attention mechanism to get the weight of each user's behavior according
+    to the target items, and finally gets the user representation.
 
     Note:
         In the official source code, unlike the paper, user features and context features are not input into DNN.
@@ -62,7 +63,6 @@ class DIN(SequentialRecommender):
         self.embedding_size = config['embedding_size']
         self.max_len = config['MAX_ITEM_LIST_LENGTH']
         self.dropout = config['dropout']
-        # self.dataset = dataset
 
         self.types = ['user', 'item']
         self.user_feat = dataset.get_user_feature()
@@ -91,7 +91,7 @@ class DIN(SequentialRecommender):
                                         dropout=self.dropout,
                                         bn=True)
 
-        self.embedding_layer = ContextSeqEmbLayer(dataset, config)
+        self.embedding_layer = ContextSeqEmbLayer(config, dataset)
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
@@ -156,7 +156,6 @@ class DIN(SequentialRecommender):
         loss = self.loss(output, label)
         return loss
 
-    # TODO: Merge the two predict functions when the data interface is ready
     def predict(self, interaction):
         scores = self.forward(interaction)
         return scores

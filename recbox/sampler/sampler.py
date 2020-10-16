@@ -8,6 +8,11 @@
 # @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou, Yushuo Chen
 # @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
+"""
+recbox.sampler
+########################
+"""
+
 import random
 import copy
 import numpy as np

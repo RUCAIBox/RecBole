@@ -67,11 +67,9 @@ class NAIS(GeneralRecommender):
             self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
 
         # define layers and loss
-
         # construct source and destination item embedding matrix
         self.item_src_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-
         self.bias = nn.Parameter(torch.zeros(self.n_items))
         if self.algorithm == 'concat':
             self.mlp_layers = MLPLayers([self.embedding_size*2, self.weight_size])
@@ -128,7 +126,7 @@ class NAIS(GeneralRecommender):
             tuple: (history_item_matrix, history_lens, mask_mat)
 
         """
-        history_item_matrix, _ , history_lens = dataset.history_item_matrix()
+        history_item_matrix, _, history_lens = dataset.history_item_matrix()
         history_item_matrix = history_item_matrix.to(self.device)
         history_lens = history_lens.to(self.device)
         arange_tensor = torch.arange(history_item_matrix.shape[1]).to(self.device)
@@ -179,7 +177,6 @@ class NAIS(GeneralRecommender):
             torch.Tensor: final output
 
         """
-        batch_size, max_len = logits.size()
         exp_logits = torch.exp(logits)  # batch_size x max_len
 
         exp_logits = batch_mask_mat * exp_logits   # batch_size x max_len

@@ -70,7 +70,7 @@ class NeuMF(GeneralRecommender):
         if self.use_pretrain:
             self.load_pretrain()
         else:
-            self.apply(self.init_weights)
+            self.apply(self._init_weights)
 
     def load_pretrain(self):
         r"""A simple implementation of loading pretrained parameters.
@@ -95,7 +95,7 @@ class NeuMF(GeneralRecommender):
         self.predict_layer.weight.data.copy_(0.5 * predict_weight)
         self.predict_layer.weight.data.copy_(0.5 * predict_bias)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             normal_(module.weight.data, mean=0.0, std=0.01)
 

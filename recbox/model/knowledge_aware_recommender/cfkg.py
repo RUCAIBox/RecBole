@@ -29,9 +29,9 @@ class CFKG(KnowledgeRecommender):
         d (u_i + r_{buy}, v_j)
 
     Note:
-            In the original paper, CFKG puts recommender data (u-i interaction) and knowledge data (h-r-t) together for sampling and
-            mix them for training. In this version, we sample recommender data and knowledge data separately, and put them together
-            for training.
+        In the original paper, CFKG puts recommender data (u-i interaction) and knowledge data (h-r-t) together
+        for sampling and mix them for training. In this version, we sample recommender data
+        and knowledge data separately, and put them together for training.
     """
 
     input_type = InputType.PAIRWISE

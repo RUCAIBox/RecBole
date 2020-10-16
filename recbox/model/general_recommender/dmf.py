@@ -18,7 +18,6 @@ Hong-Jian Xue et al. "Deep Matrix Factorization Models for Recommender Systems."
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.nn.init import normal_
 
 from recbox.utils import InputType
@@ -66,14 +65,13 @@ class DMF(GeneralRecommender):
         else:
             raise ValueError("The inter_matrix_type must in ['01', 'rating'] but get {}".format(self.inter_matrix_type))
         self.max_rating = self.history_user_value.max()
-
         # tensor of shape [n_items, H] where H is max length of history interaction.
         self.history_user_id = self.history_user_id.to(self.device)
         self.history_user_value = self.history_user_value.to(self.device)
         self.history_item_id = self.history_item_id.to(self.device)
         self.history_item_value = self.history_item_value.to(self.device)
-        # define layers
 
+        # define layers
         self.user_linear = nn.Linear(in_features=self.n_items, out_features=self.user_layers_dim[0], bias=False)
         self.item_linear = nn.Linear(in_features=self.n_users, out_features=self.item_layers_dim[0], bias=False)
         self.user_fc_layers = MLPLayers(self.user_layers_dim)
@@ -85,9 +83,9 @@ class DMF(GeneralRecommender):
         self.i_embedding = None
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         # We just initialize the module with normal distribution as the paper said
         if isinstance(module, nn.Linear):
             normal_(module.weight.data, 0, 0.01)

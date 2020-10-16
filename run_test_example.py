@@ -106,7 +106,8 @@ test_examples = {
         'valid_metric': 'Recall@10',
         'leave_one_num': 2,
         'metrics': ["Recall"],
-        'topk': [10]
+        'topk': [10],
+        'eval_batch_size': 20000
     },
     'Test GCMC': {
         'model': 'GCMC',
@@ -226,6 +227,30 @@ test_examples = {
         'metrics': ['AUC'],
         'eval_batch_size': 10000
     },
+    'Test DCN':{
+        'model': 'DCN',
+        'dataset': 'ml-100k',
+        'lowest_val': None,
+        'threshold': {'rating': 3},
+        'group_by_user': False,
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
+        'valid_metric': 'AUC',
+        'metrics': ['AUC']
+    },
+    'Test xDeepFM':{
+        'model': 'xDeepFM',
+        'dataset': 'ml-100k',
+        'lowest_val': None,
+        'threshold': {'rating': 3},
+        'group_by_user': False,
+        'epochs': 1,
+        'training_neg_sample_num': 0,
+        'eval_setting': 'RO_RS',
+        'valid_metric': 'AUC',
+        'metrics': ['AUC']
+    },
     'Test CKE': {
         'model': 'CKE',
         'dataset': 'kgdata_example',
@@ -302,9 +327,9 @@ test_examples = {
         'leave_one_num': 2,
         'real_time_process': True,
         'NEG_PREFIX': '_neg',
-        'FEATURE_FIELD': 'class',
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
+        'selected_features': ['class'],
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
         'min_user_inter_num': 5
     },
@@ -319,7 +344,6 @@ test_examples = {
         'leave_one_num': 2,
         'real_time_process': True,
         'NEG_PREFIX': '_neg',
-        'FEATURE_FIELD': 'class',
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
@@ -336,7 +360,7 @@ test_examples = {
         'leave_one_num': 2,
         'real_time_process': True,
         'NEG_PREFIX': '_neg',
-        'FEATURE_FIELD': 'class',
+        'selected_features': ['class'],
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
@@ -353,7 +377,7 @@ test_examples = {
         'leave_one_num': 2,
         'real_time_process': True,
         'NEG_PREFIX': '_neg',
-        'FEATURE_FIELD': 'class',
+        'selected_features': ['class'],
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
@@ -387,7 +411,7 @@ def run_test_examples():
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
-            run_unirec(config_dict=test_examples[example], saved=False)
+            run_unirec(config_dict=test_examples[example], config_file_list=['./myconfig/my_overall.yaml'], saved=False)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:
