@@ -46,6 +46,10 @@ class KnowledgeBasedDataset(Dataset):
         self.logger.debug('relation_field: {}'.format(self.relation_field))
         self.logger.debug('entity_field: {}'.format(self.entity_field))
 
+    def _data_processing(self):
+        self._set_field2ent_level()
+        super()._data_processing()
+
     def _data_filtering(self):
         super()._data_filtering()
         self._filter_link()
