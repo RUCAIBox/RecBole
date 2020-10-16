@@ -28,10 +28,9 @@ def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None
 
     # configurations initialization
     if quick_start:
-        try:
-            assert model is not None and dataset is not None
-        except AssertionError:
-            raise AssertionError("Quick-start required positional arguments: 'model' and 'dataset'")
+        assert model is not None and dataset is not None, \
+            "Quick-start required positional arguments: 'model' and 'dataset'"
+
         presets_dict = load_presets()
         try:
             config_dict = presets_dict['-'.join([model, dataset])]
