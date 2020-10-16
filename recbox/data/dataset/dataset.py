@@ -528,27 +528,31 @@ class Dataset(object):
         fields_in_same_space.extend(additional)
         return fields_in_same_space
 
+    def _get_remap_list(self, field_set):
+        remap_list = []
+        for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
+            if field in field_set:
+                field_set.remove(field)
+                remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
+                if feat is not None:
+                    remap_list.append((feat, field, FeatureType.TOKEN))
+        for field in field_set:
+            source = self.field2source[field]
+            if isinstance(source, FeatureSource):
+                source = source.value
+            feat = getattr(self, '{}_feat'.format(source))
+            ftype = self.field2type[field]
+            remap_list.append((feat, field, ftype))
+        return remap_list
+
     def _remap_ID_all(self):
         fields_in_same_space = self._get_fields_in_same_space()
         self.logger.debug('fields_in_same_space: {}'.format(fields_in_same_space))
         for field_set in fields_in_same_space:
-            remap_list = []
-            for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
-                if field in field_set:
-                    field_set.remove(field)
-                    remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
-                    if feat is not None:
-                        remap_list.append((feat, field, FeatureType.TOKEN))
-            for field in field_set:
-                source = self.field2source[field]
-                if isinstance(source, FeatureSource):
-                    source = source.value
-                feat = getattr(self, '{}_feat'.format(source))
-                ftype = self.field2type[field]
-                remap_list.append((feat, field, ftype))
+            remap_list = self._get_remap_list(field_set)
             self._remap(remap_list)
 
-    def _remap(self, remap_list, overwrite=True):
+    def _concat_remaped_tokens(self, remap_list):
         tokens = []
         for feat, field, ftype in remap_list:
             if ftype == FeatureType.TOKEN:
@@ -557,6 +561,10 @@ class Dataset(object):
                 tokens.append(feat[field].agg(np.concatenate))
         split_point = np.cumsum(list(map(len, tokens)))[:-1]
         tokens = np.concatenate(tokens)
+        return tokens, split_point
+
+    def _remap(self, remap_list, overwrite=True):
+        tokens, split_point = self._concat_remaped_tokens(remap_list)
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
         mp = ['[PAD]'] + list(mp)
