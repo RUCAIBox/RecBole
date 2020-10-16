@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/12, 2020/9/15, 2020/9/23
+# @Time   : 2020/10/16, 2020/9/15, 2020/9/23
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -503,6 +503,7 @@ class Dataset(object):
 
     def _get_fields_in_same_space(self):
         fields_in_same_space = self.config['fields_in_same_space'] or []
+        fields_in_same_space = [set(_) for _ in fields_in_same_space]
         additional = []
         token_like_fields = self.token_like_fields
         for field in token_like_fields:
