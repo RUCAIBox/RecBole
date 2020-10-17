@@ -12,3 +12,6 @@ split_to: 0
 regs: [1e-7, 1e-7, 1e-5]
 alpha: 0
 beta: 0.5
+# make sure that if you set want to use FISM to pretrain NAIS, your must set the pretrain path
+# such as './saved/'
+pretrain_path: ~
