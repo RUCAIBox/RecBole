@@ -1,0 +1,14 @@
+BPRMF-ml-100k:
+    epochs: 100
+    learning_rate: 0.001
+    eval_batch_size: 200000
+    embedding_szie: 64
+
+NeuMF-ml-100k:
+    epochs: 100
+    learning_rate: 0.001
+    eval_batch_size: 200000
+    mf_embedding_size: 64
+    mlp_embedding_size: 64
+    mlp_hidden_size: [64,64]
+    dropout: 0.1
