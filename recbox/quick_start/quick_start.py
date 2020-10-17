@@ -24,10 +24,10 @@ def load_presets():
     return presets_dict
 
 
-def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True, quick_start=False):
+def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True, presets=False):
 
     # configurations initialization
-    if quick_start:
+    if presets:
         assert model is not None and dataset is not None, \
             "Quick-start required positional arguments: 'model' and 'dataset'"
 
