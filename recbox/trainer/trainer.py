@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn
+# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn
 
 r"""
 recbox.trainer.trainer
@@ -625,3 +625,45 @@ class S3RecTrainer(Trainer):
             return self.finetune(train_data, valid_data, verbose, saved)
         else:
             raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
+
+class MKRTrainer(Trainer):
+    r"""MKRTrainer is designed for MKR, which is a knowledge-aware recommendation method.
+
+    """
+
+    def __init__(self, config, model):
+        super(MKRTrainer, self).__init__(config, model)
+        self.kge_interval = config['kge_interval']
+
+    def _train_epoch(self, train_data, epoch_idx):
+        self.model.train()
+        rs_total_loss, kg_total_loss = 0., 0.
+
+        # train rs
+        print('Train RS')
+        train_data.set_mode(KGDataLoaderState.RS)
+        for batch_idx, interaction in enumerate(train_data):
+            interaction = interaction.to(self.device)
+            self.optimizer.zero_grad()
+            loss_rs = self.model.calculate_rs_loss(interaction)
+            
+            self._check_nan(loss_rs)
+            loss_rs.backward()
+            self.optimizer.step()
+            rs_total_loss += loss_rs
+            
+        # train kg
+        if epoch_idx % self.kge_interval == 0:
+            print('Train KG')
+            train_data.set_mode(KGDataLoaderState.KG)
+            for batch_idx, interaction in enumerate(train_data):
+                interaction = interaction.to(self.device)
+                self.optimizer.zero_grad()
+                loss_kge = self.model.calculate_kg_loss(interaction)
+                
+                self._check_nan(loss_kge)
+                loss_kge.backward()
+                self.optimizer.step()
+                kg_total_loss += loss_kge
+
+        return rs_total_loss, kg_total_loss
