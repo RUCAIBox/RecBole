@@ -28,8 +28,6 @@ ENTITY_ID_FIELD: entity_id
 # Selectively Loading
 load_col:
     inter: [user_id, item_id, rating, timestamp]
-    user: [user_id, age]
-    item: [item_id, class]
     kg: [head_id, relation_id, tail_id]
     link: [item_id, entity_id]
 unload_col: ~
