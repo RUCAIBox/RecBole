@@ -30,7 +30,6 @@ from recbox.model.layers import TransformerEncoder
 class GNN(nn.Module):
     r"""Graph neural networks are well-suited for session-based recommendation,
     because it can automatically extract features of session graphs with considerations of rich node connections.
-    Gated gnn is a neural unit similar to gru.
     """
 
     def __init__(self, embedding_size, step=1):
@@ -56,7 +55,7 @@ class GNN(nn.Module):
 
 
     def GNNCell(self, A, hidden):
-        r"""Obtain latent vectors of nodes via graph neural networks.
+        r"""Obtain latent vectors of nodes via gated graph neural network.
 
         Args:
             A(torch.FloatTensor):The connection matrix,shape of [batch_size, max_session_len, 2 * max_session_len]
@@ -64,7 +63,7 @@ class GNN(nn.Module):
             hidden(torch.FloatTensor):The item node embedding matrix, shape of [batch_size, max_session_len, embedding_size]
 
         Returns:
-            hy(torch.FloatTensor):Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
+            torch.FloatTensor:Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
 
         """
 
@@ -93,6 +92,7 @@ class GNN(nn.Module):
 class GCSAN(SequentialRecommender):
     r"""GCSAN captures rich local dependencies via graph nerual network,
      and learns long-range dependencies by applying the self-attention mechanism.
+
     """
     input_type = InputType.PAIRWISE
 
@@ -100,9 +100,7 @@ class GCSAN(SequentialRecommender):
         super(GCSAN, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
         self.hidden_size = config['hidden_size']
-        assert self.hidden_size == self.embedding_size
         self.step = config['step']
         self.device = config['device']
         self.weight = config['weight']
@@ -111,8 +109,8 @@ class GCSAN(SequentialRecommender):
         self.initializer_range = config['initializer_range']
 
         # define layers and loss
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.gnn = GNN(self.embedding_size, self.step)
+        self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
+        self.gnn = GNN(self.hidden_size, self.step)
         self.self_attention = TransformerEncoder(config)
         self.reg_loss = EmbLoss()
         if self.loss_type == 'BPR':
@@ -140,20 +138,19 @@ class GCSAN(SequentialRecommender):
     def get_attention_mask(self, item_seq):
         attention_mask = (item_seq > 0).long()
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
-        # bidirectional mask
+        # mask for left-to-right unidirectional
+        max_len = attention_mask.size(-1)
+        attn_shape = (1, max_len, max_len)
+        subsequent_mask = torch.triu(torch.ones(attn_shape), diagonal=1)  # torch.uint8
+        subsequent_mask = (subsequent_mask == 0).unsqueeze(1)
+        subsequent_mask = subsequent_mask.long().to(item_seq.device)
+
+        extended_attention_mask = extended_attention_mask * subsequent_mask
         extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
         return extended_attention_mask
 
     def get_slice(self, item_seq):
-        r"""Get the input needed by the graph neural network
-
-        Returns:
-            alias_inputs(torch.LongTensor):The relative coordinates of the item node, shape of [batch_size, max_session_len]
-            A(torch.FloatTensor):The connecting matrix, shape of [batch_size, max_session_len, 2 * max_session_len]
-            items(torch.LongTensor):The unique item nodes, shape of [batch_size, max_session_len]
-
-        """
         items, n_node, A, alias_inputs = [], [], [], []
         max_n_node = item_seq.size(1)
         item_seq = item_seq.cpu().numpy()
@@ -178,9 +175,11 @@ class GCSAN(SequentialRecommender):
             A.append(u_A)
 
             alias_inputs.append([np.where(node == i)[0][0] for i in u_input])
-
+        # The relative coordinates of the item node, shape of [batch_size, max_session_len]
         alias_inputs = torch.LongTensor(alias_inputs).to(self.device)
+        # The connecting matrix, shape of [batch_size, max_session_len, 2 * max_session_len]
         A = torch.FloatTensor(A).to(self.device)
+        # The unique item nodes, shape of [batch_size, max_session_len]
         items = torch.LongTensor(items).to(self.device)
 
         return alias_inputs, A, items
@@ -191,7 +190,7 @@ class GCSAN(SequentialRecommender):
         alias_inputs, A, items = self.get_slice(item_seq)
         hidden = self.item_embedding(items)
         hidden = self.gnn(A, hidden)
-        alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(-1, -1, self.embedding_size)
+        alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(-1, -1, self.hidden_size)
         seq_hidden = torch.gather(hidden, dim=1, index=alias_inputs)
         # fetch the last hidden state of last timestamp
         ht = self.gather_indexes(seq_hidden, item_seq_len - 1)

@@ -193,7 +193,11 @@ test_examples = {
         'NEG_PREFIX': '_neg',
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
+
     },
     'Test FPMC': {
         'model': 'FPMC',
@@ -207,7 +211,10 @@ test_examples = {
         'real_time_process': True,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test DIN': {
         'model': 'DIN',
@@ -226,7 +233,10 @@ test_examples = {
         'threshold': {'rating': 4},
         'valid_metric': 'AUC',
         'metrics': ['AUC'],
-        'eval_batch_size': 10000
+        'eval_batch_size': 10000,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test DCN':{
         'model': 'DCN',
@@ -300,7 +310,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 10,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test TransRec': {
         'model': 'TransRec',
@@ -316,7 +329,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test GRU4RecF': {
         'model': 'GRU4RecF',
@@ -349,7 +365,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test SASRecF': {
         'model': 'SASRecF',
@@ -366,7 +385,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test FDSA': {
         'model': 'FDSA',
@@ -383,7 +405,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test BERT4Rec': {
         'model': 'BERT4Rec',
@@ -431,7 +456,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test SRGNN': {
         'model': 'SRGNN',
@@ -447,7 +475,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test GCSAN': {
         'model': 'GCSAN',
@@ -463,7 +494,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     }
 }
 

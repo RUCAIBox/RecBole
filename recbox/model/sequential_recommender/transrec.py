@@ -35,8 +35,6 @@ class TransRec(SequentialRecommender):
 
         # load parameters info
         self.embedding_size = config['embedding_size']
-        self.hidden_size = config['hidden_size']
-        assert self.embedding_size == self.hidden_size
 
         # load dataset info
         self.n_users = dataset.user_num
@@ -44,7 +42,7 @@ class TransRec(SequentialRecommender):
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size, padding_idx=0)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.bias = nn.Embedding(self.n_items, 1, padding_idx=0) # Beta popularity bias
-        self.T = nn.Parameter(torch.zeros(self.hidden_size)) # average user representation 'global'
+        self.T = nn.Parameter(torch.zeros(self.embedding_size)) # average user representation 'global'
 
         self.bpr_loss = BPRLoss()
         self.emb_loss = EmbLoss()

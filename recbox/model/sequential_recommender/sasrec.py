@@ -40,8 +40,6 @@ class SASRec(SequentialRecommender):
 
         # load parameters info
         self.hidden_size = config['hidden_size'] # same as embedding_size
-        self.embedding_size = config['embedding_size']
-        assert self.hidden_size == self.embedding_size
         self.initializer_range = config['initializer_range']
         self.loss_type = config['loss_type']
         self.dropout_prob = config['dropout_prob']
