@@ -24,22 +24,10 @@ def load_presets():
     return presets_dict
 
 
-def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True, presets=False):
+def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
 
     # configurations initialization
-    if presets:
-        assert model is not None and dataset is not None, \
-            "Quick-start required positional arguments: 'model' and 'dataset'"
-
-        presets_dict = load_presets()
-        try:
-            config_dict = presets_dict['-'.join([model, dataset])]
-        except KeyError:
-            raise KeyError('UniRec only support quick-start of the following combinations:  '
-                           + str(list(presets_dict.keys())))
-        config = Config(model=model, dataset=dataset, config_dict=config_dict)
-    else:
-        config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
+    config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
     init_seed(config['seed'])
 
     # logger initialization

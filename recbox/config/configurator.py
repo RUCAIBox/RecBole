@@ -20,7 +20,7 @@ import torch
 from logging import getLogger
 
 from recbox.evaluator import loss_metrics, topk_metrics
-from recbox.utils import get_model, Enum, EvaluatorType
+from recbox.utils import get_model, Enum, EvaluatorType, ModelType
 
 
 class Config(object):
@@ -201,6 +201,25 @@ class Config(object):
                     if config_dict is not None:
                         self.internal_config_dict.update(config_dict)
 
+        self.internal_config_dict['MODEL_TYPE'] = get_model(model).type
+        self.internal_config_dict['MODEL_INPUT_TYPE'] = get_model(model).input_type
+        if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
+            pass
+        elif self.internal_config_dict['MODEL_TYPE'] == ModelType.CONTEXT:
+            self.internal_config_dict.update({
+                'eval_setting': 'RO_RS',
+                'group_by_user': False,
+                'metrics': ['AUC', 'LogLoss'],
+                'valid_metric': 'AUC',
+                'training_neg_sample_num': 0,
+            })
+        elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
+            self.internal_config_dict.update({
+                'eval_setting': 'TO_LS, full',
+            })
+        elif self.internal_config_dict['MODEL_TYPE'] == ModelType.KNOWLEDGE:
+            pass
+
     def _get_final_config_dict(self):
         final_config_dict = dict()
         final_config_dict.update(self.internal_config_dict)
@@ -234,10 +253,6 @@ class Config(object):
         smaller_metric = ['rmse', 'mae', 'logloss']
         valid_metric = self.final_config_dict['valid_metric'].split('@')[0]
         self.final_config_dict['valid_metric_bigger'] = False if valid_metric in smaller_metric else True
-
-        model = get_model(self.model)
-        self.final_config_dict['MODEL_TYPE'] = model.type
-        self.final_config_dict['MODEL_INPUT_TYPE'] = model.input_type
 
         if 'additional_feat_suffix' in self.final_config_dict:
             ad_suf = self.final_config_dict['additional_feat_suffix']
