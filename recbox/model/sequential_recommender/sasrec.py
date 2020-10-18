@@ -33,7 +33,6 @@ class SASRec(SequentialRecommender):
         by CNN with 1x1 kernel. In this implementation, we follows the original BERT implmentation
         using Fully Connected Layer to implement the PFFN.
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(SASRec, self).__init__(config, dataset)

@@ -31,8 +31,6 @@ class FDSA(SequentialRecommender):
 
     """
 
-    input_type = InputType.PAIRWISE
-
     def __init__(self, config, dataset):
         super(FDSA, self).__init__(config, dataset)
 

@@ -36,7 +36,6 @@ class GRU4Rec(SequentialRecommender):
         in the paper and directly output the embedding of the item,
         in order that the generation method we used is common to other sequential models.
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(GRU4Rec, self).__init__(config, dataset)
