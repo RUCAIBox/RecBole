@@ -38,7 +38,6 @@ class NextItNet(SequentialRecommender):
         than it in residual block (b), the performance of b is better than a.
         So in our model, we use residual block (b).
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(NextItNet, self).__init__(config, dataset)

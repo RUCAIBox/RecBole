@@ -36,7 +36,6 @@ class GRU4RecF(SequentialRecommender):
     encode items and features respectively and concatenates the two subparts's
     outputs as the final output. The different RNN encoders are trained simultaneously.
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(GRU4RecF, self).__init__(config, dataset)

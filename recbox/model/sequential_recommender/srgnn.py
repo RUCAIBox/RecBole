@@ -114,7 +114,6 @@ class SRGNN(SequentialRecommender):
          4    0     1     0     0
         === ===== ===== ===== =====
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(SRGNN, self).__init__(config, dataset)

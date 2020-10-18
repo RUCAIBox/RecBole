@@ -29,7 +29,6 @@ from recbox.model.layers import TransformerEncoder
 
 
 class BERT4Rec(SequentialRecommender):
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(BERT4Rec, self).__init__(config, dataset)

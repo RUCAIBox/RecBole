@@ -94,7 +94,6 @@ class GCSAN(SequentialRecommender):
     r"""GCSAN captures rich local dependencies via graph nerual network,
      and learns long-range dependencies by applying the self-attention mechanism.
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(GCSAN, self).__init__(config, dataset)
