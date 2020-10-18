@@ -1,8 +1,5 @@
-MAX_ITEM_LIST_LENGTH: 50
-LIST_SUFFIX: '_list'
-ITEM_LIST_LENGTH_FIELD: 'item_length'
-
 embedding_size: 64
 hidden_size: 128
 num_layers: 1
 dropout: 0.3
+loss_type: 'CE'

@@ -35,8 +35,6 @@ class BERT4Rec(SequentialRecommender):
 
         # load parameters info
         self.hidden_size = config['hidden_size']
-        self.embedding_size = config['embedding_size']
-        assert self.hidden_size == self.embedding_size
         self.mask_ratio = config['mask_ratio']
         self.loss_type = config['loss_type']
         self.dropout_prob = config['dropout_prob']
