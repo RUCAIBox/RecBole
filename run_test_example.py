@@ -184,29 +184,37 @@ test_examples = {
         'model': 'GRU4Rec',
         'dataset': 'ml-100k',
         'epochs': 1,
-        'training_neg_sample_num': 0,
+        'training_neg_sample_num': 1,
         'eval_setting': 'TO_LS, full',
         'split_ratio': None,
         'leave_one_num': 2,
         'real_time_process': True,
-        'NEG_PREFIX': None,
-        'LABEL_FIELD': None,
+        'loss_type': 'CE',
+        'NEG_PREFIX': '_neg',
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
+
     },
     'Test FPMC': {
         'model': 'FPMC',
         'dataset': 'ml-100k',
         'epochs': 1,
         'training_neg_sample_num': 1,
-        'eval_setting': 'TO_LS, uni100',
+        'eval_setting': 'TO_LS, full',
         'split_ratio': None,
         'leave_one_num': 2,
+        'NEG_PREFIX': '_neg',
         'real_time_process': True,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test DIN': {
         'model': 'DIN',
@@ -225,7 +233,10 @@ test_examples = {
         'threshold': {'rating': 4},
         'valid_metric': 'AUC',
         'metrics': ['AUC'],
-        'eval_batch_size': 10000
+        'eval_batch_size': 10000,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test DCN':{
         'model': 'DCN',
@@ -289,16 +300,20 @@ test_examples = {
         'model': 'Caser',
         'dataset': 'ml-100k',
         'epochs': 1,
-        'training_neg_sample_num': 0,
+        'training_neg_sample_num': 1,
         'eval_setting': 'TO_LS, full',
         'split_ratio': None,
         'leave_one_num': 2,
         'real_time_process': True,
-        'NEG_PREFIX': None,
+        'NEG_PREFIX': '_neg',
+        'loss_type': 'CE',
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 10,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test TransRec': {
         'model': 'TransRec',
@@ -314,7 +329,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test GRU4RecF': {
         'model': 'GRU4RecF',
@@ -347,7 +365,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test SASRecF': {
         'model': 'SASRecF',
@@ -364,7 +385,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test FDSA': {
         'model': 'FDSA',
@@ -381,7 +405,10 @@ test_examples = {
         'LABEL_FIELD': None,
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'], 'item':['item_id', 'class']},
-        'min_user_inter_num': 5
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     },
     'Test BERT4Rec': {
         'model': 'BERT4Rec',
@@ -398,8 +425,80 @@ test_examples = {
         'TIME_FIELD': 'timestamp',
         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
         'min_user_inter_num': 5
+    },
+    'Test STAMP': {
+        'model': 'STAMP',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'loss_type': 'CE',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5
+    },
+    'Test NARM': {
+        'model': 'NARM',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'loss_type': 'CE',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
+    },
+    'Test SRGNN': {
+        'model': 'SRGNN',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'loss_type': 'CE',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
+    },
+    'Test GCSAN': {
+        'model': 'GCSAN',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, full',
+        'loss_type': 'CE',
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'real_time_process': True,
+        'NEG_PREFIX': '_neg',
+        'LABEL_FIELD': None,
+        'TIME_FIELD': 'timestamp',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp']},
+        'min_user_inter_num': 5,
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length'
     }
-
 }
 
 
@@ -411,7 +510,7 @@ def run_test_examples():
     for idx, example in enumerate(test_examples.keys()):
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
-            run_unirec(config_dict=test_examples[example], config_file_list=['./myconfig/my_overall.yaml'], saved=False)
+            run_unirec(config_dict=test_examples[example], saved=False)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:

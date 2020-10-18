@@ -29,38 +29,36 @@ from recbox.model.layers import TransformerEncoder
 
 
 class BERT4Rec(SequentialRecommender):
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
-        super(BERT4Rec, self).__init__()
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
-        self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = self.ITEM_ID
-        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
+        super(BERT4Rec, self).__init__(config, dataset)
 
-        self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
-        self.item_count = dataset.item_num + 1 # for mask token
-        self.mask_token = self.item_count - 1
+        # load parameters info
+        self.hidden_size = config['hidden_size']
         self.mask_ratio = config['mask_ratio']
-
-        self.item_embedding = nn.Embedding(self.item_count, config['hidden_size'], padding_idx=0)
-        self.position_embedding = nn.Embedding(self.max_item_list_length, config['hidden_size'], padding_idx=0)
-
-        self.trm_encoder = TransformerEncoder(config)
-        # For input
-        self.LayerNorm = nn.LayerNorm(config['hidden_size'], eps=1e-12)
-        self.dropout = nn.Dropout(config['dropout_prob'])
-
         self.loss_type = config['loss_type']
+        self.dropout_prob = config['dropout_prob']
+        self.initializer_range = config['initializer_range']
+
+        # load dataset info
+        self.n_items = dataset.item_num + 1  # for mask token
+        self.mask_token = self.n_items - 1
+        self.mask_item_length = int(self.mask_ratio * self.max_seq_length)
+
+        # define layers and loss
+        self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
+        self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size, padding_idx=0)
+        self.trm_encoder = TransformerEncoder(config)
+
+        self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=1e-12)
+        self.dropout = nn.Dropout(self.dropout_prob)
+        # we only need compute the loss at the masked position
         try:
             assert self.loss_type in ['BPR', 'CE']
         except AssertionError:
             raise AssertionError("Make sure 'loss_type' in ['BPR', 'CE']!")
-        # we only need compute the loss at the masked position
 
-        self.mask_item_length = int(self.mask_ratio * self.max_item_list_length)
-        self.initializer_range = config['initializer_range']
+        # parameters initialization
         self.apply(self._init_weights)
 
     def _init_weights(self, module):
@@ -75,12 +73,6 @@ class BERT4Rec(SequentialRecommender):
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
 
-    def gather_indexes(self, output, gather_index):
-        "Gathers the vectors at the spexific positions over a minibatch"
-        gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.size(-1))
-        output_tensor = output.gather(dim=1, index=gather_index)
-        return output_tensor.squeeze(1)
-
     def get_attention_mask(self, item_seq):
         attention_mask = (item_seq > 0).long()
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
@@ -90,9 +82,9 @@ class BERT4Rec(SequentialRecommender):
         return extended_attention_mask
 
     def neg_sample(self, item_set):
-        item = random.randint(1, self.item_count - 1)
+        item = random.randint(1, self.n_items - 1)
         while item in item_set:
-            item = random.randint(1, self.item_count - 1)
+            item = random.randint(1, self.n_items - 1)
         return item
 
     def padding_zero_at_left(self, sequence, max_length):
@@ -103,9 +95,8 @@ class BERT4Rec(SequentialRecommender):
 
     # mask data for training
     # 0.1s/batch for reconstruction
-    def reconstruct_train_data(self, interaction):
+    def reconstruct_train_data(self, item_seq):
         # concat target at the last position, but the last position is not at the 'last'
-        item_seq = interaction[self.ITEM_ID_LIST]
         device = item_seq.device
         batch_size = item_seq.size(0)
 
@@ -149,19 +140,15 @@ class BERT4Rec(SequentialRecommender):
         masked_index = torch.tensor(masked_index, dtype=torch.long, device=device).view(batch_size, -1)
         return masked_item_sequence, pos_items, neg_items, masked_index
 
-    # we need add mask_token at the last position according to the lengths of item_list
-    def reconstruct_test_data(self, interaction):
-
-        # concat target at the last position, but the last position is not at the 'last'
-        item_seq = interaction[self.ITEM_ID_LIST]
+    # we need add mask_token at the last position according to the lengths of item_seq
+    def reconstruct_test_data(self, item_seq, item_seq_len):
         padding = torch.zeros(item_seq.size(0), dtype=torch.long, device=item_seq.device)  # [B]
         item_seq = torch.cat((item_seq, padding.unsqueeze(-1)), dim=-1)  # [B max_len+1]
-        for batch_id, last_position in enumerate(interaction[self.ITEM_LIST_LEN]):
+        for batch_id, last_position in enumerate(item_seq_len):
             item_seq[batch_id][last_position] = self.mask_token
-        return item_seq[:, -self.max_item_list_length:]
+        return item_seq[:, -self.max_seq_length:]
 
     def forward(self, item_seq):
-
         position_ids = torch.arange(item_seq.size(1), dtype=torch.long, device=item_seq.device)
         position_ids = position_ids.unsqueeze(0).expand_as(item_seq)
         position_embedding = self.position_embedding(position_ids)
@@ -190,10 +177,12 @@ class BERT4Rec(SequentialRecommender):
         return multi_hot
 
     def calculate_loss(self, interaction):
-        masked_item_list, pos_items, neg_items, masked_index = self.reconstruct_train_data(interaction)
-        seq_output = self.forward(masked_item_list)
+        item_seq = interaction[self.ITEM_SEQ]
+        masked_item_seq, pos_items, neg_items, masked_index = self.reconstruct_train_data(item_seq)
+
+        seq_output = self.forward(item_seq)
         # we add 1 to the index before.
-        pred_index_map = self.multi_hot_embed(masked_index-1, masked_item_list.size(-1))
+        pred_index_map = self.multi_hot_embed(masked_index-1, masked_item_seq.size(-1))
         # [B mask_len] -> [B mask_len max_len] multi hot
         pred_index_map = pred_index_map.view(masked_index.size(0), masked_index.size(1), -1)
         # [B max_len H] -> [B mask_len H]
@@ -222,14 +211,15 @@ class BERT4Rec(SequentialRecommender):
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
-    # TODO implemented after the data interface is ready
     def predict(self, interaction):
         pass
 
     def full_sort_predict(self, interaction):
-        item_seq = self.reconstruct_test_data(interaction)
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        item_seq = self.reconstruct_test_data(item_seq, item_seq_len)
         seq_output = self.forward(item_seq)
-        seq_output = self.gather_indexes(seq_output, interaction[self.ITEM_LIST_LEN] - 1)  # [B H]
-        test_item_emb = self.item_embedding.weight[:self.item_count-1]  # delete masked token
+        seq_output = self.gather_indexes(seq_output, item_seq_len - 1)  # [B H]
+        test_item_emb = self.item_embedding.weight[:self.n_items-1]  # delete masked token
         scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
         return scores

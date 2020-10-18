@@ -7,10 +7,21 @@ recbox.quick_start
 ########################
 """
 
+import os
+import yaml
+
 from logging import getLogger
 from recbox.utils import init_logger, get_model, get_trainer, init_seed
 from recbox.config import Config
 from recbox.data import create_dataset, data_preparation
+
+
+def load_presets():
+    current_path = os.path.dirname(os.path.realpath(__file__))
+    presets_file = os.path.join(current_path, '../properties/presets.yaml')
+    with open(presets_file, 'r', encoding='utf-8') as fp:
+        presets_dict = yaml.load(fp.read(), Loader=yaml.FullLoader)
+    return presets_dict
 
 
 def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):

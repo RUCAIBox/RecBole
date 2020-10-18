@@ -9,7 +9,17 @@
 # @Author : Yupeng Hou, Zihan Lin
 # @Email  : houyupeng@ruc.edu.cn, zhlin@ruc.edu.cn
 
+
+import argparse
+
 from recbox.quick_start import run_unirec
 
+
 if __name__ == '__main__':
-    run_unirec()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', '-m', type=str, default='BPRMF', help='name of models')
+    parser.add_argument('--dataset', '-d', type=str, default='ml-100k', help='name of datasets')
+
+    args, _ = parser.parse_known_args()
+
+    run_unirec(model=args.model, dataset=args.dataset)

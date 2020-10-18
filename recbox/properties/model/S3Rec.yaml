@@ -1,9 +1,3 @@
-MAX_ITEM_LIST_LENGTH: 50
-TARGET_PREFIX: 'target_'
-LIST_SUFFIX: '_list'
-ITEM_LIST_LENGTH_FIELD: 'item_length'
-NEG_PREFIX: 'neg_'
-
 embedding_size: 64
 hidden_size: 64
 num_hidden_layers: 2
@@ -19,3 +13,4 @@ sp_weight: 0.5
 train_stage: 'pretrain'
 save_step: 10
 pre_model_path: ''
+loss_type: 'CE'

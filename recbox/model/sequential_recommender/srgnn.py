@@ -15,13 +15,16 @@ Reference code:
 https://github.com/CRIPAC-DIG/SR-GNN
 
 """
-import torch
 import numpy as np
+import math
+
+import torch
 from torch import nn
 from torch.nn import Parameter
 from torch.nn import functional as F
-import math
+
 from recbox.utils import InputType
+from recbox.model.loss import BPRLoss
 from recbox.model.abstract_recommender import SequentialRecommender
 
 
@@ -56,7 +59,7 @@ class GNN(nn.Module):
             hidden(torch.FloatTensor):The item node embedding matrix, shape of [batch_size, max_session_len, embedding_size]
 
         Returns:
-            hy(torch.FloatTensor):Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
+            torch.FloatTensor:Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
 
         """
 
@@ -88,8 +91,7 @@ class SRGNN(SequentialRecommender):
     In addition to considering the connection between the item and the adjacent item,
     it also considers the connection with other interactive items.
 
-    Such as: A example of a session sequence and the connecion matrix A
-    session sequence :item1, item2, item3, item2, item4
+    Such as: A example of a session sequence(eg:item1, item2, item3, item2, item4) and the connecion matrix A
 
     Outgoing edges:
         === ===== ===== ===== =====
@@ -111,31 +113,33 @@ class SRGNN(SequentialRecommender):
          4    0     1     0     0
         === ===== ===== ===== =====
     """
-    input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
-        super(SRGNN, self).__init__()
-        # load parameters info
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
-        self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = self.ITEM_ID
-        self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
+        super(SRGNN, self).__init__(config, dataset)
 
+        # load parameters info
         self.embedding_size = config['embedding_size']
         self.step = config['step']
         self.device = config['device']
-        self.item_count = dataset.item_num
+        self.loss_type = config['loss_type']
+
+        # define layers and loss
         # item embedding
-        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         # define layers and loss
         self.gnn = GNN(self.embedding_size, self.step)
         self.linear_one = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.linear_two = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.linear_three = nn.Linear(self.embedding_size, 1, bias=False)
         self.linear_transform = nn.Linear(self.embedding_size * 2, self.embedding_size, bias=True)
-        self.criterion = nn.CrossEntropyLoss()
-        # parameters init
+        if self.loss_type == 'BPR':
+            self.loss_fct = BPRLoss()
+        elif self.loss_type == 'CE':
+            self.loss_fct = nn.CrossEntropyLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
+
+        # parameters initialization
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -143,25 +147,13 @@ class SRGNN(SequentialRecommender):
         for weight in self.parameters():
             weight.data.uniform_(-stdv, stdv)
 
-    def get_slice(self, interaction):
-        r"""Get the input needed by the graph neural network
-
-        Returns:
-            alias_inputs(torch.LongTensor):The relative coordinates of the item node, shape of [batch_size, max_session_len]
-            A(torch.FloatTensor):The connecting matrix, shape of [batch_size, max_session_len, 2 * max_session_len]
-            items(torch.LongTensor):The unique item nodes, shape of [batch_size, max_session_len]
-            mask(torch.LongTensor):Mask matrix, shape of [batch_size, max_session_len]
-
-        """
-        item_id_list = interaction[self.ITEM_ID_LIST]
-        mask = item_id_list.gt(0)
-
+    def get_slice(self, item_seq):
+        # Mask matrix, shape of [batch_size, max_session_len]
+        mask = item_seq.gt(0)
         items, n_node, A, alias_inputs = [], [], [], []
-        max_n_node = item_id_list.size(1)
-
-        item_id_list = item_id_list.cpu().numpy()
-
-        for u_input in item_id_list:
+        max_n_node = item_seq.size(1)
+        item_seq = item_seq.cpu().numpy()
+        for u_input in item_seq:
             node = np.unique(u_input)
             items.append(node.tolist() + (max_n_node - len(node)) * [0])
             u_A = np.zeros((max_n_node, max_n_node))
@@ -184,47 +176,58 @@ class SRGNN(SequentialRecommender):
             A.append(u_A)
 
             alias_inputs.append([np.where(node == i)[0][0] for i in u_input])
-
+        # The relative coordinates of the item node, shape of [batch_size, max_session_len]
         alias_inputs = torch.LongTensor(alias_inputs).to(self.device)
+        # The connecting matrix, shape of [batch_size, max_session_len, 2 * max_session_len]
         A = torch.FloatTensor(A).to(self.device)
+        # The unique item nodes, shape of [batch_size, max_session_len]
         items = torch.LongTensor(items).to(self.device)
 
         return alias_inputs, A, items, mask
 
-    def get_item_lookup_table(self):
-        r"""Get the transpose of item_list_embedding.weight，Shape of (embedding_size, item_count+padding_id)
-        Used to calculate the score for each item with the predict_behavior_emb
-        """
-        return self.item_list_embedding.weight.t()
+    def forward(self, item_seq, item_seq_len):
 
-    def forward(self, interaction):
-        alias_inputs, A, items, mask = self.get_slice(interaction)
-        item_list_len = interaction[self.ITEM_LIST_LEN]
-        hidden = self.item_list_embedding(items)
+        alias_inputs, A, items, mask = self.get_slice(item_seq)
+        hidden = self.item_embedding(items)
         hidden = self.gnn(A, hidden)
         alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(-1, -1, self.embedding_size)
         seq_hidden = torch.gather(hidden, dim=1, index=alias_inputs)
         # fetch the last hidden state of last timestamp
-        ht = self.gather_indexes(seq_hidden, item_list_len - 1)
+        ht = self.gather_indexes(seq_hidden, item_seq_len - 1)
         q1 = self.linear_one(ht).view(ht.size(0), 1, ht.size(1))
         q2 = self.linear_two(seq_hidden)
 
         alpha = self.linear_three(torch.sigmoid(q1 + q2))
         a = torch.sum(alpha * seq_hidden * mask.view(mask.size(0), -1, 1).float(), 1)
-        predict_emb = self.linear_transform(torch.cat([a, ht], dim=1))
-        return predict_emb
+        seq_output = self.linear_transform(torch.cat([a, ht], dim=1))
+        return seq_output
 
     def calculate_loss(self, interaction):
-        target_id = interaction[self.TARGET_ITEM_ID]
-        pred = self.forward(interaction)
-        logits = torch.matmul(pred, self.get_item_lookup_table())
-        loss = self.criterion(logits, target_id)
-        return loss
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq, item_seq_len)
+        pos_items = interaction[self.POS_ITEM_ID]
+        if self.loss_type == 'BPR':
+            neg_items = interaction[self.NEG_ITEM_ID]
+            pos_items_emb = self.item_embedding(pos_items)
+            neg_items_emb = self.item_embedding(neg_items)
+            pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)  # [B]
+            neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)  # [B]
+            loss = self.loss_fct(pos_score, neg_score)
+            return loss
+        else:  # self.loss_type = 'CE'
+            test_item_emb = self.item_embedding.weight
+            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
+            loss = self.loss_fct(logits, pos_items)
+            return loss
 
     def predict(self, interaction):
         pass
 
     def full_sort_predict(self, interaction):
-        pred = self.forward(interaction)
-        scores = torch.matmul(pred, self.get_item_lookup_table())
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq, item_seq_len)
+        test_item_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
         return scores

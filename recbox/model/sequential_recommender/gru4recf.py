@@ -36,32 +36,19 @@ class GRU4RecF(SequentialRecommender):
     encode items and features respectively and concatenates the two subparts's
     outputs as the final output. The different RNN encoders are trained simultaneously.
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
-        super(GRU4RecF, self).__init__()
+        super(GRU4RecF, self).__init__(config, dataset)
 
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
-        self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = self.ITEM_ID
-        self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
-        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
-
+        # load parameters info
         self.embedding_size = config['embedding_size']
         self.hidden_size = config['hidden_size']
         self.num_layers = config['num_layers']
+        self.num_feature_field = len(config['selected_features'])
 
-        self.item_count = dataset.item_num
-
-        # need change the 'load_col' config
-        self.hidden_size = config['hidden_size']
-        self.embedding_size = config['embedding_size']
-        self.item_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
+        # define layers and loss
+        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.feature_embed_layer = FeatureSeqEmbLayer(config, dataset)
-
-        # For simplicity, we use same architecture for item_gru and feature_gru
-
         self.item_gru_layers = nn.GRU(
             input_size=self.embedding_size,
             hidden_size=self.hidden_size,
@@ -69,9 +56,7 @@ class GRU4RecF(SequentialRecommender):
             bias=False,
             batch_first=True,
         )
-
-        self.num_feature_field = len(config['selected_features'])
-
+        # For simplicity, we use same architecture for item_gru and feature_gru
         self.feature_gru_layers = nn.GRU(
             input_size=self.embedding_size * self.num_feature_field,
             hidden_size=self.hidden_size,
@@ -79,10 +64,8 @@ class GRU4RecF(SequentialRecommender):
             bias=False,
             batch_first=True,
         )
-
         self.dense_layer = nn.Linear(config['hidden_size'] * 2, self.embedding_size)
         self.dropout = nn.Dropout(config['dropout_prob'])
-
         self.loss_type = config['loss_type']
         if self.loss_type == 'BPR':
             self.loss_fct = BPRLoss()
@@ -91,23 +74,17 @@ class GRU4RecF(SequentialRecommender):
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
+        # parameters initialization
         self.apply(xavier_normal_initialization)
-
-    def gather_indexes(self, gru_output, gather_index):
-        """Gathers the vectors at the spexific positions over a minibatch"""
-        gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, gru_output.size(-1))
-        output_tensor = gru_output.gather(dim=1, index=gather_index)
-        return output_tensor.squeeze(1)
 
     def load_kg_embedding(self):
         "For GRU4Rec+KG"
         pass
 
-    def forward(self, interaction):
-        item_seq = interaction[self.ITEM_ID_LIST]
-        item_emb = self.item_embedding(item_seq)
-        item_emb = self.dropout(item_emb)
-        item_gru_output, _ = self.item_gru_layers(item_emb)  # [B Len H]
+    def forward(self, item_seq, item_seq_len):
+        item_seq_emb = self.item_embedding(item_seq)
+        item_seq_emb_dropout = self.dropout(item_seq_emb)
+        item_gru_output, _ = self.item_gru_layers(item_seq_emb_dropout)  # [B Len H]
 
         sparse_embedding, dense_embedding = self.feature_embed_layer(None, item_seq)
         sparse_embedding = sparse_embedding['item']
@@ -129,12 +106,14 @@ class GRU4RecF(SequentialRecommender):
 
         output_concat = torch.cat((item_gru_output, feature_gru_output), -1)  # [B Len 2*H]
         output = self.dense_layer(output_concat)
-        output = self.gather_indexes(output, interaction[self.ITEM_LIST_LEN] - 1)  # [B H]
+        output = self.gather_indexes(output, item_seq_len - 1)  # [B H]
         return output # [B H]
 
     def calculate_loss(self, interaction):
-        seq_output = self.forward(interaction)
-        pos_items = interaction[self.TARGET_ITEM_ID]
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq, item_seq_len)
+        pos_items = interaction[self.POS_ITEM_ID]
         if self.loss_type == 'BPR':
             neg_items = interaction[self.NEG_ITEM_ID]
             pos_items_emb = self.item_embedding(pos_items) # [B H]
@@ -143,21 +122,19 @@ class GRU4RecF(SequentialRecommender):
             neg_score = torch.sum(seq_output*neg_items_emb, dim=-1) # [B]
             loss = self.loss_fct(pos_score, neg_score)
             return loss
-        elif self.loss_type == 'CE':
+        else:  # self.loss_type = 'CE'
             test_item_emb = self.item_embedding.weight
             logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
             loss = self.loss_fct(logits, pos_items)
             return loss
-        else:
-            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
-    # TODO implemented after the data interface is ready
     def predict(self, interaction):
-
         pass
 
     def full_sort_predict(self, interaction):
-        seq_output = self.forward(interaction)
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq, item_seq_len)
         test_item_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1)) # [B, item_num]
+        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
         return scores
