@@ -1,0 +1,8 @@
+embedding_size: 64
+kg_embedding_size: 16
+low_layers_num: 1
+high_layers_num: 1
+l2_weight: 1e-6
+use_inner_product: True
+kge_interval: 3
+dropout: 0.0
