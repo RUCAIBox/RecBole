@@ -31,59 +31,56 @@ class TransRec(SequentialRecommender):
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
-        super(TransRec, self).__init__()
+        super(TransRec, self).__init__(config, dataset)
 
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
-        self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = self.ITEM_ID
-        self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
-        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
-
+        # load parameters info
         self.embedding_size = config['embedding_size']
         self.hidden_size = config['hidden_size']
-        self.item_num = dataset.item_num
-        self.user_num = dataset.user_num
+        assert self.embedding_size == self.hidden_size
 
-        # embedding_size is equal to hidden_size
-        self.user_embedding = nn.Embedding(self.user_num, self.embedding_size, padding_idx=0)
-        self.item_embedding = nn.Embedding(self.item_num, self.embedding_size, padding_idx=0)
-        self.bias = nn.Embedding(self.item_num, 1, padding_idx=0) # Beta popularity bias
+        # load dataset info
+        self.n_users = dataset.user_num
+
+        self.user_embedding = nn.Embedding(self.n_users, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.bias = nn.Embedding(self.n_items, 1, padding_idx=0) # Beta popularity bias
         self.T = nn.Parameter(torch.zeros(self.hidden_size)) # average user representation 'global'
 
         self.bpr_loss = BPRLoss()
         self.emb_loss = EmbLoss()
         self.reg_loss = RegLoss()
+
+        # parameters initialization
         self.apply(xavier_normal_initialization)
 
 
     def l2_distance(self, x, y):
         return torch.sqrt(torch.sum((x - y)**2, dim=-1, keepdim=True)) # [B 1]
 
-    def gather_last_items(self, item_list, gather_index):
+    def gather_last_items(self, item_seq, gather_index):
         "Gathers the last_item at the spexific positions over a minibatch"
         gather_index = gather_index.view(-1, 1)
-        last_items = item_list.gather(index=gather_index, dim=1) # [B 1]
+        last_items = item_seq.gather(index=gather_index, dim=1) # [B 1]
         return last_items.squeeze(-1) # [B]
 
-    def forward(self, interaction):
-        user = interaction[self.USER_ID] # [B]
-        items_list = interaction[self.ITEM_ID_LIST] # [B Len]
+    def forward(self, user, item_seq, item_seq_len):
         # the last item at the last position
-        last_items = self.gather_last_items(items_list, interaction[self.ITEM_LIST_LEN] - 1) # [B]
-
+        last_items = self.gather_last_items(item_seq, item_seq_len - 1) # [B]
         user_emb = self.user_embedding(user) # [B H]
         last_items_emb = self.item_embedding(last_items)  # [B H]
         T = self.T.expand_as(user_emb) # [B H]
-        output = user_emb + T + last_items_emb # [B H]
-        return output
+        seq_output = user_emb + T + last_items_emb # [B H]
+        return seq_output
 
 
     def calculate_loss(self, interaction):
-        output = self.forward(interaction) # [B H]
+        user = interaction[self.USER_ID]  # [B]
+        item_seq = interaction[self.ITEM_SEQ]  # [B Len]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
 
-        pos_items = interaction[self.TARGET_ITEM_ID]  # [B]
+        seq_output = self.forward(user, item_seq, item_seq_len)  # [B H]
+
+        pos_items = interaction[self.POS_ITEM_ID]  # []
         neg_items = interaction[self.NEG_ITEM_ID]  # [B] sample 1 negative item
 
         pos_items_emb = self.item_embedding(pos_items)  # [B H]
@@ -92,28 +89,30 @@ class TransRec(SequentialRecommender):
         pos_bias = self.bias(pos_items)  # [B 1]
         neg_bias = self.bias(neg_items)
 
-        pos_score = pos_bias - self.l2_distance(output, pos_items_emb)
-        neg_score = neg_bias - self.l2_distance(output, neg_items_emb)
+        pos_score = pos_bias - self.l2_distance(seq_output, pos_items_emb)
+        neg_score = neg_bias - self.l2_distance(seq_output, neg_items_emb)
 
         bpr_loss = self.bpr_loss(pos_score, neg_score)
-
         item_emb_loss = self.emb_loss(self.item_embedding.weight)
         user_emb_loss = self.emb_loss(self.user_embedding.weight)
         bias_emb_loss = self.emb_loss(self.bias.weight)
         reg_loss = self.reg_loss(self.T)
         return bpr_loss + item_emb_loss + user_emb_loss + bias_emb_loss + reg_loss
 
-    # TODO implemented after the data interface is ready
     def predict(self, interaction):
         pass
 
     def full_sort_predict(self, interaction):
-        output = self.forward(interaction) # [user_num H]
+        user = interaction[self.USER_ID]  # [B]
+        item_seq = interaction[self.ITEM_SEQ]  # [B Len]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+
+        seq_output = self.forward(user, item_seq, item_seq_len)  # [B H]
 
         test_item_emb = self.item_embedding.weight # [item_num H]
-        test_item_emb = test_item_emb.repeat(output.size(0), 1, 1) # [user_num item_num H]
+        test_item_emb = test_item_emb.repeat(seq_output.size(0), 1, 1) # [user_num item_num H]
 
-        user_hidden = output.unsqueeze(1).expand_as(test_item_emb) # [user_num item_num H]
+        user_hidden = seq_output.unsqueeze(1).expand_as(test_item_emb) # [user_num item_num H]
         test_bias = self.bias.weight # [item_num 1]
         test_bias = test_bias.repeat(user_hidden.size(0), 1, 1) # [user_num item_num 1]
 

@@ -20,7 +20,9 @@ Qiao Liu et al. "STAMP: Short-Term Attention/Memory Priority Model for Session-b
 import torch
 from torch import nn
 from torch.nn.init import normal_
+
 from recbox.utils import InputType
+from recbox.model.loss import BPRLoss
 from recbox.model.abstract_recommender import SequentialRecommender
 
 
@@ -35,34 +37,34 @@ class STAMP(SequentialRecommender):
         and did not use the final sigmoid activation function.
 
     """
-    input_type = InputType.POINTWISE
+    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
-        super(STAMP, self).__init__()
-        # load parameters info
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.ITEM_ID_LIST = self.ITEM_ID + config['LIST_SUFFIX']
-        self.ITEM_LIST_LEN = config['ITEM_LIST_LENGTH_FIELD']
-        self.TARGET_ITEM_ID = self.ITEM_ID
-        self.max_item_list_length = config['MAX_ITEM_LIST_LENGTH']
+        super(STAMP, self).__init__(config, dataset)
 
+        # load parameters info
         self.embedding_size = config['embedding_size']
-        self.item_count = dataset.item_num
-        # item embeddings
-        self.item_list_embedding = nn.Embedding(self.item_count, self.embedding_size, padding_idx=0)
-        # define weights and bias
+
+        # define layers and loss
+        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.w1 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         self.w2 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         self.w3 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         self.w0 = nn.Linear(self.embedding_size, 1, bias=False)
         self.b_a = nn.Parameter(torch.zeros(self.embedding_size), requires_grad=True)
-        # define layers,activation and loss
         self.mlp_a = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.mlp_b = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        self.criterion = nn.CrossEntropyLoss()
-        # weight initialization
+        self.loss_type = config['loss_type']
+        if self.loss_type == 'BPR':
+            self.loss_fct = BPRLoss()
+        elif self.loss_type == 'CE':
+            self.loss_fct = nn.CrossEntropyLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
+
+        # # parameters initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):
@@ -73,24 +75,18 @@ class STAMP(SequentialRecommender):
             if module.bias is not None:
                 module.bias.data.fill_(0.0)
 
-    def get_item_lookup_table(self):
-        r"""Get the transpose of item_list_embedding.weight，Shape of (embedding_size, item_count+padding_id)
-        Used to calculate the score for each item with the predict_behavior_emb
-        """
-        return self.item_list_embedding.weight.t()
-
-    def forward(self, interaction):
-        item_list_emb = self.item_list_embedding(interaction[self.ITEM_ID_LIST])
-        last_inputs = self.gather_indexes(item_list_emb, interaction[self.ITEM_LIST_LEN] - 1)
-        org_memory = item_list_emb
-        ms = torch.div(torch.sum(org_memory, dim=1), interaction[self.ITEM_LIST_LEN].unsqueeze(1).float())
+    def forward(self, item_seq, item_seq_len):
+        item_seq_emb = self.item_embedding(item_seq)
+        last_inputs = self.gather_indexes(item_seq_emb, item_seq_len - 1)
+        org_memory = item_seq_emb
+        ms = torch.div(torch.sum(org_memory, dim=1), item_seq_len.unsqueeze(1).float())
         alpha = self.count_alpha(org_memory, last_inputs, ms)
         vec = torch.matmul(alpha.unsqueeze(1), org_memory)
         ma = vec.squeeze(1) + ms
         hs = self.tanh(self.mlp_a(ma))
         ht = self.tanh(self.mlp_b(last_inputs))
-        predict_behavior_emb = hs * ht
-        return predict_behavior_emb
+        seq_output = hs * ht
+        return seq_output
 
     def count_alpha(self, context, aspect, output):
         r"""This is a function that count the attention weights
@@ -115,16 +111,31 @@ class STAMP(SequentialRecommender):
         return alpha
 
     def calculate_loss(self, interaction):
-        target_id = interaction[self.TARGET_ITEM_ID]
-        pred = self.forward(interaction)
-        logits = torch.matmul(pred, self.get_item_lookup_table())
-        loss = self.criterion(logits, target_id)
-        return loss
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq, item_seq_len)
+        pos_items = interaction[self.POS_ITEM_ID]
+        if self.loss_type == 'BPR':
+            neg_items = interaction[self.NEG_ITEM_ID]
+            pos_items_emb = self.item_embedding(pos_items)
+            neg_items_emb = self.item_embedding(neg_items)
+            pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)  # [B]
+            neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)  # [B]
+            loss = self.loss_fct(pos_score, neg_score)
+            return loss
+        else:  # self.loss_type = 'CE'
+            test_item_emb = self.item_embedding.weight
+            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
+            loss = self.loss_fct(logits, pos_items)
+            return loss
 
     def predict(self, interaction):
         pass
 
     def full_sort_predict(self, interaction):
-        pred = self.forward(interaction)
-        scores = torch.matmul(pred, self.get_item_lookup_table())
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq, item_seq_len)
+        test_item_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
         return scores

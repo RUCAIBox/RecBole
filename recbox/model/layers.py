@@ -52,7 +52,6 @@ class MLPLayers(nn.Module):
         self.activation = activation
         self.use_bn = bn
         self.init_method = init_method
-        self.logger = getLogger()
 
         mlp_modules = []
         for idx, (input_size, output_size) in enumerate(zip(self.layers[:-1], self.layers[1:])):
@@ -60,20 +59,10 @@ class MLPLayers(nn.Module):
             mlp_modules.append(nn.Linear(input_size, output_size))
             if self.use_bn:
                 mlp_modules.append(nn.BatchNorm1d(num_features=output_size))
-            if self.activation.lower() == 'sigmoid':
-                mlp_modules.append(nn.Sigmoid())
-            elif self.activation.lower() == 'tanh':
-                mlp_modules.append(nn.Tanh())
-            elif self.activation.lower() == 'relu':
-                mlp_modules.append(nn.ReLU())
-            elif self.activation.lower() == 'leakyrelu':
-                mlp_modules.append(nn.LeakyReLU())
-            elif self.activation.lower() == 'dice':
-                mlp_modules.append(Dice(output_size))
-            elif self.activation.lower() == 'none':
-                pass
-            else:
-                self.logger.warning('Received unrecognized activation function, set default activation function')
+            activation_func = activation_layer(self.activation, output_size)
+            if activation_func is not None:
+                mlp_modules.append(activation_func)
+
         self.mlp_layers = nn.Sequential(*mlp_modules)
         if self.init_method is not None:
             self.apply(self.init_weights)
@@ -88,6 +77,38 @@ class MLPLayers(nn.Module):
 
     def forward(self, input_feature):
         return self.mlp_layers(input_feature)
+
+
+def activation_layer(activation_name='relu', emb_dim=None):
+    """Construct activation layers
+
+    Args:
+        activation_name: str, name of activation function
+        emb_dim: int, used for Dice activation
+    Return:
+        activation: activation layer
+    """
+    if activation_name is None:
+        activation = None
+    elif isinstance(activation_name, str):
+        if activation_name.lower() == 'sigmoid':
+            activation = nn.Sigmoid()
+        elif activation_name.lower() == 'tanh':
+            activation = nn.Tanh()
+        elif activation_name.lower() == 'relu':
+            activation = nn.ReLU()
+        elif activation_name.lower() == 'leakyrelu':
+            activation = nn.LeakyReLU()
+        elif activation_name.lower() == 'dice':
+            activation = Dice(emb_dim)
+        elif activation_name.lower() == 'none':
+            activation = None
+    elif issubclass(activation_name, nn.Module):
+        activation = activation_name()
+    else:
+        raise NotImplementedError("activation function {} is not implemented".format(activation_name))
+
+    return activation
 
 
 class FMEmbedding(nn.Module):
@@ -180,46 +201,6 @@ class AttLayer(nn.Module):
         att_singal = fn.softmax(att_singal, dim=1)  # [batch_size, M]
 
         return att_singal
-
-
-class MultiHeadAttention(nn.Module):
-    def __init__(self, n_head, d_model, d_k, d_v):
-        super(MultiHeadAttention, self).__init__()
-        assert d_model % n_head == 0
-        self.d_model = d_model
-        self.n_head = n_head
-        self.d_k = d_k
-        self.d_v = d_v
-
-        self.W_Q = nn.Linear(self.d_model, self.d_k * self.n_head, bias=False)
-        self.W_K = nn.Linear(self.d_model, self.d_k * self.n_head, bias=False)
-        self.W_V = nn.Linear(self.d_model, self.d_v * self.n_head, bias=False)
-        self.fc = nn.Linear(self.n_head * self.d_v, self.d_model, bias=False)
-        self.layernorm = nn.LayerNorm(self.d_model)
-
-    def scale_dot_product_attention(self, Q, K, V, mask=None):
-        d_k = Q.size(-1)
-        scores = torch.matmul(Q, K.transpose(-1, -2)) / np.sqrt(d_k)
-        if mask is not None:
-            scores.masked_fill_(mask, -1e9)  # Fills elements of self tensor with value where mask is True.
-        attn = nn.Softmax(dim=-1)(scores)
-        context = torch.matmul(attn, V)
-        return context, attn
-
-    def forward(self, input_Q, input_K, input_V, mask=None):
-        residual, batch_size = input_Q, input_Q.size(0)
-
-        Q = self.W_Q(input_Q).view(batch_size, -1, self.n_head, self.d_k).transpose(1, 2)
-        K = self.W_K(input_K).view(batch_size, -1, self.n_head, self.d_k).transpose(1, 2)
-        V = self.W_V(input_V).view(batch_size, -1, self.n_head, self.d_v).transpose(1, 2)
-
-        if mask is not None:
-            mask = mask.unsqueeze(1).repeat(1, self.n_head, 1, 1)
-
-        context, attn = self.scale_dot_product_attention(Q, K, V, mask)
-        context = context.transpose(1, 2).reshape(batch_size, -1, self.n_head * self.d_v)
-        output = self.fc(context)
-        return self.layernorm(output + residual), attn
 
 
 class Dice(nn.Module):
@@ -323,6 +304,8 @@ class VanillaAttention(nn.Module):
     Transformer modules
     Adapted from https://github.com/huggingface/transformers/blob/master/src/transformers/modeling_bert.py
 """
+
+
 class SelfAttention(nn.Module):
     def __init__(self, config):
         super(SelfAttention, self).__init__()
@@ -590,7 +573,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
                         1 - mask) * 1e9  # [batch_size, max_item_length, seq_len, embed_dim]
                 result = torch.max(masked_token_seq_embedding, dim=-2,
                                    keepdim=True)  # [batch_size, max_item_length, 1, embed_dim]
-                # result = result.values
+                result = result.values
             elif self.pooling_mode == 'sum':
                 masked_token_seq_embedding = token_seq_embedding * mask.float()
                 result = torch.sum(masked_token_seq_embedding, dim=-2,
@@ -667,7 +650,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
                     sparse_embedding[type] = token_fields_embedding[type]
                 else:
                     sparse_embedding[type] = torch.cat([token_fields_embedding[type],
-                                                          token_seq_fields_embedding[type]], dim=-2)
+                                                        token_seq_fields_embedding[type]], dim=-2)
             dense_embedding[type] = float_fields_embedding[type]
 
         # sparse_embedding[type] shape: [batch_size, max_item_length, num_token_seq_field+num_token_field, embed_dim] or None
@@ -680,6 +663,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
 
 class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
     """For DIN"""
+
     def __init__(self, config, dataset):
         super(ContextSeqEmbLayer, self).__init__()
         self.device = config['device']
@@ -695,7 +679,7 @@ class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
         self.pooling_mode = config['pooling_mode']
         try:
             assert self.pooling_mode in ['mean', 'max', 'sum']
-        except:
+        except AssertionError:
             raise AssertionError("Make sure 'pooling_mode' in ['mean', 'max', 'sum']!")
         self.get_fields_name_dim()
         self.get_embedding()
@@ -703,6 +687,7 @@ class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
 
 class FeatureSeqEmbLayer(ContextSeqEmbAbstractLayer):
     """For feature-rich sequential recommenders"""
+
     def __init__(self, config, dataset):
         super(FeatureSeqEmbLayer, self).__init__()
 
@@ -718,7 +703,7 @@ class FeatureSeqEmbLayer(ContextSeqEmbAbstractLayer):
         self.pooling_mode = config['pooling_mode']
         try:
             assert self.pooling_mode in ['mean', 'max', 'sum']
-        except:
+        except AssertionError:
             raise AssertionError("Make sure 'pooling_mode' in ['mean', 'max', 'sum']!")
         self.get_fields_name_dim()
         self.get_embedding()
