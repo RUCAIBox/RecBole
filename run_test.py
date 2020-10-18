@@ -19,8 +19,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', '-m', type=str, default='BPRMF', help='name of models')
     parser.add_argument('--dataset', '-d', type=str, default='ml-100k', help='name of datasets')
-    parser.add_argument('--presets', action='store_true', help='whether to use presets')
 
     args, _ = parser.parse_known_args()
 
-    run_unirec(model=args.model, dataset=args.dataset, presets=args.presets)
+    run_unirec(model=args.model, dataset=args.dataset)

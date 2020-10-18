@@ -15,7 +15,7 @@ threshold:
     rating: 4
 
 # NegSample Prefix for Pair-wise DataLoader
-NEG_PRlEFIX: neg_
+NEG_PREFIX: neg_
 
 # Selectively Loading
 load_col:
