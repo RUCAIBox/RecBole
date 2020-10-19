@@ -498,6 +498,31 @@ test_examples = {
         'MAX_ITEM_LIST_LENGTH': 50,
         'LIST_SUFFIX': '_list',
         'ITEM_LIST_LENGTH_FIELD':'item_length'
+    },
+    'Test GRU4RecKG': {
+        'model': 'GRU4RecKG',
+        'dataset': 'ml-1m',
+        'epochs': 1,
+        'split_ratio': None,
+        'leave_one_num': 2,
+        'eval_setting': 'TO_LS, full',
+        'TIME_FIELD': 'timestamp',
+        'HEAD_ENTITY_ID_FIELD': 'head_id',
+        'TAIL_ENTITY_ID_FIELD': 'tail_id',
+        'RELATION_ID_FIELD': 'relation_id',
+        'ENTITY_ID_FIELD': 'entity_id',
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD':'item_length',
+        'load_col': {
+            'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+            'feature': ['ent_id', 'ent_feature']
+        },
+        'additional_feat_suffix': ['feature'],
+        'fields_in_same_space': [['entity_id', 'ent_id']],
+        'preload_weight': {
+            'ent_id': 'ent_feature'
+        }
     }
 }
 
