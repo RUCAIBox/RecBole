@@ -59,7 +59,7 @@ class GNN(nn.Module):
             hidden(torch.FloatTensor):The item node embedding matrix, shape of [batch_size, max_session_len, embedding_size]
 
         Returns:
-            hy(torch.FloatTensor):Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
+            torch.FloatTensor:Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
 
         """
 
@@ -91,8 +91,7 @@ class SRGNN(SequentialRecommender):
     In addition to considering the connection between the item and the adjacent item,
     it also considers the connection with other interactive items.
 
-    Such as: A example of a session sequence and the connecion matrix A
-    session sequence :item1, item2, item3, item2, item4
+    Such as: A example of a session sequence(eg:item1, item2, item3, item2, item4) and the connecion matrix A
 
     Outgoing edges:
         === ===== ===== ===== =====
@@ -149,15 +148,7 @@ class SRGNN(SequentialRecommender):
             weight.data.uniform_(-stdv, stdv)
 
     def get_slice(self, item_seq):
-        r"""Get the input needed by the graph neural network
-
-        Returns:
-            alias_inputs(torch.LongTensor):The relative coordinates of the item node, shape of [batch_size, max_session_len]
-            A(torch.FloatTensor):The connecting matrix, shape of [batch_size, max_session_len, 2 * max_session_len]
-            items(torch.LongTensor):The unique item nodes, shape of [batch_size, max_session_len]
-            mask(torch.LongTensor):Mask matrix, shape of [batch_size, max_session_len]
-
-        """
+        # Mask matrix, shape of [batch_size, max_session_len]
         mask = item_seq.gt(0)
         items, n_node, A, alias_inputs = [], [], [], []
         max_n_node = item_seq.size(1)
@@ -185,9 +176,11 @@ class SRGNN(SequentialRecommender):
             A.append(u_A)
 
             alias_inputs.append([np.where(node == i)[0][0] for i in u_input])
-
+        # The relative coordinates of the item node, shape of [batch_size, max_session_len]
         alias_inputs = torch.LongTensor(alias_inputs).to(self.device)
+        # The connecting matrix, shape of [batch_size, max_session_len, 2 * max_session_len]
         A = torch.FloatTensor(A).to(self.device)
+        # The unique item nodes, shape of [batch_size, max_session_len]
         items = torch.LongTensor(items).to(self.device)
 
         return alias_inputs, A, items, mask
