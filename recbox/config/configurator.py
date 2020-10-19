@@ -217,7 +217,7 @@ class Config(object):
             })
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
             self.internal_config_dict.update({
-                'eval_setting': 'TO_LS, full',
+                'eval_setting': 'TO_LS,full',
             })
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.KNOWLEDGE:
             pass
