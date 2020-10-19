@@ -14,6 +14,7 @@ recbox.data.utils
 
 import copy
 import os
+import importlib
 from logging import getLogger
 
 from recbox.config import EvalSetting
@@ -23,19 +24,22 @@ from recbox.data.dataloader import *
 
 
 def create_dataset(config):
-    model_type = config['MODEL_TYPE']
-    if model_type == ModelType.SEQUENTIAL:
-        from .dataset import SequentialDataset
-        return SequentialDataset(config)
-    elif model_type == ModelType.KNOWLEDGE:
-        from .dataset import KnowledgeBasedDataset
-        return KnowledgeBasedDataset(config)
-    elif model_type == ModelType.SOCIAL:
-        from .dataset import SocialDataset
-        return SocialDataset(config)
-    else:
-        from .dataset import Dataset
-        return Dataset(config)
+    try:
+        return getattr(importlib.import_module('recbox.data.dataset'), config['model'] + 'Dataset')(config)
+    except AttributeError:
+        model_type = config['MODEL_TYPE']
+        if model_type == ModelType.SEQUENTIAL:
+            from .dataset import SequentialDataset
+            return SequentialDataset(config)
+        elif model_type == ModelType.KNOWLEDGE:
+            from .dataset import KnowledgeBasedDataset
+            return KnowledgeBasedDataset(config)
+        elif model_type == ModelType.SOCIAL:
+            from .dataset import SocialDataset
+            return SocialDataset(config)
+        else:
+            from .dataset import Dataset
+            return Dataset(config)
 
 
 def data_preparation(config, dataset, save=False):
