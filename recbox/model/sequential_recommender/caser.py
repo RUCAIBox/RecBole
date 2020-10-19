@@ -4,20 +4,17 @@
 # @Email  : zhangjingsen@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/10/2
+# @Time   : 2020/10/19
 # @Author : Jingsen Zhang
 # @Email  : zhangjingsen@ruc.edu.cn
 
 r"""
 recbox.model.sequential_recommender.caser
 ################################################
-
 Reference:
 Jiaxi Tang et al., "Personalized Top-N Sequential Recommendation via Convolutional Sequence Embedding" in WSDM 2018.
-
 Reference code:
 https://github.com/graytowne/caser_pytorch
-
 """
 
 import torch
@@ -32,19 +29,17 @@ from recbox.model.abstract_recommender import SequentialRecommender
 
 class Caser(SequentialRecommender):
     r"""Caser is a model that incorporate CNN for recommendation.
-
     Note:
         We did not use the sliding window to generate training instances as in the paper, in order that
         the generation method we used is common to other sequential models.
         For comparison with other models, we set the parameter T in the paper as 1.
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(Caser, self).__init__(config, dataset)
 
         # load parameters info
-        self.L = config['L']
+        self.L = config['MAX_ITEM_LIST_LENGTH']
         self.embedding_size = config['embedding_size']
         self.loss_type = config['loss_type']
         self.n_h = config['nh']
