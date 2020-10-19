@@ -707,3 +707,69 @@ class FeatureSeqEmbLayer(ContextSeqEmbAbstractLayer):
             raise AssertionError("Make sure 'pooling_mode' in ['mean', 'max', 'sum']!")
         self.get_fields_name_dim()
         self.get_embedding()
+
+
+class CNNLayers(nn.Module):
+    r""" MLPLayers
+    Args:
+        - channels(list): a list contains the channels of each layer in cnn layers
+        - kernel(list): a list contains the kernels of each layer in cnn layers
+        - strides(list): a list contains the channels of each layer in cnn layers
+        - activation(str): activation function after each layer in mlp layers. Default: 'relu'
+                      candidates: 'sigmoid', 'tanh', 'relu', 'leekyrelu', 'none'
+    Shape:
+        - Input: (:math:`N`, \*, :math:`H_{in}`) where \* means any number of additional dimensions
+          :math:`H_{in}` must equal to the first value in `layers`
+        - Output: (:math:`N`, \*, :math:`H_{out}`) where :math:`H_{out}` equals to the last value in `layers`
+    Examples::
+        >>> m = CNNLayers([64, 32, 16], 0.2, 'relu')
+        >>> input = torch.randn(128, 64)
+        >>> output = m(input)
+        >>> print(output.size())
+        >>> torch.Size([128, 16])
+    """
+
+    def __init__(self, channels, kernels, strides, activation='relu', init_method=None):
+        super(CNNLayers, self).__init__()
+        self.channels = channels
+        self.kernels = kernels
+        self.strides = strides
+        self.activation = activation
+        self.init_method = init_method
+        self.num_of_nets = len(self.channels) - 1
+
+        if len(kernels) != len(strides) or self.num_of_nets != (len(kernels)):
+            raise RuntimeError('channels, kernels and strides don\'t match\n')
+
+
+
+        cnn_modules = []
+
+        for i in range(self.num_of_nets):
+            cnn_modules.append(nn.Conv2d(self.channels[i], self.channels[i+1], self.kernels[i], stride=self.strides[i]))
+            if self.activation.lower() == 'sigmoid':
+                cnn_modules.append(nn.Sigmoid())
+            elif self.activation.lower() == 'tanh':
+                cnn_modules.append(nn.Tanh())
+            elif self.activation.lower() == 'relu':
+                cnn_modules.append(nn.ReLU())
+            elif self.activation.lower() == 'leakyrelu':
+                cnn_modules.append(nn.LeakyReLU())
+            elif self.activation.lower() == 'none':
+                pass
+        
+        self.cnn_layers = nn.Sequential(*cnn_modules)
+        
+        if self.init_method is not None:
+            self.apply(self.init_weights)
+
+    def init_weights(self, module):
+        # We just initialize the module with normal distribution as the paper said
+        if isinstance(module, nn.Conv2d):
+            if self.init_method == 'norm':
+                normal_(module.weight.data, 0, 0.01)
+            if module.bias is not None:
+                module.bias.data.fill_(0.0)
+
+    def forward(self, input_feature):
+        return self.cnn_layers(input_feature)
