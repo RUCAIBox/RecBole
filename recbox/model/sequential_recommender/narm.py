@@ -33,7 +33,6 @@ class NARM(SequentialRecommender):
     and capture the user’s main purpose in the current session.
 
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(NARM, self).__init__(config, dataset)

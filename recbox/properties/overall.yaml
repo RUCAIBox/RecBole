@@ -2,16 +2,16 @@
 gpu_id: 0
 use_gpu: True
 seed: 2020
+state: INFO
 data_path: 'dataset/'
 
 # training settings
 epochs: 300
 train_batch_size: 2048
 learner: adam
-learning_rate: 0.01
+learning_rate: 0.001
 training_neg_sample_num: 1
 eval_step: 1
-valid_metric: MRR@10
 stopping_step: 10
 checkpoint_dir: 'saved'
 
@@ -19,8 +19,9 @@ checkpoint_dir: 'saved'
 eval_setting: RO_RS,full
 group_by_user: True
 split_ratio: [0.8,0.1,0.1]
-leave_one_num: Null
+leave_one_num: 2
 real_time_process: True
 metrics: ["Recall", "MRR","NDCG","Hit","Precision"]
 topk: [10]
+valid_metric: MRR@10
 eval_batch_size: 200000

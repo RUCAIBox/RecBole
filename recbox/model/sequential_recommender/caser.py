@@ -38,7 +38,6 @@ class Caser(SequentialRecommender):
         the generation method we used is common to other sequential models.
         For comparison with other models, we set the parameter T in the paper as 1.
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(Caser, self).__init__(config, dataset)

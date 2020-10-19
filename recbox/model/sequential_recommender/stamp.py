@@ -37,7 +37,6 @@ class STAMP(SequentialRecommender):
         and did not use the final sigmoid activation function.
 
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(STAMP, self).__init__(config, dataset)
