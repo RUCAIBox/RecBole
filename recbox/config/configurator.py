@@ -20,7 +20,8 @@ import torch
 from logging import getLogger
 
 from recbox.evaluator import loss_metrics, topk_metrics
-from recbox.utils import get_model, Enum, EvaluatorType, ModelType, InputType
+from recbox.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
+    general_arguments, training_arguments, evaluation_arguments, dataset_arguments
 
 
 class Config(object):
@@ -78,13 +79,10 @@ class Config(object):
 
     def _init_parameters_category(self):
         self.parameters = dict()
-        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path', 'state']
-        self.parameters['Training'] = ['epochs', 'train_batch_size', 'learner', 'learning_rate',
-                                       'training_neg_sample_num', 'eval_step', 'valid_metric',
-                                       'stopping_step', 'checkpoint_dir']
-        self.parameters['Evaluation'] = ['eval_setting', 'group_by_user', 'split_ratio', 'leave_one_num',
-                                         'real_time_process', 'metrics', 'topk', 'eval_batch_size']
-        self.parameters['Dataset'] = []
+        self.parameters['General'] = general_arguments
+        self.parameters['Training'] = training_arguments
+        self.parameters['Evaluation'] = evaluation_arguments
+        self.parameters['Dataset'] = dataset_arguments
 
     def _build_yaml_loader(self):
         loader = yaml.FullLoader
@@ -148,7 +146,7 @@ class Config(object):
                     continue
                 cmd_arg_name, cmd_arg_value = arg[2:].split("=")
                 if cmd_arg_name in self.cmd_config_dict and cmd_arg_value != self.cmd_config_dict[cmd_arg_name]:
-                    raise SyntaxError("There are duplicate commend arg '%s' with different value!" % arg)
+                    raise SyntaxError("There are duplicate commend arg '%s' with different value." % arg)
                 else:
                     self.cmd_config_dict[cmd_arg_name] = cmd_arg_value
         if len(unrecognized_args) > 0:
@@ -250,12 +248,12 @@ class Config(object):
         for metric in self.final_config_dict['metrics']:
             if metric.lower() in loss_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.RANKING:
-                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
+                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
                     eval_type = EvaluatorType.INDIVIDUAL
             if metric.lower() in topk_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.INDIVIDUAL:
-                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
+                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
                     eval_type = EvaluatorType.RANKING
         self.final_config_dict['eval_type'] = eval_type
@@ -277,7 +275,7 @@ class Config(object):
 
     def __setitem__(self, key, value):
         if not isinstance(key, str):
-            raise TypeError("index must be a str")
+            raise TypeError("index must be a str.")
         self.final_config_dict[key] = value
 
     def __getitem__(self, item):
@@ -288,7 +286,7 @@ class Config(object):
 
     def __contains__(self, key):
         if not isinstance(key, str):
-            raise TypeError("index must be a str!")
+            raise TypeError("index must be a str.")
         return key in self.final_config_dict
 
     def __str__(self):
