@@ -1,0 +1,4 @@
+model: FM
+learning_rate: 0.1
+topk: [5, 20]
+eval_setting: 'TO_LS,full'
