@@ -23,6 +23,16 @@ from recbox.utils import DataLoaderType, InputType
 
 
 class GeneralDataLoader(AbstractDataLoader):
+    """:class:`GeneralDataLoader` is used for general model and it just return the origin data.
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbox.utils.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+    """
     dl_type = DataLoaderType.ORIGIN
 
     def __init__(self, config, dataset,
@@ -44,6 +54,22 @@ class GeneralDataLoader(AbstractDataLoader):
 
 
 class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
+    """:class:`GeneralNegSampleDataLoader` is a general-dataloader with negative sampling.
+    For the result of every batch, we permit that every positive interaction and its negative interaction
+    must be in the same batch. Beside this, when it is in the evaluation stage, and evaluator is topk-like function,
+    we also permit that all the interactions corresponding to each user are in the same batch
+    and positive interactions are before negative interactions.
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        sampler (Sampler): The sampler of dataloader.
+        neg_sample_args (dict): The neg_sample_args of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbox.utils.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+    """
     def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.uid2index, self.uid2items_num = None, None
@@ -153,10 +179,28 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
         return new_df
 
     def get_pos_len_list(self):
+        """
+        Returns:
+            np.array or list: Number of positive item for each user in a training/evaluating epoch.
+        """
         return self.uid2items_num
 
 
 class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
+    """:class:`GeneralFullDataLoader` is a general-dataloader with full sort. In order to speed up calculation,
+    this dataloader would only return then user part of interactions, positive items and used items.
+    It would not return negative items.
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        sampler (Sampler): The sampler of dataloader.
+        neg_sample_args (dict): The neg_sample_args of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbox.utils.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+    """
     dl_type = DataLoaderType.FULL
 
     def __init__(self, config, dataset, sampler, neg_sample_args,
@@ -243,4 +287,8 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
             pos_len_list, neg_len_list
 
     def get_pos_len_list(self):
+        """
+        Returns:
+            np.array or list: Number of positive item for each user in a training/evaluating epoch.
+        """
         return self.uid2items_num

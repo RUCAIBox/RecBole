@@ -17,6 +17,16 @@ from recbox.utils.enum_type import DataLoaderType, InputType
 
 
 class UserDataLoader(AbstractDataLoader):
+    """:class:`UserDataLoader` will return a batch of data which only contains user-id when it is iterated.
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbox.utils.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+    """
     dl_type = DataLoaderType.ORIGIN
 
     def __init__(self, config, dataset,
@@ -27,6 +37,9 @@ class UserDataLoader(AbstractDataLoader):
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def setup(self):
+        """Make sure that the :attr:`shuffle` is True. If :attr:`shuffle` is False, it will be changed to True
+        and give a warning to user.
+        """
         if self.shuffle is False:
             self.shuffle = True
             self.logger.warning('UserDataLoader must shuffle the data')

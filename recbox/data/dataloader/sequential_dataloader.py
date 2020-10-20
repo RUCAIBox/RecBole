@@ -21,6 +21,25 @@ from recbox.utils import DataLoaderType, FeatureSource, FeatureType, InputType
 
 
 class SequentialDataLoader(AbstractDataLoader):
+    """:class:`SequentialDataLoader` is used for sequential model. It will do data augmentation for the origin data.
+    And its returned data contains the following:
+
+        - user id
+        - history items list
+        - history items' interaction time list
+        - item to be predicted
+        - the interaction time of item to be predicted
+        - history list length
+        - other interaction information of item to be predicted
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbox.utils.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+    """
     dl_type = DataLoaderType.ORIGIN
 
     def __init__(self, config, dataset,
@@ -57,6 +76,8 @@ class SequentialDataLoader(AbstractDataLoader):
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def data_preprocess(self):
+        """Do data augmentation before training/evaluation.
+        """
         self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
                                                     self.target_index, self.item_list_length)
 
@@ -92,6 +113,17 @@ class SequentialDataLoader(AbstractDataLoader):
         return self._dict_to_interaction(cur_data)
 
     def augmentation(self, uid_list, item_list_index, target_index, item_list_length):
+        """Data augmentation.
+
+        Args:
+            uid_list (np.array): user id list.
+            item_list_index (np.array): the index of history items list in interaction.
+            target_index (np.array): the index of items to be predicted in interaction.
+            item_list_length (np.array): history list length.
+
+        Returns:
+            dict: the augmented data.
+        """
         new_length = len(item_list_index)
         new_dict = {
             self.uid_field: uid_list,
@@ -116,12 +148,30 @@ class SequentialDataLoader(AbstractDataLoader):
 
 
 class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
+    """:class:`SequentialNegSampleDataLoader` is sequential-dataloader with negative sampling.
+    Like :class:`~recbox.data.dataloader.general_dataloader.GeneralNegSampleDataLoader`, for the result of every batch,
+    we permit that every positive interaction and its negative interaction must be in the same batch. Beside this,
+    when it is in the evaluation stage, and evaluator is topk-like function, we also permit that all the interactions
+    corresponding to each user are in the same batch and positive interactions are before negative interactions.
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        sampler (Sampler): The sampler of dataloader.
+        neg_sample_args (dict): The neg_sample_args of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbox.utils.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+    """
     def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def data_preprocess(self):
+        """Do data augmentation and neg-sampling before training/evaluation.
+        """
         self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
                                                     self.target_index, self.item_list_length)
         self.pre_processed_data = self._neg_sampling(self.pre_processed_data)
@@ -188,10 +238,28 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         return new_data
 
     def get_pos_len_list(self):
+        """
+        Returns:
+            np.array or list: Number of positive item for each user in a training/evaluating epoch.
+        """
         return np.ones(self.pr_end, dtype=np.int64)
 
 
 class SequentialFullDataLoader(SequentialDataLoader):
+    """:class:`SequentialFullDataLoader` is a sequential-dataloader with full sort. In order to speed up calculation,
+    this dataloader would only return then user part of interactions, positive items and used items.
+    It would not return negative items.
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        sampler (Sampler): The sampler of dataloader.
+        neg_sample_args (dict): The neg_sample_args of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbox.utils.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+    """
     dl_type = DataLoaderType.FULL
 
     def __init__(self, config, dataset, sampler, neg_sample_args,
@@ -212,4 +280,8 @@ class SequentialFullDataLoader(SequentialDataLoader):
         return interaction, pos_idx, used_idx, pos_len_list, neg_len_list
 
     def get_pos_len_list(self):
+        """
+        Returns:
+            np.array or list: Number of positive item for each user in a training/evaluating epoch.
+        """
         return np.ones(self.pr_end, dtype=np.int64)
