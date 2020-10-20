@@ -1,2 +1,2 @@
-recursive-include recbox/properties *
-recursive-include recbox/dataset_example *
+recursive-include recbole/properties *
+recursive-include recbole/dataset_example *

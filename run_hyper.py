@@ -10,8 +10,8 @@
 
 import argparse
 
-from recbox.trainer import HyperTuning
-from recbox.quick_start import objective_function
+from recbole.trainer import HyperTuning
+from recbole.quick_start import objective_function
 
 
 def main():

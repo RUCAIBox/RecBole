@@ -4,7 +4,7 @@ import unittest
 
 sys.path.append(os.getcwd())
 import numpy as np
-from recbox.evaluator.metrics import metrics_dict
+from recbole.evaluator.metrics import metrics_dict
 
 pos_idx = np.array([
     [0, 0, 0],
