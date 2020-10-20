@@ -9,7 +9,7 @@
 
 import traceback
 from time import time
-from recbox.quick_start import run_unirec
+from recbole.quick_start import run_unirec
 
 
 closed_examples = ['Test SRGNN', 'Test GCSAN', 'Test NextItNet', 'Test GRU4RecKG']
