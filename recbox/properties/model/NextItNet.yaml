@@ -1,11 +1,8 @@
-MAX_ITEM_LIST_LENGTH: 50
-LIST_SUFFIX: '_list'
-ITEM_LIST_LENGTH_FIELD: 'item_length'
-
 embedding_size: 64
 kernel_size: 3
 block_num: 5
 dilations: [1,4]
 reg_weight: 1e-5
 onecall: 'False'
+loss_type: 'CE'
 

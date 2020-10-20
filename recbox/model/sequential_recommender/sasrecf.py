@@ -25,7 +25,6 @@ from recbox.model.layers import TransformerEncoder, FeatureSeqEmbLayer
 
 
 class SASRecF(SequentialRecommender):
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(SASRecF, self).__init__(config, dataset)
