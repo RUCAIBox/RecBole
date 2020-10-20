@@ -20,7 +20,8 @@ import torch
 from logging import getLogger
 
 from recbox.evaluator import loss_metrics, topk_metrics
-from recbox.utils import get_model, Enum, EvaluatorType, ModelType, InputType
+from recbox.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
+    general_arguments, training_arguments, evaluation_arguments, dataset_arguments
 
 
 class Config(object):
@@ -66,9 +67,9 @@ class Config(object):
         """
         self._init_parameters_category()
         self.yaml_loader = self._build_yaml_loader()
-        self._load_config_files(config_file_list)
-        self._load_variable_config_dict(config_dict)
-        self._load_cmd_line()
+        self.file_config_dict = self._load_config_files(config_file_list)
+        self.variable_config_dict = self._load_variable_config_dict(config_dict)
+        self.cmd_config_dict = self._load_cmd_line()
         self._merge_external_config_dict()
         self.model, self.dataset = self._get_model_and_dataset(model, dataset)
         self._load_internal_config_dict(self.model, self.dataset)
@@ -78,13 +79,10 @@ class Config(object):
 
     def _init_parameters_category(self):
         self.parameters = dict()
-        self.parameters['General'] = ['gpu_id', 'use_gpu', 'seed', 'data_path', 'state']
-        self.parameters['Training'] = ['epochs', 'train_batch_size', 'learner', 'learning_rate',
-                                       'training_neg_sample_num', 'eval_step', 'valid_metric',
-                                       'stopping_step', 'checkpoint_dir']
-        self.parameters['Evaluation'] = ['eval_setting', 'group_by_user', 'split_ratio', 'leave_one_num',
-                                         'real_time_process', 'metrics', 'topk', 'eval_batch_size']
-        self.parameters['Dataset'] = []
+        self.parameters['General'] = general_arguments
+        self.parameters['Training'] = training_arguments
+        self.parameters['Evaluation'] = evaluation_arguments
+        self.parameters['Dataset'] = dataset_arguments
 
     def _build_yaml_loader(self):
         loader = yaml.FullLoader
@@ -100,46 +98,50 @@ class Config(object):
             list(u'-+0123456789.'))
         return loader
 
+    def _convert_config_dict(self, config_dict):
+        r"""This function convert the str parameters to their original type.
+
+        """
+        for key in config_dict:
+            param = config_dict[key]
+            if not isinstance(param, str):
+                continue
+            try:
+                value = eval(param)
+                if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
+                    value = param
+            except (NameError, SyntaxError, TypeError):
+                if isinstance(param, str):
+                    if param.lower() == "true":
+                        value = True
+                    elif param.lower() == "false":
+                        value = False
+                    else:
+                        value = param
+                else:
+                    value = param
+            config_dict[key] = value
+        return config_dict
+
     def _load_config_files(self, file_list):
-        self.file_config_dict = dict()
+        file_config_dict = dict()
         if file_list:
             for file in file_list:
                 with open(file, 'r', encoding='utf-8') as f:
-                    self.file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
+                    file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
+        return file_config_dict
 
     def _load_variable_config_dict(self, config_dict):
-        self.variable_config_dict = config_dict if config_dict else dict()
+        # HyperTuning may set the parameters such as mlp_hidden_size in NeuMF in the format of ['[]', '[]']
+        # then config_dict will receive a str '[]', but indeed it's a list []
+        # temporarily use _convert_config_dict to solve this problem
+        return self._convert_config_dict(config_dict) if config_dict else dict()
 
     def _load_cmd_line(self):
         r""" Read parameters from command line and convert it to str.
 
         """
-
-        def convert_cmd_args():
-            r"""This function convert the str parameters to their original type.
-
-            """
-            for key in self.cmd_config_dict:
-                param = self.cmd_config_dict[key]
-                if not isinstance(param, str):
-                    continue
-                try:
-                    value = eval(param)
-                    if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
-                        value = param
-                except (NameError, SyntaxError, TypeError):
-                    if isinstance(param, str):
-                        if param.lower() == "true":
-                            value = True
-                        elif param.lower() == "false":
-                            value = False
-                        else:
-                            value = param
-                    else:
-                        value = param
-                self.cmd_config_dict[key] = value
-
-        self.cmd_config_dict = dict()
+        cmd_config_dict = dict()
         unrecognized_args = []
         if "ipykernel_launcher" not in sys.argv[0]:
             for arg in sys.argv[1:]:
@@ -147,19 +149,20 @@ class Config(object):
                     unrecognized_args.append(arg)
                     continue
                 cmd_arg_name, cmd_arg_value = arg[2:].split("=")
-                if cmd_arg_name in self.cmd_config_dict and cmd_arg_value != self.cmd_config_dict[cmd_arg_name]:
-                    raise SyntaxError("There are duplicate commend arg '%s' with different value!" % arg)
+                if cmd_arg_name in cmd_config_dict and cmd_arg_value != cmd_config_dict[cmd_arg_name]:
+                    raise SyntaxError("There are duplicate commend arg '%s' with different value." % arg)
                 else:
-                    self.cmd_config_dict[cmd_arg_name] = cmd_arg_value
+                    cmd_config_dict[cmd_arg_name] = cmd_arg_value
         if len(unrecognized_args) > 0:
             logger = getLogger()
             logger.warning('command line args [{}] will not be used in RecBox'.format(' '.join(unrecognized_args)))
-        self.cmd_config_dict.update(self.variable_config_dict)
-        convert_cmd_args()
+        cmd_config_dict = self._convert_config_dict(cmd_config_dict)
+        return cmd_config_dict
 
     def _merge_external_config_dict(self):
         external_config_dict = dict()
         external_config_dict.update(self.file_config_dict)
+        external_config_dict.update(self.variable_config_dict)
         external_config_dict.update(self.cmd_config_dict)
         self.external_config_dict = external_config_dict
 
@@ -214,7 +217,7 @@ class Config(object):
             })
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
             self.internal_config_dict.update({
-                'eval_setting': 'TO_LS, full',
+                'eval_setting': 'TO_LS,full',
             })
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.KNOWLEDGE:
             pass
@@ -250,12 +253,12 @@ class Config(object):
         for metric in self.final_config_dict['metrics']:
             if metric.lower() in loss_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.RANKING:
-                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
+                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
                     eval_type = EvaluatorType.INDIVIDUAL
             if metric.lower() in topk_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.INDIVIDUAL:
-                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time!')
+                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
                     eval_type = EvaluatorType.RANKING
         self.final_config_dict['eval_type'] = eval_type
@@ -277,7 +280,7 @@ class Config(object):
 
     def __setitem__(self, key, value):
         if not isinstance(key, str):
-            raise TypeError("index must be a str")
+            raise TypeError("index must be a str.")
         self.final_config_dict[key] = value
 
     def __getitem__(self, item):
@@ -288,7 +291,7 @@ class Config(object):
 
     def __contains__(self, key):
         if not isinstance(key, str):
-            raise TypeError("index must be a str!")
+            raise TypeError("index must be a str.")
         return key in self.final_config_dict
 
     def __str__(self):
