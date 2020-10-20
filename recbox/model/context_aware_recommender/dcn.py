@@ -33,7 +33,7 @@ class DCN(ContextRecommender):
         self.LABEL = config['LABEL_FIELD']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.cross_layer_num = config['cross_layer_num']
-        self.weight_decay = config['weight_decay']
+        self.reg_weight = config['reg_weight']
         self.dropout = config['dropout']
 
         # init weight and bias of each cross layer
@@ -115,7 +115,7 @@ class DCN(ContextRecommender):
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]
         output = self.forward(interaction)
-        l2_loss = self.weight_decay * self.reg_loss(self.cross_layer_w)
+        l2_loss = self.reg_weight * self.reg_loss(self.cross_layer_w)
         return self.loss(output, label) + l2_loss
 
     def predict(self, interaction):
