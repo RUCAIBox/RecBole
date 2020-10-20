@@ -10,7 +10,7 @@
 
 import argparse
 
-from recbox.quick_start import run_unirec
+from recbole.quick_start import run_unirec
 
 
 if __name__ == '__main__':
