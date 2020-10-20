@@ -19,16 +19,22 @@ from recbox.utils import InputType
 
 
 class AbstractDataLoader(object):
-    """AbstractDataLoader is an abstract object which would return a batch of data which is loaded by Interaction
-    when it is iterated. And it is also the ancestor of all other dataloader.
+    """:class:`AbstractDataLoader` is an abstract object which would return a batch of data which is loaded by
+    :class:`~recbox.data.interaction.Interaction` when it is iterated.
+    And it is also the ancestor of all other dataloader.
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbox.utils.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
     dl_type = None
 
     def __init__(self, config, dataset,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        """
-
-        """
         self.config = config
         self.logger = getLogger()
         self.dataset = dataset
@@ -59,14 +65,14 @@ class AbstractDataLoader(object):
             self.data_preprocess()
 
     def setup(self):
-        """
-
+        """This function can be used to deal with some problems after essential args are initialized,
+        such as the batch-size-adaptation when neg-sampling is needed, and so on. By default, it will do nothing.
         """
         pass
 
     def data_preprocess(self):
-        """
-
+        """This function is used to do some data preprocess, such as pre-neg-sampling and pre-data-augmentation.
+        By default, it will do nothing.
         """
         pass
 
@@ -86,23 +92,27 @@ class AbstractDataLoader(object):
 
     @property
     def pr_end(self):
-        """
-
-        """
+        """This property marks the end of dataloader.pr which is used in :meth:`__next__()`."""
         raise NotImplementedError('Method [pr_end] should be implemented')
 
     def _shuffle(self):
+        """Shuffle the order of data, and it will be called by :meth:`__iter__()` if self.shuffle is True.
+        """
         raise NotImplementedError('Method [shuffle] should be implemented.')
 
     def _next_batch_data(self):
+        """Assemble next batch of data in form of Interaction, and return these data.
+
+        Returns:
+            Interaction: The next batch of data.
+        """
         raise NotImplementedError('Method [next_batch_data] should be implemented.')
 
     def set_batch_size(self, batch_size):
-        """This function could reset the batch_size of the dataloader, but it can't be called when dataloader is being
-        iterated.
+        """Reset the batch_size of the dataloader, but it can't be called when dataloader is being iterated.
 
-        :param int batch_size: the new batch_size of dataloader
-        :return:
+        Args:
+            batch_size (int): the new batch_size of dataloader.
         """
         if self.pr != 0:
             raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
@@ -111,15 +121,21 @@ class AbstractDataLoader(object):
             self.logger.warning('Batch size is changed to {}'.format(batch_size))
 
     def get_user_feature(self):
-        """
+        """It is similar to :meth:`dataset.get_user_feature()`, but it will return an
+        :class:`~recbox.data.interaction.Interaction` of user feature instead of a :class:`pandas.DataFrame`.
 
+        Returns:
+            Interaction: The interaction of user feature.
         """
         user_df = self.dataset.get_user_feature()
         return self._dataframe_to_interaction(user_df)
 
     def get_item_feature(self):
-        """
+        """It is similar to :meth:`dataset.get_item_feature()`, but it will return an
+        :class:`~recbox.data.interaction.Interaction` of item feature instead of a :class:`pandas.DataFrame`.
 
+        Returns:
+            Interaction: The interaction of item feature.
         """
         item_df = self.dataset.get_item_feature()
         return self._dataframe_to_interaction(item_df)

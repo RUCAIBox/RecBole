@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-# @Time   : 2020/10/10 上午10:09
+# @Time   : 2020/10/10
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-# @File   : gru4reckg.py
 
 # UPDATE:
 # @Time   : 2020/10/19
@@ -36,7 +34,7 @@ class GRU4RecKG(SequentialRecommender):
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.entity_embedding = nn.Embedding(self.n_items, self.embedding_size)
+        self.entity_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.entity_embedding.weight.requires_grad = not self.freeze_kg
         self.item_gru_layers = nn.GRU(
             input_size=self.embedding_size,

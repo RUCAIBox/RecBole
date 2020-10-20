@@ -12,6 +12,8 @@ from time import time
 from recbox.quick_start import run_unirec
 
 
+closed_examples = ['Test SRGNN', 'Test GCSAN', 'Test NextItNet', 'Test GRU4RecKG']
+
 test_examples = {
     'Test Eval Metric': {
         'model': 'BPRMF',
@@ -73,17 +75,6 @@ test_examples = {
         'eval_setting': 'RO_LS, full',
         'leave_one_num': 2,
         'real_time_process': True
-    },
-    'Test Criteo': {
-        'model': 'FM',
-        'dataset': 'criteo',
-        'normalize_all': True,
-        'group_by_user': False,
-        'epochs': 1,
-        'training_neg_sample_num': 0,
-        'eval_setting': 'RO_RS',
-        'valid_metric': 'AUC',
-        'metrics': ['AUC']
     },
 
     # General Recommendation
@@ -267,10 +258,6 @@ test_examples = {
     'Test GRU4RecKG': {
         'model': 'GRU4RecKG',
         'dataset': 'ml-1m',
-        'epochs': 1,
-        'split_ratio': None,
-        'leave_one_num': 2,
-        'eval_setting': 'TO_LS, full',
         'TIME_FIELD': 'timestamp',
         'HEAD_ENTITY_ID_FIELD': 'head_id',
         'TAIL_ENTITY_ID_FIELD': 'tail_id',
@@ -278,7 +265,7 @@ test_examples = {
         'ENTITY_ID_FIELD': 'entity_id',
         'MAX_ITEM_LIST_LENGTH': 50,
         'LIST_SUFFIX': '_list',
-        'ITEM_LIST_LENGTH_FIELD':'item_length',
+        'ITEM_LIST_LENGTH_FIELD': 'item_length',
         'load_col': {
             'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
             'feature': ['ent_id', 'ent_feature']
@@ -348,6 +335,8 @@ def run_test_examples():
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
     for idx, example in enumerate(test_examples.keys()):
+        if example in closed_examples:
+            continue
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
             config_dict = test_examples[example]

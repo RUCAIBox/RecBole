@@ -17,6 +17,20 @@ from recbox.utils import DataLoaderType, EvaluatorType, FeatureSource, FeatureTy
 
 
 class NegSampleMixin(AbstractDataLoader):
+    """:class:`NegSampleMixin` is a abstract class, all dataloaders that need negative sampling should inherit
+    this class. This class provides some necessary parameters and method for negative sampling, such as
+    :attr:`neg_sample_args` and :meth:`_neg_sampling()` and so on.
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        sampler (Sampler): The sampler of dataloader.
+        neg_sample_args (dict): The neg_sample_args of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbox.utils.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaluts to ``False``.
+    """
     dl_type = DataLoaderType.NEGSAMPLE
 
     def __init__(self, config, dataset, sampler, neg_sample_args,
@@ -31,22 +45,53 @@ class NegSampleMixin(AbstractDataLoader):
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def setup(self):
+        """Do batch size adaptation.
+        """
         self._batch_size_adaptation()
 
     def data_preprocess(self):
+        """Do neg-sampling before training/evaluation.
+        """
         raise NotImplementedError('Method [data_preprocess] should be implemented.')
 
     def _batch_size_adaptation(self):
+        """Adjust the batch size to ensure that each positive and negative interaction can be in a batch.
+        """
         raise NotImplementedError('Method [batch_size_adaptation] should be implemented.')
 
     def _neg_sampling(self, inter_feat):
+        """
+        Args:
+            inter_feat: The origin user-item interaction table.
+
+        Returns:
+            The user-item interaction table with negative example.
+        """
         raise NotImplementedError('Method [neg_sampling] should be implemented.')
 
     def get_pos_len_list(self):
+        """
+        Returns:
+            np.array or list: Number of positive item for each user in a training/evaluating epoch.
+        """
         raise NotImplementedError('Method [get_pos_len_list] should be implemented.')
 
 
 class NegSampleByMixin(NegSampleMixin):
+    """:class:`NegSampleByMixin` is an abstract class which can sample negative examples by ratio.
+    It has two neg-sampling method, the one is 1-by-1 neg-sampling (pair wise),
+    and the other is 1-by-multi neg-sampling (point wise).
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        sampler (Sampler): The sampler of dataloader.
+        neg_sample_args (dict): The neg_sample_args of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbox.utils.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+    """
     def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'by':
@@ -57,7 +102,6 @@ class NegSampleByMixin(NegSampleMixin):
         self.user_inter_in_one_batch = (sampler.phase != 'train') and (config['eval_type'] != EvaluatorType.INDIVIDUAL)
         self.neg_sample_by = neg_sample_args['by']
 
-        # TODO self.times 改个名（有点意义不明）
         if dl_format == InputType.POINTWISE:
             self.times = 1 + self.neg_sample_by
             self.sampling_func = self._neg_sample_by_point_wise_sampling
@@ -83,7 +127,11 @@ class NegSampleByMixin(NegSampleMixin):
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def _neg_sample_by_pair_wise_sampling(self, *args):
+        """Pair-wise sampling.
+        """
         raise NotImplementedError('Method [neg_sample_by_pair_wise_sampling] should be implemented.')
 
     def _neg_sample_by_point_wise_sampling(self, *args):
+        """Point-wise sampling.
+        """
         raise NotImplementedError('Method [neg_sample_by_point_wise_sampling] should be implemented.')
