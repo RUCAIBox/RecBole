@@ -33,28 +33,25 @@ class DCN(ContextRecommender):
         self.LABEL = config['LABEL_FIELD']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.cross_layer_num = config['cross_layer_num']
-        self.reg_weight = config['reg_weight']
+        self.weight_decay = config['weight_decay']
         self.dropout = config['dropout']
 
-        self.cross_layer_parameter = [
-            nn.Parameter(
-                torch.empty(self.num_feature_field * self.embedding_size,
-                            device=self.device))
-            for _ in range(self.cross_layer_num * 2)
-        ]
-
+        # init weight and bias of each cross layer
+        self.cross_layer_parameter = [nn.Parameter(torch.empty(self.num_feature_field * self.embedding_size,
+                                                               device=self.device))
+                                      for _ in range(self.cross_layer_num * 2)]
         self.cross_layer_w = nn.ParameterList(
             self.cross_layer_parameter[:self.cross_layer_num])
         self.cross_layer_b = nn.ParameterList(
             self.cross_layer_parameter[self.cross_layer_num:])
 
-        size_list = [self.embedding_size * self.num_feature_field
-                     ] + self.mlp_hidden_size
-        in_feature_num = self.embedding_size * self.num_feature_field + self.mlp_hidden_size[
-            -1]
+        # size of mlp hidden layer
+        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
+        # size of cross network output
+        in_feature_num = self.embedding_size * self.num_feature_field + self.mlp_hidden_size[-1]
 
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout, bn=True)
-        self.deep_predict_layer = nn.Linear(in_feature_num, 1, bias=True)
+        self.predict_layer = nn.Linear(in_feature_num, 1)
         self.reg_loss = RegLoss()
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
@@ -111,14 +108,14 @@ class DCN(ContextRecommender):
         # Cross Network
         cross_output = self.cross_network(dcn_all_embeddings)
         stack = torch.cat([cross_output, deep_output], dim=-1)
-        output = self.sigmoid(self.deep_predict_layer(stack))
+        output = self.sigmoid(self.predict_layer(stack))
 
         return output.squeeze(1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]
         output = self.forward(interaction)
-        l2_loss = self.reg_weight * self.reg_loss(self.cross_layer_w)
+        l2_loss = self.weight_decay * self.reg_loss(self.cross_layer_w)
         return self.loss(output, label) + l2_loss
 
     def predict(self, interaction):
