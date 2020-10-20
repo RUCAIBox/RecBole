@@ -37,7 +37,6 @@ class S3Rec(SequentialRecommender):
         Under this framework, we need reconstruct the pretraining data,
         which would affect the pre-training speed.
     """
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(S3Rec, self).__init__(config, dataset)

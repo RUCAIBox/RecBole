@@ -1,8 +1,11 @@
-# -*- coding: utf-8 -*-
-# @Time   : 2020/10/10 上午10:09
+# @Time   : 2020/10/10
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-# @File   : gru4reckg.py
+
+# UPDATE:
+# @Time   : 2020/10/19
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
 
 import torch
 from torch import nn
@@ -20,7 +23,7 @@ class GRU4RecKG(SequentialRecommender):
         super(GRU4RecKG, self).__init__(config, dataset)
 
         # load dataset info
-        self.entity_embedding_matrix = dataset.get_preload_weight('entity_vec')
+        self.entity_embedding_matrix = dataset.get_preload_weight('ent_id')
 
         # load parameters info
         self.embedding_size = config['embedding_size']
@@ -31,7 +34,7 @@ class GRU4RecKG(SequentialRecommender):
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.entity_embedding = nn.Embedding(self.n_items, self.embedding_size)
+        self.entity_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.entity_embedding.weight.requires_grad = not self.freeze_kg
         self.item_gru_layers = nn.GRU(
             input_size=self.embedding_size,
@@ -55,7 +58,7 @@ class GRU4RecKG(SequentialRecommender):
         self.entity_embedding.weight.data.copy_(torch.from_numpy(self.entity_embedding_matrix[:self.n_items]))
 
     def forward(self, interaction):
-        item_seq = interaction[self.ITEM_ID_LIST]
+        item_seq = interaction[self.ITEM_SEQ]
         item_emb = self.item_embedding(item_seq)
         entity_emb = self.entity_embedding(item_seq)
         item_emb = nn.Dropout(self.dropout)(item_emb)
@@ -66,12 +69,12 @@ class GRU4RecKG(SequentialRecommender):
 
         output_concat = torch.cat((item_gru_output, entity_gru_output), -1)  # [B Len 2*H]
         output = self.dense_layer(output_concat)
-        output = self.gather_indexes(output, interaction[self.ITEM_LIST_LEN] - 1)  # [B H]
+        output = self.gather_indexes(output, interaction[self.ITEM_SEQ_LEN] - 1)  # [B H]
         return output
 
     def calculate_loss(self, interaction):
         seq_output = self.forward(interaction)
-        pos_items = interaction[self.TARGET_ITEM_ID]
+        pos_items = interaction[self.POS_ITEM_ID]
 
         test_item_emb = self.item_embedding.weight
         logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
