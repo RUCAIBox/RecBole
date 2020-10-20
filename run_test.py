@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-# @Time   : 2020/7/20 20:32
+# @Time   : 2020/7/20
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
-# @File   : run_test.py
 
 # UPDATE
 # @Time   : 2020/10/3, 2020/10/1
@@ -19,7 +17,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', '-m', type=str, default='BPRMF', help='name of models')
     parser.add_argument('--dataset', '-d', type=str, default='ml-100k', help='name of datasets')
+    parser.add_argument('--config_files', type=str, default=None, help='config files')
 
     args, _ = parser.parse_known_args()
 
-    run_unirec(model=args.model, dataset=args.dataset)
+    config_file_list = args.config_files.strip().split(' ') if args.config_files else None
+    run_unirec(model=args.model, dataset=args.dataset, config_file_list=config_file_list)
