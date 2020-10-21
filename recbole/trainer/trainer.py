@@ -667,3 +667,12 @@ class MKRTrainer(Trainer):
                 kg_total_loss += loss_kge
 
         return rs_total_loss, kg_total_loss
+
+
+class TraditionalTrainer(Trainer):
+    r"""TraditionalTrainer is designed for Traditional model(Pop,ItemKNN), which set the epoch to 1 whatever the config.
+
+    """
+    def __init__(self, config, model):
+        super(TraditionalTrainer, self).__init__(config, model)
+        self.epochs = 1   # Set the epoch to 1 when running memory based model
