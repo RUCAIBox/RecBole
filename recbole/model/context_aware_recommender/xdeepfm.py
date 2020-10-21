@@ -6,7 +6,7 @@
 # UPDATE
 # @Time   : 2020/10/21
 # @Author : Zhichao Feng
-# @email  : fzcbupt@gmai.com
+# @email  : fzcbupt@gmail.com
 
 r"""
 recbole.model.context_aware_recommender.xdeepfm

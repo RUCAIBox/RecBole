@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Time   : 2020/9/21
 # @Author : Zhichao Feng
-# @Email  : fzcbupt@gmai.com
+# @Email  : fzcbupt@gmail.com
 
 # UPDATE
 # @Time   : 2020/10/21
 # @Author : Zhichao Feng
-# @email  : fzcbupt@gmai.com
+# @email  : fzcbupt@gmail.com
 
 r"""
 recbole.model.context_aware_recommender.din
