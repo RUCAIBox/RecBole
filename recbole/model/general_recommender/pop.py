@@ -20,7 +20,7 @@ class Pop(GeneralRecommender):
 
     """
     input_type = InputType.POINTWISE
-    type = ModelType.MEMBASE
+    type = ModelType.TRADITIONAL
 
     def __init__(self, config, dataset):
         super(Pop, self).__init__(config, dataset)

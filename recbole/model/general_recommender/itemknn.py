@@ -135,7 +135,7 @@ class ItemKNN(GeneralRecommender):
 
     """
     input_type = InputType.POINTWISE
-    type = ModelType.MEMBASE
+    type = ModelType.TRADITIONAL
 
     def __init__(self, config, dataset):
         super(ItemKNN, self).__init__(config, dataset)
