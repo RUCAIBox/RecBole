@@ -4,7 +4,7 @@
 
 import unittest
 
-from recbox.config import Config
+from recbole.config import Config
 
 
 parameters_dict = {

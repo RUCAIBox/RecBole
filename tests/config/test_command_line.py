@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn
 
 
-from recbox.config import Config
+from recbole.config import Config
 
 
 if __name__ == '__main__':

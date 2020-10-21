@@ -9,8 +9,10 @@
 
 import traceback
 from time import time
-from recbox.quick_start import run_unirec
+from recbole.quick_start import run_unirec
 
+
+closed_examples = ['Test SRGNN', 'Test GCSAN', 'Test NextItNet', 'Test GRU4RecKG']
 
 test_examples = {
     'Test Eval Metric': {
@@ -73,17 +75,6 @@ test_examples = {
         'eval_setting': 'RO_LS, full',
         'leave_one_num': 2,
         'real_time_process': True
-    },
-    'Test Criteo': {
-        'model': 'FM',
-        'dataset': 'criteo',
-        'normalize_all': True,
-        'group_by_user': False,
-        'epochs': 1,
-        'training_neg_sample_num': 0,
-        'eval_setting': 'RO_RS',
-        'valid_metric': 'AUC',
-        'metrics': ['AUC']
     },
 
     # General Recommendation
@@ -344,6 +335,8 @@ def run_test_examples():
     success_examples, fail_examples = [], []
     n_examples = len(test_examples.keys())
     for idx, example in enumerate(test_examples.keys()):
+        if example in closed_examples:
+            continue
         print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
         try:
             config_dict = test_examples[example]
