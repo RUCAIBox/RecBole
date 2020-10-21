@@ -35,8 +35,8 @@ class TopKEvaluator(AbstractEvaluator):
         self.topk = config['topk']
         self._check_args()
 
-    def evaluate(self, interaction, scores_tensor, full=False):
-        """ evalaute the topk metrics
+    def collect(self, interaction, scores_tensor, full=False):
+        """collect the intermediate result for topk metrics
 
         Args:
             interaction (Interaction): Interaction class of the batch
@@ -56,7 +56,7 @@ class TopKEvaluator(AbstractEvaluator):
 
         return topk_index
 
-    def collect(self, batch_matrix_list, eval_data):
+    def evaluate(self, batch_matrix_list, eval_data):
         """calculate the metrics of all batches
 
         Args:

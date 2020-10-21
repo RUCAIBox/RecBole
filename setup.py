@@ -27,9 +27,9 @@ setup(
     version=
     '0.1.0',  # please remember to edit recbole/__init__.py in response, once updating the version
     description='A package for building recommender systems',
-    url='https://github.com/RUCAIBox/RecBox',
-    author='RecBoxTeam',
-    author_email='ContactRecBoxTeam',
+    url='https://github.com/RUCAIBox/RecBole',
+    author='RecBoleTeam',
+    author_email='ContactRecBoleTeam',
     packages=[
         package for package in find_packages()
         if package.startswith('recbole')
