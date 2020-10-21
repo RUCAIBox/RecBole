@@ -15,7 +15,7 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 
-from recbox.utils import InputType, ModelType
+from recbox.utils import InputType
 from recbox.model.abstract_recommender import GeneralRecommender
 
 
@@ -135,7 +135,6 @@ class ItemKNN(GeneralRecommender):
 
     """
     input_type = InputType.POINTWISE
-    type = ModelType.MEMBASE
 
     def __init__(self, config, dataset):
         super(ItemKNN, self).__init__(config, dataset)

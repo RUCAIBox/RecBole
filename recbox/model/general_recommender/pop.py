@@ -10,7 +10,8 @@ recbox.model.general_recommender.pop
 """
 
 import torch
-from recbox.utils import InputType, ModelType
+
+from recbox.utils import InputType
 from recbox.model.abstract_recommender import GeneralRecommender
 
 
@@ -19,7 +20,6 @@ class Pop(GeneralRecommender):
 
     """
     input_type = InputType.POINTWISE
-    type = ModelType.MEMBASE
 
     def __init__(self, config, dataset):
         super(Pop, self).__init__(config, dataset)
@@ -33,6 +33,7 @@ class Pop(GeneralRecommender):
         pass
 
     def calculate_loss(self, interaction):
+
         item = interaction[self.ITEM_ID]
         self.item_cnt[item, :] = self.item_cnt[item, :] + 1
 
