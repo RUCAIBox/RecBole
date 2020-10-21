@@ -1,4 +1,4 @@
-# RecBox
+# RecBole
 
 This is a comprehensive package for building recommender systems.
 
