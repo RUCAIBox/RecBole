@@ -9,12 +9,11 @@ import torch.nn as nn
 from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.layers import MLPLayers, CNNLayers
-from recbole.model.loss import BPRLoss
 
 
 class ConvNCFBPRLoss(nn.Module):
 
-    """ ConvBPRLoss, based on Bayesian Personalized Ranking,
+    """ ConvNCFBPRLoss, based on Bayesian Personalized Ranking,
     
     Shape:
         - Pos_score: (N)
@@ -23,7 +22,7 @@ class ConvNCFBPRLoss(nn.Module):
 
     Examples::
 
-        >>> loss = BPRLoss()
+        >>> loss = ConvNCFBPRLoss()
         >>> pos_score = torch.randn(3, requires_grad=True)
         >>> neg_score = torch.randn(3, requires_grad=True)
         >>> output = loss(pos_score, neg_score)
@@ -68,7 +67,7 @@ class ConvNCF(GeneralRecommender):
         self.cnn_layers = CNNLayers(self.cnn_channels, self.cnn_kernels, self.cnn_strides, activation='relu')
         self.predict_layers = MLPLayers([self.cnn_channels[-1], 1], self.dropout, activation='none')
 
-        self.loss = BPRLoss()
+        self.loss = ConvNCFBPRLoss()
 
     def forward(self, user, item):
         user_e = self.user_embedding(user)
