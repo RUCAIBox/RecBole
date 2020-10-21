@@ -1,0 +1,16 @@
+embedding_size: 64
+hidden_size: 64
+num_hidden_layers: 2
+num_attention_heads: 2
+hidden_act: 'gelu'
+dropout_prob: 0.2
+initializer_range: 0.02
+mask_ratio: 0.2
+aap_weight: 1.0
+mip_weight: 0.2
+map_weight: 1.0
+sp_weight: 0.5
+train_stage: 'pretrain'
+save_step: 10
+pre_model_path: ''
+loss_type: 'CE'

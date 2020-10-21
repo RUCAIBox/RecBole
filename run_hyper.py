@@ -8,14 +8,22 @@
 # @Author : Zihan Lin, Yupeng Hou
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
 
+import argparse
 
-from recbox.trainer import HyperTuning
-from recbox.quick_start import objective_function
+from recbole.trainer import HyperTuning
+from recbole.quick_start import objective_function
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_files', type=str, default=None, help='fixed config files')
+    parser.add_argument('--params_file', type=str, default=None, help='parameters file')
+    args, _ = parser.parse_known_args()
+
     # plz set algo='exhaustive' to use exhaustive search, in this case, max_evals is auto set
-    hp = HyperTuning(objective_function, algo='exhaustive', params_file='hyper.test')
+    config_file_list = args.config_files.strip().split(' ') if args.config_files else None
+    hp = HyperTuning(objective_function, algo='exhaustive',
+                     params_file=args.params_file, fixed_config_file_list=config_file_list)
     hp.run()
     hp.export_result(output_file='hyper_example.result')
     print('best params: ', hp.best_params)

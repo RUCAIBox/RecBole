@@ -1,0 +1,5 @@
+embedding_size: 64
+hidden_size: 128
+n_layers: 1
+dropout: [0.25,0.5]
+loss_type: 'CE'
