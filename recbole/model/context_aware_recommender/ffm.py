@@ -24,8 +24,8 @@ from recbole.model.context_aware_recommender.context_recommender import ContextR
 
 class FFM(ContextRecommender):
     r"""FFM is a context-based recommendation model. It aims to model the different feature interactions 
-    between different fields. Each feature has several latent vectors  :math:`v_{i,F(j)}`, 
-    which depend on the field of other features, and one of them is used to do the inner product.
+    between different fields. Each feature has several latent vectors :math:`v_{i,F(j)}`,
+    which depend on the field of other features, and one of them is used to do the inner product.
 
     The model defines as follows:
 
@@ -182,8 +182,8 @@ class FieldAwareFactorizationMachine(nn.Module):
                     token_seq_ffm_input(a list): length is num_token_seq_features or 0
 
         Returns:
-            torch.cuda.FloatTensor: The results of all features' field-aware interactions. 
-                                    shape: [batch_size, num_fields, emb_dim]
+            torch.cuda.FloatTensor: The results of all features' field-aware interactions.
+            shape: [batch_size, num_fields, emb_dim]
         """
         token_ffm_input, float_ffm_input, token_seq_ffm_input = input_x[0], input_x[1], input_x[2]
 

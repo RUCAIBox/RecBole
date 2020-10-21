@@ -28,16 +28,21 @@ from recbole.utils import ModelType, InputType, FeatureType
 
 class MLPLayers(nn.Module):
     r""" MLPLayers
+
     Args:
         - layers(list): a list contains the size of each layer in mlp layers
         - dropout(float): probability of an element to be zeroed. Default: 0
         - activation(str): activation function after each layer in mlp layers. Default: 'relu'
                       candidates: 'sigmoid', 'tanh', 'relu', 'leekyrelu', 'none'
+
     Shape:
+
         - Input: (:math:`N`, \*, :math:`H_{in}`) where \* means any number of additional dimensions
           :math:`H_{in}` must equal to the first value in `layers`
         - Output: (:math:`N`, \*, :math:`H_{out}`) where :math:`H_{out}` equals to the last value in `layers`
+
     Examples::
+
         >>> m = MLPLayers([64, 32, 16], 0.2, 'relu')
         >>> input = torch.randn(128, 64)
         >>> output = m(input)
@@ -154,6 +159,7 @@ class BaseFactorizationMachine(nn.Module):
 
 class BiGNNLayer(nn.Module):
     r"""Propagate a layer of Bi-interaction GNN
+
     .. math::
         output = (L+I)EW_1 + LE \otimes EW_2
     """
@@ -205,8 +211,10 @@ class AttLayer(nn.Module):
 
 class Dice(nn.Module):
     r"""Dice activation function
+
     .. math::
         f(s)=p(s) \cdot s+(1-p(s)) \cdot \alpha s
+
     .. math::
         p(s)=\frac{1} {1 + e^{-\frac{s-E[s]} {\sqrt {Var[s] + \epsilon}}}}
     """
@@ -499,7 +507,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
     def embed_float_fields(self, float_fields, type, embed=True):
         """Get the embedding of float fields.
         In the following three functions("embed_float_fields" "embed_token_fields" "embed_token_seq_fields")
-        when the type is user, [batch_ size, max_item_length] should be recognised as [batch_size]
+        when the type is user, [batch_size, max_item_length] should be recognised as [batch_size]
 
         Args:
             float_fields(torch.Tensor): [batch_size, max_item_length, num_float_field]
