@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/16, 2020/10/13, 2020/9/23
+# @Time   : 2020/10/16, 2020/10/13, 2020/10/20
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -286,9 +286,9 @@ class Dataset(object):
             pv_source = self.field2source[preload_value_field]
             if pid_source != pv_source:
                 raise ValueError('preload id field [{}] is from source [{}],'
-                    'while prelaod value field [{}] is from source [{}], which should be the same'.format(
-                        preload_id_field, pid_source, preload_value_field, pv_source
-                    ))
+                                 'while prelaod value field [{}] is from source [{}], which should be the same'.format(
+                                     preload_id_field, pid_source, preload_value_field, pv_source
+                                 ))
             for feat in self.feat_list:
                 if preload_id_field in feat:
                     id_ftype = self.field2type[preload_id_field]
@@ -317,7 +317,8 @@ class Dataset(object):
                                 matrix[pid] = prow[:max_len]
                     else:
                         self.logger.warning('Field [{}] with type [{}] is not \'float\' or \'float_seq\', \
-                                             which will not be handled by preload matrix.'.format(preload_value_field, value_ftype))
+                                             which will not be handled by preload matrix.'.format(preload_value_field,
+                                                                                                  value_ftype))
                         continue
                     self._preloaded_weight[preload_id_field] = matrix
                     if drop_flag:
@@ -468,6 +469,8 @@ class Dataset(object):
 
     def _reset_index(self):
         for feat in self.feat_list:
+            if feat.empty:
+                raise ValueError('Some feat is empty, please check the filtering settings.')
             feat.reset_index(drop=True, inplace=True)
 
     def _drop_by_value(self, val, cmp):

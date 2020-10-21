@@ -115,7 +115,7 @@ class DGCF(GeneralRecommender):
         # Construct the sparse matrix with indices, values and size.
         return torch.sparse.FloatTensor(indices, values, size).to(self.device)
 
-    def get_ego_embeddings(self):
+    def _get_ego_embeddings(self):
         # concat of user embeddings and item embeddings
         user_embd = self.user_embedding.weight
         item_embd = self.item_embedding.weight
@@ -160,7 +160,7 @@ class DGCF(GeneralRecommender):
         return factor_edge_weight
 
     def forward(self):
-        ego_embeddings = self.get_ego_embeddings()
+        ego_embeddings = self._get_ego_embeddings()
         all_embeddings = [ego_embeddings.unsqueeze(1)]
         # initialize with every factor value as 1
         A_values = torch.ones((self.num_edge, self.n_factors)).to(self.device)

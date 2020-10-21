@@ -35,8 +35,8 @@ class LossEvaluator(AbstractEvaluator):
         self.label_field = config['LABEL_FIELD']
         self._check_args()
 
-    def evaluate(self, interaction, pred_scores):
-        """evalaute the loss metrics
+    def collect(self, interaction, pred_scores):
+        """collect the intermediate result for loss metrics
 
         Args:
             interaction (Interaction): Interaction class of the batch
@@ -50,7 +50,7 @@ class LossEvaluator(AbstractEvaluator):
         assert len(true_scores) == len(pred_scores)
         return torch.stack((true_scores, pred_scores.detach()), dim=1)
 
-    def collect(self, batch_matrix_list, *args):
+    def evaluate(self, batch_matrix_list, *args):
         """calculate the metrics of all batches
 
         Args:
