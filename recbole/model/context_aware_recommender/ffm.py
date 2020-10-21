@@ -187,11 +187,11 @@ class FieldAwareFactorizationMachine(nn.Module):
         """
         token_ffm_input, float_ffm_input, token_seq_ffm_input = input_x[0], input_x[1], input_x[2]
 
-        token_input_x_emb = self.emb_token_ffm_input(token_ffm_input)
-        float_input_x_emb = self.emb_float_ffm_input(float_ffm_input)
-        token_seq_input_x_emb = self.emb_token_seq_ffm_input(token_seq_ffm_input)
+        token_input_x_emb = self._emb_token_ffm_input(token_ffm_input)
+        float_input_x_emb = self._emb_float_ffm_input(float_ffm_input)
+        token_seq_input_x_emb = self._emb_token_seq_ffm_input(token_seq_ffm_input)
         
-        input_x_emb = self.get_input_x_emb(token_input_x_emb, float_input_x_emb, token_seq_input_x_emb)
+        input_x_emb = self._get_input_x_emb(token_input_x_emb, float_input_x_emb, token_seq_input_x_emb)
 
         output = list()
         for i in range(self.num_features - 1):
@@ -201,7 +201,7 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         return output
 
-    def get_input_x_emb(self, token_input_x_emb, float_input_x_emb, token_seq_input_x_emb):
+    def _get_input_x_emb(self, token_input_x_emb, float_input_x_emb, token_seq_input_x_emb):
         # merge different types of field-aware embeddings
         input_x_emb = []  # [num_fields: [batch_size, num_fields, emb_dim]]
         if len(self.token_feature_names) > 0 and len(self.float_feature_names) > 0 and len(self.token_seq_feature_names) > 0:
@@ -225,7 +225,7 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         return input_x_emb
 
-    def emb_token_ffm_input(self, token_ffm_input):
+    def _emb_token_ffm_input(self, token_ffm_input):
         # get token field-aware embeddings
         token_input_x_emb = []
         if len(self.token_feature_names) > 0:
@@ -234,7 +234,7 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         return token_input_x_emb
 
-    def emb_float_ffm_input(self, float_ffm_input):
+    def _emb_float_ffm_input(self, float_ffm_input):
         # get float field-aware embeddings
         float_input_x_emb = []
         if len(self.float_feature_names) > 0:
@@ -243,7 +243,7 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         return float_input_x_emb
 
-    def emb_token_seq_ffm_input(self, token_seq_ffm_input):
+    def _emb_token_seq_ffm_input(self, token_seq_ffm_input):
         # get token_seq field-aware embeddings
         token_seq_input_x_emb = []
         if len(self.token_seq_feature_names) > 0:
