@@ -79,6 +79,12 @@ class FISM(GeneralRecommender):
         return history_item_matrix, history_lens, mask_mat
 
     def reg_loss(self):
+        """calculate the reg loss for embedding layers
+
+        Returns:
+            torch.Tensor: reg loss
+
+        """        
         reg_1, reg_2 = self.regs
         loss_1 = reg_1 * self.item_src_embedding.weight.norm(2)
         loss_2 = reg_2 * self.item_dst_embedding.weight.norm(2)
