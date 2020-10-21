@@ -11,7 +11,7 @@ recbole.model.general_recommender.pop
 
 import torch
 
-from recbole.utils import InputType
+from recbole.utils import InputType, ModelType
 from recbole.model.abstract_recommender import GeneralRecommender
 
 
@@ -20,6 +20,7 @@ class Pop(GeneralRecommender):
 
     """
     input_type = InputType.POINTWISE
+    type = ModelType.MEMBASE
 
     def __init__(self, config, dataset):
         super(Pop, self).__init__(config, dataset)

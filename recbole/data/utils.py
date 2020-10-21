@@ -185,7 +185,7 @@ def get_data_loader(name, config, eval_setting):
 
     model_type = config['MODEL_TYPE']
     neg_sample_strategy = eval_setting.neg_sample_args['strategy']
-    if model_type == ModelType.GENERAL:
+    if model_type == ModelType.GENERAL or model_type == ModelType.MEMBASE:
         if neg_sample_strategy == 'none':
             return GeneralDataLoader
         elif neg_sample_strategy == 'by':

@@ -53,6 +53,8 @@ def get_trainer(model_type, model_name):
     except AttributeError:
         if model_type == ModelType.KNOWLEDGE:
             return getattr(importlib.import_module('recbole.trainer'), 'KGTrainer')
+        elif model_type == ModelType.MEMBASE:
+            return getattr(importlib.import_module('recbox.trainer'), 'MemBasedTrainer')
         else:
             return getattr(importlib.import_module('recbole.trainer'), 'Trainer')
 
