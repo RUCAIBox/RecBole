@@ -3,6 +3,11 @@
 # @Author : Zhichao Feng
 # @Email  : fzcbupt@gmail.com
 
+# UPDATE
+# @Time   : 2020/10/21
+# @Author : Zhichao Feng
+# @email  : fzcbupt@gmai.com
+
 r"""
 recbole.model.context_aware_recommender.xdeepfm
 ################################################
@@ -72,9 +77,9 @@ class xDeepFM(ContextRecommender):
         self.cin_linear = nn.Linear(self.final_len, 1, bias=False)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
@@ -83,18 +88,39 @@ class xDeepFM(ContextRecommender):
                 constant_(module.bias.data, 0)
 
     def reg_loss(self, parameters):
+        """Calculate the L2 normalization loss of parameters in a certain layer.
+
+        Returns:
+            loss(torch.FloatTensor): The L2 Loss tensor. shape of [1,]
+        """
         reg_loss = 0
         for name, parm in parameters:
             if name.endswith('weight'):
                 reg_loss = reg_loss + parm.norm(2)
         return reg_loss
 
+    def calculate_reg_loss(self):
+        """Calculate the final L2 normalization loss of model parameters.
+        Including weight matrixes of mlp layers, linear layer and convolutional layers.
+
+        Returns:
+            loss(torch.FloatTensor): The L2 Loss tensor. shape of [1,]
+        """
+        l2_reg = 0
+        l2_reg = l2_reg + self.reg_loss(self.mlp_layers.named_parameters())
+        l2_reg = l2_reg + self.reg_loss(self.first_order_linear.named_parameters())
+        for conv1d in self.conv1d_list:
+            l2_reg += self.reg_loss(conv1d.named_parameters())
+        return l2_reg
+
     def compressed_interaction_network(self, input_features, activation='identity'):
         r"""For k-th CIN layer, the output :math:`X_k` is calculated via
 
-        ..math:: x_{h,*}^{k} = \sum_{i=1}^{H_k-1} \sum_{j=1}^{m}W_{i,j}^{k,h}(X_{i,*}^{k-1} \circ x_{j,*}^0)
+        .. math::
+            x_{h,*}^{k} = \sum_{i=1}^{H_k-1} \sum_{j=1}^{m}W_{i,j}^{k,h}(X_{i,*}^{k-1} \circ x_{j,*}^0)
 
-        :math:`H_k` donates the number of feature vectors in the k-th layer. :math: `1 \le h \le H_k`
+        :math:`H_k` donates the number of feature vectors in the k-th layer,
+        :math:`1 \le h \le H_k`.
         :math:`\circ` donates the Hadamard product.
 
         And Then, We apply sum pooling on each feature map of the hidden layer.
@@ -165,14 +191,6 @@ class xDeepFM(ContextRecommender):
         y = self.sigmoid(y_p)
 
         return y.squeeze(1)
-
-    def calculate_reg_loss(self):
-        l2_reg = 0
-        l2_reg = l2_reg + self.reg_loss(self.mlp_layers.named_parameters())
-        l2_reg = l2_reg + self.reg_loss(self.first_order_linear.named_parameters())
-        for conv1d in self.conv1d_list:
-            l2_reg += self.reg_loss(conv1d.named_parameters())
-        return l2_reg
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

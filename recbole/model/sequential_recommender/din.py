@@ -4,7 +4,7 @@
 # @Email  : fzcbupt@gmai.com
 
 # UPDATE
-# @Time   : 2020/10/6
+# @Time   : 2020/10/21
 # @Author : Zhichao Feng
 # @email  : fzcbupt@gmai.com
 
@@ -84,9 +84,9 @@ class DIN(SequentialRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

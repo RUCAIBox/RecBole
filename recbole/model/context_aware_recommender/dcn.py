@@ -3,6 +3,10 @@
 # @Author : Zhichao Feng
 # @Email  : fzcbupt@gmail.com
 
+# UPDATE
+# @Time   : 2020/10/21
+# @Author : Zhichao Feng
+# @email  : fzcbupt@gmai.com
 r"""
 recbole.model.context_aware_recommender.dcn
 ################################################
@@ -56,9 +60,9 @@ class DCN(ContextRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
