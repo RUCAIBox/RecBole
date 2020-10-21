@@ -6,10 +6,10 @@
 import torch
 import torch.nn as nn
 
-from recbox.utils import InputType
-from recbox.model.abstract_recommender import GeneralRecommender
-from recbox.model.layers import MLPLayers, CNNLayers
-from recbox.model.loss import BPRLoss
+from recbole.utils import InputType
+from recbole.model.abstract_recommender import GeneralRecommender
+from recbole.model.layers import MLPLayers, CNNLayers
+from recbole.model.loss import BPRLoss
 
 
 class ConvNCFBPRLoss(nn.Module):
