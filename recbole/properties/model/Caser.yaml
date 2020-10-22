@@ -1,6 +1,6 @@
 # Note: MAX_ITEM_LIST_LENGTH needs to be consistent with L
 embedding_size: 64
-dropout: 0.4
+dropout_prob: 0.4
 reg_weight: 1e-4
 L: 10
 nv: 8
