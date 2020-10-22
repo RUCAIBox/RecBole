@@ -33,7 +33,8 @@ from recbole.data.utils import dlapi
 class Dataset(object):
     """:class:`Dataset` stores the original dataset in memory.
     It provides many useful functions for data preprocessing, such as k-core data filtering and missing value imputation.
-    Features are stored as ``pandas.DataFrame`` inside :class:`~recbole.data.dataset.dataset.Dataset`
+    Features are stored as :class:`pandas.DataFrame` inside :class:`~recbole.data.dataset.dataset.Dataset`.
+    General and Context-aware Models can use this class.
 
     By calling method :meth:`~recbole.data.dataset.dataset.Dataset.build()`, it will processing dataset into DataLoaders,
     according to :class:`~recbole.config.eval_setting.EvalSetting`.
@@ -41,6 +42,45 @@ class Dataset(object):
     Args:
         config (Config): Global configuration object.
         saved_dataset (str, optional): Restore Dataset object from ``saved_dataset``. Defaults to ``None``.
+
+    Attributes:
+        dataset_name (str): Name of this dataset.
+
+        dataset_path (str): Local file path of this dataset.
+
+        field2type (dict): Dict mapping feature name (str) to its type (:class:`~recbole.utils.enum_type.FeatureType`).
+
+        field2source (dict): Dict mapping feature name (str) to its source (:class:`~recbole.utils.enum_type.FeatureSource`).
+            Specially, if feature is loaded from Arg ``additional_feat_suffix``, its source has type str,
+            which is the suffix of its local file (also the suffix written in Arg ``additional_feat_suffix``).
+
+        field2id_token (dict): Dict mapping feature name (str) to a list, which stores the original token of this feature.
+            For example, if ``test`` is token like feature, ``token_a`` is remapped to 1, ``token_b`` is remapped to 2.
+            Then ``field2id_token['test'] = ['[PAD]', 'token_a', 'token_b']``. (Note that 0 is always PADDING for token like features.)
+
+        field2seqlen (dict): Dict mapping feature name (str) to its sequence length (int).
+            For sequence features, their length can be either setted in config,
+            or setted to the max sequence length of this feature.
+            For token and float features, their length is 1.
+
+        uid_field (str or None): The same as ``config['USER_ID_FIELD']``.
+
+        iid_field (str or None): The same as ``config['ITEM_ID_FIELD']``.
+
+        label_field (str or None): The same as ``config['LABEL_FIELD']``.
+
+        time_field (str or None): The same as ``config['TIME_FIELD']``.
+
+        inter_feat (:class:`pandas.DataFrame`): Internal data structure stores the interaction features.
+            It's loaded from file ``.inter``.
+
+        user_feat (:class:`pandas.DataFrame` or None): Internal data structure stores the user features.
+            It's loaded from file ``.user`` if existed.
+
+        item_feat (:class:`pandas.DataFrame` or None): Internal data structure stores the item features.
+            It's loaded from file ``.item`` if existed.
+
+        feat_list (list): A list contains all the features (:class:`pandas.DataFrame`), including additional features.
     """
     def __init__(self, config, saved_dataset=None):
         self.config = config
@@ -127,6 +167,12 @@ class Dataset(object):
         self._reset_index()
 
     def _build_feat_list(self):
+        """Feat list building.
+        Any feat loaded by Dataset can be found in ``feat_list``
+
+        Note:
+            Subclasses can inherit this method to add new feat.
+        """
         feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
         if self.config['additional_feat_suffix'] is not None:
             for suf in self.config['additional_feat_suffix']:
