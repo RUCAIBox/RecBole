@@ -50,6 +50,7 @@ class DIN(SequentialRecommender):
         self.embedding_size = config['embedding_size']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.device = config['device']
+        self.pooling_mode = config['pooling_mode']
         self.dropout = config['dropout']
 
         self.types = ['user', 'item']
@@ -79,7 +80,7 @@ class DIN(SequentialRecommender):
                                         dropout=self.dropout,
                                         bn=True)
 
-        self.embedding_layer = ContextSeqEmbLayer(config, dataset)
+        self.embedding_layer = ContextSeqEmbLayer(dataset, self.embedding_size, self.pooling_mode, self.device)
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
