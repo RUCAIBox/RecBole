@@ -186,10 +186,10 @@ class KGNNLS(KnowledgeRecommender):
         Returns:
             entities(list): entities is a list of i-iter (i = 0, 1, ..., n_iter) neighbors for the batch of items.
                             dimensions of entities: {[batch_size, 1],
-                                                     [batch_size, n_neighbor],
-                                                     [batch_size, n_neighbor^2],
-                                                     ...,
-                                                     [batch_size, n_neighbor^n_iter]}
+                            [batch_size, n_neighbor],
+                            [batch_size, n_neighbor^2],
+                            ...,
+                            [batch_size, n_neighbor^n_iter]}
             relations(list): relations is a list of i-iter (i = 0, 1, ..., n_iter) corresponding relations for entities.
                              relations have the same shape as entities.
         """

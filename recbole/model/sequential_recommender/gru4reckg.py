@@ -7,6 +7,12 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
+
+r"""
+recbole.model.sequential_recommender.gru4reckg
+################################################
+"""
+
 import torch
 from torch import nn
 
