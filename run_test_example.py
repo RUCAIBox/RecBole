@@ -9,7 +9,7 @@
 
 import traceback
 from time import time
-from recbole.quick_start import run_unirec
+from recbole.quick_start import run_recbole
 
 
 closed_examples = ['Test SRGNN', 'Test GCSAN', 'Test NextItNet', 'Test GRU4RecKG']
@@ -342,7 +342,7 @@ def run_test_examples():
             config_dict = test_examples[example]
             if 'epochs' not in config_dict:
                 config_dict['epochs'] = 1
-            run_unirec(config_dict=config_dict, saved=False)
+            run_recbole(config_dict=config_dict, saved=False)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:
