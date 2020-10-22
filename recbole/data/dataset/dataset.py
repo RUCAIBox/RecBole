@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/16, 2020/10/13, 2020/10/20
+# @Time   : 2020/10/22 2020/10/13, 2020/10/20
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -31,6 +31,17 @@ from recbole.data.utils import dlapi
 
 
 class Dataset(object):
+    """:class:`Dataset` stores the original dataset in memory.
+    It provides many useful functions for data preprocessing, such as k-core data filtering and missing value imputation.
+    Features are stored as ``pandas.DataFrame`` inside :class:`~recbole.data.dataset.dataset.Dataset`
+
+    By calling method :meth:`~recbole.data.dataset.dataset.Dataset.build()`, it will processing dataset into DataLoaders,
+    according to :class:`~recbole.config.eval_setting.EvalSetting`.
+
+    Args:
+        config (Config): Global configuration object.
+        saved_dataset (str, optional): Restore Dataset object from ``saved_dataset``. Defaults to ``None``.
+    """
     def __init__(self, config, saved_dataset=None):
         self.config = config
         self.dataset_name = config['dataset']
@@ -44,6 +55,9 @@ class Dataset(object):
             self._restore_saved_dataset(saved_dataset)
 
     def _from_scratch(self):
+        """Load dataset from scratch.
+        Initialize attributes firstly, then load data from atomic files, pre-process the dataset lastly.
+        """
         self.logger.debug('Loading {} from scratch'.format(self.__class__))
 
         self._get_preset()
@@ -52,6 +66,8 @@ class Dataset(object):
         self._data_processing()
 
     def _get_preset(self):
+        """Initialization useful inside attributes.
+        """
         self.dataset_path = self.config['data_path']
         self._fill_nan_flag = self.config['fill_nan']
 
@@ -63,6 +79,8 @@ class Dataset(object):
         self.benchmark_filename_list = self.config['benchmark_filename']
 
     def _get_field_from_config(self):
+        """Initialization common field names.
+        """
         self.uid_field = self.config['USER_ID_FIELD']
         self.iid_field = self.config['ITEM_ID_FIELD']
         self.label_field = self.config['LABEL_FIELD']
@@ -72,6 +90,15 @@ class Dataset(object):
         self.logger.debug('iid_field: {}'.format(self.iid_field))
 
     def _data_processing(self):
+        """Data preprocessing, including:
+
+        - K-core data filtering
+        - Value-based data filtering
+        - Remap ID
+        - Missing value imputation
+        - Normalization
+        - Preloading weights initialization
+        """
         self.feat_list = self._build_feat_list()
         if self.benchmark_filename_list is None:
             self._data_filtering()
@@ -84,6 +111,16 @@ class Dataset(object):
         self._preload_weight_matrix()
 
     def _data_filtering(self):
+        """Data filtering
+
+        - Filter missing user_id or item_id
+        - Value-based data filtering
+        - K-core data filtering
+
+        Note:
+            After filtering, feats(``DataFrame``) has non-continuous index,
+            thus :meth:`~recbole.data.dataset.dataset.Dataset._reset_index()` will reset the index of feats.
+        """
         self._filter_nan_user_or_item()
         self._filter_by_field_value()
         self._filter_by_inter_num()
