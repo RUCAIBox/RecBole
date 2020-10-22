@@ -26,6 +26,7 @@ class GRU4RecF(SequentialRecommender):
     r"""
     In the original paper, the authors proposed several architectures. We compared 3 different
     architectures:
+
         (1)  Concatenate item input and feature input and use single RNN,
 
         (2)  Concatenate outputs from two different RNNs,

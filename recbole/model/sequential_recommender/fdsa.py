@@ -26,7 +26,7 @@ from recbole.model.layers import TransformerEncoder, FeatureSeqEmbLayer, Vanilla
 
 class FDSA(SequentialRecommender):
     r"""
-    FDSA is similar with the GRU4RecF implemented in RecBox, which uses two different Transformer encoders to
+    FDSA is similar with the GRU4RecF implemented in RecBole, which uses two different Transformer encoders to
     encode items and features respectively and concatenates the two subparts's outputs as the final output.
 
     """
