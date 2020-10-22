@@ -360,7 +360,7 @@ class Trainer(AbstractTrainer):
                 if self.eval_type == EvaluatorType.INDIVIDUAL:
                     raise ValueError('full sort can\'t use LossEvaluator')
                 interaction, scores = self._full_sort_batch_eval(batched_data)
-                batch_matrix = self.evaluator.evaluate(interaction, scores, full=True)
+                batch_matrix = self.evaluator.collect(interaction, scores, full=True)
             else:
                 interaction = batched_data
                 batch_size = interaction.length
@@ -370,9 +370,9 @@ class Trainer(AbstractTrainer):
                 else:
                     scores = self._spilt_predict(interaction, batch_size)
 
-                batch_matrix = self.evaluator.evaluate(interaction, scores)
+                batch_matrix = self.evaluator.collect(interaction, scores)
             batch_matrix_list.append(batch_matrix)
-        result = self.evaluator.collect(batch_matrix_list, eval_data)
+        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
 
         return result
 
@@ -667,3 +667,12 @@ class MKRTrainer(Trainer):
                 kg_total_loss += loss_kge
 
         return rs_total_loss, kg_total_loss
+
+
+class TraditionalTrainer(Trainer):
+    r"""TraditionalTrainer is designed for Traditional model(Pop,ItemKNN), which set the epoch to 1 whatever the config.
+
+    """
+    def __init__(self, config, model):
+        super(TraditionalTrainer, self).__init__(config, model)
+        self.epochs = 1   # Set the epoch to 1 when running memory based model

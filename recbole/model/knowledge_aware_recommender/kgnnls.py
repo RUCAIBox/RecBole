@@ -267,7 +267,24 @@ class KGNNLS(KnowledgeRecommender):
         res = torch.reshape(entity_vectors[0], (self.batch_size, self.embedding_size))
         return res
 
-    def label_smoothness_loss(self, user_embeddings, user, entities, relations):
+    def label_smoothness_predict(self, user_embeddings, user, entities, relations):
+        r"""Predict the label of items by label smoothness.
+
+        Args:
+            user_embeddings(torch.FloatTensor): The embeddings of users, shape: [batch_size*2, embedding_size],
+            user(torch.FloatTensor): the index of users, shape: [batch_size*2]
+            entities(list): entities is a list of i-iter (i = 0, 1, ..., n_iter) neighbors for the batch of items.
+                            dimensions of entities: {[batch_size*2, 1],
+                                                     [batch_size*2, n_neighbor],
+                                                     [batch_size*2, n_neighbor^2],
+                                                     ...,
+                                                     [batch_size*2, n_neighbor^n_iter]}
+            relations(list): relations is a list of i-iter (i = 0, 1, ..., n_iter) corresponding relations for entities.
+                             relations have the same shape as entities.
+
+        Returns:
+            predicted_labels(torch.FloatTensor): The predicted label of items, shape: [batch_size*2]
+        """
         # calculate initial labels; calculate updating masks for label propagation
         entity_labels = []
         reset_masks = []  # True means the label of this item is reset to initial value during label propagation
@@ -343,10 +360,20 @@ class KGNNLS(KnowledgeRecommender):
         return user_e, item_e
 
     def calculate_ls_loss(self, user, item, target):
+        r"""Calculate label smoothness loss.
+
+        Args:
+            user(torch.FloatTensor): the index of users, shape: [batch_size*2],
+            item(torch.FloatTensor): the index of items, shape: [batch_size*2],
+            target(torch.FloatTensor): the label of user-item, shape: [batch_size*2],
+
+        Returns:
+            ls_loss: label smoothness loss
+        """
         user_e = self.user_embedding(user)
         entities, relations = self.get_neighbors(item)
 
-        predicted_labels = self.label_smoothness_loss(user_e, user, entities, relations)
+        predicted_labels = self.label_smoothness_predict(user_e, user, entities, relations)
         ls_loss = self.bce_loss(predicted_labels, target)
         return ls_loss
 
