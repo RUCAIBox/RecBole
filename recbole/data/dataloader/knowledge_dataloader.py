@@ -28,6 +28,10 @@ class KGDataLoader(AbstractDataLoader):
         dl_format (InputType, optional): The input type of dataloader. Defaults to
             :obj:`~recbole.utils.InputType.PAIRWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+
+    Attributes:
+        shuffle (bool): Whether the dataloader will be shuffle after a round.
+            However, in :class:`KGDataLoader`, it's guaranteed to be ``True``.
     """
 
     def __init__(self, config, dataset, sampler,
@@ -82,19 +86,10 @@ class KGDataLoader(AbstractDataLoader):
 
 class KnowledgeBasedDataLoader(AbstractDataLoader):
     """:class:`KnowledgeBasedDataLoader` is used for knowledge based model.
-    This dataloader has three states (saved by self.state):
 
-        - KGDataLoaderState.RS
-        - KGDataLoaderState.KG
-        - KGDataLoaderState.RSKG
-
-    In the first state, this dataloader would only return the triplets with negative examples in a knowledge graph.
-
-    In the second state, this dataloader would only return the user-item interaction.
-
-    In the last state, this dataloader would return both knowledge graph information
-    and user-item interaction information.
-
+    It has three states, which is saved in :attr:`state`.
+    In different states, :meth:`~_next_batch_data` will return different :class:`~recbole.data.interaction.Interaction`.
+    Detailed, please see :attr:`~state`.
 
     Args:
         config (Config): The config of dataloader.
@@ -104,8 +99,23 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         neg_sample_args (dict): The neg_sample_args of dataloader.
         batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
         dl_format (InputType, optional): The input type of dataloader. Defaults to
-            :obj:`~recbole.utils.InputType.POINTWISE`.
+            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+
+    Attributes:
+        state (KGDataLoaderState): 
+            This dataloader has three states:
+
+                - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RS`
+                - :obj:`~recbole.utils.enum_type.KGDataLoaderState.KG`
+                - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RSKG`
+
+            In the first state, this dataloader would only return the triplets with negative examples in a knowledge graph.
+
+            In the second state, this dataloader would only return the user-item interaction.
+
+            In the last state, this dataloader would return both knowledge graph information
+            and user-item interaction information.
     """
 
     def __init__(self, config, dataset, sampler, kg_sampler, neg_sample_args,
