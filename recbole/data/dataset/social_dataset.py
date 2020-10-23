@@ -95,7 +95,7 @@ class SocialDataset(Dataset):
         """Get graph or sparse matrix that describe relations between users.
 
         For an edge of <src, tgt>, ``graph[src, tgt] = 1`` if ``value_field`` is ``None``,
-        else ``graph[src, tgt] = df_feat[value_field][src, tgt]``.
+        else ``graph[src, tgt] = self.net_feat[value_field][src, tgt]``.
 
         Currently, we support graph in `DGL`_ and `PyG`_,
         and two type of sparse matrixes, ``coo`` and ``csr``.
