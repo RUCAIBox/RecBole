@@ -4,13 +4,13 @@
 # @Email  : slmu@ruc.edu.cn
 
 r"""
-recbole.model.knowledge_aware_recommender.kgat
+KGAT
 ##################################################
 Reference:
-Xiang Wang et al. "KGAT: Knowledge Graph Attention Network for Recommendation." in SIGKDD 2019.
+    Xiang Wang et al. "KGAT: Knowledge Graph Attention Network for Recommendation." in SIGKDD 2019.
 
 Reference code:
-https://github.com/xiangwang1223/knowledge_graph_attention_network
+    https://github.com/xiangwang1223/knowledge_graph_attention_network
 """
 
 import dgl

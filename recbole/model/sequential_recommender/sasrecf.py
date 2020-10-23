@@ -4,14 +4,8 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 r"""
-
-recbole.model.sequential_recommender.sasrecf
+SASRecF
 ################################################
-
-This is an extension of SASRec, which concatenates
-item representations and item attribute representations as the input
-to the model.
-
 """
 
 import torch
@@ -23,8 +17,10 @@ from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder, FeatureSeqEmbLayer
 
 
-
 class SASRecF(SequentialRecommender):
+    """This is an extension of SASRec, which concatenates item representations and item attribute representations
+    as the input to the model.
+    """
 
     def __init__(self, config, dataset):
         super(SASRecF, self).__init__(config, dataset)

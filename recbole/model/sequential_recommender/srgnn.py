@@ -5,14 +5,14 @@
 
 
 r"""
-recbole.model.sequential_recommender.srgnn
+SRGNN
 ################################################
 
 Reference:
-Shu Wu et al. "Session-based Recommendation with Graph Neural Networks." in AAAI 2019.
+    Shu Wu et al. "Session-based Recommendation with Graph Neural Networks." in AAAI 2019.
 
 Reference code:
-https://github.com/CRIPAC-DIG/SR-GNN
+    https://github.com/CRIPAC-DIG/SR-GNN
 
 """
 import numpy as np
@@ -55,7 +55,8 @@ class GNN(nn.Module):
         Args:
             A(torch.FloatTensor):The connection matrix,shape of [batch_size, max_session_len, 2 * max_session_len]
 
-            hidden(torch.FloatTensor):The item node embedding matrix, shape of [batch_size, max_session_len, embedding_size]
+            hidden(torch.FloatTensor):The item node embedding matrix, shape of
+                [batch_size, max_session_len, embedding_size]
 
         Returns:
             torch.FloatTensor:Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]

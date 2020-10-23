@@ -10,10 +10,10 @@
 
 
 r"""
-recbole.model.general_recommender.bpr
+BPR
 ################################################
 Reference:
-Steffen Rendle et al. "BPR: Bayesian Personalized Ranking from Implicit Feedback." in UAI 2009.
+    Steffen Rendle et al. "BPR: Bayesian Personalized Ranking from Implicit Feedback." in UAI 2009.
 """
 
 import torch

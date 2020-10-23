@@ -9,11 +9,11 @@
 # @Email  : yujielu1998@gmail.com
 
 r"""
-recbole.model.sequential_recommender.fpmc
+FPMC
 ################################################
 
 Reference:
-Steffen Rendle et al. "Factorizing Personalized Markov Chains for Next-Basket Recommendation." in WWW 2010.
+    Steffen Rendle et al. "Factorizing Personalized Markov Chains for Next-Basket Recommendation." in WWW 2010.
 
 """
 import torch

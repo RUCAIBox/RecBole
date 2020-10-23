@@ -9,7 +9,7 @@
 
 
 r"""
-recbole.model.sequential_recommender.gru4reckg
+GRU4RecKG
 ################################################
 """
 

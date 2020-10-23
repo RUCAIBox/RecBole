@@ -5,11 +5,11 @@
 
 
 r"""
-recbole.model.knowledge_aware_recommender.ripplenet
+RippleNet
 #####################################################
 Reference:
-Hongwei Wang et al. "RippleNet: Propagating User Preferences on the Knowledge Graph for Recommender Systems."
-in CIKM 2018.
+    Hongwei Wang et al. "RippleNet: Propagating User Preferences on the Knowledge Graph for Recommender Systems."
+    in CIKM 2018.
 """
 
 import torch
@@ -261,8 +261,6 @@ class RippleNet(KnowledgeRecommender):
     def _key_addressing_full(self):
         r"""Conduct reasoning for specific item and user ripple set
 
-        Returns:
-        
         Returns:
             o_list (dict -> torch.cuda.FloatTensor): list of torch.cuda.FloatTensor n_hop * [batch_size, n_item, embedding_size]
         """

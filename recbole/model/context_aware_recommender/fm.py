@@ -8,11 +8,12 @@
 # @Time   : 2020/8/13,
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmain.com
+
 r"""
-recbole.model.context_aware_recommender.fm
+FM
 ################################################
 Reference:
-Steffen Rendle et al. "Factorization Machines." in ICDM 2010.
+    Steffen Rendle et al. "Factorization Machines." in ICDM 2010.
 """
 
 import torch
@@ -37,9 +38,9 @@ class FM(ContextRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
 

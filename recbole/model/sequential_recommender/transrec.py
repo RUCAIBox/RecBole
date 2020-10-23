@@ -4,11 +4,11 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 r"""
-recbole.model.sequential_recommender.transrec
+TransRec
 ################################################
 
 Reference:
-Ruining He et al. "Translation-based Recommendation." In RecSys 2017.
+    Ruining He et al. "Translation-based Recommendation." In RecSys 2017.
 
 """
 

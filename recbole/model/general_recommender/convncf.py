@@ -3,6 +3,16 @@
 # @Author : Yingqian Min
 # @Email  : eliver_min@foxmail.com
 
+r"""
+ConvNCF
+################################################
+Reference:
+    Xiangnan He et al. "Outer Product-based Neural Collaborative Filtering." in IJCAI 2018.
+
+Reference code:
+    https://github.com/duxy-me/ConvNCF
+"""
+
 import torch
 import torch.nn as nn
 
@@ -10,15 +20,6 @@ from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.layers import MLPLayers, CNNLayers
 
-r"""
-recbole.model.general_recommender.convcf
-################################################
-Reference:
-Xiangnan He et al. "Outer Product-based Neural Collaborative Filtering." in IJCAI 2018.
-
-Reference code:
-https://github.com/duxy-me/ConvNCF
-"""
 
 class ConvNCFBPRLoss(nn.Module):
 

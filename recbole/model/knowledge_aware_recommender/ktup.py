@@ -3,14 +3,14 @@
 # @Email  : slmu@ruc.edu.cn
 
 r"""
-recbole.model.knowledge_aware_recommender.ktup
+KTUP
 ##################################################
 Reference:
-Yixin Cao et al. "Unifying Knowledge Graph Learning and Recommendation:Towards a Better Understanding
-of User Preferences." in WWW 2019.
+    Yixin Cao et al. "Unifying Knowledge Graph Learning and Recommendation:Towards a Better Understanding
+    of User Preferences." in WWW 2019.
 
 Reference code:
-https://github.com/TaoMiner/joint-kg-recommender
+    https://github.com/TaoMiner/joint-kg-recommender
 """
 
 import torch
