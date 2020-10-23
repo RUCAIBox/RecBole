@@ -25,6 +25,7 @@ from recbole.utils import FeatureSource
 class SocialDataset(Dataset):
     """:class:`SocialDataset` is based on :class:`~recbole.data.dataset.dataset.Dataset`,
     and load ``.net`` additionally.
+
     It also provides several interfaces to transfer ``.net`` features into coo sparse matrix,
     csr sparse matrix, :class:`DGL.Graph` or :class:`PyG.Data`.
 
