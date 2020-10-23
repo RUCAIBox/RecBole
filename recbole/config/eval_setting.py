@@ -240,7 +240,7 @@ class EvalSetting(object):
             raise ValueError('ratios [{}] should be list'.format(ratios))
         self.set_splitting(strategy='by_ratio', ratios=ratios)
 
-    def split_by_value(self, field, values, ascending=True):
+    def _split_by_value(self, field, values, ascending=True):
         raise NotImplementedError('Split by value has not been implemented.')
         if not isinstance(field, str):
             raise ValueError('field [{}] should be str'.format(field))
