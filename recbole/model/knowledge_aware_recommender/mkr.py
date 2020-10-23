@@ -30,8 +30,10 @@ class MKR(KnowledgeRecommender):
     """
 
     input_type = InputType.POINTWISE
+
     def __init__(self, config, dataset):
         super(MKR, self).__init__(config, dataset)
+
         # load parameters info
         self.LABEL = config['LABEL_FIELD']
         self.embedding_size = config['embedding_size']

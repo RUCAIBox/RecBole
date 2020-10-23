@@ -35,6 +35,7 @@ class KTUP(KnowledgeRecommender):
     def __init__(self, config, dataset):
         super(KTUP, self).__init__(config, dataset)
 
+        # load parameters info
         self.embedding_size = config['embedding_size']
         self.L1_flag = config['L1_flag']
         self.use_st_gumbel = config['use_st_gumbel']
@@ -42,6 +43,7 @@ class KTUP(KnowledgeRecommender):
         self.align_weight = config['align_weight']
         self.margin = config['margin']
 
+        # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.pref_embedding = nn.Embedding(self.n_relations, self.embedding_size)

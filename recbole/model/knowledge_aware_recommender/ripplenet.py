@@ -69,8 +69,6 @@ class RippleNet(KnowledgeRecommender):
         self.ripple_set = self._build_ripple_set()
 
         # define layers and loss
-        # self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
-        # self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
         self.relation_embedding = nn.Embedding(self.n_relations, self.embedding_size * self.embedding_size)
         self.transform_matrix = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
