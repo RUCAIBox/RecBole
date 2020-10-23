@@ -405,9 +405,9 @@ class Dataset(object):
         for field in columns:
             ftype = self.field2type[field]
             if ftype == FeatureType.TOKEN_SEQ:
-                df[field] = [_.split(seq_separator) for _ in df[field].values]
+                df[field] = [list(filter(None, _.split(seq_separator))) for _ in df[field].values]
             elif ftype == FeatureType.FLOAT_SEQ:
-                df[field] = [list(map(float, _.split(seq_separator))) for _ in df[field].values]
+                df[field] = [list(map(float, filter(None, _.split(seq_separator)))) for _ in df[field].values]
             if field not in self.field2seqlen:
                 self.field2seqlen[field] = max(map(len, df[field].values))
         return df

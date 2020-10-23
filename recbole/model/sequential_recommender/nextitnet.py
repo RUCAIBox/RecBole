@@ -5,15 +5,15 @@
 
 
 r"""
-recbole.model.sequential_recommender.nextitnet
+NextItNet
 ################################################
 
 Reference:
-Fajie Yuan et al., "A Simple Convolutional Generative Network for Next Item Recommendation" in WSDM 2019.
+    Fajie Yuan et al., "A Simple Convolutional Generative Network for Next Item Recommendation" in WSDM 2019.
 
 Reference code:
-https://github.com/fajieyuan/nextitnet
-https://github.com/initlisk/nextitnet_pytorch
+    - https://github.com/fajieyuan/nextitnet
+    - https://github.com/initlisk/nextitnet_pytorch
 
 """
 import numpy as np
@@ -72,9 +72,9 @@ class NextItNet(SequentialRecommender):
         self.reg_loss = RegLoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             stdv = np.sqrt(1. / self.n_items)
             uniform_(module.weight.data, -stdv, stdv)
@@ -212,6 +212,10 @@ class ResidualBlock_b(nn.Module):
         return out2 + x
 
     def conv_pad(self, x, dilation):
+        r""" Dropout-mask: To avoid the future information leakage problem, this paper proposed a masking-based dropout
+        trick for the 1D dilated convolution to prevent the network from seeing the future items.
+        Also the One-dimensional transformation is completed in this funtion.
+        """
         inputs_pad = x.permute(0, 2, 1)
         inputs_pad = inputs_pad.unsqueeze(2)
         pad = nn.ZeroPad2d(((self.kernel_size - 1) * dilation, 0, 0, 0))

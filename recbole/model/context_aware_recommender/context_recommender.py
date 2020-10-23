@@ -9,7 +9,7 @@
 # @Email  : linzihan.super@foxmail.com
 
 r"""
-recbole.model.context_aware_recommender.context_recommender
+ContextRecommender
 #################################################################
 """
 

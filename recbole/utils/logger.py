@@ -20,11 +20,13 @@ def init_logger(config):
     file named `filename` simultaneously.
     All the message that you want to log MUST be str.
 
-    :param config
-    example:
-        logger = logging.getLogger(config)
-        logger.debug(train_state)
-        logger.info(train_result)
+    Args:
+        config (Config): An instance object of Config, used to record parameter information.
+
+    Example:
+        >>> logger = logging.getLogger(config)
+        >>> logger.debug(train_state)
+        >>> logger.info(train_result)
     """
     LOGROOT = './log/'
     dir_name = os.path.dirname(LOGROOT)

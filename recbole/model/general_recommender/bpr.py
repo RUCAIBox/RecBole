@@ -10,10 +10,10 @@
 
 
 r"""
-recbole.model.general_recommender.bprmf
+BPR
 ################################################
 Reference:
-Steffen Rendle et al. "BPR: Bayesian Personalized Ranking from Implicit Feedback." in UAI 2009.
+    Steffen Rendle et al. "BPR: Bayesian Personalized Ranking from Implicit Feedback." in UAI 2009.
 """
 
 import torch
@@ -25,14 +25,14 @@ from recbole.model.loss import BPRLoss
 from recbole.model.init import xavier_normal_initialization
 
 
-class BPRMF(GeneralRecommender):
-    r"""BPRMF is a basic matrix factorization model that be trained in the pairwise way.
+class BPR(GeneralRecommender):
+    r"""BPR is a basic matrix factorization model that be trained in the pairwise way.
 
     """
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
-        super(BPRMF, self).__init__(config, dataset)
+        super(BPR, self).__init__(config, dataset)
 
         # load parameters info
         self.embedding_size = config['embedding_size']

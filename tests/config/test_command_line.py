@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     config_file_list = ['test_config_example.yaml']
 
-    config = Config(model='BPRMF', dataset='ml-100k')
+    config = Config(model='BPR', dataset='ml-100k')
 
     # command line
     assert config['use_gpu'] == False

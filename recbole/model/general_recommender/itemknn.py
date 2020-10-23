@@ -4,11 +4,11 @@
 # @Email  : linzihan.super@foxmail.com
 
 r"""
-recbole.model.general_recommender.itemknn
+ItemKNN
 ################################################
 Reference:
-Aiolli,F et al. Efficient top-n recommendation for very large scale binary rated datasets.
-In Proceedings of the 7th ACM conference on Recommender systems (pp. 273-280). ACM.
+    Aiolli,F et al. Efficient top-n recommendation for very large scale binary rated datasets.
+    In Proceedings of the 7th ACM conference on Recommender systems (pp. 273-280). ACM.
 """
 
 import numpy as np

@@ -9,14 +9,15 @@
 # @email  : fzcbupt@gmail.com
 
 r"""
-recbole.model.context_aware_recommender.xdeepfm
+xDeepFM
 ################################################
 Reference:
-Jianxun Lian at al. "xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems." in SIGKDD 2018.
+    Jianxun Lian at al. "xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems."
+    in SIGKDD 2018.
 
 Reference code:
-https://github.com/Leavingseason/xDeepFM
-https://github.com/shenweichen/DeepCTR-Torch
+    - https://github.com/Leavingseason/xDeepFM
+    - https://github.com/shenweichen/DeepCTR-Torch
 """
 
 import torch
@@ -29,7 +30,7 @@ from recbole.model.context_aware_recommender.context_recommender import ContextR
 
 
 class xDeepFM(ContextRecommender):
-    """xDeepFM combines a CIN(Compressed Interaction Network) with a classical DNN.
+    """xDeepFM combines a CIN (Compressed Interaction Network) with a classical DNN.
     The model is able to learn certain bounded-degree feature interactions explicitly;
     Besides, it can also learn arbitrary low- and high-order feature interactions implicitly.
     """

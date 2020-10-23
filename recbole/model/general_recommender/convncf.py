@@ -3,6 +3,16 @@
 # @Author : Yingqian Min
 # @Email  : eliver_min@foxmail.com
 
+r"""
+ConvNCF
+################################################
+Reference:
+    Xiangnan He et al. "Outer Product-based Neural Collaborative Filtering." in IJCAI 2018.
+
+Reference code:
+    https://github.com/duxy-me/ConvNCF
+"""
+
 import torch
 import torch.nn as nn
 
@@ -58,7 +68,7 @@ class ConvNCF(GeneralRecommender):
         self.cnn_kernels = config['cnn_kernels']
         self.cnn_strides = config['cnn_strides']
         self.dropout = config['dropout']
-        self.regs = config['regs']
+        self.regs = config['reg_weights']
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)

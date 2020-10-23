@@ -4,14 +4,8 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 r"""
-
-recbole.model.sequential_recommender.sasrecf
+SASRecF
 ################################################
-
-This is an extension of SASRec, which concatenates
-item representations and item attribute representations as the input
-to the model.
-
 """
 
 import torch
@@ -23,29 +17,50 @@ from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder, FeatureSeqEmbLayer
 
 
-
 class SASRecF(SequentialRecommender):
+    """This is an extension of SASRec, which concatenates item representations and item attribute representations
+    as the input to the model.
+    """
 
     def __init__(self, config, dataset):
         super(SASRecF, self).__init__(config, dataset)
 
         # load parameters info
-        self.hidden_size = config['hidden_size'] # same as embedding_size
+        self.n_layers = config['n_layers']
+        self.n_heads = config['n_heads']
+        self.hidden_size = config['hidden_size']  # same as embedding_size
+        self.inner_size = config['inner_size']  # the dimensionality in feed-forward layer
+        self.hidden_dropout_prob = config['hidden_dropout_prob']
+        self.attn_dropout_prob = config['attn_dropout_prob']
+        self.hidden_act = config['hidden_act']
+        self.layer_norm_eps = config['layer_norm_eps']
+
         self.embedding_size = config['embedding_size']
-        assert self.hidden_size == self.embedding_size
-        self.dropout_prob = config['dropout_prob']
-        self.loss_type = config['loss_type']
+        self.selected_features = config['selected_features']
+        self.pooling_mode = config['pooling_mode']
+        self.device = config['device']
         self.num_feature_field = len(config['selected_features'])
+
         self.initializer_range = config['initializer_range']
+        self.loss_type = config['loss_type']
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
-        self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size, padding_idx=0)
-        self.feature_embed_layer = FeatureSeqEmbLayer(config, dataset)
-        self.trm_encoder = TransformerEncoder(config)
-        self.concat_layer = nn.Linear(self.hidden_size * (1 + self.num_feature_field), self.hidden_size)
-        self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=1e-12)
-        self.dropout = nn.Dropout()
+        self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size)
+        self.feature_embed_layer = FeatureSeqEmbLayer(dataset, self.hidden_size, self.selected_features,
+                                                      self.pooling_mode, self.device)
+
+        self.trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
+                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
+                                              hidden_dropout_prob=self.hidden_dropout_prob,
+                                              attn_dropout_prob=self.attn_dropout_prob,
+                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+
+        self.concat_layer = nn.Linear(self.embedding_size * (1 + self.num_feature_field), self.hidden_size)
+
+        self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
+        self.dropout = nn.Dropout(self.hidden_dropout_prob)
+
         if self.loss_type == 'BPR':
             self.loss_fct = BPRLoss()
         elif self.loss_type == 'CE':
@@ -69,6 +84,7 @@ class SASRecF(SequentialRecommender):
             module.bias.data.zero_()
 
     def get_attention_mask(self, item_seq):
+        """Generate left-to-right uni-directional attention mask for multi-head attention."""
         attention_mask = (item_seq > 0).long()
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
         # mask for left-to-right unidirectional

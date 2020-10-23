@@ -5,10 +5,11 @@
 # @File   : autoint.py
 
 r"""
-recbole.model.context_aware_recommender.autoint
+AutoInt
 ################################################
 Reference:
-Weiping Song et al. "AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks" in CIKM 2018.
+    Weiping Song et al. "AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks"
+    in CIKM 2018.
 """
 
 import torch
@@ -20,13 +21,14 @@ from recbole.model.layers import AttLayer, MLPLayers
 from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
-class AUTOINT(ContextRecommender):
-    """ AUTOINT is a novel CTR prediction model based on self-attention mechanism, which can automatically learn high-order feature interactions in an explicit fashion.
+class AutoInt(ContextRecommender):
+    """ AutoInt is a novel CTR prediction model based on self-attention mechanism,
+    which can automatically learn high-order feature interactions in an explicit fashion.
 
     """
 
     def __init__(self, config, dataset):
-        super(AUTOINT, self).__init__(config, dataset)
+        super(AutoInt, self).__init__(config, dataset)
 
         self.LABEL = config['LABEL_FIELD']
 
@@ -59,16 +61,15 @@ class AUTOINT(ContextRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
             xavier_normal_(module.weight.data)
             if module.bias is not None:
                 constant_(module.bias.data, 0)
-
 
     def autoint_layer(self, infeature):
         """ Get the attention-based feature interaction score
@@ -95,7 +96,6 @@ class AUTOINT(ContextRecommender):
         att_output = self.attn_fc(cross_term) + self.deep_predict_layer(self.mlp_layers(infeature.view(batch_size, -1)))
         return att_output
 
-
     def forward(self, interaction):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
@@ -108,7 +108,6 @@ class AUTOINT(ContextRecommender):
         autoint_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
         output = self.first_order_linear(interaction) + self.autoint_layer(autoint_all_embeddings)
         return self.sigmoid(output.squeeze(1))
-
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

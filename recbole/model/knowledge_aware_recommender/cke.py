@@ -4,10 +4,10 @@
 # @Email  : slmu@ruc.edu.cn
 
 r"""
-recbole.model.knowledge_aware_recommender.cke
+CKE
 ##################################################
 Reference:
-Fuzheng Zhang et al. "Collaborative Knowledge Base Embedding for Recommender Systems." in SIGKDD 2016.
+    Fuzheng Zhang et al. "Collaborative Knowledge Base Embedding for Recommender Systems." in SIGKDD 2016.
 """
 
 import torch
