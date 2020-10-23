@@ -6,7 +6,7 @@
 
 
 """
-recbox.model.context_aware_recommender.dssm
+recbole.model.context_aware_recommender.dssm
 ################################################
 Reference:
 PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
@@ -17,8 +17,8 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbox.model.layers import MLPLayers
-from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers
+from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
 class DSSM(ContextRecommender):
