@@ -30,9 +30,9 @@ class SocialDataset(Dataset):
     csr sparse matrix, :class:`DGL.Graph` or :class:`PyG.Data`.
 
     Attributes:
-        uid_field (str): The same as ``config['SOURCE_ID_FIELD']``.
+        source_field (str): The same as ``config['SOURCE_ID_FIELD']``.
 
-        iid_field (str): The same as ``config['TARGET_ID_FIELD']``.
+        target_field (str): The same as ``config['TARGET_ID_FIELD']``.
 
         net_feat (pandas.DataFrame): Internal data structure stores the network features.
             It's loaded from file ``.net``.
