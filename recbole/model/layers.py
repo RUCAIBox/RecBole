@@ -28,16 +28,21 @@ from recbole.utils import ModelType, InputType, FeatureType
 
 class MLPLayers(nn.Module):
     r""" MLPLayers
+
     Args:
         - layers(list): a list contains the size of each layer in mlp layers
         - dropout(float): probability of an element to be zeroed. Default: 0
         - activation(str): activation function after each layer in mlp layers. Default: 'relu'
                       candidates: 'sigmoid', 'tanh', 'relu', 'leekyrelu', 'none'
+
     Shape:
+
         - Input: (:math:`N`, \*, :math:`H_{in}`) where \* means any number of additional dimensions
           :math:`H_{in}` must equal to the first value in `layers`
         - Output: (:math:`N`, \*, :math:`H_{out}`) where :math:`H_{out}` equals to the last value in `layers`
+
     Examples::
+
         >>> m = MLPLayers([64, 32, 16], 0.2, 'relu')
         >>> input = torch.randn(128, 64)
         >>> output = m(input)
@@ -154,6 +159,7 @@ class BaseFactorizationMachine(nn.Module):
 
 class BiGNNLayer(nn.Module):
     r"""Propagate a layer of Bi-interaction GNN
+
     .. math::
         output = (L+I)EW_1 + LE \otimes EW_2
     """
@@ -205,8 +211,10 @@ class AttLayer(nn.Module):
 
 class Dice(nn.Module):
     r"""Dice activation function
+
     .. math::
         f(s)=p(s) \cdot s+(1-p(s)) \cdot \alpha s
+
     .. math::
         p(s)=\frac{1} {1 + e^{-\frac{s-E[s]} {\sqrt {Var[s] + \epsilon}}}}
     """
@@ -306,27 +314,27 @@ class VanillaAttention(nn.Module):
 """
 
 
-class SelfAttention(nn.Module):
-    def __init__(self, config):
-        super(SelfAttention, self).__init__()
-        if config['hidden_size'] % config['num_attention_heads'] != 0:
+class MultiHeadAttention(nn.Module):
+    def __init__(self, n_heads, hidden_size, hidden_dropout_prob, attn_dropout_prob, layer_norm_eps):
+        super(MultiHeadAttention, self).__init__()
+        if hidden_size % n_heads != 0:
             raise ValueError(
                 "The hidden size (%d) is not a multiple of the number of attention "
-                "heads (%d)" % (config['hidden_size'], config['num_attention_heads']))
+                "heads (%d)" % (hidden_size, n_heads))
 
-        self.num_attention_heads = config['num_attention_heads']
-        self.attention_head_size = int(config['hidden_size'] / config['num_attention_heads'])
+        self.num_attention_heads = n_heads
+        self.attention_head_size = int(hidden_size / n_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
 
-        self.query = nn.Linear(config['hidden_size'], self.all_head_size)
-        self.key = nn.Linear(config['hidden_size'], self.all_head_size)
-        self.value = nn.Linear(config['hidden_size'], self.all_head_size)
+        self.query = nn.Linear(hidden_size, self.all_head_size)
+        self.key = nn.Linear(hidden_size, self.all_head_size)
+        self.value = nn.Linear(hidden_size, self.all_head_size)
 
-        self.attn_dropout = nn.Dropout(config['dropout_prob'])
+        self.attn_dropout = nn.Dropout(attn_dropout_prob)
 
-        self.dense = nn.Linear(config['hidden_size'], config['hidden_size'])
-        self.LayerNorm = nn.LayerNorm(config['hidden_size'], eps=1e-12)
-        self.out_dropout = nn.Dropout(config['dropout_prob'])
+        self.dense = nn.Linear(hidden_size, hidden_size)
+        self.LayerNorm = nn.LayerNorm(hidden_size, eps=layer_norm_eps)
+        self.out_dropout = nn.Dropout(hidden_dropout_prob)
 
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
@@ -368,15 +376,15 @@ class SelfAttention(nn.Module):
         return hidden_states
 
 
-class Intermediate(nn.Module):
-    def __init__(self, config):
-        super(Intermediate, self).__init__()
-        self.dense_1 = nn.Linear(config['hidden_size'], config['hidden_size'] * 4)
-        self.intermediate_act_fn = self.get_hidden_act(config['hidden_act'])
+class FeedForward(nn.Module):
+    def __init__(self, hidden_size, inner_size, hidden_dropout_prob, hidden_act, layer_norm_eps):
+        super(FeedForward, self).__init__()
+        self.dense_1 = nn.Linear(hidden_size, inner_size)
+        self.intermediate_act_fn = self.get_hidden_act(hidden_act)
 
-        self.dense_2 = nn.Linear(config['hidden_size'] * 4, config['hidden_size'])
-        self.LayerNorm = nn.LayerNorm(config['hidden_size'], eps=1e-12)
-        self.dropout = nn.Dropout(config['dropout_prob'])
+        self.dense_2 = nn.Linear(inner_size, hidden_size)
+        self.LayerNorm = nn.LayerNorm(hidden_size, eps=layer_norm_eps)
+        self.dropout = nn.Dropout(hidden_dropout_prob)
 
     def get_hidden_act(self, act):
         ACT2FN = {
@@ -413,23 +421,49 @@ class Intermediate(nn.Module):
 
 
 class TransformerLayer(nn.Module):
-    def __init__(self, config):
+    def __init__(self, n_heads, hidden_size, intermediate_size,
+                 hidden_dropout_prob, attn_dropout_prob, hidden_act, layer_norm_eps):
         super(TransformerLayer, self).__init__()
-        self.attention = SelfAttention(config)
-        self.intermediate = Intermediate(config)
+        self.multi_head_attention = MultiHeadAttention(n_heads, hidden_size,
+                                       hidden_dropout_prob, attn_dropout_prob, layer_norm_eps)
+        self.feed_forward = FeedForward(hidden_size, intermediate_size,
+                                         hidden_dropout_prob, hidden_act, layer_norm_eps)
 
     def forward(self, hidden_states, attention_mask):
-        attention_output = self.attention(hidden_states, attention_mask)
-        intermediate_output = self.intermediate(attention_output)
+        attention_output = self.multi_head_attention(hidden_states, attention_mask)
+        intermediate_output = self.feed_forward(attention_output)
         return intermediate_output
 
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, config):
+    r""" TransformerEncoder
+
+        Args:
+            - n_layers(num): num of transformer layers in transformer encoder. Default: 2
+            - n_heads(num): num of attention heads for multi-head attention layer. Default: 2
+            - hidden_size(num): the input and output hidden size. Default: 64
+            - inner_size(num): the dimensionality in feed-forward layer. Default: 256
+            - hidden_dropout_prob(float): probability of an element to be zeroed. Default: 0.5
+            - attn_dropout_prob(float): probability of an attention score to be zeroed. Default: 0.5
+            - hidden_act(str): activation function in feed-forward layer. Default: 'gelu'
+                          candidates: 'gelu', 'relu', 'swish', 'tanh', 'sigmoid'
+            - layer_norm_eps(float): a value added to the denominator for numerical stability. Default: 1e-12
+        """
+    def __init__(self,
+                 n_layers=2,
+                 n_heads=2,
+                 hidden_size=64,
+                 inner_size=256,
+                 hidden_dropout_prob=0.5,
+                 attn_dropout_prob=0.5,
+                 hidden_act='gelu',
+                 layer_norm_eps=1e-12):
+
         super(TransformerEncoder, self).__init__()
-        layer = TransformerLayer(config)
+        layer = TransformerLayer(n_heads, hidden_size, inner_size,
+                 hidden_dropout_prob, attn_dropout_prob, hidden_act, layer_norm_eps)
         self.layer = nn.ModuleList([copy.deepcopy(layer)
-                                    for _ in range(config['num_hidden_layers'])])
+                                    for _ in range(n_layers)])
 
     def forward(self, hidden_states, attention_mask, output_all_encoded_layers=True):
         all_encoder_layers = []
@@ -499,7 +533,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
     def embed_float_fields(self, float_fields, type, embed=True):
         """Get the embedding of float fields.
         In the following three functions("embed_float_fields" "embed_token_fields" "embed_token_seq_fields")
-        when the type is user, [batch_ size, max_item_length] should be recognised as [batch_size]
+        when the type is user, [batch_size, max_item_length] should be recognised as [batch_size]
 
         Args:
             float_fields(torch.Tensor): [batch_size, max_item_length, num_float_field]
@@ -664,10 +698,10 @@ class ContextSeqEmbAbstractLayer(nn.Module):
 class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
     """For DIN"""
 
-    def __init__(self, config, dataset):
+    def __init__(self, dataset, embedding_size, pooling_mode, device):
         super(ContextSeqEmbLayer, self).__init__()
-        self.device = config['device']
-        self.embedding_size = config['embedding_size']
+        self.device = device
+        self.embedding_size = embedding_size
         self.dataset = dataset
         self.user_feat = self.dataset.get_user_feature().to(self.device)
         self.item_feat = self.dataset.get_item_feature().to(self.device)
@@ -676,7 +710,7 @@ class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
                             'item': list(self.item_feat.interaction.keys())}
 
         self.types = ['user', 'item']
-        self.pooling_mode = config['pooling_mode']
+        self.pooling_mode = pooling_mode
         try:
             assert self.pooling_mode in ['mean', 'max', 'sum']
         except AssertionError:
@@ -688,22 +722,95 @@ class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
 class FeatureSeqEmbLayer(ContextSeqEmbAbstractLayer):
     """For feature-rich sequential recommenders"""
 
-    def __init__(self, config, dataset):
+    def __init__(self, dataset, embedding_size, selected_features, pooling_mode, device):
         super(FeatureSeqEmbLayer, self).__init__()
 
-        self.device = config['device']
-        self.embedding_size = config['embedding_size']
+        self.device = device
+        self.embedding_size = embedding_size
         self.dataset = dataset
         self.user_feat = None
         self.item_feat = self.dataset.get_item_feature().to(self.device)
 
-        self.field_names = {'item': config['selected_features']}
+        self.field_names = {'item': selected_features}
 
         self.types = ['item']
-        self.pooling_mode = config['pooling_mode']
+        self.pooling_mode = pooling_mode
         try:
             assert self.pooling_mode in ['mean', 'max', 'sum']
         except AssertionError:
             raise AssertionError("Make sure 'pooling_mode' in ['mean', 'max', 'sum']!")
         self.get_fields_name_dim()
         self.get_embedding()
+
+
+class CNNLayers(nn.Module):
+    r""" CNNLayers
+    Args:
+        - channels(list): a list contains the channels of each layer in cnn layers
+        - kernel(list): a list contains the kernels of each layer in cnn layers
+        - strides(list): a list contains the channels of each layer in cnn layers
+        - activation(str): activation function after each layer in mlp layers. Default: 'relu'
+                      candidates: 'sigmoid', 'tanh', 'relu', 'leekyrelu', 'none'
+    Shape:
+        - Input: :math:`(N, C_{in}, H_{in}, W_{in})`
+        - Output: :math:`(N, C_{out}, H_{out}, W_{out})` where
+
+          .. math::
+              H_{out} = \left\lfloor\frac{H_{in}  + 2 \times \text{padding}[0] - \text{dilation}[0]
+                        \times (\text{kernel\_size}[0] - 1) - 1}{\text{stride}[0]} + 1\right\rfloor
+
+          .. math::
+              W_{out} = \left\lfloor\frac{W_{in}  + 2 \times \text{padding}[1] - \text{dilation}[1]
+                        \times (\text{kernel\_size}[1] - 1) - 1}{\text{stride}[1]} + 1\right\rfloor
+    Examples::
+        >>> m = CNNLayers([1, 32, 32], [2,2], [2,2], 'relu')
+        >>> input = torch.randn(128, 1, 64, 64)
+        >>> output = m(input)
+        >>> print(output.size())
+        >>> torch.Size([128, 32, 16, 16])
+    """
+
+    def __init__(self, channels, kernels, strides, activation='relu', init_method=None):
+        super(CNNLayers, self).__init__()
+        self.channels = channels
+        self.kernels = kernels
+        self.strides = strides
+        self.activation = activation
+        self.init_method = init_method
+        self.num_of_nets = len(self.channels) - 1
+
+        if len(kernels) != len(strides) or self.num_of_nets != (len(kernels)):
+            raise RuntimeError('channels, kernels and strides don\'t match\n')
+
+
+
+        cnn_modules = []
+
+        for i in range(self.num_of_nets):
+            cnn_modules.append(nn.Conv2d(self.channels[i], self.channels[i+1], self.kernels[i], stride=self.strides[i]))
+            if self.activation.lower() == 'sigmoid':
+                cnn_modules.append(nn.Sigmoid())
+            elif self.activation.lower() == 'tanh':
+                cnn_modules.append(nn.Tanh())
+            elif self.activation.lower() == 'relu':
+                cnn_modules.append(nn.ReLU())
+            elif self.activation.lower() == 'leakyrelu':
+                cnn_modules.append(nn.LeakyReLU())
+            elif self.activation.lower() == 'none':
+                pass
+        
+        self.cnn_layers = nn.Sequential(*cnn_modules)
+        
+        if self.init_method is not None:
+            self.apply(self.init_weights)
+
+    def init_weights(self, module):
+        # We just initialize the module with normal distribution as the paper said
+        if isinstance(module, nn.Conv2d):
+            if self.init_method == 'norm':
+                normal_(module.weight.data, 0, 0.01)
+            if module.bias is not None:
+                module.bias.data.fill_(0.0)
+
+    def forward(self, input_feature):
+        return self.cnn_layers(input_feature)

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Time   : 2020/9/21
 # @Author : Zhichao Feng
-# @Email  : fzcbupt@gmai.com
+# @Email  : fzcbupt@gmail.com
 
 # UPDATE
-# @Time   : 2020/10/6
+# @Time   : 2020/10/21
 # @Author : Zhichao Feng
-# @email  : fzcbupt@gmai.com
+# @email  : fzcbupt@gmail.com
 
 r"""
 recbole.model.context_aware_recommender.din
@@ -50,6 +50,7 @@ class DIN(SequentialRecommender):
         self.embedding_size = config['embedding_size']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.device = config['device']
+        self.pooling_mode = config['pooling_mode']
         self.dropout = config['dropout']
 
         self.types = ['user', 'item']
@@ -79,14 +80,14 @@ class DIN(SequentialRecommender):
                                         dropout=self.dropout,
                                         bn=True)
 
-        self.embedding_layer = ContextSeqEmbLayer(config, dataset)
+        self.embedding_layer = ContextSeqEmbLayer(dataset, self.embedding_size, self.pooling_mode, self.device)
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

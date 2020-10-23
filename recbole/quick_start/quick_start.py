@@ -13,7 +13,7 @@ from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
 
 
-def run_unirec(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
+def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
 
     # configurations initialization
     config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
