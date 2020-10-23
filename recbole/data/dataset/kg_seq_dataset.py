@@ -4,7 +4,7 @@
 
 """
 recbole.data.kg_seq_dataset
-##########################
+#############################
 """
 
 from recbole.data.dataset import SequentialDataset, KnowledgeBasedDataset

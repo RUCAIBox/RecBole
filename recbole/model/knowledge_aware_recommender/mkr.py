@@ -113,7 +113,7 @@ class MKR(KnowledgeRecommender):
 
         return outputs
 
-    def l2_loss(self, inputs):
+    def _l2_loss(self, inputs):
         return torch.sum(inputs ** 2) / 2
 
     def calculate_rs_loss(self, interaction):
@@ -134,7 +134,7 @@ class MKR(KnowledgeRecommender):
                                                  tail_indices=None)
         # loss
         base_loss_rs = torch.mean(self.sigmoid_BCE(scores, self.labels))
-        l2_loss_rs = self.l2_loss(user_embeddings) + self.l2_loss(item_embeddings)
+        l2_loss_rs = self._l2_loss(user_embeddings) + self._l2_loss(item_embeddings)
         loss_rs = base_loss_rs + l2_loss_rs * self.l2_weight
 
         return loss_rs
@@ -157,7 +157,7 @@ class MKR(KnowledgeRecommender):
                                         tail_indices=self.tail_indices)
         # loss
         base_loss_kge = -scores_kge
-        l2_loss_kge = self.l2_loss(head_embeddings) + self.l2_loss(tail_embeddings)
+        l2_loss_kge = self._l2_loss(head_embeddings) + self._l2_loss(tail_embeddings)
         loss_kge = base_loss_kge + l2_loss_kge * self.l2_weight
 
         return loss_kge.sum()

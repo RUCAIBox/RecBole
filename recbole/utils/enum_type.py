@@ -17,6 +17,7 @@ class ModelType(Enum):
     CONTEXT = 3
     KNOWLEDGE = 4
     SOCIAL = 5
+    TRADITIONAL = 6
 
 
 class DataLoaderType(Enum):

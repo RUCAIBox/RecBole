@@ -20,9 +20,9 @@ config_file_list = ['test_config_example.yaml']
 class TestConfigClass(unittest.TestCase):
 
     def test_default_settings(self):
-        config = Config(model='BPRMF', dataset='ml-100k')
+        config = Config(model='BPR', dataset='ml-100k')
 
-        self.assertEqual(config['model'], 'BPRMF')
+        self.assertEqual(config['model'], 'BPR')
         self.assertEqual(config['dataset'], 'ml-100k')
 
         self.assertIsInstance(config['gpu_id'], int)
@@ -65,24 +65,24 @@ class TestConfigClass(unittest.TestCase):
         self.assertEqual(config['eval_setting'], 'TO_LS,full')
 
     def test_config_file_list(self):
-        config = Config(model='BPRMF', dataset='ml-100k', config_file_list=config_file_list)
+        config = Config(model='BPR', dataset='ml-100k', config_file_list=config_file_list)
 
-        self.assertEqual(config['model'], 'BPRMF')
+        self.assertEqual(config['model'], 'BPR')
         self.assertEqual(config['learning_rate'], 0.1)
         self.assertEqual(config['topk'], [5, 20])
         self.assertEqual(config['eval_setting'], 'TO_LS,full')
 
     def test_config_dict(self):
-        config = Config(model='BPRMF', dataset='ml-100k', config_dict=parameters_dict)
+        config = Config(model='BPR', dataset='ml-100k', config_dict=parameters_dict)
 
-        self.assertEqual(config['model'], 'BPRMF')
+        self.assertEqual(config['model'], 'BPR')
         self.assertEqual(config['learning_rate'], 0.2)
         self.assertEqual(config['topk'], [50, 100])
         self.assertEqual(config['eval_setting'], 'RO_RS,full')
 
     # todo: add command line test examples
     def test_priority(self):
-        config = Config(model='BPRMF', dataset='ml-100k',
+        config = Config(model='BPR', dataset='ml-100k',
                         config_file_list=config_file_list, config_dict=parameters_dict)
 
         self.assertEqual(config['learning_rate'], 0.2)  # default, file, dict
