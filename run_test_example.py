@@ -16,7 +16,7 @@ closed_examples = ['Test SRGNN', 'Test GCSAN', 'Test NextItNet', 'Test GRU4RecKG
 
 test_examples = {
     'Test Eval Metric': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -26,7 +26,7 @@ test_examples = {
         'topk': [5, 10, 20],
     },
     'Test Real Time Full Sort': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -36,7 +36,7 @@ test_examples = {
         'real_time_process': True
     },
     'Test Pre Full Sort': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -46,7 +46,7 @@ test_examples = {
         'real_time_process': False
     },
     'Test Real Time Neg Sample By': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -56,7 +56,7 @@ test_examples = {
         'real_time_process': True
     },
     'Test Pre Neg Sample By': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -66,7 +66,7 @@ test_examples = {
         'real_time_process': False
     },
     'Test Leave One Out': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -78,8 +78,8 @@ test_examples = {
     },
 
     # General Recommendation
-    'Test BPRMF': {
-        'model': 'BPRMF',
+    'Test BPR': {
+        'model': 'BPR',
         'dataset': 'ml-100k',
     },
     'Test NeuMF': {
