@@ -13,7 +13,8 @@ Matthew Richardson et al. "Predicting Clicks Estimating the Click-Through Rate f
 
 import torch.nn as nn
 from torch.nn.init import xavier_normal_
-from .context_recommender import ContextRecommender
+
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class LR(ContextRecommender):
@@ -29,10 +30,10 @@ class LR(ContextRecommender):
     def __init__(self, config, dataset):
         super(LR, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
+        # parameters initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):

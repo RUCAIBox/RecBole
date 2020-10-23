@@ -15,8 +15,8 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from ..layers import MLPLayers
-from .context_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class FNN(ContextRecommender):
@@ -34,18 +34,20 @@ class FNN(ContextRecommender):
     def __init__(self, config, dataset):
         super(FNN, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout_prob = config['dropout_prob']
 
         size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
 
+        # define layers and loss
         self.mlp_layers = MLPLayers(size_list, self.dropout_prob, activation='tanh', bn=False)  # use tanh as activation
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1, bias=True)
 
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
+        # parameters initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):

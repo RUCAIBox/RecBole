@@ -20,7 +20,7 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_
 
 from recbole.model.layers import BaseFactorizationMachine
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class FM(ContextRecommender):
@@ -32,11 +32,12 @@ class FM(ContextRecommender):
 
         super(FM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # define layers and loss
         self.fm = BaseFactorizationMachine(reduce_sum=True)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
+        # parameters initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):

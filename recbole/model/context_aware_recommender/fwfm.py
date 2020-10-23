@@ -16,7 +16,7 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class FwFM(ContextRecommender):
@@ -33,7 +33,7 @@ class FwFM(ContextRecommender):
     def __init__(self, config, dataset):
         super(FwFM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.dropout_prob = config['dropout_prob']
         self.fields = config['fields'] # a dict; key: field_id; value: feature_list
         self.num_features = self.num_feature_field
@@ -51,7 +51,8 @@ class FwFM(ContextRecommender):
         self.num_pair = self.num_fields * self.num_fields
 
         self.loss = nn.BCELoss()
-        
+
+        # parameters initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):

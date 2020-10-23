@@ -17,7 +17,7 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
 from recbole.model.layers import MLPLayers
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class AUTOINT(ContextRecommender):
@@ -28,20 +28,18 @@ class AUTOINT(ContextRecommender):
     def __init__(self, config, dataset):
         super(AUTOINT, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
-
+        # load parameters info
         self.attention_size = config['attention_size']
         self.dropout_probs = config['dropout_probs']
         self.n_layers = config['n_layers']
         self.num_heads = config['num_heads']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.has_residual = config['has_residual']
-        self.att_embedding = nn.Linear(self.embedding_size, self.attention_size)
 
+        # define layers and loss
+        self.att_embedding = nn.Linear(self.embedding_size, self.attention_size)
         self.embed_output_dim = self.num_feature_field * self.embedding_size
         self.atten_output_dim = self.num_feature_field * self.attention_size
-
-
         size_list = [self.embed_output_dim] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout_probs[1])
         # multi-head self-attention network
@@ -58,6 +56,7 @@ class AUTOINT(ContextRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
+        # parameters initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):

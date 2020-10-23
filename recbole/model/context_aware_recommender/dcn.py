@@ -23,7 +23,7 @@ from torch.nn.init import xavier_normal_, constant_
 
 from recbole.model.loss import RegLoss
 from recbole.model.layers import MLPLayers
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class DCN(ContextRecommender):
@@ -34,12 +34,13 @@ class DCN(ContextRecommender):
     def __init__(self, config, dataset):
         super(DCN, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.cross_layer_num = config['cross_layer_num']
         self.reg_weight = config['reg_weight']
         self.dropout_prob = config['dropout_prob']
 
+        # define layers and loss
         # init weight and bias of each cross layer
         self.cross_layer_parameter = [nn.Parameter(torch.empty(self.num_feature_field * self.embedding_size,
                                                                device=self.device))
@@ -60,6 +61,7 @@ class DCN(ContextRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
+        # parameters initialization
         self.apply(self._init_weights)
 
     def _init_weights(self, module):

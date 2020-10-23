@@ -21,8 +21,8 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from ..layers import MLPLayers
-from .context_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class PNN(ContextRecommender):
@@ -34,7 +34,7 @@ class PNN(ContextRecommender):
     def __init__(self, config, dataset):
         super(PNN, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout_prob = config['dropout_prob']
         self.use_inner = config['use_inner']
@@ -43,6 +43,7 @@ class PNN(ContextRecommender):
 
         self.num_pair = int(self.num_feature_field * (self.num_feature_field - 1) / 2)
 
+        # define layers and loss
         product_out_dim = self.num_feature_field * self.embedding_size
         if self.use_inner:
             product_out_dim += self.num_pair
@@ -59,6 +60,7 @@ class PNN(ContextRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
+        # parameters initialization
         self.apply(self.init_weights)
 
     def reg_loss(self):

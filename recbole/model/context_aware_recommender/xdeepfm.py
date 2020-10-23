@@ -25,7 +25,7 @@ from torch.nn.init import xavier_normal_, constant_
 from logging import getLogger
 
 from recbole.model.layers import MLPLayers, activation_layer
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class xDeepFM(ContextRecommender):
@@ -37,7 +37,7 @@ class xDeepFM(ContextRecommender):
     def __init__(self, config, dataset):
         super(xDeepFM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.reg_weight = config['reg_weight']
         self.dropout_prob = config['dropout_prob']

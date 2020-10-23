@@ -18,7 +18,7 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
 from recbole.model.layers import MLPLayers
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class DSSM(ContextRecommender):
@@ -26,20 +26,23 @@ class DSSM(ContextRecommender):
     def __init__(self, config, dataset):
         super(DSSM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout_prob = config['dropout_prob']
+
         self.user_feature_num = self.user_token_field_num + self.user_float_field_num + self.user_token_seq_field_num
         self.item_feature_num = self.item_token_field_num + self.item_float_field_num + self.item_token_seq_field_num
         user_size_list = [self.embedding_size * self.user_feature_num] + self.mlp_hidden_size
         item_size_list = [self.embedding_size * self.item_feature_num] + self.mlp_hidden_size
 
+        # define layers and loss
         self.user_mlp_layers = MLPLayers(user_size_list, self.dropout_prob, activation='tanh', bn=True)
         self.item_mlp_layers = MLPLayers(item_size_list, self.dropout_prob, activation='tanh', bn=True)
 
         self.loss = nn.BCELoss()
         self.sigmod = nn.Sigmoid()
 
+        # parameters initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):

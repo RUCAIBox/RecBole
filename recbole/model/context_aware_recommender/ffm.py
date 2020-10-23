@@ -19,7 +19,7 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class FFM(ContextRecommender):
@@ -36,8 +36,8 @@ class FFM(ContextRecommender):
     def __init__(self, config, dataset):
         super(FFM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
-        self.fields = config['fields'] # a dict; key: field_id; value: feature_list
+        # load parameters info
+        self.fields = config['fields']  # a dict; key: field_id; value: feature_list
         self.sigmoid = nn.Sigmoid()
 
         self.feature2id = {}
@@ -46,11 +46,12 @@ class FFM(ContextRecommender):
         self.feature_names = (self.token_field_names, self.float_field_names, self.token_seq_field_names)
         self.feature_dims = (self.token_field_dims, self.float_field_dims, self.token_seq_field_dims)
         self.get_feature2field()
-        self.num_fields = len(set(self.feature2field.values())) # the number of fields
+        self.num_fields = len(set(self.feature2field.values()))  # the number of fields
 
         self.ffm = FieldAwareFactorizationMachine(self.feature_names, self.feature_dims, self.feature2id, self.feature2field, self.num_fields, self.embedding_size, self.device)
         self.loss = nn.BCELoss()
-        
+
+        # parameters initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):

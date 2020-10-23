@@ -15,8 +15,8 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from ..layers import BaseFactorizationMachine, MLPLayers
-from .context_recommender import ContextRecommender
+from recbole.model.layers import BaseFactorizationMachine, MLPLayers
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class NFM(ContextRecommender):
@@ -26,10 +26,11 @@ class NFM(ContextRecommender):
     def __init__(self, config, dataset):
         super(NFM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.dropout_prob = config['dropout_prob']
 
+        # define layers and loss
         size_list = [self.embedding_size] + self.mlp_hidden_size
         self.fm = BaseFactorizationMachine(reduce_sum=False)
         self.bn = nn.BatchNorm1d(num_features=self.embedding_size)
@@ -38,6 +39,7 @@ class NFM(ContextRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
+        # parameters initialization
         self.apply(self.init_weights)
 
     def init_weights(self, module):
