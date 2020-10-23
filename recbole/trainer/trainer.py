@@ -288,10 +288,10 @@ class Trainer(AbstractTrainer):
         batch_size = interaction.length * self.tot_item_num
         used_idx = torch.cat([used_idx, torch.arange(interaction.length) * self.tot_item_num])  # remove [pad] item
         neg_len_list = list(np.subtract(neg_len_list, 1))
-        if hasattr(self.model, 'full_sort_predict'):
+        try:
             # Note: interaction without item ids
             scores = self.model.full_sort_predict(interaction.to(self.device)).flatten()
-        else:
+        except NotImplementedError:
             interaction = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
             if batch_size <= self.test_batch_size:
@@ -350,7 +350,7 @@ class Trainer(AbstractTrainer):
         self.model.eval()
 
         if eval_data.dl_type == DataLoaderType.FULL:
-            if not hasattr(self.model, 'full_sort_predict'):
+            if self.item_tensor is None:
                 self.item_tensor = eval_data.get_item_feature().to(self.device).repeat(eval_data.step)
             self.tot_item_num = eval_data.dataset.item_num
 
