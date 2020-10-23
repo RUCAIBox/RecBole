@@ -72,9 +72,9 @@ class NextItNet(SequentialRecommender):
         self.reg_loss = RegLoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             stdv = np.sqrt(1. / self.n_items)
             uniform_(module.weight.data, -stdv, stdv)

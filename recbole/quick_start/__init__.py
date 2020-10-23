@@ -1,1 +1,1 @@
-from recbole.quick_start.quick_start import run_unirec, objective_function
+from recbole.quick_start.quick_start import run_recbole, objective_function

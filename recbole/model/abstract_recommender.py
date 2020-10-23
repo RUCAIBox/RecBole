@@ -45,6 +45,19 @@ class AbstractRecommender(nn.Module):
         """
         raise NotImplementedError
 
+    def full_sort_predict(self, interaction):
+        r"""full sort prediction function.
+        Given users, calculate the scores between users and all candidate items.
+
+        Args:
+            interaction (Interaction): Interaction class of the batch.
+
+        Returns:
+            torch.Tensor: Predicted scores for given users and all candidate items,
+            shape: [n_batch_users * n_candidate_items]
+        """
+        raise NotImplementedError
+
     def __str__(self):
         """
         Model prints with number of trainable parameters

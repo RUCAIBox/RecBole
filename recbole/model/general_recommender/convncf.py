@@ -58,7 +58,7 @@ class ConvNCF(GeneralRecommender):
         self.cnn_kernels = config['cnn_kernels']
         self.cnn_strides = config['cnn_strides']
         self.dropout = config['dropout']
-        self.regs = config['regs']
+        self.regs = config['reg_weights']
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
