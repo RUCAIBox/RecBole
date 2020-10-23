@@ -6,7 +6,7 @@
 
 
 """
-recbole.model.context_aware_recommender.dssm
+recbox.model.context_aware_recommender.dssm
 ################################################
 Reference:
 PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
@@ -17,12 +17,15 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.layers import MLPLayers
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbox.model.layers import MLPLayers
+from recbox.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
 class DSSM(ContextRecommender):
+    """ DSSM respectively expresses user and item as low dimensional vectors with mlp layers,
+    and uses cosine distance to calculate the distance between the two semantic vectors.
 
+    """
     def __init__(self, config, dataset):
         super(DSSM, self).__init__(config, dataset)
 
@@ -51,6 +54,10 @@ class DSSM(ContextRecommender):
                 constant_(module.bias.data, 0)
 
     def forward(self, interaction):
+        # user_sparse_embedding shape: [batch_size, user_token_seq_field_num + user_token_field_num , embed_dim] or None
+        # user_dense_embedding shape: [batch_size, user_float_field_num] or [batch_size, user_float_field_num, embed_dim] or None
+        # item_sparse_embedding shape: [batch_size, item_token_seq_field_num + item_token_field_num , embed_dim] or None
+        # item_dense_embedding shape: [batch_size, item_float_field_num] or [batch_size, item_float_field_num, embed_dim] or None
         embed_result = self.double_tower_embed_input_fields(interaction)
         user_sparse_embedding, user_dense_embedding = embed_result[:2]
         item_sparse_embedding, item_dense_embedding = embed_result[2:]
