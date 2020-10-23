@@ -23,6 +23,19 @@ from recbole.utils import FeatureSource
 
 
 class SocialDataset(Dataset):
+    """:class:`SocialDataset` is based on :class:`~recbole.data.dataset.dataset.Dataset`,
+    and load ``.net`` additionally.
+    It also provides several interfaces to transfer ``.net`` features into coo sparse matrix,
+    csr sparse matrix, :class:`DGL.Graph` or :class:`PyG.Data`.
+
+    Attributes:
+        uid_field (str): The same as ``config['SOURCE_ID_FIELD']``.
+
+        iid_field (str): The same as ``config['TARGET_ID_FIELD']``.
+
+        net_feat (pandas.DataFrame): Internal data structure stores the network features.
+            It's loaded from file ``.net``.
+    """
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
@@ -37,6 +50,8 @@ class SocialDataset(Dataset):
         self.logger.debug('target_id_field: {}'.format(self.target_field))
 
     def _load_data(self, token, dataset_path):
+        """Load ``.net`` additionally.
+        """
         super()._load_data(token, dataset_path)
         self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
 
@@ -57,6 +72,14 @@ class SocialDataset(Dataset):
             raise ValueError('File {} not exist'.format(net_file_path))
             
     def _get_fields_in_same_space(self):
+        """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
+
+        Note:
+            - Each field can only exist ONCE in ``config['fields_in_same_space']``.
+            - user_id and item_id can not exist in ``config['fields_in_same_space']``.
+            - only token-like fields can exist in ``config['fields_in_same_space']``.
+            - ``source_id`` and ``target_id`` should remapped with ``user_id``.
+        """
         fields_in_same_space = super()._get_fields_in_same_space()
         fields_in_same_space = [_ for _ in fields_in_same_space if (self.source_field not in _) and
                                                                    (self.target_field not in _)]
@@ -68,6 +91,29 @@ class SocialDataset(Dataset):
 
     @dlapi.set()
     def net_graph(self, form='coo', value_field=None):
+        """Get graph or sparse matrix that describe relations between users.
+
+        For an edge of <src, tgt>, ``graph[src, tgt] = 1`` if ``value_field`` is ``None``,
+        else ``graph[src, tgt] = df_feat[value_field][src, tgt]``.
+
+        Currently, we support graph in `DGL`_ and `PyG`_,
+        and two type of sparse matrixes, ``coo`` and ``csr``.
+
+        Args:
+            form (str, optional): Format of sparse matrix, or library of graph data structure.
+                Defaults to ``coo``.
+            value_field (str, optional): edge attributes of graph, or data of sparse matrix,
+                Defaults to ``None``.
+
+        Returns:
+            Graph / Sparse matrix of relations.
+
+        .. _DGL:
+            https://www.dgl.ai/
+
+        .. _PyG:
+            https://github.com/rusty1s/pytorch_geometric
+        """
         args = [self.net_feat, self.source_field, self.target_field, form, value_field]
         if form in ['coo', 'csr']:
             return self._create_sparse_matrix(*args)
