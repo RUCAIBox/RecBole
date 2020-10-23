@@ -4,14 +4,14 @@
 # @Email  : cx.tian@outlook.com
 
 """
-recbole.model.general_recommender.spectralcf
+SpectralCF
 ################################################
 
 Reference:
-Lei Zheng et al. "Spectral collaborative filtering." in RecSys 2018.
+    Lei Zheng et al. "Spectral collaborative filtering." in RecSys 2018.
 
 Reference code:
-https://github.com/lzheng21/SpectralCF
+    https://github.com/lzheng21/SpectralCF
 """
 
 import numpy as np

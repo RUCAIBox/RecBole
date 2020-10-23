@@ -9,10 +9,10 @@
 # @email  : tsotfsk@outlook.com  linzihan.super@foxmail.con
 
 r"""
-recbole.model.general_recommender.dmf
+DMF
 ################################################
 Reference:
-Hong-Jian Xue et al. "Deep Matrix Factorization Models for Recommender Systems." in IJCAI 2017.
+    Hong-Jian Xue et al. "Deep Matrix Factorization Models for Recommender Systems." in IJCAI 2017.
 """
 
 import numpy as np

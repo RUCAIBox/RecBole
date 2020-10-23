@@ -9,14 +9,14 @@
 # @email  : fzcbupt@gmail.com
 
 r"""
-recbole.model.context_aware_recommender.din
+DIN
 ##############################################
 Reference:
-Guorui Zhou et al. "Deep Interest Network for Click-Through Rate Prediction" in ACM SIGKDD 2018
+    Guorui Zhou et al. "Deep Interest Network for Click-Through Rate Prediction" in ACM SIGKDD 2018
 
 Reference code:
-https://github.com/zhougr1993/DeepInterestNetwork/tree/master/din
-https://github.com/shenweichen/DeepCTR-Torch/tree/master/deepctr_torch/models
+    - https://github.com/zhougr1993/DeepInterestNetwork/tree/master/din
+    - https://github.com/shenweichen/DeepCTR-Torch/tree/master/deepctr_torch/models
 
 """
 
@@ -50,6 +50,7 @@ class DIN(SequentialRecommender):
         self.embedding_size = config['embedding_size']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.device = config['device']
+        self.pooling_mode = config['pooling_mode']
         self.dropout = config['dropout']
 
         self.types = ['user', 'item']
@@ -79,7 +80,7 @@ class DIN(SequentialRecommender):
                                         dropout=self.dropout,
                                         bn=True)
 
-        self.embedding_layer = ContextSeqEmbLayer(config, dataset)
+        self.embedding_layer = ContextSeqEmbLayer(dataset, self.embedding_size, self.pooling_mode, self.device)
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()

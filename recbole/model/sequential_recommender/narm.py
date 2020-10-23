@@ -9,16 +9,17 @@
 # @Email  : houyupeng@ruc.edu.cn, yujielu1998@gmail.com
 
 r"""
-recbole.model.sequential_recommender.narm
+NARM
 ################################################
 
 Reference:
-Jing Li et al. "Neural Attentive Session-based Recommendation." in CIKM 2017.
+    Jing Li et al. "Neural Attentive Session-based Recommendation." in CIKM 2017.
 
 Reference code:
-https://github.com/Wang-Shuo/Neural-Attentive-Session-Based-Recommendation-PyTorch
+    https://github.com/Wang-Shuo/Neural-Attentive-Session-Based-Recommendation-PyTorch
 
 """
+
 import torch
 from torch import nn
 from torch.nn.init import xavier_normal_, constant_
@@ -62,9 +63,9 @@ class NARM(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

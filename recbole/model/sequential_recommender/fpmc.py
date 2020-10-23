@@ -9,11 +9,11 @@
 # @Email  : yujielu1998@gmail.com
 
 r"""
-recbole.model.sequential_recommender.fpmc
+FPMC
 ################################################
 
 Reference:
-Steffen Rendle et al. "Factorizing Personalized Markov Chains for Next-Basket Recommendation." in WWW 2010.
+    Steffen Rendle et al. "Factorizing Personalized Markov Chains for Next-Basket Recommendation." in WWW 2010.
 
 """
 import torch
@@ -58,9 +58,9 @@ class FPMC(SequentialRecommender):
         self.loss_fct = BPRLoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
 

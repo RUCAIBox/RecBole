@@ -4,11 +4,11 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 r"""
-recbole.model.sequential_recommender.transrec
+TransRec
 ################################################
 
 Reference:
-Ruining He et al. "Translation-based Recommendation." In RecSys 2017.
+    Ruining He et al. "Translation-based Recommendation." In RecSys 2017.
 
 """
 
@@ -51,8 +51,7 @@ class TransRec(SequentialRecommender):
         # parameters initialization
         self.apply(xavier_normal_initialization)
 
-
-    def l2_distance(self, x, y):
+    def _l2_distance(self, x, y):
         return torch.sqrt(torch.sum((x - y)**2, dim=-1, keepdim=True)) # [B 1]
 
     def gather_last_items(self, item_seq, gather_index):
@@ -70,7 +69,6 @@ class TransRec(SequentialRecommender):
         seq_output = user_emb + T + last_items_emb # [B H]
         return seq_output
 
-
     def calculate_loss(self, interaction):
         user = interaction[self.USER_ID]  # [B]
         item_seq = interaction[self.ITEM_SEQ]  # [B Len]
@@ -87,8 +85,8 @@ class TransRec(SequentialRecommender):
         pos_bias = self.bias(pos_items)  # [B 1]
         neg_bias = self.bias(neg_items)
 
-        pos_score = pos_bias - self.l2_distance(seq_output, pos_items_emb)
-        neg_score = neg_bias - self.l2_distance(seq_output, neg_items_emb)
+        pos_score = pos_bias - self._l2_distance(seq_output, pos_items_emb)
+        neg_score = neg_bias - self._l2_distance(seq_output, neg_items_emb)
 
         bpr_loss = self.bpr_loss(pos_score, neg_score)
         item_emb_loss = self.emb_loss(self.item_embedding.weight)
@@ -114,6 +112,6 @@ class TransRec(SequentialRecommender):
         test_bias = self.bias.weight # [item_num 1]
         test_bias = test_bias.repeat(user_hidden.size(0), 1, 1) # [user_num item_num 1]
 
-        scores = test_bias - self.l2_distance(user_hidden, test_item_emb) # [user_num item_num 1]
+        scores = test_bias - self._l2_distance(user_hidden, test_item_emb) # [user_num item_num 1]
         scores = scores.squeeze(-1)
         return scores

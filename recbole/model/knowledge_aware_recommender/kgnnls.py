@@ -4,15 +4,15 @@
 # @Email  : cx.tian@outlook.com
 
 r"""
-recbole.model.knowledge_aware_recommender.kgnnls
+KGNNLS
 ################################################
 
 Reference:
-Hongwei Wang et al. "Knowledge-aware Graph Neural Networks with Label Smoothness Regularization
-for Recommender Systems." in KDD 2019.
+    Hongwei Wang et al. "Knowledge-aware Graph Neural Networks with Label Smoothness Regularization
+    for Recommender Systems." in KDD 2019.
 
 Reference code:
-https://github.com/hwwang55/KGNN-LS
+    https://github.com/hwwang55/KGNN-LS
 """
 
 import torch
@@ -90,8 +90,7 @@ class KGNNLS(KnowledgeRecommender):
             y(torch.Tensor): the label in user-item interactions, shape: [n_interactions, 1]
 
         Returns:
-            interaction_table(dict): key: user_id * 10^offset + item_id;
-                                     value: y_{user_id, item_id}
+            interaction_table(dict): key: user_id * 10^offset + item_id; value: y_{user_id, item_id}
             offset(int): The offset that is used for calculating the key(index) in interaction_table
         """
         offset = len(str(self.n_entities))
@@ -211,10 +210,10 @@ class KGNNLS(KnowledgeRecommender):
             user_embeddings(torch.FloatTensor): The embeddings of users, shape: [batch_size, embedding_size]
             entities(list): entities is a list of i-iter (i = 0, 1, ..., n_iter) neighbors for the batch of items.
                             dimensions of entities: {[batch_size, 1],
-                                                     [batch_size, n_neighbor],
-                                                     [batch_size, n_neighbor^2],
-                                                     ...,
-                                                     [batch_size, n_neighbor^n_iter]}
+                            [batch_size, n_neighbor],
+                            [batch_size, n_neighbor^2],
+                            ...,
+                            [batch_size, n_neighbor^n_iter]}
             relations(list): relations is a list of i-iter (i = 0, 1, ..., n_iter) corresponding relations for entities.
                              relations have the same shape as entities.
 
@@ -275,10 +274,10 @@ class KGNNLS(KnowledgeRecommender):
             user(torch.FloatTensor): the index of users, shape: [batch_size*2]
             entities(list): entities is a list of i-iter (i = 0, 1, ..., n_iter) neighbors for the batch of items.
                             dimensions of entities: {[batch_size*2, 1],
-                                                     [batch_size*2, n_neighbor],
-                                                     [batch_size*2, n_neighbor^2],
-                                                     ...,
-                                                     [batch_size*2, n_neighbor^n_iter]}
+                            [batch_size*2, n_neighbor],
+                            [batch_size*2, n_neighbor^2],
+                            ...,
+                            [batch_size*2, n_neighbor^n_iter]}
             relations(list): relations is a list of i-iter (i = 0, 1, ..., n_iter) corresponding relations for entities.
                              relations have the same shape as entities.
 

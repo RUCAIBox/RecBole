@@ -9,11 +9,11 @@
 # @Email  : yujielu1998@gmail.com
 
 r"""
-recbole.model.sequential_recommender.stamp
+STAMP
 ################################################
 
 Reference:
-Qiao Liu et al. "STAMP: Short-Term Attention/Memory Priority Model for Session-based Recommendation." in KDD 2018.
+    Qiao Liu et al. "STAMP: Short-Term Attention/Memory Priority Model for Session-based Recommendation." in KDD 2018.
 
 """
 
@@ -64,9 +64,9 @@ class STAMP(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             normal_(module.weight.data, 0, 0.002)
         elif isinstance(module, nn.Linear):

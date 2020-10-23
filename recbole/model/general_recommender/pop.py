@@ -4,7 +4,7 @@
 # @Email  : linzihan.super@foxmail.com
 
 r"""
-recbole.model.general_recommender.pop
+Pop
 ################################################
 
 """

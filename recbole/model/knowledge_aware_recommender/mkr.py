@@ -4,23 +4,23 @@
 # @Email  : xinyan.fan@ruc.edu.cn
 
 r"""
-recbole.model.knowledge_aware_recommender.mkr
+MKR
 #####################################################
 Reference:
-Hongwei Wang et al. "Multi-Task Feature Learning for Knowledge Graph Enhanced Recommendation." in WWW 2019.
+    Hongwei Wang et al. "Multi-Task Feature Learning for Knowledge Graph Enhanced Recommendation." in WWW 2019.
 
 Reference code:
-https://github.com/hsientzucheng/MKR.PyTorch
+    https://github.com/hsientzucheng/MKR.PyTorch
 """
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from recbole.utils import InputType
 from recbole.model.layers import MLPLayers
 from recbole.model.abstract_recommender import KnowledgeRecommender
 from recbole.model.init import xavier_normal_initialization
+
 
 class MKR(KnowledgeRecommender):
     r"""MKR is a Multi-task feature learning approach for Knowledge graph enhanced Recommendation. It is a deep 
@@ -30,6 +30,7 @@ class MKR(KnowledgeRecommender):
     """
 
     input_type = InputType.POINTWISE
+
     def __init__(self, config, dataset):
         super(MKR, self).__init__(config, dataset)
         # load parameters info
@@ -172,6 +173,7 @@ class MKR(KnowledgeRecommender):
 
         return scores
 
+
 class CrossCompressUnit(nn.Module):
     r"""This is Cross&Compress Unit for MKR model to model feature interactions between items and entities.
 
@@ -202,4 +204,3 @@ class CrossCompressUnit(nn.Module):
         e_output = e_intermediate.view(-1, self.dim)
 
         return v_output, e_output
-

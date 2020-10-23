@@ -9,14 +9,14 @@
 # @Email  : zhangjingsen@ruc.edu.cn
 
 r"""
-recbole.model.sequential_recommender.caser
+Caser
 ################################################
 
 Reference:
-Jiaxi Tang et al., "Personalized Top-N Sequential Recommendation via Convolutional Sequence Embedding" in WSDM 2018.
+    Jiaxi Tang et al., "Personalized Top-N Sequential Recommendation via Convolutional Sequence Embedding" in WSDM 2018.
 
 Reference code:
-https://github.com/graytowne/caser_pytorch
+    https://github.com/graytowne/caser_pytorch
 
 """
 
@@ -43,12 +43,12 @@ class Caser(SequentialRecommender):
         super(Caser, self).__init__(config, dataset)
 
         # load parameters info
-        self.L = config['L']
+        self.L = config['MAX_ITEM_LIST_LENGTH']
         self.embedding_size = config['embedding_size']
         self.loss_type = config['loss_type']
         self.n_h = config['nh']
         self.n_v = config['nv']
-        self.dropout_prob = config['dropout']
+        self.dropout_prob = config['dropout_prob']
         self.reg_weight = config['reg_weight']
 
         # load dataset info
@@ -85,9 +85,9 @@ class Caser(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             normal_(module.weight.data, 0, 1.0 / module.embedding_dim)
         elif isinstance(module, nn.Linear):

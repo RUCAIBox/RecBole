@@ -9,13 +9,13 @@
 # @Email  : slmu@ruc.edu.cn
 
 r"""
-recbole.model.general_recommender.dgcf
+DGCF
 ################################################
 Reference:
-Wang Xiang et al. "Disentangled Graph Collaborative Filtering." in SIGIR 2020.
+    Wang Xiang et al. "Disentangled Graph Collaborative Filtering." in SIGIR 2020.
 
 Reference code:
-https://github.com/xiangwang1223/disentangled_graph_collaborative_filtering
+    https://github.com/xiangwang1223/disentangled_graph_collaborative_filtering
 """
 
 import numpy as np

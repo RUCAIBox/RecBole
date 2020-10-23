@@ -3,4 +3,4 @@ cnn_channels: [1, 32, 32, 32, 32]
 cnn_kernels: [4, 4, 2, 2]
 cnn_strides: [4, 4, 2, 2]
 dropout: 0.2
-reg: [0.1, 0.1]
+reg_weights: [0.1, 0.1]
