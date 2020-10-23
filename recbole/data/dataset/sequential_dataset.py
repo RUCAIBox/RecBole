@@ -20,10 +20,51 @@ from recbole.data.dataset import Dataset
 
 
 class SequentialDataset(Dataset):
+    """:class:`SequentialDataset` is based on :class:`~recbole.data.dataset.dataset.Dataset`,
+    and provides augmentation interface to adapt to Sequential Recommendation,
+    which can accelerate the data loader.
+
+    Attributes:
+        uid_list (numpy.ndarray): List of user id after augmentation.
+
+        item_list_index (numpy.ndarray): List of indexes of item sequence after augmentation.
+
+        target_index (numpy.ndarray): List of target item id after augmentation.
+
+        item_list_length (numpy.ndarray): List of item sequences' length after augmentation.
+
+    """
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
     def prepare_data_augmentation(self):
+        """Augmentation processing for sequential dataset.
+
+        E.g., ``u1`` has purchase sequence ``<i1, i2, i3, i4>``,
+        then after augmentation, we will generate three cases.
+
+        ``u1, <i1> | i2``
+
+        (Which means given user_id ``u1`` and item_seq ``<i1>``,
+        we need to predict the next item ``i2``.)
+
+        The other cases are below:
+
+        ``u1, <i1, i2> | i3``
+
+        ``u1, <i1, i2, i3> | i4``
+
+        Returns:
+            Tuple of ``self.uid_list``, ``self.item_list_index``,
+            ``self.target_index``, ``self.item_list_length``.
+            See :class:`SequentialDataset`'s attributes for details.
+
+        Note:
+            Actually, we do not realy generate these new item sequences.
+            One user's item sequence is stored only once in memory.
+            We store the index (slice) of each item sequence after augmentation,
+            which saves memory and accelerates a lot.
+        """
         self.logger.debug('prepare_data_augmentation')
         if hasattr(self, 'uid_list'):
             return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
