@@ -31,7 +31,6 @@ from recbole.model.abstract_recommender import SequentialRecommender
 class GNN(nn.Module):
     r"""Graph neural networks are well-suited for session-based recommendation,
     because it can automatically extract features of session graphs with considerations of rich node connections.
-    Gated gnn is a neural unit similar to gru.
     """
 
     def __init__(self, embedding_size, step=1):
@@ -140,14 +139,14 @@ class SRGNN(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
-        self.reset_parameters()
+        self._reset_parameters()
 
-    def reset_parameters(self):
+    def _reset_parameters(self):
         stdv = 1.0 / math.sqrt(self.embedding_size)
         for weight in self.parameters():
             weight.data.uniform_(-stdv, stdv)
 
-    def get_slice(self, item_seq):
+    def _get_slice(self, item_seq):
         # Mask matrix, shape of [batch_size, max_session_len]
         mask = item_seq.gt(0)
         items, n_node, A, alias_inputs = [], [], [], []
@@ -187,7 +186,7 @@ class SRGNN(SequentialRecommender):
 
     def forward(self, item_seq, item_seq_len):
 
-        alias_inputs, A, items, mask = self.get_slice(item_seq)
+        alias_inputs, A, items, mask = self._get_slice(item_seq)
         hidden = self.item_embedding(items)
         hidden = self.gnn(A, hidden)
         alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(-1, -1, self.embedding_size)
