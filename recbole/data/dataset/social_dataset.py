@@ -79,7 +79,7 @@ class SocialDataset(Dataset):
             - Each field can only exist ONCE in ``config['fields_in_same_space']``.
             - user_id and item_id can not exist in ``config['fields_in_same_space']``.
             - only token-like fields can exist in ``config['fields_in_same_space']``.
-            - ``source_id`` and ``target_id`` should remapped with ``user_id``.
+            - ``source_id`` and ``target_id`` should be remapped with ``user_id``.
         """
         fields_in_same_space = super()._get_fields_in_same_space()
         fields_in_same_space = [_ for _ in fields_in_same_space if (self.source_field not in _) and
