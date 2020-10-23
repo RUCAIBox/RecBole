@@ -5,15 +5,15 @@
 
 
 r"""
-recbole.model.sequential_recommender.nextitnet
+NextItNet
 ################################################
 
 Reference:
-Fajie Yuan et al., "A Simple Convolutional Generative Network for Next Item Recommendation" in WSDM 2019.
+    Fajie Yuan et al., "A Simple Convolutional Generative Network for Next Item Recommendation" in WSDM 2019.
 
 Reference code:
-https://github.com/fajieyuan/nextitnet
-https://github.com/initlisk/nextitnet_pytorch
+    - https://github.com/fajieyuan/nextitnet
+    - https://github.com/initlisk/nextitnet_pytorch
 
 """
 import numpy as np

@@ -5,10 +5,10 @@
 # @File   : widedeep.py
 
 r"""
-recbole.model.context_aware_recommender.widedeep
+WideDeep
 #####################################################
 Reference:
-Heng-Tze Cheng et al. "Wide & Deep Learning for Recommender Systems." in RecSys 2016.
+    Heng-Tze Cheng et al. "Wide & Deep Learning for Recommender Systems." in RecSys 2016.
 """
 
 import torch
@@ -41,9 +41,9 @@ class WideDeep(ContextRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

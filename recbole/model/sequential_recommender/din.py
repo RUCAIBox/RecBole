@@ -9,14 +9,14 @@
 # @email  : fzcbupt@gmail.com
 
 r"""
-recbole.model.context_aware_recommender.din
+DIN
 ##############################################
 Reference:
-Guorui Zhou et al. "Deep Interest Network for Click-Through Rate Prediction" in ACM SIGKDD 2018
+    Guorui Zhou et al. "Deep Interest Network for Click-Through Rate Prediction" in ACM SIGKDD 2018
 
 Reference code:
-https://github.com/zhougr1993/DeepInterestNetwork/tree/master/din
-https://github.com/shenweichen/DeepCTR-Torch/tree/master/deepctr_torch/models
+    - https://github.com/zhougr1993/DeepInterestNetwork/tree/master/din
+    - https://github.com/shenweichen/DeepCTR-Torch/tree/master/deepctr_torch/models
 
 """
 

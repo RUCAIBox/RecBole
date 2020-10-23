@@ -9,16 +9,17 @@
 # @Email  : houyupeng@ruc.edu.cn, yujielu1998@gmail.com
 
 r"""
-recbole.model.sequential_recommender.narm
+NARM
 ################################################
 
 Reference:
-Jing Li et al. "Neural Attentive Session-based Recommendation." in CIKM 2017.
+    Jing Li et al. "Neural Attentive Session-based Recommendation." in CIKM 2017.
 
 Reference code:
-https://github.com/Wang-Shuo/Neural-Attentive-Session-Based-Recommendation-PyTorch
+    https://github.com/Wang-Shuo/Neural-Attentive-Session-Based-Recommendation-PyTorch
 
 """
+
 import torch
 from torch import nn
 from torch.nn.init import xavier_normal_, constant_

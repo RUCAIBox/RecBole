@@ -9,11 +9,11 @@
 # @Email  : houyupeng@ruc.edu.cn, yujielu1998@gmail.com
 
 r"""
-recbole.model.sequential_recommender.gru4rec
+GRU4Rec
 ################################################
 
 Reference:
-Yong Kiam Tan et al. "Improved Recurrent Neural Networks for Session-based Recommendations." in DLRS 2016.
+    Yong Kiam Tan et al. "Improved Recurrent Neural Networks for Session-based Recommendations." in DLRS 2016.
 
 """
 

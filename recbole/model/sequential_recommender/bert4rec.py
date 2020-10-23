@@ -4,17 +4,15 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 r"""
-recbole.model.sequential_recommender.bert4rec
+BERT4Rec
 ################################################
 
 Reference:
-Fei Sun et al. "BERT4Rec: Sequential Recommendation with
-Bidirectional Encoder Representations from Transformer."
-In CIKM 2019.
+    Fei Sun et al. "BERT4Rec: Sequential Recommendation with Bidirectional Encoder Representations from Transformer."
+    In CIKM 2019.
 
-Reference:
-The authors' tensorflow implementation
-https://github.com/FeiSun/BERT4Rec
+Reference code:
+    The authors' tensorflow implementation https://github.com/FeiSun/BERT4Rec
 
 """
 
@@ -185,11 +183,15 @@ class BERT4Rec(SequentialRecommender):
         Generate a multi-hot vector to indicate the masked position for masked sequence, and then is used for
         gathering the masked position hidden representation.
 
-        Examples::
+        Examples:
             sequence: [1 2 3 4 5]
+
             masked_sequence: [1 mask 3 mask 5]
+
             masked_index: [1, 3]
+
             max_length: 5
+
             multi_hot_embed: [0 1 0 1 0]
         """
         masked_index = masked_index.view(-1)

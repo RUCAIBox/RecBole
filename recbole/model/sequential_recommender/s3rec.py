@@ -4,16 +4,16 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 r"""
-recbole.model.sequential_recommender.s3rec
+S3Rec
 ################################################
 
 Reference:
-Kun Zhou and Hui Wang et al. "S^3-Rec: Self-Supervised Learning
-for Sequential Recommendation with Mutual Information Maximization"
-In CIKM 2020.
+    Kun Zhou and Hui Wang et al. "S^3-Rec: Self-Supervised Learning
+    for Sequential Recommendation with Mutual Information Maximization"
+    In CIKM 2020.
 
-The authors' implementation
-https://github.com/RUCAIBox/CIKM2020-S3Rec
+Reference code:
+    https://github.com/RUCAIBox/CIKM2020-S3Rec
 
 """
 

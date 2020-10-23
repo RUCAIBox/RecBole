@@ -5,11 +5,11 @@
 
 
 r"""
-recbole.model.sequential_recommender.gcsan
+GCSAN
 ################################################
 
 Reference:
-Chengfeng Xu et al. "Graph Contextualized Self-Attention Network for Session-based Recommendation." in IJCAI 2019.
+    Chengfeng Xu et al. "Graph Contextualized Self-Attention Network for Session-based Recommendation." in IJCAI 2019.
 
 """
 
@@ -53,17 +53,17 @@ class GNN(nn.Module):
         for weight in self.parameters():
             weight.data.uniform_(-stdv, stdv)
 
-
     def GNNCell(self, A, hidden):
         r"""Obtain latent vectors of nodes via gated graph neural network.
 
         Args:
-            A(torch.FloatTensor):The connection matrix,shape of [batch_size, max_session_len, 2 * max_session_len]
+            A (torch.FloatTensor): The connection matrix,shape of [batch_size, max_session_len, 2 * max_session_len]
 
-            hidden(torch.FloatTensor):The item node embedding matrix, shape of [batch_size, max_session_len, embedding_size]
+            hidden (torch.FloatTensor): The item node embedding matrix, shape of
+                [batch_size, max_session_len, embedding_size]
 
         Returns:
-            torch.FloatTensor:Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
+            torch.FloatTensor: Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
 
         """
 
@@ -88,6 +88,7 @@ class GNN(nn.Module):
         for i in range(self.step):
             hidden = self.GNNCell(A, hidden)
         return hidden
+
 
 class GCSAN(SequentialRecommender):
     r"""GCSAN captures rich local dependencies via graph nerual network,
@@ -119,10 +120,10 @@ class GCSAN(SequentialRecommender):
         self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
         self.gnn = GNN(self.hidden_size, self.step)
         self.self_attention = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
-                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
-                                              hidden_dropout_prob=self.hidden_dropout_prob,
-                                              attn_dropout_prob=self.attn_dropout_prob,
-                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+                                                 hidden_size=self.hidden_size, inner_size=self.inner_size,
+                                                 hidden_dropout_prob=self.hidden_dropout_prob,
+                                                 attn_dropout_prob=self.attn_dropout_prob,
+                                                 hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
         self.reg_loss = EmbLoss()
         if self.loss_type == 'BPR':
             self.loss_fct = BPRLoss()
@@ -196,9 +197,8 @@ class GCSAN(SequentialRecommender):
 
         return alias_inputs, A, items
 
-
     def forward(self, item_seq, item_seq_len):
-        assert self.weight >= 0 and self.weight <= 1
+        assert 0 <= self.weight <= 1
         alias_inputs, A, items = self._get_slice(item_seq)
         hidden = self.item_embedding(items)
         hidden = self.gnn(A, hidden)

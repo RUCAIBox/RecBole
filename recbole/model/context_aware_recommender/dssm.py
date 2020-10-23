@@ -6,10 +6,10 @@
 
 
 """
-recbole.model.context_aware_recommender.dssm
+DSSM
 ################################################
 Reference:
-PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
+    PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
 """
 
 
@@ -43,9 +43,9 @@ class DSSM(ContextRecommender):
         self.loss = nn.BCELoss()
         self.sigmod = nn.Sigmoid()
 
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

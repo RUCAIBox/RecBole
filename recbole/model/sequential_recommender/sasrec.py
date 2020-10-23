@@ -4,14 +4,14 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 """
-recbole.model.sequential_recommender.sasrec
+SASRec
 ################################################
 
 Reference:
-Wang-Cheng Kang et al. "Self-Attentive Sequential Recommendation." in ICDM 2018.
+    Wang-Cheng Kang et al. "Self-Attentive Sequential Recommendation." in ICDM 2018.
 
 Reference:
-https://github.com/kang205/SASRec
+    https://github.com/kang205/SASRec
 
 """
 
