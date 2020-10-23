@@ -1,6 +1,6 @@
 embedding_size: 10
 mlp_hidden_size: [128,128,128]
-reg_weight: 1e-3
+reg_weight: 5e-4
 dropout: 0.2
 direct: False
-cin_layer_size: [60,60,60]
+cin_layer_size: [100,100,100]

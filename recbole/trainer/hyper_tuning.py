@@ -201,7 +201,7 @@ class HyperTuning(object):
                 fp.write('Test result:\n' + dict2str(self.params2result[params]['test_result']) + '\n\n')
 
     def trial(self, params):
-        config_dict = params
+        config_dict = params.copy()
         params_str = self.params2str(params)
         print('running parameters:', config_dict)
         result_dict = self.objective_function(config_dict, self.fixed_config_file_list)

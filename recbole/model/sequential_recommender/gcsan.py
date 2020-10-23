@@ -46,9 +46,9 @@ class GNN(nn.Module):
         self.linear_edge_in = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.linear_edge_out = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         # parameters initialization
-        self.reset_parameters()
+        self._reset_parameters()
 
-    def reset_parameters(self):
+    def _reset_parameters(self):
         stdv = 1.0 / math.sqrt(self.embedding_size)
         for weight in self.parameters():
             weight.data.uniform_(-stdv, stdv)
@@ -99,7 +99,15 @@ class GCSAN(SequentialRecommender):
         super(GCSAN, self).__init__(config, dataset)
 
         # load parameters info
-        self.hidden_size = config['hidden_size']
+        self.n_layers = config['n_layers']
+        self.n_heads = config['n_heads']
+        self.hidden_size = config['hidden_size']  # same as embedding_size
+        self.inner_size = config['inner_size']  # the dimensionality in feed-forward layer
+        self.hidden_dropout_prob = config['hidden_dropout_prob']
+        self.attn_dropout_prob = config['attn_dropout_prob']
+        self.hidden_act = config['hidden_act']
+        self.layer_norm_eps = config['layer_norm_eps']
+
         self.step = config['step']
         self.device = config['device']
         self.weight = config['weight']
@@ -110,7 +118,11 @@ class GCSAN(SequentialRecommender):
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
         self.gnn = GNN(self.hidden_size, self.step)
-        self.self_attention = TransformerEncoder(config)
+        self.self_attention = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
+                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
+                                              hidden_dropout_prob=self.hidden_dropout_prob,
+                                              attn_dropout_prob=self.attn_dropout_prob,
+                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
         self.reg_loss = EmbLoss()
         if self.loss_type == 'BPR':
             self.loss_fct = BPRLoss()
@@ -135,6 +147,7 @@ class GCSAN(SequentialRecommender):
             module.bias.data.zero_()
 
     def get_attention_mask(self, item_seq):
+        """Generate left-to-right uni-directional attention mask for multi-head attention."""
         attention_mask = (item_seq > 0).long()
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
         # mask for left-to-right unidirectional
@@ -149,7 +162,7 @@ class GCSAN(SequentialRecommender):
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
         return extended_attention_mask
 
-    def get_slice(self, item_seq):
+    def _get_slice(self, item_seq):
         items, n_node, A, alias_inputs = [], [], [], []
         max_n_node = item_seq.size(1)
         item_seq = item_seq.cpu().numpy()
@@ -186,7 +199,7 @@ class GCSAN(SequentialRecommender):
 
     def forward(self, item_seq, item_seq_len):
         assert self.weight >= 0 and self.weight <= 1
-        alias_inputs, A, items = self.get_slice(item_seq)
+        alias_inputs, A, items = self._get_slice(item_seq)
         hidden = self.item_embedding(items)
         hidden = self.gnn(A, hidden)
         alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(-1, -1, self.hidden_size)
@@ -220,7 +233,7 @@ class GCSAN(SequentialRecommender):
             loss = self.loss_fct(logits, pos_items)
 
         reg_loss = self.reg_loss(self.item_embedding.weight)
-        total_loss = loss + reg_loss
+        total_loss = loss + self.reg_weight * reg_loss
         return total_loss
 
     def predict(self, interaction):

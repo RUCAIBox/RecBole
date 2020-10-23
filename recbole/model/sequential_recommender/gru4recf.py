@@ -45,11 +45,19 @@ class GRU4RecF(SequentialRecommender):
         self.embedding_size = config['embedding_size']
         self.hidden_size = config['hidden_size']
         self.num_layers = config['num_layers']
+        self.dropout_prob = config['dropout_prob']
+
+        self.selected_features = config['selected_features']
+        self.pooling_mode = config['pooling_mode']
+        self.device = config['device']
         self.num_feature_field = len(config['selected_features'])
+
+        self.loss_type = config['loss_type']
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.feature_embed_layer = FeatureSeqEmbLayer(config, dataset)
+        self.feature_embed_layer = FeatureSeqEmbLayer(dataset, self.embedding_size, self.selected_features,
+                                                      self.pooling_mode, self.device)
         self.item_gru_layers = nn.GRU(
             input_size=self.embedding_size,
             hidden_size=self.hidden_size,
@@ -65,9 +73,8 @@ class GRU4RecF(SequentialRecommender):
             bias=False,
             batch_first=True,
         )
-        self.dense_layer = nn.Linear(config['hidden_size'] * 2, self.embedding_size)
-        self.dropout = nn.Dropout(config['dropout_prob'])
-        self.loss_type = config['loss_type']
+        self.dense_layer = nn.Linear(self.hidden_size * 2, self.embedding_size)
+        self.dropout = nn.Dropout(self.dropout_prob)
         if self.loss_type == 'BPR':
             self.loss_fct = BPRLoss()
         elif self.loss_type == 'CE':
@@ -77,10 +84,6 @@ class GRU4RecF(SequentialRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
-
-    def load_kg_embedding(self):
-        "For GRU4Rec+KG"
-        pass
 
     def forward(self, item_seq, item_seq_len):
         item_seq_emb = self.item_embedding(item_seq)

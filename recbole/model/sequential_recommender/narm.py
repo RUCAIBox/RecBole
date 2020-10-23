@@ -62,9 +62,9 @@ class NARM(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
