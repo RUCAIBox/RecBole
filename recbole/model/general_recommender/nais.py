@@ -9,13 +9,13 @@
 # @Email  : tsotfsk@outlook.com
 
 """
-recbole.model.general_recommender.nais
+NAIS
 ######################################
 Reference:
-Xiangnan He et al. "NAIS: Neural Attentive Item Similarity Model for Recommendation." in TKDE 2018.
+    Xiangnan He et al. "NAIS: Neural Attentive Item Similarity Model for Recommendation." in TKDE 2018.
 
 Reference code:
-https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
+    https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
 """
 
 from logging import getLogger

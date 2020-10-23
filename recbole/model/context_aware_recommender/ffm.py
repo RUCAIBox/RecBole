@@ -5,13 +5,13 @@
 # @File   : ffm.py
 
 r"""
-recbole.model.context_aware_recommender.ffm
+FFM
 #####################################################
 Reference:
-Yuchin Juan et al. "Field-aware Factorization Machines for CTR Prediction" in RecSys 2016.
+    Yuchin Juan et al. "Field-aware Factorization Machines for CTR Prediction" in RecSys 2016.
 
 Reference code:
-https://github.com/rixwew/pytorch-fm
+    https://github.com/rixwew/pytorch-fm
 """
 
 import numpy as np
@@ -52,9 +52,9 @@ class FFM(ContextRecommender):
         self.loss = nn.BCELoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
@@ -178,9 +178,12 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         Args:
             input_x (a tuple): (token_ffm_input, float_ffm_input, token_seq_ffm_input)
-                    token_ffm_input(torch.cuda.FloatTensor): [batch_size, num_token_features] or None
-                    float_ffm_input(torch.cuda.FloatTensor): [batch_size, num_float_features] or None
-                    token_seq_ffm_input(a list): length is num_token_seq_features or 0
+
+                    token_ffm_input (torch.cuda.FloatTensor): [batch_size, num_token_features] or None
+
+                    float_ffm_input (torch.cuda.FloatTensor): [batch_size, num_float_features] or None
+
+                    token_seq_ffm_input (list): length is num_token_seq_features or 0
 
         Returns:
             torch.cuda.FloatTensor: The results of all features' field-aware interactions.

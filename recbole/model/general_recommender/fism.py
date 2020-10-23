@@ -5,13 +5,13 @@
 
 
 """
-recbole.model.general_recommender.fism
+FISM
 #######################################
 Reference:
-S. Kabbur et al. "FISM: Factored item similarity models for top-n recommender systems" in KDD 2013
+    S. Kabbur et al. "FISM: Factored item similarity models for top-n recommender systems" in KDD 2013
 
 Reference code:
-https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
+    https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
 """
 
 import torch

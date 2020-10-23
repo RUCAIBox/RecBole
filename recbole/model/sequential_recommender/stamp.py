@@ -9,11 +9,11 @@
 # @Email  : yujielu1998@gmail.com
 
 r"""
-recbole.model.sequential_recommender.stamp
+STAMP
 ################################################
 
 Reference:
-Qiao Liu et al. "STAMP: Short-Term Attention/Memory Priority Model for Session-based Recommendation." in KDD 2018.
+    Qiao Liu et al. "STAMP: Short-Term Attention/Memory Priority Model for Session-based Recommendation." in KDD 2018.
 
 """
 

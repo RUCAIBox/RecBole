@@ -5,10 +5,11 @@
 # @File   : autoint.py
 
 r"""
-recbole.model.context_aware_recommender.autoint
+AutoInt
 ################################################
 Reference:
-Weiping Song et al. "AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks" in CIKM 2018.
+    Weiping Song et al. "AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks"
+    in CIKM 2018.
 """
 
 import torch
@@ -20,13 +21,14 @@ from recbole.model.layers import MLPLayers
 from recbole.model.abstract_recommender import ContextRecommender
 
 
-class AUTOINT(ContextRecommender):
-    """ AUTOINT is a novel CTR prediction model based on self-attention mechanism, which can automatically learn high-order feature interactions in an explicit fashion.
+class AutoInt(ContextRecommender):
+    """ AutoInt is a novel CTR prediction model based on self-attention mechanism,
+    which can automatically learn high-order feature interactions in an explicit fashion.
 
     """
 
     def __init__(self, config, dataset):
-        super(AUTOINT, self).__init__(config, dataset)
+        super(AutoInt, self).__init__(config, dataset)
 
         # load parameters info
         self.attention_size = config['attention_size']
@@ -57,9 +59,9 @@ class AUTOINT(ContextRecommender):
         self.loss = nn.BCELoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

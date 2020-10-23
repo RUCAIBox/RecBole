@@ -9,10 +9,10 @@
 # @Email  : linzihan.super@foxmain.com
 
 r"""
-recbole.model.general_recommender.neumf
+NeuMF
 ################################################
 Reference:
-Xiangnan He et al. "Neural Collaborative Filtering." in WWW 2017.
+    Xiangnan He et al. "Neural Collaborative Filtering." in WWW 2017.
 """
 
 import torch

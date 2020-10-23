@@ -4,14 +4,14 @@
 # @Email  : cx.tian@outlook.com
 
 r"""
-recbole.model.knowledge_aware_recommender.kgcn
+KGCN
 ################################################
 
 Reference:
-Hongwei Wang et al. "Knowledge graph convolution networks for recommender systems." in WWW 2019.
+    Hongwei Wang et al. "Knowledge graph convolution networks for recommender systems." in WWW 2019.
 
 Reference code:
-https://github.com/hwwang55/KGCN
+    https://github.com/hwwang55/KGCN
 """
 
 import torch

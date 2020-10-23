@@ -5,10 +5,10 @@
 # @File   : nfm.py
 
 r"""
-recbole.model.context_aware_recommender.nfm
+NFM
 ################################################
 Reference:
-He X, Chua T S. "Neural factorization machines for sparse predictive analytics" in SIGIR 2017
+    He X, Chua T S. "Neural factorization machines for sparse predictive analytics" in SIGIR 2017
 """
 
 import torch
@@ -40,9 +40,9 @@ class NFM(ContextRecommender):
         self.loss = nn.BCELoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

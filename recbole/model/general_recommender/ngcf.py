@@ -7,14 +7,15 @@
 # @Time   : 2020/9/16
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
+
 r"""
-recbole.model.general_recommender.ngcf
+NGCF
 ################################################
 Reference:
-Xiang Wang et al. "Neural Graph Collaborative Filtering." in SIGIR 2019.
+    Xiang Wang et al. "Neural Graph Collaborative Filtering." in SIGIR 2019.
 
 Reference code:
-https://github.com/xiangwang1223/neural_graph_collaborative_filtering
+    https://github.com/xiangwang1223/neural_graph_collaborative_filtering
 
 """
 

@@ -5,15 +5,14 @@
 # @File   : pnn.py
 
 r"""
-recbole.model.context_aware_recommender.pnn
+PNN
 ################################################
 Reference:
-Qu Y et al. "Product-based neural networks for user response prediction." in ICDM 2016
+    Qu Y et al. "Product-based neural networks for user response prediction." in ICDM 2016
 
 Reference code:
-https://github.com/shenweichen/DeepCTR-Torch/blob/master/deepctr_torch/models/pnn.py
-
-https://github.com/Atomu2014/product-nets/blob/master/python/models.py
+    - https://github.com/shenweichen/DeepCTR-Torch/blob/master/deepctr_torch/models/pnn.py
+    - https://github.com/Atomu2014/product-nets/blob/master/python/models.py
 
 """
 
@@ -61,7 +60,7 @@ class PNN(ContextRecommender):
         self.loss = nn.BCELoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
     def reg_loss(self):
         """Calculate the L2 normalization loss of model parameters.
@@ -76,7 +75,7 @@ class PNN(ContextRecommender):
                 reg_loss = reg_loss + self.reg_weight * parm.norm(2)
         return reg_loss
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

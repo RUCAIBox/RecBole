@@ -7,14 +7,15 @@
 # @Time   : 2020/10/21
 # @Author : Zhichao Feng
 # @email  : fzcbupt@gmail.com
+
 r"""
-recbole.model.context_aware_recommender.dcn
+DCN
 ################################################
 Reference:
-Ruoxi Wang at al. "Deep & Cross Network for Ad Click Predictions." in ADKDD 2017.
+    Ruoxi Wang at al. "Deep & Cross Network for Ad Click Predictions." in ADKDD 2017.
 
 Reference code:
-https://github.com/shenweichen/DeepCTR-Torch
+    https://github.com/shenweichen/DeepCTR-Torch
 """
 
 import torch

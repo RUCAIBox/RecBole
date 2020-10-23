@@ -5,11 +5,11 @@
 # @File   : afm.py
 
 r"""
-recbole.model.context_aware_recommender.afm
+AFM
 ################################################
 Reference:
-Jun Xiao et al. "Attentional Factorization Machines: Learning the Weight of Feature Interactions via Attention Networks"
-in IJCAI 2017.
+    Jun Xiao et al. "Attentional Factorization Machines: Learning the Weight of Feature Interactions via
+    Attention Networks" in IJCAI 2017.
 """
 
 import torch
@@ -42,9 +42,9 @@ class AFM(ContextRecommender):
         self.loss = nn.BCELoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
@@ -56,7 +56,7 @@ class AFM(ContextRecommender):
         """ Build the cross feature columns of feature columns
 
         Args:
-            feat_emb (torch.FloatTensor): input feature embedding tensor. shape of[batch_size,field_size,embed_dim].
+            feat_emb (torch.FloatTensor): input feature embedding tensor. shape of [batch_size, field_size, embed_dim].
 
         Returns:
             torch.FloatTensor: Left part of the cross feature. shape of [batch_size, num_pairs, emb_dim].
@@ -77,10 +77,10 @@ class AFM(ContextRecommender):
         """ Get the attention-based feature interaction score
 
         Args:
-            infeature (torch.FloatTensor): input feature embedding tensor. shape of[batch_size,field_size,embed_dim].
+            infeature (torch.FloatTensor): input feature embedding tensor. shape of [batch_size, field_size, embed_dim].
 
         Returns:
-            torch.FloatTensor: Result of score. shape of [batch_size,1] .
+            torch.FloatTensor: Result of score. shape of [batch_size, 1].
         """
         p, q = self.build_cross(infeature)
         pair_wise_inter = torch.mul(p, q)  # [batch_size, num_pairs, emb_dim]

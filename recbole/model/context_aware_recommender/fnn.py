@@ -5,10 +5,10 @@
 # @File   : fnn.py
 
 r"""
-recbole.model.context_aware_recommender.fnn
+FNN
 ################################################
 Reference:
-Weinan Zhang1 et al. "Deep Learning over Multi-field Categorical Data" in ECIR 2016
+    Weinan Zhang1 et al. "Deep Learning over Multi-field Categorical Data" in ECIR 2016
 """
 
 import torch
@@ -48,9 +48,9 @@ class FNN(ContextRecommender):
         self.loss = nn.BCELoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

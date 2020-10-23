@@ -5,11 +5,11 @@
 # @File   : fwfm.py
 
 r"""
-recbole.model.context_aware_recommender.fwfm
+FwFM
 #####################################################
 Reference:
-Junwei Pan et al. "Field-weighted Factorization Machines for Click-Through Rate Prediction in Display Advertising." 
-in WWW 2018.
+    Junwei Pan et al. "Field-weighted Factorization Machines for Click-Through Rate Prediction in Display Advertising."
+    in WWW 2018.
 """
 
 import torch
@@ -53,9 +53,9 @@ class FwFM(ContextRecommender):
         self.loss = nn.BCELoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

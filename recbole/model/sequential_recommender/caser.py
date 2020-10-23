@@ -9,14 +9,14 @@
 # @Email  : zhangjingsen@ruc.edu.cn
 
 r"""
-recbole.model.sequential_recommender.caser
+Caser
 ################################################
 
 Reference:
-Jiaxi Tang et al., "Personalized Top-N Sequential Recommendation via Convolutional Sequence Embedding" in WSDM 2018.
+    Jiaxi Tang et al., "Personalized Top-N Sequential Recommendation via Convolutional Sequence Embedding" in WSDM 2018.
 
 Reference code:
-https://github.com/graytowne/caser_pytorch
+    https://github.com/graytowne/caser_pytorch
 
 """
 
