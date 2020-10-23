@@ -36,10 +36,10 @@ class PNN(ContextRecommender):
 
         self.LABEL = config['LABEL_FIELD']
         self.mlp_hidden_size = config['mlp_hidden_size']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
         self.use_inner = config['use_inner']
         self.use_outer = config['use_outer']
-        self.reg = config['weight_decay']
+        self.reg_weight = config['reg_weight']
 
         self.num_pair = int(self.num_feature_field * (self.num_feature_field - 1) / 2)
 
@@ -53,7 +53,7 @@ class PNN(ContextRecommender):
             self.outer_product = OuterProductLayer(
                 self.num_feature_field, self.embedding_size, device=self.device)
         size_list = [product_out_dim] + self.mlp_hidden_size
-        self.mlp_layers = MLPLayers(size_list, self.dropout, bn=False)
+        self.mlp_layers = MLPLayers(size_list, self.dropout_prob, bn=False)
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
@@ -71,7 +71,7 @@ class PNN(ContextRecommender):
         reg_loss = 0
         for name, parm in self.mlp_layers.named_parameters():
             if name.endswith('weight'):
-                reg_loss = reg_loss + self.reg * parm.norm(2)
+                reg_loss = reg_loss + self.reg_weight * parm.norm(2)
         return reg_loss
 
     def init_weights(self, module):

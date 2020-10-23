@@ -41,7 +41,7 @@ class KGCN(KnowledgeRecommender):
         self.full_sort_batch_size = config['full_sort_batch_size']
         self.n_iter = config['n_iter']  # number of iterations when computing entity representation
         self.aggregator_class = config['aggregator']  # which aggregator to use
-        self.l2_weight = config['l2_weight']  # weight of l2 regularization
+        self.reg_weight = config['reg_weight']  # weight of l2 regularization
         self.neighbor_sample_size = config['neighbor_sample_size']
 
         # define embedding
@@ -265,7 +265,7 @@ class KGCN(KnowledgeRecommender):
         rec_loss = self.bce_loss(predict, target)
 
         l2_loss = self.l2_loss(user_e, pos_item_e, neg_item_e)
-        loss = rec_loss + self.l2_weight * l2_loss
+        loss = rec_loss + self.reg_weight * l2_loss
 
         return loss
 

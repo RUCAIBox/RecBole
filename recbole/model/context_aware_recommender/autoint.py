@@ -16,7 +16,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.layers import AttLayer, MLPLayers
+from recbole.model.layers import MLPLayers
 from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
 
 
@@ -31,9 +31,8 @@ class AUTOINT(ContextRecommender):
         self.LABEL = config['LABEL_FIELD']
 
         self.attention_size = config['attention_size']
-        self.dropout = config['dropout']
-        self.num_layers = config['num_layers']
-        self.weight_decay = config['weight_decay']
+        self.dropout_probs = config['dropout_probs']
+        self.n_layers = config['n_layers']
         self.num_heads = config['num_heads']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.has_residual = config['has_residual']
@@ -44,18 +43,18 @@ class AUTOINT(ContextRecommender):
 
 
         size_list = [self.embed_output_dim] + self.mlp_hidden_size
-        self.mlp_layers = MLPLayers(size_list, dropout=self.dropout[1])
+        self.mlp_layers = MLPLayers(size_list, dropout=self.dropout_probs[1])
         # multi-head self-attention network
         self.self_attns = nn.ModuleList([
-            nn.MultiheadAttention(self.attention_size, self.num_heads, dropout=self.dropout[0])
-            for _ in range(self.num_layers)
+            nn.MultiheadAttention(self.attention_size, self.num_heads, dropout=self.dropout_probs[0])
+            for _ in range(self.n_layers)
         ])
         self.attn_fc = torch.nn.Linear(self.atten_output_dim, 1)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         if self.has_residual:
             self.v_res_res_embedding = torch.nn.Linear(self.embedding_size, self.attention_size)
 
-        self.dropout_layer = nn.Dropout(p=self.dropout[2])
+        self.dropout_layer = nn.Dropout(p=self.dropout_probs[2])
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
@@ -68,7 +67,6 @@ class AUTOINT(ContextRecommender):
             xavier_normal_(module.weight.data)
             if module.bias is not None:
                 constant_(module.bias.data, 0)
-
 
     def autoint_layer(self, infeature):
         """ Get the attention-based feature interaction score
@@ -95,7 +93,6 @@ class AUTOINT(ContextRecommender):
         att_output = self.attn_fc(cross_term) + self.deep_predict_layer(self.mlp_layers(infeature.view(batch_size, -1)))
         return att_output
 
-
     def forward(self, interaction):
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
         # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
@@ -108,7 +105,6 @@ class AUTOINT(ContextRecommender):
         autoint_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
         output = self.first_order_linear(interaction) + self.autoint_layer(autoint_all_embeddings)
         return self.sigmoid(output.squeeze(1))
-
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

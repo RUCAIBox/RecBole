@@ -38,7 +38,7 @@ class DCN(ContextRecommender):
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.cross_layer_num = config['cross_layer_num']
         self.reg_weight = config['reg_weight']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
 
         # init weight and bias of each cross layer
         self.cross_layer_parameter = [nn.Parameter(torch.empty(self.num_feature_field * self.embedding_size,
@@ -54,7 +54,7 @@ class DCN(ContextRecommender):
         # size of cross network output
         in_feature_num = self.embedding_size * self.num_feature_field + self.mlp_hidden_size[-1]
 
-        self.mlp_layers = MLPLayers(size_list, dropout=self.dropout, bn=True)
+        self.mlp_layers = MLPLayers(size_list, dropout=self.dropout_prob, bn=True)
         self.predict_layer = nn.Linear(in_feature_num, 1)
         self.reg_loss = RegLoss()
         self.sigmoid = nn.Sigmoid()

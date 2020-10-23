@@ -58,7 +58,7 @@ class GCMC(GeneralRecommender):
             form='coo').astype(np.float32)  # csr
 
         # load parameters info
-        self.drop_prob = config['drop_prob']
+        self.dropout_prob = config['dropout_prob']
         self.sparse_feature = config['sparse_feature']
         self.hidden_dim = [int(i) for i in list(config['hidden_dim'])]
         self.n_class = config['class_num']
@@ -101,7 +101,7 @@ class GCMC(GeneralRecommender):
                                    support=self.support,
                                    input_dim=self.input_dim,
                                    hidden_dim=self.hidden_dim,
-                                   drop_prob=self.drop_prob,
+                                   drop_prob=self.dropout_prob,
                                    device=self.device,
                                    sparse_feature=self.sparse_feature).to(self.device)
         self.BiDecoder = BiDecoder(input_dim=self.hidden_dim[-1],

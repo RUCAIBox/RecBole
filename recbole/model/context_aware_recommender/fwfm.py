@@ -34,11 +34,11 @@ class FwFM(ContextRecommender):
         super(FwFM, self).__init__(config, dataset)
 
         self.LABEL = config['LABEL_FIELD']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
         self.fields = config['fields'] # a dict; key: field_id; value: feature_list
         self.num_features = self.num_feature_field
         
-        self.dropout_layer = nn.Dropout(p=self.dropout)
+        self.dropout_layer = nn.Dropout(p=self.dropout_prob)
         self.sigmoid = nn.Sigmoid()
 
         self.feature2id = {}

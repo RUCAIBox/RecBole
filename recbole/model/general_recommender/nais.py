@@ -55,7 +55,7 @@ class NAIS(GeneralRecommender):
         self.embedding_size = config['embedding_size']
         self.weight_size = config['weight_size']
         self.algorithm = config['algorithm']
-        self.regs = config['regs']
+        self.reg_weights = config['reg_weights']
         self.alpha = config['alpha']
         self.beta = config['beta']
         self.split_to = config['split_to']
@@ -140,7 +140,7 @@ class NAIS(GeneralRecommender):
             torch.Tensor: reg loss
 
         """  
-        reg_1, reg_2, reg_3 = self.regs
+        reg_1, reg_2, reg_3 = self.reg_weights
         loss_1 = reg_1 * self.item_src_embedding.weight.norm(2)
         loss_2 = reg_2 * self.item_dst_embedding.weight.norm(2)
         loss_3 = 0

@@ -33,10 +33,10 @@ class WideDeep(ContextRecommender):
 
         self.LABEL = config['LABEL_FIELD']
         self.mlp_hidden_size = config['mlp_hidden_size']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
 
         size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
-        self.mlp_layers = MLPLayers(size_list, self.dropout)
+        self.mlp_layers = MLPLayers(size_list, self.dropout_prob)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()

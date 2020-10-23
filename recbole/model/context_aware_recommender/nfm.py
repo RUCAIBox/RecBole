@@ -28,12 +28,12 @@ class NFM(ContextRecommender):
 
         self.LABEL = config['LABEL_FIELD']
         self.mlp_hidden_size = config['mlp_hidden_size']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
 
         size_list = [self.embedding_size] + self.mlp_hidden_size
         self.fm = BaseFactorizationMachine(reduce_sum=False)
         self.bn = nn.BatchNorm1d(num_features=self.embedding_size)
-        self.mlp_layers = MLPLayers(size_list, self.dropout, activation='sigmoid', bn=True)
+        self.mlp_layers = MLPLayers(size_list, self.dropout_prob, activation='sigmoid', bn=True)
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1, bias=False)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()

@@ -40,7 +40,7 @@ class xDeepFM(ContextRecommender):
         self.LABEL = config['LABEL_FIELD']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.reg_weight = config['reg_weight']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
         self.direct = config['direct']
         self.cin_layer_size = temp_cin_size = list(config['cin_layer_size'])
 
@@ -66,7 +66,7 @@ class xDeepFM(ContextRecommender):
         # Create MLP layer
         size_list = [self.embedding_size * self.num_feature_field
                      ] + self.mlp_hidden_size + [1]
-        self.mlp_layers = MLPLayers(size_list, dropout=self.dropout)
+        self.mlp_layers = MLPLayers(size_list, dropout=self.dropout_prob)
 
         # Get the output size of CIN
         if self.direct:
