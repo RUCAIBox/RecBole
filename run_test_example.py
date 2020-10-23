@@ -200,7 +200,6 @@ test_examples = {
     'Test Caser': {
         'model': 'Caser',
         'dataset': 'ml-100k',
-        'MAX_ITEM_LIST_LENGTH': 10,
     },
     'Test TransRec': {
         'model': 'TransRec',

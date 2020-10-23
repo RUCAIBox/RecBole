@@ -6,7 +6,7 @@
 recbole.quick_start
 ########################
 """
-
+import logging
 from logging import getLogger
 from recbole.utils import init_logger, get_model, get_trainer, init_seed
 from recbole.config import Config
@@ -60,6 +60,7 @@ def objective_function(config_dict=None, config_file_list=None):
 
     config = Config(config_dict=config_dict, config_file_list=config_file_list)
     init_seed(config['seed'])
+    logging.basicConfig(level=logging.ERROR)
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)
     model = get_model(config['model'])(config, train_data).to(config['device'])
