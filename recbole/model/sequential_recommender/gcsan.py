@@ -233,7 +233,7 @@ class GCSAN(SequentialRecommender):
             loss = self.loss_fct(logits, pos_items)
 
         reg_loss = self.reg_loss(self.item_embedding.weight)
-        total_loss = loss + self.reg_weightreg_loss
+        total_loss = loss + self.reg_weight * reg_loss
         return total_loss
 
     def predict(self, interaction):
