@@ -15,120 +15,120 @@ from recbole.quick_start import run_recbole
 closed_examples = ['Test SRGNN', 'Test GCSAN', 'Test NextItNet', 'Test GRU4RecKG']
 
 test_examples = {
-    # 'Test Eval Metric': {
-    #     'model': 'BPR',
-    #     'dataset': 'ml-100k',
-    #     'epochs': 1,
-    #     'valid_metric': 'Recall@10',
-    #     'eval_setting': 'RO_RS, full',
-    #     'training_neg_sample_num': 1,
-    #     'metrics': ['Precision', 'Hit', 'Recall', 'MRR', 'NDCG'],
-    #     'topk': [5, 10, 20],
-    # },
-    # 'Test Real Time Full Sort': {
-    #     'model': 'BPR',
-    #     'dataset': 'ml-100k',
-    #     'epochs': 1,
-    #     'valid_metric': 'Recall@10',
-    #     'metrics': ['Recall'],
-    #     'topk': [10],
-    #     'eval_setting': 'RO_RS, full',
-    #     'real_time_process': True
-    # },
-    # 'Test Pre Full Sort': {
-    #     'model': 'BPR',
-    #     'dataset': 'ml-100k',
-    #     'epochs': 1,
-    #     'valid_metric': 'Recall@10',
-    #     'metrics': ['Recall'],
-    #     'topk': [10],
-    #     'eval_setting': 'RO_RS, full',
-    #     'real_time_process': False
-    # },
-    # 'Test Real Time Neg Sample By': {
-    #     'model': 'BPR',
-    #     'dataset': 'ml-100k',
-    #     'epochs': 1,
-    #     'valid_metric': 'Recall@10',
-    #     'metrics': ['Recall'],
-    #     'topk': [10],
-    #     'eval_setting': 'RO_RS, uni100',
-    #     'real_time_process': True
-    # },
-    # 'Test Pre Neg Sample By': {
-    #     'model': 'BPR',
-    #     'dataset': 'ml-100k',
-    #     'epochs': 1,
-    #     'valid_metric': 'Recall@10',
-    #     'metrics': ['Recall'],
-    #     'topk': [10],
-    #     'eval_setting': 'RO_RS, uni100',
-    #     'real_time_process': False
-    # },
-    # 'Test Leave One Out': {
-    #     'model': 'BPR',
-    #     'dataset': 'ml-100k',
-    #     'epochs': 1,
-    #     'valid_metric': 'Recall@10',
-    #     'metrics': ['Recall'],
-    #     'topk': [10],
-    #     'eval_setting': 'RO_LS, full',
-    #     'leave_one_num': 2,
-    #     'real_time_process': True
-    # },
-    #
-    # # General Recommendation
-    # 'Test BPR': {
-    #     'model': 'BPR',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test NeuMF': {
-    #     'model': 'NeuMF',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test DMF': {
-    #     'model': 'DMF',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test NAIS': {
-    #     'model': 'NAIS',
-    #     'dataset': 'ml-100k',
-    #     'eval_setting': 'RO_LS, uni100',
-    #     'leave_one_num': 2,
-    #     'eval_batch_size': 2000
-    # },
-    # 'Test GCMC': {
-    #     'model': 'GCMC',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test NGCF': {
-    #     'model': 'NGCF',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test LightGCN': {
-    #     'model': 'LightGCN',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test DGCF': {
-    #     'model': 'DGCF',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test FISM': {
-    #     'model': 'FISM',
-    #     'dataset': 'ml-100k'
-    # },
-    # 'Test SpectralCF': {
-    #     'model': 'SpectralCF',
-    #     'dataset': 'ml-100k'
-    # },
-    # 'Test POP': {
-    #     'model': 'Pop',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test ItemKNN': {
-    #     'model': 'ItemKNN',
-    #     'dataset': 'ml-100k',
-    # },
+    'Test Eval Metric': {
+        'model': 'BPR',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'eval_setting': 'RO_RS, full',
+        'training_neg_sample_num': 1,
+        'metrics': ['Precision', 'Hit', 'Recall', 'MRR', 'NDCG'],
+        'topk': [5, 10, 20],
+    },
+    'Test Real Time Full Sort': {
+        'model': 'BPR',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_RS, full',
+        'real_time_process': True
+    },
+    'Test Pre Full Sort': {
+        'model': 'BPR',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_RS, full',
+        'real_time_process': False
+    },
+    'Test Real Time Neg Sample By': {
+        'model': 'BPR',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_RS, uni100',
+        'real_time_process': True
+    },
+    'Test Pre Neg Sample By': {
+        'model': 'BPR',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_RS, uni100',
+        'real_time_process': False
+    },
+    'Test Leave One Out': {
+        'model': 'BPR',
+        'dataset': 'ml-100k',
+        'epochs': 1,
+        'valid_metric': 'Recall@10',
+        'metrics': ['Recall'],
+        'topk': [10],
+        'eval_setting': 'RO_LS, full',
+        'leave_one_num': 2,
+        'real_time_process': True
+    },
+
+    # General Recommendation
+    'Test BPR': {
+        'model': 'BPR',
+        'dataset': 'ml-100k',
+    },
+    'Test NeuMF': {
+        'model': 'NeuMF',
+        'dataset': 'ml-100k',
+    },
+    'Test DMF': {
+        'model': 'DMF',
+        'dataset': 'ml-100k',
+    },
+    'Test NAIS': {
+        'model': 'NAIS',
+        'dataset': 'ml-100k',
+        'eval_setting': 'RO_LS, uni100',
+        'leave_one_num': 2,
+        'eval_batch_size': 2000
+    },
+    'Test GCMC': {
+        'model': 'GCMC',
+        'dataset': 'ml-100k',
+    },
+    'Test NGCF': {
+        'model': 'NGCF',
+        'dataset': 'ml-100k',
+    },
+    'Test LightGCN': {
+        'model': 'LightGCN',
+        'dataset': 'ml-100k',
+    },
+    'Test DGCF': {
+        'model': 'DGCF',
+        'dataset': 'ml-100k',
+    },
+    'Test FISM': {
+        'model': 'FISM',
+        'dataset': 'ml-100k'
+    },
+    'Test SpectralCF': {
+        'model': 'SpectralCF',
+        'dataset': 'ml-100k'
+    },
+    'Test POP': {
+        'model': 'Pop',
+        'dataset': 'ml-100k',
+    },
+    'Test ItemKNN': {
+        'model': 'ItemKNN',
+        'dataset': 'ml-100k',
+    },
 
     # Context-aware Recommendation
     'Test FM': {
@@ -189,142 +189,142 @@ test_examples = {
     },
 
     # Sequential Recommendation
-    # 'Test GRU4Rec': {
-    #     'model': 'GRU4Rec',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test FPMC': {
-    #     'model': 'FPMC',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test Caser': {
-    #     'model': 'Caser',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test TransRec': {
-    #     'model': 'TransRec',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test SASRec': {
-    #     'model': 'SASRec',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test BERT4Rec': {
-    #     'model': 'BERT4Rec',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test STAMP': {
-    #     'model': 'STAMP',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test NARM': {
-    #     'model': 'NARM',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test NextItNet': {
-    #     'model': 'NextItNet',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test SRGNN': {
-    #     'model': 'SRGNN',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test GCSAN': {
-    #     'model': 'GCSAN',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test GRU4RecF': {
-    #     'model': 'GRU4RecF',
-    #     'dataset': 'ml-100k',
-    #     'selected_features': ['class'],
-    #     'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-    #                  'item': ['item_id', 'class']},
-    # },
-    # 'Test SASRecF': {
-    #     'model': 'SASRecF',
-    #     'dataset': 'ml-100k',
-    #     'selected_features': ['class'],
-    #     'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-    #                  'item': ['item_id', 'class']},
-    # },
-    # 'Test FDSA': {
-    #     'model': 'FDSA',
-    #     'dataset': 'ml-100k',
-    #     'selected_features': ['class'],
-    #     'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-    #                  'item': ['item_id', 'class']},
-    # },
-    # 'Test GRU4RecKG': {
-    #     'model': 'GRU4RecKG',
-    #     'dataset': 'ml-1m',
-    #     'TIME_FIELD': 'timestamp',
-    #     'HEAD_ENTITY_ID_FIELD': 'head_id',
-    #     'TAIL_ENTITY_ID_FIELD': 'tail_id',
-    #     'RELATION_ID_FIELD': 'relation_id',
-    #     'ENTITY_ID_FIELD': 'entity_id',
-    #     'MAX_ITEM_LIST_LENGTH': 50,
-    #     'LIST_SUFFIX': '_list',
-    #     'ITEM_LIST_LENGTH_FIELD': 'item_length',
-    #     'load_col': {
-    #         'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-    #         'feature': ['ent_id', 'ent_feature']
-    #     },
-    #     'additional_feat_suffix': ['feature'],
-    #     'fields_in_same_space': [['entity_id', 'ent_id']],
-    #     'preload_weight': {
-    #         'ent_id': 'ent_feature'
-    #     }
-    # },
-    # 'Test DIN': {
-    #     'model': 'DIN',
-    #     'dataset': 'ml-100k',
-    #     'training_neg_sample_num': 1,
-    #     'eval_setting': 'TO_LS, uni100',
-    #     'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-    #                  'user': ['user_id', 'age', 'gender', 'occupation'],
-    #                  'item': ['item_id', 'release_year']},
-    #     'threshold': {'rating': 4},
-    #     'valid_metric': 'AUC',
-    #     'metrics': ['AUC'],
-    #     'eval_batch_size': 10000,
-    # },
-    #
-    # # Knowledge-based Recommendation
-    # 'Test CKE': {
-    #     'model': 'CKE',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test KTUP': {
-    #     'model': 'KTUP',
-    #     'dataset': 'ml-100k',
-    #     'train_rec_step': 1,
-    #     'train_kg_step': 1,
-    #     'epochs': 2,
-    # },
-    # 'Test CFKG': {
-    #     'model': 'CFKG',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test KGAT': {
-    #     'model': 'KGAT',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test RippleNet': {
-    #     'model': 'RippleNet',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test MKR': {
-    #     'model': 'MKR',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test KGCN': {
-    #     'model': 'KGCN',
-    #     'dataset': 'ml-100k',
-    # },
-    # 'Test KGNNLS': {
-    #     'model': 'KGNNLS',
-    #     'dataset': 'ml-100k',
-    # },
+    'Test GRU4Rec': {
+        'model': 'GRU4Rec',
+        'dataset': 'ml-100k',
+    },
+    'Test FPMC': {
+        'model': 'FPMC',
+        'dataset': 'ml-100k',
+    },
+    'Test Caser': {
+        'model': 'Caser',
+        'dataset': 'ml-100k',
+    },
+    'Test TransRec': {
+        'model': 'TransRec',
+        'dataset': 'ml-100k',
+    },
+    'Test SASRec': {
+        'model': 'SASRec',
+        'dataset': 'ml-100k',
+    },
+    'Test BERT4Rec': {
+        'model': 'BERT4Rec',
+        'dataset': 'ml-100k',
+    },
+    'Test STAMP': {
+        'model': 'STAMP',
+        'dataset': 'ml-100k',
+    },
+    'Test NARM': {
+        'model': 'NARM',
+        'dataset': 'ml-100k',
+    },
+    'Test NextItNet': {
+        'model': 'NextItNet',
+        'dataset': 'ml-100k',
+    },
+    'Test SRGNN': {
+        'model': 'SRGNN',
+        'dataset': 'ml-100k',
+    },
+    'Test GCSAN': {
+        'model': 'GCSAN',
+        'dataset': 'ml-100k',
+    },
+    'Test GRU4RecF': {
+        'model': 'GRU4RecF',
+        'dataset': 'ml-100k',
+        'selected_features': ['class'],
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                     'item': ['item_id', 'class']},
+    },
+    'Test SASRecF': {
+        'model': 'SASRecF',
+        'dataset': 'ml-100k',
+        'selected_features': ['class'],
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                     'item': ['item_id', 'class']},
+    },
+    'Test FDSA': {
+        'model': 'FDSA',
+        'dataset': 'ml-100k',
+        'selected_features': ['class'],
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                     'item': ['item_id', 'class']},
+    },
+    'Test GRU4RecKG': {
+        'model': 'GRU4RecKG',
+        'dataset': 'ml-1m',
+        'TIME_FIELD': 'timestamp',
+        'HEAD_ENTITY_ID_FIELD': 'head_id',
+        'TAIL_ENTITY_ID_FIELD': 'tail_id',
+        'RELATION_ID_FIELD': 'relation_id',
+        'ENTITY_ID_FIELD': 'entity_id',
+        'MAX_ITEM_LIST_LENGTH': 50,
+        'LIST_SUFFIX': '_list',
+        'ITEM_LIST_LENGTH_FIELD': 'item_length',
+        'load_col': {
+            'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+            'feature': ['ent_id', 'ent_feature']
+        },
+        'additional_feat_suffix': ['feature'],
+        'fields_in_same_space': [['entity_id', 'ent_id']],
+        'preload_weight': {
+            'ent_id': 'ent_feature'
+        }
+    },
+    'Test DIN': {
+        'model': 'DIN',
+        'dataset': 'ml-100k',
+        'training_neg_sample_num': 1,
+        'eval_setting': 'TO_LS, uni100',
+        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                     'user': ['user_id', 'age', 'gender', 'occupation'],
+                     'item': ['item_id', 'release_year']},
+        'threshold': {'rating': 4},
+        'valid_metric': 'AUC',
+        'metrics': ['AUC'],
+        'eval_batch_size': 10000,
+    },
+
+    # Knowledge-based Recommendation
+    'Test CKE': {
+        'model': 'CKE',
+        'dataset': 'ml-100k',
+    },
+    'Test KTUP': {
+        'model': 'KTUP',
+        'dataset': 'ml-100k',
+        'train_rec_step': 1,
+        'train_kg_step': 1,
+        'epochs': 2,
+    },
+    'Test CFKG': {
+        'model': 'CFKG',
+        'dataset': 'ml-100k',
+    },
+    'Test KGAT': {
+        'model': 'KGAT',
+        'dataset': 'ml-100k',
+    },
+    'Test RippleNet': {
+        'model': 'RippleNet',
+        'dataset': 'ml-100k',
+    },
+    'Test MKR': {
+        'model': 'MKR',
+        'dataset': 'ml-100k',
+    },
+    'Test KGCN': {
+        'model': 'KGCN',
+        'dataset': 'ml-100k',
+    },
+    'Test KGNNLS': {
+        'model': 'KGNNLS',
+        'dataset': 'ml-100k',
+    },
 }
 
 
