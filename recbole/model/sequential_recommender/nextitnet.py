@@ -212,6 +212,10 @@ class ResidualBlock_b(nn.Module):
         return out2 + x
 
     def conv_pad(self, x, dilation):
+        r""" Dropout-mask: To avoid the future information leakage problem, this paper proposed a masking-based dropout
+        trick for the 1D dilated convolution to prevent the network from seeing the future items.
+        Also the One-dimensional transformation is completed in this funtion.
+        """
         inputs_pad = x.permute(0, 2, 1)
         inputs_pad = inputs_pad.unsqueeze(2)
         pad = nn.ZeroPad2d(((self.kernel_size - 1) * dilation, 0, 0, 0))
