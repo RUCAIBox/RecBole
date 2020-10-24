@@ -70,6 +70,9 @@ class AbstractRecommender(nn.Module):
 
 
 class GeneralRecommender(AbstractRecommender):
+    """This is a abstract general recommender. All the general model should implement this class.
+    The base general recommender class provide the basic dataset and parameters information.
+    """
     type = ModelType.GENERAL
 
     def __init__(self, config, dataset):
@@ -113,6 +116,9 @@ class SequentialRecommender(AbstractRecommender):
 
 
 class KnowledgeRecommender(AbstractRecommender):
+    """This is a abstract knowledge-based recommender. All the knowledge-based model should implement this class.
+    The base knowledge-based recommender class provide the basic dataset and parameters information.
+    """
     type = ModelType.KNOWLEDGE
 
     def __init__(self, config, dataset):

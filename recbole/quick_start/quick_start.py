@@ -14,7 +14,16 @@ from recbole.data import create_dataset, data_preparation
 
 
 def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
+    r""" A fast running api, which includes the complete process of
+    training and testing a model on a specified dataset
 
+    Args:
+        model (str): model name
+        dataset (str): dataset name
+        config_file_list (list): config files used to modify experiment parameters
+        config_dict (dict): parameters dictionary used to modify experiment parameters
+        saved (bool): whether to save the model
+    """
     # configurations initialization
     config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
     init_seed(config['seed'])
@@ -57,6 +66,13 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
 
 
 def objective_function(config_dict=None, config_file_list=None):
+    r""" The default objective_function used in HyperTuning
+
+    Args:
+        config_dict (dict): parameters dictionary used to modify experiment parameters
+        config_file_list (list): config files used to modify experiment parameters
+
+    """
 
     config = Config(config_dict=config_dict, config_file_list=config_file_list)
     init_seed(config['seed'])
