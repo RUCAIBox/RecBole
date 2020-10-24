@@ -296,6 +296,17 @@ class SequenceAttLayer(nn.Module):
 
 
 class VanillaAttention(nn.Module):
+    """
+    Vanilla attention layer is implemented by linear layer.
+
+    Args:
+        input_tensor (torch.Tensor): the input of the attention layer
+
+    Returns:
+        hidden_states (torch.Tensor): the outputs of the attention layer
+        weights (torch.Tensor): the attention weights
+
+    """
     def __init__(self, hidden_dim, attn_dim):
         super().__init__()
         self.projection = nn.Sequential(
@@ -304,16 +315,27 @@ class VanillaAttention(nn.Module):
             nn.Linear(attn_dim, 1)
         )
 
-    def forward(self, output):
+    def forward(self, input_tensor):
         # (B, Len, num, H) -> (B, Len, num, 1)
-        energy = self.projection(output)
+        energy = self.projection(input_tensor)
         weights = torch.softmax(energy.squeeze(-1), dim=-1)
         # (B, Len, num, H) * (B, Len, num, 1) -> (B, len, H)
-        outputs = (output * weights.unsqueeze(-1)).sum(dim=-2)
-        return outputs, weights
+        hidden_states = (input_tensor * weights.unsqueeze(-1)).sum(dim=-2)
+        return hidden_states, weights
 
 
 class MultiHeadAttention(nn.Module):
+    """
+    Multi-head Self-attention layers, a attention score dropout layer is introduced.
+
+    Args:
+        input_tensor (torch.Tensor): the input of the multi-head self-attention layer
+        attention_mask (torch.Tensor): the attention mask for input tensor
+
+    Returns:
+        hidden_states (torch.Tensor): the output of the multi-head self-attention layer
+
+    """
     def __init__(self, n_heads, hidden_size, hidden_dropout_prob, attn_dropout_prob, layer_norm_eps):
         super(MultiHeadAttention, self).__init__()
         if hidden_size % n_heads != 0:
@@ -376,6 +398,16 @@ class MultiHeadAttention(nn.Module):
 
 
 class FeedForward(nn.Module):
+    """
+    Point-wise feed-forward layer is implemented by two dense layers.
+
+    Args:
+        input_tensor (torch.Tensor): the input of the point-wise feed-forward layer
+
+    Returns:
+        hidden_states (torch.Tensor): the output of the point-wise feed-forward layer
+
+    """
     def __init__(self, hidden_size, inner_size, hidden_dropout_prob, hidden_act, layer_norm_eps):
         super(FeedForward, self).__init__()
         self.dense_1 = nn.Linear(hidden_size, inner_size)
@@ -421,6 +453,17 @@ class FeedForward(nn.Module):
 
 
 class TransformerLayer(nn.Module):
+    """
+    One transformer layer consists of a multi-head self-attention layer and a point-wise feed-forward layer.
+
+    Args:
+        hidden_states (torch.Tensor): the input of the multi-head self-attention sublayer
+        attention_mask (torch.Tensor): the attention mask for the multi-head self-attention sublayer
+
+    Returns:
+        feedforward_output (torch.Tensor): the output of the point-wise feed-forward sublayer, is the output of the transformer layer
+
+    """
     def __init__(self, n_heads, hidden_size, intermediate_size,
                  hidden_dropout_prob, attn_dropout_prob, hidden_act, layer_norm_eps):
         super(TransformerLayer, self).__init__()
@@ -431,14 +474,13 @@ class TransformerLayer(nn.Module):
 
     def forward(self, hidden_states, attention_mask):
         attention_output = self.multi_head_attention(hidden_states, attention_mask)
-        intermediate_output = self.feed_forward(attention_output)
-        return intermediate_output
+        feedforward_output = self.feed_forward(attention_output)
+        return feedforward_output
 
 
 class TransformerEncoder(nn.Module):
-    r"""TransformerEncoder
+    r""" One TransformerEncoder consists of several TransformerLayers.
 
-    Args:
         - n_layers(num): num of transformer layers in transformer encoder. Default: 2
         - n_heads(num): num of attention heads for multi-head attention layer. Default: 2
         - hidden_size(num): the input and output hidden size. Default: 64
@@ -448,6 +490,7 @@ class TransformerEncoder(nn.Module):
         - hidden_act(str): activation function in feed-forward layer. Default: 'gelu'
                       candidates: 'gelu', 'relu', 'swish', 'tanh', 'sigmoid'
         - layer_norm_eps(float): a value added to the denominator for numerical stability. Default: 1e-12
+
     """
     def __init__(self,
                  n_layers=2,
@@ -466,6 +509,17 @@ class TransformerEncoder(nn.Module):
                                     for _ in range(n_layers)])
 
     def forward(self, hidden_states, attention_mask, output_all_encoded_layers=True):
+        """
+        Args:
+            hidden_states (torch.Tensor): the input of the TrandformerEncoder
+            attention_mask (torch.Tensor): the attention mask for the input hidden_states
+            output_all_encoded_layers (Bool): whether output all transformer layers' output
+
+        Returns:
+            all_encoder_layers (list): if output_all_encoded_layers is True, return a list consists of all transformer layers' output,
+            otherwise return a list only consists of the output of last transformer layer.
+
+        """
         all_encoder_layers = []
         for layer_module in self.layer:
             hidden_states = layer_module(hidden_states, attention_mask)
@@ -477,6 +531,8 @@ class TransformerEncoder(nn.Module):
 
 
 class ContextSeqEmbAbstractLayer(nn.Module):
+    """For Deep Interest Network and feature-rich sequential recommender systems, return features embedding matrices."""
+
     def __init__(self):
         super(ContextSeqEmbAbstractLayer, self).__init__()
 
@@ -696,7 +752,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
 
 
 class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
-    """For DIN"""
+    """For Deep Interest Network, return all features (including user features and item features) embedding matrices."""
 
     def __init__(self, dataset, embedding_size, pooling_mode, device):
         super(ContextSeqEmbLayer, self).__init__()
@@ -720,7 +776,7 @@ class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
 
 
 class FeatureSeqEmbLayer(ContextSeqEmbAbstractLayer):
-    """For feature-rich sequential recommenders"""
+    """For feature-rich sequential recommenders, return item features embedding matrices according to selected features."""
 
     def __init__(self, dataset, embedding_size, selected_features, pooling_mode, device):
         super(FeatureSeqEmbLayer, self).__init__()
