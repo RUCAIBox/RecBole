@@ -386,7 +386,6 @@ class KnowledgeBasedDataset(Dataset):
         Returns:
             int: Number of different tokens of entities, including virtual entities.
         """
-        return self.num(self.relation_field)
         return self.num(self.entity_field)
 
     @property
