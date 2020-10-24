@@ -1,5 +1,5 @@
 embedding_size: 64
-kg_embedding_size: 16
+kg_embedding_size: 64
 low_layers_num: 1
 high_layers_num: 1
 reg_weight: 1e-6
