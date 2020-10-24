@@ -200,11 +200,11 @@ test_examples = {
     'Test Caser': {
         'model': 'Caser',
         'dataset': 'ml-100k',
+        'reproducibility': False,
     },
     'Test TransRec': {
         'model': 'TransRec',
         'dataset': 'ml-100k',
-        'reproducibility': False,
     },
     'Test SASRec': {
         'model': 'SASRec',
