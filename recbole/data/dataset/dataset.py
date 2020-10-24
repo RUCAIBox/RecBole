@@ -377,12 +377,15 @@ class Dataset(object):
         load_col, unload_col = self._get_load_and_unload_col(filepath, source)
         if load_col == set():
             return None
-        df = pd.read_csv(filepath, delimiter=self.config['field_separator'])
-        field_names = []
+
+        field_separator = self.config['field_separator']
         columns = []
-        for field_type in df.columns:
+        usecols = []
+        dtype = {}
+        with open(filepath, 'r') as f:
+            head = f.readline()[:-1]
+        for field_type in head.split(field_separator):
             field, ftype = field_type.split(':')
-            field_names.append(field)
             try:
                 ftype = FeatureType(ftype)
             except ValueError:
@@ -396,26 +399,31 @@ class Dataset(object):
             if not ftype.value.endswith('seq'):
                 self.field2seqlen[field] = 1
             columns.append(field)
+            usecols.append(field_type)
+            # dtype[field_type] = np.float64 if ftype == FeatureType.FLOAT else str
 
         if len(columns) == 0:
             self.logger.warning('no columns has been loaded from [{}]'.format(source))
             return None
-        df.columns = field_names
-        df = df[columns]
+
+        df = pd.read_csv(filepath, delimiter=self.config['field_separator'], usecols=usecols)  # , dtype=dtype)
+        df.columns = columns
 
         seq_separator = self.config['seq_separator']
         for field in columns:
             ftype = self.field2type[field]
+            if not ftype.value.endswith('seq'):
+                continue
+            df[field].fillna(value='0', inplace=True)
             if ftype == FeatureType.TOKEN_SEQ:
                 df[field] = [list(filter(None, _.split(seq_separator))) for _ in df[field].values]
             elif ftype == FeatureType.FLOAT_SEQ:
                 df[field] = [list(map(float, filter(None, _.split(seq_separator)))) for _ in df[field].values]
-            if field not in self.field2seqlen:
-                self.field2seqlen[field] = max(map(len, df[field].values))
+            self.field2seqlen[field] = max(map(len, df[field].values))
         return df
 
     def _user_item_feat_preparation(self):
-        """Sort :obj:`user_feat` and :obj:`item_feat` by ``user_id`` or ``item_id``.
+        """Sort :attr:`user_feat` and :attr:`item_feat` by ``user_id`` or ``item_id``.
         Missing values will be filled.
         """
         flag = False
@@ -683,7 +691,7 @@ class Dataset(object):
                 self._del_col(field)
 
     def _reset_index(self):
-        """Reset index for all feats in :obj:`feat_list`.
+        """Reset index for all feats in :attr:`feat_list`.
         """
         for feat in self.feat_list:
             if feat.empty:
@@ -796,8 +804,8 @@ class Dataset(object):
         """Transfer set of fields in the same remapping space into remap list.
 
         If ``uid_field`` or ``iid_field`` in ``field_set``,
-        field in :obj:`inter_feat` will be remapped firstly,
-        then field in :obj:`user_feat` or :obj:`item_feat` will be remapped next, finally others.
+        field in :attr:`inter_feat` will be remapped firstly,
+        then field in :attr:`user_feat` or :attr:`item_feat` will be remapped next, finally others.
 
         Args:
             field_set (set): Set of fields in the same remapping space
@@ -1534,7 +1542,7 @@ class Dataset(object):
             field (str): preloaded feature field name.
 
         Returns:
-            numpy.ndarray: preloaded weight matrix. See :doc:`../user_guide/data/args` for details.
+            numpy.ndarray: preloaded weight matrix. See :doc:`../user_guide/data/data_args` for details.
         """
         if field not in self._preloaded_weight:
             raise ValueError('field [{}] not in preload_weight'.format(field))
