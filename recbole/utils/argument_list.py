@@ -5,6 +5,7 @@
 
 general_arguments = ['gpu_id', 'use_gpu',
                      'seed',
+                     'reproducibility',
                      'state',
                      'data_path']
 

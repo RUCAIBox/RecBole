@@ -26,7 +26,7 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     """
     # configurations initialization
     config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
-    init_seed(config['seed'])
+    init_seed(config['seed'], config['reproducibility'])
 
     # logger initialization
     init_logger(config)
@@ -65,24 +65,24 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     }
 
 
-def objective_function(config_dict=None, config_file_list=None):
+def objective_function(config_dict=None, config_file_list=None, saved=True):
     r""" The default objective_function used in HyperTuning
 
     Args:
         config_dict (dict): parameters dictionary used to modify experiment parameters
         config_file_list (list): config files used to modify experiment parameters
-
+        saved (bool): whether to save the model
     """
 
     config = Config(config_dict=config_dict, config_file_list=config_file_list)
-    init_seed(config['seed'])
+    init_seed(config['seed'], config['reproducibility'])
     logging.basicConfig(level=logging.ERROR)
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)
     model = get_model(config['model'])(config, train_data).to(config['device'])
     trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
-    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False)
-    test_result = trainer.evaluate(test_data)
+    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False, saved=saved)
+    test_result = trainer.evaluate(test_data, load_best_model=saved)
 
     return {
         'best_valid_score': best_valid_score,

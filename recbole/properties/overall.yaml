@@ -3,6 +3,7 @@ gpu_id: 0
 use_gpu: True
 seed: 2020
 state: INFO
+reproducibility: True
 data_path: 'dataset/'
 checkpoint_dir: 'saved'
 
