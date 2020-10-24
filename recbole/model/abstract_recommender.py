@@ -89,7 +89,9 @@ class GeneralRecommender(AbstractRecommender):
 
 class SequentialRecommender(AbstractRecommender):
     type = ModelType.SEQUENTIAL
-
+    """
+    This is a abstract sequential recommender. All the sequential model should implement This class.
+    """
     def __init__(self, config, dataset):
         super(SequentialRecommender, self).__init__()
 
@@ -136,7 +138,7 @@ class KnowledgeRecommender(AbstractRecommender):
 
 
 class ContextRecommender(AbstractRecommender):
-    """This a a abstract context-aware recommender. All the context-aware model should implement This class.
+    """This is a abstract context-aware recommender. All the context-aware model should implement this class.
     The base context-aware recommender class provide the basic embedding function of feature fields which also
     contains a first-order part of feature fields.
     """
