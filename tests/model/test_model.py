@@ -324,14 +324,14 @@ class TestSequentialRecommender(unittest.TestCase):
     #     }
     #     objective_function(config_dict=config_dict,
     #                        config_file_list=['test_model.yaml'], saved=False)
-    #
+
     # def test_din(self):
     #     config_dict = {
     #         'model': 'DIN',
     #     }
     #     objective_function(config_dict=config_dict,
     #                        config_file_list=['test_model.yaml'], saved=False)
-    #
+
     # def test_s3rec(self):
     #     config_dict = {
     #         'model': 'S3Rec',
@@ -407,6 +407,63 @@ class TestKnowledgeRecommender(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=['test_model.yaml'], saved=False)
+
+
+class Test(unittest.TestCase):
+
+    def test_dmf(self):
+        pass
+
+    def test_gcmc(self):
+        pass
+
+    def test_bert4rec(self):
+        pass
+
+    def test_cfkg(self):
+        pass
+
+    def test_din(self):
+        pass
+
+    def test_fdsa(self):
+        pass
+
+    def test_gcsan(self):
+        pass
+
+    def test_gru4recf(self):
+        pass
+
+    def test_kgat(self):
+        pass
+
+    def test_kgcn(self):
+        pass
+
+    def test_kgnnls(self):
+        pass
+
+    def test_ktup(self):
+        pass
+
+    def test_mkr(self):
+        pass
+
+    def test_nais(self):
+        pass
+
+    def test_nextitnet(self):
+        pass
+
+    def test_s3rec(self):
+        pass
+
+    def test_sasrec(self):
+        pass
+
+    def test_sasrecf(self):
+        pass
 
 
 if __name__ == '__main__':
