@@ -45,7 +45,7 @@ class NeuMF(GeneralRecommender):
         self.mf_embedding_size = config['mf_embedding_size']
         self.mlp_embedding_size = config['mlp_embedding_size']
         self.mlp_hidden_size = config['mlp_hidden_size']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
         self.mf_train = config['mf_train']
         self.mlp_train = config['mlp_train']
         self.use_pretrain = config['use_pretrain']
@@ -58,7 +58,7 @@ class NeuMF(GeneralRecommender):
         self.mlp_layers = MLPLayers([2 * self.mlp_embedding_size] + self.mlp_hidden_size)
         self.mlp_layers.logger = None  # remove logger to use torch.save()
         if self.mf_train and self.mlp_train:
-            self.predict_layer = nn.Linear(self.mf_embedding_size + self.mlp_hidden_size[-1], 1, self.dropout)
+            self.predict_layer = nn.Linear(self.mf_embedding_size + self.mlp_hidden_size[-1], 1, self.dropout_prob)
         elif self.mf_train:
             self.predict_layer = nn.Linear(self.mf_embedding_size, 1)
         elif self.mlp_train:

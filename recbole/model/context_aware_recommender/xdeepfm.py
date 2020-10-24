@@ -26,7 +26,7 @@ from torch.nn.init import xavier_normal_, constant_
 from logging import getLogger
 
 from recbole.model.layers import MLPLayers, activation_layer
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class xDeepFM(ContextRecommender):
@@ -38,10 +38,10 @@ class xDeepFM(ContextRecommender):
     def __init__(self, config, dataset):
         super(xDeepFM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.reg_weight = config['reg_weight']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
         self.direct = config['direct']
         self.cin_layer_size = temp_cin_size = list(config['cin_layer_size'])
 
@@ -67,7 +67,7 @@ class xDeepFM(ContextRecommender):
         # Create MLP layer
         size_list = [self.embedding_size * self.num_feature_field
                      ] + self.mlp_hidden_size + [1]
-        self.mlp_layers = MLPLayers(size_list, dropout=self.dropout)
+        self.mlp_layers = MLPLayers(size_list, dropout=self.dropout_prob)
 
         # Get the output size of CIN
         if self.direct:
