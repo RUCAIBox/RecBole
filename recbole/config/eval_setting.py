@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/1, 2020/8/31
+# @Time   : 2020/10/22, 2020/8/31
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -46,14 +46,15 @@ class EvalSetting(object):
     Check out *Revisiting Alternative Experimental Settings for Evaluating Top-N Item Recommendation Algorithms*
     Wayne Xin Zhao et.al. CIKM 2020 to figure out the details about presets of evaluation settings.
 
-    Attributes:
+    Args:
         config (Config): Global configuration object.
 
-        group_field (str or None): Don't group if None,else group by field before splitting.
+    Attributes:
+        group_field (str or None): Don't group if ``None``, else group by field before splitting.
             Usually records are grouped by user id.
 
         ordering_args (dict): Args about ordering.
-            Usually records are sorted by time, or shuffled.
+            Usually records are sorted by timestamp, or shuffled.
 
         split_args (dict): Args about splitting.
             usually records are splitted by ratio (eg. 8:1:1),
@@ -65,9 +66,9 @@ class EvalSetting(object):
 
             We provide two strategies:
 
-                neg_sample_by:  sample several negative records for each positive records.
+            - ``neg_sample_by``:  sample several negative records for each positive records.
+            - ``full_sort``:      don't negative sample, while all unused items are used for evaluation.
 
-                full_sort:      don't negative sample, while all unused items are used for evaluation.
     """
 
     def __init__(self, config):
@@ -127,7 +128,7 @@ class EvalSetting(object):
         """Group by user
 
         Note:
-            Requires `USER_ID_FIELD` in config
+            Requires ``USER_ID_FIELD`` in config
         """
         self.group_field = self.config['USER_ID_FIELD']
 
@@ -135,7 +136,7 @@ class EvalSetting(object):
         """Setting about ordering
 
         Args:
-            strategy (str): Either 'none', 'shuffle' or 'by'
+            strategy (str): Either ``none``, ``shuffle`` or ``by``
             field (str or list of str): Name or list of names
             ascending (bool or list of bool): Sort ascending vs. descending. Specify list for multiple sort orders.
                 If this is a list of bools, must match the length of the field
@@ -194,7 +195,7 @@ class EvalSetting(object):
         """Setting about split method
 
         Args:
-            strategy (str): Either 'none', 'by_ratio', 'by_value' or 'loo'.
+            strategy (str): Either ``none``, ``by_ratio``, ``by_value`` or ``loo``.
             ratios (list of float): Dataset will be splited into `len(ratios)` parts.
             field (str): Split by values of field.
             values (list of float or float): Dataset will be splited into `len(values) + 1` parts.
@@ -222,7 +223,7 @@ class EvalSetting(object):
 
         Args:
             leave_one_num (int): number of sub datasets for evaluation.
-                E.g. leave_one_num=2 if you have one validation dataset and one test dataset.
+                E.g. ``leave_one_num = 2`` if you have one validation dataset and one test dataset.
         """
         if self.group_field is None:
             raise ValueError('Leave one out request grouped dataset, please set group field.')
@@ -239,7 +240,7 @@ class EvalSetting(object):
             raise ValueError('ratios [{}] should be list'.format(ratios))
         self.set_splitting(strategy='by_ratio', ratios=ratios)
 
-    def split_by_value(self, field, values, ascending=True):
+    def _split_by_value(self, field, values, ascending=True):
         raise NotImplementedError('Split by value has not been implemented.')
         if not isinstance(field, str):
             raise ValueError('field [{}] should be str'.format(field))
@@ -252,7 +253,7 @@ class EvalSetting(object):
         """Setting about negative sampling
 
         Args:
-            strategy (str): Either 'none', 'full' or 'by'.
+            strategy (str): Either ``none``, ``full`` or ``by``.
             by (int): Negative Sampling `by` neg cases for one pos case.
             distribution (str): distribution of sampler, either 'uniform' or 'popularity'.
 
@@ -272,8 +273,8 @@ class EvalSetting(object):
         """Setting about negative sampling by, which means sample several negative records for each positive records.
 
         Args:
-            by (int): Negative Sampling `by` neg cases for one pos case.
-            distribution (str): distribution of sampler, either 'uniform' or 'popularity'.
+            by (int): The number of neg cases for one pos case.
+            distribution (str): distribution of sampler, either ``uniform`` or ``popularity``.
         """
         self.set_neg_sampling(strategy='by', by=by, distribution=distribution)
 
@@ -282,7 +283,7 @@ class EvalSetting(object):
 
         Args:
             ratios (list of float): ratio of each part.
-                No need to normalize. It's ok with either `[0.8, 0.1, 0.1]`, `[8, 1, 1]` or `[56, 7, 7]`
+                No need to normalize. It's ok with either ``[0.8, 0.1, 0.1]``, ``[8, 1, 1]`` or ``[56, 7, 7]``
             group_by_user (bool): set group field to user_id if True
         """
         if group_by_user:
@@ -295,7 +296,7 @@ class EvalSetting(object):
 
         Args:
             ratios (list of float): ratio of each part.
-                No need to normalize. It's ok with either `[0.8, 0.1, 0.1]`, `[8, 1, 1]` or `[56, 7, 7]`
+                No need to normalize. It's ok with either ``[0.8, 0.1, 0.1]``, ``[8, 1, 1]`` or ``[56, 7, 7]``
             group_by_user (bool): set group field to user_id if True
         """
         if group_by_user:
@@ -308,7 +309,7 @@ class EvalSetting(object):
 
         Args:
             leave_one_num (int): number of sub datasets for evaluation.
-                E.g. leave_one_num=2 if you have one validation dataset and one test dataset.
+                E.g. ``leave_one_num=2`` if you have one validation dataset and one test dataset.
             group_by_user (bool): set group field to user_id if True
         """
         if group_by_user:
@@ -321,7 +322,7 @@ class EvalSetting(object):
 
         Args:
             leave_one_num (int): number of sub datasets for evaluation.
-                E.g. leave_one_num=2 if you have one validation dataset and one test dataset.
+                E.g. ``leave_one_num=2`` if you have one validation dataset and one test dataset.
             group_by_user (bool): set group field to user_id if True
         """
         if group_by_user:

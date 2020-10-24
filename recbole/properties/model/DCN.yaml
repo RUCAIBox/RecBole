@@ -2,4 +2,4 @@ embedding_size: 10
 mlp_hidden_size: [256, 256, 256]
 cross_layer_num: 6
 reg_weight: 2
-dropout: 0.2
+dropout_prob: 0.2

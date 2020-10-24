@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/10/6, 2020/9/23
+# @Time   : 2020/10/22, 2020/9/23
 # @Author : Yupeng Hou, Yushuo Chen
 # @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -28,7 +28,7 @@ class AbstractDataLoader(object):
         dataset (Dataset): The dataset of dataloader.
         batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
         dl_format (InputType, optional): The input type of dataloader. Defaults to
-            :obj:`~recbole.utils.InputType.POINTWISE`.
+            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
     dl_type = None
@@ -121,7 +121,7 @@ class AbstractDataLoader(object):
             self.logger.warning('Batch size is changed to {}'.format(batch_size))
 
     def get_user_feature(self):
-        """It is similar to :meth:`dataset.get_user_feature()`, but it will return an
+        """It is similar to :meth:`~recbole.data.dataset.dataset.Dataset.get_user_feature`, but it will return an
         :class:`~recbole.data.interaction.Interaction` of user feature instead of a :class:`pandas.DataFrame`.
 
         Returns:
@@ -131,7 +131,7 @@ class AbstractDataLoader(object):
         return self._dataframe_to_interaction(user_df)
 
     def get_item_feature(self):
-        """It is similar to :meth:`dataset.get_item_feature()`, but it will return an
+        """It is similar to :meth:`~recbole.data.dataset.dataset.Dataset.get_item_feature`, but it will return an
         :class:`~recbole.data.interaction.Interaction` of item feature instead of a :class:`pandas.DataFrame`.
 
         Returns:

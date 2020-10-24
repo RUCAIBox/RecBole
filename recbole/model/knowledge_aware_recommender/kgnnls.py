@@ -45,7 +45,7 @@ class KGNNLS(KnowledgeRecommender):
         self.neighbor_sample_size = config['neighbor_sample_size']
         self.aggregator_class = config['aggregator']  # which aggregator to use
         self.n_iter = config['n_iter']  # number of iterations when computing entity representation
-        self.l2_weight = config['l2_weight']  # weight of l2 regularization
+        self.reg_weight = config['reg_weight']  # weight of l2 regularization
         self.ls_weight = config['ls_weight']  # weight of label Smoothness regularization
 
         # define embedding
@@ -393,7 +393,7 @@ class KGNNLS(KnowledgeRecommender):
         ls_loss = self.calculate_ls_loss(users, items, target)
         l2_loss = self.l2_loss(user_e, item_e)
 
-        loss = rec_loss + self.ls_weight * ls_loss + self.l2_weight * l2_loss
+        loss = rec_loss + self.ls_weight * ls_loss + self.reg_weight * l2_loss
         return loss
 
     def predict(self, interaction):

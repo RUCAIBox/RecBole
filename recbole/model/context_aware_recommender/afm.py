@@ -17,7 +17,7 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
 from recbole.model.layers import AttLayer
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class AFM(ContextRecommender):
@@ -28,18 +28,20 @@ class AFM(ContextRecommender):
     def __init__(self, config, dataset):
         super(AFM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
-
+        # load parameters info
         self.attention_size = config['attention_size']
-        self.dropout = config['dropout']
-        self.weight_decay = config['weight_decay']
-        self.num_pair = self.num_feature_field * (self.num_feature_field-1) / 2
+        self.dropout_prob = config['dropout_prob']
+        self.reg_weight = config['reg_weight']
+        self.num_pair = self.num_feature_field * (self.num_feature_field - 1) / 2
+
+        # define layers and loss
         self.attlayer = AttLayer(self.embedding_size, self.attention_size)
         self.p = nn.Parameter(torch.randn(self.embedding_size), requires_grad=True)
-        self.dropout_layer = nn.Dropout(p=self.dropout)
+        self.dropout_layer = nn.Dropout(p=self.dropout_prob)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
+        # parameters initialization
         self.apply(self._init_weights)
 
     def _init_weights(self, module):
@@ -113,7 +115,7 @@ class AFM(ContextRecommender):
         label = interaction[self.LABEL]
 
         output = self.forward(interaction)
-        l2_loss = self.weight_decay * torch.norm(self.attlayer.w.weight, p=2)
+        l2_loss = self.reg_weight * torch.norm(self.attlayer.w.weight, p=2)
         return self.loss(output, label) + l2_loss
 
     def predict(self, interaction):

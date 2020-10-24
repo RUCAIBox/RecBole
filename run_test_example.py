@@ -148,7 +148,7 @@ test_examples = {
         'dataset': 'ml-100k',
     },
     'Test AUTOINT': {
-        'model': 'AUTOINT',
+        'model': 'AutoInt',
         'dataset': 'ml-100k',
     },
     'Test DeepFM': {

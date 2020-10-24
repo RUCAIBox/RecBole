@@ -1,4 +1,4 @@
 embedding_size: 10
 attention_size: 25
-dropout: 0.3
-weight_decay: 2
+dropout_prob: 0.3
+reg_weight: 2

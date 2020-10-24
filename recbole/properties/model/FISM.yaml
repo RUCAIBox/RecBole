@@ -6,5 +6,5 @@
 embedding_size: 64
 # when evaluate the model by full sort, one user will be divide into the number of slices you set
 split_to: 0
-regs: [0, 0]
+reg_weights: [1e-2, 1e-2]
 alpha: 0

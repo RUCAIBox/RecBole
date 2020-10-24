@@ -26,6 +26,43 @@ from recbole.utils import FeatureSource, FeatureType
 
 
 class KnowledgeBasedDataset(Dataset):
+    """:class:`KnowledgeBasedDataset` is based on :class:`~recbole.data.dataset.dataset.Dataset`,
+    and load ``.kg`` and ``.link`` additionally.
+
+    Entities are remapped together with ``item_id`` specially.
+    All entities are remapped into three consecutive ID sections.
+
+    - virtual entities that only exist in interaction data.
+    - entities that exist both in interaction data and kg triplets.
+    - entities only exist in kg triplets.
+
+    It also provides several interfaces to transfer ``.kg`` features into coo sparse matrix,
+    csr sparse matrix, :class:`DGL.Graph` or :class:`PyG.Data`.
+
+    Attributes:
+        head_entity_field (str): The same as ``config['HEAD_ENTITY_ID_FIELD']``.
+
+        tail_entity_field (str): The same as ``config['TAIL_ENTITY_ID_FIELD']``.
+
+        relation_field (str): The same as ``config['RELATION_ID_FIELD']``.
+
+        entity_field (str): The same as ``config['ENTITY_ID_FIELD']``.
+
+        kg_feat (pandas.DataFrame): Internal data structure stores the kg triplets.
+            It's loaded from file ``.kg``.
+
+        item2entity (dict): Dict maps ``item_id`` to ``entity``,
+            which is loaded from  file ``.link``.
+
+        entity2item (dict): Dict maps ``entity`` to ``item_id``,
+            which is loaded from  file ``.link``.
+
+    Note:
+        :attr:`entity_field` doesn't exist exactly. It's only a symbol,
+        representing entitiy features. E.g. it can be written into ``config['fields_in_same_space']``.
+
+        ``[UI-Relation]`` is a special relation token.
+    """
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
@@ -55,6 +92,10 @@ class KnowledgeBasedDataset(Dataset):
         self._filter_link()
 
     def _filter_link(self):
+        """Filter rows of :attr:`item2entity` and :attr:`entity2item`,
+        whose ``entity_id`` doesn't occur in kg triplets and
+        ``item_id`` doesn't occur in interaction records.
+        """
         item_tokens = self._get_rec_item_token()
         ent_tokens = self._get_entity_token()
         illegal_item = set()
@@ -142,6 +183,14 @@ class KnowledgeBasedDataset(Dataset):
         assert self.iid_field in link, link_warn_message.format(self.iid_field)
 
     def _get_fields_in_same_space(self):
+        """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
+
+        Note:
+            - Each field can only exist ONCE in ``config['fields_in_same_space']``.
+            - user_id and item_id can not exist in ``config['fields_in_same_space']``.
+            - only token-like fields can exist in ``config['fields_in_same_space']``.
+            - ``head_entity_id`` and ``target_entity_id`` should be remapped with ``item_id``.
+        """
         fields_in_same_space = super()._get_fields_in_same_space()
         fields_in_same_space = [
             _ for _ in fields_in_same_space if not self._contain_ent_field(_)
@@ -153,6 +202,8 @@ class KnowledgeBasedDataset(Dataset):
         return fields_in_same_space
 
     def _contain_ent_field(self, field_set):
+        """Return True if ``field_set`` contains entity fields.
+        """
         flag = False
         flag |= self.head_entity_field in field_set
         flag |= self.tail_entity_field in field_set
@@ -160,6 +211,8 @@ class KnowledgeBasedDataset(Dataset):
         return flag
 
     def _get_ent_fields_in_same_space(self):
+        """Return ``field_set`` that should be remapped together with entities.
+        """
         fields_in_same_space = super()._get_fields_in_same_space()
 
         ent_fields = {self.head_entity_field, self.tail_entity_field}
@@ -171,12 +224,17 @@ class KnowledgeBasedDataset(Dataset):
         return ent_fields
 
     def _remove_ent_field(self, field_set):
+        """Delete entity fields from ``field_set``.
+        """
         for field in [self.head_entity_field, self.tail_entity_field, self.entity_field]:
             if field in field_set:
                 field_set.remove(field)
         return field_set
 
     def _set_field2ent_level(self):
+        """For fields that remapped together with ``item_id``,
+        set their levels as ``rec``, otherwise as ``ent``.
+        """
         fields_in_same_space = self._get_fields_in_same_space()
         for field_set in fields_in_same_space:
             if self.iid_field in field_set:
@@ -187,6 +245,8 @@ class KnowledgeBasedDataset(Dataset):
             self.field2ent_level[field] = 'ent'
 
     def _fields_by_ent_level(self, ent_level):
+        """Given ``ent_level``, return all the field name of this level.
+        """
         ret = []
         for field in self.field2ent_level:
             if self.field2ent_level[field] == ent_level:
@@ -196,14 +256,27 @@ class KnowledgeBasedDataset(Dataset):
     @property
     @dlapi.set()
     def rec_level_ent_fields(self):
+        """Get entity fields remapped together with ``item_id``.
+
+        Returns:
+            list: List of field names.
+        """
         return self._fields_by_ent_level('rec')
 
     @property
     @dlapi.set()
     def ent_level_ent_fields(self):
+        """Get entity fields remapped together with ``entity_id``.
+
+        Returns:
+            list: List of field names.
+        """
         return self._fields_by_ent_level('ent')
 
     def _remap_entities_by_link(self):
+        """Map entity tokens from fields in ``ent`` level
+        to item tokens according to ``.link``.
+        """
         for ent_field in self.ent_level_ent_fields:
             source = self.field2source[ent_field]
             if not isinstance(source, str):
@@ -216,12 +289,16 @@ class KnowledgeBasedDataset(Dataset):
             feat[ent_field] = entity_list
 
     def _get_rec_item_token(self):
+        """Get set of entity tokens from fields in ``rec`` level.
+        """
         field_set = set(self.rec_level_ent_fields)
         remap_list = self._get_remap_list(field_set)
         tokens, _ = self._concat_remaped_tokens(remap_list)
         return set(tokens)
 
     def _get_entity_token(self):
+        """Get set of entity tokens from fields in ``ent`` level.
+        """
         field_set = set(self.ent_level_ent_fields)
         remap_list = self._get_remap_list(field_set)
         tokens, _ = self._concat_remaped_tokens(remap_list)
@@ -282,6 +359,9 @@ class KnowledgeBasedDataset(Dataset):
         self.field2id_token[self.entity_field] = item_ent_token_list[:layered_num[-1]]
 
     def _remap_ID_all(self):
+        """Firstly, remap entities and items all together. Then sort entity tokens,
+        then three kinds of entities can be apart away from each other.
+        """
         self._remap_entities_by_link()
         item_tokens = self._get_rec_item_token()
         super()._remap_ID_all()
@@ -291,35 +371,85 @@ class KnowledgeBasedDataset(Dataset):
     @property
     @dlapi.set()
     def relation_num(self):
+        """Get the number of different tokens of ``self.relation_field``.
+
+        Returns:
+            int: Number of different tokens of ``self.relation_field``.
+        """
         return self.num(self.relation_field)
 
     @property
     @dlapi.set()
     def entity_num(self):
+        """Get the number of different tokens of entities, including virtual entities.
+
+        Returns:
+            int: Number of different tokens of entities, including virtual entities.
+        """
+        return self.num(self.relation_field)
         return self.num(self.entity_field)
 
     @property
     @dlapi.set()
     def head_entities(self):
+        """
+        Returns:
+            numpy.ndarray: List of head entities of kg triplets.
+        """
         return self.kg_feat[self.head_entity_field].values
 
     @property
     @dlapi.set()
     def tail_entities(self):
+        """
+        Returns:
+            numpy.ndarray: List of tail entities of kg triplets.
+        """
         return self.kg_feat[self.tail_entity_field].values
 
     @property
     @dlapi.set()
     def relations(self):
+        """
+        Returns:
+            numpy.ndarray: List of relations of kg triplets.
+        """
         return self.kg_feat[self.relation_field].values
 
     @property
     @dlapi.set()
     def entities(self):
+        """
+        Returns:
+            numpy.ndarray: List of entity id, including virtual entities.
+        """
         return np.arange(self.entity_num)
 
     @dlapi.set()
     def kg_graph(self, form='coo', value_field=None):
+        """Get graph or sparse matrix that describe relations between entities.
+
+        For an edge of <src, tgt>, ``graph[src, tgt] = 1`` if ``value_field`` is ``None``,
+        else ``graph[src, tgt] = self.kg_feat[value_field][src, tgt]``.
+
+        Currently, we support graph in `DGL`_ and `PyG`_,
+        and two type of sparse matrixes, ``coo`` and ``csr``.
+
+        Args:
+            form (str, optional): Format of sparse matrix, or library of graph data structure.
+                Defaults to ``coo``.
+            value_field (str, optional): edge attributes of graph, or data of sparse matrix,
+                Defaults to ``None``.
+
+        Returns:
+            Graph / Sparse matrix of kg triplets.
+
+        .. _DGL:
+            https://www.dgl.ai/
+
+        .. _PyG:
+            https://github.com/rusty1s/pytorch_geometric
+        """
         args = [self.kg_feat, self.head_entity_field, self.tail_entity_field, form, value_field]
         if form in ['coo', 'csr']:
             return self._create_sparse_matrix(*args)
@@ -398,6 +528,33 @@ class KnowledgeBasedDataset(Dataset):
 
     @dlapi.set()
     def ckg_graph(self, form='coo', value_field=None):
+        """Get graph or sparse matrix that describe relations of CKG,
+        which combines interactions and kg triplets into the same graph.
+
+        Item ids and entity ids are added by ``user_num`` temporally.
+
+        For an edge of <src, tgt>, ``graph[src, tgt] = 1`` if ``value_field`` is ``None``,
+        else ``graph[src, tgt] = self.kg_feat[self.relation_field][src, tgt]``
+        or ``graph[src, tgt] = [UI-Relation]``.
+
+        Currently, we support graph in `DGL`_ and `PyG`_,
+        and two type of sparse matrixes, ``coo`` and ``csr``.
+
+        Args:
+            form (str, optional): Format of sparse matrix, or library of graph data structure.
+                Defaults to ``coo``.
+            value_field (str, optional): ``self.relation_field`` or ``None``,
+                Defaults to ``None``.
+
+        Returns:
+            Graph / Sparse matrix of kg triplets.
+
+        .. _DGL:
+            https://www.dgl.ai/
+
+        .. _PyG:
+            https://github.com/rusty1s/pytorch_geometric
+        """
         if value_field is not None and value_field != self.relation_field:
             raise ValueError('value_field [{}] can only be [{}] in ckg_graph.'.format(
                 value_field, self.relation_field
