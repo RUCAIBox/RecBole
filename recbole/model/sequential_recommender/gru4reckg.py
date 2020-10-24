@@ -90,7 +90,6 @@ class GRU4RecKG(SequentialRecommender):
         loss = self.ce_loss(logits, pos_items)
         return loss
 
-    # TODO implemented after the data interface is ready
     def predict(self, interaction):
         pass
 
