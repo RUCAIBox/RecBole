@@ -12,7 +12,7 @@ from time import time
 from recbole.quick_start import run_recbole
 
 
-closed_examples = ['Test SRGNN', 'Test GCSAN', 'Test NextItNet', 'Test GRU4RecKG']
+closed_examples = ['Test SRGNN', 'Test GCSAN', 'Test GRU4RecKG']
 
 test_examples = {
     'Test Eval Metric': {
@@ -224,6 +224,7 @@ test_examples = {
     'Test NextItNet': {
         'model': 'NextItNet',
         'dataset': 'ml-100k',
+        'reproducibility': False,
     },
     'Test SRGNN': {
         'model': 'SRGNN',
