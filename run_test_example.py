@@ -12,7 +12,7 @@ from time import time
 from recbole.quick_start import run_recbole
 
 
-closed_examples = ['Test SRGNN', 'Test GCSAN', 'Test GRU4RecKG']
+closed_examples = ['Test GRU4RecKG']
 
 test_examples = {
     'Test Eval Metric': {
@@ -204,6 +204,7 @@ test_examples = {
     'Test TransRec': {
         'model': 'TransRec',
         'dataset': 'ml-100k',
+        'reproducibility': False,
     },
     'Test SASRec': {
         'model': 'SASRec',
@@ -229,10 +230,12 @@ test_examples = {
     'Test SRGNN': {
         'model': 'SRGNN',
         'dataset': 'ml-100k',
+        'MAX_ITEM_LIST_LENGTH': 3,
     },
     'Test GCSAN': {
         'model': 'GCSAN',
         'dataset': 'ml-100k',
+        'MAX_ITEM_LIST_LENGTH': 3,
     },
     'Test GRU4RecF': {
         'model': 'GRU4RecF',
