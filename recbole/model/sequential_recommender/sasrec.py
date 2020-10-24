@@ -139,7 +139,12 @@ class SASRec(SequentialRecommender):
             return loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        item = interaction[self.ITEM_ID]
+        seq_output = self.forward(item_seq, item_seq_len)
+        item_emb = self.item_embedding(item)
+        return torch.mul(seq_output, item_emb).sum(dim=1)
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]

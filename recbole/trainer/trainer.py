@@ -626,6 +626,7 @@ class S3RecTrainer(Trainer):
         else:
             raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
 
+
 class MKRTrainer(Trainer):
     r"""MKRTrainer is designed for MKR, which is a knowledge-aware recommendation method.
 
