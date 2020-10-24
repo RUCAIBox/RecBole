@@ -20,8 +20,8 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from ..layers import MLPLayers
-from .context_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class PNN(ContextRecommender):
@@ -33,15 +33,16 @@ class PNN(ContextRecommender):
     def __init__(self, config, dataset):
         super(PNN, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.mlp_hidden_size = config['mlp_hidden_size']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
         self.use_inner = config['use_inner']
         self.use_outer = config['use_outer']
-        self.reg = config['weight_decay']
+        self.reg_weight = config['reg_weight']
 
         self.num_pair = int(self.num_feature_field * (self.num_feature_field - 1) / 2)
 
+        # define layers and loss
         product_out_dim = self.num_feature_field * self.embedding_size
         if self.use_inner:
             product_out_dim += self.num_pair
@@ -52,12 +53,13 @@ class PNN(ContextRecommender):
             self.outer_product = OuterProductLayer(
                 self.num_feature_field, self.embedding_size, device=self.device)
         size_list = [product_out_dim] + self.mlp_hidden_size
-        self.mlp_layers = MLPLayers(size_list, self.dropout, bn=False)
+        self.mlp_layers = MLPLayers(size_list, self.dropout_prob, bn=False)
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
+        # parameters initialization
         self.apply(self._init_weights)
 
     def reg_loss(self):
@@ -70,7 +72,7 @@ class PNN(ContextRecommender):
         reg_loss = 0
         for name, parm in self.mlp_layers.named_parameters():
             if name.endswith('weight'):
-                reg_loss = reg_loss + self.reg * parm.norm(2)
+                reg_loss = reg_loss + self.reg_weight * parm.norm(2)
         return reg_loss
 
     def _init_weights(self, module):

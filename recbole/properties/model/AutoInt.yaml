@@ -1,0 +1,6 @@
+embedding_size: 10
+attention_size: 16
+n_layers: 3
+num_heads: 2
+dropout_probs: [0.2,0.2,0.2]
+mlp_hidden_size: [128,128]

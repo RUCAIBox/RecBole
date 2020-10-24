@@ -22,7 +22,10 @@ from recbole.model.init import xavier_normal_initialization
 
 
 class GRU4RecKG(SequentialRecommender):
+    r"""It is an extension of GRU4Rec, which concatenates item and its corresponding
+    pre-trained knowledge graph embedding feature as the input.
 
+    """
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):

@@ -1,6 +1,6 @@
 accum: 'stack'
 hidden_dim: [500, 64]
-drop_prob: 0.3
+dropout_prob: 0.3
 sparse_feature: True
 class_num: 2
 num_basis_functions: 2
