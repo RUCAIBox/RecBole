@@ -32,12 +32,12 @@ from recbole.data.utils import dlapi
 
 class Dataset(object):
     """:class:`Dataset` stores the original dataset in memory.
-    It provides many useful functions for data preprocessing, such as k-core data filtering and missing value imputation.
-    Features are stored as :class:`pandas.DataFrame` inside :class:`~recbole.data.dataset.dataset.Dataset`.
+    It provides many useful functions for data preprocessing, such as k-core data filtering and missing value
+    imputation. Features are stored as :class:`pandas.DataFrame` inside :class:`~recbole.data.dataset.dataset.Dataset`.
     General and Context-aware Models can use this class.
 
-    By calling method :meth:`~recbole.data.dataset.dataset.Dataset.build()`, it will processing dataset into DataLoaders,
-    according to :class:`~recbole.config.eval_setting.EvalSetting`.
+    By calling method :meth:`~recbole.data.dataset.dataset.Dataset.build()`, it will processing dataset into
+    DataLoaders, according to :class:`~recbole.config.eval_setting.EvalSetting`.
 
     Args:
         config (Config): Global configuration object.
@@ -50,13 +50,15 @@ class Dataset(object):
 
         field2type (dict): Dict mapping feature name (str) to its type (:class:`~recbole.utils.enum_type.FeatureType`).
 
-        field2source (dict): Dict mapping feature name (str) to its source (:class:`~recbole.utils.enum_type.FeatureSource`).
+        field2source (dict): Dict mapping feature name (str) to its source
+            (:class:`~recbole.utils.enum_type.FeatureSource`).
             Specially, if feature is loaded from Arg ``additional_feat_suffix``, its source has type str,
             which is the suffix of its local file (also the suffix written in Arg ``additional_feat_suffix``).
 
-        field2id_token (dict): Dict mapping feature name (str) to a list, which stores the original token of this feature.
-            For example, if ``test`` is token-like feature, ``token_a`` is remapped to 1, ``token_b`` is remapped to 2.
-            Then ``field2id_token['test'] = ['[PAD]', 'token_a', 'token_b']``. (Note that 0 is always PADDING for token-like features.)
+        field2id_token (dict): Dict mapping feature name (str) to a list, which stores the original token of
+            this feature. For example, if ``test`` is token-like feature, ``token_a`` is remapped to 1, ``token_b``
+            is remapped to 2. Then ``field2id_token['test'] = ['[PAD]', 'token_a', 'token_b']``. (Note that 0 is
+            always PADDING for token-like features.)
 
         field2seqlen (dict): Dict mapping feature name (str) to its sequence length (int).
             For sequence features, their length can be either set in config,
@@ -1063,7 +1065,7 @@ class Dataset(object):
         """Given a name of attribute, check if it's exist.
 
         Args:
-            field_names (list): Fields to be checked.
+            *field_names (str): Fields to be checked.
         """
         for field_name in field_names:
             if getattr(self, field_name, None) is None:
@@ -1482,7 +1484,7 @@ class Dataset(object):
         ``history_matrix[i]`` represents user ``i``'s history interacted item_id.
 
         ``history_value[i]`` represents user ``i``'s history interaction records' values,
-            ``0`` if ``value_field = None``.
+        ``0`` if ``value_field = None``.
 
         ``history_len[i]`` represents number of user ``i``'s history interaction records.
 
@@ -1505,7 +1507,7 @@ class Dataset(object):
         ``history_matrix[i]`` represents item ``i``'s history interacted item_id.
 
         ``history_value[i]`` represents item ``i``'s history interaction records' values,
-            ``0`` if ``value_field = None``.
+        ``0`` if ``value_field = None``.
 
         ``history_len[i]`` represents number of item ``i``'s history interaction records.
 
@@ -1532,7 +1534,7 @@ class Dataset(object):
             field (str): preloaded feature field name.
 
         Returns:
-            numpy.ndarray: preloaded weight matrix. See :doc:`../user_guide/data/data_args` for details.
+            numpy.ndarray: preloaded weight matrix. See :doc:`../user_guide/data/args` for details.
         """
         if field not in self._preloaded_weight:
             raise ValueError('field [{}] not in preload_weight'.format(field))
