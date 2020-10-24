@@ -29,7 +29,7 @@ class SequentialDataset(Dataset):
 
         item_list_index (numpy.ndarray): List of indexes of item sequence after augmentation.
 
-        target_index (numpy.ndarray): List of target item id after augmentation.
+        target_index (numpy.ndarray): List of indexes of target item id after augmentation.
 
         item_list_length (numpy.ndarray): List of item sequences' length after augmentation.
 
