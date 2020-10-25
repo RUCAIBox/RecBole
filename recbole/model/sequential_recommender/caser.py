@@ -57,10 +57,10 @@ class Caser(SequentialRecommender):
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
 
         # vertical conv layer
-        self.conv_v = nn.Conv2d(in_channels=1, out_channels=self.n_v, kernel_size=(self.self.max_seq_length, 1))
+        self.conv_v = nn.Conv2d(in_channels=1, out_channels=self.n_v, kernel_size=(self.max_seq_length, 1))
 
         # horizontal conv layer
-        lengths = [i + 1 for i in range(self.self.max_seq_length)]
+        lengths = [i + 1 for i in range(self.max_seq_length)]
         self.conv_h = nn.ModuleList([nn.Conv2d(in_channels=1, out_channels=self.n_h, kernel_size=(i, self.embedding_size)) for i in lengths])
 
         # fully-connected layer
