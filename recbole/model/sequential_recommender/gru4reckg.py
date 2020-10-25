@@ -16,7 +16,6 @@ GRU4RecKG
 import torch
 from torch import nn
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.init import xavier_normal_initialization
 from recbole.model.loss import BPRLoss

@@ -19,6 +19,7 @@ Reference:
 import torch
 from torch import nn
 from torch.nn.init import xavier_normal_
+
 from recbole.utils import InputType
 from recbole.model.loss import BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender

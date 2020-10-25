@@ -1052,9 +1052,9 @@ class Dataset(object):
         Returns:
             tuple:
             - ``numpy.ndarray`` of tuple ``(uid, slice)``,
-                interaction records between slice are all belong to the same uid.
+              interaction records between slice are all belong to the same uid.
             - ``numpy.ndarray`` of int,
-                representing number of interaction records of each user.
+              representing number of interaction records of each user.
         """
         self._check_field('uid_field')
         self.sort(by=self.uid_field, ascending=True)
@@ -1445,9 +1445,10 @@ class Dataset(object):
                 Defaults to ``None``.
 
         Returns:
-            - History matrix (torch.Tensor): ``history_matrix`` described above.
-            - History values matrix (torch.Tensor): ``history_value`` described above.
-            - History length matrix (torch.Tensor): ``history_len`` described above.
+            tuple:
+                - History matrix (torch.Tensor): ``history_matrix`` described above.
+                - History values matrix (torch.Tensor): ``history_value`` described above.
+                - History length matrix (torch.Tensor): ``history_len`` described above.
         """
         self._check_field('uid_field', 'iid_field')
 
@@ -1503,9 +1504,10 @@ class Dataset(object):
                 Defaults to ``None``.
 
         Returns:
-            - History matrix (torch.Tensor): ``history_matrix`` described above.
-            - History values matrix (torch.Tensor): ``history_value`` described above.
-            - History length matrix (torch.Tensor): ``history_len`` described above.
+            tuple:
+                - History matrix (torch.Tensor): ``history_matrix`` described above.
+                - History values matrix (torch.Tensor): ``history_value`` described above.
+                - History length matrix (torch.Tensor): ``history_len`` described above.
         """
         return self._history_matrix(row='user', value_field=value_field)
 
@@ -1526,9 +1528,10 @@ class Dataset(object):
                 Defaults to ``None``.
 
         Returns:
-            - History matrix (torch.Tensor): ``history_matrix`` described above.
-            - History values matrix (torch.Tensor): ``history_value`` described above.
-            - History length matrix (torch.Tensor): ``history_len`` described above.
+            tuple:
+                - History matrix (torch.Tensor): ``history_matrix`` described above.
+                - History values matrix (torch.Tensor): ``history_value`` described above.
+                - History length matrix (torch.Tensor): ``history_len`` described above.
         """
         return self._history_matrix(row='item', value_field=value_field)
 
