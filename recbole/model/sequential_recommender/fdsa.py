@@ -17,7 +17,6 @@ Reference:
 import torch
 from torch import nn
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder, FeatureSeqEmbLayer, VanillaAttention

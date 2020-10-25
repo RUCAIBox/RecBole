@@ -40,7 +40,6 @@ class RippleNet(KnowledgeRecommender):
 
         # load parameters info
         self.embedding_size = config['embedding_size']
-        self.kg_embedding_size = config['kg_embedding_size']
         self.kg_weight = config['kg_weight']
         self.reg_weight = config['reg_weight']
         self.n_hop = config['n_hop']
