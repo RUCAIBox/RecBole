@@ -776,7 +776,8 @@ class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
 
 
 class FeatureSeqEmbLayer(ContextSeqEmbAbstractLayer):
-    """For feature-rich sequential recommenders, return item features embedding matrices according to selected features."""
+    """For feature-rich sequential recommenders, return item features embedding matrices according to
+    selected features."""
 
     def __init__(self, dataset, embedding_size, selected_features, pooling_mode, device):
         super(FeatureSeqEmbLayer, self).__init__()
