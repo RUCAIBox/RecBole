@@ -29,7 +29,7 @@ class TopKEvaluator(AbstractEvaluator):
     
     Note:
         The metrics used calculate group-based metrics which considers the metrics scores averaged 
-        across users. some of them are also limited to k. 
+        across users. Some of them are also limited to k. 
 
     """
     def __init__(self, config):
@@ -114,8 +114,8 @@ class TopKEvaluator(AbstractEvaluator):
         """get metrics result
 
         Args:
-            pos_idx (np.ndarray): the bool index of all users' topk items that indicating whether the corresponding entry is 
-                a right recommendation or not
+            pos_idx (np.ndarray): the bool index of all users' topk items that indicating the postive items are
+                topk items or not
             pos_len (list): the length of all users' postivite items
 
         Returns:

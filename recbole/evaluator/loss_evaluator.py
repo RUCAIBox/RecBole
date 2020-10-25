@@ -28,7 +28,7 @@ class LossEvaluator(AbstractEvaluator):
 
     Note:
         The metrics used do not calculate group-based metrics which considers the metrics scores averaged across users.
-        It is also not limited to k. Instead, it calculates the scores on the entire prediction results regardless the users.
+        They are also not limited to k. Instead, they calculate the scores on the entire prediction results regardless the users.
 
     """
     def __init__(self, config):
