@@ -5,14 +5,14 @@
 
 
 r"""
-recbole.model.sequential_recommender.srgnn
+SRGNN
 ################################################
 
 Reference:
-Shu Wu et al. "Session-based Recommendation with Graph Neural Networks." in AAAI 2019.
+    Shu Wu et al. "Session-based Recommendation with Graph Neural Networks." in AAAI 2019.
 
 Reference code:
-https://github.com/CRIPAC-DIG/SR-GNN
+    https://github.com/CRIPAC-DIG/SR-GNN
 
 """
 import numpy as np
@@ -23,7 +23,6 @@ from torch import nn
 from torch.nn import Parameter
 from torch.nn import functional as F
 
-from recbole.utils import InputType
 from recbole.model.loss import BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
 
@@ -31,7 +30,6 @@ from recbole.model.abstract_recommender import SequentialRecommender
 class GNN(nn.Module):
     r"""Graph neural networks are well-suited for session-based recommendation,
     because it can automatically extract features of session graphs with considerations of rich node connections.
-    Gated gnn is a neural unit similar to gru.
     """
 
     def __init__(self, embedding_size, step=1):
@@ -56,7 +54,8 @@ class GNN(nn.Module):
         Args:
             A(torch.FloatTensor):The connection matrix,shape of [batch_size, max_session_len, 2 * max_session_len]
 
-            hidden(torch.FloatTensor):The item node embedding matrix, shape of [batch_size, max_session_len, embedding_size]
+            hidden(torch.FloatTensor):The item node embedding matrix, shape of
+                [batch_size, max_session_len, embedding_size]
 
         Returns:
             torch.FloatTensor:Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
@@ -140,14 +139,14 @@ class SRGNN(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
-        self.reset_parameters()
+        self._reset_parameters()
 
-    def reset_parameters(self):
+    def _reset_parameters(self):
         stdv = 1.0 / math.sqrt(self.embedding_size)
         for weight in self.parameters():
             weight.data.uniform_(-stdv, stdv)
 
-    def get_slice(self, item_seq):
+    def _get_slice(self, item_seq):
         # Mask matrix, shape of [batch_size, max_session_len]
         mask = item_seq.gt(0)
         items, n_node, A, alias_inputs = [], [], [], []
@@ -187,7 +186,7 @@ class SRGNN(SequentialRecommender):
 
     def forward(self, item_seq, item_seq_len):
 
-        alias_inputs, A, items, mask = self.get_slice(item_seq)
+        alias_inputs, A, items, mask = self._get_slice(item_seq)
         hidden = self.item_embedding(items)
         hidden = self.gnn(A, hidden)
         alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(-1, -1, self.embedding_size)

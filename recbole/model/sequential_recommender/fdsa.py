@@ -4,12 +4,12 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 r"""
-recbole.model.sequential_recommender.fdsa
+FDSA
 ################################################
 
 Reference:
-Tingting. Zhang et al. "Feature-level Deeper Self-Attention Network for Sequential Recommendation."
-In IJCAI 2019
+    Tingting. Zhang et al. "Feature-level Deeper Self-Attention Network for Sequential Recommendation."
+    In IJCAI 2019
 
 
 """
@@ -17,11 +17,9 @@ In IJCAI 2019
 import torch
 from torch import nn
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder, FeatureSeqEmbLayer, VanillaAttention
-
 
 
 class FDSA(SequentialRecommender):
@@ -113,7 +111,6 @@ class FDSA(SequentialRecommender):
         extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
         return extended_attention_mask
-
 
     def forward(self, item_seq, item_seq_len):
         item_emb = self.item_embedding(item_seq)

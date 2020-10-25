@@ -3,6 +3,16 @@
 # @Author : Yingqian Min
 # @Email  : eliver_min@foxmail.com
 
+r"""
+ConvNCF
+################################################
+Reference:
+    Xiangnan He et al. "Outer Product-based Neural Collaborative Filtering." in IJCAI 2018.
+
+Reference code:
+    https://github.com/duxy-me/ConvNCF
+"""
+
 import torch
 import torch.nn as nn
 
@@ -57,16 +67,14 @@ class ConvNCF(GeneralRecommender):
         self.cnn_channels = config['cnn_channels']
         self.cnn_kernels = config['cnn_kernels']
         self.cnn_strides = config['cnn_strides']
-        self.dropout = config['dropout']
-        self.regs = config['regs']
+        self.dropout_prob = config['dropout_prob']
+        self.regs = config['reg_weights']
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
-
         self.cnn_layers = CNNLayers(self.cnn_channels, self.cnn_kernels, self.cnn_strides, activation='relu')
-        self.predict_layers = MLPLayers([self.cnn_channels[-1], 1], self.dropout, activation='none')
-
+        self.predict_layers = MLPLayers([self.cnn_channels[-1], 1], self.dropout_prob, activation='none')
         self.loss = ConvNCFBPRLoss()
 
     def forward(self, user, item):

@@ -4,14 +4,14 @@
 # @Email  : cx.tian@outlook.com
 
 """
-recbole.model.general_recommender.spectralcf
+SpectralCF
 ################################################
 
 Reference:
-Lei Zheng et al. "Spectral collaborative filtering." in RecSys 2018.
+    Lei Zheng et al. "Spectral collaborative filtering." in RecSys 2018.
 
 Reference code:
-https://github.com/lzheng21/SpectralCF
+    https://github.com/lzheng21/SpectralCF
 """
 
 import numpy as np
@@ -52,7 +52,7 @@ class SpectralCF(GeneralRecommender):
         super(SpectralCF, self).__init__(config, dataset)
 
         # load parameters info
-        self.n_layers = config['layers']
+        self.n_layers = config['n_layers']
         self.emb_dim = config['embedding_size']
         self.reg_weight = config['reg_weight']
 

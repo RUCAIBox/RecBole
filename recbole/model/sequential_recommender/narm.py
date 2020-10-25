@@ -9,21 +9,21 @@
 # @Email  : houyupeng@ruc.edu.cn, yujielu1998@gmail.com
 
 r"""
-recbole.model.sequential_recommender.narm
+NARM
 ################################################
 
 Reference:
-Jing Li et al. "Neural Attentive Session-based Recommendation." in CIKM 2017.
+    Jing Li et al. "Neural Attentive Session-based Recommendation." in CIKM 2017.
 
 Reference code:
-https://github.com/Wang-Shuo/Neural-Attentive-Session-Based-Recommendation-PyTorch
+    https://github.com/Wang-Shuo/Neural-Attentive-Session-Based-Recommendation-PyTorch
 
 """
+
 import torch
 from torch import nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.utils import InputType
 from recbole.model.loss import BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
 
@@ -41,17 +41,17 @@ class NARM(SequentialRecommender):
         self.embedding_size = config['embedding_size']
         self.hidden_size = config['hidden_size']
         self.n_layers = config['n_layers']
-        self.dropout = config['dropout']
+        self.dropout_probs = config['dropout_probs']
         self.device = config['device']
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.emb_dropout = nn.Dropout(self.dropout[0])
+        self.emb_dropout = nn.Dropout(self.dropout_probs[0])
         self.gru = nn.GRU(self.embedding_size, self.hidden_size, self.n_layers, bias=False, batch_first=True)
         self.a_1 = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
         self.a_2 = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
         self.v_t = nn.Linear(self.hidden_size, 1, bias=False)
-        self.ct_dropout = nn.Dropout(self.dropout[1])
+        self.ct_dropout = nn.Dropout(self.dropout_probs[1])
         self.b = nn.Linear(2*self.hidden_size, self.embedding_size, bias=False)
         self.loss_type = config['loss_type']
         if self.loss_type == 'BPR':
@@ -62,9 +62,9 @@ class NARM(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

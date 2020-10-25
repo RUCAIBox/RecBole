@@ -4,23 +4,23 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 r"""
-recbole.model.sequential_recommender.gru4recf
+GRU4RecF
 ################################################
 
 Reference:
-Balázs Hidasi et al. "Parallel Recurrent Neural Network Architectures for
-Feature-rich Session-based Recommendations." in RecSys 2016.
+    Balázs Hidasi et al. "Parallel Recurrent Neural Network Architectures for
+    Feature-rich Session-based Recommendations." in RecSys 2016.
 
 """
 
 import torch
 from torch import nn
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
 from recbole.model.layers import FeatureSeqEmbLayer
 from recbole.model.init import xavier_normal_initialization
+
 
 class GRU4RecF(SequentialRecommender):
     r"""

@@ -5,11 +5,11 @@
 
 
 r"""
-recbole.model.knowledge_aware_recommender.ripplenet
+RippleNet
 #####################################################
 Reference:
-Hongwei Wang et al. "RippleNet: Propagating User Preferences on the Knowledge Graph for Recommender Systems."
-in CIKM 2018.
+    Hongwei Wang et al. "RippleNet: Propagating User Preferences on the Knowledge Graph for Recommender Systems."
+    in CIKM 2018.
 """
 
 import torch
@@ -40,7 +40,6 @@ class RippleNet(KnowledgeRecommender):
 
         # load parameters info
         self.embedding_size = config['embedding_size']
-        self.kg_embedding_size = config['kg_embedding_size']
         self.kg_weight = config['kg_weight']
         self.reg_weight = config['reg_weight']
         self.n_hop = config['n_hop']
@@ -69,8 +68,6 @@ class RippleNet(KnowledgeRecommender):
         self.ripple_set = self._build_ripple_set()
 
         # define layers and loss
-        # self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
-        # self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
         self.relation_embedding = nn.Embedding(self.n_relations, self.embedding_size * self.embedding_size)
         self.transform_matrix = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
@@ -261,8 +258,6 @@ class RippleNet(KnowledgeRecommender):
     def _key_addressing_full(self):
         r"""Conduct reasoning for specific item and user ripple set
 
-        Returns:
-        
         Returns:
             o_list (dict -> torch.cuda.FloatTensor): list of torch.cuda.FloatTensor n_hop * [batch_size, n_item, embedding_size]
         """

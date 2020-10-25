@@ -4,21 +4,20 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 """
-recbole.model.sequential_recommender.sasrec
+SASRec
 ################################################
 
 Reference:
-Wang-Cheng Kang et al. "Self-Attentive Sequential Recommendation." in ICDM 2018.
+    Wang-Cheng Kang et al. "Self-Attentive Sequential Recommendation." in ICDM 2018.
 
 Reference:
-https://github.com/kang205/SASRec
+    https://github.com/kang205/SASRec
 
 """
 
 import torch
 from torch import nn
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder
@@ -139,7 +138,12 @@ class SASRec(SequentialRecommender):
             return loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        item = interaction[self.ITEM_ID]
+        seq_output = self.forward(item_seq, item_seq_len)
+        item_emb = self.item_embedding(item)
+        return torch.mul(seq_output, item_emb).sum(dim=1)
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]

@@ -37,7 +37,7 @@ class SequentialDataLoader(AbstractDataLoader):
         dataset (Dataset): The dataset of dataloader.
         batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
         dl_format (InputType, optional): The input type of dataloader. Defaults to
-            :obj:`~recbole.utils.InputType.POINTWISE`.
+            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
     dl_type = DataLoaderType.ORIGIN
@@ -161,7 +161,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         neg_sample_args (dict): The neg_sample_args of dataloader.
         batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
         dl_format (InputType, optional): The input type of dataloader. Defaults to
-            :obj:`~recbole.utils.InputType.POINTWISE`.
+            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
     def __init__(self, config, dataset, sampler, neg_sample_args,
@@ -257,7 +257,7 @@ class SequentialFullDataLoader(SequentialDataLoader):
         neg_sample_args (dict): The neg_sample_args of dataloader.
         batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
         dl_format (InputType, optional): The input type of dataloader. Defaults to
-            :obj:`~recbole.utils.InputType.POINTWISE`.
+            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
     dl_type = DataLoaderType.FULL

@@ -1,7 +1,7 @@
-mf_embedding_size: 512
-mlp_embedding_size: 128
-mlp_hidden_size: [128,64,32]
-dropout: 0.1
+mf_embedding_size: 64
+mlp_embedding_size: 64
+mlp_hidden_size: [128,64]
+dropout_prob: 0.1
 
 mf_train: True
 mlp_train: True

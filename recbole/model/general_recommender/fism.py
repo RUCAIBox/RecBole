@@ -5,13 +5,13 @@
 
 
 """
-recbole.model.general_recommender.fism
+FISM
 #######################################
 Reference:
-S. Kabbur et al. "FISM: Factored item similarity models for top-n recommender systems" in KDD 2013
+    S. Kabbur et al. "FISM: Factored item similarity models for top-n recommender systems" in KDD 2013
 
 Reference code:
-https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
+    https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
 """
 
 import torch
@@ -42,7 +42,7 @@ class FISM(GeneralRecommender):
 
         # load parameters info
         self.embedding_size = config['embedding_size']
-        self.regs = config['regs']
+        self.reg_weights = config['reg_weights']
         self.alpha = config['alpha']
         self.split_to = config['split_to']
 
@@ -85,7 +85,7 @@ class FISM(GeneralRecommender):
             torch.Tensor: reg loss
 
         """        
-        reg_1, reg_2 = self.regs
+        reg_1, reg_2 = self.reg_weights
         loss_1 = reg_1 * self.item_src_embedding.weight.norm(2)
         loss_2 = reg_2 * self.item_dst_embedding.weight.norm(2)
 

@@ -9,7 +9,7 @@
 
 
 r"""
-recbole.model.sequential_recommender.gru4reckg
+GRU4RecKG
 ################################################
 """
 
@@ -22,7 +22,10 @@ from recbole.model.init import xavier_normal_initialization
 
 
 class GRU4RecKG(SequentialRecommender):
+    r"""It is an extension of GRU4Rec, which concatenates item and its corresponding
+    pre-trained knowledge graph embedding feature as the input.
 
+    """
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
@@ -87,7 +90,6 @@ class GRU4RecKG(SequentialRecommender):
         loss = self.ce_loss(logits, pos_items)
         return loss
 
-    # TODO implemented after the data interface is ready
     def predict(self, interaction):
         pass
 

@@ -1,5 +1,4 @@
 embedding_size: 64
-kg_embedding_size: 64
 n_hop: 2
 n_memory: 16
 kg_weight: 0.01

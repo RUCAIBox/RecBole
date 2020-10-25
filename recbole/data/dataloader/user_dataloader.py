@@ -24,8 +24,12 @@ class UserDataLoader(AbstractDataLoader):
         dataset (Dataset): The dataset of dataloader.
         batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
         dl_format (InputType, optional): The input type of dataloader. Defaults to
-            :obj:`~recbole.utils.InputType.POINTWISE`.
+            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+
+    Attributes:
+        shuffle (bool): Whether the dataloader will be shuffle after a round.
+            However, in :class:`UserDataLoader`, it's guaranteed to be ``True``.
     """
     dl_type = DataLoaderType.ORIGIN
 
