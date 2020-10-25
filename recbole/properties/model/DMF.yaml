@@ -4,5 +4,5 @@
 
 inter_matrix_type: '01'
 # inter_matrix_type = 'rating'  
-user_layers_dim: [64, 32]
-item_layers_dim: [64, 32]
+user_layers_dim: [64, 64]
+item_layers_dim: [64, 64]
