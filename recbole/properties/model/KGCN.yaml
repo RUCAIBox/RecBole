@@ -1,6 +1,5 @@
 embedding_size: 64
-full_sort_batch_size: 1
 n_iter: 1
-aggregator: 'sum'
-l2_weight: 1e-7
+aggregator: "sum"
+reg_weight: 1e-7
 neighbor_sample_size: 4

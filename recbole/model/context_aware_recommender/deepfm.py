@@ -8,11 +8,12 @@
 # @Time   : 2020/8/14
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmain.com
+
 r"""
-recbole.model.context_aware_recommender.deepfm
+DeepFM
 ################################################
 Reference:
-Huifeng Guo et al. "DeepFM: A Factorization-Machine based Neural Network for CTR Prediction." in IJCAI 2017.
+    Huifeng Guo et al. "DeepFM: A Factorization-Machine based Neural Network for CTR Prediction." in IJCAI 2017.
 """
 
 import torch
@@ -20,7 +21,7 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
 from recbole.model.layers import BaseFactorizationMachine, MLPLayers
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class DeepFM(ContextRecommender):
@@ -31,20 +32,22 @@ class DeepFM(ContextRecommender):
     def __init__(self, config, dataset):
         super(DeepFM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.mlp_hidden_size = config['mlp_hidden_size']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
 
+        # define layers and loss
         self.fm = BaseFactorizationMachine(reduce_sum=True)
         size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
-        self.mlp_layers = MLPLayers(size_list, self.dropout)
+        self.mlp_layers = MLPLayers(size_list, self.dropout_prob)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)  # Linear product to the final score
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self.apply(self.init_weights)
+        # parameters initialization
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

@@ -5,18 +5,18 @@
 # @File   : fwfm.py
 
 r"""
-recbole.model.context_aware_recommender.fwfm
+FwFM
 #####################################################
 Reference:
-Junwei Pan et al. "Field-weighted Factorization Machines for Click-Through Rate Prediction in Display Advertising." 
-in WWW 2018.
+    Junwei Pan et al. "Field-weighted Factorization Machines for Click-Through Rate Prediction in Display Advertising."
+    in WWW 2018.
 """
 
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class FwFM(ContextRecommender):
@@ -33,12 +33,12 @@ class FwFM(ContextRecommender):
     def __init__(self, config, dataset):
         super(FwFM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
-        self.dropout = config['dropout']
+        # load parameters info
+        self.dropout_prob = config['dropout_prob']
         self.fields = config['fields'] # a dict; key: field_id; value: feature_list
         self.num_features = self.num_feature_field
         
-        self.dropout_layer = nn.Dropout(p=self.dropout)
+        self.dropout_layer = nn.Dropout(p=self.dropout_prob)
         self.sigmoid = nn.Sigmoid()
 
         self.feature2id = {}
@@ -51,10 +51,11 @@ class FwFM(ContextRecommender):
         self.num_pair = self.num_fields * self.num_fields
 
         self.loss = nn.BCELoss()
-        
-        self.apply(self.init_weights)
 
-    def init_weights(self, module):
+        # parameters initialization
+        self.apply(self._init_weights)
+
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

@@ -5,11 +5,11 @@
 # @File   : afm.py
 
 r"""
-recbole.model.context_aware_recommender.afm
+AFM
 ################################################
 Reference:
-Jun Xiao et al. "Attentional Factorization Machines: Learning the Weight of Feature Interactions via Attention Networks"
-in IJCAI 2017.
+    Jun Xiao et al. "Attentional Factorization Machines: Learning the Weight of Feature Interactions via
+    Attention Networks" in IJCAI 2017.
 """
 
 import torch
@@ -17,7 +17,7 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
 from recbole.model.layers import AttLayer
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class AFM(ContextRecommender):
@@ -28,21 +28,23 @@ class AFM(ContextRecommender):
     def __init__(self, config, dataset):
         super(AFM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
-
+        # load parameters info
         self.attention_size = config['attention_size']
-        self.dropout = config['dropout']
-        self.weight_decay = config['weight_decay']
-        self.num_pair = self.num_feature_field * (self.num_feature_field-1) / 2
+        self.dropout_prob = config['dropout_prob']
+        self.reg_weight = config['reg_weight']
+        self.num_pair = self.num_feature_field * (self.num_feature_field - 1) / 2
+
+        # define layers and loss
         self.attlayer = AttLayer(self.embedding_size, self.attention_size)
         self.p = nn.Parameter(torch.randn(self.embedding_size), requires_grad=True)
-        self.dropout_layer = nn.Dropout(p=self.dropout)
+        self.dropout_layer = nn.Dropout(p=self.dropout_prob)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self.apply(self.init_weights)
+        # parameters initialization
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
@@ -54,7 +56,7 @@ class AFM(ContextRecommender):
         """ Build the cross feature columns of feature columns
 
         Args:
-            feat_emb (torch.FloatTensor): input feature embedding tensor. shape of[batch_size,field_size,embed_dim].
+            feat_emb (torch.FloatTensor): input feature embedding tensor. shape of [batch_size, field_size, embed_dim].
 
         Returns:
             torch.FloatTensor: Left part of the cross feature. shape of [batch_size, num_pairs, emb_dim].
@@ -75,10 +77,10 @@ class AFM(ContextRecommender):
         """ Get the attention-based feature interaction score
 
         Args:
-            infeature (torch.FloatTensor): input feature embedding tensor. shape of[batch_size,field_size,embed_dim].
+            infeature (torch.FloatTensor): input feature embedding tensor. shape of [batch_size, field_size, embed_dim].
 
         Returns:
-            torch.FloatTensor: Result of score. shape of [batch_size,1] .
+            torch.FloatTensor: Result of score. shape of [batch_size, 1].
         """
         p, q = self.build_cross(infeature)
         pair_wise_inter = torch.mul(p, q)  # [batch_size, num_pairs, emb_dim]
@@ -113,7 +115,7 @@ class AFM(ContextRecommender):
         label = interaction[self.LABEL]
 
         output = self.forward(interaction)
-        l2_loss = self.weight_decay * torch.norm(self.attlayer.w.weight, p=2)
+        l2_loss = self.reg_weight * torch.norm(self.attlayer.w.weight, p=2)
         return self.loss(output, label) + l2_loss
 
     def predict(self, interaction):

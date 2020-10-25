@@ -4,10 +4,10 @@
 # @Email  : slmu@ruc.edu.cn
 
 """
-recbole.model.knowledge_aware_recommender.cfkg
+CFKG
 ##################################################
 Reference:
-Qingyao Ai et al. "Learning heterogeneous knowledge base embeddings for explainable recommendation." in MDPI 2018.
+    Qingyao Ai et al. "Learning heterogeneous knowledge base embeddings for explainable recommendation." in MDPI 2018.
 """
 
 import torch

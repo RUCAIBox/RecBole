@@ -4,18 +4,18 @@
 # @Email  : linzihan.super@foxmail.com
 
 r"""
-recbole.model.general_recommender.itemknn
+ItemKNN
 ################################################
 Reference:
-Aiolli,F et al. Efficient top-n recommendation for very large scale binary rated datasets.
-In Proceedings of the 7th ACM conference on Recommender systems (pp. 273-280). ACM.
+    Aiolli,F et al. Efficient top-n recommendation for very large scale binary rated datasets.
+    In Proceedings of the 7th ACM conference on Recommender systems (pp. 273-280). ACM.
 """
 
 import numpy as np
 import scipy.sparse as sp
 import torch
 
-from recbole.utils import InputType
+from recbole.utils import InputType, ModelType
 from recbole.model.abstract_recommender import GeneralRecommender
 
 
@@ -135,6 +135,7 @@ class ItemKNN(GeneralRecommender):
 
     """
     input_type = InputType.POINTWISE
+    type = ModelType.TRADITIONAL
 
     def __init__(self, config, dataset):
         super(ItemKNN, self).__init__(config, dataset)

@@ -6,10 +6,10 @@
 
 
 """
-recbole.model.context_aware_recommender.dssm
+DSSM
 ################################################
 Reference:
-PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
+    PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
 """
 
 
@@ -18,31 +18,37 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
 from recbole.model.layers import MLPLayers
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class DSSM(ContextRecommender):
+    """ DSSM respectively expresses user and item as low dimensional vectors with mlp layers,
+    and uses cosine distance to calculate the distance between the two semantic vectors.
 
+    """
     def __init__(self, config, dataset):
         super(DSSM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
+        # load parameters info
         self.mlp_hidden_size = config['mlp_hidden_size']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
+
         self.user_feature_num = self.user_token_field_num + self.user_float_field_num + self.user_token_seq_field_num
         self.item_feature_num = self.item_token_field_num + self.item_float_field_num + self.item_token_seq_field_num
         user_size_list = [self.embedding_size * self.user_feature_num] + self.mlp_hidden_size
         item_size_list = [self.embedding_size * self.item_feature_num] + self.mlp_hidden_size
 
-        self.user_mlp_layers = MLPLayers(user_size_list, self.dropout, activation='tanh', bn=True)
-        self.item_mlp_layers = MLPLayers(item_size_list, self.dropout, activation='tanh', bn=True)
+        # define layers and loss
+        self.user_mlp_layers = MLPLayers(user_size_list, self.dropout_prob, activation='tanh', bn=True)
+        self.item_mlp_layers = MLPLayers(item_size_list, self.dropout_prob, activation='tanh', bn=True)
 
         self.loss = nn.BCELoss()
         self.sigmod = nn.Sigmoid()
 
-        self.apply(self.init_weights)
+        # parameters initialization
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
@@ -51,6 +57,10 @@ class DSSM(ContextRecommender):
                 constant_(module.bias.data, 0)
 
     def forward(self, interaction):
+        # user_sparse_embedding shape: [batch_size, user_token_seq_field_num + user_token_field_num , embed_dim] or None
+        # user_dense_embedding shape: [batch_size, user_float_field_num] or [batch_size, user_float_field_num, embed_dim] or None
+        # item_sparse_embedding shape: [batch_size, item_token_seq_field_num + item_token_field_num , embed_dim] or None
+        # item_dense_embedding shape: [batch_size, item_float_field_num] or [batch_size, item_float_field_num, embed_dim] or None
         embed_result = self.double_tower_embed_input_fields(interaction)
         user_sparse_embedding, user_dense_embedding = embed_result[:2]
         item_sparse_embedding, item_dense_embedding = embed_result[2:]

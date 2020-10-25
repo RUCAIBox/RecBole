@@ -4,23 +4,23 @@
 # @Email  : xinyan.fan@ruc.edu.cn
 
 r"""
-recbole.model.knowledge_aware_recommender.mkr
+MKR
 #####################################################
 Reference:
-Hongwei Wang et al. "Multi-Task Feature Learning for Knowledge Graph Enhanced Recommendation." in WWW 2019.
+    Hongwei Wang et al. "Multi-Task Feature Learning for Knowledge Graph Enhanced Recommendation." in WWW 2019.
 
 Reference code:
-https://github.com/hsientzucheng/MKR.PyTorch
+    https://github.com/hsientzucheng/MKR.PyTorch
 """
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from recbole.utils import InputType
 from recbole.model.layers import MLPLayers
 from recbole.model.abstract_recommender import KnowledgeRecommender
 from recbole.model.init import xavier_normal_initialization
+
 
 class MKR(KnowledgeRecommender):
     r"""MKR is a Multi-task feature learning approach for Knowledge graph enhanced Recommendation. It is a deep 
@@ -30,17 +30,19 @@ class MKR(KnowledgeRecommender):
     """
 
     input_type = InputType.POINTWISE
+
     def __init__(self, config, dataset):
         super(MKR, self).__init__(config, dataset)
+
         # load parameters info
         self.LABEL = config['LABEL_FIELD']
         self.embedding_size = config['embedding_size']
         self.kg_embedding_size = config['kg_embedding_size']
         self.L = config['low_layers_num'] # the number of low layers
         self.H = config['high_layers_num'] # the number of high layers
-        self.l2_weight = config['l2_weight']
+        self.reg_weight = config['reg_weight']
         self.use_inner_product = config['use_inner_product']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
 
         # init embeddings
         self.user_embeddings_lookup = nn.Embedding(self.n_users, self.embedding_size)
@@ -56,16 +58,16 @@ class MKR(KnowledgeRecommender):
         for i in range(self.H):
             high_mlp_layers.append(self.embedding_size * 2)
 
-        self.user_mlp = MLPLayers(lower_mlp_layers, self.dropout, 'sigmoid')
-        self.tail_mlp = MLPLayers(lower_mlp_layers, self.dropout, 'sigmoid')
+        self.user_mlp = MLPLayers(lower_mlp_layers, self.dropout_prob, 'sigmoid')
+        self.tail_mlp = MLPLayers(lower_mlp_layers, self.dropout_prob, 'sigmoid')
         self.cc_unit = nn.Sequential()
         for i_cnt in range(self.L):
             self.cc_unit.add_module('cc_unit{}'.format(i_cnt), CrossCompressUnit(self.embedding_size))
-        self.kge_mlp = MLPLayers(high_mlp_layers, self.dropout, 'sigmoid')
-        self.kge_pred_mlp = MLPLayers([self.embedding_size * 2, self.embedding_size], self.dropout, 'sigmoid')
+        self.kge_mlp = MLPLayers(high_mlp_layers, self.dropout_prob, 'sigmoid')
+        self.kge_pred_mlp = MLPLayers([self.embedding_size * 2, self.embedding_size], self.dropout_prob, 'sigmoid')
         if self.use_inner_product == False:
-            self.rs_pred_mlp = MLPLayers([self.embedding_size * 2, 1], self.dropout, 'sigmoid')
-            self.rs_mlp = MLPLayers(high_mlp_layers, self.dropout, 'sigmoid')
+            self.rs_pred_mlp = MLPLayers([self.embedding_size * 2, 1], self.dropout_prob, 'sigmoid')
+            self.rs_mlp = MLPLayers(high_mlp_layers, self.dropout_prob, 'sigmoid')
 
         # loss
         self.sigmoid_BCE = nn.BCEWithLogitsLoss()
@@ -113,7 +115,7 @@ class MKR(KnowledgeRecommender):
 
         return outputs
 
-    def l2_loss(self, inputs):
+    def _l2_loss(self, inputs):
         return torch.sum(inputs ** 2) / 2
 
     def calculate_rs_loss(self, interaction):
@@ -134,8 +136,8 @@ class MKR(KnowledgeRecommender):
                                                  tail_indices=None)
         # loss
         base_loss_rs = torch.mean(self.sigmoid_BCE(scores, self.labels))
-        l2_loss_rs = self.l2_loss(user_embeddings) + self.l2_loss(item_embeddings)
-        loss_rs = base_loss_rs + l2_loss_rs * self.l2_weight
+        l2_loss_rs = self._l2_loss(user_embeddings) + self._l2_loss(item_embeddings)
+        loss_rs = base_loss_rs + l2_loss_rs * self.reg_weight
 
         return loss_rs
 
@@ -157,8 +159,8 @@ class MKR(KnowledgeRecommender):
                                         tail_indices=self.tail_indices)
         # loss
         base_loss_kge = -scores_kge
-        l2_loss_kge = self.l2_loss(head_embeddings) + self.l2_loss(tail_embeddings)
-        loss_kge = base_loss_kge + l2_loss_kge * self.l2_weight
+        l2_loss_kge = self._l2_loss(head_embeddings) + self._l2_loss(tail_embeddings)
+        loss_kge = base_loss_kge + l2_loss_kge * self.reg_weight
 
         return loss_kge.sum()
 
@@ -171,6 +173,7 @@ class MKR(KnowledgeRecommender):
         _, _, scores, _ = outputs
 
         return scores
+
 
 class CrossCompressUnit(nn.Module):
     r"""This is Cross&Compress Unit for MKR model to model feature interactions between items and entities.
@@ -202,4 +205,3 @@ class CrossCompressUnit(nn.Module):
         e_output = e_intermediate.view(-1, self.dim)
 
         return v_output, e_output
-

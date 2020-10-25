@@ -5,15 +5,15 @@
 
 
 r"""
-recbole.model.sequential_recommender.nextitnet
+NextItNet
 ################################################
 
 Reference:
-Fajie Yuan et al., "A Simple Convolutional Generative Network for Next Item Recommendation" in WSDM 2019.
+    Fajie Yuan et al., "A Simple Convolutional Generative Network for Next Item Recommendation" in WSDM 2019.
 
 Reference code:
-https://github.com/fajieyuan/nextitnet
-https://github.com/initlisk/nextitnet_pytorch
+    - https://github.com/fajieyuan/nextitnet
+    - https://github.com/initlisk/nextitnet_pytorch
 
 """
 import numpy as np
@@ -22,7 +22,6 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn.init import uniform_, xavier_normal_, constant_
 
-from recbole.utils import InputType
 from recbole.model.loss import RegLoss, BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
 
@@ -72,9 +71,9 @@ class NextItNet(SequentialRecommender):
         self.reg_loss = RegLoss()
 
         # parameters initialization
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             stdv = np.sqrt(1. / self.n_items)
             uniform_(module.weight.data, -stdv, stdv)
@@ -128,14 +127,19 @@ class NextItNet(SequentialRecommender):
         return loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        test_item = interaction[self.ITEM_ID]
+        seq_output = self.forward(item_seq)
+        test_item_emb = self.item_embedding(test_item)
+        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)
+        return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         # item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq)
-        test_item_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
+        test_items_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, item_num]
         return scores
 
 
@@ -212,6 +216,10 @@ class ResidualBlock_b(nn.Module):
         return out2 + x
 
     def conv_pad(self, x, dilation):
+        r""" Dropout-mask: To avoid the future information leakage problem, this paper proposed a masking-based dropout
+        trick for the 1D dilated convolution to prevent the network from seeing the future items.
+        Also the One-dimensional transformation is completed in this funtion.
+        """
         inputs_pad = x.permute(0, 2, 1)
         inputs_pad = inputs_pad.unsqueeze(2)
         pad = nn.ZeroPad2d(((self.kernel_size - 1) * dilation, 0, 0, 0))

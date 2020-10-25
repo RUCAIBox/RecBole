@@ -4,16 +4,16 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 r"""
-recbole.model.sequential_recommender.s3rec
+S3Rec
 ################################################
 
 Reference:
-Kun Zhou and Hui Wang et al. "S^3-Rec: Self-Supervised Learning
-for Sequential Recommendation with Mutual Information Maximization"
-In CIKM 2020.
+    Kun Zhou and Hui Wang et al. "S^3-Rec: Self-Supervised Learning
+    for Sequential Recommendation with Mutual Information Maximization"
+    In CIKM 2020.
 
-The authors' implementation
-https://github.com/RUCAIBox/CIKM2020-S3Rec
+Reference code:
+    https://github.com/RUCAIBox/CIKM2020-S3Rec
 
 """
 
@@ -22,7 +22,6 @@ import random
 import torch
 from torch import nn
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder
@@ -42,15 +41,17 @@ class S3Rec(SequentialRecommender):
         super(S3Rec, self).__init__(config, dataset)
 
         # load parameters info
-        self.FEATURE_FIELD = config['FEATURE_FIELD']
-        self.FEATURE_LIST = self.FEATURE_FIELD + config['LIST_SUFFIX']
-
+        self.n_layers = config['n_layers']
+        self.n_heads = config['n_heads']
         self.hidden_size = config['hidden_size']  # same as embedding_size
-        self.embedding_size = config['embedding_size']
-        assert self.hidden_size == self.embedding_size
-        self.initializer_range = config['initializer_range']
-        self.loss_type = config['loss_type']
-        self.dropout_prob = config['dropout_prob']
+        self.inner_size = config['inner_size']  # the dimensionality in feed-forward layer
+        self.hidden_dropout_prob = config['hidden_dropout_prob']
+        self.attn_dropout_prob = config['attn_dropout_prob']
+        self.hidden_act = config['hidden_act']
+        self.layer_norm_eps = config['layer_norm_eps']
+
+        self.FEATURE_FIELD = config['item_attribute']
+        self.FEATURE_LIST = self.FEATURE_FIELD + config['LIST_SUFFIX']
         self.train_stage = config['train_stage']  # pretrain or finetune
         self.pre_model_path = config['pre_model_path']  # We need this for finetune
         self.mask_ratio = config['mask_ratio']
@@ -58,6 +59,9 @@ class S3Rec(SequentialRecommender):
         self.mip_weight = config['mip_weight']
         self.map_weight = config['map_weight']
         self.sp_weight = config['sp_weight']
+
+        self.initializer_range = config['initializer_range']
+        self.loss_type = config['loss_type']
 
         # load dataset info
         self.n_items = dataset.item_num + 1  # for mask token
@@ -68,12 +72,17 @@ class S3Rec(SequentialRecommender):
         # define layers and loss
         # modules shared by pre-training stage and fine-tuning stage
         self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
-        self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size, padding_idx=0)
-        self.feature_embedding = nn.Embedding(self.n_features, self.hidden_size)
-        self.trm_encoder = TransformerEncoder(config)
+        self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size)
+        self.feature_embedding = nn.Embedding(self.n_features, self.hidden_size, padding_idx=0)
 
-        self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=1e-12)
-        self.dropout = nn.Dropout(self.dropout_prob)
+        self.trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
+                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
+                                              hidden_dropout_prob=self.hidden_dropout_prob,
+                                              attn_dropout_prob=self.attn_dropout_prob,
+                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+
+        self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
+        self.dropout = nn.Dropout(self.hidden_dropout_prob)
 
         # modules for pretrain
         # add unique dense layer for 4 losses respectively
@@ -113,51 +122,37 @@ class S3Rec(SequentialRecommender):
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
 
-    # AAP
-    def associated_attribute_prediction(self, sequence_output, feature_embedding):
-        '''
-        :param sequence_output: [B L H]
-        :param feature_embedding: [feature_num H]
-        :return: scores [B*L feature_num]
-        '''
+    def _associated_attribute_prediction(self, sequence_output, feature_embedding):
         sequence_output = self.aap_norm(sequence_output)  # [B L H]
         sequence_output = sequence_output.view([-1, sequence_output.size(-1), 1])  # [B*L H 1]
         # [feature_num H] [B*L H 1] -> [B*L feature_num 1]
         score = torch.matmul(feature_embedding, sequence_output)
         return torch.sigmoid(score.squeeze(-1))  # [B*L feature_num]
 
-    # MIP sample neg items
-    def masked_item_prediction(self, sequence_output, target_item_emb):
-        '''
-        :param sequence_output: [B L H]
-        :param target_item_emb: [B L H]
-        :return: scores [B*L]
-        '''
+    def _masked_item_prediction(self, sequence_output, target_item_emb):
         sequence_output = self.mip_norm(sequence_output.view([-1, sequence_output.size(-1)]))  # [B*L H]
         target_item_emb = target_item_emb.view([-1, sequence_output.size(-1)])  # [B*L H]
         score = torch.mul(sequence_output, target_item_emb)  # [B*L H]
         return torch.sigmoid(torch.sum(score, -1))  # [B*L]
 
-    # MAP
-    def masked_attribute_prediction(self, sequence_output, feature_embedding):
+    def _masked_attribute_prediction(self, sequence_output, feature_embedding):
         sequence_output = self.map_norm(sequence_output)  # [B L H]
         sequence_output = sequence_output.view([-1, sequence_output.size(-1), 1])  # [B*L H 1]
         # [feature_num H] [B*L H 1] -> [B*L feature_num 1]
         score = torch.matmul(feature_embedding, sequence_output)
         return torch.sigmoid(score.squeeze(-1))  # [B*L feature_num]
 
-    # SP sample neg segment
-    def segment_prediction(self, context, segment_emb):
-        '''
-        :param context: [B H]
-        :param segment_emb: [B H]
-        :return:
-        '''
+    def _segment_prediction(self, context, segment_emb):
         context = self.sp_norm(context)
         score = torch.mul(context, segment_emb)  # [B H]
         return torch.sigmoid(torch.sum(score, dim=-1))  # [B]
 
     def get_attention_mask(self, sequence, bidirectional=True):
+        """
+        In the pre-training stage, we generate bidirectional attention mask for multi-head attention.
+
+        In the fine-tuning stage, we generate left-to-right uni-directional attention mask for multi-head attention.
+        """
         attention_mask = (sequence > 0).long()
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
         if not bidirectional:
@@ -189,13 +184,22 @@ class S3Rec(SequentialRecommender):
 
     def pretrain(self, features, masked_item_sequence, pos_items, neg_items,
                  masked_segment_sequence, pos_segment, neg_segment):
+        """Pretrain out model using four pre-training tasks:
 
+            1. Associated Attribute Prediction
+
+            2. Masked Item Prediction
+
+            3. Masked Attribute Prediction
+
+            4. Segment Prediction
+        """
         # Encode masked sequence
         sequence_output = self.forward(masked_item_sequence)
 
         feature_embedding = self.feature_embedding.weight
         # AAP
-        aap_score = self.associated_attribute_prediction(sequence_output, feature_embedding)
+        aap_score = self._associated_attribute_prediction(sequence_output, feature_embedding)
         aap_loss = self.loss_fct(aap_score, features.view(-1, self.n_features).float())
         # only compute loss at non-masked position
         aap_mask = (masked_item_sequence != self.mask_token).float() * \
@@ -205,15 +209,15 @@ class S3Rec(SequentialRecommender):
         # MIP
         pos_item_embs = self.item_embedding(pos_items)
         neg_item_embs = self.item_embedding(neg_items)
-        pos_score = self.masked_item_prediction(sequence_output, pos_item_embs)
-        neg_score = self.masked_item_prediction(sequence_output, neg_item_embs)
+        pos_score = self._masked_item_prediction(sequence_output, pos_item_embs)
+        neg_score = self._masked_item_prediction(sequence_output, neg_item_embs)
         mip_distance = torch.sigmoid(pos_score - neg_score)
         mip_loss = self.loss_fct(mip_distance, torch.ones_like(mip_distance, dtype=torch.float32))
         mip_mask = (masked_item_sequence == self.mask_token).float()
         mip_loss = torch.sum(mip_loss * mip_mask.flatten())
 
         # MAP
-        map_score = self.masked_attribute_prediction(sequence_output, feature_embedding)
+        map_score = self._masked_attribute_prediction(sequence_output, feature_embedding)
         map_loss = self.loss_fct(map_score, features.view(-1, self.n_features).float())
         map_mask = (masked_item_sequence == self.mask_token).float()
         map_loss = torch.sum(map_loss * map_mask.flatten().unsqueeze(-1))
@@ -224,8 +228,8 @@ class S3Rec(SequentialRecommender):
         segment_context = self.forward(masked_segment_sequence)[:, -1, :]  # [B H]
         pos_segment_emb = self.forward(pos_segment)[:, -1, :]
         neg_segment_emb = self.forward(neg_segment)[:, -1, :]  # [B H]
-        pos_segment_score = self.segment_prediction(segment_context, pos_segment_emb)
-        neg_segment_score = self.segment_prediction(segment_context, neg_segment_emb)
+        pos_segment_score = self._segment_prediction(segment_context, pos_segment_emb)
+        neg_segment_score = self._segment_prediction(segment_context, neg_segment_emb)
         sp_distance = torch.sigmoid(pos_segment_score - neg_segment_score)
         sp_loss = torch.sum(self.loss_fct(sp_distance,
                                            torch.ones_like(sp_distance, dtype=torch.float32)))
@@ -238,6 +242,7 @@ class S3Rec(SequentialRecommender):
         return pretrain_loss
 
     def finetune(self, item_seq, item_seq_len, pos_items, neg_items):
+        """Same as SASRec."""
         # we use uni-directional attention in the fine-tuning stage
         seq_output = self.forward(item_seq, bidirectional=False)
         seq_output = self.gather_indexes(seq_output, item_seq_len - 1)
@@ -255,21 +260,20 @@ class S3Rec(SequentialRecommender):
             loss = self.loss_fct(logits, pos_items)
             return loss
 
-    def neg_sample(self, item_set):  # [ , ]
+    def _neg_sample(self, item_set):  # [ , ]
         item = random.randint(1, self.n_items - 1)
         while item in item_set:
             item = random.randint(1, self.n_items - 1)
         return item
 
-    def padding_zero_at_left(self, sequence):
+    def _padding_zero_at_left(self, sequence):
         # had truncated according to the max_length
         pad_len = self.max_seq_length - len(sequence)
         sequence = [0]*pad_len + sequence
         return sequence
 
-    # the data could be directly used in fine-tune stage
     def reconstruct_pretrain_data(self, item_seq, item_seq_len):
-
+        """Generate pre-training data for the pre-training stage."""
         device = item_seq.device
         batch_size = item_seq.size(0)
 
@@ -315,10 +319,10 @@ class S3Rec(SequentialRecommender):
                 prob = random.random()
                 if prob < self.mask_ratio:
                     masked_sequence[index_id] = self.mask_token
-                    neg_item[index_id] = self.neg_sample(instance)
-            masked_item_sequence.append(self.padding_zero_at_left(masked_sequence))
-            pos_items.append(self.padding_zero_at_left(pos_item))
-            neg_items.append(self.padding_zero_at_left(neg_item))
+                    neg_item[index_id] = self._neg_sample(instance)
+            masked_item_sequence.append(self._padding_zero_at_left(masked_sequence))
+            pos_items.append(self._padding_zero_at_left(pos_item))
+            neg_items.append(self._padding_zero_at_left(neg_item))
 
         # Segment Prediction
         masked_segment_list = []
@@ -341,9 +345,9 @@ class S3Rec(SequentialRecommender):
                         len(instance) - (start_id + sample_length))
                 neg_segment = [self.mask_token] * start_id + neg_segment + [self.mask_token] * (
                         len(instance) - (start_id + sample_length))
-            masked_segment_list.append(self.padding_zero_at_left(masked_segment))
-            pos_segment_list.append(self.padding_zero_at_left(pos_segment))
-            neg_segment_list.append(self.padding_zero_at_left(neg_segment))
+            masked_segment_list.append(self._padding_zero_at_left(masked_segment))
+            pos_segment_list.append(self._padding_zero_at_left(pos_segment))
+            neg_segment_list.append(self._padding_zero_at_left(neg_segment))
 
         associated_features = torch.tensor(associated_features, dtype=torch.long, device=device)
         associated_features = associated_features.view(-1, self.max_seq_length, self.n_features)
@@ -378,13 +382,20 @@ class S3Rec(SequentialRecommender):
         return loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        test_item = interaction[self.ITEM_ID]
+        seq_output = self.forward(item_seq, bidirectional=False)
+        seq_output = self.gather_indexes(seq_output, item_seq_len - 1)
+        test_item_emb = self.item_embedding(test_item)
+        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)  # [B]
+        return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, bidirectional=False)
         seq_output = self.gather_indexes(seq_output, item_seq_len - 1)
-        test_item_emb = self.item_embedding.weight[:self.n_items-1] # delete masked token
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
+        test_items_emb = self.item_embedding.weight[:self.n_items-1]  # delete masked token
+        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
         return scores

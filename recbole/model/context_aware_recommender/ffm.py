@@ -5,13 +5,13 @@
 # @File   : ffm.py
 
 r"""
-recbole.model.context_aware_recommender.ffm
+FFM
 #####################################################
 Reference:
-Yuchin Juan et al. "Field-aware Factorization Machines for CTR Prediction" in RecSys 2016.
+    Yuchin Juan et al. "Field-aware Factorization Machines for CTR Prediction" in RecSys 2016.
 
 Reference code:
-https://github.com/rixwew/pytorch-fm
+    https://github.com/rixwew/pytorch-fm
 """
 
 import numpy as np
@@ -19,13 +19,13 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.context_aware_recommender.context_recommender import ContextRecommender
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class FFM(ContextRecommender):
     r"""FFM is a context-based recommendation model. It aims to model the different feature interactions 
-    between different fields. Each feature has several latent vectors  :math:`v_{i,F(j)}`, 
-    which depend on the field of other features, and one of them is used to do the inner product.
+    between different fields. Each feature has several latent vectors :math:`v_{i,F(j)}`,
+    which depend on the field of other features, and one of them is used to do the inner product.
 
     The model defines as follows:
 
@@ -36,8 +36,8 @@ class FFM(ContextRecommender):
     def __init__(self, config, dataset):
         super(FFM, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
-        self.fields = config['fields'] # a dict; key: field_id; value: feature_list
+        # load parameters info
+        self.fields = config['fields']  # a dict; key: field_id; value: feature_list
         self.sigmoid = nn.Sigmoid()
 
         self.feature2id = {}
@@ -46,14 +46,15 @@ class FFM(ContextRecommender):
         self.feature_names = (self.token_field_names, self.float_field_names, self.token_seq_field_names)
         self.feature_dims = (self.token_field_dims, self.float_field_dims, self.token_seq_field_dims)
         self.get_feature2field()
-        self.num_fields = len(set(self.feature2field.values())) # the number of fields
+        self.num_fields = len(set(self.feature2field.values()))  # the number of fields
 
         self.ffm = FieldAwareFactorizationMachine(self.feature_names, self.feature_dims, self.feature2id, self.feature2field, self.num_fields, self.embedding_size, self.device)
         self.loss = nn.BCELoss()
-        
-        self.apply(self.init_weights)
 
-    def init_weights(self, module):
+        # parameters initialization
+        self.apply(self._init_weights)
+
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
@@ -177,21 +178,24 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         Args:
             input_x (a tuple): (token_ffm_input, float_ffm_input, token_seq_ffm_input)
-                    token_ffm_input(torch.cuda.FloatTensor): [batch_size, num_token_features] or None
-                    float_ffm_input(torch.cuda.FloatTensor): [batch_size, num_float_features] or None
-                    token_seq_ffm_input(a list): length is num_token_seq_features or 0
+
+                    token_ffm_input (torch.cuda.FloatTensor): [batch_size, num_token_features] or None
+
+                    float_ffm_input (torch.cuda.FloatTensor): [batch_size, num_float_features] or None
+
+                    token_seq_ffm_input (list): length is num_token_seq_features or 0
 
         Returns:
-            torch.cuda.FloatTensor: The results of all features' field-aware interactions. 
-                                    shape: [batch_size, num_fields, emb_dim]
+            torch.cuda.FloatTensor: The results of all features' field-aware interactions.
+            shape: [batch_size, num_fields, emb_dim]
         """
         token_ffm_input, float_ffm_input, token_seq_ffm_input = input_x[0], input_x[1], input_x[2]
 
-        token_input_x_emb = self.emb_token_ffm_input(token_ffm_input)
-        float_input_x_emb = self.emb_float_ffm_input(float_ffm_input)
-        token_seq_input_x_emb = self.emb_token_seq_ffm_input(token_seq_ffm_input)
+        token_input_x_emb = self._emb_token_ffm_input(token_ffm_input)
+        float_input_x_emb = self._emb_float_ffm_input(float_ffm_input)
+        token_seq_input_x_emb = self._emb_token_seq_ffm_input(token_seq_ffm_input)
         
-        input_x_emb = self.get_input_x_emb(token_input_x_emb, float_input_x_emb, token_seq_input_x_emb)
+        input_x_emb = self._get_input_x_emb(token_input_x_emb, float_input_x_emb, token_seq_input_x_emb)
 
         output = list()
         for i in range(self.num_features - 1):
@@ -201,7 +205,7 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         return output
 
-    def get_input_x_emb(self, token_input_x_emb, float_input_x_emb, token_seq_input_x_emb):
+    def _get_input_x_emb(self, token_input_x_emb, float_input_x_emb, token_seq_input_x_emb):
         # merge different types of field-aware embeddings
         input_x_emb = []  # [num_fields: [batch_size, num_fields, emb_dim]]
         if len(self.token_feature_names) > 0 and len(self.float_feature_names) > 0 and len(self.token_seq_feature_names) > 0:
@@ -225,7 +229,7 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         return input_x_emb
 
-    def emb_token_ffm_input(self, token_ffm_input):
+    def _emb_token_ffm_input(self, token_ffm_input):
         # get token field-aware embeddings
         token_input_x_emb = []
         if len(self.token_feature_names) > 0:
@@ -234,7 +238,7 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         return token_input_x_emb
 
-    def emb_float_ffm_input(self, float_ffm_input):
+    def _emb_float_ffm_input(self, float_ffm_input):
         # get float field-aware embeddings
         float_input_x_emb = []
         if len(self.float_feature_names) > 0:
@@ -243,7 +247,7 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         return float_input_x_emb
 
-    def emb_token_seq_ffm_input(self, token_seq_ffm_input):
+    def _emb_token_seq_ffm_input(self, token_seq_ffm_input):
         # get token_seq field-aware embeddings
         token_seq_input_x_emb = []
         if len(self.token_seq_feature_names) > 0:

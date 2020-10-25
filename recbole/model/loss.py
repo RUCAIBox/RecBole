@@ -49,7 +49,9 @@ class BPRLoss(nn.Module):
 
 
 class RegLoss(nn.Module):
+    """ RegLoss, L2 regularization on model parameters
 
+    """
     def __init__(self):
         super(RegLoss, self).__init__()
 
@@ -64,7 +66,9 @@ class RegLoss(nn.Module):
 
 
 class EmbLoss(nn.Module):
+    """ EmbLoss, regularization on embeddings
 
+    """
     def __init__(self, norm=2):
         super(EmbLoss, self).__init__()
         self.norm = norm
@@ -78,6 +82,8 @@ class EmbLoss(nn.Module):
 
 
 class EmbMarginLoss(nn.Module):
+    """ EmbMarginLoss, regularization on embeddings
+    """
 
     def __init__(self, power=2):
         super(EmbMarginLoss, self).__init__()

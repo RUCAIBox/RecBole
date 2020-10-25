@@ -288,10 +288,10 @@ class Trainer(AbstractTrainer):
         batch_size = interaction.length * self.tot_item_num
         used_idx = torch.cat([used_idx, torch.arange(interaction.length) * self.tot_item_num])  # remove [pad] item
         neg_len_list = list(np.subtract(neg_len_list, 1))
-        if hasattr(self.model, 'full_sort_predict'):
+        try:
             # Note: interaction without item ids
             scores = self.model.full_sort_predict(interaction.to(self.device)).flatten()
-        else:
+        except NotImplementedError:
             interaction = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
             if batch_size <= self.test_batch_size:
@@ -312,7 +312,7 @@ class Trainer(AbstractTrainer):
         tmp_len_list = np.add(pos_len_list, neg_len_list).tolist()
         extra_len_list = np.subtract(self.tot_item_num, tmp_len_list).tolist()
         padding_nums = self.tot_item_num * len(tmp_len_list) - np.sum(tmp_len_list)
-        padding_tensor = torch.tensor([-np.inf], device=self.device).repeat(padding_nums)
+        padding_tensor = torch.tensor([-np.inf], dtype=scores.dtype, device=self.device).repeat(padding_nums)
         padding_scores = torch.split(padding_tensor, extra_len_list)
 
         final_scores = list(itertools.chain.from_iterable(zip(pos_scores, neg_scores, padding_scores)))
@@ -350,7 +350,7 @@ class Trainer(AbstractTrainer):
         self.model.eval()
 
         if eval_data.dl_type == DataLoaderType.FULL:
-            if not hasattr(self.model, 'full_sort_predict'):
+            if self.item_tensor is None:
                 self.item_tensor = eval_data.get_item_feature().to(self.device).repeat(eval_data.step)
             self.tot_item_num = eval_data.dataset.item_num
 
@@ -626,6 +626,7 @@ class S3RecTrainer(Trainer):
         else:
             raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
 
+
 class MKRTrainer(Trainer):
     r"""MKRTrainer is designed for MKR, which is a knowledge-aware recommendation method.
 
@@ -667,3 +668,12 @@ class MKRTrainer(Trainer):
                 kg_total_loss += loss_kge
 
         return rs_total_loss, kg_total_loss
+
+
+class TraditionalTrainer(Trainer):
+    r"""TraditionalTrainer is designed for Traditional model(Pop,ItemKNN), which set the epoch to 1 whatever the config.
+
+    """
+    def __init__(self, config, model):
+        super(TraditionalTrainer, self).__init__(config, model)
+        self.epochs = 1   # Set the epoch to 1 when running memory based model

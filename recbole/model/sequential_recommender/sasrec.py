@@ -4,21 +4,20 @@
 # @Email   : hui.wang@ruc.edu.cn
 
 """
-recbole.model.sequential_recommender.sasrec
+SASRec
 ################################################
 
 Reference:
-Wang-Cheng Kang et al. "Self-Attentive Sequential Recommendation." in ICDM 2018.
+    Wang-Cheng Kang et al. "Self-Attentive Sequential Recommendation." in ICDM 2018.
 
 Reference:
-https://github.com/kang205/SASRec
+    https://github.com/kang205/SASRec
 
 """
 
 import torch
 from torch import nn
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder
@@ -38,17 +37,29 @@ class SASRec(SequentialRecommender):
         super(SASRec, self).__init__(config, dataset)
 
         # load parameters info
+        self.n_layers = config['n_layers']
+        self.n_heads = config['n_heads']
         self.hidden_size = config['hidden_size'] # same as embedding_size
+        self.inner_size = config['inner_size']  # the dimensionality in feed-forward layer
+        self.hidden_dropout_prob = config['hidden_dropout_prob']
+        self.attn_dropout_prob = config['attn_dropout_prob']
+        self.hidden_act = config['hidden_act']
+        self.layer_norm_eps = config['layer_norm_eps']
+
         self.initializer_range = config['initializer_range']
         self.loss_type = config['loss_type']
-        self.dropout_prob = config['dropout_prob']
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.hidden_size , padding_idx=0)
-        self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size, padding_idx=0)
-        self.trm_encoder = TransformerEncoder(config)
-        self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=1e-12)
-        self.dropout = nn.Dropout()
+        self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size)
+        self.trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
+                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
+                                              hidden_dropout_prob=self.hidden_dropout_prob,
+                                              attn_dropout_prob=self.attn_dropout_prob,
+                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+
+        self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
+        self.dropout = nn.Dropout(self.hidden_dropout_prob)
 
         if self.loss_type == 'BPR':
             self.loss_fct = BPRLoss()
@@ -73,6 +84,7 @@ class SASRec(SequentialRecommender):
             module.bias.data.zero_()
 
     def get_attention_mask(self, item_seq):
+        """Generate left-to-right uni-directional attention mask for multi-head attention."""
         attention_mask = (item_seq > 0).long()
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
         # mask for left-to-right unidirectional
@@ -126,12 +138,18 @@ class SASRec(SequentialRecommender):
             return loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        test_item = interaction[self.ITEM_ID]
+        seq_output = self.forward(item_seq, item_seq_len)
+        test_item_emb = self.item_embedding(test_item)
+        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)  # [B]
+        return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
-        test_item_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
+        test_items_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B n_items]
         return scores

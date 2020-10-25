@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # @Time   : 2020/9/21
 # @Author : Zhichao Feng
-# @Email  : fzcbupt@gmai.com
+# @Email  : fzcbupt@gmail.com
 
 # UPDATE
-# @Time   : 2020/10/6
+# @Time   : 2020/10/21
 # @Author : Zhichao Feng
-# @email  : fzcbupt@gmai.com
+# @email  : fzcbupt@gmail.com
 
 r"""
-recbole.model.context_aware_recommender.din
+DIN
 ##############################################
 Reference:
-Guorui Zhou et al. "Deep Interest Network for Click-Through Rate Prediction" in ACM SIGKDD 2018
+    Guorui Zhou et al. "Deep Interest Network for Click-Through Rate Prediction" in ACM SIGKDD 2018
 
 Reference code:
-https://github.com/zhougr1993/DeepInterestNetwork/tree/master/din
-https://github.com/shenweichen/DeepCTR-Torch/tree/master/deepctr_torch/models
+    - https://github.com/zhougr1993/DeepInterestNetwork/tree/master/din
+    - https://github.com/shenweichen/DeepCTR-Torch/tree/master/deepctr_torch/models
 
 """
 
@@ -50,7 +50,8 @@ class DIN(SequentialRecommender):
         self.embedding_size = config['embedding_size']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.device = config['device']
-        self.dropout = config['dropout']
+        self.pooling_mode = config['pooling_mode']
+        self.dropout_prob = config['dropout_prob']
 
         self.types = ['user', 'item']
         self.user_feat = dataset.get_user_feature()
@@ -76,17 +77,17 @@ class DIN(SequentialRecommender):
                                           return_seq_weight=False)
         self.dnn_mlp_layers = MLPLayers(self.dnn_list,
                                         activation='Dice',
-                                        dropout=self.dropout,
+                                        dropout=self.dropout_prob,
                                         bn=True)
 
-        self.embedding_layer = ContextSeqEmbLayer(config, dataset)
+        self.embedding_layer = ContextSeqEmbLayer(dataset, self.embedding_size, self.pooling_mode, self.device)
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self.apply(self.init_weights)
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):

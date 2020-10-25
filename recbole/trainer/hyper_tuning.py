@@ -22,20 +22,14 @@ from hyperopt.pyll.base import Apply
 from recbole.utils.utils import dict2str
 
 
-"""
-Thanks to sbrodeur for the exhaustive search code.
-https://github.com/hyperopt/hyperopt/issues/200
-"""
-
-
-def recursiveFindNodes(root, node_type='switch'):
+def _recursiveFindNodes(root, node_type='switch'):
     nodes = []
     if isinstance(root, (list, tuple)):
         for node in root:
-            nodes.extend(recursiveFindNodes(node, node_type))
+            nodes.extend(_recursiveFindNodes(node, node_type))
     elif isinstance(root, dict):
         for node in root.values():
-            nodes.extend(recursiveFindNodes(node, node_type))
+            nodes.extend(_recursiveFindNodes(node, node_type))
     elif isinstance(root, (Apply)):
         if root.name == node_type:
             nodes.append(root)
@@ -49,12 +43,12 @@ def recursiveFindNodes(root, node_type='switch'):
     return nodes
 
 
-def parameters(space):
+def _parameters(space):
     # Analyze the domain instance to find parameters
     parameters = {}
     if isinstance(space, dict):
         space = list(space.values())
-    for node in recursiveFindNodes(space, 'switch'):
+    for node in _recursiveFindNodes(space, 'switch'):
 
         # Find the name of this parameter
         paramNode = node.pos_args[0]
@@ -67,17 +61,20 @@ def parameters(space):
     return parameters
 
 
-def spacesize(space):
+def _spacesize(space):
     # Compute the number of possible combinations
-    params = parameters(space)
+    params = _parameters(space)
     return np.prod([len(values) for values in params.values()])
 
 
 class ExhaustiveSearchError(Exception):
+    r""" ExhaustiveSearchError
+
+    """
     pass
 
 
-def validate_space_exhaustive_search(space):
+def _validate_space_exhaustive_search(space):
     supported_stochastic_symbols = ['randint', 'quniform', 'qloguniform', 'qnormal', 'qlognormal', 'categorical']
     for node in dfs(as_apply(space)):
         if node.name in implicit_stochastic_symbols:
@@ -87,6 +84,9 @@ def validate_space_exhaustive_search(space):
 
 
 def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000):
+    r""" This is for exhaustive search in HyperTuning.
+
+    """
     # Build a hash set for previous trials
     hashset = set([hash(frozenset([(key, value[0]) if len(value) > 0 else ((key, None))
                                    for key, value in trial['misc']['vals'].items()])) for trial in trials.trials])
@@ -127,6 +127,17 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
 
 
 class HyperTuning(object):
+    r"""HyperTuning Class is used to manage the parameter tuning process of recommender system models.
+    Given objective funciton, parameters range and optimization algorithm, using HyperTuning can find
+    the best result among these parameters
+
+    Note:
+        HyperTuning is based on the hyperopt (https://github.com/hyperopt/hyperopt)
+
+        Thanks to sbrodeur for the exhaustive search code.
+        https://github.com/hyperopt/hyperopt/issues/200
+    """
+
     def __init__(self, objective_function, space=None, params_file=None, fixed_config_file_list=None,
                  algo=tpe.suggest, max_evals=100):
         self.best_score = None
@@ -146,7 +157,7 @@ class HyperTuning(object):
         if isinstance(algo, str):
             if algo == 'exhaustive':
                 self.algo = partial(exhaustive_search, nbMaxSucessiveFailures=1000)
-                self.max_evals = spacesize(self.space)
+                self.max_evals = _spacesize(self.space)
             else:
                 raise ValueError('Illegal algo [{}]'.format(algo))
         else:
@@ -178,14 +189,14 @@ class HyperTuning(object):
         return space
 
     @staticmethod
-    def params2str(params):
+    def _params2str(params):
         params_str = ''
         for param_name in params:
             params_str += param_name + ':' + str(params[param_name]) + ', '
         return params_str[:-2]
 
     @staticmethod
-    def print_result(result_dict: dict):
+    def _print_result(result_dict: dict):
         print('current best valid score: %.4f' % result_dict['best_valid_score'])
         print('current best valid result:')
         print(result_dict['best_valid_result'])
@@ -194,6 +205,12 @@ class HyperTuning(object):
         print()
 
     def export_result(self, output_file=None):
+        r""" Write the searched parameters and corresponding results to the file
+
+        Args:
+            output_file (str): the output file
+
+        """
         with open(output_file, 'w') as fp:
             for params in self.params2result:
                 fp.write(params + '\n')
@@ -201,8 +218,13 @@ class HyperTuning(object):
                 fp.write('Test result:\n' + dict2str(self.params2result[params]['test_result']) + '\n\n')
 
     def trial(self, params):
-        config_dict = params
-        params_str = self.params2str(params)
+        r"""Given a set of parameters, return results and optimization status
+
+        Args:
+            params (dict): the parameter dictionary
+        """
+        config_dict = params.copy()
+        params_str = self._params2str(params)
         print('running parameters:', config_dict)
         result_dict = self.objective_function(config_dict, self.fixed_config_file_list)
         self.params2result[params_str] = result_dict
@@ -211,22 +233,25 @@ class HyperTuning(object):
         if not self.best_score:
             self.best_score = score
             self.best_params = params
-            self.print_result(result_dict)
+            self._print_result(result_dict)
         else:
             if bigger:
                 if score > self.best_score:
                     self.best_score = score
                     self.best_params = params
-                    self.print_result(result_dict)
+                    self._print_result(result_dict)
             else:
                 if score < self.best_score:
                     self.best_score = score
                     self.best_params = params
-                    self.print_result(result_dict)
+                    self._print_result(result_dict)
 
         if bigger:
             score = - score
         return {'loss': score, 'status': hyperopt.STATUS_OK}
 
     def run(self):
+        r""" begin to search the best parameters
+
+        """
         fmin(self.trial, self.space, algo=self.algo, max_evals=self.max_evals)

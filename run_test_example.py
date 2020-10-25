@@ -9,14 +9,14 @@
 
 import traceback
 from time import time
-from recbole.quick_start import run_unirec
+from recbole.quick_start import run_recbole
 
 
-closed_examples = ['Test SRGNN', 'Test GCSAN', 'Test NextItNet', 'Test GRU4RecKG']
+closed_examples = ['Test GRU4RecKG']
 
 test_examples = {
     'Test Eval Metric': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -26,7 +26,7 @@ test_examples = {
         'topk': [5, 10, 20],
     },
     'Test Real Time Full Sort': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -36,7 +36,7 @@ test_examples = {
         'real_time_process': True
     },
     'Test Pre Full Sort': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -46,7 +46,7 @@ test_examples = {
         'real_time_process': False
     },
     'Test Real Time Neg Sample By': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -56,7 +56,7 @@ test_examples = {
         'real_time_process': True
     },
     'Test Pre Neg Sample By': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -66,7 +66,7 @@ test_examples = {
         'real_time_process': False
     },
     'Test Leave One Out': {
-        'model': 'BPRMF',
+        'model': 'BPR',
         'dataset': 'ml-100k',
         'epochs': 1,
         'valid_metric': 'Recall@10',
@@ -78,8 +78,8 @@ test_examples = {
     },
 
     # General Recommendation
-    'Test BPRMF': {
-        'model': 'BPRMF',
+    'Test BPR': {
+        'model': 'BPR',
         'dataset': 'ml-100k',
     },
     'Test NeuMF': {
@@ -148,7 +148,7 @@ test_examples = {
         'dataset': 'ml-100k',
     },
     'Test AUTOINT': {
-        'model': 'AUTOINT',
+        'model': 'AutoInt',
         'dataset': 'ml-100k',
     },
     'Test DeepFM': {
@@ -200,7 +200,7 @@ test_examples = {
     'Test Caser': {
         'model': 'Caser',
         'dataset': 'ml-100k',
-        'MAX_ITEM_LIST_LENGTH': 10,
+        'reproducibility': False,
     },
     'Test TransRec': {
         'model': 'TransRec',
@@ -225,14 +225,17 @@ test_examples = {
     'Test NextItNet': {
         'model': 'NextItNet',
         'dataset': 'ml-100k',
+        'reproducibility': False,
     },
     'Test SRGNN': {
         'model': 'SRGNN',
         'dataset': 'ml-100k',
+        'MAX_ITEM_LIST_LENGTH': 3,
     },
     'Test GCSAN': {
         'model': 'GCSAN',
         'dataset': 'ml-100k',
+        'MAX_ITEM_LIST_LENGTH': 3,
     },
     'Test GRU4RecF': {
         'model': 'GRU4RecF',
@@ -342,7 +345,7 @@ def run_test_examples():
             config_dict = test_examples[example]
             if 'epochs' not in config_dict:
                 config_dict['epochs'] = 1
-            run_unirec(config_dict=config_dict, saved=False)
+            run_recbole(config_dict=config_dict, saved=False)
             print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:

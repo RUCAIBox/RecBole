@@ -9,14 +9,14 @@
 # @Email  : slmu@ruc.edu.cn
 
 r"""
-recbole.model.general_recommender.lightgcn
+LightGCN
 ################################################
 
 Reference:
-Xiangnan He et al. "LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation." in SIGIR 2020.
+    Xiangnan He et al. "LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation." in SIGIR 2020.
 
 Reference code:
-https://github.com/kuandeng/LightGCN
+    https://github.com/kuandeng/LightGCN
 """
 
 import numpy as np
@@ -50,7 +50,7 @@ class LightGCN(GeneralRecommender):
 
         # load parameters info
         self.latent_dim = config['embedding_size']  # int type:the embedding size of lightGCN
-        self.n_layers = config['layers']  # int type:the layer num of lightGCN
+        self.n_layers = config['n_layers']  # int type:the layer num of lightGCN
         self.reg_weight = config['reg_weight']  # float32 type: the weight decay for l2 normalizaton
 
         # define layers and loss

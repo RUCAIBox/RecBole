@@ -15,7 +15,6 @@ recbole.data.utils
 import copy
 import os
 import importlib
-from logging import getLogger
 
 from recbole.config import EvalSetting
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
@@ -24,6 +23,14 @@ from recbole.data.dataloader import *
 
 
 def create_dataset(config):
+    """Create dataset according to :attr:`config['model']` and :attr:`config['MODEL_TYPE']`.
+
+    Args:
+        config (Config): An instance object of Config, used to record parameter information.
+
+    Returns:
+        Dataset: Constructed dataset.
+    """
     try:
         return getattr(importlib.import_module('recbole.data.dataset'), config['model'] + 'Dataset')(config)
     except AttributeError:
@@ -43,6 +50,21 @@ def create_dataset(config):
 
 
 def data_preparation(config, dataset, save=False):
+    """Split the dataset by :attr:`config['eval_setting']` and call :func:`dataloader_construct` to create
+    corresponding dataloader.
+
+    Args:
+        config (Config): An instance object of Config, used to record parameter information.
+        dataset (Dataset): An instance object of Dataset, which contains all interaction records.
+        save (bool, optional): If ``True``, it will call :func:`save_datasets` to save split dataset.
+            Defaults to ``False``.
+
+    Returns:
+        tuple:
+            - train_data (AbstractDataLoader): The dataloader for training.
+            - valid_data (AbstractDataLoader): The dataloader for validation.
+            - test_data (AbstractDataLoader): The dataloader for testing.
+    """
     model_type = config['MODEL_TYPE']
 
     es_str = [_.strip() for _ in config['eval_setting'].split(',')]
@@ -115,6 +137,23 @@ def data_preparation(config, dataset, save=False):
 def dataloader_construct(name, config, eval_setting, dataset,
                          dl_format=InputType.POINTWISE,
                          batch_size=1, shuffle=False, **kwargs):
+    """Get a correct dataloader class by calling :func:`get_data_loader` to construct dataloader.
+
+    Args:
+        name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
+        config (Config): An instance object of Config, used to record parameter information.
+        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+        dataset (Dataset or list of Dataset): The split dataset for constructing dataloader.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+        **kwargs: Other input args of dataloader, such as :attr:`sampler`, :attr:`kg_sampler`
+            and :attr:`neg_sample_args`. The meaning of these args is the same as these args in some dataloaders.
+
+    Returns:
+        AbstractDataLoader or list of AbstractDataLoader: Constructed dataloader in split dataset.
+    """
     if not isinstance(dataset, list):
         dataset = [dataset]
 
@@ -163,6 +202,13 @@ def dataloader_construct(name, config, eval_setting, dataset,
 
 
 def save_datasets(save_path, name, dataset):
+    """Save split datasets.
+
+    Args:
+        save_path (str): The path of directory for saving.
+        name (str or list of str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
+        dataset (Dataset or list of Dataset): The split datasets.
+    """
     if (not isinstance(name, list)) and (not isinstance(dataset, list)):
         name = [name]
         dataset = [dataset]
@@ -176,6 +222,16 @@ def save_datasets(save_path, name, dataset):
 
 
 def get_data_loader(name, config, eval_setting):
+    """Return a dataloader class according to :attr:`config` and :attr:`eval_setting`.
+
+    Args:
+        name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
+        config (Config): An instance object of Config, used to record parameter information.
+        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+
+    Returns:
+        type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
+    """
     register_table = {
         'DIN': _get_DIN_data_loader
     }
@@ -185,7 +241,7 @@ def get_data_loader(name, config, eval_setting):
 
     model_type = config['MODEL_TYPE']
     neg_sample_strategy = eval_setting.neg_sample_args['strategy']
-    if model_type == ModelType.GENERAL:
+    if model_type == ModelType.GENERAL or model_type == ModelType.TRADITIONAL:
         if neg_sample_strategy == 'none':
             return GeneralDataLoader
         elif neg_sample_strategy == 'by':
@@ -224,6 +280,16 @@ def get_data_loader(name, config, eval_setting):
 
 
 def _get_DIN_data_loader(name, config, eval_setting):
+    """Customized function for DIN to get correct dataloader class.
+
+    Args:
+        name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
+        config (Config): An instance object of Config, used to record parameter information.
+        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+
+    Returns:
+        type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
+    """
     neg_sample_strategy = eval_setting.neg_sample_args['strategy']
     if neg_sample_strategy == 'none':
         return SequentialDataLoader
@@ -245,5 +311,6 @@ class DLFriendlyAPI(object):
             self.dataloader_apis.add(f.__name__)
             return f
         return decorator
+
 
 dlapi = DLFriendlyAPI()

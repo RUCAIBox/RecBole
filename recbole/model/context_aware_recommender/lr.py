@@ -5,15 +5,16 @@
 # @File   : lr.py
 
 r"""
-recbole.model.context_aware_recommender.lr
+LR
 #####################################################
 Reference:
-Matthew Richardson et al. "Predicting Clicks Estimating the Click-Through Rate for New Ads." in WWW 2007.
+    Matthew Richardson et al. "Predicting Clicks Estimating the Click-Through Rate for New Ads." in WWW 2007.
 """
 
 import torch.nn as nn
 from torch.nn.init import xavier_normal_
-from .context_recommender import ContextRecommender
+
+from recbole.model.abstract_recommender import ContextRecommender
 
 
 class LR(ContextRecommender):
@@ -29,13 +30,13 @@ class LR(ContextRecommender):
     def __init__(self, config, dataset):
         super(LR, self).__init__(config, dataset)
 
-        self.LABEL = config['LABEL_FIELD']
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
 
-        self.apply(self.init_weights)
+        # parameters initialization
+        self.apply(self._init_weights)
 
-    def init_weights(self, module):
+    def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
 

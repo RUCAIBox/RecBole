@@ -9,14 +9,14 @@
 # @Email  : cx.tian@outlook.com
 
 r"""
-recbole.model.general_recommender.gcmc
+GCMC
 ################################################
 
 Reference:
-van den Berg et al. "Graph Convolutional Matrix Completion." in SIGKDD 2018.
+    van den Berg et al. "Graph Convolutional Matrix Completion." in SIGKDD 2018.
 
 Reference code:
-https://github.com/riannevdberg/gc-mc
+    https://github.com/riannevdberg/gc-mc
 """
 
 
@@ -58,7 +58,7 @@ class GCMC(GeneralRecommender):
             form='coo').astype(np.float32)  # csr
 
         # load parameters info
-        self.drop_prob = config['drop_prob']
+        self.dropout_prob = config['dropout_prob']
         self.sparse_feature = config['sparse_feature']
         self.hidden_dim = [int(i) for i in list(config['hidden_dim'])]
         self.n_class = config['class_num']
@@ -101,7 +101,7 @@ class GCMC(GeneralRecommender):
                                    support=self.support,
                                    input_dim=self.input_dim,
                                    hidden_dim=self.hidden_dim,
-                                   drop_prob=self.drop_prob,
+                                   drop_prob=self.dropout_prob,
                                    device=self.device,
                                    sparse_feature=self.sparse_feature).to(self.device)
         self.BiDecoder = BiDecoder(input_dim=self.hidden_dim[-1],
@@ -275,9 +275,9 @@ class GcEncoder(nn.Module):
             self.dense_layer_v = nn.Linear(
                 self.gcn_output_dim, self.dense_output_dim, bias=self.bias)
 
-        self.init_weights()
+        self._init_weights()
 
-    def init_weights(self):
+    def _init_weights(self):
         init_range = math.sqrt((self.num_support + 1) /
                                (self.input_dim + self.gcn_output_dim))
         for w in range(self.num_support):
@@ -390,9 +390,9 @@ class BiDecoder(nn.Module):
              for _ in range(self.num_weights)])
         self.dense_layer = nn.Linear(
             self.num_weights, self.output_dim, bias=False)
-        self.init_weights()
+        self._init_weights()
 
-    def init_weights(self):
+    def _init_weights(self):
         dense_init_range = math.sqrt(
             self.output_dim / (self.num_weights + self.output_dim))
         self.dense_layer.weight.data.uniform_(
