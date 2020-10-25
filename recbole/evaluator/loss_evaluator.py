@@ -23,10 +23,12 @@ loss_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOG
 
 
 class LossEvaluator(AbstractEvaluator):
-    r"""Loss Evaluator is mainly used in rating prediction and click through rate prediction.
-    The metrics used do not calculate group-based metrics which considers the metrics scores averaged across users.
-    It is also not limited to k. Instead, it calculates the scores on the entire prediction results regardless the users.
-    Now, we support four loss metrics which contain `'AUC', 'RMSE', 'MAE', 'LOGLOSS'`.
+    r"""Loss Evaluator is mainly used in rating prediction and click through rate prediction. Now, we support four 
+    loss metrics which contain `'AUC', 'RMSE', 'MAE', 'LOGLOSS'`.
+
+    Note:
+        The metrics used do not calculate group-based metrics which considers the metrics scores averaged across users.
+        It is also not limited to k. Instead, it calculates the scores on the entire prediction results regardless the users.
 
     """
     def __init__(self, config):
@@ -36,14 +38,15 @@ class LossEvaluator(AbstractEvaluator):
         self._check_args()
 
     def collect(self, interaction, pred_scores):
-        """collect the intermediate result for loss metrics
+        """collect the loss intermediate result of one batch, this function mainly 
+        implements concatenating preds and trues. It is called at the end of each batch
 
         Args:
-            interaction (Interaction): Interaction class of the batch
-            pred_scores (tensor): the predict scores' list
+            interaction (Interaction): :class:`AbstractEvaluator` of the batch
+            pred_scores (tensor): the tensor of model output with a size of `(N, )`
 
         Returns:
-            tensor : a batch of socres
+            tensor : a batch of socres with a size of `(N, 2)`
 
         """
         true_scores = interaction[self.label_field].to(pred_scores.device)
@@ -51,10 +54,10 @@ class LossEvaluator(AbstractEvaluator):
         return torch.stack((true_scores, pred_scores.detach()), dim=1)
 
     def evaluate(self, batch_matrix_list, *args):
-        """calculate the metrics of all batches
+        """calculate the metrics of all batches. It is called at the end of each epoch
 
         Args:
-            batch_matrix_list (list): scores for all batches
+            batch_matrix_list (list): the results of all batches
 
         Returns:
             dict: such as {'AUC': 0.83}

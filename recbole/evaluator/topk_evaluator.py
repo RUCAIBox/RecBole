@@ -24,10 +24,13 @@ topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'P
 
 
 class TopKEvaluator(AbstractEvaluator):
-    r"""TopK Evaluator is mainly used in ranking tasks. The metrics used calculate group-based metrics 
-    which considers the metrics scores averaged across users. some of them are also limited to k. 
-    Now, we support six topk metrics which contain `'Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP'`.
+    r"""TopK Evaluator is mainly used in ranking tasks. Now, we support six topk metrics which 
+    contain `'Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP'`.
     
+    Note:
+        The metrics used calculate group-based metrics which considers the metrics scores averaged 
+        across users. some of them are also limited to k. 
+
     """
     def __init__(self, config):
         super().__init__(config)
@@ -36,12 +39,13 @@ class TopKEvaluator(AbstractEvaluator):
         self._check_args()
 
     def collect(self, interaction, scores_tensor, full=False):
-        """collect the intermediate result for topk metrics
+        """collect the topk intermediate result of one batch, this function mainly 
+        implements padding and TopK finding. It is called at the end of each batch
 
         Args:
-            interaction (Interaction): Interaction class of the batch
-            scores_tensor (tensor): a tensor of scores
-            full (bool, optional): whether it is full sort. Default: 0.
+            interaction (Interaction): :class:`AbstractEvaluator` of the batch
+            scores_tensor (tensor): the tensor of model output with size of `(N, )`
+            full (bool, optional): whether it is full sort. Default: False.
 
         """
         user_len_list = interaction.user_len_list
@@ -57,14 +61,16 @@ class TopKEvaluator(AbstractEvaluator):
         return topk_index
 
     def evaluate(self, batch_matrix_list, eval_data):
-        """calculate the metrics of all batches
+        """calculate the metrics of all batches. It is called at the end of each epoch
 
         Args:
-            batch_matrix_list (list): the matrixs of all batches
+            batch_matrix_list (list): the results of all batches
             eval_data (Dataset): the class of test data
 
         Returns:
-            dict: such as ``{'Hit@20': 0.3824, 'Recall@20': 0.0527}`` or ``{'Hit@10': 0.3153, 'Recall@10': 0.0329}``
+            dict: such as ``{'Hit@20': 0.3824, 'Recall@20': 0.0527,
+                            'Hit@10': 0.3153, 'Recall@10': 0.0329}``
+
         """
         pos_len_list = eval_data.get_pos_len_list()
         topk_index = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
@@ -105,14 +111,15 @@ class TopKEvaluator(AbstractEvaluator):
             raise TypeError('The topk must be a integer, list')
 
     def metrics_info(self, pos_idx, pos_len):
-        """get one users's metrics result
+        """get metrics result
 
         Args:
-            pos_idx (np.ndarray): the int index of topk items
-            pos_len (int): the length of postivite items
+            pos_idx (np.ndarray): the bool index of all users' topk items that indicating whether the corresponding entry is 
+                a right recommendation or not
+            pos_len (list): the length of all users' postivite items
 
         Returns:
-            list: a list of metrics result
+            list: a list of matrix which record the results from `1` to `max(topk)`
 
         """
         result_list = []
@@ -123,7 +130,7 @@ class TopKEvaluator(AbstractEvaluator):
         return result_list
 
     def _calculate_metrics(self, pos_len_list, topk_index):
-        """ to evaluate the metrics by users
+        """integrate the results of each batch and evaluate the topk metrics by users
 
         Args:
             pos_len_list (list): a list of users' positive items
