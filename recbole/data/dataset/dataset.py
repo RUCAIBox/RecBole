@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/22 2020/10/13, 2020/10/20
+# @Time   : 2020/10/22 2020/10/13, 2020/10/25
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -362,7 +362,7 @@ class Dataset(object):
 
         Args:
             filepath (str): path of input file.
-            source (FeatureSource): source of input file.
+            source (FeatureSource or str): source of input file.
 
         Returns:
             pandas.DataFrame: Loaded feature
@@ -394,19 +394,20 @@ class Dataset(object):
                 continue
             if unload_col is not None and field in unload_col:
                 continue
-            self.field2source[field] = source
-            self.field2type[field] = ftype
-            if not ftype.value.endswith('seq'):
-                self.field2seqlen[field] = 1
+            if isinstance(source, FeatureSource):
+                self.field2source[field] = source
+                self.field2type[field] = ftype
+                if not ftype.value.endswith('seq'):
+                    self.field2seqlen[field] = 1
             columns.append(field)
             usecols.append(field_type)
-            # dtype[field_type] = np.float64 if ftype == FeatureType.FLOAT else str
+            dtype[field_type] = np.float64 if ftype == FeatureType.FLOAT else str
 
         if len(columns) == 0:
             self.logger.warning('no columns has been loaded from [{}]'.format(source))
             return None
 
-        df = pd.read_csv(filepath, delimiter=self.config['field_separator'], usecols=usecols)  # , dtype=dtype)
+        df = pd.read_csv(filepath, delimiter=self.config['field_separator'], usecols=usecols, dtype=dtype)
         df.columns = columns
 
         seq_separator = self.config['seq_separator']

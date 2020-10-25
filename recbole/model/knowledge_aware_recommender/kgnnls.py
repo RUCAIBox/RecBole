@@ -96,8 +96,9 @@ class KGNNLS(KnowledgeRecommender):
             y(torch.Tensor): the label in user-item interactions, shape: [n_interactions, 1]
 
         Returns:
-            interaction_table(dict): key: user_id * 10^offset + item_id; value: y_{user_id, item_id}
-            offset(int): The offset that is used for calculating the key(index) in interaction_table
+            tuple:
+                - interaction_table(dict): key: user_id * 10^offset + item_id; value: y_{user_id, item_id}
+                - offset(int): The offset that is used for calculating the key(index) in interaction_table
         """
         offset = len(str(self.n_entities))
         offset = 10 ** offset
@@ -138,10 +139,11 @@ class KGNNLS(KnowledgeRecommender):
             kg_graph(scipy.sparse.coo_matrix): an undirected graph
 
         Returns:
-            adj_entity(torch.LongTensor): each line stores the sampled neighbor entities for a given entity,
-                                          shape: [n_entities, neighbor_sample_size]
-            adj_relation(torch.LongTensor): each line stores the corresponding sampled neighbor relations,
-                                            shape: [n_entities, neighbor_sample_size]
+            tuple:
+                - adj_entity (torch.LongTensor): each line stores the sampled neighbor entities for a given entity,
+                  shape: [n_entities, neighbor_sample_size]
+                - adj_relation (torch.LongTensor): each line stores the corresponding sampled neighbor relations,
+                  shape: [n_entities, neighbor_sample_size]
         """
         # print('constructing knowledge graph ...')
         # treat the KG as an undirected graph
@@ -195,14 +197,15 @@ class KGNNLS(KnowledgeRecommender):
             items(torch.LongTensor): The input tensor that contains item's id, shape: [batch_size, ]
 
         Returns:
-            entities(list): entities is a list of i-iter (i = 0, 1, ..., n_iter) neighbors for the batch of items.
-                            dimensions of entities: {[batch_size, 1],
-                            [batch_size, n_neighbor],
-                            [batch_size, n_neighbor^2],
-                            ...,
-                            [batch_size, n_neighbor^n_iter]}
-            relations(list): relations is a list of i-iter (i = 0, 1, ..., n_iter) corresponding relations for entities.
-                             relations have the same shape as entities.
+            tuple:
+                - entities(list): Entities is a list of i-iter (i = 0, 1, ..., n_iter) neighbors for the batch of items.
+                  dimensions of entities: {[batch_size, 1],
+                  [batch_size, n_neighbor],
+                  [batch_size, n_neighbor^2],
+                  ...,
+                  [batch_size, n_neighbor^n_iter]}
+                - relations(list): Relations is a list of i-iter (i = 0, 1, ..., n_iter) corresponding relations for
+                  entities. Relations have the same shape as entities.
         """
         items = torch.unsqueeze(items, dim=1)
         entities = [items]
