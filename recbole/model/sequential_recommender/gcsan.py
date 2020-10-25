@@ -22,7 +22,6 @@ from torch.nn import Parameter
 from torch.nn import functional as F
 
 from recbole.model.loss import EmbLoss, BPRLoss
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.layers import TransformerEncoder
 
@@ -45,6 +44,7 @@ class GNN(nn.Module):
 
         self.linear_edge_in = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.linear_edge_out = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
+
         # parameters initialization
         self._reset_parameters()
 
@@ -237,12 +237,18 @@ class GCSAN(SequentialRecommender):
         return total_loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        test_item = interaction[self.ITEM_ID]
+        seq_output = self.forward(item_seq, item_seq_len)
+        test_item_emb = self.item_embedding(test_item)
+        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)  # [B]
+        return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
-        test_item_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
+        test_items_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
         return scores

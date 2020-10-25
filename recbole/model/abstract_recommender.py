@@ -91,10 +91,11 @@ class GeneralRecommender(AbstractRecommender):
 
 
 class SequentialRecommender(AbstractRecommender):
-    type = ModelType.SEQUENTIAL
     """
     This is a abstract sequential recommender. All the sequential model should implement This class.
     """
+    type = ModelType.SEQUENTIAL
+
     def __init__(self, config, dataset):
         super(SequentialRecommender, self).__init__()
 

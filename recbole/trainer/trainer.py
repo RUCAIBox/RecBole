@@ -312,7 +312,7 @@ class Trainer(AbstractTrainer):
         tmp_len_list = np.add(pos_len_list, neg_len_list).tolist()
         extra_len_list = np.subtract(self.tot_item_num, tmp_len_list).tolist()
         padding_nums = self.tot_item_num * len(tmp_len_list) - np.sum(tmp_len_list)
-        padding_tensor = torch.tensor([-np.inf], device=self.device).repeat(padding_nums)
+        padding_tensor = torch.tensor([-np.inf], dtype=scores.dtype, device=self.device).repeat(padding_nums)
         padding_scores = torch.split(padding_tensor, extra_len_list)
 
         final_scores = list(itertools.chain.from_iterable(zip(pos_scores, neg_scores, padding_scores)))
@@ -625,6 +625,7 @@ class S3RecTrainer(Trainer):
             return self.finetune(train_data, valid_data, verbose, saved)
         else:
             raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
+
 
 class MKRTrainer(Trainer):
     r"""MKRTrainer is designed for MKR, which is a knowledge-aware recommendation method.

@@ -25,7 +25,6 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn.init import normal_, xavier_normal_, constant_
 
-from recbole.utils import InputType
 from recbole.model.loss import RegLoss, BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
 
@@ -43,7 +42,6 @@ class Caser(SequentialRecommender):
         super(Caser, self).__init__(config, dataset)
 
         # load parameters info
-        self.L = config['MAX_ITEM_LIST_LENGTH']
         self.embedding_size = config['embedding_size']
         self.loss_type = config['loss_type']
         self.n_h = config['nh']
@@ -59,10 +57,10 @@ class Caser(SequentialRecommender):
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
 
         # vertical conv layer
-        self.conv_v = nn.Conv2d(in_channels=1, out_channels=self.n_v, kernel_size=(self.L, 1))
+        self.conv_v = nn.Conv2d(in_channels=1, out_channels=self.n_v, kernel_size=(self.max_seq_length, 1))
 
         # horizontal conv layer
-        lengths = [i + 1 for i in range(self.L)]
+        lengths = [i + 1 for i in range(self.max_seq_length)]
         self.conv_h = nn.ModuleList([nn.Conv2d(in_channels=1, out_channels=self.n_h, kernel_size=(i, self.embedding_size)) for i in lengths])
 
         # fully-connected layer
@@ -162,12 +160,18 @@ class Caser(SequentialRecommender):
         return loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        user = interaction[self.USER_ID]
+        test_item = interaction[self.ITEM_ID]
+        seq_output = self.forward(user, item_seq)
+        test_item_emb = self.item_embedding(test_item)
+        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)  # [B]
+        return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         user = interaction[self.USER_ID]
         seq_output = self.forward(user, item_seq)
-        test_item_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
+        test_items_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
         return scores

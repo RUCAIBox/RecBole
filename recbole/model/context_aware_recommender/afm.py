@@ -59,8 +59,9 @@ class AFM(ContextRecommender):
             feat_emb (torch.FloatTensor): input feature embedding tensor. shape of [batch_size, field_size, embed_dim].
 
         Returns:
-            torch.FloatTensor: Left part of the cross feature. shape of [batch_size, num_pairs, emb_dim].
-            torch.FloatTensor: Right part of the cross feature. shape of [batch_size, num_pairs, emb_dim].
+            tuple:
+                - torch.FloatTensor: Left part of the cross feature. shape of [batch_size, num_pairs, emb_dim].
+                - torch.FloatTensor: Right part of the cross feature. shape of [batch_size, num_pairs, emb_dim].
         """
         # num_pairs = num_feature_field * (num_feature_field-1) / 2
         row = []

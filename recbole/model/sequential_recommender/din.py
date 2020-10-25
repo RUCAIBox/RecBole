@@ -51,7 +51,7 @@ class DIN(SequentialRecommender):
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.device = config['device']
         self.pooling_mode = config['pooling_mode']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
 
         self.types = ['user', 'item']
         self.user_feat = dataset.get_user_feature()
@@ -77,7 +77,7 @@ class DIN(SequentialRecommender):
                                           return_seq_weight=False)
         self.dnn_mlp_layers = MLPLayers(self.dnn_list,
                                         activation='Dice',
-                                        dropout=self.dropout,
+                                        dropout=self.dropout_prob,
                                         bn=True)
 
         self.embedding_layer = ContextSeqEmbLayer(dataset, self.embedding_size, self.pooling_mode, self.device)

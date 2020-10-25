@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/22 2020/10/13, 2020/10/20
+# @Time   : 2020/10/22 2020/10/13, 2020/10/25
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -32,12 +32,12 @@ from recbole.data.utils import dlapi
 
 class Dataset(object):
     """:class:`Dataset` stores the original dataset in memory.
-    It provides many useful functions for data preprocessing, such as k-core data filtering and missing value imputation.
-    Features are stored as :class:`pandas.DataFrame` inside :class:`~recbole.data.dataset.dataset.Dataset`.
+    It provides many useful functions for data preprocessing, such as k-core data filtering and missing value
+    imputation. Features are stored as :class:`pandas.DataFrame` inside :class:`~recbole.data.dataset.dataset.Dataset`.
     General and Context-aware Models can use this class.
 
-    By calling method :meth:`~recbole.data.dataset.dataset.Dataset.build()`, it will processing dataset into DataLoaders,
-    according to :class:`~recbole.config.eval_setting.EvalSetting`.
+    By calling method :meth:`~recbole.data.dataset.dataset.Dataset.build()`, it will processing dataset into
+    DataLoaders, according to :class:`~recbole.config.eval_setting.EvalSetting`.
 
     Args:
         config (Config): Global configuration object.
@@ -50,13 +50,15 @@ class Dataset(object):
 
         field2type (dict): Dict mapping feature name (str) to its type (:class:`~recbole.utils.enum_type.FeatureType`).
 
-        field2source (dict): Dict mapping feature name (str) to its source (:class:`~recbole.utils.enum_type.FeatureSource`).
+        field2source (dict): Dict mapping feature name (str) to its source
+            (:class:`~recbole.utils.enum_type.FeatureSource`).
             Specially, if feature is loaded from Arg ``additional_feat_suffix``, its source has type str,
             which is the suffix of its local file (also the suffix written in Arg ``additional_feat_suffix``).
 
-        field2id_token (dict): Dict mapping feature name (str) to a list, which stores the original token of this feature.
-            For example, if ``test`` is token-like feature, ``token_a`` is remapped to 1, ``token_b`` is remapped to 2.
-            Then ``field2id_token['test'] = ['[PAD]', 'token_a', 'token_b']``. (Note that 0 is always PADDING for token-like features.)
+        field2id_token (dict): Dict mapping feature name (str) to a list, which stores the original token of
+            this feature. For example, if ``test`` is token-like feature, ``token_a`` is remapped to 1, ``token_b``
+            is remapped to 2. Then ``field2id_token['test'] = ['[PAD]', 'token_a', 'token_b']``. (Note that 0 is
+            always PADDING for token-like features.)
 
         field2seqlen (dict): Dict mapping feature name (str) to its sequence length (int).
             For sequence features, their length can be either set in config,
@@ -360,7 +362,7 @@ class Dataset(object):
 
         Args:
             filepath (str): path of input file.
-            source (FeatureSource): source of input file.
+            source (FeatureSource or str): source of input file.
 
         Returns:
             pandas.DataFrame: Loaded feature
@@ -375,12 +377,15 @@ class Dataset(object):
         load_col, unload_col = self._get_load_and_unload_col(filepath, source)
         if load_col == set():
             return None
-        df = pd.read_csv(filepath, delimiter=self.config['field_separator'])
-        field_names = []
+
+        field_separator = self.config['field_separator']
         columns = []
-        for field_type in df.columns:
+        usecols = []
+        dtype = {}
+        with open(filepath, 'r') as f:
+            head = f.readline()[:-1]
+        for field_type in head.split(field_separator):
             field, ftype = field_type.split(':')
-            field_names.append(field)
             try:
                 ftype = FeatureType(ftype)
             except ValueError:
@@ -389,31 +394,37 @@ class Dataset(object):
                 continue
             if unload_col is not None and field in unload_col:
                 continue
-            self.field2source[field] = source
-            self.field2type[field] = ftype
-            if not ftype.value.endswith('seq'):
-                self.field2seqlen[field] = 1
+            if isinstance(source, FeatureSource):
+                self.field2source[field] = source
+                self.field2type[field] = ftype
+                if not ftype.value.endswith('seq'):
+                    self.field2seqlen[field] = 1
             columns.append(field)
+            usecols.append(field_type)
+            dtype[field_type] = np.float64 if ftype == FeatureType.FLOAT else str
 
         if len(columns) == 0:
             self.logger.warning('no columns has been loaded from [{}]'.format(source))
             return None
-        df.columns = field_names
-        df = df[columns]
+
+        df = pd.read_csv(filepath, delimiter=self.config['field_separator'], usecols=usecols, dtype=dtype)
+        df.columns = columns
 
         seq_separator = self.config['seq_separator']
         for field in columns:
             ftype = self.field2type[field]
+            if not ftype.value.endswith('seq'):
+                continue
+            df[field].fillna(value='0', inplace=True)
             if ftype == FeatureType.TOKEN_SEQ:
                 df[field] = [list(filter(None, _.split(seq_separator))) for _ in df[field].values]
             elif ftype == FeatureType.FLOAT_SEQ:
                 df[field] = [list(map(float, filter(None, _.split(seq_separator)))) for _ in df[field].values]
-            if field not in self.field2seqlen:
-                self.field2seqlen[field] = max(map(len, df[field].values))
+            self.field2seqlen[field] = max(map(len, df[field].values))
         return df
 
     def _user_item_feat_preparation(self):
-        """Sort :obj:`user_feat` and :obj:`item_feat` by ``user_id`` or ``item_id``.
+        """Sort :attr:`user_feat` and :attr:`item_feat` by ``user_id`` or ``item_id``.
         Missing values will be filled.
         """
         flag = False
@@ -681,7 +692,7 @@ class Dataset(object):
                 self._del_col(field)
 
     def _reset_index(self):
-        """Reset index for all feats in :obj:`feat_list`.
+        """Reset index for all feats in :attr:`feat_list`.
         """
         for feat in self.feat_list:
             if feat.empty:
@@ -794,8 +805,8 @@ class Dataset(object):
         """Transfer set of fields in the same remapping space into remap list.
 
         If ``uid_field`` or ``iid_field`` in ``field_set``,
-        field in :obj:`inter_feat` will be remapped firstly,
-        then field in :obj:`user_feat` or :obj:`item_feat` will be remapped next, finally others.
+        field in :attr:`inter_feat` will be remapped firstly,
+        then field in :attr:`user_feat` or :attr:`item_feat` will be remapped next, finally others.
 
         Args:
             field_set (set): Set of fields in the same remapping space
@@ -1042,9 +1053,9 @@ class Dataset(object):
         Returns:
             tuple:
             - ``numpy.ndarray`` of tuple ``(uid, slice)``,
-                interaction records between slice are all belong to the same uid.
+              interaction records between slice are all belong to the same uid.
             - ``numpy.ndarray`` of int,
-                representing number of interaction records of each user.
+              representing number of interaction records of each user.
         """
         self._check_field('uid_field')
         self.sort(by=self.uid_field, ascending=True)
@@ -1063,7 +1074,7 @@ class Dataset(object):
         """Given a name of attribute, check if it's exist.
 
         Args:
-            field_names (list): Fields to be checked.
+            *field_names (str): Fields to be checked.
         """
         for field_name in field_names:
             if getattr(self, field_name, None) is None:
@@ -1435,9 +1446,10 @@ class Dataset(object):
                 Defaults to ``None``.
 
         Returns:
-            - History matrix (torch.Tensor): ``history_matrix`` described above.
-            - History values matrix (torch.Tensor): ``history_value`` described above.
-            - History length matrix (torch.Tensor): ``history_len`` described above.
+            tuple:
+                - History matrix (torch.Tensor): ``history_matrix`` described above.
+                - History values matrix (torch.Tensor): ``history_value`` described above.
+                - History length matrix (torch.Tensor): ``history_len`` described above.
         """
         self._check_field('uid_field', 'iid_field')
 
@@ -1482,7 +1494,7 @@ class Dataset(object):
         ``history_matrix[i]`` represents user ``i``'s history interacted item_id.
 
         ``history_value[i]`` represents user ``i``'s history interaction records' values,
-            ``0`` if ``value_field = None``.
+        ``0`` if ``value_field = None``.
 
         ``history_len[i]`` represents number of user ``i``'s history interaction records.
 
@@ -1493,9 +1505,10 @@ class Dataset(object):
                 Defaults to ``None``.
 
         Returns:
-            - History matrix (torch.Tensor): ``history_matrix`` described above.
-            - History values matrix (torch.Tensor): ``history_value`` described above.
-            - History length matrix (torch.Tensor): ``history_len`` described above.
+            tuple:
+                - History matrix (torch.Tensor): ``history_matrix`` described above.
+                - History values matrix (torch.Tensor): ``history_value`` described above.
+                - History length matrix (torch.Tensor): ``history_len`` described above.
         """
         return self._history_matrix(row='user', value_field=value_field)
 
@@ -1505,7 +1518,7 @@ class Dataset(object):
         ``history_matrix[i]`` represents item ``i``'s history interacted item_id.
 
         ``history_value[i]`` represents item ``i``'s history interaction records' values,
-            ``0`` if ``value_field = None``.
+        ``0`` if ``value_field = None``.
 
         ``history_len[i]`` represents number of item ``i``'s history interaction records.
 
@@ -1516,9 +1529,10 @@ class Dataset(object):
                 Defaults to ``None``.
 
         Returns:
-            - History matrix (torch.Tensor): ``history_matrix`` described above.
-            - History values matrix (torch.Tensor): ``history_value`` described above.
-            - History length matrix (torch.Tensor): ``history_len`` described above.
+            tuple:
+                - History matrix (torch.Tensor): ``history_matrix`` described above.
+                - History values matrix (torch.Tensor): ``history_value`` described above.
+                - History length matrix (torch.Tensor): ``history_len`` described above.
         """
         return self._history_matrix(row='item', value_field=value_field)
 
