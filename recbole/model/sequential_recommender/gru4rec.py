@@ -22,7 +22,6 @@ import torch
 from torch import nn
 from torch.nn.init import xavier_uniform_, xavier_normal_
 
-from recbole.utils import InputType
 from recbole.model.loss import BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
 
@@ -45,11 +44,11 @@ class GRU4Rec(SequentialRecommender):
         self.hidden_size = config['hidden_size']
         self.loss_type = config['loss_type']
         self.num_layers = config['num_layers']
-        self.dropout = config['dropout']
+        self.dropout_prob = config['dropout_prob']
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.emb_dropout = nn.Dropout(self.dropout)
+        self.emb_dropout = nn.Dropout(self.dropout_prob)
         self.gru_layers = nn.GRU(
             input_size=self.embedding_size,
             hidden_size=self.hidden_size,

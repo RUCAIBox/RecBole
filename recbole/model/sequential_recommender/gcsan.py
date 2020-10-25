@@ -22,7 +22,6 @@ from torch.nn import Parameter
 from torch.nn import functional as F
 
 from recbole.model.loss import EmbLoss, BPRLoss
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.layers import TransformerEncoder
 
@@ -45,6 +44,7 @@ class GNN(nn.Module):
 
         self.linear_edge_in = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.linear_edge_out = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
+
         # parameters initialization
         self._reset_parameters()
 

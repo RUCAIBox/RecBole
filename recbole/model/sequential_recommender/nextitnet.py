@@ -22,7 +22,6 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn.init import uniform_, xavier_normal_, constant_
 
-from recbole.utils import InputType
 from recbole.model.loss import RegLoss, BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
 

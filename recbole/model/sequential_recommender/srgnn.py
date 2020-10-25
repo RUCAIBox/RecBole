@@ -23,7 +23,6 @@ from torch import nn
 from torch.nn import Parameter
 from torch.nn import functional as F
 
-from recbole.utils import InputType
 from recbole.model.loss import BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
 
