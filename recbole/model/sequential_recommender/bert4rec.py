@@ -235,7 +235,15 @@ class BERT4Rec(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        test_item = interaction[self.ITEM_ID]
+        item_seq = self.reconstruct_test_data(item_seq, item_seq_len)
+        seq_output = self.forward(item_seq)
+        seq_output = self.gather_indexes(seq_output, item_seq_len - 1)  # [B H]
+        test_item_emb = self.item_embedding(test_item)
+        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)  # [B]
+        return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
@@ -243,6 +251,6 @@ class BERT4Rec(SequentialRecommender):
         item_seq = self.reconstruct_test_data(item_seq, item_seq_len)
         seq_output = self.forward(item_seq)
         seq_output = self.gather_indexes(seq_output, item_seq_len - 1)  # [B H]
-        test_item_emb = self.item_embedding.weight[:self.n_items-1]  # delete masked token
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
+        test_items_emb = self.item_embedding.weight[:self.n_items-1]  # delete masked token
+        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, item_num]
         return scores

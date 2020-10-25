@@ -3,3 +3,4 @@ hidden_size: 128
 num_layers: 1
 dropout_prob: 0.1
 freeze_kg: True
+loss_type: 'CE'

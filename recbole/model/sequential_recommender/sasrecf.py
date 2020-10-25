@@ -35,7 +35,6 @@ class SASRecF(SequentialRecommender):
         self.hidden_act = config['hidden_act']
         self.layer_norm_eps = config['layer_norm_eps']
 
-        self.embedding_size = config['embedding_size']
         self.selected_features = config['selected_features']
         self.pooling_mode = config['pooling_mode']
         self.device = config['device']
@@ -56,7 +55,7 @@ class SASRecF(SequentialRecommender):
                                               attn_dropout_prob=self.attn_dropout_prob,
                                               hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
 
-        self.concat_layer = nn.Linear(self.embedding_size * (1 + self.num_feature_field), self.hidden_size)
+        self.concat_layer = nn.Linear(self.hidden_size * (1 + self.num_feature_field), self.hidden_size)
 
         self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
         self.dropout = nn.Dropout(self.hidden_dropout_prob)
@@ -154,12 +153,18 @@ class SASRecF(SequentialRecommender):
             return loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        test_item = interaction[self.ITEM_ID]
+        seq_output = self.forward(item_seq, item_seq_len)
+        test_item_emb = self.item_embedding(test_item)
+        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)
+        return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
-        test_item_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
+        test_items_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, item_num]
         return scores

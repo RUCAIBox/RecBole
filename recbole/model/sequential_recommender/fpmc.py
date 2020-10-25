@@ -104,7 +104,12 @@ class FPMC(SequentialRecommender):
         return loss
 
     def predict(self, interaction):
-        pass
+        user = interaction[self.USER_ID]
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        test_item = interaction[self.ITEM_ID]
+        score = self.forward(user, item_seq, item_seq_len, test_item)  # [B]
+        return score
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
