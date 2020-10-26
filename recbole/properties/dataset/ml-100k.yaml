@@ -10,8 +10,6 @@ TIME_FIELD: timestamp
 seq_len: ~
 # Label for Point-wise DataLoader
 LABEL_FIELD: label
-threshold:
-    rating: 4
 # NegSample Prefix for Pair-wise DataLoader
 NEG_PREFIX: neg_
 # Sequential Model Needed
