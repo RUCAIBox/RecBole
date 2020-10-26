@@ -27,6 +27,7 @@ class Pop(GeneralRecommender):
 
         self.item_cnt = torch.zeros(self.n_items, 1, dtype=torch.long, device=self.device, requires_grad=False)
         self.max_cnt = None
+        self.fake_loss = torch.nn.Parameter(torch.zeros(1))
 
     def forward(self):
         pass
