@@ -1,3 +1,7 @@
+![RecBole Logo](asset/logo.png)
+
+--------------------------------------------------------------------------------
+
 # RecBole (伯乐)
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
