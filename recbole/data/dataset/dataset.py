@@ -867,7 +867,7 @@ class Dataset(object):
         tokens = np.concatenate(tokens)
         return tokens, split_point
 
-    def _remap(self, remap_list, overwrite=True):
+    def _remap(self, remap_list):
         """Remap tokens using :meth:`pandas.factorize`.
 
         Args:
@@ -879,7 +879,7 @@ class Dataset(object):
         mp = ['[PAD]'] + list(mp)
 
         for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
-            if overwrite or (field not in self.field2id_token):
+            if (field not in self.field2id_token):
                 self.field2id_token[field] = mp
             if ftype == FeatureType.TOKEN:
                 feat[field] = new_ids
