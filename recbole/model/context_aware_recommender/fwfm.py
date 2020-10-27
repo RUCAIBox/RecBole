@@ -77,10 +77,10 @@ class FwFM(ContextRecommender):
                     fea_id += 1
         
         if self.fields is None:
-            fea_id = 0
+            field_id = 0
             for key, value in self.feature2id.items():
-                self.feature2field[fea_id] = self.feature2id[key]
-                fea_id += 1
+                self.feature2field[self.feature2id[key]] = field_id
+                field_id += 1
         else:
             for key, value in self.fields.items():
                 for v in value:
