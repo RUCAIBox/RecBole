@@ -964,19 +964,19 @@ class Dataset(object):
         """
         return self.fields([FeatureType.FLOAT, FeatureType.TOKEN])
 
-    def set_field_property(self, field, field2type, field2source, field2seqlen):
+    def set_field_property(self, field, field_type, field_source, field_seqlen):
         """Set a new field's properties.
 
         Args:
             field (str): Name of the new field.
-            field2type (FeatureType): Type of the new field.
-            field2source (FeatureSource): Source of the new field.
-            field2seqlen (int): max length of the sequence in ``field``.
+            field_type (FeatureType): Type of the new field.
+            field_source (FeatureSource): Source of the new field.
+            field_seqlen (int): max length of the sequence in ``field``.
                 ``1`` if ``field``'s type is not sequence-like.
         """
-        self.field2type[field] = field2type
-        self.field2source[field] = field2source
-        self.field2seqlen[field] = field2seqlen
+        self.field2type[field] = field_type
+        self.field2source[field] = field_source
+        self.field2seqlen[field] = field_seqlen
 
     def copy_field_property(self, dest_field, source_field):
         """Copy properties from ``dest_field`` towards ``source_field``.
