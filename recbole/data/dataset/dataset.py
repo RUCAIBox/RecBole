@@ -321,12 +321,11 @@ class Dataset(object):
                 raise ValueError('Additional feature file [{}] not found'.format(feat_path))
             setattr(self, '{}_feat'.format(suf), feat)
 
-    def _get_load_and_unload_col(self, filepath, source):
+    def _get_load_and_unload_col(self, source):
         """Parsing ``config['load_col']`` and ``config['unload_col']`` according to source.
         See :doc:`../user_guide/data/data_args` for detail arg setting.
 
         Args:
-            filepath (str): path of input file.
             source (FeatureSource): source of input file.
 
         Returns:
@@ -352,7 +351,7 @@ class Dataset(object):
             raise ValueError('load_col [{}] and unload_col [{}] can not be set the same time'.format(
                 load_col, unload_col))
 
-        self.logger.debug('\n [{}]:\n\t load_col: [{}]\n\t unload_col: [{}]\n'.format(filepath, load_col, unload_col))
+        self.logger.debug('\n [{}]:\n\t load_col: [{}]\n\t unload_col: [{}]\n'.format(source, load_col, unload_col))
         return load_col, unload_col
 
     def _load_feat(self, filepath, source):
@@ -374,7 +373,7 @@ class Dataset(object):
         """
         self.logger.debug('loading feature from [{}] (source: [{}])'.format(filepath, source))
 
-        load_col, unload_col = self._get_load_and_unload_col(filepath, source)
+        load_col, unload_col = self._get_load_and_unload_col(source)
         if load_col == set():
             return None
 
