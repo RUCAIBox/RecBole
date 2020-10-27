@@ -65,7 +65,7 @@ class FFM(ContextRecommender):
             if module.bias is not None:
                 constant_(module.bias.data, 0)
 
-    def get_feature2field(self):
+    def _get_feature2field(self):
         r"""Create a mapping between features and fields.
 
         """
