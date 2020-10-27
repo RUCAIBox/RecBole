@@ -37,7 +37,6 @@ class FFM(ContextRecommender):
         super(FFM, self).__init__(config, dataset)
 
         # load parameters info
-        self.LABEL = config['LABEL_FIELD']
         try:
             self.fields = config['fields'] # a dict; key: field_id; value: feature_list
         except:
