@@ -37,7 +37,11 @@ class FFM(ContextRecommender):
         super(FFM, self).__init__(config, dataset)
 
         # load parameters info
-        self.fields = config['fields']  # a dict; key: field_id; value: feature_list
+        self.LABEL = config['LABEL_FIELD']
+        try:
+            self.fields = config['fields'] # a dict; key: field_id; value: feature_list
+        except:
+            self.fields = {}
         self.sigmoid = nn.Sigmoid()
 
         self.feature2id = {}
@@ -73,12 +77,18 @@ class FFM(ContextRecommender):
                     self.feature2id[name] = fea_id
                     fea_id += 1
         
-        for key, value in self.fields.items():
-            for v in value:
-                try:
-                    self.feature2field[self.feature2id[v]] = key
-                except:
-                    pass
+        if self.fields is None:
+            cnt = 0
+            for key, value in self.feature2id.items():
+                self.feature2field[cnt] = self.feature2id[key]
+                cnt += 1
+        else:
+            for key, value in self.fields.items():
+                for v in value:
+                    try:
+                        self.feature2field[self.feature2id[v]] = key
+                    except:
+                        pass
 
     def get_ffm_input(self, interaction):
         r"""Get different types of ffm layer's input.
