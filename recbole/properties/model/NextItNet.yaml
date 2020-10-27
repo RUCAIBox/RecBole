@@ -3,6 +3,5 @@ kernel_size: 3
 block_num: 5
 dilations: [1,4]
 reg_weight: 1e-5
-onecall: 'False'
 loss_type: 'CE'
 

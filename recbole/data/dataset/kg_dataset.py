@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/16, 2020/9/15, 2020/9/22
+# @Time   : 2020/10/16, 2020/9/15, 2020/10/25
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -140,14 +140,7 @@ class KnowledgeBasedDataset(Dataset):
         kg_path = os.path.join(dataset_path, '{}.{}'.format(token, 'kg'))
         if not os.path.isfile(kg_path):
             raise ValueError('[{}.{}] not found in [{}]'.format(token, 'kg', dataset_path))
-        df = pd.read_csv(kg_path, delimiter=self.config['field_separator'])
-        field_names = []
-        for field_type in df.columns:
-            field, ftype = field_type.split(':')
-            field_names.append(field)
-            assert ftype == 'token', 'kg data requires fields with type token'
-            self.set_field_property(field, FeatureType.TOKEN, FeatureSource.KG, 1)
-        df.columns = field_names
+        df = self._load_feat(kg_path, FeatureSource.KG)
         self._check_kg(df)
         return df
 
@@ -162,13 +155,7 @@ class KnowledgeBasedDataset(Dataset):
         link_path = os.path.join(dataset_path, '{}.{}'.format(token, 'link'))
         if not os.path.isfile(link_path):
             raise ValueError('[{}.{}] not found in [{}]'.format(token, 'link', dataset_path))
-        df = pd.read_csv(link_path, delimiter=self.config['field_separator'])
-        field_names = []
-        for field_type in df.columns:
-            field, ftype = field_type.split(':')
-            field_names.append(field)
-            assert ftype == 'token', 'kg data requires fields with type token'
-        df.columns = field_names
+        df = self._load_feat(link_path, 'link')
         self._check_link(df)
 
         item2entity, entity2item = {}, {}

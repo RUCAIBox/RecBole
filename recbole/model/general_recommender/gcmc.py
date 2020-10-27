@@ -60,7 +60,8 @@ class GCMC(GeneralRecommender):
         # load parameters info
         self.dropout_prob = config['dropout_prob']
         self.sparse_feature = config['sparse_feature']
-        self.hidden_dim = [int(i) for i in list(config['hidden_dim'])]
+        self.gcn_output_dim = config['gcn_output_dim']
+        self.dense_output_dim = config['embedding_size']
         self.n_class = config['class_num']
         self.num_basis_functions = config['num_basis_functions']
 
@@ -88,11 +89,11 @@ class GCMC(GeneralRecommender):
         # accumulation operation
         self.accum = config['accum']
         if self.accum == 'stack':
-            div = self.hidden_dim[0] // len(self.support)
-            if self.hidden_dim[0] % len(self.support) != 0:
+            div = self.gcn_output_dim // len(self.support)
+            if self.gcn_output_dim % len(self.support) != 0:
                 print("""\nWARNING: HIDDEN[0] (=%d) of stack layer is adjusted to %d (in %d splits).\n"""
-                      % (self.hidden_dim[0], len(self.support) * div, len(self.support)))
-            self.hidden_dim[0] = len(self.support) * div
+                      % (self.gcn_output_dim, len(self.support) * div, len(self.support)))
+            self.gcn_output_dim = len(self.support) * div
 
         # define layers and loss
         self.GcEncoder = GcEncoder(accum=self.accum,
@@ -100,11 +101,12 @@ class GCMC(GeneralRecommender):
                                    num_item=self.n_items,
                                    support=self.support,
                                    input_dim=self.input_dim,
-                                   hidden_dim=self.hidden_dim,
+                                   gcn_output_dim=self.gcn_output_dim,
+                                   dense_output_dim=self.dense_output_dim,
                                    drop_prob=self.dropout_prob,
                                    device=self.device,
                                    sparse_feature=self.sparse_feature).to(self.device)
-        self.BiDecoder = BiDecoder(input_dim=self.hidden_dim[-1],
+        self.BiDecoder = BiDecoder(input_dim=self.dense_output_dim,
                                    output_dim=self.n_class,
                                    drop_prob=0.,
                                    device=self.device,
@@ -212,14 +214,14 @@ class GcEncoder(nn.Module):
     and :math:`E` the embedding size.
     """
 
-    def __init__(self, accum, num_user, num_item, support, input_dim, hidden_dim, drop_prob, device,
+    def __init__(self, accum, num_user, num_item, support, input_dim, gcn_output_dim, dense_output_dim, drop_prob, device,
                  sparse_feature=True, act_dense=lambda x: x, share_user_item_weights=True, bias=False):
         super(GcEncoder, self).__init__()
         self.num_users = num_user
         self.num_items = num_item
         self.input_dim = input_dim
-        self.gcn_output_dim = hidden_dim[0]
-        self.dense_output_dim = hidden_dim[1]
+        self.gcn_output_dim = gcn_output_dim
+        self.dense_output_dim = dense_output_dim
         self.accum = accum
         self.sparse_feature = sparse_feature
 
