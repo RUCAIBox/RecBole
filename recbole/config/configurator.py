@@ -211,14 +211,25 @@ class Config(object):
             self.internal_config_dict.update({
                 'eval_setting': 'RO_RS',
                 'group_by_user': False,
+                'training_neg_sample_num': 0,
+                'threshold': {'rating': 4},
                 'metrics': ['AUC', 'LogLoss'],
                 'valid_metric': 'AUC',
-                'training_neg_sample_num': 0,
             })
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
-            self.internal_config_dict.update({
-                'eval_setting': 'TO_LS,full',
-            })
+            if model == 'DIN':
+                self.internal_config_dict.update({
+                    'eval_setting': 'TO_LS, uni100',
+                    'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                                 'user': ['user_id', 'age', 'gender', 'occupation'],
+                                 'item': ['item_id', 'release_year']},
+                    'metrics': ['AUC', 'LogLoss'],
+                    'valid_metric': 'AUC',
+                })
+            else:
+                self.internal_config_dict.update({
+                    'eval_setting': 'TO_LS,full',
+                })
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.KNOWLEDGE:
             pass
 
