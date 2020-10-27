@@ -1,5 +1,6 @@
-accum: 'stack'
-hidden_dim: [500, 64]
+accum: "stack"
+gcn_output_dim: 500
+embedding_size: 64
 dropout_prob: 0.3
 sparse_feature: True
 class_num: 2

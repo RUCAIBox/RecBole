@@ -189,7 +189,14 @@ class HyperTuning(object):
         return space
 
     @staticmethod
-    def _params2str(params):
+    def params2str(params):
+        r""" convert dict to str
+
+        Args:
+            params (dict): parameters dict
+        Returns:
+            str: parameters string
+        """
         params_str = ''
         for param_name in params:
             params_str += param_name + ':' + str(params[param_name]) + ', '
@@ -224,7 +231,7 @@ class HyperTuning(object):
             params (dict): the parameter dictionary
         """
         config_dict = params.copy()
-        params_str = self._params2str(params)
+        params_str = self.params2str(params)
         print('running parameters:', config_dict)
         result_dict = self.objective_function(config_dict, self.fixed_config_file_list)
         self.params2result[params_str] = result_dict

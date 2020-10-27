@@ -160,12 +160,18 @@ class Caser(SequentialRecommender):
         return loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        user = interaction[self.USER_ID]
+        test_item = interaction[self.ITEM_ID]
+        seq_output = self.forward(user, item_seq)
+        test_item_emb = self.item_embedding(test_item)
+        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)  # [B]
+        return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         user = interaction[self.USER_ID]
         seq_output = self.forward(user, item_seq)
-        test_item_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
+        test_items_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
         return scores
