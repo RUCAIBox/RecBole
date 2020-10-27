@@ -1,4 +1,4 @@
-embedding_size: 64
+embedding_size: 10
 dropout_prob: 0.0
 # define fields: key: field's id, value: features in this field. can be ignored.
 fields: ~
