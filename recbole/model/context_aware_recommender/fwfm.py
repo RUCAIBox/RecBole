@@ -35,10 +35,8 @@ class FwFM(ContextRecommender):
 
         # load parameters info
         self.dropout_prob = config['dropout_prob']
-        try:
-            self.fields = config['fields'] # a dict; key: field_id; value: feature_list
-        except:
-            self.fields = {}
+        self.fields = config['fields'] # a dict; key: field_id; value: feature_list
+
         self.num_features = self.num_feature_field
         
         self.dropout_layer = nn.Dropout(p=self.dropout_prob)
