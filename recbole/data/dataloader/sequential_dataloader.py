@@ -116,10 +116,10 @@ class SequentialDataLoader(AbstractDataLoader):
         """Data augmentation.
 
         Args:
-            uid_list (np.array): user id list.
-            item_list_index (np.array): the index of history items list in interaction.
-            target_index (np.array): the index of items to be predicted in interaction.
-            item_list_length (np.array): history list length.
+            uid_list (np.ndarray): user id list.
+            item_list_index (np.ndarray): the index of history items list in interaction.
+            target_index (np.ndarray): the index of items to be predicted in interaction.
+            item_list_length (np.ndarray): history list length.
 
         Returns:
             dict: the augmented data.
@@ -240,7 +240,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.array or list: Number of positive item for each user in a training/evaluating epoch.
+            np.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
         """
         return np.ones(self.pr_end, dtype=np.int64)
 
@@ -282,6 +282,6 @@ class SequentialFullDataLoader(SequentialDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.array or list: Number of positive item for each user in a training/evaluating epoch.
+            np.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
         """
         return np.ones(self.pr_end, dtype=np.int64)
