@@ -52,7 +52,7 @@ class TransRec(SequentialRecommender):
         self.apply(xavier_normal_initialization)
 
     def _l2_distance(self, x, y):
-        return torch.sqrt(torch.sum((x - y)**2, dim=-1, keepdim=True)) # [B 1]
+        return torch.sqrt(torch.sum((x - y)**2, dim=-1, keepdim=True))  # [B 1]
 
     def gather_last_items(self, item_seq, gather_index):
         "Gathers the last_item at the spexific positions over a minibatch"
@@ -96,7 +96,18 @@ class TransRec(SequentialRecommender):
         return bpr_loss + item_emb_loss + user_emb_loss + bias_emb_loss + reg_loss
 
     def predict(self, interaction):
-        pass
+        user = interaction[self.USER_ID]  # [B]
+        item_seq = interaction[self.ITEM_SEQ]  # [B Len]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        test_item = interaction[self.ITEM_ID]
+
+        seq_output = self.forward(user, item_seq, item_seq_len)  # [B H]
+        test_item_emb = self.item_embedding(test_item)  # [B H]
+        test_bias = self.bias(test_item)  # [B 1]
+
+        scores = test_bias - self._l2_distance(seq_output, test_item_emb)  # [B 1]
+        scores = scores.squeeze(-1)  # [B]
+        return scores
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]  # [B]
@@ -105,13 +116,13 @@ class TransRec(SequentialRecommender):
 
         seq_output = self.forward(user, item_seq, item_seq_len)  # [B H]
 
-        test_item_emb = self.item_embedding.weight # [item_num H]
-        test_item_emb = test_item_emb.repeat(seq_output.size(0), 1, 1) # [user_num item_num H]
+        test_items_emb = self.item_embedding.weight # [item_num H]
+        test_items_emb = test_items_emb.repeat(seq_output.size(0), 1, 1) # [user_num item_num H]
 
-        user_hidden = seq_output.unsqueeze(1).expand_as(test_item_emb) # [user_num item_num H]
+        user_hidden = seq_output.unsqueeze(1).expand_as(test_items_emb) # [user_num item_num H]
         test_bias = self.bias.weight # [item_num 1]
         test_bias = test_bias.repeat(user_hidden.size(0), 1, 1) # [user_num item_num 1]
 
-        scores = test_bias - self._l2_distance(user_hidden, test_item_emb) # [user_num item_num 1]
-        scores = scores.squeeze(-1)
+        scores = test_bias - self._l2_distance(user_hidden, test_items_emb) # [user_num item_num 1]
+        scores = scores.squeeze(-1)  # [B n_items]
         return scores

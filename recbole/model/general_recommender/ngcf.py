@@ -77,8 +77,8 @@ class NGCF(GeneralRecommender):
 
         # load parameters info
         self.embedding_size = config['embedding_size']
-        self.layers = config['layers']
-        self.layers = [self.embedding_size] + self.layers
+        self.hidden_size_list = config['hidden_size_list']
+        self.hidden_size_list = [self.embedding_size] + self.hidden_size_list
         self.node_dropout = config['node_dropout']
         self.message_dropout = config['message_dropout']
         self.reg_weight = config['reg_weight']
@@ -87,7 +87,7 @@ class NGCF(GeneralRecommender):
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.GNNlayers = torch.nn.ModuleList()
-        for idx, (input_size, output_size) in enumerate(zip(self.layers[:-1], self.layers[1:])):
+        for idx, (input_size, output_size) in enumerate(zip(self.hidden_size_list[:-1], self.hidden_size_list[1:])):
             self.GNNlayers.append(BiGNNLayer(input_size, output_size))
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
