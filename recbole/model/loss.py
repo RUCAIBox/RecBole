@@ -24,7 +24,7 @@ class BPRLoss(nn.Module):
     """ BPRLoss, based on Bayesian Personalized Ranking
 
     Args:
-        - gamma(float):
+        - gamma(float): Small value to avoid division by zero
 
     Shape:
         - Pos_score: (N)

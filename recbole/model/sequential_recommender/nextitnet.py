@@ -47,7 +47,6 @@ class NextItNet(SequentialRecommender):
         self.block_num = config['block_num']
         self.dilations = config['dilations'] * self.block_num
         self.kernel_size = config['kernel_size']
-        self.onecall = config['onecall']
         self.reg_weight = config['reg_weight']
         self.loss_type = config['loss_type']
 
@@ -86,12 +85,7 @@ class NextItNet(SequentialRecommender):
         item_seq_emb = self.item_embedding(item_seq) # [batch_size, seq_len, embed_size]
         # Residual locks
         dilate_outputs = self.residual_blocks(item_seq_emb)
-
-        if self.onecall:   # Extract the last item
-            hidden = dilate_outputs[:, -1, :].view(-1, self.residual_channels)  # [batch_size, embed_size]
-        else:
-            hidden = dilate_outputs.view(-1, self.residual_channels)  # [batch_size*seq_len, embed_size]
-
+        hidden = dilate_outputs[:, -1, :].view(-1, self.residual_channels)  # [batch_size, embed_size]
         seq_output = self.final_layer(hidden)   # [batch_size, embedding_size]
         return seq_output
 
@@ -127,14 +121,19 @@ class NextItNet(SequentialRecommender):
         return loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        test_item = interaction[self.ITEM_ID]
+        seq_output = self.forward(item_seq)
+        test_item_emb = self.item_embedding(test_item)
+        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)
+        return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         # item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq)
-        test_item_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
+        test_items_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, item_num]
         return scores
 
 

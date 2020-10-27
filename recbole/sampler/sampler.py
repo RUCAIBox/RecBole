@@ -25,9 +25,12 @@ class AbstractSampler(object):
     to move around the :attr:`random_list` to generate random numbers, so we need to implement the
     :meth:`get_random_list` method in the subclass.
 
-
     Args:
         distribution (str): The string of distribution, which is used for subclass.
+
+    Attributes:
+        random_list (list or numpy.ndarray): The shuffled result of :meth:`get_random_list`.
+        used_ids (numpy.ndarray): The result of :meth:`get_used_ids`.
     """
     def __init__(self, distribution):
         self.distribution = distribution
@@ -239,7 +242,7 @@ class KGSampler(AbstractSampler):
 
         Args:
             head_entity_ids (np.ndarray or list): Input head_entity_ids.
-            num (int): Number of sampled entity_ids for each head_entity_id.
+            num (int, optional): Number of sampled entity_ids for each head_entity_id. Defaults to ``1``.
 
         Returns:
             np.ndarray: Sampled entity_ids.

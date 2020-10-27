@@ -8,9 +8,8 @@ FDSA
 ################################################
 
 Reference:
-    Tingting. Zhang et al. "Feature-level Deeper Self-Attention Network for Sequential Recommendation."
+    Tingting Zhang et al. "Feature-level Deeper Self-Attention Network for Sequential Recommendation."
     In IJCAI 2019
-
 
 """
 
@@ -58,18 +57,18 @@ class FDSA(SequentialRecommender):
                                                       self.pooling_mode, self.device)
 
         self.item_trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
-                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
-                                              hidden_dropout_prob=self.hidden_dropout_prob,
-                                              attn_dropout_prob=self.attn_dropout_prob,
-                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+                                                   hidden_size=self.hidden_size, inner_size=self.inner_size,
+                                                   hidden_dropout_prob=self.hidden_dropout_prob,
+                                                   attn_dropout_prob=self.attn_dropout_prob,
+                                                   hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
 
         self.feature_att_layer = VanillaAttention(self.hidden_size, self.hidden_size)
         # For simplicity, we use same architecture for item_trm and feature_trm
         self.feature_trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
-                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
-                                              hidden_dropout_prob=self.hidden_dropout_prob,
-                                              attn_dropout_prob=self.attn_dropout_prob,
-                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+                                                      hidden_size=self.hidden_size, inner_size=self.inner_size,
+                                                      hidden_dropout_prob=self.hidden_dropout_prob,
+                                                      attn_dropout_prob=self.attn_dropout_prob,
+                                                      hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
 
         self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
         self.dropout = nn.Dropout(self.hidden_dropout_prob)
@@ -189,12 +188,18 @@ class FDSA(SequentialRecommender):
             return loss
 
     def predict(self, interaction):
-        pass
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        test_item = interaction[self.ITEM_ID]
+        seq_output = self.forward(item_seq, item_seq_len)
+        test_item_emb = self.item_embedding(test_item)
+        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)  # [B]
+        return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
-        test_item_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B, item_num]
+        test_items_emb = self.item_embedding.weight
+        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
         return scores

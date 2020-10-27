@@ -150,13 +150,13 @@ class ItemKNN(GeneralRecommender):
         self.w = ComputeSimilarity(self.interaction_matrix, topk=self.k, shrink=self.shrink).compute_similarity()
         self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
 
-        self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))
+        self.fake_loss = torch.nn.Parameter(torch.zeros(1))
 
     def forward(self, user, item):
         pass
 
     def calculate_loss(self, interaction):
-        return self.fake_loss
+        return torch.nn.Parameter(torch.zeros(1))
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
