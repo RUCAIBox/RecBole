@@ -37,7 +37,8 @@ class FFM(ContextRecommender):
         super(FFM, self).__init__(config, dataset)
 
         # load parameters info
-        self.fields = config['fields']  # a dict; key: field_id; value: feature_list
+        self.fields = config['fields'] # a dict; key: field_id; value: feature_list
+
         self.sigmoid = nn.Sigmoid()
 
         self.feature2id = {}
@@ -62,7 +63,7 @@ class FFM(ContextRecommender):
             if module.bias is not None:
                 constant_(module.bias.data, 0)
 
-    def get_feature2field(self):
+    def _get_feature2field(self):
         r"""Create a mapping between features and fields.
 
         """
@@ -73,12 +74,18 @@ class FFM(ContextRecommender):
                     self.feature2id[name] = fea_id
                     fea_id += 1
         
-        for key, value in self.fields.items():
-            for v in value:
-                try:
-                    self.feature2field[self.feature2id[v]] = key
-                except:
-                    pass
+        if self.fields is None:
+            field_id = 0
+            for key, value in self.feature2id.items():
+                self.feature2field[self.feature2id[key]] = field_id
+                field_id += 1
+        else:
+            for key, value in self.fields.items():
+                for v in value:
+                    try:
+                        self.feature2field[self.feature2id[v]] = key
+                    except:
+                        pass
 
     def get_ffm_input(self, interaction):
         r"""Get different types of ffm layer's input.
