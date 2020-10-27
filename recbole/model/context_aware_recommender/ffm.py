@@ -46,7 +46,7 @@ class FFM(ContextRecommender):
         
         self.feature_names = (self.token_field_names, self.float_field_names, self.token_seq_field_names)
         self.feature_dims = (self.token_field_dims, self.float_field_dims, self.token_seq_field_dims)
-        self.get_feature2field()
+        self._get_feature2field()
         self.num_fields = len(set(self.feature2field.values()))  # the number of fields
 
         self.ffm = FieldAwareFactorizationMachine(self.feature_names, self.feature_dims, self.feature2id, self.feature2field, self.num_fields, self.embedding_size, self.device)
