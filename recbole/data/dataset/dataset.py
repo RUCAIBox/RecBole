@@ -751,7 +751,7 @@ class Dataset(object):
             This field will be droped if ``config['drop_threshold_field'] == True``
         """
         threshold = self.config['threshold']
-        drop_flag = self.config['drop_threshold_field'] is not None and self.config['drop_threshold_field']
+        drop_flag = self.config['drop_threshold_field']
         if threshold is None:
             return
 
