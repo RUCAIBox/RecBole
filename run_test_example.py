@@ -12,7 +12,7 @@ from time import time
 from recbole.quick_start import run_recbole
 
 
-closed_examples = ['Test GRU4RecKG']
+closed_examples = ['Test GRU4RecKG', 'Test S3Rec', 'Test DIN']
 
 test_examples = {
     'Test Eval Metric': {
@@ -93,9 +93,6 @@ test_examples = {
     'Test NAIS': {
         'model': 'NAIS',
         'dataset': 'ml-100k',
-        'eval_setting': 'RO_LS, uni100',
-        'leave_one_num': 2,
-        'eval_batch_size': 2000
     },
     'Test GCMC': {
         'model': 'GCMC',
@@ -127,6 +124,10 @@ test_examples = {
     },
     'Test ItemKNN': {
         'model': 'ItemKNN',
+        'dataset': 'ml-100k',
+    },
+    'Test ConvNCF': {
+        'model': 'ConvNCF',
         'dataset': 'ml-100k',
     },
 
@@ -240,23 +241,17 @@ test_examples = {
     'Test GRU4RecF': {
         'model': 'GRU4RecF',
         'dataset': 'ml-100k',
-        'selected_features': ['class'],
-        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                     'item': ['item_id', 'class']},
     },
     'Test SASRecF': {
         'model': 'SASRecF',
         'dataset': 'ml-100k',
-        'selected_features': ['class'],
-        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                     'item': ['item_id', 'class']},
     },
     'Test FDSA': {
         'model': 'FDSA',
         'dataset': 'ml-100k',
-        'selected_features': ['class'],
-        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                     'item': ['item_id', 'class']},
+    },
+    'Test S3Rec': {
+
     },
     'Test GRU4RecKG': {
         'model': 'GRU4RecKG',
