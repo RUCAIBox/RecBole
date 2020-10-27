@@ -47,7 +47,6 @@ class NextItNet(SequentialRecommender):
         self.block_num = config['block_num']
         self.dilations = config['dilations'] * self.block_num
         self.kernel_size = config['kernel_size']
-        self.onecall = config['onecall']
         self.reg_weight = config['reg_weight']
         self.loss_type = config['loss_type']
 
@@ -86,12 +85,7 @@ class NextItNet(SequentialRecommender):
         item_seq_emb = self.item_embedding(item_seq) # [batch_size, seq_len, embed_size]
         # Residual locks
         dilate_outputs = self.residual_blocks(item_seq_emb)
-
-        if self.onecall:   # Extract the last item
-            hidden = dilate_outputs[:, -1, :].view(-1, self.residual_channels)  # [batch_size, embed_size]
-        else:
-            hidden = dilate_outputs.view(-1, self.residual_channels)  # [batch_size*seq_len, embed_size]
-
+        hidden = dilate_outputs[:, -1, :].view(-1, self.residual_channels)  # [batch_size, embed_size]
         seq_output = self.final_layer(hidden)   # [batch_size, embedding_size]
         return seq_output
 
