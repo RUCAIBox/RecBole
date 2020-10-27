@@ -35,7 +35,10 @@ class FwFM(ContextRecommender):
 
         # load parameters info
         self.dropout_prob = config['dropout_prob']
-        self.fields = config['fields'] # a dict; key: field_id; value: feature_list
+        try:
+            self.fields = config['fields'] # a dict; key: field_id; value: feature_list
+        except:
+            self.fields = {}
         self.num_features = self.num_feature_field
         
         self.dropout_layer = nn.Dropout(p=self.dropout_prob)
@@ -75,12 +78,18 @@ class FwFM(ContextRecommender):
                     self.feature2id[name] = fea_id
                     fea_id += 1
         
-        for key, value in self.fields.items():
-            for v in value:
-                try:
-                    self.feature2field[self.feature2id[v]] = key
-                except:
-                    pass
+        if self.fields is None:
+            cnt = 0
+            for key, value in self.feature2id.items():
+                self.feature2field[cnt] = self.feature2id[key]
+                cnt += 1
+        else:
+            for key, value in self.fields.items():
+                for v in value:
+                    try:
+                        self.feature2field[self.feature2id[v]] = key
+                    except:
+                        pass
 
     def fwfm_layer(self, infeature):
         r"""Get the field pair weight matrix r_{F(i),F(j)}, and model the different interaction strengths of 
