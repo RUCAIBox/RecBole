@@ -13,6 +13,7 @@ seq_len: ~
 LABEL_FIELD: label
 threshold:
     rating: 4
+drop_threshold_field: False
 
 # NegSample Prefix for Pair-wise DataLoader
 NEG_PREFIX: neg_
@@ -21,6 +22,7 @@ NEG_PREFIX: neg_
 load_col:
     inter: [user_id, item_id, rating]
 unload_col: ~
+additional_feat_suffix: ~
 
 # Filtering
 max_user_inter_num: ~

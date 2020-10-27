@@ -68,8 +68,7 @@ class TopKEvaluator(AbstractEvaluator):
             eval_data (Dataset): the class of test data
 
         Returns:
-            dict: such as ``{'Hit@20': 0.3824, 'Recall@20': 0.0527,
-                            'Hit@10': 0.3153, 'Recall@10': 0.0329}``
+            dict: such as ``{'Hit@20': 0.3824, 'Recall@20': 0.0527, 'Hit@10': 0.3153, 'Recall@10': 0.0329}``
 
         """
         pos_len_list = eval_data.get_pos_len_list()
