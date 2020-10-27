@@ -747,10 +747,9 @@ class Dataset(object):
 
         Note:
             Key of ``config['threshold']`` if a field name.
-            This field will be droped if ``config['drop_threshold_field'] == True``
+            This field will be droped after label generation.
         """
         threshold = self.config['threshold']
-        drop_flag = self.config['drop_threshold_field']
         if threshold is None:
             return
 
@@ -765,8 +764,7 @@ class Dataset(object):
                 self.inter_feat[self.label_field] = (self.inter_feat[field] >= value).astype(int)
             else:
                 raise ValueError('field [{}] not in inter_feat'.format(field))
-            if drop_flag:
-                self._del_col(field)
+            self._del_col(field)
 
     def _get_fields_in_same_space(self):
         """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
