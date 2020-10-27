@@ -30,6 +30,15 @@ class AbstractDataLoader(object):
         dl_format (InputType, optional): The input type of dataloader. Defaults to
             :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+
+    Attributes:
+        dataset (Dataset): The dataset of this dataloader.
+        shuffle (bool): If ``True``, dataloader will shuffle before every epoch.
+        real_time (bool): If ``True``, dataloader will do data pre-processing,
+            such as neg-sampling and data-augmentation.
+        pr (int): Pointer of dataloader.
+        step (int): The increment of :attr:`pr` for each batch.
+        batch_size (int): The max interaction number for all batch.
     """
     dl_type = None
 
