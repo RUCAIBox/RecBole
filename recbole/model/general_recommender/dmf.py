@@ -47,10 +47,12 @@ class DMF(GeneralRecommender):
         self.RATING = config['RATING_FIELD']
 
         # load parameters info
-        self.user_layers_dim = config['user_layers_dim']
-        self.item_layers_dim = config['item_layers_dim']
+        self.user_embedding_size = config['user_embedding_size']
+        self.item_embedding_size = config['item_embedding_size']
+        self.user_hidden_size_list = config['user_hidden_size_list']
+        self.item_hidden_size_list = config['item_hidden_size_list']
         # The dimensions of the last layer of users and items must be the same
-        assert self.user_layers_dim[-1] == self.item_layers_dim[-1]
+        assert self.user_hidden_size_list[-1] == self.item_hidden_size_list[-1]
         self.inter_matrix_type = config['inter_matrix_type']
 
         # generate intermediate data
@@ -72,10 +74,10 @@ class DMF(GeneralRecommender):
         self.history_item_value = self.history_item_value.to(self.device)
 
         # define layers
-        self.user_linear = nn.Linear(in_features=self.n_items, out_features=self.user_layers_dim[0], bias=False)
-        self.item_linear = nn.Linear(in_features=self.n_users, out_features=self.item_layers_dim[0], bias=False)
-        self.user_fc_layers = MLPLayers(self.user_layers_dim)
-        self.item_fc_layers = MLPLayers(self.item_layers_dim)
+        self.user_linear = nn.Linear(in_features=self.n_items, out_features=self.user_embedding_size, bias=False)
+        self.item_linear = nn.Linear(in_features=self.n_users, out_features=self.item_embedding_size, bias=False)
+        self.user_fc_layers = MLPLayers([self.user_embedding_size] + self.user_hidden_size_list)
+        self.item_fc_layers = MLPLayers([self.item_embedding_size] + self.item_hidden_size_list)
         self.sigmoid = nn.Sigmoid()
         self.bce_loss = nn.BCELoss()
 
