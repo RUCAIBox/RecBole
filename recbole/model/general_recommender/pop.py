@@ -27,8 +27,7 @@ class Pop(GeneralRecommender):
 
         self.item_cnt = torch.zeros(self.n_items, 1, dtype=torch.long, device=self.device, requires_grad=False)
         self.max_cnt = None
-
-        self.fake_loss = torch.nn.Parameter(torch.FloatTensor([2]))  # fake loss used for trainer to backward
+        self.fake_loss = torch.nn.Parameter(torch.zeros(1))
 
     def forward(self):
         pass
@@ -40,7 +39,7 @@ class Pop(GeneralRecommender):
 
         self.max_cnt = torch.max(self.item_cnt, dim=0)[0]
 
-        return self.fake_loss
+        return torch.nn.Parameter(torch.zeros(1))
 
     def predict(self, interaction):
 
