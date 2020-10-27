@@ -37,10 +37,8 @@ class FFM(ContextRecommender):
         super(FFM, self).__init__(config, dataset)
 
         # load parameters info
-        try:
-            self.fields = config['fields'] # a dict; key: field_id; value: feature_list
-        except:
-            self.fields = {}
+        self.fields = config['fields'] # a dict; key: field_id; value: feature_list
+
         self.sigmoid = nn.Sigmoid()
 
         self.feature2id = {}
