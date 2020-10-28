@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/27 2020/10/13, 2020/10/25
+# @Time   : 2020/10/28 2020/10/13, 2020/10/25
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -393,7 +393,7 @@ class Dataset(object):
                 continue
             if unload_col is not None and field in unload_col:
                 continue
-            if isinstance(source, FeatureSource):
+            if isinstance(source, FeatureSource) or source != 'link':
                 self.field2source[field] = source
                 self.field2type[field] = ftype
                 if not ftype.value.endswith('seq'):
