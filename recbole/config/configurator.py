@@ -212,26 +212,47 @@ class Config(object):
                 'eval_setting': 'RO_RS',
                 'group_by_user': False,
                 'training_neg_sample_num': 0,
-                'threshold': {'rating': 4},
                 'metrics': ['AUC', 'LogLoss'],
                 'valid_metric': 'AUC',
             })
+            if dataset == 'ml-100k':
+                self.internal_config_dict.update({
+                    'threshold': {'rating': 4},
+                    'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                                 'user': ['user_id', 'age', 'gender', 'occupation'],
+                                 'item': ['item_id', 'release_year', 'class']},
+                })
+
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
             if model == 'DIN':
                 self.internal_config_dict.update({
                     'eval_setting': 'TO_LS, uni100',
-                    'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                                 'user': ['user_id', 'age', 'gender', 'occupation'],
-                                 'item': ['item_id', 'release_year']},
                     'metrics': ['AUC', 'LogLoss'],
                     'valid_metric': 'AUC',
                 })
+                if dataset == 'ml-100k':
+                    self.internal_config_dict.update({
+                        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                                     'user': ['user_id', 'age', 'gender', 'occupation'],
+                                     'item': ['item_id', 'release_year']},
+                    })
+
             else:
                 self.internal_config_dict.update({
                     'eval_setting': 'TO_LS,full',
                 })
+                if dataset == 'ml-100k' and model in ['GRU4RecF', 'SASRecF', 'FDSA']:
+                    self.internal_config_dict.update({
+                        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                                     'item': ['item_id', 'release_year', 'class']},
+                    })
+
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.KNOWLEDGE:
-            pass
+            self.internal_config_dict.update({
+                'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
+                             'kg': ['head_id', 'relation_id', 'tail_id'],
+                             'link': ['item_id', 'entity_id']}
+            })
 
     def _get_final_config_dict(self):
         final_config_dict = dict()
