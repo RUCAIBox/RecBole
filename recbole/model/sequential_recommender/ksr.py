@@ -35,25 +35,13 @@ class KSR(SequentialRecommender):
     def __init__(self, config, dataset):
         super(KSR, self).__init__(config, dataset)
 
-        # ## get from class KnowledgeRecommender(AbstractRecommender):
-        # self.ENTITY_ID = config['ENTITY_ID_FIELD']
-        # self.RELATION_ID = config['RELATION_ID_FIELD']
-        # self.n_entities = dataset.num(self.ENTITY_ID)
-        # self.n_relations = dataset.num(self.RELATION_ID)
-        # Todo: Using the above setting causes some errors. So I just use the below fixed setting
-        self.n_entities = self.n_items
-        self.n_relations = 26
-        # load parameters info
-        self.device = config['device']
-
-        # # load dataset info
-        # self.entity_embedding_matrix = dataset.get_preload_weight('ent_id')
-        # self.relation_embedding_matrix = dataset.get_preload_weight('rel_id')
-        # Todo: Without relative docs, I randomly generate some data. (See below)
-        import numpy as np
-        self.embedding_size = config['embedding_size']
-        self.entity_embedding_matrix = np.random.randn(self.n_entities, self.embedding_size)
-        self.relation_embedding_matrix = np.random.randn(self.n_relations, self.embedding_size)
+        # load dataset info
+        self.ENTITY_ID = config['ENTITY_ID_FIELD']
+        self.RELATION_ID = config['RELATION_ID_FIELD']
+        self.n_entities = dataset.num(self.ENTITY_ID)
+        self.n_relations = dataset.num(self.RELATION_ID)
+        self.entity_embedding_matrix = dataset.get_preload_weight('ent_id')
+        self.relation_embedding_matrix = dataset.get_preload_weight('rel_id')
 
         # load parameters info
         self.embedding_size = config['embedding_size']
@@ -62,10 +50,11 @@ class KSR(SequentialRecommender):
         self.num_layers = config['num_layers']
         self.dropout_prob = config['dropout_prob']
         self.gamma = 10 # Todo: Scaling factor
+        self.device = config['device']
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0) 
-        self.entity_embedding = nn.Embedding(self.n_items, self.embedding_size)
+        self.entity_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.entity_embedding.weight.requires_grad = False
 
         self.emb_dropout = nn.Dropout(self.dropout_prob)
@@ -85,7 +74,7 @@ class KSR(SequentialRecommender):
         # parameters initialization
         self.apply(self._init_weights)
         self.entity_embedding.weight.data.copy_(torch.from_numpy(self.entity_embedding_matrix[:self.n_items]))
-        self.relation_Matrix = torch.from_numpy(self.relation_embedding_matrix[:self.n_relations]) # (R+1)*E
+        self.relation_Matrix = torch.from_numpy(self.relation_embedding_matrix[:self.n_relations]).to(self.device) # (R+1)*E
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
@@ -120,7 +109,7 @@ class KSR(SequentialRecommender):
         step_length = item_seq.size()[1]
         last_item = item_seq_len - 1
         # init user memory with 0s
-        user_memory = torch.zeros(item_seq.size()[0], self.n_relations, self.embedding_size).float() # B*R*E
+        user_memory = torch.zeros(item_seq.size()[0], self.n_relations, self.embedding_size).float().to(self.device) # B*R*E
         last_user_memory = torch.zeros_like(user_memory)
         for i in range(step_length): # Loop L
             _, update_memory = self._get_kg_embedding(item_seq[:, i]) # B*R*E
