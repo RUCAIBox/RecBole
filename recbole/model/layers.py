@@ -118,11 +118,17 @@ def activation_layer(activation_name='relu', emb_dim=None):
 
 
 class FMEmbedding(nn.Module):
-    """
-        Input shape
-        - A 3D tensor with shape:``(batch_size,field_size)``.
-        Output shape
-        - 3D tensor with shape: ``(batch_size,field_size,embed_dim)``.
+    r""" Embedding for token fields.
+
+    Args:
+        field_dims: list, the number of tokens in each token fields
+        offsets: list, the dimension offset of each token field
+        embed_dim: int, the dimension of output embedding vectors
+
+    Input:
+        input_x: tensor, A 3D tensor with shape:``(batch_size,field_size)``.
+    Return:
+        output: tensor,  A 3D tensor with shape: ``(batch_size,field_size,embed_dim)``.
     """
 
     def __init__(self, field_dims, offsets, embed_dim):
@@ -137,11 +143,16 @@ class FMEmbedding(nn.Module):
 
 
 class BaseFactorizationMachine(nn.Module):
-    """
-        Input shape
-        - A 3D tensor with shape:``(batch_size,field_size,embed_dim)``.
-        Output shape
-        - 3D tensor with shape: ``(batch_size,1)`` or ``(batch_size, embed_dim)``.
+    r"""Calculate FM result over the embeddings
+
+    Args:
+        reduce_sum: bool, whether to sum the result, default is True.
+
+    Input:
+        input_x: tensor, A 3D tensor with shape:``(batch_size,field_size,embed_dim)``.
+
+    Output
+        output: tensor, A 3D tensor with shape: ``(batch_size,1)`` or ``(batch_size, embed_dim)``.
     """
 
     def __init__(self, reduce_sum=True):

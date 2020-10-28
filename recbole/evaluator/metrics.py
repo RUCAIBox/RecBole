@@ -44,7 +44,7 @@ def mrr_(pos_index, pos_len):
     r"""The MRR_ (also known as mean reciprocal rank) is a statistic measure for evaluating any process
     that produces a list of possible responses to a sample of queries, ordered by probability of correctness.
 
-    .. _MRR: https://en.wikipedia.org/wiki/Mean_reciprocal_ranks
+    .. _MRR: https://en.wikipedia.org/wiki/Mean_reciprocal_rank
 
     .. math::
         \mathrm {MRR} = \frac{1}{|{U}|} \sum_{i=1}^{|{U}|} \frac{1}{rank_i}
@@ -64,7 +64,7 @@ def mrr_(pos_index, pos_len):
 
 
 def map_(pos_index, pos_len):
-    r"""Map_ (also known as Mean Average Precision) The MAP is meant to calculate Avg. Precision for the relevant items.
+    r"""MAP_ (also known as Mean Average Precision) The MAP is meant to calculate Avg. Precision for the relevant items.
 
     Note:
         In this case the normalization factor used is :math:`\frac{1}{\min (m,N)}`, which prevents your AP score from

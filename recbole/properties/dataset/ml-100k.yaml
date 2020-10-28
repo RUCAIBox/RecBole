@@ -26,8 +26,6 @@ ENTITY_ID_FIELD: entity_id
 # Selectively Loading
 load_col:
     inter: [user_id, item_id, rating, timestamp]
-    kg: [head_id, relation_id, tail_id]
-    link: [item_id, entity_id]
 unload_col: ~
 
 # Filtering
@@ -35,8 +33,7 @@ max_user_inter_num: ~
 min_user_inter_num: ~
 max_item_inter_num: ~
 min_item_inter_num: ~
-lowest_val:
-    rating: 0
+lowest_val: ~
 highest_val: ~
 equal_val: ~
 not_equal_val: ~
