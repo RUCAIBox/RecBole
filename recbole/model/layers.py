@@ -408,10 +408,6 @@ class MultiHeadAttention(nn.Module):
         return hidden_states
 
 
-class temp(nn.Module):
-    def __init__(self):
-        super(temp, self).__init__()
-
 class FeedForward(nn.Module):
     """
     Point-wise feed-forward layer is implemented by two dense layers.
