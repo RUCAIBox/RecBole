@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/27 2020/10/13, 2020/10/25
+# @Time   : 2020/10/28 2020/10/13, 2020/10/25
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -393,7 +393,7 @@ class Dataset(object):
                 continue
             if unload_col is not None and field in unload_col:
                 continue
-            if isinstance(source, FeatureSource):
+            if isinstance(source, FeatureSource) or source != 'link':
                 self.field2source[field] = source
                 self.field2type[field] = ftype
                 if not ftype.value.endswith('seq'):
@@ -747,10 +747,9 @@ class Dataset(object):
 
         Note:
             Key of ``config['threshold']`` if a field name.
-            This field will be droped if ``config['drop_threshold_field'] == True``
+            This field will be droped after label generation.
         """
         threshold = self.config['threshold']
-        drop_flag = self.config['drop_threshold_field']
         if threshold is None:
             return
 
@@ -765,8 +764,7 @@ class Dataset(object):
                 self.inter_feat[self.label_field] = (self.inter_feat[field] >= value).astype(int)
             else:
                 raise ValueError('field [{}] not in inter_feat'.format(field))
-            if drop_flag:
-                self._del_col(field)
+            self._del_col(field)
 
     def _get_fields_in_same_space(self):
         """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
