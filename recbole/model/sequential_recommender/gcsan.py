@@ -93,6 +93,7 @@ class GNN(nn.Module):
 class GCSAN(SequentialRecommender):
     r"""GCSAN captures rich local dependencies via graph nerual network,
      and learns long-range dependencies by applying the self-attention mechanism.
+     
     Note:
 
         In the original paper, the attention mechanism in the self-attention layer is a single head,
