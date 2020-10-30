@@ -331,7 +331,7 @@ class TestSequentialRecommender(unittest.TestCase):
             'save_step': 1,
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['test_model.yaml'], saved=True)
+                           config_file_list=['test_model.yaml'], saved=False)
 
         config_dict = {
             'model': 'S3Rec',
