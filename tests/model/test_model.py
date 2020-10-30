@@ -669,6 +669,23 @@ class TestSequentialRecommender2(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=['test_model.yaml'], saved=False)
 
+    def test_s3rec(self):
+        config_dict = {
+            'model': 'S3Rec',
+            'train_stage': 'pretrain',
+            'save_step': 1,
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=['test_model.yaml'], saved=True)
+
+        config_dict = {
+            'model': 'S3Rec',
+            'train_stage': 'finetune',
+            'pre_model_path': './saved/S3Rec-ml-100k-1.pth',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=['test_model.yaml'], saved=False)
+
 
 if __name__ == '__main__':
     unittest.main()
