@@ -123,7 +123,7 @@ class KGAT(KnowledgeRecommender):
         r"""Get the initial attention matrix through the collaborative knowledge graph
 
         Returns:
-            torch.spares.FloatTensor: Sparse tensor of the attention matrix
+            torch.sparse.FloatTensor: Sparse tensor of the attention matrix
         """
 
         adj_list = []

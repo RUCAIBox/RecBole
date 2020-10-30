@@ -8,9 +8,8 @@ FDSA
 ################################################
 
 Reference:
-    Tingting. Zhang et al. "Feature-level Deeper Self-Attention Network for Sequential Recommendation."
+    Tingting Zhang et al. "Feature-level Deeper Self-Attention Network for Sequential Recommendation."
     In IJCAI 2019
-
 
 """
 
@@ -58,18 +57,18 @@ class FDSA(SequentialRecommender):
                                                       self.pooling_mode, self.device)
 
         self.item_trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
-                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
-                                              hidden_dropout_prob=self.hidden_dropout_prob,
-                                              attn_dropout_prob=self.attn_dropout_prob,
-                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+                                                   hidden_size=self.hidden_size, inner_size=self.inner_size,
+                                                   hidden_dropout_prob=self.hidden_dropout_prob,
+                                                   attn_dropout_prob=self.attn_dropout_prob,
+                                                   hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
 
         self.feature_att_layer = VanillaAttention(self.hidden_size, self.hidden_size)
         # For simplicity, we use same architecture for item_trm and feature_trm
         self.feature_trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
-                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
-                                              hidden_dropout_prob=self.hidden_dropout_prob,
-                                              attn_dropout_prob=self.attn_dropout_prob,
-                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+                                                      hidden_size=self.hidden_size, inner_size=self.inner_size,
+                                                      hidden_dropout_prob=self.hidden_dropout_prob,
+                                                      attn_dropout_prob=self.attn_dropout_prob,
+                                                      hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
 
         self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
         self.dropout = nn.Dropout(self.hidden_dropout_prob)

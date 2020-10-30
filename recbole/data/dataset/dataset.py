@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/22 2020/10/13, 2020/10/20
+# @Time   : 2020/10/28 2020/10/13, 2020/10/25
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -321,12 +321,11 @@ class Dataset(object):
                 raise ValueError('Additional feature file [{}] not found'.format(feat_path))
             setattr(self, '{}_feat'.format(suf), feat)
 
-    def _get_load_and_unload_col(self, filepath, source):
+    def _get_load_and_unload_col(self, source):
         """Parsing ``config['load_col']`` and ``config['unload_col']`` according to source.
         See :doc:`../user_guide/data/data_args` for detail arg setting.
 
         Args:
-            filepath (str): path of input file.
             source (FeatureSource): source of input file.
 
         Returns:
@@ -352,7 +351,7 @@ class Dataset(object):
             raise ValueError('load_col [{}] and unload_col [{}] can not be set the same time'.format(
                 load_col, unload_col))
 
-        self.logger.debug('\n [{}]:\n\t load_col: [{}]\n\t unload_col: [{}]\n'.format(filepath, load_col, unload_col))
+        self.logger.debug('\n [{}]:\n\t load_col: [{}]\n\t unload_col: [{}]\n'.format(source, load_col, unload_col))
         return load_col, unload_col
 
     def _load_feat(self, filepath, source):
@@ -362,7 +361,7 @@ class Dataset(object):
 
         Args:
             filepath (str): path of input file.
-            source (FeatureSource): source of input file.
+            source (FeatureSource or str): source of input file.
 
         Returns:
             pandas.DataFrame: Loaded feature
@@ -374,7 +373,7 @@ class Dataset(object):
         """
         self.logger.debug('loading feature from [{}] (source: [{}])'.format(filepath, source))
 
-        load_col, unload_col = self._get_load_and_unload_col(filepath, source)
+        load_col, unload_col = self._get_load_and_unload_col(source)
         if load_col == set():
             return None
 
@@ -394,19 +393,20 @@ class Dataset(object):
                 continue
             if unload_col is not None and field in unload_col:
                 continue
-            self.field2source[field] = source
-            self.field2type[field] = ftype
-            if not ftype.value.endswith('seq'):
-                self.field2seqlen[field] = 1
+            if isinstance(source, FeatureSource) or source != 'link':
+                self.field2source[field] = source
+                self.field2type[field] = ftype
+                if not ftype.value.endswith('seq'):
+                    self.field2seqlen[field] = 1
             columns.append(field)
             usecols.append(field_type)
-            # dtype[field_type] = np.float64 if ftype == FeatureType.FLOAT else str
+            dtype[field_type] = np.float64 if ftype == FeatureType.FLOAT else str
 
         if len(columns) == 0:
             self.logger.warning('no columns has been loaded from [{}]'.format(source))
             return None
 
-        df = pd.read_csv(filepath, delimiter=self.config['field_separator'], usecols=usecols)  # , dtype=dtype)
+        df = pd.read_csv(filepath, delimiter=self.config['field_separator'], usecols=usecols, dtype=dtype)
         df.columns = columns
 
         seq_separator = self.config['seq_separator']
@@ -747,7 +747,7 @@ class Dataset(object):
 
         Note:
             Key of ``config['threshold']`` if a field name.
-            This field will be droped after this method.
+            This field will be droped after label generation.
         """
         threshold = self.config['threshold']
         if threshold is None:
@@ -864,7 +864,7 @@ class Dataset(object):
         tokens = np.concatenate(tokens)
         return tokens, split_point
 
-    def _remap(self, remap_list, overwrite=True):
+    def _remap(self, remap_list):
         """Remap tokens using :meth:`pandas.factorize`.
 
         Args:
@@ -876,7 +876,7 @@ class Dataset(object):
         mp = ['[PAD]'] + list(mp)
 
         for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
-            if overwrite or (field not in self.field2id_token):
+            if (field not in self.field2id_token):
                 self.field2id_token[field] = mp
             if ftype == FeatureType.TOKEN:
                 feat[field] = new_ids
@@ -961,19 +961,19 @@ class Dataset(object):
         """
         return self.fields([FeatureType.FLOAT, FeatureType.TOKEN])
 
-    def set_field_property(self, field, field2type, field2source, field2seqlen):
+    def set_field_property(self, field, field_type, field_source, field_seqlen):
         """Set a new field's properties.
 
         Args:
             field (str): Name of the new field.
-            field2type (FeatureType): Type of the new field.
-            field2source (FeatureSource): Source of the new field.
-            field2seqlen (int): max length of the sequence in ``field``.
+            field_type (FeatureType): Type of the new field.
+            field_source (FeatureSource): Source of the new field.
+            field_seqlen (int): max length of the sequence in ``field``.
                 ``1`` if ``field``'s type is not sequence-like.
         """
-        self.field2type[field] = field2type
-        self.field2source[field] = field2source
-        self.field2seqlen[field] = field2seqlen
+        self.field2type[field] = field_type
+        self.field2source[field] = field_source
+        self.field2seqlen[field] = field_seqlen
 
     def copy_field_property(self, dest_field, source_field):
         """Copy properties from ``dest_field`` towards ``source_field``.

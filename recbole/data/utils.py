@@ -300,6 +300,19 @@ def _get_DIN_data_loader(name, config, eval_setting):
 
 
 class DLFriendlyAPI(object):
+    """A Decorator class, which helps copying :class:`Dataset` methods to :class:`DataLoader`.
+
+    These methods are called *DataLoader Friendly APIs*.
+
+    E.g. if ``train_data`` is an object of :class:`DataLoader`,
+    and :meth:`~recbole.data.dataset.dataset.Dataset.num` is a method of :class:`~recbole.data.dataset.dataset.Dataset`,
+    Cause it has been decorated, :meth:`~recbole.data.dataset.dataset.Dataset.num` can be called directly by ``train_data``.
+
+    See the example of :meth:`set` for details.
+
+    Attributes:
+        dataloader_apis (set): Register table that saves all the method names of DataLoader Friendly APIs.
+    """
     def __init__(self):
         self.dataloader_apis = set()
 
@@ -307,6 +320,16 @@ class DLFriendlyAPI(object):
         return self.dataloader_apis
 
     def set(self):
+        """
+        Example:
+            .. code:: python
+
+                from recbole.data.utils import dlapi
+
+                @dlapi.set()
+                def dataset_meth():
+                    ...
+        """
         def decorator(f):
             self.dataloader_apis.add(f.__name__)
             return f
