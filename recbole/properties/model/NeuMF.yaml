@@ -2,7 +2,9 @@ mf_embedding_size: 64
 mlp_embedding_size: 64
 mlp_hidden_size: [128,64]
 dropout_prob: 0.1
-
 mf_train: True
 mlp_train: True
+
 use_pretrain: False
+mf_pretrain_path: ~
+mlp_pretrain_path: ~
