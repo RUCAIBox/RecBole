@@ -241,7 +241,7 @@ class Config(object):
                 self.internal_config_dict.update({
                     'eval_setting': 'TO_LS,full',
                 })
-                if dataset == 'ml-100k' and model in ['GRU4RecF', 'SASRecF', 'FDSA']:
+                if dataset == 'ml-100k' and model in ['GRU4RecF', 'SASRecF', 'FDSA', 'S3Rec']:
                     self.internal_config_dict.update({
                         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
                                      'item': ['item_id', 'release_year', 'class']},
