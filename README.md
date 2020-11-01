@@ -9,8 +9,8 @@
 
 [HomePage] | [Docs] | [Datasets] |
 
-[HomePage]: https://recbole.net
-[Docs]: https://github.com/RUCAIBox/RecBole
+[HomePage]: https://recbole.io/
+[Docs]: https://recbole.io/docs/
 [Datasets]: https://github.com/RUCAIBox/RecDatasets
 
 
@@ -177,7 +177,7 @@ If you find RecBole useful for your research or development, please cite the fol
 ```
 
 ## The Team
-RecBole is developed and maintained by [RUC, BUPT, ECNU](https://www.recbole.net/about.html).
+RecBole is developed and maintained by [RUC, BUPT, ECNU](https://www.recbole.io/about.html).
 
 ## License
 RecBole uses MIT License.
