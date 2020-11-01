@@ -241,25 +241,6 @@ class S3Rec(SequentialRecommender):
 
         return pretrain_loss
 
-    def finetune(self, item_seq, item_seq_len, pos_items, neg_items):
-        """Same as SASRec."""
-        # we use uni-directional attention in the fine-tuning stage
-        seq_output = self.forward(item_seq, bidirectional=False)
-        seq_output = self.gather_indexes(seq_output, item_seq_len - 1)
-
-        if self.loss_type == 'BPR':
-            pos_items_emb = self.item_embedding(pos_items)
-            neg_items_emb = self.item_embedding(neg_items)
-            pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)  # [B]
-            neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)  # [B]
-            loss = self.loss_fct(pos_score, neg_score)
-            return loss
-        else:  # self.loss_type = 'CE'
-            test_item_emb = self.item_embedding.weight
-            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
-            loss = self.loss_fct(logits, pos_items)
-            return loss
-
     def _neg_sample(self, item_set):  # [ , ]
         item = random.randint(1, self.n_items - 1)
         while item in item_set:
@@ -366,7 +347,7 @@ class S3Rec(SequentialRecommender):
     def calculate_loss(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
-
+        # pretrain
         if self.train_stage == 'pretrain':
             features, masked_item_sequence, pos_items, neg_items, \
             masked_segment_sequence, pos_segment, neg_segment \
@@ -374,11 +355,24 @@ class S3Rec(SequentialRecommender):
 
             loss = self.pretrain(features, masked_item_sequence, pos_items, neg_items,
                                  masked_segment_sequence, pos_segment, neg_segment)
+        # finetune
         else:
             pos_items = interaction[self.POS_ITEM_ID]
-            neg_items = interaction[self.NEG_ITEM_ID]
-            loss = self.finetune(item_seq, item_seq_len, pos_items, neg_items)
+            # we use uni-directional attention in the fine-tuning stage
+            seq_output = self.forward(item_seq, bidirectional=False)
+            seq_output = self.gather_indexes(seq_output, item_seq_len - 1)
 
+            if self.loss_type == 'BPR':
+                neg_items = interaction[self.NEG_ITEM_ID]
+                pos_items_emb = self.item_embedding(pos_items)
+                neg_items_emb = self.item_embedding(neg_items)
+                pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)  # [B]
+                neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)  # [B]
+                loss = self.loss_fct(pos_score, neg_score)
+            else:  # self.loss_type = 'CE'
+                test_item_emb = self.item_embedding.weight
+                logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
+                loss = self.loss_fct(logits, pos_items)
         return loss
 
     def predict(self, interaction):

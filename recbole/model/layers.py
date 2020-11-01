@@ -127,6 +127,7 @@ class FMEmbedding(nn.Module):
 
     Input:
         input_x: tensor, A 3D tensor with shape:``(batch_size,field_size)``.
+
     Return:
         output: tensor,  A 3D tensor with shape: ``(batch_size,field_size,embed_dim)``.
     """
