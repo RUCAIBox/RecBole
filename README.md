@@ -9,8 +9,8 @@
 
 [HomePage] | [Docs] | [Datasets] |
 
-[HomePage]: https://recbole.net
-[Docs]: https://github.com/RUCAIBox/RecBole
+[HomePage]: https://recbole.io/
+[Docs]: https://recbole.io/docs/
 [Datasets]: https://github.com/RUCAIBox/RecDatasets
 
 
@@ -67,18 +67,18 @@ This requires NVIDIA driver version >= 396.26 (for Linux) or >= 397.44 (for Wind
 
 ### Install from conda
 
-```
+```bash
 conda install recbole
 ```
 
 ### Install from pip
 
-```
+```bash
 pip install recbole
 ```
 
 ### Install from source
-```
+```bash
 git clone https://github.com/RUCAIBox/RecBole.git && cd RecBole
 pip install -e . --verbose
 ```
@@ -86,7 +86,7 @@ pip install -e . --verbose
 ## Quick-Start
 With the source code, you can use the provided script for initial usage of our library:
 
-```
+```bash
 python run_recbole.py
 ```
 
@@ -139,13 +139,13 @@ recall@10: 0.2076  mrr@10: 0.3796  ndcg@10: 0.2203  hit@10: 0.6769  precision@10
 If you want to change the parameters, such as ``learning_rate``, ``embedding_size``, just set the additional command
 parameters as you need:
 
-```
+```bash
 python run_recbole.py --learning_rate=0.0001 --embedding_size=128
 ```
 
 If you want to change the models, just run the script by setting additional command parameters:
 
-```
+```bash
 python run_recbole.py --model=[model_name]
 ```
 
@@ -177,7 +177,7 @@ If you find RecBole useful for your research or development, please cite the fol
 ```
 
 ## The Team
-RecBole is developed and maintained by [RUC, BUPT, ECNU](https://www.recbole.net/about.html).
+RecBole is developed and maintained by [RUC, BUPT, ECNU](https://www.recbole.io/about.html).
 
 ## License
 RecBole uses MIT License.
