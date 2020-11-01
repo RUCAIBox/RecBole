@@ -319,7 +319,6 @@ class VanillaAttention(nn.Module):
         weights (torch.Tensor): the attention weights
 
     """
-
     def __init__(self, hidden_dim, attn_dim):
         super().__init__()
         self.projection = nn.Sequential(
@@ -349,7 +348,6 @@ class MultiHeadAttention(nn.Module):
         hidden_states (torch.Tensor): the output of the multi-head self-attention layer
 
     """
-
     def __init__(self, n_heads, hidden_size, hidden_dropout_prob, attn_dropout_prob, layer_norm_eps):
         super(MultiHeadAttention, self).__init__()
         if hidden_size % n_heads != 0:
@@ -422,7 +420,6 @@ class FeedForward(nn.Module):
         hidden_states (torch.Tensor): the output of the point-wise feed-forward layer
 
     """
-
     def __init__(self, hidden_size, inner_size, hidden_dropout_prob, hidden_act, layer_norm_eps):
         super(FeedForward, self).__init__()
         self.dense_1 = nn.Linear(hidden_size, inner_size)
@@ -479,14 +476,13 @@ class TransformerLayer(nn.Module):
         feedforward_output (torch.Tensor): the output of the point-wise feed-forward sublayer, is the output of the transformer layer
 
     """
-
     def __init__(self, n_heads, hidden_size, intermediate_size,
                  hidden_dropout_prob, attn_dropout_prob, hidden_act, layer_norm_eps):
         super(TransformerLayer, self).__init__()
         self.multi_head_attention = MultiHeadAttention(n_heads, hidden_size,
-                                                       hidden_dropout_prob, attn_dropout_prob, layer_norm_eps)
+                                       hidden_dropout_prob, attn_dropout_prob, layer_norm_eps)
         self.feed_forward = FeedForward(hidden_size, intermediate_size,
-                                        hidden_dropout_prob, hidden_act, layer_norm_eps)
+                                         hidden_dropout_prob, hidden_act, layer_norm_eps)
 
     def forward(self, hidden_states, attention_mask):
         attention_output = self.multi_head_attention(hidden_states, attention_mask)
@@ -508,7 +504,6 @@ class TransformerEncoder(nn.Module):
         - layer_norm_eps(float): a value added to the denominator for numerical stability. Default: 1e-12
 
     """
-
     def __init__(self,
                  n_layers=2,
                  n_heads=2,
@@ -862,8 +857,7 @@ class CNNLayers(nn.Module):
         cnn_modules = []
 
         for i in range(self.num_of_nets):
-            cnn_modules.append(
-                nn.Conv2d(self.channels[i], self.channels[i + 1], self.kernels[i], stride=self.strides[i]))
+            cnn_modules.append(nn.Conv2d(self.channels[i], self.channels[i + 1], self.kernels[i], stride=self.strides[i]))
             if self.activation.lower() == 'sigmoid':
                 cnn_modules.append(nn.Sigmoid())
             elif self.activation.lower() == 'tanh':
