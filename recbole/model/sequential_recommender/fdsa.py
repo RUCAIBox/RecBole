@@ -136,7 +136,7 @@ class FDSA(SequentialRecommender):
             feature_table.append(dense_embedding)
 
         # [batch len num_features hidden_size]
-        feature_table = torch.cat(feature_table, dim=1)
+        feature_table = torch.cat(feature_table, dim=-2)
 
         # feature_emb [batch len hidden]
         # weight [batch len num_features]

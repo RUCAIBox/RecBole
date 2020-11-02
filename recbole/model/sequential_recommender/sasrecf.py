@@ -114,7 +114,7 @@ class SASRecF(SequentialRecommender):
         if dense_embedding is not None:
             feature_table.append(dense_embedding)
 
-        feature_table = torch.cat(feature_table, dim=1)
+        feature_table = torch.cat(feature_table, dim=-2)
         table_shape = feature_table.shape
         feat_num, embedding_size = table_shape[-2], table_shape[-1]
         feature_emb = feature_table.view(table_shape[:-2] + (feat_num * embedding_size,))
