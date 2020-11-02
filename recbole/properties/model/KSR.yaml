@@ -3,6 +3,5 @@ hidden_size: 128
 num_layers: 1
 dropout_prob: 0.1
 loss_type: 'CE'
-use_gpu: True
 freeze_kg: False
 gamma: 10
