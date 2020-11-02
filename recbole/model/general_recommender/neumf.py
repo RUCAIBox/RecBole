@@ -49,6 +49,8 @@ class NeuMF(GeneralRecommender):
         self.mf_train = config['mf_train']
         self.mlp_train = config['mlp_train']
         self.use_pretrain = config['use_pretrain']
+        self.mf_pretrain_path = config['mf_pretrain_path']
+        self.mlp_pretrain_path = config['mlp_pretrain_path']
 
         # define layers and loss
         self.user_mf_embedding = nn.Embedding(self.n_users, self.mf_embedding_size)
@@ -76,8 +78,8 @@ class NeuMF(GeneralRecommender):
         r"""A simple implementation of loading pretrained parameters.
 
         """
-        mf = torch.load('./saved/NeuMF-mf.pth')
-        mlp = torch.load('./saved/NeuMF-mlp.pth')
+        mf = torch.load(self.mf_pretrain_path)
+        mlp = torch.load(self.mlp_pretrain_path)
         self.user_mf_embedding.weight.data.copy_(mf.user_mf_embedding.weight)
         self.item_mf_embedding.weight.data.copy_(mf.item_mf_embedding.weight)
         self.user_mlp_embedding.weight.data.copy_(mlp.user_mlp_embedding.weight)
@@ -136,9 +138,8 @@ class NeuMF(GeneralRecommender):
 
         """
         if self.mf_train and not self.mlp_train:
-            save_path = './saved/NeuMF-mf.pth'
+            save_path = self.mf_pretrain_path
+            torch.save(self, save_path)
         elif self.mlp_train and not self.mf_train:
-            save_path = './saved/NeuMF-mlp.pth'
-        else:
-            save_path = './saved/NeuMF.pth'
-        torch.save(self, save_path)
+            save_path = self.mlp_pretrain_path
+            torch.save(self, save_path)
