@@ -11,25 +11,24 @@ seq_len: ~
 
 # Label for Point-wise DataLoader
 LABEL_FIELD: label
-threshold:
-    rating: 4
+threshold: ~
 
 # NegSample Prefix for Pair-wise DataLoader
 NEG_PREFIX: neg_
 
 # Selectively Loading
 load_col:
-    inter: [user_id, item_id, rating]
+    inter: [user_id, item_id]
+    # the others
 unload_col: ~
 additional_feat_suffix: ~
 
 # Filtering
 max_user_inter_num: ~
-min_user_inter_num: 5
+min_user_inter_num: 0
 max_item_inter_num: ~
-min_item_inter_num: 5
-lowest_val:
-    rating: 3
+min_item_inter_num: 0
+lowest_val: ~
 highest_val: ~
 equal_val: ~
 not_equal_val: ~

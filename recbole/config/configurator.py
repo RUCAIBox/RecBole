@@ -191,10 +191,11 @@ class Config(object):
         current_path = os.path.dirname(os.path.realpath(__file__))
         overall_init_file = os.path.join(current_path, '../properties/overall.yaml')
         model_init_file = os.path.join(current_path, '../properties/model/' + model + '.yaml')
+        sample_init_file = os.path.join(current_path, '../properties/dataset/sample.yaml')
         dataset_init_file = os.path.join(current_path, '../properties/dataset/' + dataset + '.yaml')
 
         self.internal_config_dict = dict()
-        for file in [overall_init_file, model_init_file, dataset_init_file]:
+        for file in [overall_init_file, model_init_file, sample_init_file, dataset_init_file]:
             if os.path.isfile(file):
                 with open(file, 'r', encoding='utf-8') as f:
                     config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
@@ -241,7 +242,7 @@ class Config(object):
                 self.internal_config_dict.update({
                     'eval_setting': 'TO_LS,full',
                 })
-                if dataset == 'ml-100k' and model in ['GRU4RecF', 'SASRecF', 'FDSA']:
+                if dataset == 'ml-100k' and model in ['GRU4RecF', 'SASRecF', 'FDSA', 'S3Rec']:
                     self.internal_config_dict.update({
                         'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
                                      'item': ['item_id', 'release_year', 'class']},

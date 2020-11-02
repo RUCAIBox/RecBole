@@ -113,7 +113,7 @@ class DIN(SequentialRecommender):
             if dense_embedding[type] is not None:
                 feature_table[type].append(dense_embedding[type])
 
-            feature_table[type] = torch.cat(feature_table[type], dim=1)
+            feature_table[type] = torch.cat(feature_table[type], dim=-2)
             table_shape = feature_table[type].shape
 
             feat_num, embedding_size = table_shape[-2], table_shape[-1]
@@ -142,7 +142,6 @@ class DIN(SequentialRecommender):
         user = interaction[self.USER_ID]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         next_items = interaction[self.POS_ITEM_ID]
-
         output = self.forward(user, item_seq, item_seq_len, next_items)
         loss = self.loss(output, label)
         return loss
