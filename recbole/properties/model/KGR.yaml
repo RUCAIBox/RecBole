@@ -1,3 +1,0 @@
-embedding_size: 64
-freeze_kg: True
-reg_weight: 1e-5
