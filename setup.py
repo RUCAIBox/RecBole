@@ -6,15 +6,12 @@ import os
 
 from setuptools import setup, find_packages
 
-install_requires = ['numpy>=1.17.2', 'torch>=1.2.0', 'scipy>=1.1.0', 'pandas>=1.0.5', 'tqdm>=4.48.2',
-                    'scikit_learn>=0.20.3', 'pyyaml>=5.3.1']
+install_requires = ['numpy>=1.17.2', 'torch>=1.6.0', 'scipy>=1.3.1', 'pandas>=1.0.5', 'tqdm>=4.48.2',
+                    'scikit_learn>=0.23.2', 'pyyaml>=5.1.0', 'matplotlib>=3.1.3', 'hyperopt>=0.2.4']
 
 setup_requires = []
 
-extras_require = {
-    'matplotlib': ['matplotlib>=3.1.3'],
-    'hyperopt': ['hyperopt>=0.2.4']
-}
+extras_require = {}
 
 # Readthedocs requires Sphinx extensions to be specified as part of
 # install_requires in order to build properly.
@@ -29,7 +26,7 @@ setup(
     description='A package for building recommender systems',
     url='https://github.com/RUCAIBox/RecBole',
     author='RecBoleTeam',
-    author_email='ContactRecBoleTeam',
+    author_email='recbole@outlook.com',
     packages=[
         package for package in find_packages()
         if package.startswith('recbole')
