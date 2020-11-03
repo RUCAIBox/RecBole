@@ -13,8 +13,7 @@ setup_requires = []
 
 extras_require = {}
 
-classifiers = ["Programming Language :: Python",
-               "License :: OSI Approved :: MIT License"]
+classifiers = ["License :: OSI Approved :: MIT License"]
 
 long_description = 'RecBole is developed based on Python and PyTorch for ' \
                    'reproducing and developing recommendation algorithms in ' \
