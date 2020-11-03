@@ -13,6 +13,17 @@ setup_requires = []
 
 extras_require = {}
 
+classifiers = ["License :: OSI Approved :: MIT License"]
+
+long_description = 'RecBole is developed based on Python and PyTorch for ' \
+                   'reproducing and developing recommendation algorithms in ' \
+                   'a unified, comprehensive and efficient framework for ' \
+                   'research purpose. In the first version, Our library ' \
+                   'includes 53 recommendation algorithms, covering four ' \
+                   'major categories: General Recommendation, Sequential ' \
+                   'Recommendation, Context-aware Recommendation and ' \
+                   'Knowledge-based Recommendation.'
+
 # Readthedocs requires Sphinx extensions to be specified as part of
 # install_requires in order to build properly.
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
@@ -23,7 +34,9 @@ setup(
     name='recbole',
     version=
     '0.1.0',  # please remember to edit recbole/__init__.py in response, once updating the version
-    description='A package for building recommender systems',
+    description='A unified, comprehensive and efficient recommendation library',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     url='https://github.com/RUCAIBox/RecBole',
     author='RecBoleTeam',
     author_email='recbole@outlook.com',
@@ -35,4 +48,6 @@ setup(
     install_requires=install_requires,
     setup_requires=setup_requires,
     extras_require=extras_require,
-    zip_safe=False)
+    zip_safe=False,
+    classifiers=classifiers,
+)
