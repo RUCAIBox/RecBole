@@ -16,14 +16,14 @@
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
-Our library includes 52 recommendation algorithms, covering four major categories:
+Our library includes 53 recommendation algorithms, covering four major categories:
 
 + General Recommendation
 + Sequential Recommendation
 + Context-aware Recommendation
 + Knowledge-based Recommendation
 
-We design a unified and flexible data file format, and provide the support for 25 benchmark recommendation datasets.
+We design a unified and flexible data file format, and provide the support for 27 benchmark recommendation datasets.
 A user can apply the provided script to process the original data copy, or simply download the processed datasets
 by our team.
 
@@ -39,7 +39,7 @@ by our team.
 + *General and extensible data structure.* We design general and extensible data structures to unify the formatting and
 usage of various recommendation datasets.
 
-+ *Comprehensive benchmark models and datasets.* We implement 52 commonly used recommendation algorithms, and provide
++ *Comprehensive benchmark models and datasets.* We implement 53 commonly used recommendation algorithms, and provide
 the formatted copies of 27 recommendation datasets.
 
 + *Efficient GPU-accelerated execution.* We optimize the efficiency of our library with a number of improved techniques
@@ -49,7 +49,7 @@ oriented to the GPU environment.
 for testing and comparing recommendation algorithms.
 
 ## RecBole News
-**10/xx/2020**: We release the first version of RecBole **v0.1.0 release**.
+**11/03/2020**: We release the first version of RecBole **v0.1.0 release**.
 
 
 ## Installation
@@ -61,7 +61,7 @@ RecBole works with the following operating systems:
 
 RecBole requires Python version 3.6 or later.
 
-RecBole requires torch version 1.2.0 or later. If you want to use RecBole with GPU,
+RecBole requires torch version 1.6.0 or later. If you want to use RecBole with GPU,
 please ensure that CUDA or cudatoolkit version is 9.2 or later.
 This requires NVIDIA driver version >= 396.26 (for Linux) or >= 397.44 (for Windows10).
 
@@ -107,7 +107,7 @@ INFO Evaluation Settings:
 Group by user_id
 Ordering: {'strategy': 'shuffle'}
 Splitting: {'strategy': 'by_ratio', 'ratios': [0.8, 0.1, 0.1]}
-Negative Sampling: {'strategy': 'by', 'distribution': 'uniform', 'by': 1}
+Negative Sampling: {'strategy': 'full', 'distribution': 'uniform'}
 
 INFO BPRMF(
     (user_embedding): Embedding(944, 64)
@@ -123,17 +123,17 @@ recall@10: 0.0073  mrr@10: 0.0219  ndcg@10: 0.0093  hit@10: 0.0795  precision@10
 
 ...
 
-INFO epoch 16 training [time: 0.19s, train loss: 2.2169]
-INFO epoch 16 evaluating [time: 0.08s, valid_score: 0.298600]
+INFO epoch 63 training [time: 0.19s, train loss: 4.7660]
+INFO epoch 63 evaluating [time: 0.08s, valid_score: 0.394500]
 INFO valid result:
-recall@10: 0.2049  mrr@10: 0.2986  ndcg@10: 0.1836  hit@10: 0.6684  precision@10: 0.1147
+recall@10: 0.2156  mrr@10: 0.3945  ndcg@10: 0.2332  hit@10: 0.7593  precision@10: 0.1591
 
-INFO Finished training, best eval result in epoch 5
+INFO Finished training, best eval result in epoch 52
 INFO Loading model structure and parameters from saved/***.pth
 INFO best valid result:
-recall@10: 0.2077  mrr@10: 0.3329  ndcg@10: 0.1992  hit@10: 0.6738  precision@10: 0.1264
+recall@10: 0.2169  mrr@10: 0.4005  ndcg@10: 0.235  hit@10: 0.7582  precision@10: 0.1598
 INFO test result:
-recall@10: 0.2076  mrr@10: 0.3796  ndcg@10: 0.2203  hit@10: 0.6769  precision@10: 0.1404
+recall@10: 0.2368  mrr@10: 0.4519  ndcg@10: 0.2768  hit@10: 0.7614  precision@10: 0.1901
 ```
 
 If you want to change the parameters, such as ``learning_rate``, ``embedding_size``, just set the additional command
@@ -152,7 +152,7 @@ python run_recbole.py --model=[model_name]
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
-| v0.1.0    | 10/xx/2020 |  Basic RecBole |
+| v0.1.0    | 11/03/2020 |  Basic RecBole |
 
 
 ## Contributing
