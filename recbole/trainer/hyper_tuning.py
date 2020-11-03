@@ -10,19 +10,13 @@ recbole.trainer.hyper_tuning
 """
 
 import numpy as np
-
-import hyperopt
 from functools import partial
-from hyperopt import fmin, tpe, hp, pyll
-from hyperopt.base import miscs_update_idxs_vals
-from hyperopt.pyll.base import dfs, as_apply
-from hyperopt.pyll.stochastic import implicit_stochastic_symbols
-from hyperopt.pyll.base import Apply
 
 from recbole.utils.utils import dict2str
 
 
 def _recursiveFindNodes(root, node_type='switch'):
+    from hyperopt.pyll.base import Apply
     nodes = []
     if isinstance(root, (list, tuple)):
         for node in root:
@@ -75,6 +69,8 @@ class ExhaustiveSearchError(Exception):
 
 
 def _validate_space_exhaustive_search(space):
+    from hyperopt.pyll.base import dfs, as_apply
+    from hyperopt.pyll.stochastic import implicit_stochastic_symbols
     supported_stochastic_symbols = ['randint', 'quniform', 'qloguniform', 'qnormal', 'qlognormal', 'categorical']
     for node in dfs(as_apply(space)):
         if node.name in implicit_stochastic_symbols:
@@ -87,6 +83,8 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
     r""" This is for exhaustive search in HyperTuning.
 
     """
+    from hyperopt import pyll
+    from hyperopt.base import miscs_update_idxs_vals
     # Build a hash set for previous trials
     hashset = set([hash(frozenset([(key, value[0]) if len(value) > 0 else ((key, None))
                                    for key, value in trial['misc']['vals'].items()])) for trial in trials.trials])
@@ -137,6 +135,7 @@ class HyperTuning(object):
         Thanks to sbrodeur for the exhaustive search code.
         https://github.com/hyperopt/hyperopt/issues/200
     """
+    from hyperopt import tpe
 
     def __init__(self, objective_function, space=None, params_file=None, fixed_config_file_list=None,
                  algo=tpe.suggest, max_evals=100):
@@ -165,6 +164,7 @@ class HyperTuning(object):
 
     @staticmethod
     def _build_space_from_file(file):
+        from hyperopt import hp
         space = {}
         with open(file, 'r') as fp:
             for line in fp:
@@ -230,6 +230,7 @@ class HyperTuning(object):
         Args:
             params (dict): the parameter dictionary
         """
+        import hyperopt
         config_dict = params.copy()
         params_str = self.params2str(params)
         print('running parameters:', config_dict)
@@ -261,4 +262,5 @@ class HyperTuning(object):
         r""" begin to search the best parameters
 
         """
+        from hyperopt import fmin
         fmin(self.trial, self.space, algo=self.algo, max_evals=self.max_evals)
