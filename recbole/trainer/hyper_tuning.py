@@ -135,10 +135,9 @@ class HyperTuning(object):
         Thanks to sbrodeur for the exhaustive search code.
         https://github.com/hyperopt/hyperopt/issues/200
     """
-    from hyperopt import tpe
 
     def __init__(self, objective_function, space=None, params_file=None, fixed_config_file_list=None,
-                 algo=tpe.suggest, max_evals=100):
+                 algo='exhaustive', max_evals=100):
         self.best_score = None
         self.best_params = None
         self.best_test_result = None
