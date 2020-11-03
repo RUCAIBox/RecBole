@@ -100,7 +100,7 @@ class GRU4RecF(SequentialRecommender):
         if dense_embedding is not None:
             feature_table.append(dense_embedding)
 
-        feature_table = torch.cat(feature_table, dim=1)
+        feature_table = torch.cat(feature_table, dim=-2)
         # [batch len num_features hidden_size]
         table_shape = feature_table.shape
 

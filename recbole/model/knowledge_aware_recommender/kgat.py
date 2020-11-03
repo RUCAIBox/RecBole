@@ -13,7 +13,6 @@ Reference code:
     https://github.com/xiangwang1223/knowledge_graph_attention_network
 """
 
-import dgl
 import copy
 import torch
 import torch.nn as nn
@@ -125,7 +124,7 @@ class KGAT(KnowledgeRecommender):
         Returns:
             torch.sparse.FloatTensor: Sparse tensor of the attention matrix
         """
-
+        import dgl
         adj_list = []
         for rel_type in range(1, self.n_relations, 1):
             edge_idxs = self.ckg.filter_edges(lambda edge: edge.data['relation_id'] == rel_type)
