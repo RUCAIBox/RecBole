@@ -4,6 +4,8 @@
 
 # RecBole (伯乐)
 
+[![PyPi Latest Release](https://img.shields.io/pypi/v/recbole)](https://pypi.org/project/recbole/)
+[![Conda Latest Release](https://anaconda.org/aibox/recbole/badges/version.svg)](https://anaconda.org/aibox/recbole)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 
@@ -36,16 +38,16 @@ by our team.
 
 
 ## Feature
-+ *General and extensible data structure.* We design general and extensible data structures to unify the formatting and
++ **General and extensible data structure.** We design general and extensible data structures to unify the formatting and
 usage of various recommendation datasets.
 
-+ *Comprehensive benchmark models and datasets.* We implement 53 commonly used recommendation algorithms, and provide
++ **Comprehensive benchmark models and datasets.** We implement 53 commonly used recommendation algorithms, and provide
 the formatted copies of 27 recommendation datasets.
 
-+ *Efficient GPU-accelerated execution.* We optimize the efficiency of our library with a number of improved techniques
++ **Efficient GPU-accelerated execution.** We optimize the efficiency of our library with a number of improved techniques
 oriented to the GPU environment.
 
-+ *Extensive and standard evaluation protocols.* We support a series of widely adopted evaluation protocols or settings
++ **Extensive and standard evaluation protocols.** We support a series of widely adopted evaluation protocols or settings
 for testing and comparing recommendation algorithms.
 
 ## RecBole News
@@ -68,7 +70,7 @@ This requires NVIDIA driver version >= 396.26 (for Linux) or >= 397.44 (for Wind
 ### Install from conda
 
 ```bash
-conda install recbole
+conda install -c aibox recbole
 ```
 
 ### Install from pip
@@ -161,7 +163,7 @@ Please let us know if you encounter a bug or have any suggestions by [filing an 
 
 We welcome all contributions from bug fixes to new features and extensions.
 
-We expect all contributions discussed in the issue tracker and going through PRs
+We expect all contributions discussed in the issue tracker and going through PRs.
 
 
 ## Cite
@@ -170,7 +172,7 @@ If you find RecBole useful for your research or development, please cite the fol
 ```
 @article{recbole,
     title={RecBole: Towards a Unified, Comprehensive and Efficient Framework for Recommendation Algorithms},
-    author={Wayne Xin Zhao and Shanlei Mu and Yupeng Hou and Zihan Lin and Kaiyuan Li and Yushuo Chen and Yujie Lu and Hui Wang and Changxin Tian and Yingqian Min and Zhichao Feng and Xingyu Pan and Xinyan Fan and Xu Chen and Pengfei Wang and Wendi Ji and Yaliang Li and Zhen Wang and Xiaoling Wang and Ji-Rong Wen},
+    author={Wayne Xin Zhao and Shanlei Mu and Yupeng Hou and Zihan Lin and Kaiyuan Li and Yushuo Chen and Yujie Lu and Hui Wang and Changxin Tian and Yingqian Min and Zhichao Feng and Xingyu Pan and Xinyan Fan and Xu Chen and Pengfei Wang and Wendi Ji and Yaliang Li and Xiaoling Wang and Ji-Rong Wen},
     year={2020},
     journal={arXiv preprint arXiv:}
 }
@@ -180,4 +182,4 @@ If you find RecBole useful for your research or development, please cite the fol
 RecBole is developed and maintained by [RUC, BUPT, ECNU](https://www.recbole.io/about.html).
 
 ## License
-RecBole uses MIT License.
+RecBole uses [MIT License](./LICENSE).
