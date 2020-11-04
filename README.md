@@ -9,12 +9,12 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 
-[HomePage] | [Docs] | [Datasets] |
+[HomePage] | [Docs] | [Datasets] | [Paper]
 
 [HomePage]: https://recbole.io/
 [Docs]: https://recbole.io/docs/
 [Datasets]: https://github.com/RUCAIBox/RecDatasets
-
+[Paper]: https://arxiv.org/abs/2011.01731
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
