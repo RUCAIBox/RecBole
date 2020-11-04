@@ -4,6 +4,8 @@
 
 # RecBole (伯乐)
 
+*“世有伯乐，然后有千里马。千里马常有，而伯乐不常有。”——韩愈《马说》*
+
 [![PyPi Latest Release](https://img.shields.io/pypi/v/recbole)](https://pypi.org/project/recbole/)
 [![Conda Latest Release](https://anaconda.org/aibox/recbole/badges/version.svg)](https://anaconda.org/aibox/recbole)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
@@ -167,7 +169,7 @@ We expect all contributions discussed in the issue tracker and going through PRs
 
 
 ## Cite
-If you find RecBole useful for your research or development, please cite the following paper.
+If you find RecBole useful for your research or development, please cite the following [paper](https://arxiv.org/abs/2011.01731).
 
 ```
 @article{recbole,
