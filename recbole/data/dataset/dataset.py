@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/28 2020/10/13, 2020/10/25
+# @Time   : 2020/10/28 2020/10/13, 2020/11/10
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -164,6 +164,7 @@ class Dataset(object):
             thus :meth:`~recbole.data.dataset.dataset.Dataset._reset_index()` will reset the index of feats.
         """
         self._filter_nan_user_or_item()
+        self._remove_duplication()
         self._filter_by_field_value()
         self._filter_by_inter_num()
         self._reset_index()
@@ -602,6 +603,29 @@ class Dataset(object):
                     self.logger.warning('In inter_feat, line {}, {} do not exist, so they will be removed'.format(
                         name, list(dropped_inter + 2), field))
                     self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
+
+    def _remove_duplication(self):
+        """Remove duplications in inter_feat.
+
+        If :attr:`self.config['rm_dup_inter']` is not ``None``, it will remove duplicated user-item interactions.
+
+        Note:
+            Before removing duplicated user-item interactions, if :attr:`time_field` existed, :attr:`inter_feat`
+            will be sorted by :attr:`time_field` in ascending order.
+        """
+        keep = self.config['rm_dup_inter']
+        if keep is None:
+            return
+        self._check_field('uid_field', 'iid_field')
+
+        if self.time_field in self.inter_feat:
+            self.inter_feat.sort_values(by=[self.time_field], ascending=True, inplace=True)
+            self.logger.info('Records in original dataset have been sorted by value of [{}] in ascending order.'.format(
+                self.time_field))
+        else:
+            self.logger.warning('Timestamp field has not been loaded or specified, '
+                                'thus strategy [{}] of duplication removal may be meaningless.'.format(keep))
+        self.inter_feat.drop_duplicates(subset=[self.uid_field, self.iid_field], keep=keep, inplace=True)
 
     def _filter_by_inter_num(self):
         """Filter by number of interaction.
