@@ -55,11 +55,13 @@ class Config(object):
     Finally the learning_rate is equal to 0.02.
     """
 
-    def __init__(self, model=None, dataset=None, config_file_list=None, config_dict=None):
+    def __init__(self, model=None, model_class=None, dataset=None, config_file_list=None, config_dict=None):
         """
         Args:
             model (str): the model name, default is None, if it is None, config will search the parameter 'model'
             from the external input as the model name.
+            model_class (AbstractRecommender): the model class, default is None, if it is not None, config will
+            assign the model class name to the model name in config
             dataset (str): the dataset name, default is None, if it is None, config will search the parameter 'dataset'
             from the external input as the dataset name.
             config_file_list (list of str): the external config file, it allows multiple config files, default is None.
@@ -71,8 +73,9 @@ class Config(object):
         self.variable_config_dict = self._load_variable_config_dict(config_dict)
         self.cmd_config_dict = self._load_cmd_line()
         self._merge_external_config_dict()
-        self.model, self.dataset = self._get_model_and_dataset(model, dataset)
-        self._load_internal_config_dict(self.model, self.dataset)
+
+        self.model, self.model_class, self.dataset = self._get_model_and_dataset(model, model_class, dataset)
+        self._load_internal_config_dict(self.model, self.model_class, self.dataset)
         self.final_config_dict = self._get_final_config_dict()
         self._set_default_parameters()
         self._init_device()
@@ -166,15 +169,27 @@ class Config(object):
         external_config_dict.update(self.cmd_config_dict)
         self.external_config_dict = external_config_dict
 
-    def _get_model_and_dataset(self, model, dataset):
-        if model is None:
-            try:
-                final_model = self.external_config_dict['model']
-            except KeyError:
-                raise KeyError('model need to be specified in at least one of the these ways: '
-                               '[model variable, config file, config dict, command line] ')
+    def _get_model_class(self, model, model_class):
+        if model_class:
+            return model_class
         else:
-            final_model = model
+            return get_model(model)
+
+    def _get_model_and_dataset(self, model, model_class, dataset):
+        if model_class:
+            final_model_class = model_class
+            final_model = model_class.__name__
+
+        else:
+            if model is None:
+                try:
+                    final_model = self.external_config_dict['model']
+                except KeyError:
+                    raise KeyError('model need to be specified in at least one of the these ways: '
+                                   '[model variable, config file, config dict, command line] ')
+            else:
+                final_model = model
+            final_model_class = get_model(final_model)
 
         if dataset is None:
             try:
@@ -185,9 +200,9 @@ class Config(object):
         else:
             final_dataset = dataset
 
-        return final_model, final_dataset
+        return final_model, final_model_class, final_dataset
 
-    def _load_internal_config_dict(self, model, dataset):
+    def _load_internal_config_dict(self, model, model_class, dataset):
         current_path = os.path.dirname(os.path.realpath(__file__))
         overall_init_file = os.path.join(current_path, '../properties/overall.yaml')
         model_init_file = os.path.join(current_path, '../properties/model/' + model + '.yaml')
@@ -204,8 +219,7 @@ class Config(object):
                                                        key not in self.parameters['Dataset']]
                     if config_dict is not None:
                         self.internal_config_dict.update(config_dict)
-
-        self.internal_config_dict['MODEL_TYPE'] = get_model(model).type
+        self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.CONTEXT:
@@ -271,8 +285,8 @@ class Config(object):
         else:
             self.final_config_dict['data_path'] = os.path.join(self.final_config_dict['data_path'], self.dataset)
 
-        if hasattr(get_model(self.model), 'input_type'):
-            self.final_config_dict['MODEL_INPUT_TYPE'] = get_model(self.model).input_type
+        if hasattr(self.model_class, 'input_type'):
+            self.final_config_dict['MODEL_INPUT_TYPE'] = self.model_class.input_type
         elif 'loss_type' in self.final_config_dict:
             if self.final_config_dict['loss_type'] in ['CE']:
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.POINTWISE
