@@ -169,12 +169,6 @@ class Config(object):
         external_config_dict.update(self.cmd_config_dict)
         self.external_config_dict = external_config_dict
 
-    def _get_model_class(self, model, model_class):
-        if model_class:
-            return model_class
-        else:
-            return get_model(model)
-
     def _get_model_and_dataset(self, model, model_class, dataset):
         if model_class:
             final_model_class = model_class
