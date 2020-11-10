@@ -61,7 +61,7 @@ class Config(object):
             model (str): the model name, default is None, if it is None, config will search the parameter 'model'
             from the external input as the model name.
             model_class (AbstractRecommender): the model class, default is None, if it is not None, config will
-            assign the model class name to the model name in config
+            assign the model class name to the model name in config.
             dataset (str): the dataset name, default is None, if it is None, config will search the parameter 'dataset'
             from the external input as the dataset name.
             config_file_list (list of str): the external config file, it allows multiple config files, default is None.
