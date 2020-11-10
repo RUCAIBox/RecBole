@@ -59,7 +59,7 @@ class Config(object):
         """
         Args:
             model (str/AbstractRecommender): the model name or the model class, default is None, if it is None, config
-            will search the parameter 'model' from the external input as the model name.
+            will search the parameter 'model' from the external input as the model name or model class.
             dataset (str): the dataset name, default is None, if it is None, config will search the parameter 'dataset'
             from the external input as the dataset name.
             config_file_list (list of str): the external config file, it allows multiple config files, default is None.
@@ -171,19 +171,17 @@ class Config(object):
 
         if model is None:
             try:
-                final_model = self.external_config_dict['model']
-                final_model_class = get_model(final_model)
+                model = self.external_config_dict['model']
             except KeyError:
                 raise KeyError(
                     'model need to be specified in at least one of the these ways: '
                     '[model variable, config file, config dict, command line] ')
+        if not isinstance(model, str):
+            final_model_class = model
+            final_model = model.__name__
         else:
-            if not isinstance(model, str):
-                final_model_class = model
-                final_model = model.__name__
-            else:
-                final_model = model
-                final_model_class = get_model(final_model)
+            final_model = model
+            final_model_class = get_model(final_model)
 
         if dataset is None:
             try:
