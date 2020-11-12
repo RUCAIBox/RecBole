@@ -16,25 +16,25 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'BPR',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'RO_LS,full',
             'model': 'NeuMF',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'RO_LS,full',
             'model': 'FISM',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'RO_LS,full',
             'model': 'LightGCN',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
 
     def test_tols_full(self):
         config_dict = {
@@ -42,25 +42,25 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'BPR',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_LS,full',
             'model': 'NeuMF',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_LS,full',
             'model': 'FISM',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_LS,full',
             'model': 'LightGCN',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
 
     def test_tors_full(self):
         config_dict = {
@@ -68,25 +68,25 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'BPR',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_RS,full',
             'model': 'NeuMF',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_RS,full',
             'model': 'FISM',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_RS,full',
             'model': 'LightGCN',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
 
     def test_rors_uni100(self):
         config_dict = {
@@ -94,25 +94,25 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'BPR',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'RO_RS,uni100',
             'model': 'NeuMF',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'RO_RS,uni100',
             'model': 'FISM',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'RO_RS,uni100',
             'model': 'LightGCN',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
 
     def test_tols_uni100(self):
         config_dict = {
@@ -120,25 +120,25 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'BPR',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_LS,uni100',
             'model': 'NeuMF',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_LS,uni100',
             'model': 'FISM',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_LS,uni100',
             'model': 'LightGCN',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
 
     def test_rols_uni100(self):
         config_dict = {
@@ -146,25 +146,25 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'BPR',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'RO_LS,uni100',
             'model': 'NeuMF',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'RO_LS,uni100',
             'model': 'FISM',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'RO_LS,uni100',
             'model': 'LightGCN',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
 
     def test_tors_uni100(self):
         config_dict = {
@@ -172,25 +172,25 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'BPR',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_RS,uni100',
             'model': 'NeuMF',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_RS,uni100',
             'model': 'FISM',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_RS,uni100',
             'model': 'LightGCN',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
 
 
 class TestContextRecommender(unittest.TestCase):
@@ -201,25 +201,25 @@ class TestContextRecommender(unittest.TestCase):
             'model': 'FM',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_RS',
             'model': 'DeepFM',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_RS',
             'model': 'DSSM',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_RS',
             'model': 'AutoInt',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
 
 
 class TestSequentialRecommender(unittest.TestCase):
@@ -230,19 +230,19 @@ class TestSequentialRecommender(unittest.TestCase):
             'model': 'FPMC',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_LS,uni100',
             'model': 'SASRec',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_LS,uni100',
             'model': 'GRU4RecF',
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
         config_dict = {
             'eval_setting': 'TO_LS,uni100',
             'model': 'Caser',
@@ -250,4 +250,4 @@ class TestSequentialRecommender(unittest.TestCase):
             'reproducibility': False,
         }
         objective_function(config_dict=config_dict,
-                           config_file_list=['../model/test_model.yaml'], saved=False)
+                           config_file_list=['tests/model/test_model.yaml'], saved=False)
