@@ -53,7 +53,7 @@ oriented to the GPU environment.
 for testing and comparing recommendation algorithms.
 
 ## RecBole News
-**11/03/2020**: We release the first version of RecBole **v0.1.0 release**.
+**11/03/2020**: We release the first version of RecBole **v0.1.1**.
 
 
 ## Installation
@@ -156,7 +156,7 @@ python run_recbole.py --model=[model_name]
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
-| v0.1.0    | 11/03/2020 |  Basic RecBole |
+| v0.1.1    | 11/03/2020 |  Basic RecBole |
 
 
 ## Contributing
@@ -169,7 +169,7 @@ We expect all contributions discussed in the issue tracker and going through PRs
 
 
 ## Cite
-If you find RecBole useful for your research or development, please cite the following [paper](https://arxiv.org/abs/2011.01731).
+If you find RecBole useful for your research or development, please cite the following [paper](https://arxiv.org/abs/2011.01731):
 
 ```
 @article{recbole,
