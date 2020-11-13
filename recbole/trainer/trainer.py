@@ -231,8 +231,9 @@ class Trainer(AbstractTrainer):
         Returns:
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
         """
-        if hasattr(self.model, 'train_preparation'):
-            self.model.train_preparation(train_data=train_data, valid_data=valid_data)
+        if saved and self.start_epoch >= self.epochs:
+            self._save_checkpoint(-1)
+
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
@@ -616,8 +617,8 @@ class S3RecTrainer(Trainer):
         Returns:
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
         """
-        if hasattr(self.model, 'train_preparation'):
-            self.model.train_preparation(train_data=train_data, valid_data=valid_data)
+        if saved and self.start_epoch >= self.epochs:
+            self._save_checkpoint(-1)
 
         if self.model.train_stage == 'pretrain':
             return self.pretrain(train_data, verbose)
