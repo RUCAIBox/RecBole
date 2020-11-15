@@ -54,7 +54,7 @@ class AbstractTrainer(object):
 
 class Trainer(AbstractTrainer):
     r"""The basic Trainer for basic training and evaluation strategies in recommender systems. This class defines common
-    functions for training and evaluation processes of most recommender system models, including fit(), evalute(),
+    functions for training and evaluation processes of most recommender system models, including fit(), evaluate(),
     resume_checkpoint() and some other features helpful for model training and evaluation.
 
     Generally speaking, this class can serve most recommender system models, If the training process of the model is to
