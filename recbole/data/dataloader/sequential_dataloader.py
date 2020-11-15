@@ -240,7 +240,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
+            np.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         return np.ones(self.pr_end, dtype=np.int64)
 

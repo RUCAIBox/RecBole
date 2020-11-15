@@ -53,10 +53,10 @@ class TopKEvaluator(AbstractEvaluator):
             scores_matrix = scores_tensor.view(len(user_len_list), -1)
         else:
             scores_list = torch.split(scores_tensor, user_len_list, dim=0)
-            scores_matrix = pad_sequence(scores_list, batch_first=True, padding_value=-np.inf)  # nusers x items
+            scores_matrix = pad_sequence(scores_list, batch_first=True, padding_value=-np.inf)  # n_users x items
 
         # get topk
-        _, topk_index = torch.topk(scores_matrix, max(self.topk), dim=-1)  # nusers x k
+        _, topk_index = torch.topk(scores_matrix, max(self.topk), dim=-1)  # n_users x k
 
         return topk_index
 
@@ -105,7 +105,8 @@ class TopKEvaluator(AbstractEvaluator):
                 self.topk = [self.topk]
             for topk in self.topk:
                 if topk <= 0:
-                    raise ValueError('topk must be a positive integer or a list of positive integers, but get `{}`'.format(topk))
+                    raise ValueError('topk must be a positive integer or a list of positive integers, '
+                                     'but get `{}`'.format(topk))
         else:
             raise TypeError('The topk must be a integer, list')
 
@@ -113,9 +114,9 @@ class TopKEvaluator(AbstractEvaluator):
         """get metrics result
 
         Args:
-            pos_idx (np.ndarray): the bool index of all users' topk items that indicating the postive items are
+            pos_idx (np.ndarray): the bool index of all users' topk items that indicating the positive items are
                 topk items or not
-            pos_len (list): the length of all users' postivite items
+            pos_len (np.ndarray): the length of all users' positive items
 
         Returns:
             list: a list of matrix which record the results from `1` to `max(topk)`
@@ -132,7 +133,7 @@ class TopKEvaluator(AbstractEvaluator):
         """integrate the results of each batch and evaluate the topk metrics by users
 
         Args:
-            pos_len_list (list): a list of users' positive items
+            pos_len_list (np.ndarray): a list of users' positive items
             topk_index (np.ndarray): a matrix which contains the index of the topk items for users
 
         Returns:
@@ -146,6 +147,10 @@ class TopKEvaluator(AbstractEvaluator):
         return result
 
     def __str__(self):
-        mesg = 'The TopK Evaluator Info:\n' + '\tMetrics:[' + ', '.join([topk_metrics[metric.lower()] for metric in self.metrics]) \
-                + '], TopK:[' + ', '.join(map(str, self.topk)) +']'
-        return mesg
+        msg = 'The TopK Evaluator Info:\n' + \
+              '\tMetrics:[' + \
+              ', '.join([topk_metrics[metric.lower()] for metric in self.metrics]) + \
+              '], TopK:[' + \
+              ', '.join(map(str, self.topk)) + \
+              ']'
+        return msg
