@@ -118,12 +118,14 @@ class Trainer(AbstractTrainer):
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         return optimizer
 
-    def _train_epoch(self, train_data, epoch_idx):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
         r"""Train the model in an epoch
 
         Args:
-            train_data (DataLoader): the train data
-            epoch_idx (int): the current epoch id
+            train_data (DataLoader): The train data.
+            epoch_idx (int): The current epoch id.
+            loss_func (function): The loss function of :attr:`model`. If it is ``None``, the loss function will be
+                :attr:`self.model.calculate_loss`. Defaults to ``None``.
 
         Returns:
             float/tuple: The sum of loss returned by all batches in this epoch. If the loss in each batch contains
@@ -131,11 +133,12 @@ class Trainer(AbstractTrainer):
             tuple which includes the sum of loss in each part.
         """
         self.model.train()
+        loss_func = loss_func or self.model.calculate_loss
         total_loss = None
         for batch_idx, interaction in enumerate(train_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
-            losses = self.model.calculate_loss(interaction)
+            losses = loss_func(interaction)
             if isinstance(losses, tuple):
                 loss = sum(losses)
                 loss_tuple = tuple(per_loss.item() for per_loss in losses)
@@ -421,9 +424,7 @@ class KGTrainer(Trainer):
         self.train_rec_step = config['train_rec_step']
         self.train_kg_step = config['train_kg_step']
 
-    def _train_epoch(self, train_data, epoch_idx):
-        self.model.train()
-        total_loss = None
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
         if self.train_rec_step is None or self.train_kg_step is None:
             interaction_state = KGDataLoaderState.RSKG
         else:
@@ -432,36 +433,10 @@ class KGTrainer(Trainer):
                 else KGDataLoaderState.KG
         train_data.set_mode(interaction_state)
         if interaction_state in [KGDataLoaderState.RSKG, KGDataLoaderState.RS]:
-            for batch_idx, interaction in enumerate(train_data):
-                interaction = interaction.to(self.device)
-                self.optimizer.zero_grad()
-                losses = self.model.calculate_loss(interaction)
-                if isinstance(losses, tuple):
-                    loss = sum(losses)
-                    loss_tuple = tuple(per_loss.item() for per_loss in losses)
-                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
-                else:
-                    loss = losses
-                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
-                self._check_nan(loss)
-                loss.backward()
-                self.optimizer.step()
+            return super()._train_epoch(train_data, epoch_idx)
         elif interaction_state in [KGDataLoaderState.KG]:
-            for bath_idx, interaction in enumerate(train_data):
-                interaction = interaction.to(self.device)
-                self.optimizer.zero_grad()
-                losses = self.model.calculate_kg_loss(interaction)
-                if isinstance(losses, tuple):
-                    loss = sum(losses)
-                    loss_tuple = tuple(per_loss.item() for per_loss in losses)
-                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
-                else:
-                    loss = losses
-                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
-                self._check_nan(loss)
-                loss.backward()
-                self.optimizer.step()
-        return total_loss
+            return super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
+        return None
 
 
 class KGATTrainer(Trainer):
@@ -472,31 +447,14 @@ class KGATTrainer(Trainer):
     def __init__(self, config, model):
         super(KGATTrainer, self).__init__(config, model)
 
-    def _train_epoch(self, train_data, epoch_idx):
-        self.model.train()
-        rs_total_loss, kg_total_loss = 0., 0.
-
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
         # train rs
         train_data.set_mode(KGDataLoaderState.RS)
-        for batch_idx, interaction in enumerate(train_data):
-            interaction = interaction.to(self.device)
-            self.optimizer.zero_grad()
-            loss = self.model.calculate_loss(interaction)
-            self._check_nan(loss)
-            loss.backward()
-            self.optimizer.step()
-            rs_total_loss += loss.item()
+        rs_total_loss = super()._train_epoch(train_data, epoch_idx)
 
         # train kg
         train_data.set_mode(KGDataLoaderState.KG)
-        for batch_idx, interaction in enumerate(train_data):
-            interaction = interaction.to(self.device)
-            self.optimizer.zero_grad()
-            loss = self.model.calculate_kg_loss(interaction)
-            self._check_nan(loss)
-            loss.backward()
-            self.optimizer.step()
-            kg_total_loss += loss.item()
+        kg_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
 
         # update A
         self.model.update_attentive_A()
@@ -634,36 +592,19 @@ class MKRTrainer(Trainer):
         super(MKRTrainer, self).__init__(config, model)
         self.kge_interval = config['kge_interval']
 
-    def _train_epoch(self, train_data, epoch_idx):
-        self.model.train()
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
         rs_total_loss, kg_total_loss = 0., 0.
 
         # train rs
         print('Train RS')
         train_data.set_mode(KGDataLoaderState.RS)
-        for batch_idx, interaction in enumerate(train_data):
-            interaction = interaction.to(self.device)
-            self.optimizer.zero_grad()
-            loss_rs = self.model.calculate_rs_loss(interaction)
-            
-            self._check_nan(loss_rs)
-            loss_rs.backward()
-            self.optimizer.step()
-            rs_total_loss += loss_rs
+        rs_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_rs_loss)
             
         # train kg
         if epoch_idx % self.kge_interval == 0:
             print('Train KG')
             train_data.set_mode(KGDataLoaderState.KG)
-            for batch_idx, interaction in enumerate(train_data):
-                interaction = interaction.to(self.device)
-                self.optimizer.zero_grad()
-                loss_kge = self.model.calculate_kg_loss(interaction)
-                
-                self._check_nan(loss_kge)
-                loss_kge.backward()
-                self.optimizer.step()
-                kg_total_loss += loss_kge
+            kg_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
 
         return rs_total_loss, kg_total_loss
 
