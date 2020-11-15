@@ -115,7 +115,7 @@ class TopKEvaluator(AbstractEvaluator):
         Args:
             pos_idx (np.ndarray): the bool index of all users' topk items that indicating the postive items are
                 topk items or not
-            pos_len (list): the length of all users' postivite items
+            pos_len (np.ndarray): the length of all users' postivite items
 
         Returns:
             list: a list of matrix which record the results from `1` to `max(topk)`
@@ -132,7 +132,7 @@ class TopKEvaluator(AbstractEvaluator):
         """integrate the results of each batch and evaluate the topk metrics by users
 
         Args:
-            pos_len_list (list): a list of users' positive items
+            pos_len_list (np.ndarray): a list of users' positive items
             topk_index (np.ndarray): a matrix which contains the index of the topk items for users
 
         Returns:
