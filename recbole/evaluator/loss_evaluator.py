@@ -28,7 +28,8 @@ class LossEvaluator(AbstractEvaluator):
 
     Note:
         The metrics used do not calculate group-based metrics which considers the metrics scores averaged across users.
-        They are also not limited to k. Instead, they calculate the scores on the entire prediction results regardless the users.
+        They are also not limited to k. Instead, they calculate the scores on the entire prediction results regardless
+        the users.
 
     """
     def __init__(self, config):
@@ -46,7 +47,7 @@ class LossEvaluator(AbstractEvaluator):
             pred_scores (tensor): the tensor of model output with a size of `(N, )`
 
         Returns:
-            tensor : a batch of socres with a size of `(N, 2)`
+            tensor : a batch of scores with a size of `(N, 2)`
 
         """
         true_scores = interaction[self.label_field].to(pred_scores.device)
@@ -113,5 +114,8 @@ class LossEvaluator(AbstractEvaluator):
         return self.metrics_info(trues, preds)
 
     def __str__(self):
-        mesg = 'The Loss Evaluator Info:\n' + '\tMetrics:[' + ', '.join([loss_metrics[metric.lower()] for metric in self.metrics]) + ']'
-        return mesg
+        msg = 'The Loss Evaluator Info:\n' + \
+              '\tMetrics:[' + \
+              ', '.join([loss_metrics[metric.lower()] for metric in self.metrics]) + \
+              ']'
+        return msg
