@@ -427,10 +427,10 @@ class KGTrainer(Trainer):
     def _train_epoch(self, train_data, epoch_idx, loss_func=None):
         if self.train_rec_step is None or self.train_kg_step is None:
             interaction_state = KGDataLoaderState.RSKG
+        elif epoch_idx % (self.train_rec_step + self.train_kg_step) < self.train_rec_step:
+            interaction_state = KGDataLoaderState.RS
         else:
-            interaction_state = KGDataLoaderState.RS \
-                if epoch_idx % (self.train_rec_step + self.train_kg_step) < self.train_rec_step \
-                else KGDataLoaderState.KG
+            interaction_state = KGDataLoaderState.KG
         train_data.set_mode(interaction_state)
         if interaction_state in [KGDataLoaderState.RSKG, KGDataLoaderState.RS]:
             return super()._train_epoch(train_data, epoch_idx)
