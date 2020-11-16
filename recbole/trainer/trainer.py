@@ -98,7 +98,6 @@ class Trainer(AbstractTrainer):
 
         self.item_tensor = None
         self.tot_item_num = None
-        self.iid_field = config['ITEM_ID_FIELD']
 
     def _build_optimizer(self):
         r"""Init the Optimizer
@@ -209,13 +208,11 @@ class Trainer(AbstractTrainer):
             raise ValueError('Training loss is nan')
 
     def _generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
-        train_loss_output = "epoch %d training [time: %.2fs, " % (epoch_idx, e_time - s_time)
+        train_loss_output = 'epoch %d training [time: %.2fs, ' % (epoch_idx, e_time - s_time)
         if isinstance(losses, tuple):
-            for idx, loss in enumerate(losses):
-                train_loss_output += 'train_loss%d: %.4f, ' % (idx + 1, loss)
-            train_loss_output = train_loss_output[:-2]
+            train_loss_output = ', '.join('train_loss%d: %.4f' % (idx + 1, loss) for idx, loss in enumerate(losses))
         else:
-            train_loss_output += "train loss: %.4f" % losses
+            train_loss_output += 'train loss: %.4f' % losses
         return train_loss_output + ']'
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True):
@@ -231,8 +228,9 @@ class Trainer(AbstractTrainer):
         Returns:
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
         """
-        if hasattr(self.model, 'train_preparation'):
-            self.model.train_preparation(train_data=train_data, valid_data=valid_data)
+        if saved and self.start_epoch >= self.epochs:
+            self._save_checkpoint(-1)
+
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
@@ -616,8 +614,8 @@ class S3RecTrainer(Trainer):
         Returns:
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
         """
-        if hasattr(self.model, 'train_preparation'):
-            self.model.train_preparation(train_data=train_data, valid_data=valid_data)
+        if saved and self.start_epoch >= self.epochs:
+            self._save_checkpoint(-1)
 
         if self.model.train_stage == 'pretrain':
             return self.pretrain(train_data, verbose)
