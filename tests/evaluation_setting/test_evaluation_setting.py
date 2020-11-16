@@ -87,8 +87,7 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=['tests/model/test_model.yaml'], saved=False)
-    
-    
+
     def test_rors_uni100(self):
         config_dict = {
             'eval_setting': 'RO_RS,uni100',
@@ -141,7 +140,6 @@ class TestGeneralRecommender(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=['tests/model/test_model.yaml'], saved=False)
 
-    
     def test_rols_uni100(self):
         config_dict = {
             'eval_setting': 'RO_LS,uni100',
@@ -193,7 +191,6 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=['tests/model/test_model.yaml'], saved=False)
-
 
 class TestContextRecommender(unittest.TestCase):
 
