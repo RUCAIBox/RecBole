@@ -1,3 +1,9 @@
+# -*- encoding: utf-8 -*-
+# @Time    :   2020/11/1
+# @Author  :   Kaiyuan Li
+# @email   :   tsotfsk@outlook.com
+
+
 import os
 import sys
 import unittest
@@ -61,7 +67,8 @@ class TestOverallConfig(unittest.TestCase):
         self.assertTrue(run_parms({'learning_rate': [0, 0.001, 1e-5]}))
 
     def test_training_neg_sample_num(self):
-        self.assertTrue(run_parms({'training_neg_sample_num': [0, 1, 2]}))
+        self.assertTrue(run_parms({'training_neg_sample_num': [  #0,
+         1, 2]}))
 
     def test_eval_step(self):
         settings = {
@@ -111,7 +118,8 @@ class TestOverallConfig(unittest.TestCase):
             'leave_one_num':None
         }
 
-        self.assertTrue(run_parms({'split_ratio':[[0.8, 0.2], [0.8, 0.1, 0.1], [7, 1, 1, 1], [16, 2, 2]]}))
+        self.assertTrue(run_parms({'split_ratio':[  # [0.8, 0.2], 
+        [0.8, 0.1, 0.1], [7, 1, 1, 1], [16, 2, 2]]}))
 
     def test_leave_one_num(self):
         settings = {
