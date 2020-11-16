@@ -14,7 +14,7 @@ class AbstractEvaluator(object):
     the evaluation of the model. It is called by :class:`Trainer`.
 
     Note:       
-        If you want to inherit this class and implement your own evalautor class, 
+        If you want to inherit this class and implement your own evaluator class,
         you must implement the following functions.
 
     Args:
@@ -29,18 +29,18 @@ class AbstractEvaluator(object):
         """check the correct of the setting"""
         raise NotImplementedError
 
-    def collect(self):
+    def collect(self, *args):
         """get the intermediate results for each batch, it is called at the end of each batch"""
         raise NotImplementedError
 
-    def evaluate(self):
+    def evaluate(self, *args):
         """calculate the metrics of all batches, it is called at the end of each epoch"""
         raise NotImplementedError
 
-    def metrics_info(self):
+    def metrics_info(self, *args):
         """get metrics result"""
         raise NotImplementedError
 
-    def _calculate_metrics(self):
+    def _calculate_metrics(self, *args):
         """ to calculate the metrics"""
         raise NotImplementedError
