@@ -533,13 +533,13 @@ class MKRTrainer(Trainer):
         rs_total_loss, kg_total_loss = 0., 0.
 
         # train rs
-        print('Train RS')
+        self.logger.info('Train RS')
         train_data.set_mode(KGDataLoaderState.RS)
         rs_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_rs_loss)
             
         # train kg
         if epoch_idx % self.kge_interval == 0:
-            print('Train KG')
+            self.logger.info('Train KG')
             train_data.set_mode(KGDataLoaderState.KG)
             kg_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
 
