@@ -192,7 +192,6 @@ class TestGeneralRecommender(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=['tests/model/test_model.yaml'], saved=False)
 
-
 class TestContextRecommender(unittest.TestCase):
 
     def test_tors(self):
@@ -251,3 +250,6 @@ class TestSequentialRecommender(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=['tests/model/test_model.yaml'], saved=False)
+
+if __name__ == '__main__':
+    unittest.main()
