@@ -113,7 +113,7 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=['tests/model/test_model.yaml'], saved=False)
-    
+
     def test_tols_uni100(self):
         config_dict = {
             'eval_setting': 'TO_LS,uni100',
@@ -165,7 +165,7 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=['tests/model/test_model.yaml'], saved=False)
-    
+
     def test_tors_uni100(self):
         config_dict = {
             'eval_setting': 'TO_RS,uni100',
@@ -222,7 +222,7 @@ class TestContextRecommender(unittest.TestCase):
 
 
 class TestSequentialRecommender(unittest.TestCase):
-    
+
     def test_tols_uni100(self):
         config_dict = {
             'eval_setting': 'TO_LS,uni100',
