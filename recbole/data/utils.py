@@ -254,7 +254,7 @@ def get_data_loader(name, config, eval_setting):
         elif neg_sample_strategy == 'by':
             return ContextNegSampleDataLoader
         elif neg_sample_strategy == 'full':
-            raise NotImplementedError('context model\'s full_sort has not been implemented')
+            return ContextFullDataLoader
     elif model_type == ModelType.SEQUENTIAL:
         if neg_sample_strategy == 'none':
             return SequentialDataLoader
