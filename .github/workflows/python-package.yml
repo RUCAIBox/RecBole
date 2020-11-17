@@ -1,4 +1,4 @@
-name: Python package
+name: RecBole tests
 
 on:
 - push
@@ -27,18 +27,18 @@ jobs:
     # Use "python -m pytest" instead of "pytest" to fix imports
     - name: Test metrics
       run: |
-        python -m pytest tests/metrics
+        python -m pytest -v tests/metrics
     - name: Test evaluation_setting
       run: |
-        python -m pytest tests/evaluation_setting
+        python -m pytest -v tests/evaluation_setting
     - name: Test model
       run: |
-        python -m pytest tests/model
+        python -m pytest -v tests/model
     - name: Test config
       run: |
-        python -m pytest tests/config/test_config.py
+        python -m pytest -v tests/config/test_config.py
         python tests/config/test_command_line.py --use_gpu=False --valid_metric=Recall@10 --split_ratio=[0.7,0.2,0.1] --metrics=['Recall@10'] --epochs=200 --eval_setting='LO_RS' --learning_rate=0.3
     - name: Test evaluation_setting
       run: |
-        python -m pytest tests/evaluation_setting
+        python -m pytest -v tests/evaluation_setting
 
