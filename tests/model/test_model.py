@@ -182,13 +182,13 @@ class TestContextRecommender(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
-
-    def test_dcn(self):
-        config_dict = {
-            'model': 'DCN',
-        }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
+    
+    # def test_dcn(self):
+    #     config_dict = {
+    #         'model': 'DCN',
+    #     }
+    #     objective_function(config_dict=config_dict,
+    #                        config_file_list=config_file_list, saved=False)
 
     def test_autoint(self):
         config_dict = {
@@ -618,14 +618,14 @@ class TestSequentialRecommender2(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
 
-    def test_bert4rec(self):
-        config_dict = {
-            'model': 'BERT4Rec',
-            'loss_type': 'BPR',
-            'hidden_act': 'swish'
-        }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
+    # def test_bert4rec(self):
+    #     config_dict = {
+    #         'model': 'BERT4Rec',
+    #         'loss_type': 'BPR',
+    #         'hidden_act': 'swish'
+    #     }
+    #     objective_function(config_dict=config_dict,
+    #                        config_file_list=config_file_list, saved=False)
 
     def test_gcsan(self):
         config_dict = {
