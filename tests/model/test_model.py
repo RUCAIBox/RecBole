@@ -3,6 +3,11 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+# UPDATE
+# @Time    :   2020/11/17
+# @Author  :   Xingyu Pan
+# @email   :   panxy@ruc.edu.cn  
+
 import os
 import unittest
 
@@ -673,6 +678,10 @@ class TestSequentialRecommender2(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 99f27ad9d5410e82134b3f3e742a30742d18e381
 
 if __name__ == '__main__':
     unittest.main()
