@@ -324,12 +324,12 @@ class TestSequentialRecommender(unittest.TestCase):
     #     objective_function(config_dict=config_dict,
     #                        config_file_list=config_file_list, saved=False)
 
-    def test_gru4reckg(self):
-        config_dict = {
-            'model': 'GRU4RecKG',
-        }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
+    # def test_gru4reckg(self):
+    #     config_dict = {
+    #         'model': 'GRU4RecKG',
+    #     }
+    #     objective_function(config_dict=config_dict,
+    #                        config_file_list=config_file_list, saved=False)
 
     # def test_s3rec(self):
     #     config_dict = {
