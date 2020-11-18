@@ -280,12 +280,12 @@ class TestSequentialRecommender(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
 
-    def test_bert4rec(self):
-        config_dict = {
-            'model': 'BERT4Rec',
-        }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
+    # def test_bert4rec(self):
+    #     config_dict = {
+    #         'model': 'BERT4Rec',
+    #     }
+    #     objective_function(config_dict=config_dict,
+    #                        config_file_list=config_file_list, saved=False)
 
     def test_srgnn(self):
         config_dict = {
