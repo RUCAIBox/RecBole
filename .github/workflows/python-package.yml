@@ -34,7 +34,7 @@ jobs:
         python -m pytest -v tests/evaluation_setting
     - name: Test model
       run: |
-        python -m pytest -v tests/model
+        python -m pytest -v tests/model/test_model_auto.py
     - name: Test config
       run: |
         python -m pytest -v tests/config/test_config.py
