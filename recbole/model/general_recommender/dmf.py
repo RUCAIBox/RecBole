@@ -170,8 +170,7 @@ class DMF(GeneralRecommender):
         col = interaction_matrix.col
         i = torch.LongTensor([row, col])
         data = torch.FloatTensor(interaction_matrix.data)
-        item_matrix = torch.sparse.FloatTensor(i, data).to(self.device).transpose(0, 1)
-        
+        item_matrix = torch.sparse.FloatTensor(i, data, torch.Size(interaction_matrix.shape)).to(self.device).transpose(0, 1)
         item = torch.sparse.mm(item_matrix, self.item_linear.weight.t())
 
         item = self.item_fc_layers(item)
