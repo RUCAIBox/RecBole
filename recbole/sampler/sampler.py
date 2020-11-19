@@ -155,6 +155,12 @@ class Sampler(AbstractSampler):
             last = used_item_id[phase] = cur
         return used_item_id
 
+    def set_distribution(self, distribution):
+        if self.distribution == distribution:
+            return
+        self.distribution = distribution
+        self.random_list = self.get_random_list()
+ 
     def set_phase(self, phase):
         """Get the sampler of corresponding phase.
 
@@ -295,6 +301,12 @@ class RepeatableSampler(AbstractSampler):
         else:
             raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
 
+    def set_distribution(self, distribution):
+        if self.distribution == distribution:
+            return
+        self.distribution = distribution
+        self.random_list = self.get_random_list()
+        
     def get_used_ids(self):
         """
         Returns:
