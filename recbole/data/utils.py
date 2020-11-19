@@ -94,7 +94,8 @@ def data_preparation(config, dataset, save=False):
 
     kwargs = {}
     if config['training_neg_sample_num']:
-        es.neg_sample_by(config['training_neg_sample_num'])
+        train_distribution = config['training_neg_sample_distribution'] or 'uniform'
+        es.neg_sample_by(by=config['training_neg_sample_num'], distribution=train_distribution)
         if model_type != ModelType.SEQUENTIAL:
             sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
         else:
@@ -120,6 +121,7 @@ def data_preparation(config, dataset, save=False):
         getattr(es, es_str[1])()
         if 'sampler' not in locals():
             sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
+        sampler.set_distribution(es.neg_sample_args['distribution'])   
         kwargs['sampler'] = [sampler.set_phase('valid'), sampler.set_phase('test')]
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
     valid_data, test_data = dataloader_construct(
