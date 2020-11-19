@@ -3,7 +3,10 @@
 # @Author  :   Kaiyuan Li
 # @email   :   tsotfsk@outlook.com
 
-
+# UPDATE:
+# @Time   : 2020/11/17
+# @Author : Xingyu Pan
+# @Email  : panxy@ruc.edu.cn
 import os
 import sys
 import unittest
@@ -119,7 +122,7 @@ class TestOverallConfig(unittest.TestCase):
         }
 
         self.assertTrue(run_parms({'split_ratio':[  # [0.8, 0.2], 
-        [0.8, 0.1, 0.1], [7, 1, 1, 1], [16, 2, 2]]}))
+        [0.8, 0.1, 0.1],  [16, 2, 2]]}))
 
     def test_leave_one_num(self):
         settings = {
