@@ -311,8 +311,9 @@ class Trainer(AbstractTrainer):
         neg_scores = torch.split(neg_scores, neg_len_list, dim=0)
 
         tmp_len_list = np.add(pos_len_list, neg_len_list).tolist()
-        extra_len_list = np.subtract(self.tot_item_num, tmp_len_list).tolist()
-        padding_nums = self.tot_item_num * len(tmp_len_list) - np.sum(tmp_len_list)
+        final_scores_width = max(self.tot_item_num, max(tmp_len_list))
+        extra_len_list = np.subtract(final_scores_width, tmp_len_list).tolist()
+        padding_nums = final_scores_width * len(tmp_len_list) - np.sum(tmp_len_list)
         padding_tensor = torch.tensor([-np.inf], dtype=scores.dtype, device=self.device).repeat(padding_nums)
         padding_scores = torch.split(padding_tensor, extra_len_list)
 
@@ -320,7 +321,7 @@ class Trainer(AbstractTrainer):
         final_scores = torch.cat(final_scores)
 
         setattr(interaction, 'pos_len_list', pos_len_list)
-        setattr(interaction, 'user_len_list', len(tmp_len_list) * [self.tot_item_num])
+        setattr(interaction, 'user_len_list', len(tmp_len_list) * [final_scores_width])
 
         return interaction, final_scores
 
