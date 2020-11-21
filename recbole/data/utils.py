@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/19, 2020/9/17, 2020/8/31
-# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
+# @Time   : 2020/10/19, 2020/9/17, 2020/8/31, 2020/11/21
+# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li, Chen Yang
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com, 254170321@qq.com
 
 """
 recbole.data.utils
@@ -277,6 +277,8 @@ def get_data_loader(name, config, eval_setting):
             # TODO 训练也可以为none? 看general的逻辑似乎是都可以为None
             raise NotImplementedError('The use of external negative sampling for knowledge model '
                                       'has not been implemented')
+    elif model_type == ModelType.XGBOOST:
+        return XgboostDataLoader
     else:
         raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
 

@@ -3,8 +3,8 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan
+# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15, 2020/11/20
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan, Chen Yang
 # @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn
 
 r"""
@@ -18,6 +18,7 @@ import torch
 import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
+import xgboost as xgb
 
 from time import time
 from logging import getLogger
@@ -556,3 +557,85 @@ class TraditionalTrainer(Trainer):
     def __init__(self, config, model):
         super(TraditionalTrainer, self).__init__(config, model)
         self.epochs = 1  # Set the epoch to 1 when running memory based model
+
+class xgboostTrainer(AbstractTrainer):
+    r"""xgboostTrainer is designed for External algorithm library 'xgboost'.
+    
+    """
+
+    def __init__(self, config, model):
+        super(xgboostTrainer, self).__init__(config, model)
+
+        self.label_field = config['xgb_label_field']
+        self.train_or_cv = config['train_or_cv']
+        self.xgb_model = config['xgb_model']
+
+        # train params
+        self.params = config['xgb_params']
+        self.num_boost_round = config['xgb_num_boost_round']
+        self.evals = ()
+        self.obj = config['xgb_obj']
+        self.feval = config['xgb_feval']
+        self.maximize = config['xgb_maximize']
+        self.early_stopping_rounds = config['xgb_early_stopping_rounds']
+        self.evals_result = {}
+        self.verbose_eval = config['xgb_verbose_eval']
+        self.callbacks = None
+
+        # cv params
+        if self.train_or_cv == 'cv':
+            self.nfold = config['xgb_cv_nfold']
+            self.stratified = config['xgb_cv_stratified']
+            self.folds = config['xgb_cv_folds']
+            self.fpreproc = config['xgb_cv_freproc']
+            self.show_stdv = config['xgb_cv_show_stdv']
+            self.seed = config['xgb_cv_seed']
+            self.shuffle = config['xgb_cv_shuffle']
+
+        # evaluator
+        self.eval_type = config['eval_type']
+        if self.eval_type == EvaluatorType.INDIVIDUAL:
+            self.evaluator = LossEvaluator(config)
+        else:
+            self.evaluator = TopKEvaluator(config)
+
+        # model saved
+        self.checkpoint_dir = config['checkpoint_dir']
+        ensure_dir(self.checkpoint_dir)
+        saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
+        self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
+
+
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+        self.dtrain = train_data.dataset_DMatrix
+        self.dvalid = valid_data.dataset_DMatrix
+        if self.train_or_cv == 'train':
+            self.model = xgb.train(self.params, self.dtrain, self.num_boost_round, 
+                            self.evals, self.obj, self.feval, self.maximize, 
+                            self.early_stopping_rounds, self.evals_result, 
+                            self.verbose_eval, self.xgb_model, self.callbacks)
+        elif self.train_or_cv == 'cv':
+            self.model = xgb.cv(self.params, self.dtrain, self.num_boost_round, self.nfold, 
+                            self.stratified, self.folds, (), self.obj,
+                            self.feval, self.maximize, self.early_stopping_round, 
+                            self.fpreproc, True, self.verbose_eval, 
+                            self.show_stdv, self.seed, self.callbacks, self.shuffle)
+        
+        if saved:
+            self.model.save_model(self.saved_model_file)
+
+        return 0,0
+
+    def evaluate(self, eval_data, load_best_model=True, model_file=None):
+        """
+    
+        """
+        self.deval = eval_data.dataset_DMatrix
+
+        self.eval_pred = torch.Tensor(self.model.predict(self.deval))
+        self.eval_true = torch.Tensor(eval_data.dataset.inter_feat['rating'])
+
+        matrix_list = [torch.stack((self.eval_pred, self.eval_true), 1)]
+
+        result = self.evaluator.evaluate(matrix_list, eval_data)
+        return result
