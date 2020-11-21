@@ -1,0 +1,46 @@
+name: RecBole tests
+
+on:
+- push
+# - pull_request
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+        pip install dgl
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    # Use "python -m pytest" instead of "pytest" to fix imports
+    - name: Test metrics
+      run: |
+        python -m pytest -v tests/metrics
+    - name: Test evaluation_setting
+      run: |
+        python -m pytest -v tests/evaluation_setting
+    - name: Test model
+      run: |
+        python -m pytest -v tests/model/test_model_auto.py
+    - name: Test config
+      run: |
+        python -m pytest -v tests/config/test_config.py
+        export PYTHONPATH=.
+        python tests/config/test_command_line.py --use_gpu=False --valid_metric=Recall@10 --split_ratio=[0.7,0.2,0.1] --metrics=['Recall@10'] --epochs=200 --eval_setting='LO_RS' --learning_rate=0.3
+    - name: Test evaluation_setting
+      run: |
+        python -m pytest -v tests/evaluation_setting
+
