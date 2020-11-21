@@ -66,6 +66,7 @@ class Trainer(AbstractTrainer):
     More information can be found in [placeholder]. `model` is the instantiated object of a Model Class.
 
     """
+
     def __init__(self, config, model):
         super(Trainer, self).__init__(config, model)
 
@@ -311,8 +312,9 @@ class Trainer(AbstractTrainer):
         neg_scores = torch.split(neg_scores, neg_len_list, dim=0)
 
         tmp_len_list = np.add(pos_len_list, neg_len_list).tolist()
-        extra_len_list = np.subtract(self.tot_item_num, tmp_len_list).tolist()
-        padding_nums = self.tot_item_num * len(tmp_len_list) - np.sum(tmp_len_list)
+        final_scores_width = max(self.tot_item_num, max(tmp_len_list))
+        extra_len_list = np.subtract(final_scores_width, tmp_len_list).tolist()
+        padding_nums = final_scores_width * len(tmp_len_list) - np.sum(tmp_len_list)
         padding_tensor = torch.tensor([-np.inf], dtype=scores.dtype, device=self.device).repeat(padding_nums)
         padding_scores = torch.split(padding_tensor, extra_len_list)
 
@@ -320,7 +322,7 @@ class Trainer(AbstractTrainer):
         final_scores = torch.cat(final_scores)
 
         setattr(interaction, 'pos_len_list', pos_len_list)
-        setattr(interaction, 'user_len_list', len(tmp_len_list) * [self.tot_item_num])
+        setattr(interaction, 'user_len_list', len(tmp_len_list) * [final_scores_width])
 
         return interaction, final_scores
 
@@ -381,7 +383,7 @@ class Trainer(AbstractTrainer):
         spilt_interaction = dict()
         for key, tensor in interaction.interaction.items():
             spilt_interaction[key] = tensor.split(self.test_batch_size, dim=0)
-        num_block = (batch_size+self.test_batch_size-1)//self.test_batch_size
+        num_block = (batch_size + self.test_batch_size - 1) // self.test_batch_size
         result_list = []
         for i in range(num_block):
             current_interaction = dict()
@@ -536,7 +538,7 @@ class MKRTrainer(Trainer):
         self.logger.info('Train RS')
         train_data.set_mode(KGDataLoaderState.RS)
         rs_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_rs_loss)
-            
+
         # train kg
         if epoch_idx % self.kge_interval == 0:
             self.logger.info('Train KG')
@@ -550,6 +552,7 @@ class TraditionalTrainer(Trainer):
     r"""TraditionalTrainer is designed for Traditional model(Pop,ItemKNN), which set the epoch to 1 whatever the config.
 
     """
+
     def __init__(self, config, model):
         super(TraditionalTrainer, self).__init__(config, model)
-        self.epochs = 1   # Set the epoch to 1 when running memory based model
+        self.epochs = 1  # Set the epoch to 1 when running memory based model
