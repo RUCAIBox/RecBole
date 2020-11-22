@@ -26,7 +26,7 @@ class SHAN(SequentialRecommender):
     first get the long term purpose and then fuse the long-term with recent items to get long-short term purpose
 
     """
-
+#ddgkkhfakjfhjkhfhkfhkfkhf
     def __init__(self,config,dataset):
 
         super(SHAN, self).__init__(config,dataset)
