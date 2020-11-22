@@ -13,6 +13,7 @@ recbole.model.abstract_recommender
 ##################################
 """
 
+from logging import getLogger
 import numpy as np
 import torch
 import torch.nn as nn
@@ -24,6 +25,10 @@ from recbole.model.layers import FMEmbedding, FMFirstOrderLinear
 class AbstractRecommender(nn.Module):
     r"""Base class for all models
     """
+
+    def __init__(self):
+        self.logger = getLogger()
+        super(AbstractRecommender, self).__init__()
 
     def calculate_loss(self, interaction):
         r"""Calculate the training loss for a batch data.

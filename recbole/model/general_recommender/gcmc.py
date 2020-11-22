@@ -91,8 +91,8 @@ class GCMC(GeneralRecommender):
         if self.accum == 'stack':
             div = self.gcn_output_dim // len(self.support)
             if self.gcn_output_dim % len(self.support) != 0:
-                print("""\nWARNING: HIDDEN[0] (=%d) of stack layer is adjusted to %d (in %d splits).\n"""
-                      % (self.gcn_output_dim, len(self.support) * div, len(self.support)))
+                self.logger.info("""\nWARNING: HIDDEN[0] (=%d) of stack layer is adjusted to %d (in %d splits).\n"""
+                                 % (self.gcn_output_dim, len(self.support) * div, len(self.support)))
             self.gcn_output_dim = len(self.support) * div
 
         # define layers and loss
