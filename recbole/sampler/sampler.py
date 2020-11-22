@@ -33,14 +33,23 @@ class AbstractSampler(object):
         used_ids (numpy.ndarray): The result of :meth:`get_used_ids`.
     """
     def __init__(self, distribution):
-        self.distribution = distribution
+        self.distribution = None
+        self.set_distribution(distribution)
+        self.used_ids = self.get_used_ids()
 
+    def set_distribution(self, distribution):
+        """Set the distribution of sampler.
+            
+        Args:
+            distribution (str): Distribution of the negative items.
+        """
+        if self.distribution == distribution:
+            return
+        self.distribution = distribution
         self.random_list = self.get_random_list()
         random.shuffle(self.random_list)
         self.random_pr = 0
         self.random_list_length = len(self.random_list)
-
-        self.used_ids = self.get_used_ids()
 
     def get_random_list(self):
         """
@@ -155,12 +164,6 @@ class Sampler(AbstractSampler):
             last = used_item_id[phase] = cur
         return used_item_id
 
-    def set_distribution(self, distribution):
-        if self.distribution == distribution:
-            return
-        self.distribution = distribution
-        self.random_list = self.get_random_list()
- 
     def set_phase(self, phase):
         """Get the sampler of corresponding phase.
 
@@ -301,12 +304,6 @@ class RepeatableSampler(AbstractSampler):
         else:
             raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
 
-    def set_distribution(self, distribution):
-        if self.distribution == distribution:
-            return
-        self.distribution = distribution
-        self.random_list = self.get_random_list()
-        
     def get_used_ids(self):
         """
         Returns:
