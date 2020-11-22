@@ -49,9 +49,8 @@ class xDeepFM(ContextRecommender):
         if not self.direct:
             self.cin_layer_size = list(map(lambda x: int(x // 2 * 2), temp_cin_size))
             if self.cin_layer_size[:-1] != temp_cin_size[:-1]:
-                logger = getLogger()
-                logger.warning('Layer size of CIN should be even except for the last layer when direct is True.'
-                               'It is changed to {}'.format(self.cin_layer_size))
+                self.logger.warning('Layer size of CIN should be even except for the last layer when direct is True.'
+                                    'It is changed to {}'.format(self.cin_layer_size))
 
         # Create a convolutional layer for each CIN layer
         self.conv1d_list = []

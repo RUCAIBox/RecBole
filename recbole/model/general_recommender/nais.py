@@ -18,7 +18,6 @@ Reference code:
     https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
 """
 
-from logging import getLogger
 
 import torch
 import torch.nn as nn
@@ -45,7 +44,6 @@ class NAIS(GeneralRecommender):
 
         # load dataset info
         self.LABEL = config['LABEL_FIELD']
-        self.logger = getLogger()
 
         # get all users's history interaction information.the history item 
         # matrix is padding by the maximum number of a user's interactions
