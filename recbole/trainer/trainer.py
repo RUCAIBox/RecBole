@@ -16,6 +16,7 @@ import os
 import itertools
 import torch
 import torch.optim as optim
+from torch.nn.utils.clip_grad import clip_grad_norm_
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -76,6 +77,7 @@ class Trainer(AbstractTrainer):
         self.epochs = config['epochs']
         self.eval_step = min(config['eval_step'], self.epochs)
         self.stopping_step = config['stopping_step']
+        self.clip_grad_norm = config['clip_grad_norm']
         self.valid_metric = config['valid_metric'].lower()
         self.valid_metric_bigger = config['valid_metric_bigger']
         self.test_batch_size = config['eval_batch_size']
@@ -149,6 +151,8 @@ class Trainer(AbstractTrainer):
                 total_loss = losses.item() if total_loss is None else total_loss + losses.item()
             self._check_nan(loss)
             loss.backward()
+            if self.clip_grad_norm:
+                clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
             self.optimizer.step()
         return total_loss
 
