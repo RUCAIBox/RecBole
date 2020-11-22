@@ -1,0 +1,5 @@
+embedding_size: 50
+loss_type: "BPR"
+reg_weight: 0.001
+order_len: 1
+alpha: 0.5

@@ -1,0 +1,5 @@
+embedding_size: 32
+loss_type: "CE"
+reg_weight: 0.0001
+pooling_type_layer_1: "max"
+pooling_type_layer_2: "max"

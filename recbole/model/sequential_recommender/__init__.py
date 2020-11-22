@@ -16,3 +16,9 @@ from recbole.model.sequential_recommender.sasrecf import SASRecF
 from recbole.model.sequential_recommender.srgnn import SRGNN
 from recbole.model.sequential_recommender.stamp import STAMP
 from recbole.model.sequential_recommender.transrec import TransRec
+from recbole.model.sequential_recommender.npe import NPE
+from recbole.model.sequential_recommender.hgn import HGN
+from recbole.model.sequential_recommender.hrm import HRM
+from recbole.model.sequential_recommender.repeatnet import RepeatNet
+from recbole.model.sequential_recommender.fossil import FOSSIL
+from recbole.model.sequential_recommender.shan import SHAN

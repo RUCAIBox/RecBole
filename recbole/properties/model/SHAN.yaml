@@ -1,0 +1,4 @@
+embedding_size: 32
+short_item_length: 1
+loss_type: "BPR"
+reg_weight: [0.001,0.0001]
