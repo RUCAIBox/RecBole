@@ -221,8 +221,9 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
             return self.sampling_func(data, neg_iids)
 
     def _neg_sample_by_pair_wise_sampling(self, data, neg_iids):
-        data[self.neg_item_id] = neg_iids
-        return data
+        new_data = {key: np.concatenate([value] * self.times) for key, value in data.items()}
+        new_data[self.neg_item_id] = neg_iids
+        return new_data
 
     def _neg_sample_by_point_wise_sampling(self, data, neg_iids):
         new_data = {}
