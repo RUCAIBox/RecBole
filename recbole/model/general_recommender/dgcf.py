@@ -148,7 +148,7 @@ class DGCF(GeneralRecommender):
             try:
                 assert not torch.isnan(d_values).any()
             except AssertionError:
-                print("d_values", torch.min(d_values), torch.max(d_values))
+                self.logger.info("d_values", torch.min(d_values), torch.max(d_values))
 
             d_values = 1.0 / torch.sqrt(d_values)
             head_term = torch.sparse.mm(self.head2edge_mat, d_values)

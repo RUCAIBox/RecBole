@@ -107,7 +107,7 @@ class S3Rec(SequentialRecommender):
         else:
             # load pretrained model for finetune
             pretrained = torch.load(self.pre_model_path)
-            print('Load pretrained model from', self.pre_model_path)
+            self.logger.info('Load pretrained model from', self.pre_model_path)
             self.load_state_dict(pretrained['state_dict'])
 
     def _init_weights(self, module):
