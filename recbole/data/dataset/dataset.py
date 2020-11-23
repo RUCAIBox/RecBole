@@ -1123,10 +1123,12 @@ class Dataset(object):
 
         Returns:
             tuple:
-            - ``numpy.ndarray`` of tuple ``(uid, slice)``,
-              interaction records between slice are all belong to the same uid.
-            - ``numpy.ndarray`` of int,
-              representing number of interaction records of each user.
+            - :class:`numpy.ndarray` of int,
+              user id list in interaction records.
+            - :class:`numpy.ndarray` of :class:`slice`,
+              interaction records between slice are all belong to the same uid, index represent user id.
+            - :class:`numpy.ndarray` of int,
+              representing number of interaction records of each user, index represent user id.
         """
         self._check_field('uid_field')
         self.sort(by=self.uid_field, ascending=True)
@@ -1137,9 +1139,12 @@ class Dataset(object):
                 uid_list.append(uid)
                 start[uid] = i
             end[uid] = i
-        index = [(uid, slice(start[uid], end[uid] + 1)) for uid in uid_list]
-        uid2items_num = [end[uid] - start[uid] + 1 for uid in uid_list]
-        return np.array(index), np.array(uid2items_num)
+        uid2index = np.array([None] * self.user_num)
+        uid2items_num = np.zeros(self.user_num, dtype=np.int64)
+        for uid in uid_list:
+            uid2index[uid] = slice(start[uid], end[uid] + 1)
+            uid2items_num[uid] = end[uid] - start[uid] + 1
+        return np.array(uid_list), uid2index, uid2items_num
 
     def _check_field(self, *field_names):
         """Given a name of attribute, check if it's exist.
