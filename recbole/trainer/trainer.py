@@ -394,6 +394,9 @@ class Trainer(AbstractTrainer):
             for key, spilt_tensor in spilt_interaction.items():
                 current_interaction[key] = spilt_tensor[i]
             result = self.model.predict(Interaction(current_interaction).to(self.device))
+            if len(result.shape) == 0:
+                result = result.unsqueeze(0)
+            #print(result.shape)
             result_list.append(result)
         return torch.cat(result_list, dim=0)
 
