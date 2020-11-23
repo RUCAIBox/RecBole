@@ -2,6 +2,8 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+
+import os
 import unittest
 
 from recbole.config import Config
@@ -14,7 +16,8 @@ parameters_dict = {
     'epochs': 100,
 }
 
-config_file_list = ['test_config_example.yaml']
+current_path = os.path.dirname(os.path.realpath(__file__))
+config_file_list = [os.path.join(current_path, 'test_config_example.yaml')]
 
 
 class TestConfigClass(unittest.TestCase):

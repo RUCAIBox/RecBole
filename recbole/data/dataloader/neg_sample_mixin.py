@@ -72,7 +72,7 @@ class NegSampleMixin(AbstractDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
+            np.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         raise NotImplementedError('Method [get_pos_len_list] should be implemented.')
 
@@ -96,8 +96,6 @@ class NegSampleByMixin(NegSampleMixin):
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in GeneralInteractionBasedDataLoader() should be `by`')
-        if dl_format == InputType.PAIRWISE and neg_sample_args['by'] != 1:
-            raise ValueError('Pairwise dataloader can only neg sample by 1')
 
         self.user_inter_in_one_batch = (sampler.phase != 'train') and (config['eval_type'] != EvaluatorType.INDIVIDUAL)
         self.neg_sample_by = neg_sample_args['by']
@@ -109,7 +107,7 @@ class NegSampleByMixin(NegSampleMixin):
             self.label_field = config['LABEL_FIELD']
             dataset.set_field_property(self.label_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
         elif dl_format == InputType.PAIRWISE:
-            self.times = 1
+            self.times = self.neg_sample_by
             self.sampling_func = self._neg_sample_by_pair_wise_sampling
 
             neg_prefix = config['NEG_PREFIX']

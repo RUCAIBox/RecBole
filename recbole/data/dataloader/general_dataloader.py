@@ -156,6 +156,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
         return self.sampling_func(uid_field, iid_field, neg_iids, inter_feat)
 
     def _neg_sample_by_pair_wise_sampling(self, uid_field, iid_field, neg_iids, inter_feat):
+        inter_feat = pd.concat([inter_feat] * self.times, ignore_index=True)
         inter_feat.insert(len(inter_feat.columns), self.neg_item_id, neg_iids)
 
         if self.dataset.item_feat is not None:
@@ -181,7 +182,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
+            np.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         return self.uid2items_num
 
@@ -289,6 +290,6 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
+            np.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         return self.uid2items_num

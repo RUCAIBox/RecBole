@@ -76,7 +76,7 @@ class TransRec(SequentialRecommender):
 
         seq_output = self.forward(user, item_seq, item_seq_len)  # [B H]
 
-        pos_items = interaction[self.POS_ITEM_ID]  # []
+        pos_items = interaction[self.POS_ITEM_ID]  # [B]
         neg_items = interaction[self.NEG_ITEM_ID]  # [B] sample 1 negative item
 
         pos_items_emb = self.item_embedding(pos_items)  # [B H]
@@ -89,9 +89,10 @@ class TransRec(SequentialRecommender):
         neg_score = neg_bias - self._l2_distance(seq_output, neg_items_emb)
 
         bpr_loss = self.bpr_loss(pos_score, neg_score)
-        item_emb_loss = self.emb_loss(self.item_embedding.weight)
-        user_emb_loss = self.emb_loss(self.user_embedding.weight)
-        bias_emb_loss = self.emb_loss(self.bias.weight)
+        item_emb_loss = self.emb_loss(self.item_embedding(pos_items).detach())
+        user_emb_loss = self.emb_loss(self.user_embedding(user).detach())
+        bias_emb_loss = self.emb_loss(self.bias(pos_items).detach())
+
         reg_loss = self.reg_loss(self.T)
         return bpr_loss + item_emb_loss + user_emb_loss + bias_emb_loss + reg_loss
 

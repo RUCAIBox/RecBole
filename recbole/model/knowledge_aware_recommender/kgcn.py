@@ -86,7 +86,7 @@ class KGCN(KnowledgeRecommender):
                 - adj_relation(torch.LongTensor): each line stores the corresponding sampled neighbor relations,
                   shape: [n_entities, neighbor_sample_size]
         """
-        # print('constructing knowledge graph ...')
+        # self.logger.info('constructing knowledge graph ...')
         # treat the KG as an undirected graph
         kg_dict = dict()
         for triple in zip(kg_graph.row, kg_graph.data, kg_graph.col):
@@ -100,7 +100,7 @@ class KGCN(KnowledgeRecommender):
                 kg_dict[tail] = []
             kg_dict[tail].append((head, relation))
 
-        # print('constructing adjacency matrix ...')
+        # self.logger.info('constructing adjacency matrix ...')
         # each line of adj_entity stores the sampled neighbor entities for a given entity
         # each line of adj_relation stores the corresponding sampled neighbor relations
         entity_num = kg_graph.shape[0]
