@@ -184,6 +184,13 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
         """
         return self.uid2items_num[self.uid_list]
 
+    def get_user_len_list(self):
+        """
+        Returns:
+            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        return self.uid2items_num[self.uid_list] * self.times
+
 
 class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
     """:class:`GeneralFullDataLoader` is a general-dataloader with full sort. In order to speed up calculation,
@@ -292,3 +299,10 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
             np.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         return self.uid2items_num[self.uid_list]
+
+    def get_user_len_list(self):
+        """
+        Returns:
+            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        return np.full(len(self.uid_list), self.item_num)

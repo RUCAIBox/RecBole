@@ -76,6 +76,13 @@ class NegSampleMixin(AbstractDataLoader):
         """
         raise NotImplementedError('Method [get_pos_len_list] should be implemented.')
 
+    def get_user_len_list(self):
+        """
+        Returns:
+            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        raise NotImplementedError('Method [get_user_len_list] should be implemented.')
+
 
 class NegSampleByMixin(NegSampleMixin):
     """:class:`NegSampleByMixin` is an abstract class which can sample negative examples by ratio.
