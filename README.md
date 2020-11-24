@@ -160,8 +160,8 @@ click links to check more information.<br>
 (**NOTE:**  Our test results only reflect the approximate time and memory cost of models. If you find any error in our result, 
 please let us know.)<br>
 
-* [General recommendation models](time_test_result/General_recommendation.md)<br>
-* [Sequential recommendation models]()<br>
+* [General recommendation models](asset/time_test_result/General_recommendation.md)<br>
+* [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)<br>
 * [Context-aware recommendation models]()<br>
 * [Knowledge-based recommendation models]()<br>
 
