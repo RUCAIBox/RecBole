@@ -153,6 +153,26 @@ If you want to change the models, just run the script by setting additional comm
 python run_recbole.py --model=[model_name]
 ```
 
+
+## Training and testing time of models
+We test our models on three datasets of different size (small size, medium size and large size). You can
+click links to check more information.
+[General recommendation models]()
+[Sequential recommendation models]()
+[Context-aware recommendation models]()
+[Knowledge-based recommendation models]()
+here is our testing device information:
+```
+GPU: TITAN GTX
+Driver Version: 430.64
+CUDA Version: 10.1
+Memory size: 65412748 KB
+CPU: Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz
+The number of CPU cores: 8
+Cache size: 11264KB
+```
+
+
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
