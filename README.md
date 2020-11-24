@@ -156,7 +156,8 @@ python run_recbole.py --model=[model_name]
 
 ## Time and memory cost of models
 We test our models on three datasets of different size (small size, medium size and large size). You can
-click links to check more information. ( **NOTE:**  Our test results only reflect the approximate time and memory cost of models, if you find some error in our result, 
+click links to check more information.<br> 
+(**NOTE:**  Our test results only reflect the approximate time and memory cost of models, if you find some error in our result, 
 please let us know.)<br>
 
 * [General recommendation models](time_test_result/General_recommendation.md)<br>
