@@ -16,7 +16,7 @@ import numpy as np
 import torch
 
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
-from recbole.data.dataloader.neg_sample_mixin import NegSampleByMixin
+from recbole.data.dataloader.neg_sample_mixin import NegSampleByMixin, NegSampleMixin
 from recbole.utils import DataLoaderType, FeatureSource, FeatureType, InputType
 
 
@@ -245,8 +245,15 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         """
         return np.ones(self.pr_end, dtype=np.int64)
 
+    def get_user_len_list(self):
+        """
+        Returns:
+            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        return np.full(self.pr_end, self.times)
 
-class SequentialFullDataLoader(SequentialDataLoader):
+
+class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
     """:class:`SequentialFullDataLoader` is a sequential-dataloader with full sort. In order to speed up calculation,
     this dataloader would only return then user part of interactions, positive items and used items.
     It would not return negative items.
@@ -265,8 +272,17 @@ class SequentialFullDataLoader(SequentialDataLoader):
 
     def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        super().__init__(config, dataset,
+        super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+
+    def data_preprocess(self):
+        pass
+
+    def _batch_size_adaptation(self):
+        pass
+
+    def _neg_sampling(self, inter_feat):
+        pass
 
     def _shuffle(self):
         self.logger.warnning('SequentialFullDataLoader can\'t shuffle')
@@ -286,3 +302,10 @@ class SequentialFullDataLoader(SequentialDataLoader):
             np.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
         """
         return np.ones(self.pr_end, dtype=np.int64)
+
+    def get_user_len_list(self):
+        """
+        Returns:
+            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        return np.full(len(self.uid_list), self.item_num)

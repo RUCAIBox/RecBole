@@ -72,28 +72,27 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
     """
     def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        self.uid2index, self.uid2items_num = None, None
+        self.uid_list, self.uid2index, self.uid2items_num = None, None, None
 
         super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def setup(self):
         if self.user_inter_in_one_batch:
-            self.uid2index, self.uid2items_num = self.dataset.uid2index
+            self.uid_list, self.uid2index, self.uid2items_num = self.dataset.uid2index
         self._batch_size_adaptation()
 
     def data_preprocess(self):
         if self.user_inter_in_one_batch:
             new_inter_num = 0
             new_inter_feat = []
-            new_uid2index = []
-            for uid, index in self.uid2index:
+            for uid in self.uid_list:
+                index = self.uid2index[uid]
                 new_inter_feat.append(self._neg_sampling(self.dataset.inter_feat[index]))
                 new_num = len(new_inter_feat[-1])
-                new_uid2index.append((uid, slice(new_inter_num, new_inter_num + new_num)))
-                new_inter_num += new_num
+                self.uid2index[uid] = slice(new_inter_num, new_inter_num + new_num)
+                self.uid2items_num[uid] = new_num
             self.dataset.inter_feat = pd.concat(new_inter_feat, ignore_index=True)
-            self.uid2index = np.array(new_uid2index)
         else:
             self.dataset.inter_feat = self._neg_sampling(self.dataset.inter_feat)
 
@@ -118,15 +117,13 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
     @property
     def pr_end(self):
         if self.user_inter_in_one_batch:
-            return len(self.uid2index)
+            return len(self.uid_list)
         else:
             return len(self.dataset)
 
     def _shuffle(self):
         if self.user_inter_in_one_batch:
-            new_index = np.random.permutation(len(self.uid2index))
-            self.uid2index = self.uid2index[new_index]
-            self.uid2items_num = self.uid2items_num[new_index]
+            np.random.shuffle(self.uid_list)
         else:
             self.dataset.shuffle()
 
@@ -134,10 +131,11 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
         if self.user_inter_in_one_batch:
             sampling_func = self._neg_sampling if self.real_time else (lambda x: x)
             cur_data = []
-            for uid, index in self.uid2index[self.pr: self.pr + self.step]:
+            for uid in self.uid_list[self.pr: self.pr + self.step]:
+                index = self.uid2index[uid]
                 cur_data.append(sampling_func(self.dataset[index]))
             cur_data = pd.concat(cur_data, ignore_index=True)
-            pos_len_list = self.uid2items_num[self.pr: self.pr + self.step]
+            pos_len_list = self.uid2items_num[self.uid_list[self.pr: self.pr + self.step]]
             user_len_list = pos_len_list * self.times
             self.pr += self.step
             return self._dataframe_to_interaction(cur_data, list(pos_len_list), list(user_len_list))
@@ -184,7 +182,14 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
         Returns:
             np.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
-        return self.uid2items_num
+        return self.uid2items_num[self.uid_list]
+
+    def get_user_len_list(self):
+        """
+        Returns:
+            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        return self.uid2items_num[self.uid_list] * self.times
 
 
 class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
@@ -208,14 +213,14 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'full':
             raise ValueError('neg_sample strategy in GeneralFullDataLoader() should be `full`')
-        self.uid2index, self.uid2items_num = dataset.uid2index
+        self.uid_list, self.uid2index, self.uid2items_num = dataset.uid2index
 
         super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def data_preprocess(self):
         self.user_tensor, tmp_pos_idx, tmp_used_idx, self.pos_len_list, self.neg_len_list = \
-            self._neg_sampling(self.uid2index, show_progress=True)
+            self._neg_sampling(self.uid_list, show_progress=True)
         tmp_pos_len_list = [sum(self.pos_len_list[_: _ + self.step]) for _ in range(0, self.pr_end, self.step)]
         tot_item_num = self.dataset.item_num
         tmp_used_len_list = [sum(
@@ -236,7 +241,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
 
     @property
     def pr_end(self):
-        return len(self.uid2index)
+        return len(self.uid_list)
 
     def _shuffle(self):
         self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
@@ -248,11 +253,11 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
             cur_data = self.user_tensor[slc], self.pos_idx[idx], self.used_idx[idx], \
                 self.pos_len_list[slc], self.neg_len_list[slc]
         else:
-            cur_data = self._neg_sampling(self.uid2index[self.pr: self.pr + self.step])
+            cur_data = self._neg_sampling(self.uid_list[self.pr: self.pr + self.step])
         self.pr += self.step
         return cur_data
 
-    def _neg_sampling(self, uid2index, show_progress=False):
+    def _neg_sampling(self, uid_list, show_progress=False):
         uid_field = self.dataset.uid_field
         iid_field = self.dataset.iid_field
         tot_item_num = self.dataset.item_num
@@ -264,8 +269,9 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         pos_idx = []
         used_idx = []
 
-        iter_data = tqdm(uid2index) if show_progress else uid2index
-        for uid, index in iter_data:
+        iter_data = tqdm(uid_list) if show_progress else uid_list
+        for uid in iter_data:
+            index = self.uid2index[uid]
             pos_item_id = self.dataset.inter_feat[iid_field][index].values
             pos_idx.extend([_ + start_idx for _ in pos_item_id])
             pos_num = len(pos_item_id)
@@ -280,7 +286,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
 
             start_idx += tot_item_num
 
-        user_df = pd.DataFrame({uid_field: np.array(uid2index[:, 0], dtype=np.int)})
+        user_df = pd.DataFrame({uid_field: uid_list})
         user_interaction = self._dataframe_to_interaction(self.join(user_df))
 
         return user_interaction, \
@@ -292,4 +298,11 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         Returns:
             np.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
-        return self.uid2items_num
+        return self.uid2items_num[self.uid_list]
+
+    def get_user_len_list(self):
+        """
+        Returns:
+            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        return np.full(len(self.uid_list), self.item_num)
