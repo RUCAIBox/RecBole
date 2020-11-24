@@ -158,7 +158,7 @@ python run_recbole.py --model=[model_name]
 We test our models on three datasets of different size (small size, medium size and large size). You can
 click links to check more information.<br>
 
-* [General recommendation models]()<br>
+* [General recommendation models](time_test_result/General_recommendation.md)<br>
 * [Sequential recommendation models]()<br>
 * [Context-aware recommendation models]()<br>
 * [Knowledge-based recommendation models]()<br>
