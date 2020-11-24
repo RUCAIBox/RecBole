@@ -107,12 +107,12 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
                 batch_num = i
                 new_batch_size += inters_num[i]
             self.step = batch_num
-            self.set_batch_size(new_batch_size)
+            self.upgrade_batch_size(new_batch_size)
         else:
             batch_num = max(self.batch_size // self.times, 1)
             new_batch_size = batch_num * self.times
             self.step = batch_num if self.real_time else new_batch_size
-            self.set_batch_size(new_batch_size)
+            self.upgrade_batch_size(new_batch_size)
 
     @property
     def pr_end(self):
@@ -237,7 +237,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         batch_num = max(self.batch_size // self.dataset.item_num, 1)
         new_batch_size = batch_num * self.dataset.item_num
         self.step = batch_num
-        self.set_batch_size(new_batch_size)
+        self.upgrade_batch_size(new_batch_size)
 
     @property
     def pr_end(self):

@@ -180,7 +180,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         batch_num = max(self.batch_size // self.times, 1)
         new_batch_size = batch_num * self.times
         self.step = batch_num if self.real_time else new_batch_size
-        self.set_batch_size(new_batch_size)
+        self.upgrade_batch_size(new_batch_size)
 
     def _next_batch_data(self):
         cur_index = slice(self.pr, self.pr + self.step)
