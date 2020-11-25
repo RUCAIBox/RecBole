@@ -1,4 +1,4 @@
-## Time  and memory cost of sequential recommendation models 
+## Time  and memory costs of sequential recommendation models 
 
 ### Datasets information:
 
@@ -10,7 +10,7 @@
 
 ### 1) ml-1m dataset:
 
-#### Time and memory cost on ml-1m dataset:
+#### Time and memory costs on ml-1m dataset:
 
 | Method           | Training Time (s) | Evaluate Time (s) | Memory (GB) |
 | ---------------- | -----------------: | -----------------: | -----------: |
@@ -74,7 +74,7 @@ load_col:
 
 ### 2）DIGINETICA dataset:
 
-#### Time and memory cost on DIGINETICA dataset:
+#### Time and memory costs on DIGINETICA dataset:
 
 | Method           | Training Time (s) | Evaluate Time (s) | Memory (GB) |
 | ---------------- | -----------------: | -----------------: | -----------: |
