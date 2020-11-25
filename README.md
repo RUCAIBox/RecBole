@@ -161,8 +161,6 @@ NOTE: Our test results only gave the approximate time and memory cost of our im
 
 * [General recommendation models](asset/time_test_result/General_recommendation.md)<br>
 * [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)<br>
-* [Context-aware recommendation models]()<br>
-* [Knowledge-based recommendation models]()<br>
 
 Here is our testing device information:<br>
 ```
