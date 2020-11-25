@@ -288,15 +288,11 @@ class Trainer(AbstractTrainer):
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
-        # Note: interaction without item ids
-        interaction, pos_idx, used_idx, pos_len_list, neg_len_list = batched_data
-
+        interaction, history_index, swap_row, swap_col_after, swap_col_before = batched_data
         batch_size = interaction.length * self.tot_item_num
-        used_idx = torch.cat([used_idx, torch.arange(interaction.length) * self.tot_item_num])  # remove [pad] item
-        neg_len_list = list(np.subtract(neg_len_list, 1))
         try:
             # Note: interaction without item ids
-            scores = self.model.full_sort_predict(interaction.to(self.device)).flatten()
+            scores = self.model.full_sort_predict(interaction.to(self.device))
         except NotImplementedError:
             interaction = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             interaction.update(self.item_tensor[:batch_size])
@@ -304,31 +300,18 @@ class Trainer(AbstractTrainer):
                 scores = self.model.predict(interaction)
             else:
                 scores = self._spilt_predict(interaction, batch_size)
-        pos_idx = pos_idx.to(self.device)
-        used_idx = used_idx.to(self.device)
 
-        pos_scores = scores.index_select(dim=0, index=pos_idx)
-        pos_scores = torch.split(pos_scores, pos_len_list, dim=0)
+        scores = scores.view(-1, self.tot_item_num)
+        scores[:, 0] = -np.inf
+        if history_index is not None:
+            scores[history_index] = -np.inf
 
-        ones_tensor = torch.ones(batch_size, dtype=torch.bool, device=self.device)
-        used_mask = ones_tensor.index_fill(dim=0, index=used_idx, value=0)
-        neg_scores = scores.masked_select(used_mask)
-        neg_scores = torch.split(neg_scores, neg_len_list, dim=0)
+        swap_row = swap_row.to(self.device)
+        swap_col_after = swap_col_after.to(self.device)
+        swap_col_before = swap_col_before.to(self.device)
+        scores[swap_row, swap_col_after] = scores[swap_row, swap_col_before]
 
-        tmp_len_list = np.add(pos_len_list, neg_len_list).tolist()
-        final_scores_width = max(self.tot_item_num, max(tmp_len_list))
-        extra_len_list = np.subtract(final_scores_width, tmp_len_list).tolist()
-        padding_nums = final_scores_width * len(tmp_len_list) - np.sum(tmp_len_list)
-        padding_tensor = torch.tensor([-np.inf], dtype=scores.dtype, device=self.device).repeat(padding_nums)
-        padding_scores = torch.split(padding_tensor, extra_len_list)
-
-        final_scores = list(itertools.chain.from_iterable(zip(pos_scores, neg_scores, padding_scores)))
-        final_scores = torch.cat(final_scores)
-
-        setattr(interaction, 'pos_len_list', pos_len_list)
-        setattr(interaction, 'user_len_list', len(tmp_len_list) * [final_scores_width])
-
-        return interaction, final_scores
+        return interaction, scores
 
     @torch.no_grad()
     def evaluate(self, eval_data, load_best_model=True, model_file=None):
@@ -396,7 +379,6 @@ class Trainer(AbstractTrainer):
             result = self.model.predict(Interaction(current_interaction).to(self.device))
             if len(result.shape) == 0:
                 result = result.unsqueeze(0)
-            #print(result.shape)
             result_list.append(result)
         return torch.cat(result_list, dim=0)
 

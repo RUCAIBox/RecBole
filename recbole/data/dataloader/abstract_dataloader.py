@@ -129,6 +129,15 @@ class AbstractDataLoader(object):
             self.batch_size = batch_size
             self.logger.warning('Batch size is changed to {}'.format(batch_size))
 
+    def upgrade_batch_size(self, batch_size):
+        """Upgrade the batch_size of the dataloader, if input batch_size is bigger than current batch_size.
+
+        Args:
+            batch_size (int): the new batch_size of dataloader.
+        """
+        if self.batch_size < batch_size:
+            self.set_batch_size(batch_size)
+
     def get_user_feature(self):
         """It is similar to :meth:`~recbole.data.dataset.dataset.Dataset.get_user_feature`, but it will return an
         :class:`~recbole.data.interaction.Interaction` of user feature instead of a :class:`pandas.DataFrame`.
