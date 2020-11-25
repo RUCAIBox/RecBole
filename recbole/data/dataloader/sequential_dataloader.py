@@ -180,7 +180,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         batch_num = max(self.batch_size // self.times, 1)
         new_batch_size = batch_num * self.times
         self.step = batch_num if self.real_time else new_batch_size
-        self.set_batch_size(new_batch_size)
+        self.upgrade_batch_size(new_batch_size)
 
     def _next_batch_data(self):
         cur_index = slice(self.pr, self.pr + self.step)
@@ -289,12 +289,13 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
 
     def _next_batch_data(self):
         interaction = super()._next_batch_data()
-        tot_item_num = self.dataset.item_num
         inter_num = len(interaction)
-        pos_idx = used_idx = interaction[self.target_iid_field] + torch.arange(inter_num) * tot_item_num
-        pos_len_list = [1] * inter_num
-        neg_len_list = [tot_item_num - 1] * inter_num
-        return interaction, pos_idx, used_idx, pos_len_list, neg_len_list
+        scores_row = torch.arange(inter_num).repeat(2)
+        padding_idx = torch.zeros(inter_num, dtype=torch.int64)
+        positive_idx = interaction[self.target_iid_field]
+        scores_col_after = torch.cat((padding_idx, positive_idx))
+        scores_col_before = torch.cat((positive_idx, padding_idx))
+        return interaction, None, scores_row, scores_col_after, scores_col_before
 
     def get_pos_len_list(self):
         """
