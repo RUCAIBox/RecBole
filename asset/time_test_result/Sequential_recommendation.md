@@ -12,21 +12,25 @@
 
 #### Time and memory cost on ml-1m dataset:
 
-| Method           | Training Time (s) | Evaluate Time (s) | Memory (MB) |
-| ---------------- | ----------------- | ----------------- | ----------- |
-| Improved GRU-Rec | 7.78              | 0.11              | 1305        |
-| SASRec           | 17.78             | 0.12              | 1889        |
-| NARM             | 8.29              | 0.11              | 1323        |
-| FPMC             | 7.51              | 0.11              | 1209        |
-| STAMP            | 7.32              | 0.11              | 1229        |
-| Caser            | 44.85             | 0.12              | 1165        |
-| TransRec         | 10.08             | 0.16              | 8373        |
-| GRU4RecF         | 10.2              | 0.15              | 1847        |
-| SASRecF          | 18.84             | 0.17              | 1819        |
-| BERT4Rec         | 36.09             | 0.34              | 2017        |
-| FDSA             | 31.86             | 0.19              | 2375        |
-| SRGNN            | 327.38            | 2.19              | 1243        |
-| GCSAN            | 335.27            | 0.022             | 1623        |
+| Method           | Training Time (s) | Evaluate Time (s) | Memory (GB) |
+| ---------------- | -----------------: | -----------------: | -----------: |
+| Improved GRU-Rec | 7.78              | 0.11              | 1.27     |
+| SASRec           | 17.78             | 0.12              | 1.84     |
+| NARM             | 8.29              | 0.11              | 1.29     |
+| FPMC             | 7.51              | 0.11              | 1.18     |
+| STAMP            | 7.32              | 0.11              | 1.20     |
+| Caser            | 44.85             | 0.12              | 1.14     |
+| NextItNet        | -               | - | - |
+| TransRec         | 10.08             | 0.16              | 8.18     |
+| S3Rec            | - | - | -       |
+| GRU4RecF         | 10.20             | 0.15              | 1.80     |
+| SASRecF          | 18.84             | 0.17              | 1.78    |
+| BERT4Rec         | 36.09             | 0.34              | 1.97    |
+| FDSA             | 31.86             | 0.19              | 2.32     |
+| SRGNN            | 327.38            | 2.19              | 1.21     |
+| GCSAN            | 335.27            | 0.02             | 1.58     |
+| KSR              | - | - | - |
+| GRU4RecKG        | - | - | - |
 
 #### Config file of ml-1m dataset:
 
@@ -72,20 +76,25 @@ load_col:
 
 #### Time and memory cost on DIGINETICA dataset:
 
-| Method           | Training Time (s) | Evaluate Time (s) | Memory (MB) |
-| ---------------- | ----------------- | ----------------- | ----------- |
-| Improved GRU-Rec | 4.1               | 1.05              | 4121        |
-| SASRec           | 8.36              | 1.21              | 4537        |
-| NARM             | 4.3               | 1.08              | 4185        |
-| FPMC             | 2.98              | 1.08              | 4181        |
-| STAMP            | 4.27              | 1.04              | 3973        |
-| Caser            | 17.15             | 1.18              | 4033        |
-| GRU4RecF         | 4.79              | 1.17              | 4949        |
-| SASRecF          | 8.66              | 1.29              | 5237        |
-| BERT4Rec         | 16.8              | 3.54              | 8157        |
-| FDSA             | 13.44             | 1.47              | 5799        |
-| SRGNN            | 88.59             | 15.37             | 4105        |
-| GCSAN            | 96.69             | 17.11             | 4355        |
+| Method           | Training Time (s) | Evaluate Time (s) | Memory (GB) |
+| ---------------- | -----------------: | -----------------: | -----------: |
+| Improved GRU-Rec | 4.10              | 1.05              | 4.02     |
+| SASRec           | 8.36              | 1.21              | 4.43     |
+| NARM             | 4.30              | 1.08              | 4.09     |
+| FPMC             | 2.98              | 1.08              | 4.08     |
+| STAMP            | 4.27              | 1.04              | 3.88     |
+| Caser            | 17.15             | 1.18              | 3.94    |
+| NextItNet        | - | - | - |
+| TransRec         | -                 | -                 | -           |
+| S3Rec            | - | - | - |
+| GRU4RecF         | 4.79              | 1.17              | 4.83     |
+| SASRecF          | 8.66              | 1.29              | 5.11     |
+| BERT4Rec         | 16.80             | 3.54              | 7.97    |
+| FDSA             | 13.44             | 1.47              | 5.66     |
+| SRGNN            | 88.59             | 15.37             | 4.01     |
+| GCSAN            | 96.69             | 17.11             | 4.25     |
+| KSR              | - | - | - |
+| GRU4RecKG        | - | - | - |
 
 #### Config file of DIGINETICA dataset:
 
@@ -126,5 +135,7 @@ load_col:
    inter: [session_id, item_id, timestamp]
    item: [item_id, item_category]
 ```
+
+
 
 
