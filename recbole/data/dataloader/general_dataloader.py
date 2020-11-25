@@ -79,22 +79,23 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
 
     def setup(self):
         if self.user_inter_in_one_batch:
-            self.uid_list, self.uid2index, self.uid2items_num = self.dataset.uid2index
-        self._batch_size_adaptation()
-
-    def data_preprocess(self):
-        if self.user_inter_in_one_batch:
-            new_inter_num = 0
-            new_inter_feat = []
+            uid_field = self.dataset.uid_field
+            user_num = self.dataset.user_num
+            self.dataset.sort(by=uid_field, ascending=True)
+            self.uid_list = []
+            start, end = dict(), dict()
+            for i, uid in enumerate(self.dataset.inter_feat[uid_field].values):
+                if uid not in start:
+                    self.uid_list.append(uid)
+                    start[uid] = i
+                end[uid] = i
+            self.uid2index = np.array([None] * user_num)
+            self.uid2items_num = np.zeros(user_num, dtype=np.int64)
             for uid in self.uid_list:
-                index = self.uid2index[uid]
-                new_inter_feat.append(self._neg_sampling(self.dataset.inter_feat[index]))
-                new_num = len(new_inter_feat[-1])
-                self.uid2index[uid] = slice(new_inter_num, new_inter_num + new_num)
-                self.uid2items_num[uid] = new_num
-            self.dataset.inter_feat = pd.concat(new_inter_feat, ignore_index=True)
-        else:
-            self.dataset.inter_feat = self._neg_sampling(self.dataset.inter_feat)
+                self.uid2index[uid] = slice(start[uid], end[uid] + 1)
+                self.uid2items_num[uid] = end[uid] - start[uid] + 1
+            self.uid_list = np.array(self.uid_list)
+        self._batch_size_adaptation()
 
     def _batch_size_adaptation(self):
         if self.user_inter_in_one_batch:
@@ -111,7 +112,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
         else:
             batch_num = max(self.batch_size // self.times, 1)
             new_batch_size = batch_num * self.times
-            self.step = batch_num if self.real_time else new_batch_size
+            self.step = batch_num
             self.upgrade_batch_size(new_batch_size)
 
     @property
@@ -129,21 +130,18 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
 
     def _next_batch_data(self):
         if self.user_inter_in_one_batch:
-            sampling_func = self._neg_sampling if self.real_time else (lambda x: x)
             cur_data = []
             for uid in self.uid_list[self.pr: self.pr + self.step]:
                 index = self.uid2index[uid]
-                cur_data.append(sampling_func(self.dataset[index]))
+                cur_data.append(self._neg_sampling(self.dataset[index]))
             cur_data = pd.concat(cur_data, ignore_index=True)
             pos_len_list = self.uid2items_num[self.uid_list[self.pr: self.pr + self.step]]
             user_len_list = pos_len_list * self.times
             self.pr += self.step
             return self._dataframe_to_interaction(cur_data, list(pos_len_list), list(user_len_list))
         else:
-            cur_data = self.dataset[self.pr: self.pr + self.step]
+            cur_data = self._neg_sampling(self.dataset[self.pr: self.pr + self.step])
             self.pr += self.step
-            if self.real_time:
-                cur_data = self._neg_sampling(cur_data)
             return self._dataframe_to_interaction(cur_data)
 
     def _neg_sampling(self, inter_feat):
@@ -249,9 +247,6 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         self.uid2swap_idx[uid] = swap_idx
         self.uid2rev_swap_idx[uid] = swap_idx.flip(0)
         self.uid2history_item[uid] = torch.tensor(list(history_item))
-
-    def data_preprocess(self):
-        pass
 
     def _batch_size_adaptation(self):
         batch_num = max(self.batch_size // self.dataset.item_num, 1)

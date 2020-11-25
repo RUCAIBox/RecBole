@@ -93,24 +93,22 @@ class SequentialDataLoader(AbstractDataLoader):
             self.target_index = self.target_index[new_index]
             self.item_list_length = self.item_list_length[new_index]
         else:
-            new_data = {}
-            for key, value in self.pre_processed_data.items():
-                new_data[key] = value[new_index]
-            self.pre_processed_data = new_data
+            self.pre_processed_data = {key: value[new_index] for key, value in self.pre_processed_data.items()}
 
     def _next_batch_data(self):
-        cur_index = slice(self.pr, self.pr + self.step)
-        if self.real_time:
-            cur_data = self.augmentation(self.uid_list[cur_index],
-                                         self.item_list_index[cur_index],
-                                         self.target_index[cur_index],
-                                         self.item_list_length[cur_index])
-        else:
-            cur_data = {}
-            for key, value in self.pre_processed_data.items():
-                cur_data[key] = value[cur_index]
+        cur_data = self._get_processed_data(slice(self.pr, self.pr + self.step))
         self.pr += self.step
         return self._dict_to_interaction(cur_data)
+
+    def _get_processed_data(self, index):
+        if self.real_time:
+            cur_data = self.augmentation(self.uid_list[index],
+                                         self.item_list_index[index],
+                                         self.target_index[index],
+                                         self.item_list_length[index])
+        else:
+            cur_data = {key: value[index] for key, value in self.pre_processed_data.items()}
+        return cur_data
 
     def augmentation(self, uid_list, item_list_index, target_index, item_list_length):
         """Data augmentation.
@@ -169,31 +167,15 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
-    def data_preprocess(self):
-        """Do data augmentation and neg-sampling before training/evaluation.
-        """
-        self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
-                                                    self.target_index, self.item_list_length)
-        self.pre_processed_data = self._neg_sampling(self.pre_processed_data)
-
     def _batch_size_adaptation(self):
         batch_num = max(self.batch_size // self.times, 1)
         new_batch_size = batch_num * self.times
-        self.step = batch_num if self.real_time else new_batch_size
+        self.step = batch_num
         self.upgrade_batch_size(new_batch_size)
 
     def _next_batch_data(self):
-        cur_index = slice(self.pr, self.pr + self.step)
-        if self.real_time:
-            cur_data = self.augmentation(self.uid_list[cur_index],
-                                         self.item_list_index[cur_index],
-                                         self.target_index[cur_index],
-                                         self.item_list_length[cur_index])
-            cur_data = self._neg_sampling(cur_data)
-        else:
-            cur_data = {}
-            for key, value in self.pre_processed_data.items():
-                cur_data[key] = value[cur_index]
+        cur_data = self._get_processed_data(slice(self.pr, self.pr + self.step))
+        cur_data = self._neg_sampling(cur_data)
         self.pr += self.step
 
         if self.user_inter_in_one_batch:
@@ -274,9 +256,6 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
-
-    def data_preprocess(self):
-        pass
 
     def _batch_size_adaptation(self):
         pass

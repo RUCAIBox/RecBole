@@ -80,7 +80,7 @@ class AbstractDataLoader(object):
         pass
 
     def data_preprocess(self):
-        """This function is used to do some data preprocess, such as pre-neg-sampling and pre-data-augmentation.
+        """This function is used to do some data preprocess, such as pre-data-augmentation.
         By default, it will do nothing.
         """
         pass

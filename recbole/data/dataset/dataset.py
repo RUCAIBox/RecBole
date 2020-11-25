@@ -1116,36 +1116,6 @@ class Dataset(object):
         """
         return 1 - self.inter_num / self.user_num / self.item_num
 
-    @property
-    def uid2index(self):
-        """Sort ``self.inter_feat``,
-        and get the mapping of user_id and index of its interaction records.
-
-        Returns:
-            tuple:
-            - :class:`numpy.ndarray` of int,
-              user id list in interaction records.
-            - :class:`numpy.ndarray` of :class:`slice`,
-              interaction records between slice are all belong to the same uid, index represent user id.
-            - :class:`numpy.ndarray` of int,
-              representing number of interaction records of each user, index represent user id.
-        """
-        self._check_field('uid_field')
-        self.sort(by=self.uid_field, ascending=True)
-        uid_list = []
-        start, end = dict(), dict()
-        for i, uid in enumerate(self.inter_feat[self.uid_field].values):
-            if uid not in start:
-                uid_list.append(uid)
-                start[uid] = i
-            end[uid] = i
-        uid2index = np.array([None] * self.user_num)
-        uid2items_num = np.zeros(self.user_num, dtype=np.int64)
-        for uid in uid_list:
-            uid2index[uid] = slice(start[uid], end[uid] + 1)
-            uid2items_num[uid] = end[uid] - start[uid] + 1
-        return np.array(uid_list), uid2index, uid2items_num
-
     def _check_field(self, *field_names):
         """Given a name of attribute, check if it's exist.
 

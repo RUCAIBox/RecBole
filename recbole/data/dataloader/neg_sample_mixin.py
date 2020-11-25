@@ -49,11 +49,6 @@ class NegSampleMixin(AbstractDataLoader):
         """
         self._batch_size_adaptation()
 
-    def data_preprocess(self):
-        """Do neg-sampling before training/evaluation.
-        """
-        raise NotImplementedError('Method [data_preprocess] should be implemented.')
-
     def _batch_size_adaptation(self):
         """Adjust the batch size to ensure that each positive and negative interaction can be in a batch.
         """

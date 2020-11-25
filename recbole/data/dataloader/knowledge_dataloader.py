@@ -66,16 +66,9 @@ class KGDataLoader(AbstractDataLoader):
         self.dataset.kg_feat = self.dataset.kg_feat.sample(frac=1).reset_index(drop=True)
 
     def _next_batch_data(self):
-        cur_data = self.dataset.kg_feat[self.pr: self.pr + self.step]
+        cur_data = self._neg_sampling(self.dataset.kg_feat[self.pr: self.pr + self.step])
         self.pr += self.step
-        if self.real_time:
-            cur_data = self._neg_sampling(cur_data)
         return self._dataframe_to_interaction(cur_data)
-
-    def data_preprocess(self):
-        """Do neg-sampling before training/evaluation.
-        """
-        self.dataset.kg_feat = self._neg_sampling(self.dataset.kg_feat)
 
     def _neg_sampling(self, kg_feat):
         hids = kg_feat[self.hid_field].to_list()
