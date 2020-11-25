@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/28 2020/10/13, 2020/10/25
+# @Time   : 2020/10/28 2020/10/13, 2020/11/10
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
@@ -55,10 +55,15 @@ class Dataset(object):
             Specially, if feature is loaded from Arg ``additional_feat_suffix``, its source has type str,
             which is the suffix of its local file (also the suffix written in Arg ``additional_feat_suffix``).
 
-        field2id_token (dict): Dict mapping feature name (str) to a list, which stores the original token of
-            this feature. For example, if ``test`` is token-like feature, ``token_a`` is remapped to 1, ``token_b``
+        field2id_token (dict): Dict mapping feature name (str) to a :class:`np.ndarray`, which stores the original token
+            of this feature. For example, if ``test`` is token-like feature, ``token_a`` is remapped to 1, ``token_b``
             is remapped to 2. Then ``field2id_token['test'] = ['[PAD]', 'token_a', 'token_b']``. (Note that 0 is
             always PADDING for token-like features.)
+
+        field2token_id (dict): Dict mapping feature name (str) to a dict, which stores the token remap table
+            of this feature. For example, if ``test`` is token-like feature, ``token_a`` is remapped to 1, ``token_b``
+            is remapped to 2. Then ``field2token_id['test'] = {'[PAD]': 0, 'token_a': 1, 'token_b': 2}``.
+            (Note that 0 is always PADDING for token-like features.)
 
         field2seqlen (dict): Dict mapping feature name (str) to its sequence length (int).
             For sequence features, their length can be either set in config,
@@ -116,6 +121,7 @@ class Dataset(object):
         self.field2type = {}
         self.field2source = {}
         self.field2id_token = {}
+        self.field2token_id = {}
         self.field2seqlen = self.config['seq_len'] or {}
         self._preloaded_weight = {}
         self.benchmark_filename_list = self.config['benchmark_filename']
@@ -164,6 +170,7 @@ class Dataset(object):
             thus :meth:`~recbole.data.dataset.dataset.Dataset._reset_index()` will reset the index of feats.
         """
         self._filter_nan_user_or_item()
+        self._remove_duplication()
         self._filter_by_field_value()
         self._filter_by_inter_num()
         self._reset_index()
@@ -603,6 +610,29 @@ class Dataset(object):
                         name, list(dropped_inter + 2), field))
                     self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
+    def _remove_duplication(self):
+        """Remove duplications in inter_feat.
+
+        If :attr:`self.config['rm_dup_inter']` is not ``None``, it will remove duplicated user-item interactions.
+
+        Note:
+            Before removing duplicated user-item interactions, if :attr:`time_field` existed, :attr:`inter_feat`
+            will be sorted by :attr:`time_field` in ascending order.
+        """
+        keep = self.config['rm_dup_inter']
+        if keep is None:
+            return
+        self._check_field('uid_field', 'iid_field')
+
+        if self.time_field in self.inter_feat:
+            self.inter_feat.sort_values(by=[self.time_field], ascending=True, inplace=True)
+            self.logger.info('Records in original dataset have been sorted by value of [{}] in ascending order.'.format(
+                self.time_field))
+        else:
+            self.logger.warning('Timestamp field has not been loaded or specified, '
+                                'thus strategy [{}] of duplication removal may be meaningless.'.format(keep))
+        self.inter_feat.drop_duplicates(subset=[self.uid_field, self.iid_field], keep=keep, inplace=True)
+
     def _filter_by_inter_num(self):
         """Filter by number of interaction.
 
@@ -873,11 +903,13 @@ class Dataset(object):
         tokens, split_point = self._concat_remaped_tokens(remap_list)
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
-        mp = ['[PAD]'] + list(mp)
+        mp = np.array(['[PAD]'] + list(mp))
+        token_id = {t: i for i, t in enumerate(mp)}
 
         for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
-            if (field not in self.field2id_token):
+            if field not in self.field2id_token:
                 self.field2id_token[field] = mp
+                self.field2token_id[field] = token_id
             if ftype == FeatureType.TOKEN:
                 feat[field] = new_ids
             elif ftype == FeatureType.TOKEN_SEQ:
@@ -985,6 +1017,46 @@ class Dataset(object):
         self.field2type[dest_field] = self.field2type[source_field]
         self.field2source[dest_field] = self.field2source[source_field]
         self.field2seqlen[dest_field] = self.field2seqlen[source_field]
+
+    @dlapi.set()
+    def token2id(self, field, tokens):
+        """Map external tokens to internal ids.
+
+        Args:
+            field (str): Field of external tokens.
+            tokens (str, list or np.ndarray): External tokens.
+
+        Returns:
+            int or np.ndarray: The internal ids of external tokens.
+        """
+        if isinstance(tokens, str):
+            if tokens in self.field2token_id[field]:
+                return self.field2token_id[field][tokens]
+            else:
+                raise ValueError('token [{}] is not existed')
+        elif isinstance(tokens, (list, np.ndarray)):
+            return np.array([self.token2id(field, token) for token in tokens])
+        else:
+            raise TypeError('The type of tokens [{}] is not supported')
+
+    @dlapi.set()
+    def id2token(self, field, ids):
+        """Map internal ids to external tokens.
+
+        Args:
+            field (str): Field of internal ids.
+            ids (int, list, np.ndarray or torch.Tensor): Internal ids.
+
+        Returns:
+            str or np.ndarray: The external tokens of internal ids.
+        """
+        try:
+            return self.field2id_token[field][ids]
+        except IndexError:
+            if isinstance(ids, list):
+                raise ValueError('[{}] is not a one-dimensional list'.format(ids))
+            else:
+                raise ValueError('[{}] is not a valid ids'.format(ids))
 
     @property
     @dlapi.set()
