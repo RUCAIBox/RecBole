@@ -102,7 +102,14 @@ valid_metric: MRR@10
 
 #### Time and memory cost on Yelp dataset:
 
-
+| Method     | Training Time (s) | Evaluate Time (s) | Memory (MB) |
+| ---------- | ----------------- | ----------------- | ----------- |
+| Popularity | 5.69              | 134.23            | 915         |
+| BPRMF      | 6.31              | 120.03            | 1319        |
+| NeuMF      | 17.38             | 2069.53           | 1709        |
+| DMF        | 43.96             | 173.13            | 9443        |
+| LightGCN   | 67.91             | 116.16            | 2067        |
+| DGCF       | 1542              | 119               | 17579       |
 
 #### Config file of Yelp dataset:
 
@@ -130,14 +137,4 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
-
-
-
-
-
-
-
-
-
-
 
