@@ -153,6 +153,30 @@ If you want to change the models, just run the script by setting additional comm
 python run_recbole.py --model=[model_name]
 ```
 
+
+## Time and memory cost of models
+We test our models on three datasets of different size (small size, medium size and large size) to estimate their time and memory cost. You can
+click links to check more information.<br> 
+(**NOTE:**  Our test results only reflect the approximate time and memory cost of models. If you find any error in our result, 
+please let us know.)<br>
+
+* [General recommendation models](time_test_result/General_recommendation.md)<br>
+* [Sequential recommendation models]()<br>
+* [Context-aware recommendation models]()<br>
+* [Knowledge-based recommendation models]()<br>
+
+Here is our testing device information:<br>
+```
+GPU:                      TITAN GTX
+Driver Version:           430.64
+CUDA Version:             10.1
+Memory size:              65412748 KB
+CPU:                      Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz
+The number of CPU cores:  8
+Cache size:               11264KB
+```
+
+
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
