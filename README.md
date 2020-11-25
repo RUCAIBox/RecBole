@@ -169,8 +169,8 @@ RecBole Version:      0.1.1
 Python Version:       3.8.3
 PyTorch Version:      1.7.0
 cudatoolkit Version:  10.1
-GPU:                  TITAN RTX
-Machine Specs:        8-core CPU machine, 60GB RAM
+GPU:                  TITAN RTX（24GB）
+Machine Specs:        8-core CPU machine, 64GB RAM
 ```
 
 
