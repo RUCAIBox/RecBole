@@ -93,7 +93,7 @@ load_col:
 # dataset config
 field_separator: "\t"
 seq_separator: " "
-USER_ID_FIELD: user_id
+USER_ID_FIELD: session_id
 ITEM_ID_FIELD: item_id
 TIME_FIELD: timestamp
 NEG_PREFIX: neg_
@@ -102,9 +102,9 @@ LIST_SUFFIX: _list
 MAX_ITEM_LIST_LENGTH: 20
 POSITION_FIELD: position_id
 load_col:
-  inter: [user_id, item_id, timestamp]
-min_user_inter_num: 0
-min_item_inter_num: 0
+  inter: [session_id, item_id, timestamp]
+min_user_inter_num: 6
+min_item_inter_num: 1
 
 # training and evaluation
 epochs: 500
@@ -112,49 +112,19 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 eval_setting: TO_LS,full
-training_neg_sample_num: 1
+training_neg_sample_num: 0
 ```
 
-### 3) Yelp dataset:
+**NOTE :** 
 
-#### Time and memory cost on Yelp dataset:
+1) For FPMC and TransRec model,  `training_neg_sample_num`  should be  `1` . 
 
-
-
-#### Config file of Yelp dataset:
+2) For  SASRecF, GRU4RecF and FDSA,   `load_col` should as below:
 
 ```
-# dataset config
-field_separator: "\t"
-seq_separator: " "
-USER_ID_FIELD: user_id
-ITEM_ID_FIELD: business_id
-RATING_FIELD: stars
-TIME_FIELD: date
-LABEL_FIELD: label
-NEG_PREFIX: neg_
 load_col:
-  inter: [user_id, business_id, stars]
-min_user_inter_num: 10
-min_item_inter_num: 4
-lowest_val:
-  stars: 3
-drop_filter_field: True
-
-# training and evaluation
-epochs: 500
-train_batch_size: 2048
-eval_batch_size: 2048
-valid_metric: MRR@10
+   inter: [session_id, item_id, timestamp]
+   item: [item_id, item_category]
 ```
-
-
-
-
-
-
-
-
-
 
 
