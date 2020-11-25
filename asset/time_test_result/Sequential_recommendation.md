@@ -23,7 +23,7 @@ Machine Specs:        32 CPU machine, 64GB RAM
 
 #### Time (per epoch) and memory cost on ml-1m dataset:
 
-| Method           | Training Time (sec/epoch) | Evaluate Time (sec/epoch) | GPU Memory (GB) |
+| Method           | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
 | ---------------- | -----------------: | -----------------: | -----------: |
 | Improved GRU-Rec | 7.78              | 0.11              | 1.27     |
 | SASRec           | 17.78             | 0.12              | 1.84     |
@@ -87,7 +87,7 @@ load_col:
 
 #### Time (per epoch) and memory cost on DIGINETICA dataset:
 
-| Method           | Training Time (sec/epoch) | Evaluate Time (sec/epoch) | GPU Memory (GB) |
+| Method           | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
 | ---------------- | -----------------: | -----------------: | -----------: |
 | Improved GRU-Rec | 4.10              | 1.05              | 4.02     |
 | SASRec           | 8.36              | 1.21              | 4.43     |
