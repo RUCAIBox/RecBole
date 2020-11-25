@@ -1,4 +1,4 @@
-## Time  and memory cost of general recommendation models 
+## Time  and memory costs of general recommendation models 
 
 ### Datasets information:
 
@@ -10,7 +10,7 @@
 
 ### 1) ml-1m dataset:
 
-#### Time and memory cost on ml-1m dataset:
+#### Time and memory costs on ml-1m dataset:
 
 | Method     | Training Time (s) | Evaluate Time (s) | Memory (GB) |
 | ---------- | ----------------: | ----------------: | ----------: |
@@ -55,7 +55,7 @@ valid_metric: MRR@10
 
 ### 2）Netflix dataset:
 
-#### Time and memory cost on Netflix dataset:
+#### Time and memory costs on Netflix dataset:
 
 | Method     | Training Time (s) | Evaluate Time (s) | Memory (GB) |
 | ---------- | ----------------: | -----------------: | -----------: |
@@ -103,7 +103,7 @@ valid_metric: MRR@10
 
 ### 3) Yelp dataset:
 
-#### Time and memory cost on Yelp dataset:
+#### Time and memory costs on Yelp dataset:
 
 | Method     | Training Time (s) | Evaluate Time (s) | Memory (GB) |
 | ---------- | -----------------: | -----------------: | -----------:|
