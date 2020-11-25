@@ -167,7 +167,7 @@ please let us know.)<br>
 
 Here is our testing device information:<br>
 ```
-GPU:                      TITAN GTX
+GPU:                      TITAN RTX
 Driver Version:           430.64
 CUDA Version:             10.1
 Memory size:              65412748 KB
