@@ -213,25 +213,45 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'full':
             raise ValueError('neg_sample strategy in GeneralFullDataLoader() should be `full`')
-        self.uid_list, self.uid2index, self.uid2items_num = dataset.uid2index
+
+        uid_field = dataset.uid_field
+        iid_field = dataset.iid_field
+        user_num = dataset.user_num
+        self.uid_list = []
+        self.uid2items_num = np.zeros(user_num, dtype=np.int64)
+        self.uid2swap_idx = np.array([None] * user_num)
+        self.uid2rev_swap_idx = np.array([None] * user_num)
+        self.uid2history_item = np.array([None] * user_num)
+
+        dataset.sort(by=uid_field, ascending=True)
+        last_uid = None
+        positive_item = None
+        uid2used_item = sampler.used_ids
+        for uid, iid in dataset.inter_feat[[uid_field, iid_field]].values:
+            if uid != last_uid:
+                if last_uid is not None:
+                    self._set_user_property(last_uid, uid2used_item[last_uid], positive_item)
+                last_uid = uid
+                self.uid_list.append(uid)
+                positive_item = set()
+            positive_item.add(iid)
+        self._set_user_property(last_uid, uid2used_item[last_uid], positive_item)
+        self.user_df = dataset.join(pd.DataFrame(self.uid_list, columns=[uid_field]))
 
         super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
+    def _set_user_property(self, uid, used_item, positive_item):
+        history_item = used_item - positive_item
+        positive_item_num = len(positive_item)
+        self.uid2items_num[uid] = positive_item_num
+        swap_idx = torch.tensor(sorted(set(range(positive_item_num)) ^ positive_item))
+        self.uid2swap_idx[uid] = swap_idx
+        self.uid2rev_swap_idx[uid] = swap_idx.flip(0)
+        self.uid2history_item[uid] = torch.tensor(list(history_item))
+
     def data_preprocess(self):
-        self.user_tensor, tmp_pos_idx, tmp_used_idx, self.pos_len_list, self.neg_len_list = \
-            self._neg_sampling(self.uid_list, show_progress=True)
-        tmp_pos_len_list = [sum(self.pos_len_list[_: _ + self.step]) for _ in range(0, self.pr_end, self.step)]
-        tot_item_num = self.dataset.item_num
-        tmp_used_len_list = [sum(
-            [tot_item_num - x for x in self.neg_len_list[_: _ + self.step]]
-        ) for _ in range(0, self.pr_end, self.step)]
-        self.pos_idx = list(torch.split(tmp_pos_idx, tmp_pos_len_list))
-        self.used_idx = list(torch.split(tmp_used_idx, tmp_used_len_list))
-        for i in range(len(self.pos_idx)):
-            self.pos_idx[i] -= i * tot_item_num * self.step
-        for i in range(len(self.used_idx)):
-            self.used_idx[i] -= i * tot_item_num * self.step
+        pass
 
     def _batch_size_adaptation(self):
         batch_num = max(self.batch_size // self.dataset.item_num, 1)
@@ -247,51 +267,24 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
-        if not self.real_time:
-            slc = slice(self.pr, self.pr + self.step)
-            idx = self.pr // self.step
-            cur_data = self.user_tensor[slc], self.pos_idx[idx], self.used_idx[idx], \
-                self.pos_len_list[slc], self.neg_len_list[slc]
-        else:
-            cur_data = self._neg_sampling(self.uid_list[self.pr: self.pr + self.step])
+        cur_data = self._neg_sampling(self.user_df[self.pr: self.pr + self.step])
         self.pr += self.step
         return cur_data
 
-    def _neg_sampling(self, uid_list, show_progress=False):
-        uid_field = self.dataset.uid_field
-        iid_field = self.dataset.iid_field
-        tot_item_num = self.dataset.item_num
+    def _neg_sampling(self, user_df):
+        uid_list = user_df[self.dataset.uid_field].values
+        user_interaction = self._dataframe_to_interaction(user_df)
 
-        start_idx = 0
-        pos_len_list = []
-        neg_len_list = []
+        history_item = self.uid2history_item[uid_list]
+        history_row = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
+        history_col = torch.cat(list(history_item))
 
-        pos_idx = []
-        used_idx = []
-
-        iter_data = tqdm(uid_list) if show_progress else uid_list
-        for uid in iter_data:
-            index = self.uid2index[uid]
-            pos_item_id = self.dataset.inter_feat[iid_field][index].values
-            pos_idx.extend([_ + start_idx for _ in pos_item_id])
-            pos_num = len(pos_item_id)
-            pos_len_list.append(pos_num)
-
-            used_item_id = self.sampler.used_ids[uid]
-            used_idx.extend([_ + start_idx for _ in used_item_id])
-            used_num = len(used_item_id)
-
-            neg_num = tot_item_num - used_num
-            neg_len_list.append(neg_num)
-
-            start_idx += tot_item_num
-
-        user_df = pd.DataFrame({uid_field: uid_list})
-        user_interaction = self._dataframe_to_interaction(self.join(user_df))
-
-        return user_interaction, \
-            torch.LongTensor(pos_idx), torch.LongTensor(used_idx), \
-            pos_len_list, neg_len_list
+        swap_idx = self.uid2swap_idx[uid_list]
+        rev_swap_idx = self.uid2rev_swap_idx[uid_list]
+        swap_row = torch.cat([torch.full_like(swap, i) for i, swap in enumerate(swap_idx)])
+        swap_col_after = torch.cat(list(swap_idx))
+        swap_col_before = torch.cat(list(rev_swap_idx))
+        return user_interaction, (history_row, history_col), swap_row, swap_col_after, swap_col_before
 
     def get_pos_len_list(self):
         """
@@ -305,4 +298,4 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         Returns:
             np.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
-        return np.full(len(self.uid_list), self.item_num)
+        return np.full(self.pr_end, self.item_num)

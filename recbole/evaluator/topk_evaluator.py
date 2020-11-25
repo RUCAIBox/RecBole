@@ -48,10 +48,10 @@ class TopKEvaluator(AbstractEvaluator):
             full (bool, optional): whether it is full sort. Default: False.
 
         """
-        user_len_list = interaction.user_len_list
         if full is True:
-            scores_matrix = scores_tensor.view(len(user_len_list), -1)
+            scores_matrix = scores_tensor
         else:
+            user_len_list = interaction.user_len_list
             scores_list = torch.split(scores_tensor, user_len_list, dim=0)
             scores_matrix = pad_sequence(scores_list, batch_first=True, padding_value=-np.inf)  # n_users x items
 
