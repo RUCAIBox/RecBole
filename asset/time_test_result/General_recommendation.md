@@ -12,21 +12,21 @@
 
 #### Time and memory cost on ml-1m dataset:
 
-| Method     | Training Time (s) | Evaluate Time (s) | Memory (MB) |
-| ---------- | ----------------- | ----------------- | ----------- |
-| Popularity | 2.11              | 8.08              | 843         |
-| ItemKNN    | 2                 | 11.76             | 843         |
-| BPRMF      | 1.93              | 7.43              | 931         |
-| NeuMF      | 4.94              | 13.12             | 965         |
-| DMF        | 4.47              | 12.63             | 1555        |
-| NAIS       | 59.27             | 24.41             | 22351       |
-| NGCF       | 12.09             | 7.12              | 1231        |
-| GCMC       | 9.04              | 54.15             | 1353        |
-| LightGCN   | 7.83              | 7.47              | 1177        |
-| DGCF       | 181.66            | 8.06              | 6745        |
-| ConvNCF    | 8.46              | 19.6              | 1341        |
-| FISM       | 19.3              | 10.92             | 7109        |
-| SpectralCF | 13.87             | 6.97              | 1219        |
+| Method     | Training Time (s) | Evaluate Time (s) | Memory (GB) |
+| ---------- | ----------------: | ----------------: | ----------: |
+| Popularity |              2.11 |              8.08 |        0.82 |
+| ItemKNN    |              2.00 |             11.76 |        0.82 |
+| BPRMF      |              1.93 |              7.43 |        0.91 |
+| NeuMF      |              4.94 |             13.12 |        0.94 |
+| DMF        |              4.47 |             12.63 |        1.52 |
+| NAIS       |             59.27 |             24.41 |       21.83 |
+| NGCF       |             12.09 |              7.12 |        1.20 |
+| GCMC       |              9.04 |             54.15 |        1.32 |
+| LightGCN   |              7.83 |              7.47 |        1.15 |
+| DGCF       |            181.66 |              8.06 |        6.59 |
+| ConvNCF    |              8.46 |             19.60 |        1.31 |
+| FISM       |             19.30 |             10.92 |        6.94 |
+| SpectralCF |             13.87 |              6.97 |        1.19 |
 
 #### Config file of ml-1m dataset:
 
@@ -57,18 +57,21 @@ valid_metric: MRR@10
 
 #### Time and memory cost on Netflix dataset:
 
-| Method     | Training Time (s) | Evaluate Time (s) | Memory (MB) |
-| ---------- | ----------------- | ----------------- | ----------- |
-| Popularity | 3.98              | 58.86             | 881         |
-| ItemKNN    | 5.42              | 69.64             | 881         |
-| BPRMF      | 4.42              | 52.81             | 1103        |
-| NeuMF      | 11.33             | 238.92            | 1289        |
-| DMF        | 20.62             | 68.89             | 7291        |
-| NGCF       | 52.5              | 51.6              | 2039        |
-| LightGCN   | 30.21             | 47.12             | 1615        |
-| ConvNCF    | 17.02             | 402.65            | 1477        |
-| FISM       | 86.52             | 83.26             | 21029       |
-| SpectralCF | 59.92             | 46.94             | 1925        |
+| Method     | Training Time (s) | Evaluate Time (s) | Memory (GB) |
+| ---------- | ----------------: | -----------------: | -----------: |
+| Popularity | 3.98              | 58.86             | 0.86     |
+| ItemKNN    | 5.42              | 69.64             | 0.86      |
+| BPRMF      | 4.42              | 52.81             | 1.08    |
+| NeuMF      | 11.33             | 238.92            | 1.26     |
+| DMF        | 20.62             | 68.89             | 7.12     |
+| NAIS       | -                 | -                 | -           |
+| NGCF       | 52.50             | 51.60             | 2.00     |
+| GCMC       | 93.15             | -            | 3.17     |
+| LightGCN   | 30.21             | 47.12             | 1.58     |
+| DGCF       | - | - | -      |
+| ConvNCF    | 17.02             | 402.65            | 1.44     |
+| FISM       | 86.52             | 83.26             | 20.54   |
+| SpectralCF | 59.92             | 46.94             | 1.88     |
 
 #### Config file of Netflix dataset:
 
@@ -102,14 +105,21 @@ valid_metric: MRR@10
 
 #### Time and memory cost on Yelp dataset:
 
-| Method     | Training Time (s) | Evaluate Time (s) | Memory (MB) |
-| ---------- | ----------------- | ----------------- | ----------- |
-| Popularity | 5.69              | 134.23            | 915         |
-| BPRMF      | 6.31              | 120.03            | 1319        |
-| NeuMF      | 17.38             | 2069.53           | 1709        |
-| DMF        | 43.96             | 173.13            | 9443        |
-| LightGCN   | 67.91             | 116.16            | 2067        |
-| DGCF       | 1542              | 119               | 17579       |
+| Method     | Training Time (s) | Evaluate Time (s) | Memory (GB) |
+| ---------- | -----------------: | -----------------: | -----------:|
+| Popularity | 5.69              | 134.23            | 0.89      |
+| ItemKNN    | - | - | - |
+| BPRMF      | 6.31              | 120.03            | 1.28     |
+| NeuMF      | 17.38             | 2069.53           | 1.67     |
+| DMF        | 43.96             | 173.13            | 9.22     |
+| NAIS       | -                 | -                 | -           |
+| NGCF       | 122.90            | 129.59            | 3.28     |
+| GCMC       | - | - | -        |
+| LightGCN   | 67.91             | 116.16            | 2.02    |
+| DGCF       | 1542.00           | 119.00            | 17.17    |
+| ConvNCF    | 87.56             | 11155.31          | 1.62     |
+| FISM       | -                 | -                 | -           |
+| SpectralCF | 138.99            | 133.37            | 3.10     |
 
 #### Config file of Yelp dataset:
 
