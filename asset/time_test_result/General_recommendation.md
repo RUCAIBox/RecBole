@@ -63,6 +63,7 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
+Note: other parameters in our tests are default value, click [here](https://recbole.io/docs/user_guide/config_settings.html) for more information.
 
 ### 2）Netflix dataset:
 
@@ -111,6 +112,7 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
+Note: other parameters in our tests are default value, click [here](https://recbole.io/docs/user_guide/config_settings.html) for more information.
 
 ### 3) Yelp dataset:
 
@@ -158,7 +160,7 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
-
+Note: other parameters in our tests are default value, click [here](https://recbole.io/docs/user_guide/config_settings.html) for more information.
 
 
 
