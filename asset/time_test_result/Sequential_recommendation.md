@@ -3,7 +3,7 @@
 ### Datasets information:
 
 | Dataset    | #User   | #Item  | #Interaction | Sparsity |
-| ---------- | ------- | ------ | ------------ | -------- |
+| ---------- | -------: | ------: | ------------: | --------: |
 | ml-1m      | 6,041   | 3,707  | 1,000,209    | 0.9553   |
 | DIGINETICA | 59,425  | 42,116 | 547,416      | 0.9998   |
 | Yelp       | 102,046 | 98,408 | 2,903,648    | 0.9997   |
@@ -70,6 +70,7 @@ valid_metric: MRR@10
 eval_setting: TO_LS,full
 training_neg_sample_num: 0
 ```
+Other parameters (including model parameters) are default value.
 
 **NOTE :** 
 
@@ -134,6 +135,7 @@ valid_metric: MRR@10
 eval_setting: TO_LS,full
 training_neg_sample_num: 0
 ```
+Other parameters (including model parameters) are default value.
 
 **NOTE :** 
 
