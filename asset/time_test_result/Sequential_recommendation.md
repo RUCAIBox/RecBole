@@ -1,4 +1,4 @@
-## Time (per epoch) and memory cost of sequential recommendation models 
+## Time and memory cost of sequential recommendation models 
 
 ### Datasets information:
 
@@ -21,7 +21,7 @@ Machine Specs:        32 CPU machine, 64GB RAM
 
 ### 1) ml-1m dataset:
 
-#### Time (per epoch) and memory cost on ml-1m dataset:
+#### Time and memory cost on ml-1m dataset:
 
 | Method           | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
 | ---------------- | -----------------: | -----------------: | -----------: |
@@ -85,7 +85,7 @@ load_col:
 
 ### 2）DIGINETICA dataset:
 
-#### Time (per epoch) and memory cost on DIGINETICA dataset:
+#### Time and memory cost on DIGINETICA dataset:
 
 | Method           | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
 | ---------------- | -----------------: | -----------------: | -----------: |
