@@ -1,18 +1,29 @@
-## Time  and memory costs of sequential recommendation models 
+## Time and memory cost of sequential recommendation models 
 
 ### Datasets information:
 
 | Dataset    | #User   | #Item  | #Interaction | Sparsity |
-| ---------- | ------- | ------ | ------------ | -------- |
+| ---------- | -------: | ------: | ------------: | --------: |
 | ml-1m      | 6,041   | 3,707  | 1,000,209    | 0.9553   |
 | DIGINETICA | 59,425  | 42,116 | 547,416      | 0.9998   |
 | Yelp       | 102,046 | 98,408 | 2,903,648    | 0.9997   |
 
+### Device information
+
+```
+OS:                   Linux
+Python Version:       3.8.3
+PyTorch Version:      1.7.0
+cudatoolkit Version:  10.1
+GPU:                  TITAN RTX（24GB）
+Machine Specs:        32 CPU machine, 64GB RAM
+```
+
 ### 1) ml-1m dataset:
 
-#### Time and memory costs on ml-1m dataset:
+#### Time and memory cost on ml-1m dataset:
 
-| Method           | Training Time (s) | Evaluate Time (s) | Memory (GB) |
+| Method           | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
 | ---------------- | -----------------: | -----------------: | -----------: |
 | Improved GRU-Rec | 7.78              | 0.11              | 1.27     |
 | SASRec           | 17.78             | 0.12              | 1.84     |
@@ -59,6 +70,7 @@ valid_metric: MRR@10
 eval_setting: TO_LS,full
 training_neg_sample_num: 0
 ```
+Other parameters (including model parameters) are default value.
 
 **NOTE :** 
 
@@ -74,9 +86,9 @@ load_col:
 
 ### 2）DIGINETICA dataset:
 
-#### Time and memory costs on DIGINETICA dataset:
+#### Time and memory cost on DIGINETICA dataset:
 
-| Method           | Training Time (s) | Evaluate Time (s) | Memory (GB) |
+| Method           | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
 | ---------------- | -----------------: | -----------------: | -----------: |
 | Improved GRU-Rec | 4.10              | 1.05              | 4.02     |
 | SASRec           | 8.36              | 1.21              | 4.43     |
@@ -123,6 +135,7 @@ valid_metric: MRR@10
 eval_setting: TO_LS,full
 training_neg_sample_num: 0
 ```
+Other parameters (including model parameters) are default value.
 
 **NOTE :** 
 
@@ -135,7 +148,6 @@ load_col:
    inter: [session_id, item_id, timestamp]
    item: [item_id, item_category]
 ```
-
 
 
 
