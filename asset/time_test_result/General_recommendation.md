@@ -1,32 +1,43 @@
-## Time  and memory costs of general recommendation models 
+## Time  and memory cost of general recommendation models 
 
 ### Datasets information:
 
 | Dataset | #User   | #Item  | #Interaction | Sparsity |
-| ------- | ------- | ------ | ------------ | -------- |
+| ------- | -------:| ------: | ------------: | --------: |
 | ml-1m   | 6,041   | 3,707  | 1,000,209    | 0.9553   |
 | Netflix | 80,476  | 16,821 | 1,977,844    | 0.9985   |
 | Yelp    | 102,046 | 98,408 | 2,903,648    | 0.9997   |
 
+### Device information
+
+```
+OS:                   Linux
+Python Version:       3.8.3
+PyTorch Version:      1.7.0
+cudatoolkit Version:  10.1
+GPU:                  TITAN RTX（24GB）
+Machine Specs:        32 CPU machine, 64GB RAM
+```
+
 ### 1) ml-1m dataset:
 
-#### Time and memory costs on ml-1m dataset:
+#### Time and memory cost on ml-1m dataset:
 
-| Method     | Training Time (s) | Evaluate Time (s) | Memory (GB) |
-| ---------- | ----------------: | ----------------: | ----------: |
-| Popularity |              2.11 |              8.08 |        0.82 |
-| ItemKNN    |              2.00 |             11.76 |        0.82 |
-| BPRMF      |              1.93 |              7.43 |        0.91 |
-| NeuMF      |              4.94 |             13.12 |        0.94 |
-| DMF        |              4.47 |             12.63 |        1.52 |
-| NAIS       |             59.27 |             24.41 |       21.83 |
-| NGCF       |             12.09 |              7.12 |        1.20 |
-| GCMC       |              9.04 |             54.15 |        1.32 |
-| LightGCN   |              7.83 |              7.47 |        1.15 |
-| DGCF       |            181.66 |              8.06 |        6.59 |
-| ConvNCF    |              8.46 |             19.60 |        1.31 |
-| FISM       |             19.30 |             10.92 |        6.94 |
-| SpectralCF |             13.87 |              6.97 |        1.19 |
+| Method     | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
+| ---------- | ------------------------: | --------------------------: | --------------: |
+| Popularity |                      2.11 |                        8.08 |            0.82 |
+| ItemKNN    |                      2.00 |                       11.76 |            0.82 |
+| BPRMF      |                      1.93 |                        7.43 |            0.91 |
+| NeuMF      |                      4.94 |                       13.12 |            0.94 |
+| DMF        |                      4.47 |                       12.63 |            1.52 |
+| NAIS       |                     59.27 |                       24.41 |           21.83 |
+| NGCF       |                     12.09 |                        7.12 |            1.20 |
+| GCMC       |                      9.04 |                       54.15 |            1.32 |
+| LightGCN   |                      7.83 |                        7.47 |            1.15 |
+| DGCF       |                    181.66 |                        8.06 |            6.59 |
+| ConvNCF    |                      8.46 |                       19.60 |            1.31 |
+| FISM       |                     19.30 |                       10.92 |            6.94 |
+| SpectralCF |                     13.87 |                        6.97 |            1.19 |
 
 #### Config file of ml-1m dataset:
 
@@ -52,12 +63,13 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
+Other parameters (including model parameters) are default value.
 
 ### 2）Netflix dataset:
 
-#### Time and memory costs on Netflix dataset:
+#### Time and memory cost on Netflix dataset:
 
-| Method     | Training Time (s) | Evaluate Time (s) | Memory (GB) |
+| Method     | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
 | ---------- | ----------------: | -----------------: | -----------: |
 | Popularity | 3.98              | 58.86             | 0.86     |
 | ItemKNN    | 5.42              | 69.64             | 0.86      |
@@ -100,12 +112,13 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
+Other parameters (including model parameters) are default value.
 
 ### 3) Yelp dataset:
 
-#### Time and memory costs on Yelp dataset:
+#### Time and memory cost on Yelp dataset:
 
-| Method     | Training Time (s) | Evaluate Time (s) | Memory (GB) |
+| Method     | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
 | ---------- | -----------------: | -----------------: | -----------:|
 | Popularity | 5.69              | 134.23            | 0.89      |
 | ItemKNN    | - | - | - |
@@ -147,4 +160,10 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
+Other parameters (including model parameters) are default value.
+
+
+
+
+
 
