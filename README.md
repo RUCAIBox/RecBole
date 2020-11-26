@@ -154,24 +154,13 @@ python run_recbole.py --model=[model_name]
 ```
 
 
-## Time and memory costs
+## Time and Memory Costs
 We constructed preliminary experiments to test the time and memory cost on three different-sized datasets  (small, medium and large). For detailed information, you can click the following links.<br> 
-
-NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library (based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. We will keep improving our implementations, and update these test results.
 
 * [General recommendation models](asset/time_test_result/General_recommendation.md)<br>
 * [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)<br>
 
-Here is our testing device information:<br>
-```
-OS:                   Linux
-RecBole Version:      0.1.1
-Python Version:       3.8.3
-PyTorch Version:      1.7.0
-cudatoolkit Version:  10.1
-GPU:                  TITAN RTX（24GB）
-Machine Specs:        8-core CPU machine, 64GB RAM
-```
+NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library (based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. We will keep improving our implementations, and update these test results.
 
 
 ## RecBole Major Releases
