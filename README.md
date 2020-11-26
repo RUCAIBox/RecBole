@@ -154,7 +154,7 @@ python run_recbole.py --model=[model_name]
 ```
 
 
-## Time And Memory Costs
+## Time and Memory Costs
 We constructed preliminary experiments to test the time and memory cost on three different-sized datasets  (small, medium and large). For detailed information, you can click the following links.<br> 
 
 * [General recommendation models](asset/time_test_result/General_recommendation.md)<br>
