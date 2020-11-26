@@ -63,7 +63,7 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
-NOTE: Other parameters (including model parameters) are default value, click [here](https://recbole.io/docs/user_guide/config_settings.html) for more information.
+Other parameters (including model parameters) are default value, click [here](https://recbole.io/docs/user_guide/config_settings.html).
 
 ### 2）Netflix dataset:
 
