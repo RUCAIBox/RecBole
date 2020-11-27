@@ -123,11 +123,11 @@ class KnowledgeBasedDataset(Dataset):
                 'The number of items that have been linked to KG: {}'.format(len(self.item2entity))]
         return '\n'.join(info)
 
-    def _build_feat_list(self):
-        feat_list = super()._build_feat_list()
+    def _build_feat_name_list(self):
+        feat_name_list = super()._build_feat_name_list()
         if self.kg_feat is not None:
-            feat_list.append(self.kg_feat)
-        return feat_list
+            feat_name_list.append('kg_feat')
+        return feat_name_list
 
     def _restore_saved_dataset(self, saved_dataset):
         raise NotImplementedError()

@@ -87,7 +87,7 @@ class Dataset(object):
         item_feat (:class:`pandas.DataFrame` or None): Internal data structure stores the item features.
             It's loaded from file ``.item`` if existed.
 
-        feat_list (list): A list contains all the features (:class:`pandas.DataFrame`), including additional features.
+        feat_name_list (list): A list contains all the features' name (:class:`str`), including additional features.
     """
     def __init__(self, config, saved_dataset=None):
         self.config = config
@@ -147,7 +147,7 @@ class Dataset(object):
         - Normalization
         - Preloading weights initialization
         """
-        self.feat_list = self._build_feat_list()
+        self.feat_name_list = self._build_feat_name_list()
         if self.benchmark_filename_list is None:
             self._data_filtering()
 
@@ -175,23 +175,24 @@ class Dataset(object):
         self._filter_by_inter_num()
         self._reset_index()
 
-    def _build_feat_list(self):
+    def _build_feat_name_list(self):
         """Feat list building.
 
-        Any feat loaded by Dataset can be found in ``feat_list``
+        Any feat loaded by Dataset can be found in ``feat_name_list``
 
         Returns:
-            builded feature list.
+            built feature name list.
 
         Note:
             Subclasses can inherit this method to add new feat.
         """
-        feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        feat_name_list = [feat_name for feat_name in ['inter_feat', 'user_feat', 'item_feat']
+                          if getattr(self, feat_name, None) is not None]
         if self.config['additional_feat_suffix'] is not None:
             for suf in self.config['additional_feat_suffix']:
-                if hasattr(self, '{}_feat'.format(suf)):
-                    feat_list.append(getattr(self, '{}_feat'.format(suf)))
-        return feat_list
+                if getattr(self, '{}_feat'.format(suf), None) is not None:
+                    feat_name_list.append('{}_feat'.format(suf))
+        return feat_name_list
 
     def _restore_saved_dataset(self, saved_dataset):
         """Restore saved dataset from ``saved_dataset``.
@@ -310,7 +311,7 @@ class Dataset(object):
 
         For those additional features, e.g. pretrained entity embedding, user can set them
         as ``config['additional_feat_suffix']``, then they will be loaded and stored in
-        :attr:`feat_list`. See :doc:`../user_guide/data/data_args` for details.
+        :attr:`feat_name_list`. See :doc:`../user_guide/data/data_args` for details.
 
         Args:
             token (str): dataset name.
@@ -445,9 +446,9 @@ class Dataset(object):
             flag = True
             self.logger.debug('ordering item features by user id.')
         if flag:
-            # CANNOT be removed
-            # user/item feat has been updated, thus feat_list should be updated too.
-            self.feat_list = self._build_feat_list()
+            # # CANNOT be removed
+            # # user/item feat has been updated, thus feat_list should be updated too.
+            # self.feat_name_list = self._build_feat_name_list()
             self._fill_nan_flag = True
 
     def _preload_weight_matrix(self):
@@ -476,7 +477,8 @@ class Dataset(object):
                                  'while prelaod value field [{}] is from source [{}], which should be the same'.format(
                                      preload_id_field, pid_source, preload_value_field, pv_source
                                  ))
-            for feat in self.feat_list:
+            for feat_name in self.feat_name_list:
+                feat = getattr(self, feat_name)
                 if preload_id_field in feat:
                     id_ftype = self.field2type[preload_id_field]
                     if id_ftype != FeatureType.TOKEN:
@@ -531,7 +533,8 @@ class Dataset(object):
         most_freq = SimpleImputer(missing_values=np.nan, strategy='most_frequent', copy=False)
         aveg = SimpleImputer(missing_values=np.nan, strategy='mean', copy=False)
 
-        for feat in self.feat_list:
+        for feat_name in self.feat_name_list:
+            feat = getattr(self, feat_name)
             for field in feat:
                 ftype = self.field2type[field]
                 if ftype == FeatureType.TOKEN:
@@ -571,7 +574,8 @@ class Dataset(object):
 
         self.logger.debug('Normalized fields: {}'.format(fields))
 
-        for feat in self.feat_list:
+        for feat_name in self.feat_name_list:
+            feat = getattr(self, feat_name)
             for field in feat:
                 if field not in fields:
                     continue
@@ -721,9 +725,10 @@ class Dataset(object):
                 self._del_col(field)
 
     def _reset_index(self):
-        """Reset index for all feats in :attr:`feat_list`.
+        """Reset index for all feats in :attr:`feat_name_list`.
         """
-        for feat in self.feat_list:
+        for feat_name in self.feat_name_list:
+            feat = getattr(self, feat_name)
             if feat.empty:
                 raise ValueError('Some feat is empty, please check the filtering settings.')
             feat.reset_index(drop=True, inplace=True)
@@ -748,7 +753,8 @@ class Dataset(object):
                 raise ValueError('field [{}] not defined in dataset'.format(field))
             if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
                 raise ValueError('field [{}] is not float-like field in dataset, which can\'t be filter'.format(field))
-            for feat in self.feat_list:
+            for feat_name in self.feat_name_list:
+                feat = getattr(self, feat_name)
                 if field in feat:
                     feat.drop(feat.index[cmp(feat[field].values, val[field])], inplace=True)
             filter_field.append(field)
@@ -761,7 +767,8 @@ class Dataset(object):
             field (str): field name to be droped.
         """
         self.logger.debug('delete column [{}]'.format(field))
-        for feat in self.feat_list:
+        for feat_name in self.feat_name_list:
+            feat = getattr(self, feat_name)
             if field in feat:
                 feat.drop(columns=field, inplace=True)
         for dct in [self.field2id_token, self.field2seqlen, self.field2source, self.field2type]:
@@ -1628,13 +1635,13 @@ class Dataset(object):
             elif ftype == FeatureType.FLOAT:
                 data[k] = torch.FloatTensor(data[k])
             elif ftype == FeatureType.TOKEN_SEQ:
-                if isinstance(data[k], np.ndarray):
+                if isinstance(data[k], np.ndarray) and data[k].dtype == np.int64:
                     data[k] = torch.LongTensor(data[k][:, :self.field2seqlen[k]])
                 else:
                     seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in data[k]]
                     data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == FeatureType.FLOAT_SEQ:
-                if isinstance(data[k], np.ndarray):
+                if isinstance(data[k], np.ndarray) and data[k].dtype == np.float64:
                     data[k] = torch.FloatTensor(data[k][:, :self.field2seqlen[k]])
                 else:
                     seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in data[k]]
