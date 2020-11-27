@@ -208,7 +208,7 @@ training_neg_sample_num: 0
 ```
 load_col:
     inter: [session_id, item_id, timestamp]
- 	item: [item_id, item_category]
+ 	  item: [item_id, item_category]
 ```
 
 
