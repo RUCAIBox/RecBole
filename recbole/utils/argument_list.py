@@ -32,6 +32,6 @@ dataset_arguments = ['field_separator', 'seq_separator',
                      'load_col', 'unload_col', 'additional_feat_suffix',
                      'max_user_inter_num', 'min_user_inter_num', 'max_item_inter_num', 'min_item_inter_num',
                      'lowest_val', 'highest_val', 'equal_val', 'not_equal_val', 'drop_filter_field',
-                     'fields_in_same_space', 'fill_nan',
+                     'fields_in_same_space',
                      'preload_weight', 'drop_preload_weight',
                      'normalize_field', 'normalize_all']

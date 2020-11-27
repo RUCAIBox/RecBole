@@ -23,7 +23,6 @@ import pandas as pd
 import torch
 import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
-from sklearn.impute import SimpleImputer
 
 from recbole.utils import FeatureSource, FeatureType
 from recbole.data.interaction import Interaction
@@ -116,7 +115,6 @@ class Dataset(object):
         """Initialization useful inside attributes.
         """
         self.dataset_path = self.config['data_path']
-        self._fill_nan_flag = self.config['fill_nan']
 
         self.field2type = {}
         self.field2source = {}
@@ -432,24 +430,16 @@ class Dataset(object):
 
     def _user_item_feat_preparation(self):
         """Sort :attr:`user_feat` and :attr:`item_feat` by ``user_id`` or ``item_id``.
-        Missing values will be filled.
+        Missing values will be filled later.
         """
-        flag = False
         if self.user_feat is not None:
             new_user_df = pd.DataFrame({self.uid_field: np.arange(self.user_num)})
             self.user_feat = pd.merge(new_user_df, self.user_feat, on=self.uid_field, how='left')
-            flag = True
             self.logger.debug('ordering user features by user id.')
         if self.item_feat is not None:
             new_item_df = pd.DataFrame({self.iid_field: np.arange(self.item_num)})
             self.item_feat = pd.merge(new_item_df, self.item_feat, on=self.iid_field, how='left')
-            flag = True
             self.logger.debug('ordering item features by user id.')
-        if flag:
-            # # CANNOT be removed
-            # # user/item feat has been updated, thus feat_list should be updated too.
-            # self.feat_name_list = self._build_feat_name_list()
-            self._fill_nan_flag = True
 
     def _preload_weight_matrix(self):
         """Transfer preload weight features into :class:`numpy.ndarray` with shape ``[id_token_length]``
@@ -527,20 +517,14 @@ class Dataset(object):
         """
         self.logger.debug('Filling nan')
 
-        if not self._fill_nan_flag:
-            return
-
-        most_freq = SimpleImputer(missing_values=np.nan, strategy='most_frequent', copy=False)
-        aveg = SimpleImputer(missing_values=np.nan, strategy='mean', copy=False)
-
         for feat_name in self.feat_name_list:
             feat = getattr(self, feat_name)
             for field in feat:
                 ftype = self.field2type[field]
                 if ftype == FeatureType.TOKEN:
-                    feat[field] = most_freq.fit_transform(feat[field].values.reshape(-1, 1))
+                    feat[field].fillna(value=0, inplace=True)
                 elif ftype == FeatureType.FLOAT:
-                    feat[field] = aveg.fit_transform(feat[field].values.reshape(-1, 1))
+                    feat[field].fillna(value=feat[field].mean(), inplace=True)
                 elif ftype.value.endswith('seq'):
                     feat[field] = feat[field].apply(lambda x: [0]
                                                     if (not isinstance(x, np.ndarray) and (not isinstance(x, list)))

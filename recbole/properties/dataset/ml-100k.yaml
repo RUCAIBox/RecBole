@@ -41,7 +41,6 @@ drop_filter_field : False
 
 # Preprocessing
 fields_in_same_space: ~
-fill_nan: True
 preload_weight: ~
 drop_preload_weight: True
 normalize_field: ~
