@@ -3,7 +3,7 @@
 ### Datasets information:
 
 | Dataset | #User   | #Item  | #Interaction | Sparsity |
-| ------- | -------:| ------: | ------------: | --------: |
+| ------- | -------: | ------: | ------------: | --------: |
 | ml-1m   | 6,041   | 3,707  | 1,000,209    | 0.9553   |
 | Netflix | 80,476  | 16,821 | 1,977,844    | 0.9985   |
 | Yelp    | 102,046 | 98,408 | 2,903,648    | 0.9997   |
@@ -63,7 +63,6 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
-Other parameters (including model parameters) are default value.
 
 ### 2）Netflix dataset:
 
@@ -78,9 +77,9 @@ Other parameters (including model parameters) are default value.
 | DMF        | 20.62             | 68.89             | 7.12     |
 | NAIS       | -                 | -                 | -           |
 | NGCF       | 52.50             | 51.60             | 2.00     |
-| GCMC       | 93.15             | -            | 3.17     |
+| GCMC       | 93.15             |                     1810.43 | 3.17     |
 | LightGCN   | 30.21             | 47.12             | 1.58     |
-| DGCF       | - | - | -      |
+| DGCF       |                    750.74 |                       47.23 |           12.52 |
 | ConvNCF    | 17.02             | 402.65            | 1.44     |
 | FISM       | 86.52             | 83.26             | 20.54   |
 | SpectralCF | 59.92             | 46.94             | 1.88     |
@@ -112,27 +111,26 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
-Other parameters (including model parameters) are default value.
 
 ### 3) Yelp dataset:
 
 #### Time and memory cost on Yelp dataset:
 
-| Method     | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
-| ---------- | -----------------: | -----------------: | -----------:|
-| Popularity | 5.69              | 134.23            | 0.89      |
-| ItemKNN    | - | - | - |
-| BPRMF      | 6.31              | 120.03            | 1.28     |
-| NeuMF      | 17.38             | 2069.53           | 1.67     |
-| DMF        | 43.96             | 173.13            | 9.22     |
-| NAIS       | -                 | -                 | -           |
-| NGCF       | 122.90            | 129.59            | 3.28     |
-| GCMC       | - | - | -        |
-| LightGCN   | 67.91             | 116.16            | 2.02    |
-| DGCF       | 1542.00           | 119.00            | 17.17    |
-| ConvNCF    | 87.56             | 11155.31          | 1.62     |
-| FISM       | -                 | -                 | -           |
-| SpectralCF | 138.99            | 133.37            | 3.10     |
+| Method     | Training Time (sec/epoch) | Evaluate Time (sec/epoch) | GPU Memory (GB) |
+| ---------- | -------------------------: | -------------------------: | ---------------: |
+| Popularity | 5.69                      | 134.23                    | 0.89            |
+| ItemKNN    | 8.44                      | 194.24                    | 0.90            |
+| BPRMF      | 6.31                      | 120.03                    | 1.29            |
+| NeuMF      | 17.38                     | 2069.53                   | 1.67            |
+| DMF        | 43.96                     | 173.13                    | 9.22            |
+| NAIS       | -                         | -                         | -               |
+| NGCF       | 122.90                    | 129.59                    | 3.28            |
+| GCMC       | 299.36                    | 9833.24                   | 5.96            |
+| LightGCN   | 67.91                     | 116.16                    | 2.02            |
+| DGCF       | 1542.00                   | 119.00                    | 17.17           |
+| ConvNCF    | 87.56                     | 11155.31                  | 1.62            |
+| FISM       | -                         | -                         | -               |
+| SpectralCF | 138.99                    | 133.37                    | 3.10            |
 
 #### Config file of Yelp dataset:
 
@@ -160,11 +158,6 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
-Other parameters (including model parameters) are default value.
-
-
-
-
 
 
 
