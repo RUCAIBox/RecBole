@@ -13,7 +13,6 @@ recbole.sampler
 ########################
 """
 
-import random
 import copy
 import numpy as np
 
@@ -33,7 +32,10 @@ class AbstractSampler(object):
         used_ids (numpy.ndarray): The result of :meth:`get_used_ids`.
     """
     def __init__(self, distribution):
-        self.distribution = None
+        self.distribution = ''
+        self.random_list = []
+        self.random_pr = 0
+        self.random_list_length = 0
         self.set_distribution(distribution)
         self.used_ids = self.get_used_ids()
 
@@ -47,7 +49,7 @@ class AbstractSampler(object):
             return
         self.distribution = distribution
         self.random_list = self.get_random_list()
-        random.shuffle(self.random_list)
+        np.random.shuffle(self.random_list)
         self.random_pr = 0
         self.random_list_length = len(self.random_list)
 
@@ -74,7 +76,21 @@ class AbstractSampler(object):
         self.random_pr += 1
         return value_id
 
-    def sample_by_key_ids(self, key_ids, num, used_ids):
+    def random_num(self, num):
+        value_id = []
+        self.random_pr %= self.random_list_length
+        while True:
+            if self.random_pr + num <= self.random_list_length:
+                value_id.append(self.random_list[self.random_pr: self.random_pr + num])
+                self.random_pr += num
+                break
+            else:
+                value_id.append(self.random_list[self.random_pr:])
+                num -= self.random_list_length - self.random_pr
+                self.random_pr = 0
+        return np.concatenate(value_id)
+
+    def sample_by_key_ids(self, key_ids, num):
         """Sampling by key_ids.
 
         Args:
@@ -89,15 +105,42 @@ class AbstractSampler(object):
             value_ids[1], value_ids[len(key_ids) + 1], value_ids[len(key_ids) * 2 + 1], ...,
             value_id[len(key_ids) * (num - 1) + 1] is sampled for key_ids[1]; ...; and so on.
         """
+        key_ids = np.array(key_ids)
         key_num = len(key_ids)
         total_num = key_num * num
-        value_ids = np.zeros(total_num, dtype=np.int64)
-        used_id_list = np.repeat(used_ids, num)
-        for i, used_ids in enumerate(used_id_list):
-            cur = self.random()
-            while cur in used_ids:
-                cur = self.random()
-            value_ids[i] = cur
+        if (key_ids == key_ids[0]).all():
+            key_id = key_ids[0]
+            used = np.array(list(self.used_ids[key_id]))
+            value_ids = self.random_num(total_num)
+            check_list = np.arange(total_num)[np.isin(value_ids, used)]
+            while len(check_list) > 0:
+                value_ids[check_list] = value = self.random_num(len(check_list))
+                perm = value.argsort(kind='quicksort')
+                aux = value[perm]
+                mask = np.empty(aux.shape, dtype=np.bool_)
+                mask[:1] = True
+                mask[1:] = aux[1:] != aux[:-1]
+                value = aux[mask]
+                rev_idx = np.empty(mask.shape, dtype=np.intp)
+                rev_idx[perm] = np.cumsum(mask) - 1
+                ar = np.concatenate((value, used))
+                order = ar.argsort(kind='mergesort')
+                sar = ar[order]
+                bool_ar = (sar[1:] == sar[:-1])
+                flag = np.concatenate((bool_ar, [False]))
+                ret = np.empty(ar.shape, dtype=bool)
+                ret[order] = flag
+                mask = ret[rev_idx]
+                check_list = check_list[mask]
+        else:
+            value_ids = np.zeros(total_num, dtype=np.int64)
+            check_list = np.arange(total_num)
+            key_ids = np.tile(key_ids, num)
+            while len(check_list) > 0:
+                value_ids[check_list] = self.random_num(len(check_list))
+                check_list = np.array([i for i, used, v in
+                                       zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
+                                       if v in used])
         return value_ids
 
 
@@ -140,7 +183,7 @@ class Sampler(AbstractSampler):
             np.ndarray or list: Random list of item_id.
         """
         if self.distribution == 'uniform':
-            return list(range(1, self.n_items))
+            return np.arange(1, self.n_items)
         elif self.distribution == 'popularity':
             random_item_list = []
             for dataset in self.datasets:
@@ -196,7 +239,7 @@ class Sampler(AbstractSampler):
             item_id[len(user_ids) * (num - 1) + 1] is sampled for user_ids[1]; ...; and so on.
         """
         try:
-            return self.sample_by_key_ids(user_ids, num, self.used_ids[user_ids])
+            return self.sample_by_key_ids(user_ids, num)
         except IndexError:
             for user_id in user_ids:
                 if user_id < 0 or user_id >= self.n_users:
@@ -261,7 +304,7 @@ class KGSampler(AbstractSampler):
             entity_id[len(head_entity_ids) * (num - 1) + 1] is sampled for head_entity_ids[1]; ...; and so on.
         """
         try:
-            return self.sample_by_key_ids(head_entity_ids, num, self.used_ids[head_entity_ids])
+            return self.sample_by_key_ids(head_entity_ids, num)
         except IndexError:
             for head_entity_id in head_entity_ids:
                 if head_entity_id not in self.head_entities:
@@ -287,8 +330,8 @@ class RepeatableSampler(AbstractSampler):
         self.dataset = dataset
 
         self.iid_field = dataset.iid_field
-        self.user_num = dataset.user_num
-        self.item_num = dataset.item_num
+        self.n_users = dataset.user_num
+        self.n_items = dataset.item_num
 
         super().__init__(distribution=distribution)
 
@@ -298,7 +341,7 @@ class RepeatableSampler(AbstractSampler):
             np.ndarray or list: Random list of item_id.
         """
         if self.distribution == 'uniform':
-            return list(range(1, self.item_num))
+            return np.arange(1, self.n_items)
         elif self.distribution == 'popularity':
             return self.dataset.inter_feat[self.iid_field].values
         else:
@@ -310,7 +353,7 @@ class RepeatableSampler(AbstractSampler):
             np.ndarray: Used item_ids is the same as positive item_ids.
             Index is user_id, and element is a set of item_ids.
         """
-        return np.array([set() for i in range(self.user_num)])
+        return np.array([set() for i in range(self.n_users)])
 
     def sample_by_user_ids(self, user_ids, num):
         """Sampling by user_ids.
@@ -327,7 +370,7 @@ class RepeatableSampler(AbstractSampler):
             item_id[len(user_ids) * (num - 1) + 1] is sampled for user_ids[1]; ...; and so on.
         """
         try:
-            return self.sample_by_key_ids(user_ids, num, self.used_ids[user_ids])
+            return self.sample_by_key_ids(user_ids, num)
         except IndexError:
             for user_id in user_ids:
                 if user_id < 0 or user_id >= self.n_users:
