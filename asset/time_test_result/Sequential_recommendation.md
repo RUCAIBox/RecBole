@@ -23,7 +23,7 @@ Machine Specs:        32 CPU machine, 64GB RAM
 
 #### Time and memory cost on ml-1m dataset:
 
-| Method           | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
+| Method           | Training Time (sec/epoch) | Evaluate Time (sec/epoch) | GPU Memory (GB) |
 | ---------------- | -----------------: | -----------------: | -----------: |
 | Improved GRU-Rec | 7.78              | 0.11              | 1.27     |
 | SASRec           | 17.78             | 0.12              | 1.84     |
@@ -31,7 +31,7 @@ Machine Specs:        32 CPU machine, 64GB RAM
 | FPMC             | 7.51              | 0.11              | 1.18     |
 | STAMP            | 7.32              | 0.11              | 1.20     |
 | Caser            | 44.85             | 0.12              | 1.14     |
-| NextItNet        | -               | - | - |
+| NextItNet        |                  16433.27 |                     96.31 |            1.86 |
 | TransRec         | 10.08             | 0.16              | 8.18     |
 | S3Rec            | - | - | -       |
 | GRU4RecF         | 10.20             | 0.15              | 1.80     |
@@ -70,7 +70,8 @@ valid_metric: MRR@10
 eval_setting: TO_LS,full
 training_neg_sample_num: 0
 ```
-Other parameters (including model parameters) are default value.
+
+Other parameters (including model parameters) are default value. 
 
 **NOTE :** 
 
@@ -88,7 +89,7 @@ load_col:
 
 #### Time and memory cost on DIGINETICA dataset:
 
-| Method           | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
+| Method           | Training Time (sec/epoch) | Evaluate Time (sec/epoch) | GPU Memory (GB) |
 | ---------------- | -----------------: | -----------------: | -----------: |
 | Improved GRU-Rec | 4.10              | 1.05              | 4.02     |
 | SASRec           | 8.36              | 1.21              | 4.43     |
@@ -135,7 +136,8 @@ valid_metric: MRR@10
 eval_setting: TO_LS,full
 training_neg_sample_num: 0
 ```
-Other parameters (including model parameters) are default value.
+
+Other parameters (including model parameters) are default value. 
 
 **NOTE :** 
 
@@ -148,6 +150,76 @@ load_col:
    inter: [session_id, item_id, timestamp]
    item: [item_id, item_category]
 ```
+
+### 3）Yelp dataset:
+
+#### Time and memory cost on Yelp dataset:
+
+| Method           | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
+| ---------------- | -----------------: | -----------------: | -----------: |
+| Improved GRU-Rec | 44.31             | 2.74              | 7.92        |
+| SASRec           | 75.51             | 3.11              | 8.32        |
+| NARM             | 45.65             | 2.76              | 7.98        |
+| FPMC             | 21.05             | 3.05              | 8.22        |
+| STAMP            | 42.08             | 2.72              | 7.77        |
+| Caser            | 147.15            | 2.89              | 7.87        |
+| NextItNet        |                  45019.38 |                     1670.76 |            8.44 |
+| TransRec         | -                 | -                 | -           |
+| S3Rec            | -                 | -                 | -           |
+| GRU4RecF         | -                 | -                 | -           |
+| SASRecF          | -                 | -                 | -           |
+| BERT4Rec         | 193.74            | 8.43              | 16.57       |
+| FDSA             | -                 | -                 | -           |
+| SRGNN            | 825.11            | 33.20             | 7.90        |
+| GCSAN            | 837.23            | 33.00             | 8.14        |
+| KSR              | - | - | - |
+| GRU4RecKG        | - | - | - |
+
+#### Config file of DIGINETICA dataset:
+
+```
+# dataset config
+field_separator: "\t"
+seq_separator: " "
+USER_ID_FIELD: session_id
+ITEM_ID_FIELD: item_id
+TIME_FIELD: timestamp
+NEG_PREFIX: neg_
+ITEM_LIST_LENGTH_FIELD: item_length
+LIST_SUFFIX: _list
+MAX_ITEM_LIST_LENGTH: 20
+POSITION_FIELD: position_id
+load_col:
+  inter: [session_id, item_id, timestamp]
+min_user_inter_num: 6
+min_item_inter_num: 1
+
+# training and evaluation
+epochs: 500
+train_batch_size: 2048
+eval_batch_size: 2048
+valid_metric: MRR@10
+eval_setting: TO_LS,full
+training_neg_sample_num: 0
+```
+
+Other parameters (including model parameters) are default value. 
+
+**NOTE :** 
+
+1) For FPMC and TransRec model,  `training_neg_sample_num`  should be  `1` . 
+
+2) For  SASRecF, GRU4RecF and FDSA,   `load_col` should as below:
+
+```
+load_col:
+    inter: [session_id, item_id, timestamp]
+ 	item: [item_id, item_category]
+```
+
+
+
+
 
 
 
