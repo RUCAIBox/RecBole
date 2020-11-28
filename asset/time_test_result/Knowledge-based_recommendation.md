@@ -6,7 +6,7 @@
 | ------- | ------: | -------: | ------------: | --------: | ---------: | ---------: | ---------: |
 | ml-1m   | 6,040  | 3,629   | 836,478      | 0.9618   | 79,388    | 51        | 385,923   |
 | ml-10m  | 69,864 | 10,599  | 8,242,124    | 0.9889   | 181,941   | 51        | 1,051,385 |
-| lfm-1b  | 64,536 | 156,343 | 6,544,312    | 0.9994   | 1,751,586 | 10        | 3,054,516 |
+| LFM-1b | 64,536 | 156,343 | 6,544,312    | 0.9994   | 1,751,586 | 10        | 3,054,516 |
 
 ### Device information
 
@@ -64,6 +64,8 @@ eval_batch_size: 2048
 valid_metric: MRR@10
 ```
 
+Other parameters (including model parameters) are default value. 
+
 ### 2）ml-10m dataset:
 
 #### Time and memory cost on ml-10m dataset:
@@ -109,9 +111,11 @@ eval_batch_size: 2048
 valid_metric: MRR@10
 ```
 
-### 3）lfm-1b dataset:
+Other parameters (including model parameters) are default value. 
 
-#### Time and memory cost on lfm-1b dataset:
+### 3）LFM-1b dataset:
+
+#### Time and memory cost on LFM-1b dataset:
 
 | Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
 | --------- | -------------------------: | ---------------------------: | ---------------: |
@@ -124,7 +128,7 @@ valid_metric: MRR@10
 | MKR       | 290.01                    | 2341.91                     | 6.96            |
 | CFKG      | 53.35                     | 553.58                      | 4.22            |
 
-#### Config file of lfm-1b  dataset:
+#### Config file of LFM-1b  dataset:
 
 ```
 # dataset config
@@ -159,5 +163,5 @@ eval_batch_size: 2048
 valid_metric: MRR@10
 ```
 
-
+Other parameters (including model parameters) are default value. 
 

@@ -71,6 +71,8 @@ eval_setting: TO_LS,full
 training_neg_sample_num: 0
 ```
 
+Other parameters (including model parameters) are default value. 
+
 **NOTE :** 
 
 1) For FPMC and TransRec model,  `training_neg_sample_num`  should be  `1` . 
@@ -134,6 +136,8 @@ valid_metric: MRR@10
 eval_setting: TO_LS,full
 training_neg_sample_num: 0
 ```
+
+Other parameters (including model parameters) are default value. 
 
 **NOTE :** 
 
@@ -199,6 +203,8 @@ eval_setting: TO_LS,full
 training_neg_sample_num: 0
 ```
 
+Other parameters (including model parameters) are default value. 
+
 **NOTE :** 
 
 1) For FPMC and TransRec model,  `training_neg_sample_num`  should be  `1` . 
@@ -208,7 +214,7 @@ training_neg_sample_num: 0
 ```
 load_col:
     inter: [session_id, item_id, timestamp]
-    item: [item_id, item_category]
+ 	item: [item_id, item_category]
 ```
 
 

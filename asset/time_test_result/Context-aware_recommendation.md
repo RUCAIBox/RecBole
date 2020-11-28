@@ -2,11 +2,11 @@
 
 ### Datasets information:
 
-| Dataset | #Interaction | #Feature Field                                               | #Feature |
-| ------- | ------------: | ------------------------------------------------------------ | --------: |
-| ml-1m   | 1,000,209    | item: [ release_year, genre]  user: [ age, gender, occupation] | 134      |
-| Criteo  | 2,292,530    | inter:[I1-I13, C1-C26]                                       | 2572192  |
-| Avazu   | 4,218,938    | inter: [ C1, banner_pos, site_id,  site_domain, site_category,  app_id, app_domain, app_category,  device_id, device_ip,  device_model, device_type,  device_conn_type, C14, C15,  C16, C17, C18, C19, C20, C21] | 1326631  |
+| Dataset | #Interaction | #Feature Field | #Feature |
+| ------- | ------------: | --------------: | --------: |
+| ml-1m   | 1,000,209    | 5              | 134      |
+| Criteo  | 2,292,530    | 39             | 2572192  |
+| Avazu   | 4,218,938    | 21             | 1326631  |
 
 ### Device information
 
@@ -68,6 +68,8 @@ valid_metric: AUC
 metrics: ['AUC', 'LogLoss']
 ```
 
+Other parameters (including model parameters) are default value. 
+
 ### 2）Criteo dataset:
 
 #### Time and memory cost on Criteo dataset:
@@ -124,6 +126,8 @@ valid_metric: AUC
 metrics: ['AUC', 'LogLoss']
 ```
 
+Other parameters (including model parameters) are default value. 
+
 ### 3）Avazu dataset:
 
 #### Time and memory cost on Avazu dataset:
@@ -175,7 +179,7 @@ valid_metric: AUC
 metrics: ['AUC', 'LogLoss']
 ```
 
-
+Other parameters (including model parameters) are default value. 
 
 
 

@@ -64,7 +64,7 @@ eval_batch_size: 2048
 valid_metric: MRR@10
 ```
 
-Oher parameters (including model parameters) are default value. 
+Other parameters (including model parameters) are default value. 
 
 ### 2）Netflix dataset:
 
@@ -114,7 +114,7 @@ eval_batch_size: 2048
 valid_metric: MRR@10
 ```
 
-Oher parameters (including model parameters) are default value. 
+Other parameters (including model parameters) are default value. 
 
 ### 3) Yelp dataset:
 
@@ -163,7 +163,7 @@ eval_batch_size: 2048
 valid_metric: MRR@10
 ```
 
-Oher parameters (including model parameters) are default value. 
+Other parameters (including model parameters) are default value. 
 
 
 
