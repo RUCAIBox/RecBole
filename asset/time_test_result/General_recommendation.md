@@ -64,6 +64,8 @@ eval_batch_size: 2048
 valid_metric: MRR@10
 ```
 
+Oher parameters (including model parameters) are default value. 
+
 ### 2）Netflix dataset:
 
 #### Time and memory cost on Netflix dataset:
@@ -112,6 +114,8 @@ eval_batch_size: 2048
 valid_metric: MRR@10
 ```
 
+Oher parameters (including model parameters) are default value. 
+
 ### 3) Yelp dataset:
 
 #### Time and memory cost on Yelp dataset:
@@ -158,6 +162,11 @@ train_batch_size: 2048
 eval_batch_size: 2048
 valid_metric: MRR@10
 ```
+
+Oher parameters (including model parameters) are default value. 
+
+
+
 
 
 
