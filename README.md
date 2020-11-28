@@ -159,6 +159,8 @@ We constructed preliminary experiments to test the time and memory cost on three
 
 * [General recommendation models](asset/time_test_result/General_recommendation.md)<br>
 * [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)<br>
+* [Context-aware recommendation models](asset/time_test_result/Context-aware_recommendation.md)<br>
+* [Knowledge-based recommendation models](asset/time_test_result/Knowledge-based_recommendation.md)<br>
 
 NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library (based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. We will keep improving our implementations, and update these test results.
 
