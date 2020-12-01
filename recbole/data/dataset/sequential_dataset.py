@@ -75,7 +75,7 @@ class SequentialDataset(Dataset):
         last_uid = None
         uid_list, item_list_index, target_index, item_list_length = [], [], [], []
         seq_start = 0
-        for i, uid in enumerate(self.inter_feat[self.uid_field].values):
+        for i, uid in enumerate(self.inter_feat[self.uid_field].numpy()):
             if last_uid != uid:
                 last_uid = uid
                 seq_start = i
@@ -99,7 +99,7 @@ class SequentialDataset(Dataset):
             raise ValueError('leave one out strategy require a group field')
 
         self.prepare_data_augmentation()
-        grouped_index = pd.DataFrame(self.uid_list).groupby(by=0).groups.values()
+        grouped_index = self._grouped_index(self.uid_list)
         next_index = self._split_index_by_leave_one_out(grouped_index, leave_one_num)
         next_ds = []
         for index in next_index:

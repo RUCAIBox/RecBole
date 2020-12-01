@@ -15,6 +15,7 @@ recbole.sampler
 
 import copy
 import numpy as np
+import torch
 
 
 class AbstractSampler(object):
@@ -99,7 +100,7 @@ class AbstractSampler(object):
             used_ids (np.ndarray): Used ids. index is key_id, and element is a set of value_ids.
 
         Returns:
-            np.ndarray: Sampled value_ids.
+            torch.tensor: Sampled value_ids.
             value_ids[0], value_ids[len(key_ids)], value_ids[len(key_ids) * 2], ..., value_id[len(key_ids) * (num - 1)]
             is sampled for key_ids[0];
             value_ids[1], value_ids[len(key_ids) + 1], value_ids[len(key_ids) * 2 + 1], ...,
@@ -141,7 +142,7 @@ class AbstractSampler(object):
                 check_list = np.array([i for i, used, v in
                                        zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
                                        if v in used])
-        return value_ids
+        return torch.tensor(value_ids)
 
 
 class Sampler(AbstractSampler):
@@ -187,7 +188,7 @@ class Sampler(AbstractSampler):
         elif self.distribution == 'popularity':
             random_item_list = []
             for dataset in self.datasets:
-                random_item_list.extend(dataset.inter_feat[self.iid_field].values)
+                random_item_list.extend(dataset.inter_feat[self.iid_field].numpy())
             return random_item_list
         else:
             raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
@@ -202,7 +203,7 @@ class Sampler(AbstractSampler):
         last = [set() for i in range(self.n_users)]
         for phase, dataset in zip(self.phases, self.datasets):
             cur = np.array([set(s) for s in last])
-            for uid, iid in dataset.inter_feat[[self.uid_field, self.iid_field]].values:
+            for uid, iid in zip(dataset.inter_feat[self.uid_field].numpy(), dataset.inter_feat[self.iid_field].numpy()):
                 cur[uid].add(iid)
             last = used_item_id[phase] = cur
         return used_item_id
@@ -232,7 +233,7 @@ class Sampler(AbstractSampler):
             num (int): Number of sampled item_ids for each user_id.
 
         Returns:
-            np.ndarray: Sampled item_ids.
+            torch.tensor: Sampled item_ids.
             item_ids[0], item_ids[len(user_ids)], item_ids[len(user_ids) * 2], ..., item_id[len(user_ids) * (num - 1)]
             is sampled for user_ids[0];
             item_ids[1], item_ids[len(user_ids) + 1], item_ids[len(user_ids) * 2 + 1], ...,
@@ -272,7 +273,7 @@ class KGSampler(AbstractSampler):
             np.ndarray or list: Random list of entity_id.
         """
         if self.distribution == 'uniform':
-            return list(range(1, self.entity_num))
+            return np.arange(1, self.entity_num)
         elif self.distribution == 'popularity':
             return list(self.hid_list) + list(self.tid_list)
         else:
@@ -297,7 +298,7 @@ class KGSampler(AbstractSampler):
             num (int, optional): Number of sampled entity_ids for each head_entity_id. Defaults to ``1``.
 
         Returns:
-            np.ndarray: Sampled entity_ids.
+            torch.tensor: Sampled entity_ids.
             entity_ids[0], entity_ids[len(head_entity_ids)], entity_ids[len(head_entity_ids) * 2], ...,
             entity_id[len(head_entity_ids) * (num - 1)] is sampled for head_entity_ids[0];
             entity_ids[1], entity_ids[len(head_entity_ids) + 1], entity_ids[len(head_entity_ids) * 2 + 1], ...,
@@ -343,7 +344,7 @@ class RepeatableSampler(AbstractSampler):
         if self.distribution == 'uniform':
             return np.arange(1, self.n_items)
         elif self.distribution == 'popularity':
-            return self.dataset.inter_feat[self.iid_field].values
+            return self.dataset.inter_feat[self.iid_field].numpy()
         else:
             raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
 
@@ -363,7 +364,7 @@ class RepeatableSampler(AbstractSampler):
             num (int): Number of sampled item_ids for each user_id.
 
         Returns:
-            np.ndarray: Sampled item_ids.
+            torch.tensor: Sampled item_ids.
             item_ids[0], item_ids[len(user_ids)], item_ids[len(user_ids) * 2], ..., item_id[len(user_ids) * (num - 1)]
             is sampled for user_ids[0];
             item_ids[1], item_ids[len(user_ids) + 1], item_ids[len(user_ids) * 2 + 1], ...,

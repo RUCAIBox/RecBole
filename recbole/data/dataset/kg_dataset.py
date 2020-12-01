@@ -382,7 +382,7 @@ class KnowledgeBasedDataset(Dataset):
         Returns:
             numpy.ndarray: List of head entities of kg triplets.
         """
-        return self.kg_feat[self.head_entity_field].values
+        return self.kg_feat[self.head_entity_field].numpy()
 
     @property
     @dlapi.set()
@@ -391,7 +391,7 @@ class KnowledgeBasedDataset(Dataset):
         Returns:
             numpy.ndarray: List of tail entities of kg triplets.
         """
-        return self.kg_feat[self.tail_entity_field].values
+        return self.kg_feat[self.tail_entity_field].numpy()
 
     @property
     @dlapi.set()
@@ -400,7 +400,7 @@ class KnowledgeBasedDataset(Dataset):
         Returns:
             numpy.ndarray: List of relations of kg triplets.
         """
-        return self.kg_feat[self.relation_field].values
+        return self.kg_feat[self.relation_field].numpy()
 
     @property
     @dlapi.set()
@@ -447,11 +447,11 @@ class KnowledgeBasedDataset(Dataset):
     def _create_ckg_sparse_matrix(self, form='coo', show_relation=False):
         user_num = self.user_num
 
-        hids = self.kg_feat[self.head_entity_field].values + user_num
-        tids = self.kg_feat[self.tail_entity_field].values + user_num
+        hids = self.head_entities + user_num
+        tids = self.tail_entities + user_num
 
-        uids = self.inter_feat[self.uid_field].values
-        iids = self.inter_feat[self.iid_field].values + user_num
+        uids = self.inter_feat[self.uid_field].numpy()
+        iids = self.inter_feat[self.iid_field].numpy() + user_num
 
         ui_rel_num = len(uids)
         ui_rel_id = self.relation_num - 1
@@ -463,7 +463,7 @@ class KnowledgeBasedDataset(Dataset):
         if not show_relation:
             data = np.ones(len(src))
         else:
-            kg_rel = self.kg_feat[self.relation_field].values
+            kg_rel = self.kg_feat[self.relation_field].numpy()
             ui_rel = np.full(2 * ui_rel_num, ui_rel_id, dtype=kg_rel.dtype)
             data = np.concatenate([ui_rel, kg_rel])
         node_num = self.entity_num + self.user_num
@@ -478,8 +478,8 @@ class KnowledgeBasedDataset(Dataset):
     def _create_ckg_graph(self, form='dgl', show_relation=False):
         user_num = self.user_num
 
-        kg_tensor = self._dataframe_to_interaction(self.kg_feat)
-        inter_tensor = self._dataframe_to_interaction(self.inter_feat)
+        kg_tensor = self.kg_feat
+        inter_tensor = self.inter_feat
 
         head_entity = kg_tensor[self.head_entity_field] + user_num
         tail_entity = kg_tensor[self.tail_entity_field] + user_num

@@ -112,13 +112,13 @@ class NegSampleByMixin(NegSampleMixin):
             self.times = self.neg_sample_by
             self.sampling_func = self._neg_sample_by_pair_wise_sampling
 
-            neg_prefix = config['NEG_PREFIX']
+            self.neg_prefix = config['NEG_PREFIX']
             iid_field = config['ITEM_ID_FIELD']
-            self.neg_item_id = neg_prefix + iid_field
+            self.neg_item_id = self.neg_prefix + iid_field
 
             columns = [iid_field] if dataset.item_feat is None else dataset.item_feat.columns
             for item_feat_col in columns:
-                neg_item_feat_col = neg_prefix + item_feat_col
+                neg_item_feat_col = self.neg_prefix + item_feat_col
                 dataset.copy_field_property(neg_item_feat_col, item_feat_col)
         else:
             raise ValueError('`neg sampling by` with dl_format [{}] not been implemented'.format(dl_format))

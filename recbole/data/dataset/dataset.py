@@ -77,13 +77,13 @@ class Dataset(object):
 
         time_field (str or None): The same as ``config['TIME_FIELD']``.
 
-        inter_feat (:class:`pandas.DataFrame`): Internal data structure stores the interaction features.
+        inter_feat (:class:`Interaction`): Internal data structure stores the interaction features.
             It's loaded from file ``.inter``.
 
-        user_feat (:class:`pandas.DataFrame` or None): Internal data structure stores the user features.
+        user_feat (:class:`Interaction` or None): Internal data structure stores the user features.
             It's loaded from file ``.user`` if existed.
 
-        item_feat (:class:`pandas.DataFrame` or None): Internal data structure stores the item features.
+        item_feat (:class:`Interaction` or None): Internal data structure stores the item features.
             It's loaded from file ``.item`` if existed.
 
         feat_name_list (list): A list contains all the features' name (:class:`str`), including additional features.
@@ -110,6 +110,7 @@ class Dataset(object):
         self._get_field_from_config()
         self._load_data(self.dataset_name, self.dataset_path)
         self._data_processing()
+        self._change_feat_format()
 
     def _get_preset(self):
         """Initialization useful inside attributes.
@@ -907,6 +908,13 @@ class Dataset(object):
                 split_point = np.cumsum(feat[field].agg(len))[:-1]
                 feat[field] = np.split(new_ids, split_point)
 
+    def _change_feat_format(self):
+        """Change feat format from :class:`pandas.DataFrame` to :class:`Interaction`.
+        """
+        for feat_name in self.feat_name_list:
+            feat = getattr(self, feat_name)
+            setattr(self, feat_name, self._dataframe_to_interaction(feat))
+
     @dlapi.set()
     def num(self, field):
         """Given ``field``, for token-like fields, return the number of different tokens after remapping,
@@ -1087,7 +1095,7 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of users' interaction records.
         """
-        return np.mean(self.inter_feat.groupby(self.uid_field).size())
+        return np.mean(list(Counter(self.inter_feat[self.uid_field]).values()))
 
     @property
     def avg_actions_of_items(self):
@@ -1096,7 +1104,7 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of items' interaction records.
         """
-        return np.mean(self.inter_feat.groupby(self.iid_field).size())
+        return np.mean(list(Counter(self.inter_feat[self.iid_field]).values()))
 
     @property
     def sparsity(self):
@@ -1121,15 +1129,15 @@ class Dataset(object):
         """Given interaction feature, join user/item feature into it.
 
         Args:
-            df (pandas.DataFrame): Interaction feature to be joint.
+            df (Interaction): Interaction feature to be joint.
 
         Returns:
-            pandas.DataFrame: Interaction feature after joining operation.
+            Interaction: Interaction feature after joining operation.
         """
         if self.user_feat is not None and self.uid_field in df:
-            df = pd.merge(df, self.user_feat, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
+            df.update(self.user_feat[df[self.uid_field]])
         if self.item_feat is not None and self.iid_field in df:
-            df = pd.merge(df, self.item_feat, on=self.iid_field, how='left', suffixes=('_inter', '_item'))
+            df.update(self.item_feat[df[self.iid_field]])
         return df
 
     def __getitem__(self, index, join=True):
@@ -1161,7 +1169,7 @@ class Dataset(object):
         whose interaction feature is updated with ``new_inter_feat``, and all the other attributes the same.
 
         Args:
-            new_inter_feat (pandas.DataFrame): The new interaction feature need to be updated.
+            new_inter_feat (Interaction): The new interaction feature need to be updated.
 
         Returns:
             :class:`~Dataset`: the new :class:`~Dataset` object, whose interaction feature has been updated.
@@ -1169,6 +1177,15 @@ class Dataset(object):
         nxt = copy.copy(self)
         nxt.inter_feat = new_inter_feat
         return nxt
+
+    def _grouped_index(self, group_by_list):
+        index = {}
+        for i, key in enumerate(group_by_list):
+            if key not in index:
+                index[key] = [i]
+            else:
+                index[key].append(i)
+        return index.values()
 
     def _calcu_split_ids(self, tot, ratios):
         """Given split ratios, and total number, calculate the number of each part after splitting.
@@ -1210,7 +1227,7 @@ class Dataset(object):
             split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
             next_index = [range(start, end) for start, end in zip([0] + split_ids, split_ids + [tot_cnt])]
         else:
-            grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
+            grouped_inter_feat_index = self._grouped_index(self.inter_feat[group_by].numpy())
             next_index = [[] for i in range(len(ratios))]
             for grouped_index in grouped_inter_feat_index:
                 tot_cnt = len(grouped_index)
@@ -1218,7 +1235,7 @@ class Dataset(object):
                 for index, start, end in zip(next_index, [0] + split_ids, split_ids + [tot_cnt]):
                     index.extend(grouped_index[start: end])
 
-        next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
+        next_df = [self.inter_feat[index] for index in next_index]
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
@@ -1226,7 +1243,7 @@ class Dataset(object):
         """Split indexes by strategy leave one out.
 
         Args:
-            grouped_index (pandas.DataFrameGroupBy): Index to be splitted.
+            grouped_index (list of list of int): Index to be splitted.
             leave_one_num (int): Number of parts whose length is expected to be ``1``.
 
         Returns:
@@ -1259,26 +1276,26 @@ class Dataset(object):
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 
-        grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
+        grouped_inter_feat_index = self._grouped_index(self.inter_feat[group_by].numpy())
         next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num)
-        next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
+        next_df = [self.inter_feat[index] for index in next_index]
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
     def shuffle(self):
         """Shuffle the interaction records inplace.
         """
-        self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
+        self.inter_feat.shuffle()
 
     def sort(self, by, ascending=True):
         """Sort the interaction records inplace.
 
         Args:
-            by (str): Field that as the key in the sorting process.
-            ascending (bool, optional): Results are ascending if ``True``, otherwise descending.
+            by (str or list of str): Field that as the key in the sorting process.
+            ascending (bool or list of bool, optional): Results are ascending if ``True``, otherwise descending.
                 Defaults to ``True``
         """
-        self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True, ignore_index=True)
+        self.inter_feat.sort(by=by, ascending=ascending)
 
     def build(self, eval_setting):
         """Processing dataset according to evaluation setting, including Group, Order and Split.
@@ -1340,22 +1357,22 @@ class Dataset(object):
     def get_user_feature(self):
         """
         Returns:
-            pandas.DataFrame: user features
+            Interaction: user features
         """
         if self.user_feat is None:
             self._check_field('uid_field')
-            return pd.DataFrame({self.uid_field: np.arange(self.user_num)})
+            return Interaction({self.uid_field: torch.arange(self.user_num)})
         else:
             return self.user_feat
 
     def get_item_feature(self):
         """
         Returns:
-            pandas.DataFrame: item features
+            Interaction: item features
         """
         if self.item_feat is None:
             self._check_field('iid_field')
-            return pd.DataFrame({self.iid_field: np.arange(self.item_num)})
+            return Interaction({self.iid_field: torch.arange(self.item_num)})
         else:
             return self.item_feat
 
@@ -1370,7 +1387,7 @@ class Dataset(object):
         else ``matrix[src, tgt] = df_feat[value_field][src, tgt]``.
 
         Args:
-            df_feat (pandas.DataFrame): Feature where src and tgt exist.
+            df_feat (Interaction): Feature where src and tgt exist.
             source_field (str): Source field
             target_field (str): Target field
             form (str, optional): Sparse matrix format. Defaults to ``coo``.
@@ -1380,14 +1397,14 @@ class Dataset(object):
         Returns:
             scipy.sparse: Sparse matrix in form ``coo`` or ``csr``.
         """
-        src = df_feat[source_field].values
-        tgt = df_feat[target_field].values
+        src = df_feat[source_field]
+        tgt = df_feat[target_field]
         if value_field is None:
             data = np.ones(len(df_feat))
         else:
-            if value_field not in df_feat.columns:
+            if value_field not in df_feat:
                 raise ValueError('value_field [{}] should be one of `df_feat`\'s features.'.format(value_field))
-            data = df_feat[value_field].values
+            data = df_feat[value_field]
         mat = coo_matrix((data, (src, tgt)), shape=(self.num(source_field), self.num(target_field)))
 
         if form == 'coo':
@@ -1397,7 +1414,7 @@ class Dataset(object):
         else:
             raise NotImplementedError('sparse matrix format [{}] has not been implemented.'.format(form))
 
-    def _create_graph(self, df_feat, source_field, target_field, form='dgl', value_field=None):
+    def _create_graph(self, tensor_feat, source_field, target_field, form='dgl', value_field=None):
         """Get graph that describe relations between two fields.
 
         Source and target should be token-like fields.
@@ -1408,7 +1425,7 @@ class Dataset(object):
         Currently, we support graph in `DGL`_ and `PyG`_.
 
         Args:
-            df_feat (pandas.DataFrame): Feature where src and tgt exist.
+            tensor_feat (Interaction): Feature where src and tgt exist.
             source_field (str): Source field
             target_field (str): Target field
             form (str, optional): Library of graph data structure. Defaults to ``dgl``.
@@ -1424,7 +1441,6 @@ class Dataset(object):
         .. _PyG:
             https://github.com/rusty1s/pytorch_geometric
         """
-        tensor_feat = self._dataframe_to_interaction(df_feat)
         src = tensor_feat[source_field]
         tgt = tensor_feat[target_field]
 
@@ -1490,13 +1506,13 @@ class Dataset(object):
         """
         self._check_field('uid_field', 'iid_field')
 
-        user_ids, item_ids = self.inter_feat[self.uid_field].values, self.inter_feat[self.iid_field].values
+        user_ids, item_ids = self.inter_feat[self.uid_field].numpy(), self.inter_feat[self.iid_field].numpy()
         if value_field is None:
             values = np.ones(len(self.inter_feat))
         else:
-            if value_field not in self.inter_feat.columns:
+            if value_field not in self.inter_feat:
                 raise ValueError('value_field [{}] should be one of `inter_feat`\'s features.'.format(value_field))
-            values = self.inter_feat[value_field].values
+            values = self.inter_feat[value_field].numpy()
 
         if row == 'user':
             row_num, max_col_num = self.user_num, self.item_num
@@ -1589,8 +1605,7 @@ class Dataset(object):
             raise ValueError('field [{}] not in preload_weight'.format(field))
         return self._preloaded_weight[field]
 
-    @dlapi.set()
-    def _dataframe_to_interaction(self, data, *args):
+    def _dataframe_to_interaction(self, data):
         """Convert :class:`pandas.DataFrame` to :class:`~recbole.data.interaction.Interaction`.
 
         Args:
@@ -1599,37 +1614,18 @@ class Dataset(object):
         Returns:
             :class:`~recbole.data.interaction.Interaction`: Converted data.
         """
-        data = data.to_dict(orient='list')
-        return self._dict_to_interaction(data, *args)
-
-    @dlapi.set()
-    def _dict_to_interaction(self, data, *args):
-        """Convert :class:`dict` to :class:`~recbole.data.interaction.Interaction`.
-
-        Args:
-            data (dict): data to be converted.
-
-        Returns:
-            :class:`~recbole.data.interaction.Interaction`: Converted data.
-        """
+        new_data = {}
         for k in data:
+            value = data[k].values
             ftype = self.field2type[k]
             if ftype == FeatureType.TOKEN:
-                data[k] = torch.LongTensor(data[k])
+                new_data[k] = torch.LongTensor(value)
             elif ftype == FeatureType.FLOAT:
-                data[k] = torch.FloatTensor(data[k])
+                new_data[k] = torch.FloatTensor(value)
             elif ftype == FeatureType.TOKEN_SEQ:
-                if isinstance(data[k], np.ndarray) and data[k].dtype == np.int64:
-                    data[k] = torch.LongTensor(data[k][:, :self.field2seqlen[k]])
-                else:
-                    seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in data[k]]
-                    data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+                seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in value]
+                new_data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == FeatureType.FLOAT_SEQ:
-                if isinstance(data[k], np.ndarray) and data[k].dtype == np.float64:
-                    data[k] = torch.FloatTensor(data[k][:, :self.field2seqlen[k]])
-                else:
-                    seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in data[k]]
-                    data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
-            else:
-                raise ValueError('Illegal ftype [{}]'.format(ftype))
-        return Interaction(data, *args)
+                seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in value]
+                new_data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+        return Interaction(new_data)
