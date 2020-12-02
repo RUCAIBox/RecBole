@@ -16,7 +16,7 @@ import numpy as np
 import torch
 
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
-from recbole.data.dataloader.neg_sample_mixin import NegSampleByMixin
+from recbole.data.dataloader.neg_sample_mixin import NegSampleByMixin, NegSampleMixin
 from recbole.utils import DataLoaderType, FeatureSource, FeatureType, InputType
 
 
@@ -180,7 +180,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         batch_num = max(self.batch_size // self.times, 1)
         new_batch_size = batch_num * self.times
         self.step = batch_num if self.real_time else new_batch_size
-        self.set_batch_size(new_batch_size)
+        self.upgrade_batch_size(new_batch_size)
 
     def _next_batch_data(self):
         cur_index = slice(self.pr, self.pr + self.step)
@@ -245,8 +245,15 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         """
         return np.ones(self.pr_end, dtype=np.int64)
 
+    def get_user_len_list(self):
+        """
+        Returns:
+            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        return np.full(self.pr_end, self.times)
 
-class SequentialFullDataLoader(SequentialDataLoader):
+
+class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
     """:class:`SequentialFullDataLoader` is a sequential-dataloader with full sort. In order to speed up calculation,
     this dataloader would only return then user part of interactions, positive items and used items.
     It would not return negative items.
@@ -265,20 +272,30 @@ class SequentialFullDataLoader(SequentialDataLoader):
 
     def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        super().__init__(config, dataset,
+        super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+
+    def data_preprocess(self):
+        pass
+
+    def _batch_size_adaptation(self):
+        pass
+
+    def _neg_sampling(self, inter_feat):
+        pass
 
     def _shuffle(self):
         self.logger.warnning('SequentialFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
         interaction = super()._next_batch_data()
-        tot_item_num = self.dataset.item_num
         inter_num = len(interaction)
-        pos_idx = used_idx = interaction[self.target_iid_field] + torch.arange(inter_num) * tot_item_num
-        pos_len_list = [1] * inter_num
-        neg_len_list = [tot_item_num - 1] * inter_num
-        return interaction, pos_idx, used_idx, pos_len_list, neg_len_list
+        scores_row = torch.arange(inter_num).repeat(2)
+        padding_idx = torch.zeros(inter_num, dtype=torch.int64)
+        positive_idx = interaction[self.target_iid_field]
+        scores_col_after = torch.cat((padding_idx, positive_idx))
+        scores_col_before = torch.cat((positive_idx, padding_idx))
+        return interaction, None, scores_row, scores_col_after, scores_col_before
 
     def get_pos_len_list(self):
         """
@@ -286,3 +303,10 @@ class SequentialFullDataLoader(SequentialDataLoader):
             np.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
         """
         return np.ones(self.pr_end, dtype=np.int64)
+
+    def get_user_len_list(self):
+        """
+        Returns:
+            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        return np.full(len(self.uid_list), self.item_num)
