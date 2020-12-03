@@ -128,7 +128,7 @@ class SequentialDataLoader(AbstractDataLoader):
         new_dict = {
             self.uid_field: uid_list,
             self.item_list_field: np.zeros((new_length, self.max_item_list_len), dtype=np.int64),
-            self.time_list_field: np.zeros((new_length, self.max_item_list_len), dtype=np.int64),
+            self.time_list_field: np.zeros((new_length, self.max_item_list_len)),
             self.target_iid_field: self.dataset.inter_feat[self.iid_field][target_index].values,
             self.target_time_field: self.dataset.inter_feat[self.time_field][target_index].values,
             self.item_list_length_field: item_list_length,
