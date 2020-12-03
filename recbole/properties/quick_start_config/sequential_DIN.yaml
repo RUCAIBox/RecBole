@@ -1,0 +1,3 @@
+eval_setting: TO_LS, uni100
+metrics: ['AUC', 'LogLoss']
+valid_metric: AUC
