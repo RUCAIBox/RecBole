@@ -182,6 +182,8 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         elif self.state == KGDataLoaderState.RS:
             return self.general_dataloader._next_batch_data()
         elif self.state == KGDataLoaderState.RSKG:
+            if self.kg_dataloader.pr >= self.kg_dataloader.pr_end:
+                self.kg_dataloader.pr = 0
             kg_data = self.kg_dataloader._next_batch_data()
             rec_data = self.general_dataloader._next_batch_data()
             rec_data.update(kg_data)
