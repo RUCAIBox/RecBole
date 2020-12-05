@@ -14,12 +14,13 @@ Reference code:
     https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
 """
 
+from logging import getLogger
+
 import torch
 import torch.nn as nn
-from torch.nn.init import normal_
-
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.utils import InputType
+from torch.nn.init import normal_
 
 
 class FISM(GeneralRecommender):
@@ -36,6 +37,8 @@ class FISM(GeneralRecommender):
 
         # load dataset info
         self.LABEL = config['LABEL_FIELD']
+        self.logger = getLogger()
+
         # get all users's history interaction information.the history item 
         # matrix is padding by the maximum number of a user's interactions
         self.history_item_matrix, self.history_lens, self.mask_mat = self.get_history_info(dataset)
@@ -49,6 +52,11 @@ class FISM(GeneralRecommender):
         # split the too large dataset into the specified pieces
         if self.split_to > 0:
             self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
+        else:
+            self.logger.warning('Pay Attetion!! the `split_to` is set to 0. If you catch a OMM error in this case, ' + \
+                                'you need to increase it \n\t\t\tuntil the error disappears. For example, ' + \
+                                'you can append it in the command line such as `--split_to=5`')
+
 
         # define layers and loss
         # construct source and destination item embedding matrix

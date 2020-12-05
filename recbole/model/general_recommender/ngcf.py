@@ -73,7 +73,7 @@ class NGCF(GeneralRecommender):
         super(NGCF, self).__init__(config, dataset)
 
         # load dataset info
-        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
 
         # load parameters info
         self.embedding_size = config['embedding_size']
