@@ -14,6 +14,7 @@ recbole.data.dataloader.sequential_dataloader
 
 import numpy as np
 import torch
+from collections import Iterable
 
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.dataloader.neg_sample_mixin import NegSampleByMixin
@@ -56,6 +57,21 @@ class SequentialDataLoader(AbstractDataLoader):
         self.target_iid_field = self.iid_field
         self.target_time_field = self.time_field
         self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
+
+        for field in dataset.inter_feat:
+            if field != self.iid_field and field != self.time_field:
+                ftype = dataset.field2type[field]
+                setattr(self, f'{field}_list_field', field + list_suffix)
+                if dataset.field2type[field] == FeatureType.TOKEN:
+                    dataset.set_field_property(getattr(self, f'{field}_list_field'), FeatureType.TOKEN_SEQ,
+                                               FeatureSource.INTERACTION,
+                                               self.max_item_list_len)
+                elif dataset.field2type[field] == FeatureType.FLOAT:
+                    dataset.set_field_property(getattr(self, f'{field}_list_field'), FeatureType.FLOAT_SEQ,
+                                               FeatureSource.INTERACTION,
+                                               self.max_item_list_len)
+                else:
+                    raise NotImplementedError('Field with ftype [{}] is not implemented for sequential model'.format(ftype))
 
         dataset.set_field_property(self.item_list_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
                                    self.max_item_list_len)
@@ -136,6 +152,18 @@ class SequentialDataLoader(AbstractDataLoader):
         for field in self.dataset.inter_feat:
             if field != self.iid_field and field != self.time_field:
                 new_dict[field] = self.dataset.inter_feat[field][target_index].values
+                """Add extra field feature for interaction"""
+                ftype = self.dataset.field2type[field]
+                if ftype == FeatureType.TOKEN or ftype == FeatureType.FLOAT:
+                    field_value = self.dataset.inter_feat[field]
+                    dtype = np.int64 if ftype == FeatureType.TOKEN else np.float32
+                    new_dict[getattr(self, f'{field}_list_field')] = np.zeros((new_length, self.max_item_list_len),
+                                                                              dtype=dtype)
+                    for i, (index, length) in enumerate(zip(item_list_index, item_list_length)):
+                        new_dict[getattr(self, f'{field}_list_field')][i][:length] = field_value[index]
+                else:
+                    raise NotImplementedError('Field with ftype [{}] is not implemented for sequential model'.format(ftype))
+
         if self.position_field:
             new_dict[self.position_field] = np.tile(np.arange(self.max_item_list_len), (new_length, 1))
 
