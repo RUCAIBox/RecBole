@@ -58,7 +58,7 @@ class SequentialDataLoader(AbstractDataLoader):
         self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
 
         for field in dataset.inter_feat:
-            if field not in [self.iid_field, self.time_field]:
+            if field not in [self.uid_field, self.iid_field, self.time_field]:
                 ftype = dataset.field2type[field]
                 setattr(self, f'{field}_list_field', field + list_suffix)
                 if dataset.field2type[field] == FeatureType.TOKEN:
@@ -149,7 +149,7 @@ class SequentialDataLoader(AbstractDataLoader):
             self.item_list_length_field: item_list_length,
         }
         for field in self.dataset.inter_feat:
-            if field not in [self.iid_field, self.time_field]:
+            if field not in [self.uid_field, self.iid_field, self.time_field]:
                 new_dict[field] = self.dataset.inter_feat[field][target_index].values
                 """Add extra field feature for interaction"""
                 ftype = self.dataset.field2type[field]
