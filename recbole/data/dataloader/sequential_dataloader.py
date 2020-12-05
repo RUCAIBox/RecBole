@@ -14,7 +14,6 @@ recbole.data.dataloader.sequential_dataloader
 
 import numpy as np
 import torch
-from collections import Iterable
 
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.dataloader.neg_sample_mixin import NegSampleByMixin
