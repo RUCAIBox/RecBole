@@ -58,14 +58,23 @@ class FOSSIL(SequentialRecommender):
         self.apply(self.init_weights)
 
 
-    def inverse_seq_item(self,seq_item):
+    def inverse_seq_item_embedding(self, seq_item_embedding, seq_item_len):
+        """
+        batch_size * seq_len * embedding_size
+        """
+        zeros = torch.zeros_like(seq_item_embedding, dtype=torch.float).to(self.device)
+        # batch_size * seq_len * embedding_size
+        item_embedding_zeros = torch.cat([zeros, seq_item_embedding], dim=1)
+        # batch_size * 2_mul_seq_len * embedding_size
+        embedding_list = list()
+        for i in range(self.order_len):
+            embedding = self.gather_indexes(item_embedding_zeros,
+                                            self.max_seq_length + seq_item_len - self.order_len + i)
+            embedding_list.append(embedding.unsqueeze(1))
+        short_item_embedding = torch.cat(embedding_list, dim=1)
+        # batch_size * short_len * embedding_size
 
-        seq_item=seq_item.numpy()
-        for idx,x in enumerate(seq_item):
-            seq_item[idx]=x[::-1]
-        seq_item=torch.LongTensor(seq_item)
-
-        return seq_item
+        return short_item_embedding
 
 
     def init_weights(self,module):
@@ -76,12 +85,9 @@ class FOSSIL(SequentialRecommender):
 
     def forward(self,seq_item,seq_item_len,user):
 
-        seq_item_value=seq_item
-
-        seq_item=self.inverse_seq_item(seq_item)
         seq_item_embedding=self.item_embedding(seq_item)
 
-        high_order_seq_item_embedding=seq_item_embedding[:,-self.order_len:,:]
+        high_order_seq_item_embedding=self.inverse_seq_item_embedding(seq_item_embedding,seq_item_len)
         # batch_size * order_len * embedding
 
         high_order=self.get_high_order_Markov(high_order_seq_item_embedding,user)
@@ -119,12 +125,13 @@ class FOSSIL(SequentialRecommender):
         :param item_click_times: batch_size
         :return:
         """
-        coeff = torch.pow(seq_item_len.unsqueeze(1), -self.alpha)
+        coeff = torch.pow(seq_item_len.unsqueeze(1), -self.alpha).float()
         # batch_size * 1
         similarity=torch.mul(coeff,seq_item_embedding.sum(dim=1))
         # batch_size * embedding_size
 
         return similarity
+
 
     def calculate_loss(self, interaction):
 
@@ -147,6 +154,7 @@ class FOSSIL(SequentialRecommender):
             loss = self.loss_fct(logits, pos_items)
             return loss
 
+
     def predict(self, interaction):
 
         item_seq = interaction[self.ITEM_SEQ]
@@ -157,6 +165,7 @@ class FOSSIL(SequentialRecommender):
         test_item_emb = self.item_embedding(test_item)
         scores = torch.mul(seq_output, test_item_emb).sum(dim=1)
         return scores
+
 
     def full_sort_predict(self, interaction):
 
