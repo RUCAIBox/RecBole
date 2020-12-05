@@ -10,6 +10,8 @@ RepeatNet
 Reference:
     Pengjie Ren et al. "RepeatNet: A Repeat Aware Neural Recommendation Machine for Session-based Recommendation." in AAAI 2019
 
+Reference code:
+    https://github.com/PengjieRen/RepeatNet.
 
 """
 
@@ -19,6 +21,7 @@ from torch import nn
 from torch.nn.init import xavier_normal_, constant_
 
 from torch.nn import functional as F
+from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
 
 
@@ -29,6 +32,8 @@ class RepeatNet(SequentialRecommender):
     explore module is used for exploring new items for recommendation
 
     """
+
+    input_type=InputType.POINTWISE
 
     def __init__(self,config,dataset):
 
@@ -44,19 +49,22 @@ class RepeatNet(SequentialRecommender):
         self.dropout_prob=config["dropout_prob"]
 
         # define the layers and loss function
-        self.item_matrix = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.gru = nn.GRU(self.embedding_size, self.hidden_size, batch_first=True)
-        self.repeat_explore_mechanism = Repeat_Explore_Mechanism(hidden_size=self.hidden_size,
+        self.item_matrix = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0).to(self.device)
+        self.gru = nn.GRU(self.embedding_size, self.hidden_size, batch_first=True).to(self.device)
+        self.repeat_explore_mechanism = Repeat_Explore_Mechanism(self.device,
+                                                                 hidden_size=self.hidden_size,
                                                                  seq_len=self.max_seq_length,
-                                                                 dropout_prob=self.dropout_prob)
-        self.repeat_recommendation_decoder = Repeat_Recommendation_Decoder(hidden_size=self.hidden_size,
+                                                                 dropout_prob=self.dropout_prob).to(self.device)
+        self.repeat_recommendation_decoder = Repeat_Recommendation_Decoder(self.device,
+                                                                           hidden_size=self.hidden_size,
                                                                            seq_len=self.max_seq_length,
                                                                            num_item=self.n_items,
-                                                                           dropout_prob=self.dropout_prob)
+                                                                           dropout_prob=self.dropout_prob).to(self.device)
         self.explore_recommendation_decoder = Explore_Recommendation_Decoder(hidden_size=self.hidden_size,
                                                                              seq_len=self.max_seq_length,
                                                                              num_item=self.n_items,
-                                                                             dropout_prob=self.dropout_prob)
+                                                                             device=self.device,
+                                                                             dropout_prob=self.dropout_prob).to(self.device)
 
         self.loss_fct=F.nll_loss
 
@@ -74,22 +82,23 @@ class RepeatNet(SequentialRecommender):
                 constant_(module.bias.data, 0)
 
 
-    def forward(self, seq_item):
+    def forward(self, seq_item,seq_item_len):
 
         batch_seq_item_embedding = self.item_matrix(seq_item)
         # batch_size * seq_len == embedding ==>> batch_size * seq_len * embedding_size
 
-        all_memory, last_memory = self.gru(batch_seq_item_embedding)
-        last_memory = last_memory.squeeze(0)
+        all_memory, _ = self.gru(batch_seq_item_embedding)
+        last_memory = self.gather_indexes(all_memory,seq_item_len-1)
         # all_memory: batch_size * seq_item * hidden_size
         # last_memory: batch_size * hidden_size
+        timeline_mask = (seq_item == 0)
 
         repeat_recommendation_mechanism = self.repeat_explore_mechanism.forward(all_memory=all_memory,
-                                                                                last_memory=last_memory)
+                                                                                last_memory=last_memory,
+                                                                                mask=timeline_mask)
         self.repeat_explore=repeat_recommendation_mechanism
         # batch_size * 2
 
-        timeline_mask = torch.BoolTensor(seq_item == 0).to(self.device)
         repeat_recommendation_decoder = self.repeat_recommendation_decoder.forward(all_memory=all_memory,
                                                                                    last_memory=last_memory,
                                                                                    seq_item=seq_item,
@@ -112,8 +121,9 @@ class RepeatNet(SequentialRecommender):
     def calculate_loss(self, interaction):
 
         seq_item= interaction[self.ITEM_SEQ]
+        seq_item_len=interaction[self.ITEM_SEQ_LEN]
         pos_item=interaction[self.POS_ITEM_ID]
-        prediction = self.forward(seq_item)
+        prediction = self.forward(seq_item,seq_item_len)
         loss = self.loss_fct((prediction + 1e-8).log(), pos_item, ignore_index=0)
         if self.joint_train is True:
             loss+=self.repeat_explore_loss(seq_item,pos_item)
@@ -136,26 +146,28 @@ class RepeatNet(SequentialRecommender):
                 repeat[i]=1
                 explore[i]=0
             i+=1
-        repeat_loss=torch.mul(repeat.unsqueeze(1),torch.log(self.repeat_explore[:,0]+1e-8)).sum()
-        explore_loss=torch.mul(explore.unsqueeze(1),torch.log(self.repeat_explore[:,1]+1e-8)).sum()
+        repeat_loss=torch.mul(repeat.unsqueeze(1),torch.log(self.repeat_explore[:,0]+1e-8)).mean()
+        explore_loss=torch.mul(explore.unsqueeze(1),torch.log(self.repeat_explore[:,1]+1e-8)).mean()
 
-        return -repeat_loss-explore_loss
+        return (-repeat_loss-explore_loss)/2
 
 
     def full_sort_predict(self, interaction):
 
         seq_item=interaction[self.ITEM_SEQ]
-        prediction = self.forward(seq_item)
+        seq_item_len=interaction[self.ITEM_SEQ_LEN]
+        prediction = self.forward(seq_item,seq_item_len)
 
         return prediction
 
 
 class Repeat_Explore_Mechanism(nn.Module):
 
-    def __init__(self, hidden_size=32, seq_len=10,dropout_prob=0.5):
+    def __init__(self, device,hidden_size=32, seq_len=10,dropout_prob=0.5):
         super(Repeat_Explore_Mechanism, self).__init__()
         self.dropout=nn.Dropout(dropout_prob)
         self.hidden_size = hidden_size
+        self.device=device
         self.seq_len = seq_len
         self.Wr = nn.Linear(hidden_size, hidden_size, bias=False)
         self.Ur = nn.Linear(hidden_size, hidden_size, bias=False)
@@ -163,7 +175,7 @@ class Repeat_Explore_Mechanism(nn.Module):
         self.Vre = nn.Linear(hidden_size, 1, bias=False)
         self.Wre = nn.Linear(hidden_size, 2, bias=False)
 
-    def forward(self, all_memory, last_memory):
+    def forward(self, all_memory, last_memory,mask=None):
         """
 
         :param all_memory: batch_size * seq_len * hidden_size
@@ -202,6 +214,7 @@ class Repeat_Explore_Mechanism(nn.Module):
         output = self.tanh(all_memory + last_memory)
 
         output = self.Vre(output)
+        output = nn.Softmax(dim=1)(output)
         output = output.repeat(1, 1, self.hidden_size)
         output = output * all_memory_values
         output = output.sum(dim=1)
@@ -215,10 +228,11 @@ class Repeat_Explore_Mechanism(nn.Module):
 
 class Repeat_Recommendation_Decoder(nn.Module):
 
-    def __init__(self, hidden_size=32, seq_len=10, num_item=40000,dropout_prob=0.5):
+    def __init__(self, device,hidden_size=32, seq_len=10, num_item=40000,dropout_prob=0.5):
         super(Repeat_Recommendation_Decoder, self).__init__()
         self.dropout=nn.Dropout(dropout_prob)
         self.hidden_size = hidden_size
+        self.device=device
         self.seq_len = seq_len
         self.num_item = num_item
         self.Wr = nn.Linear(hidden_size, hidden_size, bias=False)
@@ -227,7 +241,7 @@ class Repeat_Recommendation_Decoder(nn.Module):
         self.Vr = nn.Linear(hidden_size, 1)
 
 
-    def forward(self, all_memory, last_memory, seq_item, mask=None):
+    def forward(self, all_memory, last_memory, seq_item,mask=None):
         """
 
         :param all_memory: batch_size * seq_len * hidden_size
@@ -269,22 +283,23 @@ class Repeat_Recommendation_Decoder(nn.Module):
         output = nn.Softmax(dim=-1)(output)
         output = output.unsqueeze(1)
 
-        map = build_map(seq_item, max=self.num_item)
-        output = torch.matmul(output, map).squeeze(1)
-        output = output.squeeze(1)
+        map = build_map(seq_item,self.device, max=self.num_item).to(self.device)
+        output = torch.matmul(output, map).squeeze(1).to(self.device)
+        output = output.squeeze(1).to(self.device)
 
-        return output
+        return output.to(self.device)
 
 
 class Explore_Recommendation_Decoder(nn.Module):
 
 
-    def __init__(self, hidden_size, seq_len, num_item,dropout_prob=0.5):
+    def __init__(self, hidden_size, seq_len, num_item,device,dropout_prob=0.5):
         super(Explore_Recommendation_Decoder, self).__init__()
         self.dropout=nn.Dropout(dropout_prob)
         self.hidden_size = hidden_size
         self.seq_len = seq_len
         self.num_item = num_item
+        self.device=device
         self.We = nn.Linear(hidden_size, hidden_size)
         self.Ue = nn.Linear(hidden_size, hidden_size)
         self.tanh = nn.Tanh()
@@ -336,15 +351,15 @@ class Explore_Recommendation_Decoder(nn.Module):
         output = torch.cat([output, last_memory_values], dim=1)
         output = self.dropout(self.matrix_for_explore(output))
 
-        map = build_map(seq_item, max=self.num_item)
-        explore_mask = torch.bmm((seq_item > 0).float().unsqueeze(1), map).squeeze(1)
+        map = build_map(seq_item, self.device,max=self.num_item).to(self.device)
+        explore_mask = torch.bmm((seq_item > 0).float().unsqueeze(1), map).squeeze(1).to(self.device)
         output = output.masked_fill(explore_mask.bool(), float('-inf'))
         output = nn.Softmax(1)(output)
 
         return output
 
 
-def build_map(b_map, max=None):
+def build_map(b_map, device,max=None):
     """
     project the b_map to the place where it in should be
     like this:
@@ -366,7 +381,7 @@ def build_map(b_map, max=None):
     if max is None:
         max = b_map.max() + 1
     if torch.cuda.is_available():
-        b_map_ = torch.cuda.FloatTensor(batch_size, b_len, max).fill_(0)
+        b_map_ = torch.FloatTensor(batch_size, b_len, max).fill_(0).to(device)
     else:
         b_map_ = torch.zeros(batch_size, b_len, max)
     b_map_.scatter_(2, b_map.unsqueeze(2), 1.)
