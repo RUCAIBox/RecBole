@@ -1,0 +1,4 @@
+learning_rate choice [0.001,0.0003]
+embedding_size choice [64]
+short_item_length choice [1,2,4,5]
+reg_weight ['[0.0,0.0]','[0.01,0.0001]']
