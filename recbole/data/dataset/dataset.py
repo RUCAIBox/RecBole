@@ -133,6 +133,10 @@ class Dataset(object):
         self.label_field = self.config['LABEL_FIELD']
         self.time_field = self.config['TIME_FIELD']
 
+        if (self.uid_field is None) ^ (self.iid_field is None):
+            raise ValueError('USER_ID_FIELD and ITEM_ID_FIELD need to be set at the same time '
+                             'or not set at the same time.')
+
         self.logger.debug('uid_field: {}'.format(self.uid_field))
         self.logger.debug('iid_field: {}'.format(self.iid_field))
 
@@ -514,7 +518,7 @@ class Dataset(object):
         For fields with type :obj:`~recbole.utils.enum_type.FeatureType.FLOAT`, missing value will be filled by
         the average of original data.
 
-        For sequence features, missing value will be filled by ``[0]``. 
+        For sequence features, missing value will be filled by ``[0]``.
         """
         self.logger.debug('Filling nan')
 
@@ -632,16 +636,34 @@ class Dataset(object):
             Lower bound is also called k-core filtering, which means this method will filter loops
             until all the users and items has at least k interactions.
         """
+        if self.uid_field is None or self.iid_field is None:
+            return
+
+        max_user_inter_num = self.config['max_user_inter_num']
+        min_user_inter_num = self.config['min_user_inter_num']
+        max_item_inter_num = self.config['max_item_inter_num']
+        min_item_inter_num = self.config['min_item_inter_num']
+
+        if max_user_inter_num is None and min_user_inter_num is None:
+            user_inter_num = Counter()
+        else:
+            user_inter_num = Counter(self.inter_feat[self.uid_field].values)
+
+        if max_item_inter_num is None and min_item_inter_num is None:
+            item_inter_num = Counter()
+        else:
+            item_inter_num = Counter(self.inter_feat[self.iid_field].values)
+
         while True:
             ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field, feat=self.user_feat,
-                                                           max_num=self.config['max_user_inter_num'],
-                                                           min_num=self.config['min_user_inter_num'])
+                                                           inter_num=user_inter_num,
+                                                           max_num=max_user_inter_num, min_num=min_user_inter_num)
             ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field, feat=self.item_feat,
-                                                           max_num=self.config['max_item_inter_num'],
-                                                           min_num=self.config['min_item_inter_num'])
+                                                           inter_num=item_inter_num,
+                                                           max_num=max_item_inter_num, min_num=min_item_inter_num)
 
             if len(ban_users) == 0 and len(ban_items) == 0:
-                return
+                break
 
             if self.user_feat is not None:
                 dropped_user = self.user_feat[self.uid_field].isin(ban_users)
@@ -652,14 +674,19 @@ class Dataset(object):
                 self.item_feat.drop(self.item_feat.index[dropped_item], inplace=True)
 
             dropped_inter = pd.Series(False, index=self.inter_feat.index)
-            if self.uid_field:
-                dropped_inter |= self.inter_feat[self.uid_field].isin(ban_users)
-            if self.iid_field:
-                dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
-            self.logger.debug('[{}] dropped interactions'.format(len(dropped_inter)))
-            self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
+            user_inter = self.inter_feat[self.uid_field]
+            item_inter = self.inter_feat[self.iid_field]
+            dropped_inter |= user_inter.isin(ban_users)
+            dropped_inter |= item_inter.isin(ban_items)
 
-    def _get_illegal_ids_by_inter_num(self, field, feat, max_num=None, min_num=None):
+            user_inter_num -= Counter(user_inter[dropped_inter].values)
+            item_inter_num -= Counter(item_inter[dropped_inter].values)
+
+            dropped_index = self.inter_feat.index[dropped_inter]
+            self.logger.debug('[{}] dropped interactions'.format(len(dropped_index)))
+            self.inter_feat.drop(dropped_index, inplace=True)
+
+    def _get_illegal_ids_by_inter_num(self, field, feat, inter_num, max_num=None, min_num=None):
         """Given inter feat, return illegal ids, whose inter num out of [min_num, max_num]
 
         Args:
@@ -675,16 +702,9 @@ class Dataset(object):
             field, max_num, min_num
         ))
 
-        if field is None:
-            return set()
-        if max_num is None and min_num is None:
-            return set()
-
         max_num = max_num or np.inf
         min_num = min_num or -1
 
-        ids = self.inter_feat[field].values
-        inter_num = Counter(ids)
         ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
 
         if feat is not None:
