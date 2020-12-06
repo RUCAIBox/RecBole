@@ -353,7 +353,7 @@ class KnowledgeBasedDataset(Dataset):
         item_tokens = self._get_rec_item_token()
         super()._remap_ID_all()
         self._sort_remaped_entities(item_tokens)
-        self.field2id_token[self.relation_field].append('[UI-Relation]')
+        self.field2id_token[self.relation_field] = np.append(self.field2id_token[self.relation_field], '[UI-Relation]')
 
     @property
     @dlapi.set()
