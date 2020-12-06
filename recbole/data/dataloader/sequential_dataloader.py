@@ -51,22 +51,25 @@ class SequentialDataLoader(AbstractDataLoader):
         self.max_item_list_len = config['MAX_ITEM_LIST_LENGTH']
 
         list_suffix = config['LIST_SUFFIX']
-        self.item_list_field = self.iid_field + list_suffix
-        self.time_list_field = self.time_field + list_suffix
-        self.position_field = config['POSITION_FIELD']
-        self.target_iid_field = self.iid_field
-        self.target_time_field = self.time_field
-        self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
+        for field in dataset.inter_feat:
+            if field != self.uid_field:
+                list_field = field + list_suffix
+                setattr(self, f'{field}_list_field', list_field)
+                ftype = dataset.field2type[field]
 
-        dataset.set_field_property(self.item_list_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
-                                   self.max_item_list_len)
-        dataset.set_field_property(self.time_list_field, FeatureType.FLOAT_SEQ, FeatureSource.INTERACTION,
-                                   self.max_item_list_len)
-        if self.position_field:
-            dataset.set_field_property(self.position_field, FeatureType.TOKEN_SEQ, FeatureSource.INTERACTION,
-                                       self.max_item_list_len)
-        dataset.set_field_property(self.target_iid_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
-        dataset.set_field_property(self.target_time_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
+                if ftype in [FeatureType.TOKEN, FeatureType.TOKEN_SEQ]:
+                    list_ftype = FeatureType.TOKEN_SEQ
+                else:
+                    list_ftype = FeatureType.FLOAT_SEQ
+
+                if ftype in [FeatureType.TOKEN_SEQ, FeatureType.FLOAT_SEQ]:
+                    list_len = (self.max_item_list_len, dataset.field2seqlen[field])
+                else:
+                    list_len = self.max_item_list_len
+
+                dataset.set_field_property(list_field, list_ftype, FeatureSource.INTERACTION, list_len)
+
+        self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
         dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
 
         self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
@@ -79,8 +82,7 @@ class SequentialDataLoader(AbstractDataLoader):
     def data_preprocess(self):
         """Do data augmentation before training/evaluation.
         """
-        self.pre_processed_data = self.augmentation(self.uid_list, self.item_list_field,
-                                                    self.target_index, self.item_list_length)
+        self.pre_processed_data = self.augmentation(self.item_list_index, self.target_index, self.item_list_length)
 
     @property
     def pr_end(self):
@@ -103,19 +105,17 @@ class SequentialDataLoader(AbstractDataLoader):
 
     def _get_processed_data(self, index):
         if self.real_time:
-            cur_data = self.augmentation(self.uid_list[index],
-                                         self.item_list_index[index],
+            cur_data = self.augmentation(self.item_list_index[index],
                                          self.target_index[index],
                                          self.item_list_length[index])
         else:
             cur_data = self.pre_processed_data[index]
         return cur_data
 
-    def augmentation(self, uid_list, item_list_index, target_index, item_list_length):
+    def augmentation(self, item_list_index, target_index, item_list_length):
         """Data augmentation.
 
         Args:
-            uid_list (np.ndarray): user id list.
             item_list_index (np.ndarray): the index of history items list in interaction.
             target_index (np.ndarray): the index of items to be predicted in interaction.
             item_list_length (np.ndarray): history list length.
@@ -126,17 +126,22 @@ class SequentialDataLoader(AbstractDataLoader):
         new_length = len(item_list_index)
         new_data = self.dataset.inter_feat[target_index]
         new_dict = {
-            self.item_list_field: torch.zeros((new_length, self.max_item_list_len), dtype=torch.int64),
-            self.time_list_field: torch.zeros((new_length, self.max_item_list_len)),
             self.item_list_length_field: torch.tensor(item_list_length),
         }
-        if self.position_field:
-            new_dict[self.position_field] = torch.arange(self.max_item_list_len).repeat(new_length).view(new_length, -1)
-        iid_value = self.dataset.inter_feat[self.iid_field]
-        time_value = self.dataset.inter_feat[self.time_field]
-        for i, (index, length) in enumerate(zip(item_list_index, item_list_length)):
-            new_dict[self.item_list_field][i][:length] = iid_value[index]
-            new_dict[self.time_list_field][i][:length] = time_value[index]
+
+        for field in self.dataset.inter_feat:
+            if field != self.uid_field:
+                list_field = getattr(self, f'{field}_list_field')
+                list_len = self.dataset.field2seqlen[list_field]
+                shape = (new_length, list_len) if isinstance(list_len, int) else (new_length, ) + list_len
+                list_ftype = self.dataset.field2type[list_field]
+                dtype = torch.int64 if list_ftype in [FeatureType.TOKEN, FeatureType.TOKEN_SEQ] else torch.float64
+                new_dict[list_field] = torch.zeros(shape, dtype=dtype)
+
+                value = self.dataset.inter_feat[field]
+                for i, (index, length) in enumerate(zip(item_list_index, item_list_length)):
+                    new_dict[list_field][i][:length] = value[index]
+
         new_data.update(Interaction(new_dict))
         return new_data
 
@@ -261,7 +266,7 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
         inter_num = len(interaction)
         scores_row = torch.arange(inter_num).repeat(2)
         padding_idx = torch.zeros(inter_num, dtype=torch.int64)
-        positive_idx = interaction[self.target_iid_field]
+        positive_idx = interaction[self.iid_field]
         scores_col_after = torch.cat((padding_idx, positive_idx))
         scores_col_before = torch.cat((positive_idx, padding_idx))
         return interaction, None, scores_row, scores_col_after, scores_col_before
@@ -278,4 +283,4 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
         Returns:
             np.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
-        return np.full(len(self.uid_list), self.item_num)
+        return np.full(self.pr_end, self.item_num)
