@@ -1,3 +1,58 @@
-dataset: ml-100k
+dataset: test
 epochs: 1
 state: ERROR
+data_path: tests/test_data/
+
+# Atomic File Format
+field_separator: "\t"
+seq_separator: " "
+
+# Common Features
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: item_id
+RATING_FIELD: rating
+TIME_FIELD: timestamp
+seq_len: ~
+# Label for Point-wise DataLoader
+LABEL_FIELD: label
+# NegSample Prefix for Pair-wise DataLoader
+NEG_PREFIX: neg_
+# Sequential Model Needed
+ITEM_LIST_LENGTH_FIELD: item_length
+LIST_SUFFIX: _list
+MAX_ITEM_LIST_LENGTH: 50
+POSITION_FIELD: position_id
+# Knowledge-based Model Needed
+HEAD_ENTITY_ID_FIELD: head_id
+TAIL_ENTITY_ID_FIELD: tail_id
+RELATION_ID_FIELD: relation_id
+ENTITY_ID_FIELD: entity_id
+
+# Selectively Loading
+load_col:
+    inter: [user_id, item_id, rating, timestamp, label]
+    user: [user_id, age, gender, occupation]
+    item: [item_id, movie_title, release_year, class]
+    link: [item_id, entity_id]
+    kg: [head_id, relation_id, tail_id]
+
+unload_col: ~
+
+# Filtering
+max_user_inter_num: ~
+min_user_inter_num: ~
+max_item_inter_num: ~
+min_item_inter_num: ~
+lowest_val: ~
+highest_val: ~
+equal_val: ~
+not_equal_val: ~
+drop_filter_field : False
+
+# Preprocessing
+fields_in_same_space: ~
+fill_nan: True
+preload_weight: ~
+drop_preload_weight: True
+normalize_field: ~
+normalize_all: True

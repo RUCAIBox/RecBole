@@ -65,6 +65,10 @@ class NAIS(GeneralRecommender):
         if self.split_to > 0:
             self.logger.info('split the n_items to {} pieces'.format(self.split_to))
             self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
+        else:
+            self.logger.warning('Pay Attetion!! the `split_to` is set to 0. If you catch a OMM error in this case, ' + \
+                                'you need to increase it \n\t\t\tuntil the error disappears. For example, ' + \
+                                'you can append it in the command line such as `--split_to=5`')
 
         # define layers and loss
         # construct source and destination item embedding matrix

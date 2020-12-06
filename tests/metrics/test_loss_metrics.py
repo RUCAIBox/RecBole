@@ -1,3 +1,9 @@
+# -*- encoding: utf-8 -*-
+# @Time    :   2020/11/1
+# @Author  :   Kaiyuan Li
+# @email   :   tsotfsk@outlook.com
+
+
 import os
 import sys
 import unittest
@@ -21,7 +27,7 @@ def get_result(name, case=0):
                 getattr(TestCases, f'preds_{case}'))
 
 
-class TestLossMetrics(unittest.TestCases):
+class TestLossMetrics(unittest.TestCase):
     def test_auc(self):
         name = 'auc'
         self.assertEqual(get_result(name, case=0), 0)
