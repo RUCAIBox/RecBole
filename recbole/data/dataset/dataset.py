@@ -692,6 +692,7 @@ class Dataset(object):
         Args:
             field (str): field name of user_id or item_id.
             feat (pandas.DataFrame): interaction feature.
+            inter_num (Counter): interaction number counter.
             max_num (int, optional): max number of interaction. Defaults to ``None``.
             min_num (int, optional): min number of interaction. Defaults to ``None``.
 
