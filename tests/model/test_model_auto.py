@@ -211,12 +211,12 @@ class TestContextRecommender(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
 
-    # def test_din(self):
-    #     config_dict = {
-    #         'model': 'DIN',
-    #     }
-    #     objective_function(config_dict=config_dict,
-    #                        config_file_list=config_file_list, saved=False)
+    def test_din(self):
+        config_dict = {
+            'model': 'DIN',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
 
 
 class TestSequentialRecommender(unittest.TestCase):

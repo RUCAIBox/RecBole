@@ -73,7 +73,7 @@ class NGCF(GeneralRecommender):
         super(NGCF, self).__init__(config, dataset)
 
         # load dataset info
-        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
 
         # load parameters info
         self.embedding_size = config['embedding_size']
@@ -117,10 +117,13 @@ class NGCF(GeneralRecommender):
         """
         # build adj matrix
         A = sp.dok_matrix((self.n_users + self.n_items, self.n_users + self.n_items), dtype=np.float32)
-        A = A.tolil()
-        A[:self.n_users, self.n_users:] = self.interaction_matrix
-        A[self.n_users:, :self.n_users] = self.interaction_matrix.transpose()
-        A = A.todok()
+        inter_M = self.interaction_matrix
+        inter_M_t = self.interaction_matrix.transpose()
+        data_dict = dict(zip(zip(inter_M.row, inter_M.col + self.n_users),
+                             [1] * inter_M.nnz))
+        data_dict.update(dict(zip(zip(inter_M_t.row + self.n_users, inter_M_t.col),
+                                  [1] * inter_M_t.nnz)))
+        A._update(data_dict)
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)
         diag = np.array(sumArr.flatten())[0] + 1e-7     # add epsilon to avoid Devide by zero Warning

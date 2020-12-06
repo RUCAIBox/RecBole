@@ -71,7 +71,7 @@ class FwFM(ContextRecommender):
         fea_id = 0
         for names in self.feature_names:
             if names is not None:
-                print(names)
+                self.logger.info(names)
                 for name in names:
                     self.feature2id[name] = fea_id
                     fea_id += 1
