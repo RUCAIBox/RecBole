@@ -27,7 +27,6 @@ class ModelType(Enum):
     SOCIAL = 5
     TRADITIONAL = 6
 
-
 class DataLoaderType(Enum):
     """Type of DataLoaders.
 
