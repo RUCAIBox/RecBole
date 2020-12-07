@@ -88,7 +88,7 @@ Other parameters (including model parameters) are default value.
 | DCN       | 16.25                     | 0.78                        | 1.67            |
 | FNN(DNN)  | 10.03                     | 0.64                        | 1.63            |
 | PNN       | 12.92                     | 0.72                        | 1.85            |
-| FFM       | -                         | -                           | -               |
+| FFM       | -                         | -                           | Out of Memory               |
 | FwFM      | 1175.24                   | 8.90                        | 2.12            |
 | xDeepFM   | 32.27                     | 1.34                        | 2.25            |
 
@@ -147,7 +147,7 @@ Other parameters (including model parameters) are default value.
 | DCN       | 30.78                     | 0.96                        | 2.64            |
 | FNN(DNN)  | 23.53                     | 0.84                        | 2.60            |
 | PNN       | 25.86                     | 0.90                        | 2.68            |
-| FFM       | -                         | -                           | -               |
+| FFM       | -                         | -                           | Out of Memory               |
 | FwFM      | 336.75                    | 7.49                        | 2.63            |
 | xDeepFM   | 54.88                     | 1.45                        | 2.89            |
 
