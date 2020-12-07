@@ -193,7 +193,7 @@ class BERT4Rec(SequentialRecommender):
             multi_hot_embed: [[0 1 0 0 0], [0 0 0 1 0]]
         """
         masked_index = masked_index.view(-1)
-        multi_hot = torch.zeros(masked_index.size(0), max_length).cuda()
+        multi_hot = torch.zeros(masked_index.size(0), max_length, device=masked_index.device)
         multi_hot[torch.arange(masked_index.size(0)), masked_index] = 1
         return multi_hot
 
