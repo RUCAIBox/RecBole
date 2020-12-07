@@ -92,6 +92,7 @@ Other parameters (including model parameters) are default value.
 | FwFM      | 1175.24                   | 8.90                        | 2.12            |
 | xDeepFM   | 32.27                     | 1.34                        | 2.25            |
 
+Note: Criteo dataset is not suitable for DIN model and DSSM model.
 #### Config file of Criteo dataset:
 
 ```
@@ -150,6 +151,7 @@ Other parameters (including model parameters) are default value.
 | FwFM      | 336.75                    | 7.49                        | 2.63            |
 | xDeepFM   | 54.88                     | 1.45                        | 2.89            |
 
+Note: Avazu dataset is not suitable for DIN model and DSSM model.
 #### Config file of Avazu dataset:
 
 ```
