@@ -97,7 +97,7 @@ load_col:
 | FPMC             | 2.98              | 1.08              | 4.08     |
 | STAMP            | 4.27              | 1.04              | 3.88     |
 | Caser            | 17.15             | 1.18              | 3.94    |
-| NextItNet        | - | - | - |
+| NextItNet        | 6150.49 | 947.66 | 4.54 |
 | TransRec         | -                 | -                 | Out of Memory           |
 | S3Rec            | - | - | - |
 | GRU4RecF         | 4.79              | 1.17              | 4.83     |
