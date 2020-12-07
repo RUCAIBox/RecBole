@@ -98,7 +98,7 @@ load_col:
 | STAMP            | 4.27              | 1.04              | 3.88     |
 | Caser            | 17.15             | 1.18              | 3.94    |
 | NextItNet        | - | - | - |
-| TransRec         | -                 | -                 | -           |
+| TransRec         | -                 | -                 | Out of Memory           |
 | S3Rec            | - | - | - |
 | GRU4RecF         | 4.79              | 1.17              | 4.83     |
 | SASRecF          | 8.66              | 1.29              | 5.11     |
@@ -164,12 +164,12 @@ load_col:
 | STAMP            | 42.08             | 2.72              | 7.77        |
 | Caser            | 147.15            | 2.89              | 7.87        |
 | NextItNet        |                  45019.38 |                     1670.76 |            8.44 |
-| TransRec         | -                 | -                 | -           |
+| TransRec         | -                 | -                 | Out of Memory           |
 | S3Rec            | -                 | -                 | -           |
-| GRU4RecF         | -                 | -                 | -           |
-| SASRecF          | -                 | -                 | -           |
+| GRU4RecF         | -                 | -                 | Out of Memory           |
+| SASRecF          | -                 | -                 | Out of Memory           |
 | BERT4Rec         | 193.74            | 8.43              | 16.57       |
-| FDSA             | -                 | -                 | -           |
+| FDSA             | -                 | -                 | Out of Memory           |
 | SRGNN            | 825.11            | 33.20             | 7.90        |
 | GCSAN            | 837.23            | 33.00             | 8.14        |
 | KSR              | - | - | - |
