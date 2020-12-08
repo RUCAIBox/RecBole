@@ -264,6 +264,13 @@ def get_data_loader(name, config, eval_setting):
             return SequentialNegSampleDataLoader
         elif neg_sample_strategy == 'full':
             return SequentialFullDataLoader
+    elif model_type == ModelType.XGBOOST:
+        if neg_sample_strategy == 'none':
+            return XgboostDataLoader
+        elif neg_sample_strategy == 'by':
+            return XgboostNegSampleDataLoader
+        elif neg_sample_strategy == 'full':
+            return XgboostFullDataLoader
     elif model_type == ModelType.KNOWLEDGE:
         if neg_sample_strategy == 'by':
             if name == 'train':
