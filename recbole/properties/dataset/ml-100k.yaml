@@ -37,11 +37,9 @@ lowest_val: ~
 highest_val: ~
 equal_val: ~
 not_equal_val: ~
-drop_filter_field : False
 
 # Preprocessing
 fields_in_same_space: ~
 preload_weight: ~
-drop_preload_weight: True
 normalize_field: ~
 normalize_all: True
