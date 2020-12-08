@@ -90,7 +90,7 @@ class SequentialDataLoader(AbstractDataLoader):
 
     def _shuffle(self):
         if self.real_time:
-            new_index = np.random.permutation(len(self.item_list_index))
+            new_index = torch.randperm(self.pr_end)
             self.uid_list = self.uid_list[new_index]
             self.item_list_index = self.item_list_index[new_index]
             self.target_index = self.target_index[new_index]
