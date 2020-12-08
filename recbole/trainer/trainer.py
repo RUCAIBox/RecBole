@@ -219,7 +219,7 @@ class Trainer(AbstractTrainer):
     def _generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
         train_loss_output = 'epoch %d training [time: %.2fs, ' % (epoch_idx, e_time - s_time)
         if isinstance(losses, tuple):
-            train_loss_output = ', '.join('train_loss%d: %.4f' % (idx + 1, loss) for idx, loss in enumerate(losses))
+            train_loss_output += ', '.join('train_loss%d: %.4f' % (idx + 1, loss) for idx, loss in enumerate(losses))
         else:
             train_loss_output += 'train loss: %.4f' % losses
         return train_loss_output + ']'
