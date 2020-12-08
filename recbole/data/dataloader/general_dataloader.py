@@ -155,7 +155,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
         return self.sampling_func(inter_feat, neg_iids)
 
     def _neg_sample_by_pair_wise_sampling(self, inter_feat, neg_iids):
-        inter_feat.repeat(self.times)
+        inter_feat = inter_feat.repeat(self.times)
         neg_item_feat = Interaction({self.iid_field: neg_iids})
         neg_item_feat = self.dataset.join(neg_item_feat)
         neg_item_feat.add_prefix(self.neg_prefix)
