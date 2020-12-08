@@ -453,11 +453,8 @@ class Dataset(object):
         preload_fields = self.config['preload_weight']
         if preload_fields is None:
             return
-        drop_flag = self.config['drop_preload_weight']
-        if drop_flag is None:
-            drop_flag = True
 
-        self.logger.debug('preload weight matrix for {}, drop=[{}]'.format(preload_fields, drop_flag))
+        self.logger.debug('preload weight matrix for {}'.format(preload_fields))
 
         for preload_id_field in preload_fields:
             preload_value_field = preload_fields[preload_id_field]
@@ -505,9 +502,6 @@ class Dataset(object):
                                                                                                   value_ftype))
                         continue
                     self._preloaded_weight[preload_id_field] = matrix
-                    if drop_flag:
-                        self._del_col(preload_id_field)
-                        self._del_col(preload_value_field)
 
     def _fill_nan(self):
         """Missing value imputation.
@@ -726,9 +720,6 @@ class Dataset(object):
 
         if not filter_field:
             return
-        if self.config['drop_filter_field']:
-            for field in set(filter_field):
-                self._del_col(field)
 
     def _reset_index(self):
         """Reset index for all feats in :attr:`feat_name_list`.
@@ -766,18 +757,19 @@ class Dataset(object):
             filter_field.append(field)
         return filter_field
 
-    def _del_col(self, field):
+    def _del_col(self, feat, field):
         """Delete columns
 
         Args:
-            field (str): field name to be droped.
+            feat (pandas.DataFrame or Interaction): the feat contains field.
+            field (str): field name to be dropped.
         """
         self.logger.debug('delete column [{}]'.format(field))
-        for feat_name in self.feat_name_list:
-            feat = getattr(self, feat_name)
-            if field in feat:
-                feat.drop(columns=field, inplace=True)
-        for dct in [self.field2id_token, self.field2seqlen, self.field2source, self.field2type]:
+        if isinstance(feat, Interaction):
+            feat.drop(column=field)
+        else:
+            feat.drop(columns=field, inplace=True)
+        for dct in [self.field2id_token, self.field2token_id, self.field2seqlen, self.field2source, self.field2type]:
             if field in dct:
                 del dct[field]
 
@@ -807,7 +799,7 @@ class Dataset(object):
                 self.inter_feat[self.label_field] = (self.inter_feat[field] >= value).astype(int)
             else:
                 raise ValueError('field [{}] not in inter_feat'.format(field))
-            self._del_col(field)
+            self._del_col(self.inter_feat, field)
 
     def _get_fields_in_same_space(self):
         """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
@@ -1199,6 +1191,22 @@ class Dataset(object):
         nxt.inter_feat = new_inter_feat
         return nxt
 
+    def _drop_unused_col(self):
+        """Drop columns which are loaded for data preparation but not used in model.
+        """
+        unused_col = self.config['unused_col']
+        if unused_col is None:
+            return
+
+        for feat_name, unused_fields in unused_col.items():
+            feat = getattr(self, feat_name + '_feat')
+            for field in unused_fields:
+                if field not in feat:
+                    self.logger.warning('field [{}] is not in [{}_feat], which can not be set in `unused_col`'.format(
+                        field, feat_name))
+                    continue
+                self._del_col(feat, field)
+
     def _grouped_index(self, group_by_list):
         index = {}
         for i, key in enumerate(group_by_list):
@@ -1256,6 +1264,7 @@ class Dataset(object):
                 for index, start, end in zip(next_index, [0] + split_ids, split_ids + [tot_cnt]):
                     index.extend(grouped_index[start: end])
 
+        self._drop_unused_col()
         next_df = [self.inter_feat[index] for index in next_index]
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
@@ -1299,6 +1308,8 @@ class Dataset(object):
 
         grouped_inter_feat_index = self._grouped_index(self.inter_feat[group_by].numpy())
         next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num)
+
+        self._drop_unused_col()
         next_df = [self.inter_feat[index] for index in next_index]
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds

@@ -101,6 +101,8 @@ class SequentialDataset(Dataset):
         self.prepare_data_augmentation()
         grouped_index = self._grouped_index(self.uid_list)
         next_index = self._split_index_by_leave_one_out(grouped_index, leave_one_num)
+
+        self._drop_unused_col()
         next_ds = []
         for index in next_index:
             ds = copy.copy(self)

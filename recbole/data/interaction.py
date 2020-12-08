@@ -243,6 +243,16 @@ class Interaction(object):
         self.pos_len_list = new_inter.pos_len_list
         self.user_len_list = new_inter.user_len_list
 
+    def drop(self, column):
+        """Drop column in interaction.
+
+        Args:
+            column (str): the column to be dropped.
+        """
+        if column not in self.interaction:
+            raise ValueError('column [{}] is not in [{}]'.format(column, self))
+        del self.interaction[column]
+
     def _reindex(self, index):
         """Reset the index of interaction inplace.
 
