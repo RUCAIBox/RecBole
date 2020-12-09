@@ -264,6 +264,9 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
     def _next_batch_data(self):
         interaction = super()._next_batch_data()
         inter_num = len(interaction)
+        pos_len_list = np.ones(inter_num, dtype=np.int64)
+        user_len_list = np.full(inter_num, self.item_num)
+        interaction.set_additional_info(pos_len_list, user_len_list)
         scores_row = torch.arange(inter_num).repeat(2)
         padding_idx = torch.zeros(inter_num, dtype=torch.int64)
         positive_idx = interaction[self.iid_field]
