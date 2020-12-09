@@ -7,7 +7,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         python-version: [3.8]
@@ -29,9 +29,9 @@ jobs:
     - name: Test metrics
       run: |
         python -m pytest -v tests/metrics
-#     - name: Test evaluation_setting
-#       run: |
-#         python -m pytest -v tests/evaluation_setting
+    - name: Test evaluation_setting
+      run: |
+        python -m pytest -v tests/evaluation_setting
 #     - name: Test model
 #       run: |
 #         python -m pytest -v tests/model/test_model_auto.py
