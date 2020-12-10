@@ -116,6 +116,8 @@ class Trainer(AbstractTrainer):
             optimizer = optim.Adagrad(self.model.parameters(), lr=self.learning_rate)
         elif self.learner.lower() == 'rmsprop':
             optimizer = optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
+        elif self.learner.lower() == 'sparse_adam':
+            optimizer =optim.SparseAdam(self.model.parameters(), lr=self.learning_rate)
         else:
             self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
