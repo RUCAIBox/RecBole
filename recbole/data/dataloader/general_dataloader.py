@@ -244,7 +244,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         swap_idx = torch.tensor(sorted(set(range(positive_item_num)) ^ positive_item))
         self.uid2swap_idx[uid] = swap_idx
         self.uid2rev_swap_idx[uid] = swap_idx.flip(0)
-        self.uid2history_item[uid] = torch.tensor(list(history_item))
+        self.uid2history_item[uid] = torch.tensor(list(history_item), dtype=torch.int64)
 
     def _batch_size_adaptation(self):
         batch_num = max(self.batch_size // self.dataset.item_num, 1)
