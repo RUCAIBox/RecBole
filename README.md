@@ -174,8 +174,8 @@ NOTE: Our test results only gave the approximate time and memory cost of our im
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
+| v0.1.2    | 12/06/2020 |  Basic RecBole |
 | v0.1.1    | 11/03/2020 |  Basic RecBole |
-
 
 ## Contributing
 
