@@ -260,7 +260,12 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
-        cur_data = self._neg_sampling(self.user_df[self.pr: self.pr + self.step])
+        index = slice(self.pr, self.pr + self.step)
+        user_df = self.user_df[index]
+        pos_len_list = self.uid2items_num[self.uid_list[index]]
+        user_len_list = np.full(len(user_df), self.item_num)
+        user_df.set_additional_info(pos_len_list, user_len_list)
+        cur_data = self._neg_sampling(user_df)
         self.pr += self.step
         return cur_data
 
