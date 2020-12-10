@@ -53,6 +53,12 @@ oriented to the GPU environment.
 for testing and comparing recommendation algorithms.
 
 ## RecBole News
+**12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
+
+**11/29/2020**: We constructed preliminary experiments to test the time and memory cost on three
+different-sized datasets and provided the [test result](https://github.com/RUCAIBox/RecBole#time-and-memory-costs)
+for reference.
+
 **11/03/2020**: We release the first version of RecBole **v0.1.1**.
 
 
@@ -153,9 +159,22 @@ If you want to change the models, just run the script by setting additional comm
 python run_recbole.py --model=[model_name]
 ```
 
+
+## Time and Memory Costs
+We constructed preliminary experiments to test the time and memory cost on three different-sized datasets  (small, medium and large). For detailed information, you can click the following links.<br> 
+
+* [General recommendation models](asset/time_test_result/General_recommendation.md)<br>
+* [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)<br>
+* [Context-aware recommendation models](asset/time_test_result/Context-aware_recommendation.md)<br>
+* [Knowledge-based recommendation models](asset/time_test_result/Knowledge-based_recommendation.md)<br>
+
+NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library (based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. We will keep improving our implementations, and update these test results.
+
+
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
+| v0.1.2    | 12/06/2020 |  Basic RecBole |
 | v0.1.1    | 11/03/2020 |  Basic RecBole |
 
 

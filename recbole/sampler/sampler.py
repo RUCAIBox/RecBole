@@ -83,7 +83,7 @@ class AbstractSampler(object):
         key_num = len(key_ids)
         total_num = key_num * num
         value_ids = np.zeros(total_num, dtype=np.int64)
-        used_id_list = np.repeat(used_ids, num)
+        used_id_list = np.tile(used_ids, num)
         for i, used_ids in enumerate(used_id_list):
             cur = self.random()
             while cur in used_ids:

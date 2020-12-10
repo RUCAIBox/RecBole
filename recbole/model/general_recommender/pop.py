@@ -2,7 +2,10 @@
 # @Time   : 2020/8/11 9:57
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
-
+# UPDATE
+# @Time   : 2020/11/9
+# @Author : Zihan Lin
+# @Email  : zhlin@ruc.edu.cn
 r"""
 Pop
 ################################################
@@ -44,8 +47,8 @@ class Pop(GeneralRecommender):
     def predict(self, interaction):
 
         item = interaction[self.ITEM_ID]
-        result = self.item_cnt[item, :] / self.max_cnt
-        return result
+        result = torch.true_divide(self.item_cnt[item, :], self.max_cnt)
+        return result.squeeze()
 
     def full_sort_predict(self, interaction):
         batch_user_num = interaction[self.USER_ID].shape[0]
