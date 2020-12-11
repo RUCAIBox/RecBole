@@ -53,6 +53,8 @@ oriented to the GPU environment.
 for testing and comparing recommendation algorithms.
 
 ## RecBole News
+**12/10/2020**: 我们发布了RecBole小白入门系列中文博客。
+
 **12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
 
 **11/29/2020**: We constructed preliminary experiments to test the time and memory cost on three
@@ -61,6 +63,11 @@ for reference.
 
 **11/03/2020**: We release the first version of RecBole **v0.1.1**.
 
+## Blogs
+
+[RecBole小白入门系列博客（一）——快速安装和简单上手](https://blog.csdn.net/Turinger_2000/article/details/110414642)
+
+[RecBole小白入门系列博客（二） ——General类模型运行流程](https://blog.csdn.net/Turinger_2000/article/details/110395198)
 
 ## Installation
 RecBole works with the following operating systems:
