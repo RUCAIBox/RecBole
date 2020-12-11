@@ -24,7 +24,7 @@ import xgboost as xgb
 from time import time
 from logging import getLogger
 
-from recbole.evaluator import TopKEvaluator, LossEvaluator
+from recbole.evaluator.proxy_evaluator import ProxyEvaluator
 from recbole.data.interaction import Interaction
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
     DataLoaderType, KGDataLoaderState, EvaluatorType
@@ -95,11 +95,7 @@ class Trainer(AbstractTrainer):
         self.train_loss_dict = dict()
         self.optimizer = self._build_optimizer()
         self.eval_type = config['eval_type']
-        if self.eval_type == EvaluatorType.INDIVIDUAL:
-            self.evaluator = LossEvaluator(config)
-        else:
-            self.evaluator = TopKEvaluator(config)
-
+        self.evaluator = ProxyEvaluator(config)
         self.item_tensor = None
         self.tot_item_num = None
 
@@ -348,20 +344,16 @@ class Trainer(AbstractTrainer):
         batch_matrix_list = []
         for batch_idx, batched_data in enumerate(eval_data):
             if eval_data.dl_type == DataLoaderType.FULL:
-                if self.eval_type == EvaluatorType.INDIVIDUAL:
-                    raise ValueError('full sort can\'t use LossEvaluator')
                 interaction, scores = self._full_sort_batch_eval(batched_data)
-                batch_matrix = self.evaluator.collect(interaction, scores, full=True)
             else:
                 interaction = batched_data
                 batch_size = interaction.length
-
                 if batch_size <= self.test_batch_size:
                     scores = self.model.predict(interaction.to(self.device))
                 else:
                     scores = self._spilt_predict(interaction, batch_size)
 
-                batch_matrix = self.evaluator.collect(interaction, scores)
+            batch_matrix = self.evaluator.collect(interaction, scores)
             batch_matrix_list.append(batch_matrix)
         result = self.evaluator.evaluate(batch_matrix_list, eval_data)
 
