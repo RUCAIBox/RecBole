@@ -68,7 +68,7 @@ for reference.
 
 [RecBole小白入门系列博客（一）——快速安装和简单上手](https://blog.csdn.net/Turinger_2000/article/details/110414642)
 
-[RecBole小白入门系列博客（二） ——General类模型运行流程](https://blog.csdn.net/Turinger_2000/article/details/110395198)
+[RecBole小白入门系列博客（二）——General类模型运行流程](https://blog.csdn.net/Turinger_2000/article/details/110395198)
 
 ## Installation
 RecBole works with the following operating systems:
