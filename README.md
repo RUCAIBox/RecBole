@@ -194,6 +194,9 @@ We welcome all contributions from bug fixes to new features and extensions.
 
 We expect all contributions discussed in the issue tracker and going through PRs.
 
+We thank the insightful suggestions from @tszumowski, @rowedenny et.al.
+
+We thank the nice contributions through PRs from @rowedenny et.al.
 
 ## Cite
 If you find RecBole useful for your research or development, please cite the following [paper](https://arxiv.org/abs/2011.01731):
