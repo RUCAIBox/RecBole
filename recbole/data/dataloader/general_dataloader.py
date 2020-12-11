@@ -244,7 +244,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         swap_idx = torch.tensor(sorted(set(range(positive_item_num)) ^ positive_item))
         self.uid2swap_idx[uid] = swap_idx
         self.uid2rev_swap_idx[uid] = swap_idx.flip(0)
-        self.uid2history_item[uid] = torch.tensor(list(history_item))
+        self.uid2history_item[uid] = torch.tensor(list(history_item), dtype=torch.int64)
 
     def _batch_size_adaptation(self):
         batch_num = max(self.batch_size // self.dataset.item_num, 1)
@@ -260,7 +260,12 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
-        cur_data = self._neg_sampling(self.user_df[self.pr: self.pr + self.step])
+        index = slice(self.pr, self.pr + self.step)
+        user_df = self.user_df[index]
+        pos_len_list = self.uid2items_num[self.uid_list[index]]
+        user_len_list = np.full(len(user_df), self.item_num)
+        user_df.set_additional_info(pos_len_list, user_len_list)
+        cur_data = self._neg_sampling(user_df)
         self.pr += self.step
         return cur_data
 
