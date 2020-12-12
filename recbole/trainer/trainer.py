@@ -24,7 +24,7 @@ import xgboost as xgb
 from time import time
 from logging import getLogger
 
-from recbole.evaluator.proxy_evaluator import ProxyEvaluator
+from recbole.evaluator import ProxyEvaluator
 from recbole.data.interaction import Interaction
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
     DataLoaderType, KGDataLoaderState, EvaluatorType
