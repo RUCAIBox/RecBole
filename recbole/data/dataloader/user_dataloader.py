@@ -53,9 +53,9 @@ class UserDataLoader(AbstractDataLoader):
         return len(self.dataset.user_feat)
 
     def _shuffle(self):
-        self.dataset.user_feat = self.dataset.user_feat.sample(frac=1).reset_index(drop=True)
+        self.dataset.user_feat.shuffle()
 
     def _next_batch_data(self):
-        cur_data = self.dataset.user_feat[[self.uid_field]][self.pr: self.pr + self.step]
+        cur_data = self.dataset.user_feat[self.pr: self.pr + self.step]
         self.pr += self.step
-        return self._dataframe_to_interaction(cur_data)
+        return cur_data

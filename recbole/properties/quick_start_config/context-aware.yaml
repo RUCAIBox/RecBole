@@ -1,0 +1,5 @@
+eval_setting: RO_RS
+group_by_user: False
+training_neg_sample_num: 0
+metrics: ['AUC', 'LogLoss']
+valid_metric: AUC

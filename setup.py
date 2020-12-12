@@ -36,7 +36,7 @@ if on_rtd:
 setup(
     name='recbole',
     version=
-    '0.1.1',  # please remember to edit recbole/__init__.py in response, once updating the version
+    '0.1.2',  # please remember to edit recbole/__init__.py in response, once updating the version
     description='A unified, comprehensive and efficient recommendation library',
     long_description=long_description,
     long_description_content_type="text/markdown",

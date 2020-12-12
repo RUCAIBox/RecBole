@@ -53,6 +53,12 @@ oriented to the GPU environment.
 for testing and comparing recommendation algorithms.
 
 ## RecBole News
+**12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
+
+**11/29/2020**: We constructed preliminary experiments to test the time and memory cost on three
+different-sized datasets and provided the [test result](https://github.com/RUCAIBox/RecBole#time-and-memory-costs)
+for reference.
+
 **11/03/2020**: We release the first version of RecBole **v0.1.1**.
 
 
@@ -154,34 +160,22 @@ python run_recbole.py --model=[model_name]
 ```
 
 
-## Time and memory cost of models
-We test our models on three datasets of different size (small size, medium size and large size) to estimate their time and memory cost. You can
-click links to check more information.<br> 
-(**NOTE:**  Our test results only reflect the approximate time and memory cost of models. If you find any error in our result, 
-please let us know.)<br>
+## Time and Memory Costs
+We constructed preliminary experiments to test the time and memory cost on three different-sized datasets  (small, medium and large). For detailed information, you can click the following links.<br> 
 
-* [General recommendation models](time_test_result/General_recommendation.md)<br>
-* [Sequential recommendation models]()<br>
-* [Context-aware recommendation models]()<br>
-* [Knowledge-based recommendation models]()<br>
+* [General recommendation models](asset/time_test_result/General_recommendation.md)<br>
+* [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)<br>
+* [Context-aware recommendation models](asset/time_test_result/Context-aware_recommendation.md)<br>
+* [Knowledge-based recommendation models](asset/time_test_result/Knowledge-based_recommendation.md)<br>
 
-Here is our testing device information:<br>
-```
-GPU:                      TITAN GTX
-Driver Version:           430.64
-CUDA Version:             10.1
-Memory size:              65412748 KB
-CPU:                      Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz
-The number of CPU cores:  8
-Cache size:               11264KB
-```
+NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library (based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. We will keep improving our implementations, and update these test results.
 
 
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
+| v0.1.2    | 12/06/2020 |  Basic RecBole |
 | v0.1.1    | 11/03/2020 |  Basic RecBole |
-
 
 ## Contributing
 

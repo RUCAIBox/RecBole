@@ -201,6 +201,15 @@ class Config(object):
         sample_init_file = os.path.join(current_path, '../properties/dataset/sample.yaml')
         dataset_init_file = os.path.join(current_path, '../properties/dataset/' + dataset + '.yaml')
 
+        context_aware_init = os.path.join(current_path, '../properties/quick_start_config/context-aware.yaml')
+        context_aware_on_ml_100k_init = os.path.join(current_path, '../properties/quick_start_config/context-aware_ml-100k.yaml')
+        DIN_init = os.path.join(current_path, '../properties/quick_start_config/sequential_DIN.yaml')
+        DIN_on_ml_100k_init = os.path.join(current_path, '../properties/quick_start_config/sequential_DIN_on_ml-100k.yaml')
+        sequential_init = os.path.join(current_path, '../properties/quick_start_config/sequential.yaml')
+        special_sequential_on_ml_100k_init = os.path.join(current_path, '../properties/quick_start_config/special_sequential_on_ml-100k.yaml')
+        sequential_embedding_model_init = os.path.join(current_path, '../properties/quick_start_config/sequential_embedding_model.yaml')
+        knowledge_base_init = os.path.join(current_path, '../properties/quick_start_config/knowledge_base.yaml')
+
         self.internal_config_dict = dict()
         for file in [overall_init_file, model_init_file, sample_init_file, dataset_init_file]:
             if os.path.isfile(file):
@@ -215,51 +224,48 @@ class Config(object):
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.CONTEXT:
-            self.internal_config_dict.update({
-                'eval_setting': 'RO_RS',
-                'group_by_user': False,
-                'training_neg_sample_num': 0,
-                'metrics': ['AUC', 'LogLoss'],
-                'valid_metric': 'AUC',
-            })
+            with open(context_aware_init, 'r', encoding='utf-8') as f:
+                config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+                if config_dict is not None:
+                    self.internal_config_dict.update(config_dict)
             if dataset == 'ml-100k':
-                self.internal_config_dict.update({
-                    'threshold': {'rating': 4},
-                    'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                                 'user': ['user_id', 'age', 'gender', 'occupation'],
-                                 'item': ['item_id', 'release_year', 'class']},
-                })
-
+                with open(context_aware_on_ml_100k_init, 'r', encoding='utf-8') as f:
+                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+                    if config_dict is not None:
+                        self.internal_config_dict.update(config_dict)
+    
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
             if model == 'DIN':
-                self.internal_config_dict.update({
-                    'eval_setting': 'TO_LS, uni100',
-                    'metrics': ['AUC', 'LogLoss'],
-                    'valid_metric': 'AUC',
-                })
+                with open(DIN_init, 'r', encoding='utf-8') as f:
+                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+                    if config_dict is not None:
+                        self.internal_config_dict.update(config_dict)
                 if dataset == 'ml-100k':
-                    self.internal_config_dict.update({
-                        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                                     'user': ['user_id', 'age', 'gender', 'occupation'],
-                                     'item': ['item_id', 'release_year']},
-                    })
-
+                    with open(DIN_on_ml_100k_init, 'r', encoding='utf-8') as f:
+                        config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+                        if config_dict is not None:
+                            self.internal_config_dict.update(config_dict)
+            elif model in ['GRU4RecKG','KSR']:
+               with open(sequential_embedding_model_init, 'r', encoding='utf-8') as f:
+                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+                    if config_dict is not None:
+                        self.internal_config_dict.update(config_dict) 
             else:
-                self.internal_config_dict.update({
-                    'eval_setting': 'TO_LS,full',
-                })
+                with open(sequential_init, 'r', encoding='utf-8') as f:
+                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+                    if config_dict is not None:
+                        self.internal_config_dict.update(config_dict)
                 if dataset == 'ml-100k' and model in ['GRU4RecF', 'SASRecF', 'FDSA', 'S3Rec']:
-                    self.internal_config_dict.update({
-                        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                                     'item': ['item_id', 'release_year', 'class']},
-                    })
-
+                    with open(special_sequential_on_ml_100k_init, 'r', encoding='utf-8') as f:
+                        config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+                        if config_dict is not None:
+                            self.internal_config_dict.update(config_dict)
+        
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.KNOWLEDGE:
-            self.internal_config_dict.update({
-                'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                             'kg': ['head_id', 'relation_id', 'tail_id'],
-                             'link': ['item_id', 'entity_id']}
-            })
+            with open(knowledge_base_init, 'r', encoding='utf-8') as f:
+                config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+                if config_dict is not None:
+                    self.internal_config_dict.update(config_dict)
 
     def _get_final_config_dict(self):
         final_config_dict = dict()
