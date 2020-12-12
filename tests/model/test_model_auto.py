@@ -317,6 +317,27 @@ class TestSequentialRecommender(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
 
+    def test_hrm(self):
+        config_dict = {
+            'model': 'HRM',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
+    def test_npe(self):
+        config_dict = {
+            'model': 'NPE',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
+    def test_shan(self):
+        config_dict = {
+            'model': 'SHAN',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
     # def test_fdsa(self):
     #     config_dict = {
     #         'model': 'FDSA',
@@ -569,6 +590,30 @@ class TestSequentialRecommender2(unittest.TestCase):
     def test_stamp(self):
         config_dict = {
             'model': 'STAMP',
+            'loss_type': 'BPR',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
+    def test_hrm(self):
+        config_dict = {
+            'model': 'HRM',
+            'loss_type': 'BPR',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
+    def test_npe(self):
+        config_dict = {
+            'model': 'NPE',
+            'loss_type': 'BPR',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
+    def test_shan(self):
+        config_dict = {
+            'model': 'SHAN',
             'loss_type': 'BPR',
         }
         objective_function(config_dict=config_dict,
