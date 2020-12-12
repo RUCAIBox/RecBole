@@ -290,17 +290,17 @@ class Trainer(AbstractTrainer):
 
     def _full_sort_batch_eval(self, batched_data):
         interaction, history_index, swap_row, swap_col_after, swap_col_before = batched_data
-        batch_size = interaction.length * self.tot_item_num
         try:
             # Note: interaction without item ids
             scores = self.model.full_sort_predict(interaction.to(self.device))
         except NotImplementedError:
-            interaction = interaction.to(self.device).repeat_interleave(self.tot_item_num)
-            interaction.update(self.item_tensor[:batch_size])
+            new_inter = interaction.to(self.device).repeat_interleave(self.tot_item_num)
+            batch_size = len(new_inter)
+            new_inter.update(self.item_tensor[:batch_size])
             if batch_size <= self.test_batch_size:
-                scores = self.model.predict(interaction)
+                scores = self.model.predict(new_inter)
             else:
-                scores = self._spilt_predict(interaction, batch_size)
+                scores = self._spilt_predict(new_inter, batch_size)
 
         scores = scores.view(-1, self.tot_item_num)
         scores[:, 0] = -np.inf
