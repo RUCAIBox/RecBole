@@ -1,0 +1,4 @@
+embedding_size: 64
+short_item_length: 2
+loss_type: "CE"
+reg_weight: [0.01,0.0001]
