@@ -1108,7 +1108,7 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of users' interaction records.
         """
-        return np.mean(list(Counter(self.inter_feat[self.uid_field]).values()))
+        return np.mean(list(Counter(self.inter_feat[self.uid_field].numpy()).values()))
 
     @property
     def avg_actions_of_items(self):
@@ -1117,7 +1117,7 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of items' interaction records.
         """
-        return np.mean(list(Counter(self.inter_feat[self.iid_field]).values()))
+        return np.mean(list(Counter(self.inter_feat[self.iid_field].numpy()).values()))
 
     @property
     def sparsity(self):
