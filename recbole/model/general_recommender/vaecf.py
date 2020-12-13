@@ -42,7 +42,7 @@ class VAECF(GeneralRecommender):
         self.is_vae = config['is_vae']
 
         self.lat_dim = lat_dim
-        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32).toarray()
+        self.interaction_matrix = torch.tensor(dataset.inter_matrix(form='coo').astype(np.float32).toarray(),device=self.device)
 
         if self.is_vae:
 
