@@ -93,38 +93,28 @@ class LINE(GeneralRecommender):
 
     def gen_neg_sample(self,src):
 
-        h = []
         t = []
-        sign = []
 
         for i in range(len(src)):
-            h.append(src[i])
             t.append(self.generate_neg_user(src[i]))
-            sign.append(-1)
 
-        return h,t,sign
+        return src,torch.LongTensor(t).to(self.device)
 
     def forward(self,h,t):
 
-        h = torch.LongTensor(h)
-        t = torch.LongTensor(t)
-
-        h_embedding = self.user_embedding(h.to(self.device))
-        t_embedding = self.item_embedding(t.to(self.device))
+        h_embedding = self.user_embedding(h)
+        t_embedding = self.item_embedding(t)
 
         return torch.sum(h_embedding.mul(t_embedding), dim=1)
 
     def context_forward(self, h, t, field):
 
-        h = torch.LongTensor(h)
-        t = torch.LongTensor(t)
-
         if field == "uu":
-            h_embedding = self.user_embedding(h.to(self.device))
-            t_embedding = self.item_context_embedding(t.to(self.device))
+            h_embedding = self.user_embedding(h)
+            t_embedding = self.item_context_embedding(t)
         else:
-            h_embedding = self.item_embedding(h.to(self.device))
-            t_embedding = self.user_context_embedding(t.to(self.device))
+            h_embedding = self.item_embedding(h)
+            t_embedding = self.user_context_embedding(t)
 
         return torch.sum(h_embedding.mul(t_embedding), dim=1)
 
@@ -141,7 +131,7 @@ class LINE(GeneralRecommender):
             score_pos_con = self.context_forward(user, pos_item, 'uu')
             score_neg_con = self.context_forward(user, neg_item, 'uu')
         else:
-            h,t,sign = self.gen_neg_sample(pos_item)
+            h,t = self.gen_neg_sample(pos_item)
             score_neg = self.forward(t,h)
             score_pos_con = self.context_forward(pos_item, user,'ii')
             score_neg_con = self.context_forward(h, t,'ii')
@@ -168,7 +158,7 @@ class LINE(GeneralRecommender):
         user = interaction[self.USER_ID]
 
         # get user embedding from storage variable
-        u_embeddings = self.user_embedding(torch.LongTensor(user))
+        u_embeddings = self.user_embedding(user)
         i_embedding = self.item_embedding.weight
         # dot with all item embedding to accelerate
         scores = torch.matmul(u_embeddings, i_embedding.transpose(0, 1))
