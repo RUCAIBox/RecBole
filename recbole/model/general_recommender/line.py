@@ -136,14 +136,15 @@ class LINE(GeneralRecommender):
             score_pos_con = self.context_forward(pos_item, user,'ii')
             score_neg_con = self.context_forward(h, t,'ii')
 
+        ones = torch.ones(len(score_pos),device=self.device)
         if self.order == 1:
-            return self.loss_fct(torch.ones(len(score_pos)),score_pos) \
-               + self.loss_fct(-1 * torch.ones(len(score_pos)), score_neg)
+            return self.loss_fct(ones,score_pos) \
+               + self.loss_fct(-1 * ones, score_neg)
         else:
-            return self.loss_fct(torch.ones(len(score_pos)),score_pos) \
-                   + self.loss_fct(-1 * torch.ones(len(score_pos)), score_neg)\
-                   + self.loss_fct(torch.ones(len(score_pos)),score_pos_con)*self.second_order_loss_weight\
-                   + self.loss_fct(-1*torch.ones(len(score_pos)),score_neg_con)*self.second_order_loss_weight
+            return self.loss_fct(ones,score_pos) \
+                   + self.loss_fct(-1 * ones, score_neg)\
+                   + self.loss_fct(ones,score_pos_con)*self.second_order_loss_weight\
+                   + self.loss_fct(-1*ones,score_neg_con)*self.second_order_loss_weight
 
     def predict(self, interaction):
 

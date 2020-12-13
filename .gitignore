@@ -2,6 +2,10 @@
 /saved*
 *.pth
 
+.inter
+.user
+.item
+.DS_Store
 .vscode/
 .idea/
 *.pyc
