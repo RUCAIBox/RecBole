@@ -1,0 +1,14 @@
+# dataset config
+field_separator: "\t"
+seq_separator: ","
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: artist_id
+LABEL_FIELD: label
+NEG_PREFIX: neg_
+load_col:
+  inter: [user_id, artist_id]
+
+# training and evaluation
+epochs: 500
+train_batch_size: 4096
+valid_metric: MRR@10

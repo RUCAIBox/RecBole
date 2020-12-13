@@ -1,0 +1,21 @@
+# dataset config
+field_separator: "\t"
+seq_separator: " "
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: business_id
+RATING_FIELD: stars
+TIME_FIELD: date
+LABEL_FIELD: label
+NEG_PREFIX: neg_
+load_col:
+  inter: [user_id, business_id, stars]
+min_user_inter_num: 15
+min_item_inter_num: 15
+lowest_val:
+  stars: 3
+drop_filter_field: True
+
+# training and evaluation
+epochs: 500
+train_batch_size: 4096
+valid_metric: MRR@10
