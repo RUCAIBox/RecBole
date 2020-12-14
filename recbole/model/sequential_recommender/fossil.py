@@ -9,7 +9,7 @@ FOSSIL
 ################################################
 
 Reference:
-    Ruining He et al. "Fusing Similarity Models with Markov Chains for Sparse Sequential Recommendation." in IEEE 2016
+    Ruining He et al. "Fusing Similarity Models with Markov Chains for Sparse Sequential Recommendation." in ICDM 2016.
 
 
 """
