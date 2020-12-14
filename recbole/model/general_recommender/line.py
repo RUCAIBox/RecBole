@@ -132,7 +132,7 @@ class LINE(GeneralRecommender):
             score_neg_con = self.context_forward(user, neg_item, 'uu')
         else:
             h,t = self.gen_neg_sample(pos_item.cpu())
-            score_neg = self.forward(t,h)
+            score_neg = self.forward(t,pos_item.to(self.device))
             score_pos_con = self.context_forward(pos_item.to(self.device), user,'ii')
             score_neg_con = self.context_forward(h, t,'ii')
 
