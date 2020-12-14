@@ -2,9 +2,9 @@
 /saved*
 *.pth
 
-.inter
-.user
-.item
+*.inter
+*.user
+*.item
 .DS_Store
 .vscode/
 .idea/

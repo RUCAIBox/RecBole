@@ -42,7 +42,8 @@ class VAECF(GeneralRecommender):
         self.is_vae = config['is_vae']
 
         self.lat_dim = lat_dim
-        self.interaction_matrix = torch.tensor(dataset.inter_matrix(form='coo').astype(np.float32).toarray(),device=self.device)
+        # self.interaction_matrix = torch.tensor(dataset.inter_matrix(form='coo').astype(np.float32).toarray(),device=self.device)
+        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
 
         if self.is_vae:
 
@@ -59,6 +60,9 @@ class VAECF(GeneralRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
+
+    def get_rating_matrix(self,id):
+        return torch.tensor(self.interaction_matrix[id.cpu(),:].toarray(),device=self.device)
 
     def mlp_layars(self,layer_dims):
         mlp_modules = []
@@ -96,7 +100,8 @@ class VAECF(GeneralRecommender):
 
         user = interaction[self.USER_ID]
 
-        rating_matrix = torch.tensor(self.interaction_matrix[user, :])
+        # rating_matrix = torch.tensor(self.interaction_matrix[user, :])
+        rating_matrix = self.get_rating_matrix(user)
 
         if self.is_vae:
             z, mu, logvar = self.forward(rating_matrix)
@@ -115,7 +120,9 @@ class VAECF(GeneralRecommender):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
 
-        rating_matrix = self.interaction_matrix[user, :]
+        # rating_matrix = self.interaction_matrix[user, :]
+        rating_matrix = self.get_rating_matrix(user)
+
         if self.is_vae:
             scores, _, _ = self.forward(rating_matrix)
         else:
@@ -126,7 +133,8 @@ class VAECF(GeneralRecommender):
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
 
-        rating_matrix = torch.tensor(self.interaction_matrix[user, :].reshape(-1,self.n_items))
+        # rating_matrix = torch.tensor(self.interaction_matrix[user, :].reshape(-1,self.n_items))
+        rating_matrix = self.get_rating_matrix(user)
         if self.is_vae:
             scores,_,_ = self.forward(rating_matrix)
         else:
