@@ -7,10 +7,8 @@ r"""
 VAECF
 ################################################
 Reference:
-    Jian Tang et al. "LINE: Large-scale Information Network Embedding." in WWW 2015.
+    Dawen Liang et al. "Variational Autoencoders for Collaborative Filtering." in WWW 2018.
 
-Reference code:
-    https://github.com/shenweichen/GraphEmbedding
 """
 
 import torch
@@ -23,12 +21,10 @@ from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
 
 
-
-
 class VAECF(GeneralRecommender):
-    r"""LINE is a graph embedding model.
+    r"""VAECF is a item-based model collaborative filtering model that simultaneously rank all items for user .
 
-    We implement the model with to train users and items embedding for recommendation.
+    We implement the the MultiDAE and MultiVAE model with only user dataloader.
     """
     input_type = InputType.PAIRWISE
 
@@ -108,7 +104,7 @@ class VAECF(GeneralRecommender):
             z = self.forward(rating_matrix)
             kl_loss = 0
 
-        # CE
+        # CE loss
         ce_loss = -(F.log_softmax(z, 1) * rating_matrix).sum(1).mean()
 
         return ce_loss + kl_loss*self.kl_loss_weight

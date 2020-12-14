@@ -33,7 +33,7 @@ class neg_sampling_loss(nn.Module):
 class LINE(GeneralRecommender):
     r"""LINE is a graph embedding model.
 
-    We implement the model with to train users and items embedding for recommendation.
+    We implement the model to train users and items embedding for recommendation.
     """
     input_type = InputType.PAIRWISE
 
@@ -131,9 +131,9 @@ class LINE(GeneralRecommender):
             score_pos_con = self.context_forward(user, pos_item, 'uu')
             score_neg_con = self.context_forward(user, neg_item, 'uu')
         else:
-            h,t = self.gen_neg_sample(pos_item)
+            h,t = self.gen_neg_sample(pos_item.cpu())
             score_neg = self.forward(t,h)
-            score_pos_con = self.context_forward(pos_item, user,'ii')
+            score_pos_con = self.context_forward(pos_item.to(self.device), user,'ii')
             score_neg_con = self.context_forward(h, t,'ii')
 
         ones = torch.ones(len(score_pos),device=self.device)
