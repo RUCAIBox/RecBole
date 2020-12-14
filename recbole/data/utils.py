@@ -235,7 +235,8 @@ def get_data_loader(name, config, eval_setting):
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
     """
     register_table = {
-        'DIN': _get_DIN_data_loader
+        'DIN': _get_DIN_data_loader,
+        "VAECF":_get_VAECF_data_loader
     }
 
     if config['model'] in register_table:
@@ -306,6 +307,28 @@ def _get_DIN_data_loader(name, config, eval_setting):
         return SequentialNegSampleDataLoader
     elif neg_sample_strategy == 'full':
         return SequentialFullDataLoader
+
+def _get_VAECF_data_loader(name, config, eval_setting):
+    """Customized function for DIN to get correct dataloader class.
+
+    Args:
+        name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
+        config (Config): An instance object of Config, used to record parameter information.
+        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+
+    Returns:
+        type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
+    """
+    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    if name=="train":
+        return GeneralUerDataLoader
+    else:
+        if neg_sample_strategy == 'none':
+            return GeneralDataLoader
+        elif neg_sample_strategy == 'by':
+            return GeneralNegSampleDataLoader
+        elif neg_sample_strategy == 'full':
+            return GeneralFullDataLoader
 
 
 class DLFriendlyAPI(object):

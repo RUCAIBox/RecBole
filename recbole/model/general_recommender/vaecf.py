@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/12/8
+# @Time   : 2020/12/14
 # @Author : Yihong Guo
 # @Email  : gyihong@hotmail.com
 
 r"""
-LINE
+VAECF
 ################################################
 Reference:
     Jian Tang et al. "LINE: Large-scale Information Network Embedding." in WWW 2015.
@@ -42,7 +42,6 @@ class VAECF(GeneralRecommender):
         self.is_vae = config['is_vae']
 
         self.lat_dim = lat_dim
-        # self.interaction_matrix = torch.tensor(dataset.inter_matrix(form='coo').astype(np.float32).toarray(),device=self.device)
         self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
 
         if self.is_vae:
@@ -80,7 +79,7 @@ class VAECF(GeneralRecommender):
         else:
             return mu
 
-    def forward(self,rating_matrix):
+    def forward(self, rating_matrix):
 
         h = F.normalize(rating_matrix)
 
@@ -100,7 +99,6 @@ class VAECF(GeneralRecommender):
 
         user = interaction[self.USER_ID]
 
-        # rating_matrix = torch.tensor(self.interaction_matrix[user, :])
         rating_matrix = self.get_rating_matrix(user)
 
         if self.is_vae:
@@ -120,7 +118,6 @@ class VAECF(GeneralRecommender):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
 
-        # rating_matrix = self.interaction_matrix[user, :]
         rating_matrix = self.get_rating_matrix(user)
 
         if self.is_vae:
@@ -133,7 +130,6 @@ class VAECF(GeneralRecommender):
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
 
-        # rating_matrix = torch.tensor(self.interaction_matrix[user, :].reshape(-1,self.n_items))
         rating_matrix = self.get_rating_matrix(user)
         if self.is_vae:
             scores,_,_ = self.forward(rating_matrix)

@@ -296,3 +296,41 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
             np.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
         return np.full(self.pr_end, self.item_num)
+
+class GeneralUerDataLoader(AbstractDataLoader):
+    """:class:`GeneralNegSampleDataLoader` is a general-dataloader with negative sampling.
+    For the result of every batch, we permit that every positive interaction and its negative interaction
+    must be in the same batch. Beside this, when it is in the evaluation stage, and evaluator is topk-like function,
+    we also permit that all the interactions corresponding to each user are in the same batch
+    and positive interactions are before negative interactions.
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        sampler (Sampler): The sampler of dataloader.
+        neg_sample_args (dict): The neg_sample_args of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+    """
+    def __init__(self, config, dataset, sampler, neg_sample_args,
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+        self.uid_field = dataset.uid_field
+        self.iid_field = dataset.iid_field
+        self.uid2index = np.unique(dataset.inter_feat[self.uid_field].numpy())
+
+        super().__init__(config, dataset,batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+
+    @property
+    def pr_end(self):
+        return len(self.uid2index)
+
+    def _shuffle(self):
+        np.random.shuffle(self.uid2index)
+
+    def _next_batch_data(self):
+        cur_data = self.uid2index[self.pr: self.pr + self.step]
+        self.pr += self.step
+        return Interaction({self.uid_field: torch.tensor(cur_data)})
+
