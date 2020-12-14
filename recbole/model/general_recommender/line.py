@@ -91,14 +91,16 @@ class LINE(GeneralRecommender):
 
         return curr
 
-    def gen_neg_sample(self,src):
+    def gen_neg_sample(self,src_):
 
         t = []
+
+        src = src_.cpu()
 
         for i in range(len(src)):
             t.append(self.generate_neg_user(src[i]))
 
-        return src,torch.LongTensor(t).to(self.device)
+        return src_,torch.LongTensor(t).to(self.device)
 
     def forward(self,h,t):
 
@@ -131,9 +133,9 @@ class LINE(GeneralRecommender):
             score_pos_con = self.context_forward(user, pos_item, 'uu')
             score_neg_con = self.context_forward(user, neg_item, 'uu')
         else:
-            h,t = self.gen_neg_sample(pos_item.cpu())
-            score_neg = self.forward(t,pos_item.to(self.device))
-            score_pos_con = self.context_forward(pos_item.to(self.device), user,'ii')
+            h,t = self.gen_neg_sample(pos_item)
+            score_neg = self.forward(t,h)
+            score_pos_con = self.context_forward(h, user,'ii')
             score_neg_con = self.context_forward(h, t,'ii')
 
         ones = torch.ones(len(score_pos),device=self.device)
