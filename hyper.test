@@ -1,4 +1,4 @@
-learning_rate choice [0.003,0.002,0.001,]
-embedding_size choice [64]
+learning_rate choice [0.004,0.003,0.002]
+dropout_prob choice [0.2,0.4,0.6]
 train_batch_size choice [2048]
-second_order_loss_weight choice [0.3,0.6,0.9]
+kl_loss_weight choice [0.1,0.2,0.3]
