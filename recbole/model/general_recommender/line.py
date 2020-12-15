@@ -43,6 +43,7 @@ class LINE(GeneralRecommender):
         self.embedding_size = config['embedding_size']
         self.order = config['order']
         self.second_order_loss_weight = config['second_order_loss_weight']
+        self.training_neg_sample_num = config['training_neg_sample_num']
 
 
         self.interaction_feat = dataset.dataset.inter_feat
@@ -98,7 +99,8 @@ class LINE(GeneralRecommender):
         src = src_.cpu()
 
         for i in range(len(src)):
-            t.append(self.generate_neg_user(src[i]))
+            for j in range(self.training_neg_sample_num):
+                t.append(self.generate_neg_user(src[i]))
 
         return src_,torch.LongTensor(t).to(self.device)
 
@@ -139,14 +141,15 @@ class LINE(GeneralRecommender):
             score_neg_con = self.context_forward(h, t,'ii')
 
         ones = torch.ones(len(score_pos),device=self.device)
+        neg_sample_ones = torch.ones(len(score_neg),device=self.device)
         if self.order == 1:
             return self.loss_fct(ones,score_pos) \
-               + self.loss_fct(-1 * ones, score_neg)
+               + self.loss_fct(-1 * neg_sample_ones, score_neg)
         else:
             return self.loss_fct(ones,score_pos) \
-                   + self.loss_fct(-1 * ones, score_neg)\
+                   + self.loss_fct(-1 * neg_sample_ones, score_neg)\
                    + self.loss_fct(ones,score_pos_con)*self.second_order_loss_weight\
-                   + self.loss_fct(-1*ones,score_neg_con)*self.second_order_loss_weight
+                   + self.loss_fct(-1* neg_sample_ones,score_neg_con)*self.second_order_loss_weight
 
     def predict(self, interaction):
 
