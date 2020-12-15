@@ -1,5 +1,5 @@
-learning_rate choice [0.004,0.003,0.002]
+learning_rate choice [0.0025,0.0035]
 dropout_prob choice [0.5]
 train_batch_size choice [500]
-anneal_cap choice [0.2,0.4,0.5,0.6,0.8]
-total_anneal_steps choice [200000,100000]
+anneal_cap choice [0.2]
+total_anneal_steps choice [1000,10000,100000,100000]
