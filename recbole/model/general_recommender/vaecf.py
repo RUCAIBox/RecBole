@@ -34,13 +34,17 @@ class VAECF(GeneralRecommender):
         layers = config["mlp_hidden_size"]
         lat_dim = config['latent_dimendion']
         self.drop_out = config['dropout_prob']
-        self.kl_loss_weight = config['kl_loss_weight']
+        self.anneal_cap = config['anneal_cap']
+        self.total_anneal_steps = config["total_anneal_steps"]
+
         self.is_vae = config['is_vae']
 
         self.lat_dim = lat_dim
         self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
 
         if self.is_vae:
+
+            self.update = 0
 
             self.encode_layer_dims = [self.n_items] + layers + [lat_dim]
             self.decode_layer_dims = [int(self.lat_dim/2)]+self.encode_layer_dims[::-1][1:]
@@ -98,8 +102,14 @@ class VAECF(GeneralRecommender):
         rating_matrix = self.get_rating_matrix(user)
 
         if self.is_vae:
+            self.update+=1
+            if self.total_anneal_steps>0:
+                self.anneal = min(self.anneal_cap, 1. * self.update / self.total_anneal_steps)
+            else:
+                self.anneal = self.anneal_cap
+
             z, mu, logvar = self.forward(rating_matrix)
-            kl_loss = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+            kl_loss = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))*self.anneal
         else:
             z = self.forward(rating_matrix)
             kl_loss = 0
@@ -107,7 +117,7 @@ class VAECF(GeneralRecommender):
         # CE loss
         ce_loss = -(F.log_softmax(z, 1) * rating_matrix).sum(1).mean()
 
-        return ce_loss + kl_loss*self.kl_loss_weight
+        return ce_loss + kl_loss
 
     def predict(self, interaction):
 

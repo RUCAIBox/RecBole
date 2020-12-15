@@ -2,5 +2,7 @@ embedding_size: 64
 mlp_hidden_size: [600]
 latent_dimendion: 128
 dropout_prob: 0.5
-kl_loss_weight: 0.2
+anneal_cap: 0.2
+total_anneal_steps: 2000
+train_batch_size: 500
 is_vae: True
