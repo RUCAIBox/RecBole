@@ -1,4 +1,4 @@
 learning_rate choice [0.004,0.003,0.002]
-dropout_prob choice [0.4,0.6,0.8]
-train_batch_size choice [2048]
-kl_loss_weight choice [0.4,0.5,0.6]
+dropout_prob choice [0.5]
+train_batch_size choice [500]
+kl_loss_weight choice [0.2,0.4,0.5,0.6,0.8]
