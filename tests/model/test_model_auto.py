@@ -648,14 +648,6 @@ class TestSequentialRecommender2(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
 
-    def test_fossil(self):
-        config_dict = {
-            'model': 'FOSSIL',
-            'loss_type': 'BPR',
-        }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
-
     def test_caser(self):
         config_dict = {
             'model': 'Caser',
