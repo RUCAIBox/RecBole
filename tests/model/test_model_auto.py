@@ -352,6 +352,13 @@ class TestSequentialRecommender(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
 
+    def test_repeat_net(self):
+        config_dict = {
+            'model': 'RepeatNet',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
     # def test_fdsa(self):
     #     config_dict = {
     #         'model': 'FDSA',
