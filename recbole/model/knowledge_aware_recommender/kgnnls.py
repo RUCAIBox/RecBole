@@ -62,9 +62,9 @@ class KGNNLS(KnowledgeRecommender):
         self.adj_entity, self.adj_relation = adj_entity.to(
             self.device), adj_relation.to(self.device)
 
-        inter_feat = dataset.dataset.inter_feat.values
-        pos_users = torch.from_numpy(inter_feat[:, 0])
-        pos_items = torch.from_numpy(inter_feat[:, 1])
+        inter_feat = dataset.dataset.inter_feat
+        pos_users = inter_feat[dataset.dataset.uid_field]
+        pos_items = inter_feat[dataset.dataset.iid_field]
         pos_label = torch.ones(pos_items.shape)
         pos_interaction_table, self.offset = self.get_interaction_table(
             pos_users, pos_items, pos_label)

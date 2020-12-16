@@ -1,0 +1,6 @@
+embedding_size: 64
+high_order: 2
+loss_type: "CE"
+dropout_prob: 0.2
+pooling_type_layer_1: "max"
+pooling_type_layer_2: "max"

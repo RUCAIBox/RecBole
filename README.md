@@ -53,6 +53,12 @@ oriented to the GPU environment.
 for testing and comparing recommendation algorithms.
 
 ## RecBole News
+**12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
+
+**11/29/2020**: We constructed preliminary experiments to test the time and memory cost on three
+different-sized datasets and provided the [test result](https://github.com/RUCAIBox/RecBole#time-and-memory-costs)
+for reference.
+
 **11/03/2020**: We release the first version of RecBole **v0.1.1**.
 
 
@@ -168,8 +174,8 @@ NOTE: Our test results only gave the approximate time and memory cost of our im
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
+| v0.1.2    | 12/06/2020 |  Basic RecBole |
 | v0.1.1    | 11/03/2020 |  Basic RecBole |
-
 
 ## Contributing
 

@@ -4,7 +4,7 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/12, 2020/08/21, 2020/9/16
+# @Time    :   2020/08/12, 2020/12/9, 2020/9/16
 # @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan
 # @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, panxy@ruc.edu.cn
 
@@ -19,6 +19,7 @@ import numpy as np
 from recbole.evaluator.utils import _binary_clf_curve
 from sklearn.metrics import auc as sk_auc
 from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error
+
 
 #    TopK Metrics    #
 
@@ -85,7 +86,7 @@ def map_(pos_index, pos_len):
     actual_len = np.where(pos_len > len_rank, len_rank, pos_len)
     result = np.zeros_like(pos_index, dtype=np.float)
     for row, lens in enumerate(actual_len):
-        ranges = np.arange(1, pos_index.shape[1]+1)
+        ranges = np.arange(1, pos_index.shape[1] + 1)
         ranges[lens:] = ranges[lens - 1]
         result[row] = sum_pre[row] / ranges
     return result
@@ -164,8 +165,16 @@ def precision_(pos_index, pos_len):
     return pos_index.cumsum(axis=1) / np.arange(1, pos_index.shape[1] + 1)
 
 
-#    CTR Metrics    #
+def gauc_(user_len_list, pos_len_list, pos_rank_sum):
+    frac = user_len_list - (pos_len_list - 1) / 2 - (1 / pos_len_list) * np.squeeze(pos_rank_sum)
+    neg_item_num = user_len_list - pos_len_list
+    user_auc = frac / neg_item_num
 
+    result = (user_auc * pos_len_list).sum() / pos_len_list.sum()
+    return result
+
+
+#    CTR Metrics    #
 def auc_(trues, preds):
     r"""AUC_ (also known as Area Under Curve) is used to evaluate the two-class model, referring to
     the area under the ROC curve
@@ -300,5 +309,6 @@ metrics_dict = {
     'rmse': rmse_,
     'mae': mae_,
     'logloss': log_loss_,
-    'auc': auc_
+    'auc': auc_,
+    'gauc': gauc_
 }

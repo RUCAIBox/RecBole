@@ -56,11 +56,11 @@ class SocialDataset(Dataset):
         super()._load_data(token, dataset_path)
         self.net_feat = self._load_net(self.dataset_name, self.dataset_path)
 
-    def _build_feat_list(self):
-        feat_list = super()._build_feat_list()
+    def _build_feat_name_list(self):
+        feat_name_list = super()._build_feat_name_list()
         if self.net_feat is not None:
-            feat_list.append(self.net_feat)
-        return feat_list
+            feat_name_list.append('net_feat')
+        return feat_name_list
 
     def _load_net(self, dataset_name, dataset_path): 
         net_file_path = os.path.join(dataset_path, '{}.{}'.format(dataset_name, 'net'))
