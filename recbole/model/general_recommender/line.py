@@ -15,9 +15,8 @@ Reference code:
 
 import torch
 import torch.nn as nn
-import networkx as nx
-import pandas as pd
 import random
+import numpy as np
 
 from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
@@ -43,6 +42,7 @@ class LINE(GeneralRecommender):
         self.embedding_size = config['embedding_size']
         self.order = config['order']
         self.second_order_loss_weight = config['second_order_loss_weight']
+        self.training_neg_sample_num = config['training_neg_sample_num']
 
 
         self.interaction_feat = dataset.dataset.inter_feat
@@ -58,49 +58,54 @@ class LINE(GeneralRecommender):
 
         self.loss_fct = neg_sampling_loss()
 
-        # graph initialization
-        self.process_nodeid()
-        self.read_graph()
+        self.used_ids = self.get_used_ids()
+        self.random_list = self.get_random_list()
+        np.random.shuffle(self.random_list)
+        self.random_pr = 0
+        self.random_list_length = len(self.random_list)
 
-        # parameters initialization
         self.apply(xavier_normal_initialization)
 
-    def process_nodeid(self):
+    def get_used_ids(self):
+        last = [set() for i in range(self.n_items)]
+        cur = np.array([set(s) for s in last])
+        for iid, uid in zip(self.interaction_feat[self.iid_field].numpy(), self.interaction_feat[self.uid_field].numpy()):
+            cur[iid].add(uid)
+        return cur
 
-        u = self.interaction_feat[self.uid_field].numpy()
-        i = self.interaction_feat[self.iid_field].numpy()
+    def sampler(self,key_ids, num):
 
-        interaction_feat_new = pd.DataFrame([])
-        interaction_feat_new[self.uid_field] = u
-        interaction_feat_new[self.iid_field] = i
-        self.interaction_feat_new = interaction_feat_new
+        key_ids = np.array(key_ids.cpu())
+        key_num = len(key_ids)
+        total_num = key_num * num
+        value_ids = np.zeros(total_num, dtype=np.int64)
+        check_list = np.arange(total_num)
+        key_ids = np.tile(key_ids, num)
+        while len(check_list) > 0:
+            value_ids[check_list] = self.random_num(len(check_list))
+            check_list = np.array([i for i, used, v in
+                                   zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
+                                   if v in used])
 
-        self.interaction_feat_new[self.uid_field] = self.interaction_feat_new[self.uid_field].map(lambda x: "u" + str(x))
-        self.interaction_feat_new[self.iid_field] = self.interaction_feat_new[self.iid_field].map(lambda x: "i" + str(x))
+        return torch.tensor(value_ids,device=self.device)
 
-    def read_graph(self):
-        self.g = nx.from_pandas_edgelist(self.interaction_feat_new,self.uid_field,self.iid_field)
+    def random_num(self, num):
+        value_id = []
+        self.random_pr %= self.random_list_length
+        while True:
+            if self.random_pr + num <= self.random_list_length:
+                value_id.append(self.random_list[self.random_pr: self.random_pr + num])
+                self.random_pr += num
+                break
+            else:
+                value_id.append(self.random_list[self.random_pr:])
+                num -= self.random_list_length - self.random_pr
+                self.random_pr = 0
+                np.random.shuffle(self.random_list)
+        return np.concatenate(value_id)
 
-    def generate_neg_user(self,item_id):
-
-        neigh = list(self.g['i' + str(int(item_id))])
-
-        curr = random.randint(1, self.n_users-1)
-        while 'u' + str(curr) in neigh:
-            curr = random.randint(1, self.n_users-1)
-
-        return curr
-
-    def gen_neg_sample(self,src_):
-
-        t = []
-
-        src = src_.cpu()
-
-        for i in range(len(src)):
-            t.append(self.generate_neg_user(src[i]))
-
-        return src_,torch.LongTensor(t).to(self.device)
+    def get_random_list(self):
+        return np.arange(1, self.n_users)
 
     def forward(self,h,t):
 
@@ -133,10 +138,11 @@ class LINE(GeneralRecommender):
             score_pos_con = self.context_forward(user, pos_item, 'uu')
             score_neg_con = self.context_forward(user, neg_item, 'uu')
         else:
-            h,t = self.gen_neg_sample(pos_item)
-            score_neg = self.forward(t,h)
-            score_pos_con = self.context_forward(h, user,'ii')
-            score_neg_con = self.context_forward(h, t,'ii')
+            # h,t = self.gen_neg_sample(pos_item)
+            neg_user = self.sampler(pos_item,self.training_neg_sample_num)
+            score_neg = self.forward(neg_user,pos_item)
+            score_pos_con = self.context_forward(pos_item, user,'ii')
+            score_neg_con = self.context_forward(pos_item, neg_user,'ii')
 
         ones = torch.ones(len(score_pos),device=self.device)
         if self.order == 1:
