@@ -11,12 +11,13 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 
-[HomePage] | [Docs] | [Datasets] | [Paper]
+[HomePage] | [Docs] | [Datasets] | [Paper] | [Blogs]
 
 [HomePage]: https://recbole.io/
 [Docs]: https://recbole.io/docs/
 [Datasets]: https://github.com/RUCAIBox/RecDatasets
 [Paper]: https://arxiv.org/abs/2011.01731
+[Blogs]: https://blog.csdn.net/Turinger_2000/article/details/111182852
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
@@ -53,6 +54,8 @@ oriented to the GPU environment.
 for testing and comparing recommendation algorithms.
 
 ## RecBole News
+**12/10/2020**: 我们发布了[RecBole小白入门系列中文博客（持续更新中）](https://blog.csdn.net/Turinger_2000/article/details/111182852)。
+
 **12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
 
 **11/29/2020**: We constructed preliminary experiments to test the time and memory cost on three
@@ -60,7 +63,6 @@ different-sized datasets and provided the [test result](https://github.com/RUCAI
 for reference.
 
 **11/03/2020**: We release the first version of RecBole **v0.1.1**.
-
 
 ## Installation
 RecBole works with the following operating systems:
@@ -174,7 +176,6 @@ NOTE: Our test results only gave the approximate time and memory cost of our im
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
-| v0.1.2    | 12/06/2020 |  Basic RecBole |
 | v0.1.1    | 11/03/2020 |  Basic RecBole |
 
 
@@ -186,6 +187,9 @@ We welcome all contributions from bug fixes to new features and extensions.
 
 We expect all contributions discussed in the issue tracker and going through PRs.
 
+We thank the insightful suggestions from [@tszumowski](https://github.com/tszumowski), [@rowedenny](https://github.com/rowedenny) et.al.
+
+We thank the nice contributions through PRs from [@rowedenny](https://github.com/rowedenny) et.al.
 
 ## Cite
 If you find RecBole useful for your research or development, please cite the following [paper](https://arxiv.org/abs/2011.01731):
