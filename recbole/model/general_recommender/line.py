@@ -73,14 +73,14 @@ class LINE(GeneralRecommender):
             cur[iid].add(uid)
         return cur
 
-    def sampler(self,key_ids, num):
+    def sampler(self,key_ids):
 
         key_ids = np.array(key_ids.cpu())
         key_num = len(key_ids)
-        total_num = key_num * num
+        total_num = key_num
         value_ids = np.zeros(total_num, dtype=np.int64)
         check_list = np.arange(total_num)
-        key_ids = np.tile(key_ids, num)
+        key_ids = np.tile(key_ids, 1)
         while len(check_list) > 0:
             value_ids[check_list] = self.random_num(len(check_list))
             check_list = np.array([i for i, used, v in
@@ -139,7 +139,7 @@ class LINE(GeneralRecommender):
             score_neg_con = self.context_forward(user, neg_item, 'uu')
         else:
             # h,t = self.gen_neg_sample(pos_item)
-            neg_user = self.sampler(pos_item,self.training_neg_sample_num)
+            neg_user = self.sampler(pos_item)
             score_neg = self.forward(neg_user,pos_item)
             score_pos_con = self.context_forward(pos_item, user,'ii')
             score_neg_con = self.context_forward(pos_item, neg_user,'ii')
