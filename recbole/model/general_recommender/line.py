@@ -133,12 +133,13 @@ class LINE(GeneralRecommender):
 
         score_pos = self.forward(user,pos_item)
 
+        # randomly train i-i relation and u-u relation with u-i relation
         if random.random()<0.5:
             score_neg = self.forward(user, neg_item)
             score_pos_con = self.context_forward(user, pos_item, 'uu')
             score_neg_con = self.context_forward(user, neg_item, 'uu')
         else:
-            # h,t = self.gen_neg_sample(pos_item)
+            # sample negative user for item
             neg_user = self.sampler(pos_item)
             score_neg = self.forward(neg_user,pos_item)
             score_pos_con = self.context_forward(pos_item, user,'ii')
