@@ -1,0 +1,5 @@
+embedding_size: 64
+loss_type: "CE"
+hidden_size: 64
+joint_train: False
+dropout_prob: 0.5
