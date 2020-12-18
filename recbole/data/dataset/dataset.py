@@ -1201,7 +1201,7 @@ class Dataset(object):
             :class:`~Dataset`: the new :class:`~Dataset` object, whose interaction feature has been updated.
         """
         nxt = copy.copy(self)
-        nxt.inter_feat = new_inter_feat
+        nxt.inter_feat = pd.DataFrame(new_inter_feat)
         return nxt
 
     def _calcu_split_ids(self, tot, ratios):
@@ -1325,6 +1325,11 @@ class Dataset(object):
         Returns:
             list: List of builded :class:`Dataset`.
         """
+        if self.benchmark_filename_list is not None:
+            cumsum = list(np.cumsum(self.file_size_list))
+            datasets = [self.copy(self.inter_feat[start: end]) for start, end in zip([0] + cumsum[:-1], cumsum)]
+            return datasets
+
         ordering_args = eval_setting.ordering_args
         if ordering_args['strategy'] == 'shuffle':
             self.shuffle()
