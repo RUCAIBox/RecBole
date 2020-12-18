@@ -11,7 +11,7 @@
 
 import torch
 import numpy as np
-from collections import ChainMap
+from collections import ChainMap, Counter
 from recbole.evaluator.metrics import metrics_dict
 from recbole.evaluator.abstract_evaluator import GroupedEvalautor, IndividualEvaluator
 
@@ -158,22 +158,35 @@ class RankEvaluator(GroupedEvalautor):
         user_len_list = interaction.user_len_list
         return pos_len_list, user_len_list
 
-    def get_pos_index(self, scores_tensor, pos_len_list, user_len_list):
-        """get the index of positive items
+    def rankdata(self, scores):
+        """Get the ranking of an ordered tensor, and take the average of the ranking for positions with equal values.
 
-       Args:
-           scores_tensor (tensor): the tensor of model output with size of `(N, )`
-           pos_len_list(list): number of positive items
-           user_len_list(list): number of all items
+        Args:
+            scores(tensor): an ordered tensor, with size of `(N, )`
 
-       Returns:
-           tensor: a matrix indicating whether the corresponding item is positive
+        Examples::
 
-       """
-        scores_matrix = self.get_score_matrix(scores_tensor, user_len_list)
-        _, n_index = torch.sort(scores_matrix, dim=-1, descending=True)
-        pos_index = (n_index < pos_len_list.reshape(-1, 1))
-        return pos_index
+        >>> rankdata(tensor([[1,2,2,2,3,3,6],[2,2,2,2,4,4,5]]))
+        tensor([[1.0000, 3.0000, 3.0000, 3.0000, 5.5000, 5.5000, 7.0000],
+        [2.5000, 2.5000, 2.5000, 2.5000, 5.0000, 6.5000, 6.5000]])
+
+        """
+        length, width = scores.shape
+        device = scores.device
+        true_tensor = torch.full((length, 1), True, dtype=np.bool, device=device)
+
+        obs = torch.cat([true_tensor, scores[:, 1:] != scores[:, :-1]], dim=1)
+        # bias added to dense
+        bias = torch.arange(0, length, device=device).repeat(width).reshape(width, -1). \
+            transpose(1, 0).reshape(-1)
+        dense = obs.view(-1).cumsum(0) + bias
+
+        # cumulative counts of each unique value
+        count = torch.where(torch.cat([obs, true_tensor], dim=1))[1]
+        # get averange rank
+        avg_rank = .5 * (count[dense] + count[dense - 1] + 1).view(length, -1)
+
+        return avg_rank
 
     def collect(self, interaction, scores_tensor):
         """collect the rank intermediate result of one batch, this function mainly implements ranking
@@ -185,10 +198,16 @@ class RankEvaluator(GroupedEvalautor):
 
         """
         pos_len_list, user_len_list = self.get_user_pos_len_list(interaction, scores_tensor)
-        pos_index = self.get_pos_index(scores_tensor, pos_len_list, user_len_list)
-        index_list = torch.arange(1, pos_index.shape[1] + 1).to(pos_index.device)
-        pos_rank_sum = torch.where(pos_index, index_list, torch.zeros_like(index_list)). \
+        scores_matrix = self.get_score_matrix(scores_tensor, user_len_list)
+        desc_scores, desc_index = torch.sort(scores_matrix, dim=-1, descending=True)
+
+        # get the index of positive items in the ranking list
+        pos_index = (desc_index < pos_len_list.reshape(-1, 1))
+
+        avg_rank = self.rankdata(desc_scores)
+        pos_rank_sum = torch.where(pos_index, avg_rank, torch.zeros_like(avg_rank)). \
             sum(axis=-1).reshape(-1, 1)
+
         return pos_rank_sum
 
     def evaluate(self, batch_matrix_list, eval_data):
