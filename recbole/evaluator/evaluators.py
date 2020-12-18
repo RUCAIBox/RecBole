@@ -4,14 +4,14 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/04, 2020/08/11, 2020/12/9
+# @Time    :   2020/08/04, 2020/08/11, 2020/12/18
 # @Author  :   Kaiyuan Li, Yupeng Hou, Zhichao Feng
 # @email   :   tsotfsk@outlook.com, houyupeng@ruc.edu.cn, fzcbupt@gmail.com
 
 
 import torch
 import numpy as np
-from collections import ChainMap, Counter
+from collections import ChainMap
 from recbole.evaluator.metrics import metrics_dict
 from recbole.evaluator.abstract_evaluator import GroupedEvalautor, IndividualEvaluator
 
@@ -158,22 +158,27 @@ class RankEvaluator(GroupedEvalautor):
         user_len_list = interaction.user_len_list
         return pos_len_list, user_len_list
 
-    def rankdata(self, scores):
+    def average_rank(self, scores):
         """Get the ranking of an ordered tensor, and take the average of the ranking for positions with equal values.
 
         Args:
             scores(tensor): an ordered tensor, with size of `(N, )`
 
-        Examples::
+        Returns:
+            torch.Tensor: average_rank
 
-        >>> rankdata(tensor([[1,2,2,2,3,3,6],[2,2,2,2,4,4,5]]))
-        tensor([[1.0000, 3.0000, 3.0000, 3.0000, 5.5000, 5.5000, 7.0000],
-        [2.5000, 2.5000, 2.5000, 2.5000, 5.0000, 6.5000, 6.5000]])
+        Example:
+            >>> average_rank(tensor([[1,2,2,2,3,3,6],[2,2,2,2,4,4,5]]))
+            tensor([[1.0000, 3.0000, 3.0000, 3.0000, 5.5000, 5.5000, 7.0000],
+            [2.5000, 2.5000, 2.5000, 2.5000, 5.0000, 6.5000, 6.5000]])
+
+        Reference:
+            https://github.com/scipy/scipy/blob/v0.17.1/scipy/stats/stats.py#L5262-L5352
 
         """
         length, width = scores.shape
         device = scores.device
-        true_tensor = torch.full((length, 1), True, dtype=np.bool, device=device)
+        true_tensor = torch.full((length, 1), True, dtype=torch.bool, device=device)
 
         obs = torch.cat([true_tensor, scores[:, 1:] != scores[:, :-1]], dim=1)
         # bias added to dense
@@ -183,7 +188,7 @@ class RankEvaluator(GroupedEvalautor):
 
         # cumulative counts of each unique value
         count = torch.where(torch.cat([obs, true_tensor], dim=1))[1]
-        # get averange rank
+        # get average rank
         avg_rank = .5 * (count[dense] + count[dense - 1] + 1).view(length, -1)
 
         return avg_rank
@@ -204,7 +209,7 @@ class RankEvaluator(GroupedEvalautor):
         # get the index of positive items in the ranking list
         pos_index = (desc_index < pos_len_list.reshape(-1, 1))
 
-        avg_rank = self.rankdata(desc_scores)
+        avg_rank = self.average_rank(desc_scores)
         pos_rank_sum = torch.where(pos_index, avg_rank, torch.zeros_like(avg_rank)). \
             sum(axis=-1).reshape(-1, 1)
 
