@@ -1,0 +1,4 @@
+embedding_size: 64
+n_layers: 2
+reg_weight: 1e-02
+dropout_prob: 0.1
