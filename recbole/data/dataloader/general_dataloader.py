@@ -220,12 +220,11 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
 
         dataset.sort(by=uid_field, ascending=True)
         last_uid = None
-        positive_item = None
+        positive_item = set()
         uid2used_item = sampler.used_ids
         for uid, iid in zip(dataset.inter_feat[uid_field].numpy(), dataset.inter_feat[iid_field].numpy()):
             if uid != last_uid:
-                if last_uid is not None:
-                    self._set_user_property(last_uid, uid2used_item[last_uid], positive_item)
+                self._set_user_property(last_uid, uid2used_item[last_uid], positive_item)
                 last_uid = uid
                 self.uid_list.append(uid)
                 positive_item = set()
@@ -238,6 +237,8 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def _set_user_property(self, uid, used_item, positive_item):
+        if uid is None:
+            return
         history_item = used_item - positive_item
         positive_item_num = len(positive_item)
         self.uid2items_num[uid] = positive_item_num
