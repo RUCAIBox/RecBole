@@ -86,15 +86,8 @@ def data_preparation(config, dataset, save=False):
         raise ValueError('Sequential models require "loo" split strategy.')
 
     builded_datasets = dataset.build(es)
-    if len(builded_datasets) not in {2, 3}:
-        raise ValueError('Dataset should only be divided into two or three parts.')
-    else:
-        train_dataset = builded_datasets[0]
-        evaluation_datasets = builded_datasets[1:]
-        if len(builded_datasets) == 2:
-            phases = ['train', 'test']
-        else:
-            phases = ['train', 'valid', 'test']
+    train_dataset, valid_dataset, test_dataset = builded_datasets
+    phases = ['train', 'valid', 'test']
 
     if save:
         save_datasets(config['checkpoint_dir'], name=phases, dataset=builded_datasets)
@@ -107,7 +100,7 @@ def data_preparation(config, dataset, save=False):
             sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
         else:
             sampler = RepeatableSampler(phases, dataset, es.neg_sample_args['distribution'])
-        kwargs['sampler'] = sampler.set_phase(phases[0])
+        kwargs['sampler'] = sampler.set_phase('train')
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
         if model_type == ModelType.KNOWLEDGE:
             kg_sampler = KGSampler(dataset, es.neg_sample_args['distribution'])
@@ -128,22 +121,19 @@ def data_preparation(config, dataset, save=False):
         getattr(es, es_str[1])()
         if 'sampler' not in locals():
             sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
-        sampler.set_distribution(es.neg_sample_args['distribution'])   
-        kwargs['sampler'] = [sampler.set_phase(phase) for phase in phases[1:]]
+        sampler.set_distribution(es.neg_sample_args['distribution'])
+        kwargs['sampler'] = [sampler.set_phase('valid'), sampler.set_phase('test')]
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
-    evaluation_data = dataloader_construct(
+    valid_data, test_data = dataloader_construct(
         name='evaluation',
         config=config,
         eval_setting=es,
-        dataset=evaluation_datasets,
+        dataset=[valid_dataset, test_dataset],
         batch_size=config['eval_batch_size'],
         **kwargs
     )
 
-    if len(builded_datasets) == 2:
-        return train_data, None, evaluation_data
-    else:
-        return [train_data] + evaluation_data
+    return train_data, valid_data, test_data
 
 
 def dataloader_construct(name, config, eval_setting, dataset,
