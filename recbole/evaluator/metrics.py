@@ -170,8 +170,11 @@ def gauc_(user_len_list, pos_len_list, pos_rank_sum):
     .. _GAUC: https://dl.acm.org/doi/10.1145/3219819.3219823
 
     Note:
-        It calculates the AUC score of each user, and finally obtains GAUC by weighting the user AUC
-        . It is also not limited to k.
+        It calculates the AUC score of each user, and finally obtains GAUC by weighting the user AUC. 
+        It is also not limited to k.Due to our padding for `scores_tensor` in `RankEvaluator` with 
+        `-np.inf`, the padding value will influence the ranks of origin items. Therefore, we use
+        descending sort here and make an identity transformation to the formula of `AUC`, which is 
+        shown in `auc_` function. For readability, we didn't do simplification in the code.
 
     .. math::
         \mathrm {GAUC} = \frac {{{M} \times {(M+N+1)} - \frac{M \times (M+1)}{2}} -
@@ -180,10 +183,6 @@ def gauc_(user_len_list, pos_len_list, pos_rank_sum):
     :math:`M` is the number of positive samples.
     :math:`N` is the number of negative samples.
     :math:`rank_i` is the descending rank of the ith positive sample.
-
-    Note: Due to our padding for `scores_tensor` in `RankEvaluator` with `-np.inf`, the padding value will influence
-    the ranks of origin items. Therefore, we use descending sort here and make an identity transformation to the
-    formula of `AUC`, which is shown in `auc_` function. For readability, we didn't do simplification in the code.
 
     """
     pair_num = (user_len_list + 1) * pos_len_list - pos_len_list * (pos_len_list + 1) / 2 - np.squeeze(pos_rank_sum)
