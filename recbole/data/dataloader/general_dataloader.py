@@ -261,17 +261,16 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
-        index = slice(self.pr, self.pr + self.step)
-        user_df = self.user_df[index]
-        pos_len_list = self.uid2items_num[self.uid_list[index]]
-        user_len_list = np.full(len(user_df), self.item_num)
-        user_df.set_additional_info(pos_len_list, user_len_list)
+        user_df = self.user_df[self.pr: self.pr + self.step]
         cur_data = self._neg_sampling(user_df)
         self.pr += self.step
         return cur_data
 
     def _neg_sampling(self, user_df):
         uid_list = list(user_df[self.dataset.uid_field])
+        pos_len_list = self.uid2items_num[uid_list]
+        user_len_list = np.full(len(uid_list), self.item_num)
+        user_df.set_additional_info(pos_len_list, user_len_list)
 
         history_item = self.uid2history_item[uid_list]
         history_row = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
