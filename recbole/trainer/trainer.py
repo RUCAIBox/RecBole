@@ -324,6 +324,9 @@ class Trainer(AbstractTrainer):
         Returns:
             dict: eval result, key is the eval metric and value in the corresponding metric value
         """
+        if not eval_data:
+            return
+
         if load_best_model:
             if model_file:
                 checkpoint_file = model_file
