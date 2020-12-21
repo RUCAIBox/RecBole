@@ -268,7 +268,7 @@ class KGAT(KnowledgeRecommender):
         # Current PyTorch version does not support softmax on SparseCUDA, temporarily move to CPU to calculate softmax
         A_in = torch.sparse.FloatTensor(indices, kg_score, self.matrix_size).cpu()
         A_in = torch.sparse.softmax(A_in, dim=1).to(self.device)
-        self.A_in = copy.copy(A_in)
+        self.A_in = A_in
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]

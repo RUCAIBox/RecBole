@@ -220,12 +220,11 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
 
         dataset.sort(by=uid_field, ascending=True)
         last_uid = None
-        positive_item = None
+        positive_item = set()
         uid2used_item = sampler.used_ids
         for uid, iid in zip(dataset.inter_feat[uid_field].numpy(), dataset.inter_feat[iid_field].numpy()):
             if uid != last_uid:
-                if last_uid is not None:
-                    self._set_user_property(last_uid, uid2used_item[last_uid], positive_item)
+                self._set_user_property(last_uid, uid2used_item[last_uid], positive_item)
                 last_uid = uid
                 self.uid_list.append(uid)
                 positive_item = set()
@@ -238,6 +237,8 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def _set_user_property(self, uid, used_item, positive_item):
+        if uid is None:
+            return
         history_item = used_item - positive_item
         positive_item_num = len(positive_item)
         self.uid2items_num[uid] = positive_item_num
@@ -260,17 +261,16 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
-        index = slice(self.pr, self.pr + self.step)
-        user_df = self.user_df[index]
-        pos_len_list = self.uid2items_num[self.uid_list[index]]
-        user_len_list = np.full(len(user_df), self.item_num)
-        user_df.set_additional_info(pos_len_list, user_len_list)
+        user_df = self.user_df[self.pr: self.pr + self.step]
         cur_data = self._neg_sampling(user_df)
         self.pr += self.step
         return cur_data
 
     def _neg_sampling(self, user_df):
         uid_list = list(user_df[self.dataset.uid_field])
+        pos_len_list = self.uid2items_num[uid_list]
+        user_len_list = np.full(len(uid_list), self.item_num)
+        user_df.set_additional_info(pos_len_list, user_len_list)
 
         history_item = self.uid2history_item[uid_list]
         history_row = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
