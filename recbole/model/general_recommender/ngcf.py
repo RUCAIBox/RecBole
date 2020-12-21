@@ -164,7 +164,7 @@ class NGCF(GeneralRecommender):
     def forward(self):
         # A_hat: spare tensor with shape of [n_items+n_users,n_items+n_users]
         A_hat = sparse_dropout(self.norm_adj_matrix, self.node_dropout,
-                               self.norm_adj_matrix._nnz()) if self.node_dropout != 0 else self.norm_adj_matrix
+                               self.norm_adj_matrix._nnz()) if self.node_dropout != 0 and self.training else self.norm_adj_matrix
         all_embeddings = self.get_ego_embeddings()
         embeddings_list = [all_embeddings]
         for gnn in self.GNNlayers:

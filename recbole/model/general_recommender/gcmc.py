@@ -307,8 +307,9 @@ class GcEncoder(nn.Module):
     def forward(self, user_X, item_X):
         # ----------------------------------------GCN layer----------------------------------------
 
-        user_X = self.sparse_dropout(user_X)
-        item_X = self.sparse_dropout(item_X)
+        if self.training:
+            user_X = self.sparse_dropout(user_X)
+            item_X = self.sparse_dropout(item_X)
 
         embeddings = []
         if self.accum == 'sum':
