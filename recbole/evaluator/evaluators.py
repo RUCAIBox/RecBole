@@ -229,6 +229,7 @@ class RankEvaluator(GroupedEvalautor):
         pos_len_list = eval_data.get_pos_len_list()
         user_len_list = eval_data.get_user_len_list()
         pos_rank_sum = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
+        assert len(pos_len_list) == len(pos_rank_sum)
 
         # get metrics
         metric_dict = {}

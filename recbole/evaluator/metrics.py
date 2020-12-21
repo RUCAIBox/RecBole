@@ -170,8 +170,11 @@ def gauc_(user_len_list, pos_len_list, pos_rank_sum):
     .. _GAUC: https://dl.acm.org/doi/10.1145/3219819.3219823
 
     Note:
-        It calculates the AUC score of each user, and finally obtains GAUC by weighting the user AUC
-        . It is also not limited to k.
+        It calculates the AUC score of each user, and finally obtains GAUC by weighting the user AUC.
+        It is also not limited to k. Due to our padding for `scores_tensor` in `RankEvaluator` with
+        `-np.inf`, the padding value will influence the ranks of origin items. Therefore, we use
+        descending sort here and make an identity transformation  to the formula of `AUC`, which is
+        shown in `auc_` function. For readability, we didn't do simplification in the code.
 
     .. math::
         \mathrm {GAUC} = \frac {{{M} \times {(M+N+1)} - \frac{M \times (M+1)}{2}} -
@@ -181,14 +184,32 @@ def gauc_(user_len_list, pos_len_list, pos_rank_sum):
     :math:`N` is the number of negative samples.
     :math:`rank_i` is the descending rank of the ith positive sample.
 
-    Note: Due to our padding for `scores_tensor` in `RankEvaluator` with `-np.inf`, the padding value will influence
-    the ranks of origin items. Therefore, we use descending sort here and make an identity transformation to the
-    formula of `AUC`, which is shown in `auc_` function. For readability, we didn't do simplification in the code.
-
     """
+    neg_len_list = user_len_list - pos_len_list
+
+    # check positive and negative samples
+    all_with_pos = np.any(pos_len_list == 0)
+    all_with_neg = np.any(neg_len_list == 0)
+    non_zero_idx = np.full(len(user_len_list), True, dtype=np.bool)
+    if all_with_pos:
+        logger = getLogger()
+        logger.warning("No positive samples in some users, "
+                       "true positive value should be meaningless, "
+                       "these users have been removed from GAUC calculation")
+        non_zero_idx *= (pos_len_list != 0)
+    if all_with_neg:
+        logger = getLogger()
+        logger.warning("No negative samples in some users, "
+                       "false positive value should be meaningless, "
+                       "these users have been removed from GAUC calculation")
+        non_zero_idx *= (neg_len_list != 0)
+    if all_with_pos or all_with_neg:
+        user_len_list = user_len_list[non_zero_idx]
+        neg_len_list = user_len_list[non_zero_idx]
+        pos_rank_sum = pos_rank_sum[non_zero_idx]
+
     pair_num = (user_len_list + 1) * pos_len_list - pos_len_list * (pos_len_list + 1) / 2 - np.squeeze(pos_rank_sum)
-    neg_item_num = user_len_list - pos_len_list
-    user_auc = pair_num / (neg_item_num * pos_len_list)
+    user_auc = pair_num / (neg_len_list * pos_len_list)
     result = (user_auc * pos_len_list).sum() / pos_len_list.sum()
     return result
 
