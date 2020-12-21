@@ -4,7 +4,7 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/12, 2020/12/18, 2020/9/16
+# @Time    :   2020/08/12, 2020/12/21, 2020/9/16
 # @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan
 # @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, panxy@ruc.edu.cn
 
@@ -204,9 +204,9 @@ def gauc_(user_len_list, pos_len_list, pos_rank_sum):
                        "these users have been removed from GAUC calculation")
         non_zero_idx *= (neg_len_list != 0)
     if all_with_pos or all_with_neg:
-        user_len_list = user_len_list[non_zero_idx]
-        neg_len_list = user_len_list[non_zero_idx]
-        pos_rank_sum = pos_rank_sum[non_zero_idx]
+        item_list = user_len_list, neg_len_list, pos_len_list, pos_rank_sum
+        user_len_list, neg_len_list, pos_len_list, pos_rank_sum = \
+            map(lambda x: x[non_zero_idx], item_list)
 
     pair_num = (user_len_list + 1) * pos_len_list - pos_len_list * (pos_len_list + 1) / 2 - np.squeeze(pos_rank_sum)
     user_auc = pair_num / (neg_len_list * pos_len_list)
