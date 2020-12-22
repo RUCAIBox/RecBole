@@ -12,3 +12,4 @@ from recbole.model.general_recommender.neumf import NeuMF
 from recbole.model.general_recommender.ngcf import NGCF
 from recbole.model.general_recommender.pop import Pop
 from recbole.model.general_recommender.spectralcf import SpectralCF
+from recbole.model.general_recommender.ease import EASE
