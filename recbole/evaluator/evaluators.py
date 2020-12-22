@@ -116,8 +116,6 @@ class TopKEvaluator(GroupedEvalautor):
             metric_fuc = metrics_dict[metric.lower()]
             result = metric_fuc(pos_idx_matrix, pos_len_list)
             result_list.append(result)  # n_users x len(metrics) x len(ranks)
-        import pdb;
-        pdb.set_trace()
         result = np.stack(result_list, axis=0).mean(axis=1)  # len(metrics) x len(ranks)
         return result
 
