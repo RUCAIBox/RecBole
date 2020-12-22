@@ -22,12 +22,14 @@ from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
 
-class neg_sampling_loss(nn.Module):
-    def __init__(self):
-        super(neg_sampling_loss, self).__init__()
 
-    def forward(self,score,sign):
+class NegSamplingLoss(nn.Module):
+    def __init__(self):
+        super(NegSamplingLoss, self).__init__()
+
+    def forward(self, score, sign):
         return -torch.mean(torch.sigmoid(sign * score))
+
 
 class LINE(GeneralRecommender):
     r"""LINE is a graph embedding model.
@@ -50,16 +52,17 @@ class LINE(GeneralRecommender):
         self.uid_field = dataset.dataset.uid_field
         self.iid_field = dataset.dataset.iid_field
 
-        self.user_embedding = nn.Embedding(self.n_users, self.embedding_size).to(self.device)
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size).to(self.device)
+        self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
+        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
 
-        self.user_context_embedding = nn.Embedding(self.n_users, self.embedding_size).to(self.device)
-        self.item_context_embedding = nn.Embedding(self.n_items, self.embedding_size).to(self.device)
+        if self.order == 2:
+            self.user_context_embedding = nn.Embedding(self.n_users, self.embedding_size)
+            self.item_context_embedding = nn.Embedding(self.n_items, self.embedding_size)
 
-        self.loss_fct = neg_sampling_loss()
+        self.loss_fct = NegSamplingLoss()
 
         self.used_ids = self.get_used_ids()
-        self.random_list = self.get_random_list()
+        self.random_list = self.get_user_id_list()
         np.random.shuffle(self.random_list)
         self.random_pr = 0
         self.random_list_length = len(self.random_list)
@@ -67,13 +70,14 @@ class LINE(GeneralRecommender):
         self.apply(xavier_normal_initialization)
 
     def get_used_ids(self):
-        last = [set() for i in range(self.n_items)]
+        last = [[] for _ in range(self.n_items)]
         cur = np.array([set(s) for s in last])
-        for iid, uid in zip(self.interaction_feat[self.iid_field].numpy(), self.interaction_feat[self.uid_field].numpy()):
+        for iid, uid in zip(self.interaction_feat[self.iid_field].numpy(),
+                            self.interaction_feat[self.uid_field].numpy()):
             cur[iid].add(uid)
         return cur
 
-    def sampler(self,key_ids):
+    def sampler(self, key_ids):
 
         key_ids = np.array(key_ids.cpu())
         key_num = len(key_ids)
@@ -87,7 +91,7 @@ class LINE(GeneralRecommender):
                                    zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
                                    if v in used])
 
-        return torch.tensor(value_ids,device=self.device)
+        return torch.tensor(value_ids, device=self.device)
 
     def random_num(self, num):
         value_id = []
@@ -104,10 +108,10 @@ class LINE(GeneralRecommender):
                 np.random.shuffle(self.random_list)
         return np.concatenate(value_id)
 
-    def get_random_list(self):
+    def get_user_id_list(self):
         return np.arange(1, self.n_users)
 
-    def forward(self,h,t):
+    def forward(self, h, t):
 
         h_embedding = self.user_embedding(h)
         t_embedding = self.item_embedding(t)
@@ -131,29 +135,31 @@ class LINE(GeneralRecommender):
         pos_item = interaction[self.ITEM_ID]
         neg_item = interaction[self.NEG_ITEM_ID]
 
-        score_pos = self.forward(user,pos_item)
+        score_pos = self.forward(user, pos_item)
 
-        # randomly train i-i relation and u-u relation with u-i relation
-        if random.random()<0.5:
-            score_neg = self.forward(user, neg_item)
-            score_pos_con = self.context_forward(user, pos_item, 'uu')
-            score_neg_con = self.context_forward(user, neg_item, 'uu')
-        else:
-            # sample negative user for item
-            neg_user = self.sampler(pos_item)
-            score_neg = self.forward(neg_user,pos_item)
-            score_pos_con = self.context_forward(pos_item, user,'ii')
-            score_neg_con = self.context_forward(pos_item, neg_user,'ii')
+        ones = torch.ones(len(score_pos), device=self.device)
 
-        ones = torch.ones(len(score_pos),device=self.device)
         if self.order == 1:
-            return self.loss_fct(ones,score_pos) \
-               + self.loss_fct(-1 * ones, score_neg)
+            score_neg = self.forward(user, neg_item)
+            return self.loss_fct(ones, score_pos) + self.loss_fct(-1 * ones, score_neg)
+
         else:
-            return self.loss_fct(ones,score_pos) \
-                   + self.loss_fct(-1 * ones, score_neg)\
-                   + self.loss_fct(ones,score_pos_con)*self.second_order_loss_weight\
-                   + self.loss_fct(-1*ones,score_neg_con)*self.second_order_loss_weight
+            # randomly train i-i relation and u-u relation with u-i relation
+            if random.random() < 0.5:
+                score_neg = self.forward(user, neg_item)
+                score_pos_con = self.context_forward(user, pos_item, 'uu')
+                score_neg_con = self.context_forward(user, neg_item, 'uu')
+            else:
+                # sample negative user for item
+                neg_user = self.sampler(pos_item)
+                score_neg = self.forward(neg_user, pos_item)
+                score_pos_con = self.context_forward(pos_item, user, 'ii')
+                score_neg_con = self.context_forward(pos_item, neg_user, 'ii')
+
+            return self.loss_fct(ones, score_pos) \
+                   + self.loss_fct(-1 * ones, score_neg) \
+                   + self.loss_fct(ones, score_pos_con)*self.second_order_loss_weight \
+                   + self.loss_fct(-1*ones, score_neg_con)*self.second_order_loss_weight
 
     def predict(self, interaction):
 
