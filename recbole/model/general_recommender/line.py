@@ -46,11 +46,7 @@ class LINE(GeneralRecommender):
         self.second_order_loss_weight = config['second_order_loss_weight']
         self.training_neg_sample_num = config['training_neg_sample_num']
 
-
         self.interaction_feat = dataset.dataset.inter_feat
-
-        self.uid_field = dataset.dataset.uid_field
-        self.iid_field = dataset.dataset.iid_field
 
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
@@ -70,10 +66,9 @@ class LINE(GeneralRecommender):
         self.apply(xavier_normal_initialization)
 
     def get_used_ids(self):
-        last = [[] for _ in range(self.n_items)]
-        cur = np.array([set(s) for s in last])
-        for iid, uid in zip(self.interaction_feat[self.iid_field].numpy(),
-                            self.interaction_feat[self.uid_field].numpy()):
+        cur = np.array([set() for _ in range(self.n_items)])
+        for iid, uid in zip(self.interaction_feat[self.USER_ID].numpy(),
+                            self.interaction_feat[self.ITEM_ID].numpy()):
             cur[iid].add(uid)
         return cur
 
@@ -140,8 +135,13 @@ class LINE(GeneralRecommender):
         ones = torch.ones(len(score_pos), device=self.device)
 
         if self.order == 1:
-            score_neg = self.forward(user, neg_item)
-            return self.loss_fct(ones, score_pos) + self.loss_fct(-1 * ones, score_neg)
+            if random.random() < 0.5:
+                score_neg = self.forward(user, neg_item)
+                return self.loss_fct(ones, score_pos) + self.loss_fct(-1 * ones, score_neg)
+            else:
+                neg_user = self.sampler(pos_item)
+                score_neg = self.forward(neg_user, pos_item)
+                return self.loss_fct(ones, score_pos) + self.loss_fct(-1 * ones, score_neg)
 
         else:
             # randomly train i-i relation and u-u relation with u-i relation
@@ -157,9 +157,9 @@ class LINE(GeneralRecommender):
                 score_neg_con = self.context_forward(pos_item, neg_user, 'ii')
 
             return self.loss_fct(ones, score_pos) \
-                   + self.loss_fct(-1 * ones, score_neg) \
-                   + self.loss_fct(ones, score_pos_con)*self.second_order_loss_weight \
-                   + self.loss_fct(-1*ones, score_neg_con)*self.second_order_loss_weight
+                + self.loss_fct(-1 * ones, score_neg) \
+                + self.loss_fct(ones, score_pos_con) * self.second_order_loss_weight \
+                + self.loss_fct(-1*ones, score_neg_con) * self.second_order_loss_weight
 
     def predict(self, interaction):
 
