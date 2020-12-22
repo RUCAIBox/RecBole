@@ -137,11 +137,10 @@ class LINE(GeneralRecommender):
         if self.order == 1:
             if random.random() < 0.5:
                 score_neg = self.forward(user, neg_item)
-                return self.loss_fct(ones, score_pos) + self.loss_fct(-1 * ones, score_neg)
             else:
                 neg_user = self.sampler(pos_item)
                 score_neg = self.forward(neg_user, pos_item)
-                return self.loss_fct(ones, score_pos) + self.loss_fct(-1 * ones, score_neg)
+            return self.loss_fct(ones, score_pos) + self.loss_fct(-1 * ones, score_neg)
 
         else:
             # randomly train i-i relation and u-u relation with u-i relation
