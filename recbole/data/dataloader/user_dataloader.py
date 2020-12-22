@@ -12,8 +12,12 @@ recbole.data.dataloader.user_dataloader
 ################################################
 """
 
+import numpy as np
+import torch
+
 from recbole.data.dataloader import AbstractDataLoader
 from recbole.utils.enum_type import DataLoaderType, InputType
+from recbole.data.interaction import Interaction
 
 
 class UserDataLoader(AbstractDataLoader):
@@ -59,3 +63,36 @@ class UserDataLoader(AbstractDataLoader):
         cur_data = self.dataset.user_feat[self.pr: self.pr + self.step]
         self.pr += self.step
         return cur_data
+
+
+class AutoEncoderUserDataloader(AbstractDataLoader):
+    """:class:`AutoEncoderUserDataloader` is a general-dataloader that only load user id.
+    For the result of every batch, we only return batch size of user id.
+
+    Args:
+        config (Config): The config of dataloader.
+        dataset (Dataset): The dataset of dataloader.
+        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
+        dl_format (InputType, optional): The input type of dataloader. Defaults to
+            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+    """
+    def __init__(self, config, dataset,
+                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+
+        self.uid_field = dataset.uid_field
+        self.uid2index = np.unique(dataset.inter_feat[self.uid_field].numpy())
+
+        super().__init__(config, dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+
+    @property
+    def pr_end(self):
+        return len(self.uid2index)
+
+    def _shuffle(self):
+        np.random.shuffle(self.uid2index)
+
+    def _next_batch_data(self):
+        cur_data = self.uid2index[self.pr: self.pr + self.step]
+        self.pr += self.step
+        return Interaction({self.uid_field: torch.tensor(cur_data)})
