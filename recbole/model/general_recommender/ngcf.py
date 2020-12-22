@@ -28,39 +28,8 @@ import torch.nn.functional as F
 from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.loss import BPRLoss, EmbLoss
-from recbole.model.layers import BiGNNLayer
+from recbole.model.layers import BiGNNLayer, SparseDropout
 from recbole.model.init import xavier_normal_initialization
-
-
-def sparse_dropout(x, rate, noise_shape):
-    r"""This is a function that execute Dropout on Pytorch sparse tensor.
-
-    A random dropout will be applied to the input sparse tensor.
-
-    Note:
-        input tensor SHOULD be a sparse float tensor.
-        we suggest to use '._nnz()' as the shape of sparse tensor for an easy calling.
-
-    Args:
-        x (torch.sparse.FloatTensor): The input sparse tensor.
-        rate (float): Dropout rate which should in [0,1].
-        noise_shape(tuple): Shape of the input sparse tensor. suggest '._nnz()'
-
-    Returns:
-        torch.sparse.FloatTensor: The result sparse tensor after dropout.
-
-    """
-    random_tensor = 1 - rate
-    random_tensor += torch.rand(noise_shape).to(x.device)
-    dropout_mask = torch.floor(random_tensor).type(torch.bool)
-    i = x._indices()
-    v = x._values()
-
-    i = i[:, dropout_mask]
-    v = v[dropout_mask]
-
-    out = torch.sparse.FloatTensor(i, v, x.shape).to(x.device)
-    return out * (1. / (1 - rate))
 
 
 class NGCF(GeneralRecommender):
@@ -84,6 +53,7 @@ class NGCF(GeneralRecommender):
         self.reg_weight = config['reg_weight']
 
         # define layers and loss
+        self.sparse_dropout = SparseDropout(self.node_dropout)
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.GNNlayers = torch.nn.ModuleList()
@@ -162,9 +132,8 @@ class NGCF(GeneralRecommender):
         return ego_embeddings
 
     def forward(self):
-        # A_hat: spare tensor with shape of [n_items+n_users,n_items+n_users]
-        A_hat = sparse_dropout(self.norm_adj_matrix, self.node_dropout,
-                               self.norm_adj_matrix._nnz()) if self.node_dropout != 0 and self.training else self.norm_adj_matrix
+
+        A_hat = self.sparse_dropout(self.norm_adj_matrix) if self.node_dropout != 0 else self.norm_adj_matrix
         all_embeddings = self.get_ego_embeddings()
         embeddings_list = [all_embeddings]
         for gnn in self.GNNlayers:

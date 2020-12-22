@@ -28,6 +28,7 @@ import numpy as np
 
 from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
+from recbole.model.layers import SparseDropout
 
 
 class GCMC(GeneralRecommender):
@@ -307,9 +308,8 @@ class GcEncoder(nn.Module):
     def forward(self, user_X, item_X):
         # ----------------------------------------GCN layer----------------------------------------
 
-        if self.training:
-            user_X = self.sparse_dropout(user_X)
-            item_X = self.sparse_dropout(item_X)
+        user_X = self.sparse_dropout(user_X)
+        item_X = self.sparse_dropout(item_X)
 
         embeddings = []
         if self.accum == 'sum':
@@ -433,25 +433,6 @@ class BiDecoder(nn.Module):
         output = self.activate(basis_outputs)
 
         return output
-
-
-class SparseDropout(nn.Module):
-    """
-    This is a Module that execute Dropout on Pytorch sparse tensor.
-    """
-
-    def __init__(self, p=0.5):
-        super(SparseDropout, self).__init__()
-        # p is ratio of dropout
-        # convert to keep probability
-        self.kprob = 1 - p
-
-    def forward(self, x):
-        mask = ((torch.rand(x._values().size()) +
-                 self.kprob).floor()).type(torch.bool)
-        rc = x._indices()[:, mask]
-        val = x._values()[mask] * (1.0 / self.kprob)
-        return torch.sparse.FloatTensor(rc, val, x.shape)
 
 
 def orthogonal(shape, scale=1.1):
