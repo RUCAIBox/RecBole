@@ -188,22 +188,22 @@ def gauc_(user_len_list, pos_len_list, pos_rank_sum):
     neg_len_list = user_len_list - pos_len_list
 
     # check positive and negative samples
-    all_with_pos = np.any(pos_len_list == 0)
-    all_with_neg = np.any(neg_len_list == 0)
+    any_without_pos = np.any(pos_len_list == 0)
+    any_without_neg = np.any(neg_len_list == 0)
     non_zero_idx = np.full(len(user_len_list), True, dtype=np.bool)
-    if all_with_pos:
+    if any_without_pos:
         logger = getLogger()
         logger.warning("No positive samples in some users, "
                        "true positive value should be meaningless, "
                        "these users have been removed from GAUC calculation")
         non_zero_idx *= (pos_len_list != 0)
-    if all_with_neg:
+    if any_without_neg:
         logger = getLogger()
         logger.warning("No negative samples in some users, "
                        "false positive value should be meaningless, "
                        "these users have been removed from GAUC calculation")
         non_zero_idx *= (neg_len_list != 0)
-    if all_with_pos or all_with_neg:
+    if any_without_pos or any_without_neg:
         item_list = user_len_list, neg_len_list, pos_len_list, pos_rank_sum
         user_len_list, neg_len_list, pos_len_list, pos_rank_sum = \
             map(lambda x: x[non_zero_idx], item_list)

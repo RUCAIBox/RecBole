@@ -34,7 +34,7 @@ class ProxyEvaluator(object):
         evaluator_list = []
         metrics_list = [metric.lower() for metric in self.metrics]
         for metrics, evaluator in metric_eval_bind:
-            used_metrics = [metric for metric in metrics_list if metric in metrics.keys()]
+            used_metrics = [metric for metric in metrics_list if metric in metrics]
             if used_metrics:
                 evaluator_list.append(evaluator(self.config, used_metrics))
         return evaluator_list
