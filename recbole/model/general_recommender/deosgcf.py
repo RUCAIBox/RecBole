@@ -59,6 +59,9 @@ class SparseDropout(torch.nn.Module):
         self.kprob = 1 - p
 
     def forward(self, x):
+        if not self.training:
+            return x
+
         mask = ((torch.rand(x._values().size()) +
                  self.kprob).floor()).type(torch.bool)
         rc = x._indices()[:, mask]
