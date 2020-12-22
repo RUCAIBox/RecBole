@@ -211,6 +211,7 @@ def gauc_(user_len_list, pos_len_list, pos_rank_sum):
     pair_num = (user_len_list + 1) * pos_len_list - pos_len_list * (pos_len_list + 1) / 2 - np.squeeze(pos_rank_sum)
     user_auc = pair_num / (neg_len_list * pos_len_list)
     result = (user_auc * pos_len_list).sum() / pos_len_list.sum()
+
     return result
 
 
