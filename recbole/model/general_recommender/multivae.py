@@ -64,7 +64,7 @@ class MultiVAE(GeneralRecommender):
     def reparameterize(self, mu, logvar):
         if self.training:
             std = torch.exp(0.5 * logvar)
-            epsilon = torch.zeros_like(std).normal_(mean=0, std=0.1)
+            epsilon = torch.zeros_like(std).normal_(mean=0, std=1)
             return mu + epsilon * std
         else:
             return mu
