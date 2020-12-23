@@ -1,5 +1,4 @@
 mlp_hidden_size: [600]
 latent_dimendion: 64
 dropout_prob: 0.5
-train_batch_size: 512
 training_neg_sample_num: 0
