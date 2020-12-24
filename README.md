@@ -54,8 +54,9 @@ oriented to the GPU environment.
 + **Extensive and standard evaluation protocols.** We support a series of widely adopted evaluation protocols or settings
 for testing and comparing recommendation algorithms.
 
+
 ## RecBole News
-**12/10/2020**: 我们发布了[RecBole小白入门系列中文博客（持续更新中）](https://blog.csdn.net/Turinger_2000/article/details/111182852)。
+**12/10/2020**: 我们发布了[RecBole小白入门系列中文博客（持续更新中）](https://blog.csdn.net/Turinger_2000/article/details/111182852) 。
 
 **12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
 
