@@ -11,13 +11,14 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 
-[HomePage] | [Docs] | [Datasets] | [Paper] | [Blogs]
+[HomePage] | [Docs] | [Datasets] | [Paper] | [Blogs] | [中文版]
 
 [HomePage]: https://recbole.io/
 [Docs]: https://recbole.io/docs/
 [Datasets]: https://github.com/RUCAIBox/RecDatasets
 [Paper]: https://arxiv.org/abs/2011.01731
 [Blogs]: https://blog.csdn.net/Turinger_2000/article/details/111182852
+[中文版]: README_CN.md
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
@@ -53,8 +54,9 @@ oriented to the GPU environment.
 + **Extensive and standard evaluation protocols.** We support a series of widely adopted evaluation protocols or settings
 for testing and comparing recommendation algorithms.
 
+
 ## RecBole News
-**12/10/2020**: 我们发布了[RecBole小白入门系列中文博客（持续更新中）](https://blog.csdn.net/Turinger_2000/article/details/111182852)。
+**12/10/2020**: 我们发布了[RecBole小白入门系列中文博客（持续更新中）](https://blog.csdn.net/Turinger_2000/article/details/111182852) 。
 
 **12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
 
@@ -63,6 +65,7 @@ different-sized datasets and provided the [test result](https://github.com/RUCAI
 for reference.
 
 **11/03/2020**: We release the first version of RecBole **v0.1.1**.
+
 
 ## Installation
 RecBole works with the following operating systems:
@@ -163,14 +166,17 @@ python run_recbole.py --model=[model_name]
 
 
 ## Time and Memory Costs
-We constructed preliminary experiments to test the time and memory cost on three different-sized datasets  (small, medium and large). For detailed information, you can click the following links.<br> 
+We constructed preliminary experiments to test the time and memory cost on three different-sized datasets 
+(small, medium and large). For detailed information, you can click the following links.
 
-* [General recommendation models](asset/time_test_result/General_recommendation.md)<br>
-* [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)<br>
-* [Context-aware recommendation models](asset/time_test_result/Context-aware_recommendation.md)<br>
-* [Knowledge-based recommendation models](asset/time_test_result/Knowledge-based_recommendation.md)<br>
+* [General recommendation models](asset/time_test_result/General_recommendation.md)
+* [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)
+* [Context-aware recommendation models](asset/time_test_result/Context-aware_recommendation.md)
+* [Knowledge-based recommendation models](asset/time_test_result/Knowledge-based_recommendation.md)
 
-NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library (based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. We will keep improving our implementations, and update these test results.
+NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library
+(based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. 
+We will keep improving our implementations, and update these test results.
 
 
 ## RecBole Major Releases
