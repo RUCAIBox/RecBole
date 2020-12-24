@@ -18,6 +18,7 @@ import torch.nn.functional as F
 from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
+from recbole.model.layers import MLPLayers
 
 
 class MultiDAE(GeneralRecommender):
@@ -39,7 +40,7 @@ class MultiDAE(GeneralRecommender):
         self.encode_layer_dims = [self.n_items] + self.layers + [self.lat_dim]
         self.decode_layer_dims = [self.lat_dim] + self.encode_layer_dims[::-1][1:]
 
-        self.encoder = self.mlp_layars(self.encode_layer_dims)
+        self.encoder = MLPLayers(self.encode_layer_dims, activation='tanh')
         self.decoder = self.mlp_layars(self.decode_layer_dims)
 
         # parameters initialization
