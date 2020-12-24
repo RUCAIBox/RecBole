@@ -36,6 +36,8 @@ class MultiDAE(GeneralRecommender):
         self.drop_out = config['dropout_prob']
 
         self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
+        self.history_item_id = self.history_item_id.to(self.device)
+        self.history_item_value = self.history_item_value.to(self.device)
 
         self.encode_layer_dims = [self.n_items] + self.layers + [self.lat_dim]
         self.decode_layer_dims = [self.lat_dim] + self.encode_layer_dims[::-1][1:]

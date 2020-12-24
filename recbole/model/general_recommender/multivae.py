@@ -37,6 +37,8 @@ class MultiVAE(GeneralRecommender):
         self.total_anneal_steps = config["total_anneal_steps"]
 
         self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
+        self.history_item_id = self.history_item_id.to(self.device)
+        self.history_item_value = self.history_item_value.to(self.device)
 
         self.update = 0
 
