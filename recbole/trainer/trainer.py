@@ -324,6 +324,9 @@ class Trainer(AbstractTrainer):
         Returns:
             dict: eval result, key is the eval metric and value in the corresponding metric value
         """
+        if not eval_data:
+            return
+
         if load_best_model:
             if model_file:
                 checkpoint_file = model_file
@@ -441,7 +444,9 @@ class KGATTrainer(Trainer):
         kg_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
 
         # update A
-        self.model.update_attentive_A()
+        self.model.eval()
+        with torch.no_grad():
+            self.model.update_attentive_A()
 
         return rs_total_loss, kg_total_loss
 
@@ -622,14 +627,8 @@ class xgboostTrainer(AbstractTrainer):
             train_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
             valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
         """
-        train_x = train_data.dataset[:].drop([self.label_field], axis=1, inplace=False)
-        train_y = list(map(int, train_data.dataset[:][self.label_field].values.tolist()))
-
-        valid_x = valid_data.dataset[:].drop([self.label_field], axis=1, inplace=False)
-        valid_y = list(map(int, valid_data.dataset[:][self.label_field].values.tolist()))
-        
-        self.dtrain = xgb.DMatrix(data = train_x, label = train_y)
-        self.dvalid = xgb.DMatrix(data = valid_x, label = valid_y)
+        self.dtrain = self._interaction_to_DMatrix(train_data.dataset[:])
+        self.dvalid = self._interaction_to_DMatrix(valid_data.dataset[:])
         self.evals = [(self.dtrain,'train'),(self.dvalid, 'valid')]
         self.model = xgb.train(self.params, self.dtrain, self.num_boost_round, 
                         self.evals, self.obj, self.feval, self.maximize, 
@@ -680,10 +679,7 @@ class xgboostTrainer(AbstractTrainer):
         self.eval_pred = torch.Tensor()
         self.eval_true = torch.Tensor()
 
-        eval_x = eval_data.dataset[:].drop([self.label_field], axis=1, inplace=False)
-        eval_y = list(map(int,eval_data.dataset[:][self.label_field].values.tolist()))
-
-        self.deval = xgb.DMatrix(data = eval_x, label = eval_y)
+        self.deval = self._interaction_to_DMatrix(eval_data.dataset[:])
         self.eval_true = torch.Tensor(self.deval.get_label())
         self.eval_pred = torch.Tensor(self.model.predict(self.deval))
 

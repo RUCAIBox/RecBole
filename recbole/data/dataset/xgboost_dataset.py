@@ -78,17 +78,17 @@ class XgboostDataset(Dataset):
         """Given interaction feature, join user/item feature into it.
 
         Args:
-            df (pandas.DataFrame): Interaction feature to be joint.
+            df (Interaction): Interaction feature to be joint.
 
         Returns:
-            pandas.DataFrame: Interaction feature after joining operation.
+            Interaction: Interaction feature after joining operation.
         """
         if self.user_feat is not None and self.uid_field in df:
-            df = pd.merge(df, self.user_feat_xgb, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
+            df.update(self.user_feat[df[self.uid_field]])
         if self.item_feat is not None and self.iid_field in df:
-            df = pd.merge(df, self.item_feat_xgb, on=self.iid_field, how='left', suffixes=('_inter', '_item'))
+            df.update(self.item_feat[df[self.iid_field]])
         return df
 
     def __getitem__(self, index, join=True):
-        df = self.inter_feat_xgb[index]
+        df = self.inter_feat[index]
         return self.join(df) if join else df
