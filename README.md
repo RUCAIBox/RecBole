@@ -11,12 +11,13 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 
-[HomePage] | [Docs] | [Datasets] | [Paper]
+[HomePage] | [Docs] | [Datasets] | [Paper] | [中文版]
 
 [HomePage]: https://recbole.io/
 [Docs]: https://recbole.io/docs/
 [Datasets]: https://github.com/RUCAIBox/RecDatasets
 [Paper]: https://arxiv.org/abs/2011.01731
+[中文版]: README_CN.md
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
@@ -161,14 +162,17 @@ python run_recbole.py --model=[model_name]
 
 
 ## Time and Memory Costs
-We constructed preliminary experiments to test the time and memory cost on three different-sized datasets  (small, medium and large). For detailed information, you can click the following links.<br> 
+We constructed preliminary experiments to test the time and memory cost on three different-sized datasets 
+(small, medium and large). For detailed information, you can click the following links.
 
-* [General recommendation models](asset/time_test_result/General_recommendation.md)<br>
-* [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)<br>
-* [Context-aware recommendation models](asset/time_test_result/Context-aware_recommendation.md)<br>
-* [Knowledge-based recommendation models](asset/time_test_result/Knowledge-based_recommendation.md)<br>
+* [General recommendation models](asset/time_test_result/General_recommendation.md)
+* [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)
+* [Context-aware recommendation models](asset/time_test_result/Context-aware_recommendation.md)
+* [Knowledge-based recommendation models](asset/time_test_result/Knowledge-based_recommendation.md)
 
-NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library (based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. We will keep improving our implementations, and update these test results.
+NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library
+(based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. 
+We will keep improving our implementations, and update these test results.
 
 
 ## RecBole Major Releases
