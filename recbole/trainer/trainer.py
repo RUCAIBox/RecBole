@@ -113,6 +113,8 @@ class Trainer(AbstractTrainer):
             optimizer = optim.Adagrad(self.model.parameters(), lr=self.learning_rate)
         elif self.learner.lower() == 'rmsprop':
             optimizer = optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
+        elif self.learner.lower() == 'sparse_adam':
+            optimizer = optim.SparseAdam(self.model.parameters(), lr=self.learning_rate)
         else:
             self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
@@ -324,6 +326,9 @@ class Trainer(AbstractTrainer):
         Returns:
             dict: eval result, key is the eval metric and value in the corresponding metric value
         """
+        if not eval_data:
+            return
+
         if load_best_model:
             if model_file:
                 checkpoint_file = model_file
@@ -441,7 +446,9 @@ class KGATTrainer(Trainer):
         kg_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
 
         # update A
-        self.model.update_attentive_A()
+        self.model.eval()
+        with torch.no_grad():
+            self.model.update_attentive_A()
 
         return rs_total_loss, kg_total_loss
 
