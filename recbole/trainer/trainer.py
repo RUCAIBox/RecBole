@@ -446,7 +446,9 @@ class KGATTrainer(Trainer):
         kg_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
 
         # update A
-        self.model.update_attentive_A()
+        self.model.eval()
+        with torch.no_grad():
+            self.model.update_attentive_A()
 
         return rs_total_loss, kg_total_loss
 
