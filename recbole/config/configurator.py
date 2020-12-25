@@ -223,7 +223,7 @@ class Config(object):
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
-        elif self.internal_config_dict['MODEL_TYPE'] == ModelType.CONTEXT:
+        elif self.internal_config_dict['MODEL_TYPE'] == ModelType.CONTEXT or self.internal_config_dict['MODEL_TYPE'] == ModelType.XGBOOST:
             with open(context_aware_init, 'r', encoding='utf-8') as f:
                 config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
                 if config_dict is not None:
