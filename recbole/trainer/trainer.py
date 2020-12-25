@@ -551,9 +551,10 @@ class xgboostTrainer(AbstractTrainer):
     """xgboostTrainer is designed for XGBOOST.
     
     """
+
     def __init__(self, config, model):
         super(xgboostTrainer, self).__init__(config, model)
-        
+
         self.logger = getLogger()
         self.label_field = config['LABEL_FIELD']
 
@@ -605,22 +606,22 @@ class xgboostTrainer(AbstractTrainer):
         interaction_np = interaction.numpy()
         cur_data = np.array([])
         for key, value in interaction_np.items():
-            value = np.resize(value,(value.shape[0],1))
+            value = np.resize(value, (value.shape[0], 1))
             if key != self.label_field:
                 if cur_data.shape[0] == 0:
                     cur_data = value
                 else:
                     cur_data = np.hstack((cur_data, value))
-                    
-        return xgb.DMatrix(data = cur_data, 
-                                label = interaction_np[self.label_field], 
-                                weight = self.weight,
-                                base_margin = self.base_margin,
-                                missing = self.missing, 
-                                silent = self.silent, 
-                                feature_names = self.feature_names, 
-                                feature_types = self.feature_types, 
-                                nthread = self.nthread)
+
+        return xgb.DMatrix(data=cur_data,
+                           label=interaction_np[self.label_field],
+                           weight=self.weight,
+                           base_margin=self.base_margin,
+                           missing=self.missing,
+                           silent=self.silent,
+                           feature_names=self.feature_names,
+                           feature_types=self.feature_types,
+                           nthread=self.nthread)
 
     def _train_at_once(self, train_data, valid_data):
         r"""
@@ -631,11 +632,11 @@ class xgboostTrainer(AbstractTrainer):
         """
         self.dtrain = self._interaction_to_DMatrix(train_data.dataset[:])
         self.dvalid = self._interaction_to_DMatrix(valid_data.dataset[:])
-        self.evals = [(self.dtrain,'train'),(self.dvalid, 'valid')]
-        self.model = xgb.train(self.params, self.dtrain, self.num_boost_round, 
-                        self.evals, self.obj, self.feval, self.maximize, 
-                        self.early_stopping_rounds, self.evals_result, 
-                        self.verbose_eval, self.xgb_model, self.callbacks)
+        self.evals = [(self.dtrain, 'train'), (self.dvalid, 'valid')]
+        self.model = xgb.train(self.params, self.dtrain, self.num_boost_round,
+                               self.evals, self.obj, self.feval, self.maximize,
+                               self.early_stopping_rounds, self.evals_result,
+                               self.verbose_eval, self.xgb_model, self.callbacks)
         self.model.save_model(self.saved_model_file)
         self.xgb_model = self.saved_model_file
 
@@ -645,13 +646,13 @@ class xgboostTrainer(AbstractTrainer):
         Args:
             valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
         """
-        valid_result = self.evaluate(valid_data) 
+        valid_result = self.evaluate(valid_data)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_result, valid_score
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True):
         # load model
-        if self.xgb_model != None:
+        if self.xgb_model is not None:
             self.model.load_model(self.xgb_model)
 
         self.best_valid_score = 0.
@@ -666,7 +667,7 @@ class xgboostTrainer(AbstractTrainer):
                 valid_result, valid_score = self._valid_epoch(valid_data)
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
-                                    (epoch_idx, valid_end_time - valid_start_time, valid_score)
+                                     (epoch_idx, valid_end_time - valid_start_time, valid_score)
                 valid_result_output = 'valid result: \n' + dict2str(valid_result)
                 if verbose:
                     self.logger.info(valid_score_output)
@@ -674,7 +675,7 @@ class xgboostTrainer(AbstractTrainer):
 
                 self.best_valid_score = valid_score
                 self.best_valid_result = valid_result
-    
+
         return self.best_valid_score, self.best_valid_result
 
     def evaluate(self, eval_data, load_best_model=True, model_file=None):
