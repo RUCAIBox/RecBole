@@ -233,7 +233,7 @@ class Trainer(AbstractTrainer):
             train_loss_output += 'train loss: %.4f' % losses
         return train_loss_output + ']'
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         r"""Train the model based on the train data and the valid data.
 
         Args:
@@ -243,6 +243,8 @@ class Trainer(AbstractTrainer):
             verbose (bool, optional): whether to write training and evaluation information to logger, default: True
             saved (bool, optional): whether to save the model parameters, default: True
             show_progress (bool): Show progress of epoch training and evaluate. Defaults to ``False``.
+            callback_fn (callable): Optional callback function executed at end of epoch.
+                                    Includes (epoch_idx, valid_score) input arguments.
 
         Returns:
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
@@ -289,6 +291,9 @@ class Trainer(AbstractTrainer):
                         if verbose:
                             self.logger.info(update_output)
                     self.best_valid_result = valid_result
+
+                if callback_fn:
+                    callback_fn(epoch_idx, valid_score)
 
                 if stop_flag:
                     stop_output = 'Finished training, best eval result in epoch %d' % \
@@ -528,11 +533,11 @@ class S3RecTrainer(Trainer):
 
         return self.best_valid_score, self.best_valid_result
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         if self.model.train_stage == 'pretrain':
             return self.pretrain(train_data, verbose, show_progress)
         elif self.model.train_stage == 'finetune':
-            return super().fit(train_data, valid_data, verbose, saved, show_progress)
+            return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
             raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
 
