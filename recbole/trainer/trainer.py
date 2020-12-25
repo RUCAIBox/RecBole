@@ -557,7 +557,6 @@ class xgboostTrainer(AbstractTrainer):
         self.logger = getLogger()
         self.label_field = config['LABEL_FIELD']
 
-        self.train_or_cv = config['train_or_cv']
         self.xgb_model = config['xgb_model']
 
         # DMatrix params
@@ -581,26 +580,13 @@ class xgboostTrainer(AbstractTrainer):
         self.verbose_eval = config['xgb_verbose_eval']
         self.callbacks = None
 
-        # cv params
-        if self.train_or_cv == 'cv':
-            self.nfold = config['xgb_cv_nfold']
-            self.stratified = config['xgb_cv_stratified']
-            self.folds = config['xgb_cv_folds']
-            self.fpreproc = config['xgb_cv_freproc']
-            self.show_stdv = config['xgb_cv_show_stdv']
-            self.seed = config['xgb_cv_seed']
-            self.shuffle = config['xgb_cv_shuffle']
-
         # evaluator
         self.eval_type = config['eval_type']
         self.epochs = config['epochs']
         self.eval_step = min(config['eval_step'], self.epochs)
         self.valid_metric = config['valid_metric'].lower()
 
-        if self.eval_type == EvaluatorType.INDIVIDUAL:
-            self.evaluator = LossEvaluator(config)
-        else:
-            self.evaluator = TopKEvaluator(config)
+        self.evaluator = ProxyEvaluator(config)
 
         # model saved
         self.checkpoint_dir = config['checkpoint_dir']
@@ -636,23 +622,22 @@ class xgboostTrainer(AbstractTrainer):
                                 feature_types = self.feature_types, 
                                 nthread = self.nthread)
 
-    def _train_epoch(self, train_data, valid_data):
+    def _train_at_once(self, train_data, valid_data):
         r"""
 
         Args:
             train_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
             valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
         """
-        for _, train_interaction in enumerate(train_data):
-            self.dtrain = self._interaction_to_DMatrix(train_interaction)
-            self.evals = [(self.dtrain,'train')]
-            self.model = xgb.train(self.params, self.dtrain, 1, 
+        self.dtrain = self._interaction_to_DMatrix(train_data.dataset[:])
+        self.dvalid = self._interaction_to_DMatrix(valid_data.dataset[:])
+        self.evals = [(self.dtrain,'train'),(self.dvalid, 'valid')]
+        self.model = xgb.train(self.params, self.dtrain, self.num_boost_round, 
                         self.evals, self.obj, self.feval, self.maximize, 
                         self.early_stopping_rounds, self.evals_result, 
                         self.verbose_eval, self.xgb_model, self.callbacks)
-
-            self.model.save_model(self.saved_model_file)
-            self.xgb_model = self.saved_model_file
+        self.model.save_model(self.saved_model_file)
+        self.xgb_model = self.saved_model_file
 
     def _valid_epoch(self, valid_data):
         r"""
@@ -665,26 +650,30 @@ class xgboostTrainer(AbstractTrainer):
         return valid_result, valid_score
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+        # load model
+        if self.xgb_model != None:
+            self.model.load_model(self.xgb_model)
+
         self.best_valid_score = 0.
         self.best_valid_result = 0.
-        if self.train_or_cv == 'train':
-            for epoch_idx in range(self.epochs):
-                train_loss = self._train_epoch(train_data, valid_data)
 
-                if (epoch_idx + 1) % self.eval_step == 0:
-                    # evaluate
-                    valid_start_time = time()
-                    valid_result, valid_score = self._valid_epoch(valid_data)
-                    valid_end_time = time()
-                    valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
-                                     (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                    valid_result_output = 'valid result: \n' + dict2str(valid_result)
-                    if verbose:
-                        self.logger.info(valid_score_output)
-                        self.logger.info(valid_result_output)
+        for epoch_idx in range(self.epochs):
+            self._train_at_once(train_data, valid_data)
 
-                    self.best_valid_score = valid_score
-                    self.best_valid_result = valid_result
+            if (epoch_idx + 1) % self.eval_step == 0:
+                # evaluate
+                valid_start_time = time()
+                valid_result, valid_score = self._valid_epoch(valid_data)
+                valid_end_time = time()
+                valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
+                                    (epoch_idx, valid_end_time - valid_start_time, valid_score)
+                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                if verbose:
+                    self.logger.info(valid_score_output)
+                    self.logger.info(valid_result_output)
+
+                self.best_valid_score = valid_score
+                self.best_valid_result = valid_result
     
         return self.best_valid_score, self.best_valid_result
 
@@ -692,15 +681,10 @@ class xgboostTrainer(AbstractTrainer):
         self.eval_pred = torch.Tensor()
         self.eval_true = torch.Tensor()
 
-        for _, batched_data in enumerate(eval_data):
-            batched_data_DMatrix = self._interaction_to_DMatrix(batched_data)
-            batch_pred = torch.Tensor(self.model.predict(batched_data_DMatrix))
-            if self.params['objective'] == 'binary:logistic':
-                batch_pred = (batch_pred >= 0.5) * 1 
-            self.eval_pred = torch.cat((self.eval_pred, batch_pred))
-            self.eval_true = torch.cat((self.eval_true, batched_data[self.label_field]))
-            
-        matrix_list = [torch.stack((self.eval_pred, self.eval_true), 1)]
+        self.deval = self._interaction_to_DMatrix(eval_data.dataset[:])
+        self.eval_true = torch.Tensor(self.deval.get_label())
+        self.eval_pred = torch.Tensor(self.model.predict(self.deval))
 
-        result = self.evaluator.evaluate(matrix_list, eval_data)
+        batch_matrix_list = [[torch.stack((self.eval_true, self.eval_pred), 1)]]
+        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
         return result
