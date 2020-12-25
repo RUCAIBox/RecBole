@@ -6,6 +6,7 @@ state: INFO
 reproducibility: True
 data_path: 'dataset/'
 checkpoint_dir: 'saved'
+show_progress: True
 
 # training settings
 epochs: 300
@@ -13,6 +14,7 @@ train_batch_size: 2048
 learner: adam
 learning_rate: 0.001
 training_neg_sample_num: 1
+training_neg_sample_distribution: uniform
 eval_step: 1
 stopping_step: 10
 clip_grad_norm: ~
