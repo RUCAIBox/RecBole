@@ -6,7 +6,7 @@
 # UPDATE
 # @Time    :   2020/11/17
 # @Author  :   Xingyu Pan
-# @email   :   panxy@ruc.edu.cn  
+# @email   :   panxy@ruc.edu.cn
 
 import os
 import unittest
@@ -15,6 +15,7 @@ from recbole.quick_start import objective_function
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 config_file_list = [os.path.join(current_path, 'test_model.yaml')]
+
 
 class TestGeneralRecommender(unittest.TestCase):
 
@@ -116,6 +117,13 @@ class TestGeneralRecommender(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
 
+    def test_slimelastic(self):
+        config_dict = {
+            'model': 'SLIMElastic',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
@@ -189,7 +197,7 @@ class TestContextRecommender(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
-    
+
     # def test_dcn(self):
     #     config_dict = {
     #         'model': 'DCN',
@@ -759,6 +767,7 @@ class TestSequentialRecommender2(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
+
 
 if __name__ == '__main__':
     unittest.main()
