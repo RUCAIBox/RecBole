@@ -15,6 +15,20 @@ from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 
 
+def scipy_to_sparse_tensor(A):
+    # https://stackoverflow.com/a/50665264/7367514
+    C = A.tocoo()
+
+    values = C.data
+    indices = np.vstack((C.row, C.col))
+
+    i = torch.LongTensor(indices)
+    v = torch.FloatTensor(values)
+    shape = C.shape
+
+    return torch.sparse.FloatTensor(i, v, torch.Size(shape))
+
+
 class EASE(GeneralRecommender):
     input_type = InputType.POINTWISE
     type = ModelType.TRADITIONAL
@@ -28,9 +42,9 @@ class EASE(GeneralRecommender):
         X = dataset.inter_matrix(
             form='coo').astype(np.float32)
 
-        reg_weight = config['reg_weight']  
+        reg_weight = config['reg_weight']
 
-        ## just directly calculate the entire score matrix in init
+        # just directly calculate the entire score matrix in init
         # (can't be done incrementally)
 
         # gram matrix
@@ -48,9 +62,16 @@ class EASE(GeneralRecommender):
         # zero out diag
         np.fill_diagonal(B, 0.)
 
-        S = X @ B
+        # instead of computing and storing the entire score matrix, just store B and compute the scores on demand
+        # more memory efficient for a larger number of users
+        # but if there's a large number of items not much one can do:
+        # still have to compute B all at once
+        # S = X @ B
+        # self.score_matrix = torch.from_numpy(S).to(self.device)
 
-        self.score_matrix = torch.from_numpy(S).to(self.device)
+        # torch doesn't support sparse tensor slicing, so will do everything with np/scipy
+        self.item_similarity = B
+        self.interaction_matrix = X
 
     def forward(self):
         pass
@@ -59,14 +80,13 @@ class EASE(GeneralRecommender):
         return torch.nn.Parameter(torch.zeros(1))
 
     def predict(self, interaction):
-        user = interaction[self.USER_ID]
-        item = interaction[self.ITEM_ID]
-        
-        return self.score_matrix[user, item]
+        user = interaction[self.USER_ID].cpu().numpy()
+        item = interaction[self.ITEM_ID].cpu().numpy()
+
+        return torch.from_numpy((self.interaction_matrix[user, :].multiply(self.item_similarity[:, item].T)).sum(axis=1).getA1())
 
     def full_sort_predict(self, interaction):
-        user = interaction[self.USER_ID]
+        user = interaction[self.USER_ID].cpu().numpy()
 
-        scores = self.score_matrix[user]
-
-        return scores.view(-1)
+        r = self.interaction_matrix[user, :] @ self.item_similarity
+        return torch.from_numpy(r.flatten())
