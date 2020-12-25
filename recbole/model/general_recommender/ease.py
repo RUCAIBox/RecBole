@@ -40,7 +40,7 @@ class EASE(GeneralRecommender):
         self.dummy_param = torch.nn.Parameter(torch.zeros(1))
 
         X = dataset.inter_matrix(
-            form='coo').astype(np.float32)
+            form='csr').astype(np.float32)
 
         reg_weight = config['reg_weight']
 
