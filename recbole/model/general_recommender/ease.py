@@ -15,20 +15,6 @@ from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 
 
-def scipy_to_sparse_tensor(A):
-    # https://stackoverflow.com/a/50665264/7367514
-    C = A.tocoo()
-
-    values = C.data
-    indices = np.vstack((C.row, C.col))
-
-    i = torch.LongTensor(indices)
-    v = torch.FloatTensor(values)
-    shape = C.shape
-
-    return torch.sparse.FloatTensor(i, v, torch.Size(shape))
-
-
 class EASE(GeneralRecommender):
     input_type = InputType.POINTWISE
     type = ModelType.TRADITIONAL
