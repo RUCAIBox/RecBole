@@ -19,7 +19,6 @@ import torch.optim as optim
 from torch.nn.utils.clip_grad import clip_grad_norm_
 import numpy as np
 import matplotlib.pyplot as plt
-import xgboost as xgb
 
 from time import time
 from logging import getLogger
@@ -590,9 +589,10 @@ class xgboostTrainer(AbstractTrainer):
     def __init__(self, config, model):
         super(xgboostTrainer, self).__init__(config, model)
 
+        self.xgb = __import__('xgboost')
+
         self.logger = getLogger()
         self.label_field = config['LABEL_FIELD']
-
         self.xgb_model = config['xgb_model']
 
         # DMatrix params
@@ -648,15 +648,15 @@ class xgboostTrainer(AbstractTrainer):
                 else:
                     cur_data = np.hstack((cur_data, value))
 
-        return xgb.DMatrix(data=cur_data,
-                           label=interaction_np[self.label_field],
-                           weight=self.weight,
-                           base_margin=self.base_margin,
-                           missing=self.missing,
-                           silent=self.silent,
-                           feature_names=self.feature_names,
-                           feature_types=self.feature_types,
-                           nthread=self.nthread)
+        return self.xgb.DMatrix(data=cur_data,
+                                label=interaction_np[self.label_field],
+                                weight=self.weight,
+                                base_margin=self.base_margin,
+                                missing=self.missing,
+                                silent=self.silent,
+                                feature_names=self.feature_names,
+                                feature_types=self.feature_types,
+                                nthread=self.nthread)
 
     def _train_at_once(self, train_data, valid_data):
         r"""
@@ -668,10 +668,10 @@ class xgboostTrainer(AbstractTrainer):
         self.dtrain = self._interaction_to_DMatrix(train_data.dataset[:])
         self.dvalid = self._interaction_to_DMatrix(valid_data.dataset[:])
         self.evals = [(self.dtrain, 'train'), (self.dvalid, 'valid')]
-        self.model = xgb.train(self.params, self.dtrain, self.num_boost_round,
-                               self.evals, self.obj, self.feval, self.maximize,
-                               self.early_stopping_rounds, self.evals_result,
-                               self.verbose_eval, self.xgb_model, self.callbacks)
+        self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round,
+                                    self.evals, self.obj, self.feval, self.maximize,
+                                    self.early_stopping_rounds, self.evals_result,
+                                    self.verbose_eval, self.xgb_model, self.callbacks)
         self.model.save_model(self.saved_model_file)
         self.xgb_model = self.saved_model_file
 
