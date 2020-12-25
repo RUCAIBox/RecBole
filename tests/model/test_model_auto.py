@@ -217,6 +217,18 @@ class TestContextRecommender(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
+    
+    def test_xgboost(self):
+        config_dict = {
+            'model': 'xgboost',
+            'xgb_params': 
+                {'booster': 'gbtree',
+                'objective': 'binary:logistic',
+                'eval_metric': ['auc','logloss']},
+            'xgb_num_boost_round': 1,
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
 
 
 class TestSequentialRecommender(unittest.TestCase):
