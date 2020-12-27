@@ -23,6 +23,11 @@ from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 
 
+# https://github.com/RUCAIBox/RecBole/issues/622
+def add_noise(t, mag=1e-5):
+    return t + mag * torch.rand(t.shape)
+
+
 class SLIMElastic(GeneralRecommender):
     input_type = InputType.POINTWISE
     type = ModelType.TRADITIONAL
@@ -79,7 +84,7 @@ class SLIMElastic(GeneralRecommender):
                     # reattach column if removed
                     X[:, j] = r
 
-            self.item_similarity = sp.vstack(item_coeffs).T
+        self.item_similarity = sp.vstack(item_coeffs).T
 
     def forward(self):
         pass
@@ -91,11 +96,15 @@ class SLIMElastic(GeneralRecommender):
         user = interaction[self.USER_ID].cpu().numpy()
         item = interaction[self.ITEM_ID].cpu().numpy()
 
-        return torch.from_numpy((self.interaction_matrix[user, :].multiply(
+        r = torch.from_numpy((self.interaction_matrix[user, :].multiply(
             self.item_similarity[:, item].T)).sum(axis=1).getA1())
+
+        return add_noise(r)
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID].cpu().numpy()
 
         r = self.interaction_matrix[user, :] @ self.item_similarity
-        return torch.from_numpy(r.todense().getA1())
+        r = torch.from_numpy(r.todense().getA1())
+
+        return add_noise(r)

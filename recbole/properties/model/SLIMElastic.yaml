@@ -1,4 +1,4 @@
-alpha: 1.0
-l1_ratio: 0.001
+alpha: 0.2
+l1_ratio: 0.02
 positive_only: False
 hide_item: True
