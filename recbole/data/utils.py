@@ -44,6 +44,9 @@ def create_dataset(config):
         elif model_type == ModelType.SOCIAL:
             from .dataset import SocialDataset
             return SocialDataset(config)
+        elif model_type == ModelType.XGBOOST:
+            from .dataset import XgboostDataset
+            return XgboostDataset(config)
         else:
             from .dataset import Dataset
             return Dataset(config)

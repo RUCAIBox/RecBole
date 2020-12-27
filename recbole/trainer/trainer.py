@@ -13,13 +13,12 @@ recbole.trainer.trainer
 """
 
 import os
-import itertools
+from tqdm import tqdm
 import torch
 import torch.optim as optim
 from torch.nn.utils.clip_grad import clip_grad_norm_
 import numpy as np
 import matplotlib.pyplot as plt
-import xgboost as xgb
 
 from time import time
 from logging import getLogger
@@ -120,7 +119,7 @@ class Trainer(AbstractTrainer):
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         return optimizer
 
-    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         r"""Train the model in an epoch
 
         Args:
@@ -128,6 +127,7 @@ class Trainer(AbstractTrainer):
             epoch_idx (int): The current epoch id.
             loss_func (function): The loss function of :attr:`model`. If it is ``None``, the loss function will be
                 :attr:`self.model.calculate_loss`. Defaults to ``None``.
+            show_progress (bool): Show progress of epoch training. Defaults to ``False``.
 
         Returns:
             float/tuple: The sum of loss returned by all batches in this epoch. If the loss in each batch contains
@@ -137,7 +137,16 @@ class Trainer(AbstractTrainer):
         self.model.train()
         loss_func = loss_func or self.model.calculate_loss
         total_loss = None
-        for batch_idx, interaction in enumerate(train_data):
+        iter_data = (
+            tqdm(
+                enumerate(train_data),
+                total=len(train_data),
+                desc=f"Train {epoch_idx:>5}",
+            )
+            if show_progress
+            else enumerate(train_data)
+        )
+        for batch_idx, interaction in iter_data:
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             losses = loss_func(interaction)
@@ -155,17 +164,18 @@ class Trainer(AbstractTrainer):
             self.optimizer.step()
         return total_loss
 
-    def _valid_epoch(self, valid_data):
+    def _valid_epoch(self, valid_data, show_progress=False):
         r"""Valid the model with valid data
 
         Args:
-            valid_data (DataLoader): the valid data
+            valid_data (DataLoader): the valid data.
+            show_progress (bool): Show progress of epoch evaluate. Defaults to ``False``.
 
         Returns:
             float: valid score
             dict: valid result
         """
-        valid_result = self.evaluate(valid_data, load_best_model=False)
+        valid_result = self.evaluate(valid_data, load_best_model=False, show_progress=show_progress)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_score, valid_result
 
@@ -222,7 +232,7 @@ class Trainer(AbstractTrainer):
             train_loss_output += 'train loss: %.4f' % losses
         return train_loss_output + ']'
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         r"""Train the model based on the train data and the valid data.
 
         Args:
@@ -231,6 +241,9 @@ class Trainer(AbstractTrainer):
                                                If it's None, the early_stopping is invalid.
             verbose (bool, optional): whether to write training and evaluation information to logger, default: True
             saved (bool, optional): whether to save the model parameters, default: True
+            show_progress (bool): Show progress of epoch training and evaluate. Defaults to ``False``.
+            callback_fn (callable): Optional callback function executed at end of epoch.
+                                    Includes (epoch_idx, valid_score) input arguments.
 
         Returns:
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
@@ -241,7 +254,7 @@ class Trainer(AbstractTrainer):
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
-            train_loss = self._train_epoch(train_data, epoch_idx)
+            train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
             self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
             training_end_time = time()
             train_loss_output = \
@@ -259,7 +272,7 @@ class Trainer(AbstractTrainer):
                 continue
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
-                valid_score, valid_result = self._valid_epoch(valid_data)
+                valid_score, valid_result = self._valid_epoch(valid_data, show_progress=show_progress)
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
                     valid_score, self.best_valid_score, self.cur_step,
                     max_step=self.stopping_step, bigger=self.valid_metric_bigger)
@@ -277,6 +290,9 @@ class Trainer(AbstractTrainer):
                         if verbose:
                             self.logger.info(update_output)
                     self.best_valid_result = valid_result
+
+                if callback_fn:
+                    callback_fn(epoch_idx, valid_score)
 
                 if stop_flag:
                     stop_output = 'Finished training, best eval result in epoch %d' % \
@@ -313,7 +329,7 @@ class Trainer(AbstractTrainer):
         return interaction, scores
 
     @torch.no_grad()
-    def evaluate(self, eval_data, load_best_model=True, model_file=None):
+    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
         r"""Evaluate the model based on the eval data.
 
         Args:
@@ -322,6 +338,7 @@ class Trainer(AbstractTrainer):
                                               It should be set True, if users want to test the model after training.
             model_file (str, optional): the saved model file, default: None. If users want to test the previously
                                         trained model file, they can set this parameter.
+            show_progress (bool): Show progress of epoch evaluate. Defaults to ``False``.
 
         Returns:
             dict: eval result, key is the eval metric and value in the corresponding metric value
@@ -347,7 +364,16 @@ class Trainer(AbstractTrainer):
             self.tot_item_num = eval_data.dataset.item_num
 
         batch_matrix_list = []
-        for batch_idx, batched_data in enumerate(eval_data):
+        iter_data = (
+            tqdm(
+                enumerate(eval_data),
+                total=len(eval_data),
+                desc=f"Evaluate   ",
+            )
+            if show_progress
+            else enumerate(eval_data)
+        )
+        for batch_idx, batched_data in iter_data:
             if eval_data.dl_type == DataLoaderType.FULL:
                 interaction, scores = self._full_sort_batch_eval(batched_data)
             else:
@@ -413,7 +439,7 @@ class KGTrainer(Trainer):
         self.train_rec_step = config['train_rec_step']
         self.train_kg_step = config['train_kg_step']
 
-    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         if self.train_rec_step is None or self.train_kg_step is None:
             interaction_state = KGDataLoaderState.RSKG
         elif epoch_idx % (self.train_rec_step + self.train_kg_step) < self.train_rec_step:
@@ -422,9 +448,11 @@ class KGTrainer(Trainer):
             interaction_state = KGDataLoaderState.KG
         train_data.set_mode(interaction_state)
         if interaction_state in [KGDataLoaderState.RSKG, KGDataLoaderState.RS]:
-            return super()._train_epoch(train_data, epoch_idx)
+            return super()._train_epoch(train_data, epoch_idx, show_progress=show_progress)
         elif interaction_state in [KGDataLoaderState.KG]:
-            return super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
+            return super()._train_epoch(train_data, epoch_idx,
+                                        loss_func=self.model.calculate_kg_loss,
+                                        show_progress=show_progress)
         return None
 
 
@@ -436,14 +464,16 @@ class KGATTrainer(Trainer):
     def __init__(self, config, model):
         super(KGATTrainer, self).__init__(config, model)
 
-    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         # train rs
         train_data.set_mode(KGDataLoaderState.RS)
-        rs_total_loss = super()._train_epoch(train_data, epoch_idx)
+        rs_total_loss = super()._train_epoch(train_data, epoch_idx, show_progress=show_progress)
 
         # train kg
         train_data.set_mode(KGDataLoaderState.KG)
-        kg_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
+        kg_total_loss = super()._train_epoch(train_data, epoch_idx,
+                                             loss_func=self.model.calculate_kg_loss,
+                                             show_progress=show_progress)
 
         # update A
         self.model.eval()
@@ -478,12 +508,12 @@ class S3RecTrainer(Trainer):
         }
         torch.save(state, saved_model_file)
 
-    def pretrain(self, train_data, verbose=True):
+    def pretrain(self, train_data, verbose=True, show_progress=False):
 
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
-            train_loss = self._train_epoch(train_data, epoch_idx)
+            train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
             self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
             training_end_time = time()
             train_loss_output = \
@@ -502,11 +532,11 @@ class S3RecTrainer(Trainer):
 
         return self.best_valid_score, self.best_valid_result
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         if self.model.train_stage == 'pretrain':
-            return self.pretrain(train_data, verbose)
+            return self.pretrain(train_data, verbose, show_progress)
         elif self.model.train_stage == 'finetune':
-            return super().fit(train_data, valid_data, verbose, saved)
+            return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
             raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
 
@@ -520,19 +550,23 @@ class MKRTrainer(Trainer):
         super(MKRTrainer, self).__init__(config, model)
         self.kge_interval = config['kge_interval']
 
-    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         rs_total_loss, kg_total_loss = 0., 0.
 
         # train rs
         self.logger.info('Train RS')
         train_data.set_mode(KGDataLoaderState.RS)
-        rs_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_rs_loss)
+        rs_total_loss = super()._train_epoch(train_data, epoch_idx,
+                                             loss_func=self.model.calculate_rs_loss,
+                                             show_progress=show_progress)
 
         # train kg
         if epoch_idx % self.kge_interval == 0:
             self.logger.info('Train KG')
             train_data.set_mode(KGDataLoaderState.KG)
-            kg_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
+            kg_total_loss = super()._train_epoch(train_data, epoch_idx,
+                                                 loss_func=self.model.calculate_kg_loss,
+                                                 show_progress=show_progress)
 
         return rs_total_loss, kg_total_loss
 
@@ -551,13 +585,14 @@ class xgboostTrainer(AbstractTrainer):
     """xgboostTrainer is designed for XGBOOST.
     
     """
+
     def __init__(self, config, model):
         super(xgboostTrainer, self).__init__(config, model)
-        
+
+        self.xgb = __import__('xgboost')
+
         self.logger = getLogger()
         self.label_field = config['LABEL_FIELD']
-
-        self.train_or_cv = config['train_or_cv']
         self.xgb_model = config['xgb_model']
 
         # DMatrix params
@@ -581,26 +616,13 @@ class xgboostTrainer(AbstractTrainer):
         self.verbose_eval = config['xgb_verbose_eval']
         self.callbacks = None
 
-        # cv params
-        if self.train_or_cv == 'cv':
-            self.nfold = config['xgb_cv_nfold']
-            self.stratified = config['xgb_cv_stratified']
-            self.folds = config['xgb_cv_folds']
-            self.fpreproc = config['xgb_cv_freproc']
-            self.show_stdv = config['xgb_cv_show_stdv']
-            self.seed = config['xgb_cv_seed']
-            self.shuffle = config['xgb_cv_shuffle']
-
         # evaluator
         self.eval_type = config['eval_type']
         self.epochs = config['epochs']
         self.eval_step = min(config['eval_step'], self.epochs)
         self.valid_metric = config['valid_metric'].lower()
 
-        if self.eval_type == EvaluatorType.INDIVIDUAL:
-            self.evaluator = LossEvaluator(config)
-        else:
-            self.evaluator = TopKEvaluator(config)
+        self.evaluator = ProxyEvaluator(config)
 
         # model saved
         self.checkpoint_dir = config['checkpoint_dir']
@@ -619,40 +641,39 @@ class xgboostTrainer(AbstractTrainer):
         interaction_np = interaction.numpy()
         cur_data = np.array([])
         for key, value in interaction_np.items():
-            value = np.resize(value,(value.shape[0],1))
+            value = np.resize(value, (value.shape[0], 1))
             if key != self.label_field:
                 if cur_data.shape[0] == 0:
                     cur_data = value
                 else:
                     cur_data = np.hstack((cur_data, value))
-                    
-        return xgb.DMatrix(data = cur_data, 
-                                label = interaction_np[self.label_field], 
-                                weight = self.weight,
-                                base_margin = self.base_margin,
-                                missing = self.missing, 
-                                silent = self.silent, 
-                                feature_names = self.feature_names, 
-                                feature_types = self.feature_types, 
-                                nthread = self.nthread)
 
-    def _train_epoch(self, train_data, valid_data):
+        return self.xgb.DMatrix(data=cur_data,
+                                label=interaction_np[self.label_field],
+                                weight=self.weight,
+                                base_margin=self.base_margin,
+                                missing=self.missing,
+                                silent=self.silent,
+                                feature_names=self.feature_names,
+                                feature_types=self.feature_types,
+                                nthread=self.nthread)
+
+    def _train_at_once(self, train_data, valid_data):
         r"""
 
         Args:
             train_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
             valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
         """
-        for _, train_interaction in enumerate(train_data):
-            self.dtrain = self._interaction_to_DMatrix(train_interaction)
-            self.evals = [(self.dtrain,'train')]
-            self.model = xgb.train(self.params, self.dtrain, 1, 
-                        self.evals, self.obj, self.feval, self.maximize, 
-                        self.early_stopping_rounds, self.evals_result, 
-                        self.verbose_eval, self.xgb_model, self.callbacks)
-
-            self.model.save_model(self.saved_model_file)
-            self.xgb_model = self.saved_model_file
+        self.dtrain = self._interaction_to_DMatrix(train_data.dataset[:])
+        self.dvalid = self._interaction_to_DMatrix(valid_data.dataset[:])
+        self.evals = [(self.dtrain, 'train'), (self.dvalid, 'valid')]
+        self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round,
+                                    self.evals, self.obj, self.feval, self.maximize,
+                                    self.early_stopping_rounds, self.evals_result,
+                                    self.verbose_eval, self.xgb_model, self.callbacks)
+        self.model.save_model(self.saved_model_file)
+        self.xgb_model = self.saved_model_file
 
     def _valid_epoch(self, valid_data):
         r"""
@@ -660,47 +681,46 @@ class xgboostTrainer(AbstractTrainer):
         Args:
             valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
         """
-        valid_result = self.evaluate(valid_data) 
+        valid_result = self.evaluate(valid_data)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_result, valid_score
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+        # load model
+        if self.xgb_model is not None:
+            self.model.load_model(self.xgb_model)
+
         self.best_valid_score = 0.
         self.best_valid_result = 0.
-        if self.train_or_cv == 'train':
-            for epoch_idx in range(self.epochs):
-                train_loss = self._train_epoch(train_data, valid_data)
 
-                if (epoch_idx + 1) % self.eval_step == 0:
-                    # evaluate
-                    valid_start_time = time()
-                    valid_result, valid_score = self._valid_epoch(valid_data)
-                    valid_end_time = time()
-                    valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
+        for epoch_idx in range(self.epochs):
+            self._train_at_once(train_data, valid_data)
+
+            if (epoch_idx + 1) % self.eval_step == 0:
+                # evaluate
+                valid_start_time = time()
+                valid_result, valid_score = self._valid_epoch(valid_data)
+                valid_end_time = time()
+                valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                    valid_result_output = 'valid result: \n' + dict2str(valid_result)
-                    if verbose:
-                        self.logger.info(valid_score_output)
-                        self.logger.info(valid_result_output)
+                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                if verbose:
+                    self.logger.info(valid_score_output)
+                    self.logger.info(valid_result_output)
 
-                    self.best_valid_score = valid_score
-                    self.best_valid_result = valid_result
-    
+                self.best_valid_score = valid_score
+                self.best_valid_result = valid_result
+
         return self.best_valid_score, self.best_valid_result
 
     def evaluate(self, eval_data, load_best_model=True, model_file=None):
         self.eval_pred = torch.Tensor()
         self.eval_true = torch.Tensor()
 
-        for _, batched_data in enumerate(eval_data):
-            batched_data_DMatrix = self._interaction_to_DMatrix(batched_data)
-            batch_pred = torch.Tensor(self.model.predict(batched_data_DMatrix))
-            if self.params['objective'] == 'binary:logistic':
-                batch_pred = (batch_pred >= 0.5) * 1 
-            self.eval_pred = torch.cat((self.eval_pred, batch_pred))
-            self.eval_true = torch.cat((self.eval_true, batched_data[self.label_field]))
-            
-        matrix_list = [torch.stack((self.eval_pred, self.eval_true), 1)]
+        self.deval = self._interaction_to_DMatrix(eval_data.dataset[:])
+        self.eval_true = torch.Tensor(self.deval.get_label())
+        self.eval_pred = torch.Tensor(self.model.predict(self.deval))
 
-        result = self.evaluator.evaluate(matrix_list, eval_data)
+        batch_matrix_list = [[torch.stack((self.eval_true, self.eval_pred), 1)]]
+        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
         return result
