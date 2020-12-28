@@ -6,7 +6,7 @@ state: INFO
 reproducibility: True
 data_path: 'dataset/'
 checkpoint_dir: 'saved'
-show_progress: ~
+show_progress: True
 
 # training settings
 epochs: 300
