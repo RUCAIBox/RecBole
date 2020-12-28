@@ -226,11 +226,12 @@ class Trainer(AbstractTrainer):
 
     def _generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
         des = self.config['loss_decimal_place'] or 4
-        des = '%.' + str(des) + 'f'
         train_loss_output = 'epoch %d training [time: %.2fs, ' % (epoch_idx, e_time - s_time)
         if isinstance(losses, tuple):
-            train_loss_output += ', '.join('train_loss%d:' + des % (idx + 1, loss) for idx, loss in enumerate(losses))
+            des = 'train_loss%d: %.' + str(des) + 'f'
+            train_loss_output += ', '.join( des % (idx + 1, loss) for idx, loss in enumerate(losses))
         else:
+            des = '%.' + str(des) + 'f'
             train_loss_output += 'train loss:' + des % losses
         return train_loss_output + ']'
 
