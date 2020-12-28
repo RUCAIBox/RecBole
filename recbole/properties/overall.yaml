@@ -6,7 +6,7 @@ state: INFO
 reproducibility: True
 data_path: 'dataset/'
 checkpoint_dir: 'saved'
-show_progress: True
+show_progress: ~
 
 # training settings
 epochs: 300
@@ -30,3 +30,5 @@ metrics: ["Recall", "MRR","NDCG","Hit","Precision"]
 topk: [10]
 valid_metric: MRR@10
 eval_batch_size: 4096
+loss_decimal_place: 3
+metric_decimal_place: 2

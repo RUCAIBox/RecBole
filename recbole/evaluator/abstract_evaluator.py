@@ -34,6 +34,7 @@ class BaseEvaluator(object):
     def __init__(self, config, metrics):
         self.metrics = metrics
         self.full = ('full' in config['eval_setting'])
+        self.precision = config['metric_decimal_place']
 
     def collect(self, *args):
         """get the intermediate results for each batch, it is called at the end of each batch"""
