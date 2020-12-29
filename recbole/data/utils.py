@@ -31,9 +31,9 @@ def create_dataset(config):
     Returns:
         Dataset: Constructed dataset.
     """
-    try:
+    if hasattr(importlib.import_module('recbole.data.dataset'), config['model'] + 'Dataset'):
         return getattr(importlib.import_module('recbole.data.dataset'), config['model'] + 'Dataset')(config)
-    except AttributeError:
+    else:
         model_type = config['MODEL_TYPE']
         if model_type == ModelType.SEQUENTIAL:
             from .dataset import SequentialDataset
