@@ -245,8 +245,8 @@ class Config(object):
                         config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
                         if config_dict is not None:
                             self.internal_config_dict.update(config_dict)
-            elif model in ['GRU4RecKG','KSR']:
-               with open(sequential_embedding_model_init, 'r', encoding='utf-8') as f:
+            elif model in ['GRU4RecKG', 'KSR']:
+                with open(sequential_embedding_model_init, 'r', encoding='utf-8') as f:
                     config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
                     if config_dict is not None:
                         self.internal_config_dict.update(config_dict) 
