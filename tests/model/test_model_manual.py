@@ -13,24 +13,6 @@ current_path = os.path.dirname(os.path.realpath(__file__))
 config_file_list = [os.path.join(current_path, 'test_model.yaml')]
 
 
-class TestContextRecommender(unittest.TestCase):
-    # todo: more complex context information should be test, such as criteo dataset
-
-    def test_dcn(self):
-        config_dict = {
-            'model': 'DCN',
-        }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
-
-    # def test_din(self):
-    #     config_dict = {
-    #         'model': 'DIN',
-    #     }
-    #     objective_function(config_dict=config_dict,
-    #                        config_file_list=config_file_list, saved=False)
-
-
 class TestSequentialRecommender(unittest.TestCase):
 
     def test_bert4rec(self):
