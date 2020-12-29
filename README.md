@@ -11,12 +11,13 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 
-[HomePage] | [Docs] | [Datasets] | [Paper]
+[HomePage] | [Docs] | [Datasets] | [Paper] | [Blogs]
 
 [HomePage]: https://recbole.io/
 [Docs]: https://recbole.io/docs/
 [Datasets]: https://github.com/RUCAIBox/RecDatasets
 [Paper]: https://arxiv.org/abs/2011.01731
+[Blogs]: #blogs
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
@@ -53,6 +54,8 @@ oriented to the GPU environment.
 for testing and comparing recommendation algorithms.
 
 ## RecBole News
+**12/10/2020**: 我们发布了RecBole小白入门系列中文博客。
+
 **12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
 
 **11/29/2020**: We constructed preliminary experiments to test the time and memory cost on three
@@ -61,6 +64,11 @@ for reference.
 
 **11/03/2020**: We release the first version of RecBole **v0.1.1**.
 
+## Blogs
+
+[RecBole小白入门系列博客（一）——快速安装和简单上手](https://blog.csdn.net/Turinger_2000/article/details/110414642)
+
+[RecBole小白入门系列博客（二） ——General类模型运行流程](https://blog.csdn.net/Turinger_2000/article/details/110395198)
 
 ## Installation
 RecBole works with the following operating systems:

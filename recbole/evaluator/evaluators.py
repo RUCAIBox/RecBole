@@ -82,7 +82,7 @@ class TopKEvaluator(GroupedEvalautor):
         for metric, value in zip(self.metrics, result_list):
             for k in self.topk:
                 key = '{}@{}'.format(metric, k)
-                metric_dict[key] = round(value[k - 1], 4)
+                metric_dict[key] = round(value[k - 1], self.precision)
 
         return metric_dict
 
@@ -236,7 +236,7 @@ class RankEvaluator(GroupedEvalautor):
         result_list = self._calculate_metrics(user_len_list, pos_len_list, pos_rank_sum)
         for metric, value in zip(self.metrics, result_list):
             key = '{}'.format(metric)
-            metric_dict[key] = round(value, 4)
+            metric_dict[key] = round(value, self.precision)
 
         return metric_dict
 
@@ -320,7 +320,7 @@ class LossEvaluator(IndividualEvaluator):
         result_list = self._calculate_metrics(trues, preds)
         for metric, value in zip(self.metrics, result_list):
             key = '{}'.format(metric)
-            metric_dict[key] = round(value, 4)
+            metric_dict[key] = round(value, self.precision)
         return metric_dict
 
     def _calculate_metrics(self, trues, preds):
