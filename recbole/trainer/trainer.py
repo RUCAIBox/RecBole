@@ -131,7 +131,7 @@ class Trainer(AbstractTrainer):
 
         Returns:
             float/tuple: The sum of loss returned by all batches in this epoch. If the loss in each batch contains
-            multiple parts and the model return these multiple parts loss instead of the sum of loss, It will return a
+            multiple parts and the model return these multiple parts loss instead of the sum of loss, it will return a
             tuple which includes the sum of loss in each part.
         """
         self.model.train()
@@ -225,11 +225,14 @@ class Trainer(AbstractTrainer):
             raise ValueError('Training loss is nan')
 
     def _generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
+        des = self.config['loss_decimal_place'] or 4
         train_loss_output = 'epoch %d training [time: %.2fs, ' % (epoch_idx, e_time - s_time)
         if isinstance(losses, tuple):
-            train_loss_output += ', '.join('train_loss%d: %.4f' % (idx + 1, loss) for idx, loss in enumerate(losses))
+            des = 'train_loss%d: %.' + str(des) + 'f'
+            train_loss_output += ', '.join( des % (idx + 1, loss) for idx, loss in enumerate(losses))
         else:
-            train_loss_output += 'train loss: %.4f' % losses
+            des = '%.' + str(des) + 'f'
+            train_loss_output += 'train loss:' + des % losses
         return train_loss_output + ']'
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
