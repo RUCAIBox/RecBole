@@ -240,8 +240,10 @@ class Interaction(object):
         """
         for k in new_inter.interaction:
             self.interaction[k] = new_inter.interaction[k]
-        self.pos_len_list = new_inter.pos_len_list
-        self.user_len_list = new_inter.user_len_list
+        if new_inter.pos_len_list is not None:
+            self.pos_len_list = new_inter.pos_len_list
+        if new_inter.user_len_list is not None:
+            self.user_len_list = new_inter.user_len_list
 
     def drop(self, column):
         """Drop column in interaction.

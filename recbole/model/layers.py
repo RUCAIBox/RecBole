@@ -1041,3 +1041,26 @@ class FMFirstOrderLinear(nn.Module):
             total_fields_embedding.append(token_seq_fields_embedding)
 
         return torch.sum(torch.cat(total_fields_embedding, dim=1), dim=1) + self.bias  # [batch_size, output_dim]
+
+
+class SparseDropout(nn.Module):
+    """
+    This is a Module that execute Dropout on Pytorch sparse tensor.
+    """
+
+    def __init__(self, p=0.5):
+        super(SparseDropout, self).__init__()
+        # p is ratio of dropout
+        # convert to keep probability
+        self.kprob = 1 - p
+
+    def forward(self, x):
+
+        if not self.training:
+            return x
+
+        mask = ((torch.rand(x._values().size()) +
+                 self.kprob).floor()).type(torch.bool)
+        rc = x._indices()[:, mask]
+        val = x._values()[mask] * (1.0 / self.kprob)
+        return torch.sparse.FloatTensor(rc, val, x.shape)

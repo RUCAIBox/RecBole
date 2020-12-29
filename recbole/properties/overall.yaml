@@ -6,6 +6,7 @@ state: INFO
 reproducibility: True
 data_path: 'dataset/'
 checkpoint_dir: 'saved'
+show_progress: True
 
 # training settings
 epochs: 300
@@ -13,9 +14,11 @@ train_batch_size: 2048
 learner: adam
 learning_rate: 0.001
 training_neg_sample_num: 1
+training_neg_sample_distribution: uniform
 eval_step: 1
 stopping_step: 10
-clip_grad_norm: {'max_norm': 5, 'norm_type': 2}
+clip_grad_norm: ~
+# clip_grad_norm:  {'max_norm': 5, 'norm_type': 2}
 
 # evaluation settings
 eval_setting: RO_RS,full
@@ -27,3 +30,5 @@ metrics: ["Recall", "MRR","NDCG","Hit","Precision"]
 topk: [10]
 valid_metric: MRR@10
 eval_batch_size: 4096
+loss_decimal_place: 3
+metric_decimal_place: 2

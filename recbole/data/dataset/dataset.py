@@ -1108,7 +1108,7 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of users' interaction records.
         """
-        return np.mean(list(Counter(self.inter_feat[self.uid_field]).values()))
+        return np.mean(list(Counter(self.inter_feat[self.uid_field].numpy()).values()))
 
     @property
     def avg_actions_of_items(self):
@@ -1117,7 +1117,7 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of items' interaction records.
         """
-        return np.mean(list(Counter(self.inter_feat[self.iid_field]).values()))
+        return np.mean(list(Counter(self.inter_feat[self.iid_field].numpy()).values()))
 
     @property
     def sparsity(self):
@@ -1340,6 +1340,11 @@ class Dataset(object):
         Returns:
             list: List of builded :class:`Dataset`.
         """
+        if self.benchmark_filename_list is not None:
+            cumsum = list(np.cumsum(self.file_size_list))
+            datasets = [self.copy(self.inter_feat[start: end]) for start, end in zip([0] + cumsum[:-1], cumsum)]
+            return datasets
+
         ordering_args = eval_setting.ordering_args
         if ordering_args['strategy'] == 'shuffle':
             self.shuffle()

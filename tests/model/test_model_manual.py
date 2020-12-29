@@ -15,7 +15,7 @@ config_file_list = [os.path.join(current_path, 'test_model.yaml')]
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
-  
+
     def test_dcn(self):
         config_dict = {
             'model': 'DCN',
@@ -83,6 +83,6 @@ class TestSequentialRecommender2(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
 
-   
+
 if __name__ == '__main__':
     unittest.main()

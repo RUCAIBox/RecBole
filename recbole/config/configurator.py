@@ -19,7 +19,7 @@ import yaml
 import torch
 from logging import getLogger
 
-from recbole.evaluator import loss_metrics, topk_metrics
+from recbole.evaluator import group_metrics, individual_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
     general_arguments, training_arguments, evaluation_arguments, dataset_arguments
 
@@ -223,7 +223,7 @@ class Config(object):
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
-        elif self.internal_config_dict['MODEL_TYPE'] == ModelType.CONTEXT:
+        elif self.internal_config_dict['MODEL_TYPE'] == ModelType.CONTEXT or self.internal_config_dict['MODEL_TYPE'] == ModelType.XGBOOST:
             with open(context_aware_init, 'r', encoding='utf-8') as f:
                 config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
                 if config_dict is not None:
@@ -245,8 +245,8 @@ class Config(object):
                         config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
                         if config_dict is not None:
                             self.internal_config_dict.update(config_dict)
-            elif model in ['GRU4RecKG','KSR']:
-               with open(sequential_embedding_model_init, 'r', encoding='utf-8') as f:
+            elif model in ['GRU4RecKG', 'KSR']:
+                with open(sequential_embedding_model_init, 'r', encoding='utf-8') as f:
                     config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
                     if config_dict is not None:
                         self.internal_config_dict.update(config_dict) 
@@ -296,12 +296,12 @@ class Config(object):
 
         eval_type = None
         for metric in self.final_config_dict['metrics']:
-            if metric.lower() in loss_metrics:
+            if metric.lower() in individual_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.RANKING:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
                     eval_type = EvaluatorType.INDIVIDUAL
-            if metric.lower() in topk_metrics:
+            if metric.lower() in group_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.INDIVIDUAL:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:

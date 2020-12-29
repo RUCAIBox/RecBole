@@ -130,6 +130,10 @@ test_examples = {
         'model': 'ConvNCF',
         'dataset': 'ml-100k',
     },
+    'Test LINE': {
+        'model': 'LINE',
+        'dataset': 'ml-100k',
+    },
 
     # Context-aware Recommendation
     'Test FM': {

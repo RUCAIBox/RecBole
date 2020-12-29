@@ -44,6 +44,9 @@ def create_dataset(config):
         elif model_type == ModelType.SOCIAL:
             from .dataset import SocialDataset
             return SocialDataset(config)
+        elif model_type == ModelType.XGBOOST:
+            from .dataset import XgboostDataset
+            return XgboostDataset(config)
         else:
             from .dataset import Dataset
             return Dataset(config)
@@ -94,6 +97,9 @@ def data_preparation(config, dataset, save=False):
 
     kwargs = {}
     if config['training_neg_sample_num']:
+        if dataset.label_field in dataset.inter_feat:
+            raise ValueError(f'`training_neg_sample_num` should be 0 '
+                             f'if inter_feat have label_field [{dataset.label_field}].')
         train_distribution = config['training_neg_sample_distribution'] or 'uniform'
         es.neg_sample_by(by=config['training_neg_sample_num'], distribution=train_distribution)
         if model_type != ModelType.SEQUENTIAL:
@@ -118,10 +124,13 @@ def data_preparation(config, dataset, save=False):
 
     kwargs = {}
     if len(es_str) > 1 and getattr(es, es_str[1], None):
+        if dataset.label_field in dataset.inter_feat:
+            raise ValueError(f'It can not validate with `{es_str[1]}` '
+                             f'when inter_feat have label_field [{dataset.label_field}].')
         getattr(es, es_str[1])()
         if 'sampler' not in locals():
             sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
-        sampler.set_distribution(es.neg_sample_args['distribution'])   
+        sampler.set_distribution(es.neg_sample_args['distribution'])
         kwargs['sampler'] = [sampler.set_phase('valid'), sampler.set_phase('test')]
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
     valid_data, test_data = dataloader_construct(
