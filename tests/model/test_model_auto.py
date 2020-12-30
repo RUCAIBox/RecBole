@@ -116,6 +116,13 @@ class TestGeneralRecommender(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
 
+    def test_MacridVAE(self):
+        config_dict = {
+            'model': 'MacridVAE',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
