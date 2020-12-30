@@ -567,15 +567,19 @@ class Dataset(object):
                     lst = feat[field].values
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, feat))
-                    feat[field] = (lst - mn) / (mx - mn)
+                        self.logger.warning('All the same value in [{}] from [{}_feat]'.format(field, feat))
+                        feat[field] = 1.0
+                    else:
+                        feat[field] = (lst - mn) / (mx - mn)
                 elif ftype == FeatureType.FLOAT_SEQ:
                     split_point = np.cumsum(feat[field].agg(len))[:-1]
                     lst = feat[field].agg(np.concatenate)
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, feat))
-                    lst = (lst - mn) / (mx - mn)
+                        self.logger.warning('All the same value in [{}] from [{}_feat]'.format(field, feat))
+                        lst = 1.0
+                    else:
+                        lst = (lst - mn) / (mx - mn)
                     lst = np.split(lst, split_point)
                     feat[field] = lst
 
