@@ -572,20 +572,20 @@ class TestSequentialRecommender(unittest.TestCase):
     #     }
     #     quick_test(config_dict)
 
-    def test_s3rec(self):
-        config_dict = {
-            'model': 'S3Rec',
-            'train_stage': 'pretrain',
-            'save_step': 1,
-        }
-        quick_test(config_dict)
-
-        config_dict = {
-            'model': 'S3Rec',
-            'train_stage': 'finetune',
-            'pre_model_path': './saved/S3Rec-test-1.pth',
-        }
-        quick_test(config_dict)
+    # def test_s3rec(self):
+    #     config_dict = {
+    #         'model': 'S3Rec',
+    #         'train_stage': 'pretrain',
+    #         'save_step': 1,
+    #     }
+    #     quick_test(config_dict)
+    #
+    #     config_dict = {
+    #         'model': 'S3Rec',
+    #         'train_stage': 'finetune',
+    #         'pre_model_path': './saved/S3Rec-test-1.pth',
+    #     }
+    #     quick_test(config_dict)
 
 
 class TestKnowledgeRecommender(unittest.TestCase):
