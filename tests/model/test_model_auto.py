@@ -240,13 +240,6 @@ class TestContextRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
-    # def test_dcn(self):
-    #     config_dict = {
-    #         'model': 'DCN',
-    #         'threshold': {'rating': 4},
-    #     }
-    #     quick_test(config_dict)
-
     def test_autoint(self):
         config_dict = {
             'model': 'AutoInt',
@@ -401,20 +394,6 @@ class TestSequentialRecommender(unittest.TestCase):
             'hidden_act': 'sigmoid'
         }
         quick_test(config_dict)
-
-    # def test_bert4rec(self):
-    #     config_dict = {
-    #         'model': 'BERT4Rec',
-    #     }
-    #     quick_test(config_dict)
-
-    # def test_bert4rec(self):
-    #     config_dict = {
-    #         'model': 'BERT4Rec',
-    #         'loss_type': 'BPR',
-    #         'hidden_act': 'swish'
-    #     }
-    #     quick_test(config_dict)
 
     def test_srgnn(self):
         config_dict = {
@@ -571,26 +550,42 @@ class TestSequentialRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_bert4rec(self):
+        config_dict = {
+            'model': 'BERT4Rec',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
+    def test_bert4rec_with_BPR_loss_and_swish(self):
+        config_dict = {
+            'model': 'BERT4Rec',
+            'loss_type': 'BPR',
+            'hidden_act': 'swish'
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
     # def test_gru4reckg(self):
     #     config_dict = {
     #         'model': 'GRU4RecKG',
     #     }
     #     quick_test(config_dict)
 
-    # def test_s3rec(self):
-    #     config_dict = {
-    #         'model': 'S3Rec',
-    #         'train_stage': 'pretrain',
-    #         'save_step': 1,
-    #     }
-    #     quick_test(config_dict)
+    def test_s3rec(self):
+        config_dict = {
+            'model': 'S3Rec',
+            'train_stage': 'pretrain',
+            'save_step': 1,
+        }
+        quick_test(config_dict)
 
-    #     config_dict = {
-    #         'model': 'S3Rec',
-    #         'train_stage': 'finetune',
-    #         'pre_model_path': './saved/S3Rec-test-1.pth',
-    #     }
-    #     quick_test(config_dict)
+        config_dict = {
+            'model': 'S3Rec',
+            'train_stage': 'finetune',
+            'pre_model_path': './saved/S3Rec-test-1.pth',
+        }
+        quick_test(config_dict)
 
 
 class TestKnowledgeRecommender(unittest.TestCase):
