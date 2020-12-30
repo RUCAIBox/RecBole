@@ -23,7 +23,6 @@ from recbole.data.dataloader import *
 from recbole.data.dataloader.user_dataloader import *
 
 
-
 def create_dataset(config):
     """Create dataset according to :attr:`config['model']` and :attr:`config['MODEL_TYPE']`.
 
