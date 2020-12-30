@@ -43,13 +43,10 @@ class DCN(ContextRecommender):
 
         # define layers and loss
         # init weight and bias of each cross layer
-        self.cross_layer_parameter = [nn.Parameter(torch.empty(self.num_feature_field * self.embedding_size,
-                                                               device=self.device))
-                                      for _ in range(self.cross_layer_num * 2)]
-        self.cross_layer_w = nn.ParameterList(
-            self.cross_layer_parameter[:self.cross_layer_num])
-        self.cross_layer_b = nn.ParameterList(
-            self.cross_layer_parameter[self.cross_layer_num:])
+        self.cross_layer_w = nn.ParameterList(nn.Parameter(torch.randn(self.num_feature_field * self.embedding_size)
+                                                           .to(self.device)) for _ in range(self.cross_layer_num))
+        self.cross_layer_b = nn.ParameterList(nn.Parameter(torch.zeros(self.num_feature_field * self.embedding_size)
+                                                           .to(self.device)) for _ in range(self.cross_layer_num))
 
         # size of mlp hidden layer
         size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
