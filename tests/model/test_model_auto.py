@@ -157,7 +157,13 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'MacridVAE',
         }
         quick_test(config_dict)
-
+ 
+    def test_CDAE(self):
+        config_dict = {
+            'model': 'CDAE',
+            'training_neg_sample_num': 0
+        }
+        quick_test(config_dict)
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
