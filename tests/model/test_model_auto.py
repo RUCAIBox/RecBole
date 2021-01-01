@@ -140,6 +140,20 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_MultiDAE(self):
+        config_dict = {
+            'model': 'MultiDAE',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
+    def test_MultiVAE(self):
+        config_dict = {
+            'model': 'MultiVAE',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
