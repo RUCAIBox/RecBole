@@ -134,6 +134,14 @@ test_examples = {
         'model': 'LINE',
         'dataset': 'ml-100k',
     },
+    'Test MultiDAE': {
+        'model': 'MultiDAE',
+        'dataset': 'ml-100k',
+    },
+    'Test MultiVAE': {
+        'model': 'LINE',
+        'dataset': 'ml-100k',
+    },
     'Test MacridVAE': {
         'model': 'MacridVAE',
         'dataset': 'ml-100k',
