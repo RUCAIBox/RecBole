@@ -7,6 +7,7 @@ from recbole.model.general_recommender.gcmc import GCMC
 from recbole.model.general_recommender.itemknn import ItemKNN
 from recbole.model.general_recommender.lightgcn import LightGCN
 from recbole.model.general_recommender.line import LINE
+from recbole.model.general_recommender.macridvae import MacridVAE
 from recbole.model.general_recommender.multidae import MultiDAE
 from recbole.model.general_recommender.multivae import MultiVAE
 from recbole.model.general_recommender.nais import NAIS
