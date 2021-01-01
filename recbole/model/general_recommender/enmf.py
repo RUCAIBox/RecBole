@@ -4,7 +4,7 @@
 # @Email  : zhlin@ruc.edu.cn
 
 r"""
-MultiDAE
+ENMF
 ################################################
 Reference:
     Chong Chen et al. "Efficient Neural Matrix Factorization without Sampling for Recommendation." in TOIS 2020.
@@ -21,13 +21,17 @@ from recbole.model.abstract_recommender import GeneralRecommender
 
 
 class ENMF(GeneralRecommender):
+    r"""ENMF is an efficient non-sampling model for general recommendation.
+    In order to run non-sampling model, please set the training_neg_sample_num parameter as 0 .
+
+    """
 
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
         super(ENMF, self).__init__(config, dataset)
 
-        self.embedding_dim = config['embedding_dim']
+        self.embedding_size = config['embedding_size']
         self.dropout_prob = config['dropout_prob']
         self.reg_weight = config['reg_weight']
         self.negative_weight = config['negative_weight']
@@ -37,9 +41,9 @@ class ENMF(GeneralRecommender):
         self.history_item_matrix, _, self.history_lens = dataset.history_item_matrix()
         self.history_item_matrix = self.history_item_matrix.to(self.device)
 
-        self.user_embedding = nn.Embedding(self.n_users, self.embedding_dim, padding_idx=0)
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_dim, padding_idx=0)
-        self.H_i = nn.Linear(self.embedding_dim, 1, bias=False)
+        self.user_embedding = nn.Embedding(self.n_users, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.H_i = nn.Linear(self.embedding_size, 1, bias=False)
         self.dropout = nn.Dropout(self.dropout_prob)
 
         self.apply(xavier_normal_initialization)
@@ -57,12 +61,12 @@ class ENMF(GeneralRecommender):
         return loss_l2
 
     def forward(self, user):
-        user_embedding = self.user_embedding(user)  # shape:[B, embedding_dim]
-        user_embedding = self.dropout(user_embedding)  # shape:[B, embedding_dim]
+        user_embedding = self.user_embedding(user)  # shape:[B, embedding_size]
+        user_embedding = self.dropout(user_embedding)  # shape:[B, embedding_size]
 
         user_inter = self.history_item_matrix[user]  # shape :[B, max_len]
-        item_embedding = self.item_embedding(user_inter)  # shape: [B, max_len, embedding_dim]
-        score = torch.mul(user_embedding.unsqueeze(1), item_embedding)  # shape: [B, max_len, embedding_dim]
+        item_embedding = self.item_embedding(user_inter)  # shape: [B, max_len, embedding_size]
+        score = torch.mul(user_embedding.unsqueeze(1), item_embedding)  # shape: [B, max_len, embedding_size]
         score = self.H_i(score)  # shape: [B,max_len,1]
         score = score.squeeze()  # shape:[B,max_len]
 
@@ -73,13 +77,13 @@ class ENMF(GeneralRecommender):
 
         pos_score = self.forward(user)
 
-        # shape: [embedding_dim, embedding_dim]
+        # shape: [embedding_size, embedding_size]
         item_sum = torch.bmm(self.item_embedding.weight.unsqueeze(2), self.item_embedding.weight.unsqueeze(1)).sum(dim=0)
 
-        # shape: [embedding_dim, embedding_dim]
+        # shape: [embedding_size, embedding_size]
         user_sum = torch.bmm(self.user_embedding.weight.unsqueeze(2), self.user_embedding.weight.unsqueeze(1)).sum(dim=0)
 
-        # shape: [embedding_dim, embedding_dim]
+        # shape: [embedding_size, embedding_size]
         H_sum = torch.matmul(self.H_i.weight.t(), self.H_i.weight)
 
         t = torch.sum(item_sum * user_sum * H_sum)
