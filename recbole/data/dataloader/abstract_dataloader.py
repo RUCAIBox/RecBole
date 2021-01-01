@@ -101,9 +101,6 @@ class AbstractDataLoader(object):
             raise StopIteration()
         return self._next_batch_data()
 
-    def get_batch_size(self):
-        return self.batch_size
-        
     @property
     def pr_end(self):
         """This property marks the end of dataloader.pr which is used in :meth:`__next__()`."""

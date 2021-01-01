@@ -1,6 +1,6 @@
 dataset: test
 epochs: 1
-state: INFO
+state: ERROR
 data_path: tests/test_data/
 
 # Atomic File Format

@@ -52,8 +52,6 @@ class GeneralDataLoader(AbstractDataLoader):
         cur_data = self.dataset[self.pr: self.pr + self.step]
         self.pr += self.step
         return cur_data
-    def get_batch_size(self):
-        return self.batch_size
 
 class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
     """:class:`GeneralNegSampleDataLoader` is a general-dataloader with negative sampling.
