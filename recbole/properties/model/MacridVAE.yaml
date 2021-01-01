@@ -1,4 +1,4 @@
-embedding_size: 128
+embedding_size: 64
 drop_out: 0.5
 kfac: 10
 nogb: False
