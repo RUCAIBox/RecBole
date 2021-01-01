@@ -6,4 +6,3 @@ embedding_size: 64
 reg_1: 0.
 reg_2: 0.01
 training_neg_sample_num: 0
-learning_rate: 0.01
