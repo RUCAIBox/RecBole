@@ -53,6 +53,7 @@ class GeneralDataLoader(AbstractDataLoader):
         self.pr += self.step
         return cur_data
 
+
 class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
     """:class:`GeneralNegSampleDataLoader` is a general-dataloader with negative sampling.
     For the result of every batch, we permit that every positive interaction and its negative interaction
