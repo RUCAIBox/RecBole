@@ -43,3 +43,4 @@ fields_in_same_space: ~
 preload_weight: ~
 normalize_field: ~
 normalize_all: True
+rm_dup_inter: first

@@ -30,5 +30,5 @@ metrics: ["Recall", "MRR","NDCG","Hit","Precision"]
 topk: [10]
 valid_metric: MRR@10
 eval_batch_size: 4096
-loss_decimal_place: 3
-metric_decimal_place: 2
+loss_decimal_place: 4
+metric_decimal_place: 4

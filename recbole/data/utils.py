@@ -247,7 +247,8 @@ def get_data_loader(name, config, eval_setting):
     register_table = {
         'DIN': _get_DIN_data_loader,
         "MultiDAE": _get_AE_data_loader,
-        "MultiVAE": _get_AE_data_loader
+        "MultiVAE": _get_AE_data_loader,
+        'CDAE': _get_AE_data_loader
     }
 
     if config['model'] in register_table:
@@ -318,7 +319,6 @@ def _get_DIN_data_loader(name, config, eval_setting):
         return SequentialNegSampleDataLoader
     elif neg_sample_strategy == 'full':
         return SequentialFullDataLoader
-
 
 def _get_AE_data_loader(name, config, eval_setting):
     """Customized function for Multi-DAE and Multi-VAE to get correct dataloader class.
