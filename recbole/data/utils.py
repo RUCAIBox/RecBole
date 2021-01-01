@@ -20,7 +20,6 @@ from recbole.config import EvalSetting
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
 from recbole.utils import ModelType
 from recbole.data.dataloader import *
-from recbole.data.dataloader.user_dataloader import *
 
 
 def create_dataset(config):
