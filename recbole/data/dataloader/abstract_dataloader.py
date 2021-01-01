@@ -100,9 +100,6 @@ class AbstractDataLoader(object):
             self.pr = 0
             raise StopIteration()
         return self._next_batch_data()
-
-    def get_batch_size(self):
-        return self.batch_size
         
     @property
     def pr_end(self):
