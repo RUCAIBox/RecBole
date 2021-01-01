@@ -31,9 +31,10 @@ def create_dataset(config):
     Returns:
         Dataset: Constructed dataset.
     """
-    try:
-        return getattr(importlib.import_module('recbole.data.dataset'), config['model'] + 'Dataset')(config)
-    except AttributeError:
+    dataset_module = importlib.import_module('recbole.data.dataset')
+    if hasattr(dataset_module, config['model'] + 'Dataset'):
+        return getattr(dataset_module, config['model'] + 'Dataset')(config)
+    else:
         model_type = config['MODEL_TYPE']
         if model_type == ModelType.SEQUENTIAL:
             from .dataset import SequentialDataset
@@ -244,7 +245,9 @@ def get_data_loader(name, config, eval_setting):
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
     """
     register_table = {
-        'DIN': _get_DIN_data_loader
+        'DIN': _get_DIN_data_loader,
+        "MultiDAE": _get_AE_data_loader,
+        "MultiVAE": _get_AE_data_loader
     }
 
     if config['model'] in register_table:
@@ -315,6 +318,29 @@ def _get_DIN_data_loader(name, config, eval_setting):
         return SequentialNegSampleDataLoader
     elif neg_sample_strategy == 'full':
         return SequentialFullDataLoader
+
+
+def _get_AE_data_loader(name, config, eval_setting):
+    """Customized function for Multi-DAE and Multi-VAE to get correct dataloader class.
+
+    Args:
+        name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
+        config (Config): An instance object of Config, used to record parameter information.
+        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+
+    Returns:
+        type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
+    """
+    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    if name == "train":
+        return UserDataLoader
+    else:
+        if neg_sample_strategy == 'none':
+            return GeneralDataLoader
+        elif neg_sample_strategy == 'by':
+            return GeneralNegSampleDataLoader
+        elif neg_sample_strategy == 'full':
+            return GeneralFullDataLoader
 
 
 class DLFriendlyAPI(object):

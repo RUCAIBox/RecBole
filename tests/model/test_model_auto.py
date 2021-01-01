@@ -140,6 +140,20 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_MultiDAE(self):
+        config_dict = {
+            'model': 'MultiDAE',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
+    def test_MultiVAE(self):
+        config_dict = {
+            'model': 'MultiVAE',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
@@ -240,13 +254,6 @@ class TestContextRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
-    # def test_dcn(self):
-    #     config_dict = {
-    #         'model': 'DCN',
-    #         'threshold': {'rating': 4},
-    #     }
-    #     quick_test(config_dict)
-
     def test_autoint(self):
         config_dict = {
             'model': 'AutoInt',
@@ -264,6 +271,13 @@ class TestContextRecommender(unittest.TestCase):
     def test_fwfm(self):
         config_dict = {
             'model': 'FwFM',
+            'threshold': {'rating': 4},
+        }
+        quick_test(config_dict)
+
+    def test_dcn(self):
+        config_dict = {
+            'model': 'DCN',
             'threshold': {'rating': 4},
         }
         quick_test(config_dict)
@@ -394,20 +408,6 @@ class TestSequentialRecommender(unittest.TestCase):
             'hidden_act': 'sigmoid'
         }
         quick_test(config_dict)
-
-    # def test_bert4rec(self):
-    #     config_dict = {
-    #         'model': 'BERT4Rec',
-    #     }
-    #     quick_test(config_dict)
-
-    # def test_bert4rec(self):
-    #     config_dict = {
-    #         'model': 'BERT4Rec',
-    #         'loss_type': 'BPR',
-    #         'hidden_act': 'swish'
-    #     }
-    #     quick_test(config_dict)
 
     def test_srgnn(self):
         config_dict = {
@@ -564,6 +564,22 @@ class TestSequentialRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_bert4rec(self):
+        config_dict = {
+            'model': 'BERT4Rec',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
+    def test_bert4rec_with_BPR_loss_and_swish(self):
+        config_dict = {
+            'model': 'BERT4Rec',
+            'loss_type': 'BPR',
+            'hidden_act': 'swish'
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
     # def test_gru4reckg(self):
     #     config_dict = {
     #         'model': 'GRU4RecKG',
@@ -577,7 +593,7 @@ class TestSequentialRecommender(unittest.TestCase):
     #         'save_step': 1,
     #     }
     #     quick_test(config_dict)
-
+    #
     #     config_dict = {
     #         'model': 'S3Rec',
     #         'train_stage': 'finetune',
