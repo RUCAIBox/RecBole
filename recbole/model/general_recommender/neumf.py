@@ -57,10 +57,10 @@ class NeuMF(GeneralRecommender):
         self.item_mf_embedding = nn.Embedding(self.n_items, self.mf_embedding_size)
         self.user_mlp_embedding = nn.Embedding(self.n_users, self.mlp_embedding_size)
         self.item_mlp_embedding = nn.Embedding(self.n_items, self.mlp_embedding_size)
-        self.mlp_layers = MLPLayers([2 * self.mlp_embedding_size] + self.mlp_hidden_size)
+        self.mlp_layers = MLPLayers([2 * self.mlp_embedding_size] + self.mlp_hidden_size, self.dropout_prob)
         self.mlp_layers.logger = None  # remove logger to use torch.save()
         if self.mf_train and self.mlp_train:
-            self.predict_layer = nn.Linear(self.mf_embedding_size + self.mlp_hidden_size[-1], 1, self.dropout_prob)
+            self.predict_layer = nn.Linear(self.mf_embedding_size + self.mlp_hidden_size[-1], 1)
         elif self.mf_train:
             self.predict_layer = nn.Linear(self.mf_embedding_size, 1)
         elif self.mlp_train:
