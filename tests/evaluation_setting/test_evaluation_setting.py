@@ -45,6 +45,7 @@ class TestGeneralRecommender(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
         '''
+
     def test_tols_full(self):
         config_dict = {
             'eval_setting': 'TO_LS,full',
@@ -72,6 +73,7 @@ class TestGeneralRecommender(unittest.TestCase):
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
         '''
+
     def test_tors_full(self):
         config_dict = {
             'eval_setting': 'TO_RS,full',
@@ -182,7 +184,7 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'BPR',
         }
         objective_function(config_dict=config_dict,
-                            config_file_list=config_file_list, saved=False)
+                           config_file_list=config_file_list, saved=False)
         # config_dict = {
         #     'eval_setting': 'TO_RS,uni100',
         #     'model': 'NeuMF',
@@ -208,10 +210,11 @@ class TestContextRecommender(unittest.TestCase):
     def test_tors(self):
         config_dict = {
             'eval_setting': 'TO_RS',
+            'threshold': {'rating': 4},
             'model': 'FM',
         }
         objective_function(config_dict=config_dict,
-                            config_file_list=config_file_list, saved=False)
+                           config_file_list=config_file_list, saved=False)
         # config_dict = {
         #     'eval_setting': 'TO_RS',
         #     'model': 'DeepFM',
