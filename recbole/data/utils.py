@@ -247,7 +247,9 @@ def get_data_loader(name, config, eval_setting):
     register_table = {
         'DIN': _get_DIN_data_loader,
         "MultiDAE": _get_AE_data_loader,
-        "MultiVAE": _get_AE_data_loader
+        "MultiVAE": _get_AE_data_loader,
+        'CDAE': _get_AE_data_loader,
+        'ENMF': _get_AE_data_loader
     }
 
     if config['model'] in register_table:
