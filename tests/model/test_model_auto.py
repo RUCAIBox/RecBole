@@ -172,7 +172,7 @@ class TestGeneralRecommender(unittest.TestCase):
     def test_enmf(self):
         config_dict = {
             'model': 'ENMF',
-            'train_neg_sample': 0,
+            'training_neg_sample': 0,
         }
         quick_test(config_dict)
 
