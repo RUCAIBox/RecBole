@@ -153,10 +153,11 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)
-        
+
     def test_enmf(self):
         config_dict = {
             'model': 'ENMF',
+            'train_neg_sample': 0,
         }
         quick_test(config_dict)
 
