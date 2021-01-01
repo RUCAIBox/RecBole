@@ -32,8 +32,8 @@ class CDAE(GeneralRecommender):
     def __init__(self, config, dataset):
         super(CDAE, self).__init__(config, dataset)
 
-        self.reg_1 = config['reg_1']
-        self.reg_2 = config['reg_2']
+        self.reg_weight_1 = config['reg_weight_1']
+        self.reg_weight_2 = config['reg_weight_2']
         self.loss_type = config['loss_type']
         self.hid_activation = config['hid_activation']
         self.out_activation = config['out_activation']
@@ -109,9 +109,9 @@ class CDAE(GeneralRecommender):
 
         loss = loss_func(predict, x_items)
         # l1-regularization
-        loss += self.reg_1 * (self.h_user.weight.norm(p=1) + self.h_item.weight.norm(p=1))
+        loss += self.reg_weight_1 * (self.h_user.weight.norm(p=1) + self.h_item.weight.norm(p=1))
         # l2-regularization
-        loss += self.reg_2 * (self.h_user.weight.norm() + self.h_item.weight.norm())
+        loss += self.reg_weight_2 * (self.h_user.weight.norm() + self.h_item.weight.norm())
               
         return loss
         

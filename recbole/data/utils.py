@@ -321,6 +321,7 @@ def _get_DIN_data_loader(name, config, eval_setting):
     elif neg_sample_strategy == 'full':
         return SequentialFullDataLoader
 
+
 def _get_AE_data_loader(name, config, eval_setting):
     """Customized function for Multi-DAE and Multi-VAE to get correct dataloader class.
 
