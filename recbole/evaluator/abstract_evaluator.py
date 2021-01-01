@@ -4,7 +4,7 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/10/21, 2020/12/9
+# @Time    :   2020/10/21, 2020/12/18
 # @Author  :   Kaiyuan Li, Zhichao Feng
 # @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com
 
@@ -34,6 +34,7 @@ class BaseEvaluator(object):
     def __init__(self, config, metrics):
         self.metrics = metrics
         self.full = ('full' in config['eval_setting'])
+        self.precision = config['metric_decimal_place']
 
     def collect(self, *args):
         """get the intermediate results for each batch, it is called at the end of each batch"""
@@ -99,7 +100,7 @@ class IndividualEvaluator(BaseEvaluator):
     """
     def __init__(self, config, metrics):
         super().__init__(config, metrics)
-        pass
+        self._check_args()
 
     def sample_collect(self, true_scores, pred_scores):
         """It is called when evaluation sample distribution is `uniform` or `popularity`.
@@ -127,3 +128,7 @@ class IndividualEvaluator(BaseEvaluator):
             scores_matrix = self.sample_collect(true_scores, pred_scores)
 
         return scores_matrix
+
+    def _check_args(self):
+        if self.full:
+            raise NotImplementedError('full sort can\'t use IndividualEvaluator')

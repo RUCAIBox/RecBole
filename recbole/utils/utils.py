@@ -164,7 +164,7 @@ def dict2str(result_dict):
 
     result_str = ''
     for metric, value in result_dict.items():
-        result_str += str(metric) + ' : ' + '%.04f' % value + '    '
+        result_str += str(metric) + ' : ' + str(value) + '    '
     return result_str
 
 

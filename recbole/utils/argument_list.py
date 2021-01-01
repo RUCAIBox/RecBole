@@ -7,11 +7,13 @@ general_arguments = ['gpu_id', 'use_gpu',
                      'seed',
                      'reproducibility',
                      'state',
-                     'data_path']
+                     'data_path',
+                     'show_progress']
 
 training_arguments = ['epochs', 'train_batch_size',
                       'learner', 'learning_rate',
                       'training_neg_sample_num',
+                      'training_neg_sample_distribution',
                       'eval_step', 'stopping_step',
                       'checkpoint_dir']
 
