@@ -143,18 +143,21 @@ class TestGeneralRecommender(unittest.TestCase):
     def test_MultiDAE(self):
         config_dict = {
             'model': 'MultiDAE',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
     def test_MultiVAE(self):
         config_dict = {
             'model': 'MultiVAE',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
     def test_MacridVAE(self):
         config_dict = {
             'model': 'MacridVAE',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
  
