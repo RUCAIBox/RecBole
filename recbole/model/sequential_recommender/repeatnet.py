@@ -19,11 +19,11 @@ Reference code:
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 from torch.nn.init import xavier_normal_, constant_
 
-from torch.nn import functional as F
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
+from recbole.utils import InputType
 
 
 class RepeatNet(SequentialRecommender):

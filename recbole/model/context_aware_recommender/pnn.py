@@ -64,7 +64,7 @@ class PNN(ContextRecommender):
 
     def reg_loss(self):
         """Calculate the L2 normalization loss of model parameters.
-        Including weight matrixes of mlp layers.
+        Including weight matrices of mlp layers.
 
         Returns:
             loss(torch.FloatTensor): The L2 Loss tensor. shape of [1,]
@@ -152,7 +152,7 @@ class InnerProductLayer(nn.Module):
 
 
 class OuterProductLayer(nn.Module):
-    """OutterProduct Layer used in PNN. This implemention is
+    """OuterProduct Layer used in PNN. This implementation is
     adapted from code that the author of the paper published on https://github.com/Atomu2014/product-nets.
     """
 

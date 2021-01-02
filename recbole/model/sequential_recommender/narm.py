@@ -24,8 +24,8 @@ import torch
 from torch import nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.loss import BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
+from recbole.model.loss import BPRLoss
 
 
 class NARM(SequentialRecommender):
@@ -52,7 +52,7 @@ class NARM(SequentialRecommender):
         self.a_2 = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
         self.v_t = nn.Linear(self.hidden_size, 1, bias=False)
         self.ct_dropout = nn.Dropout(self.dropout_probs[1])
-        self.b = nn.Linear(2*self.hidden_size, self.embedding_size, bias=False)
+        self.b = nn.Linear(2 * self.hidden_size, self.embedding_size, bias=False)
         self.loss_type = config['loss_type']
         if self.loss_type == 'BPR':
             self.loss_fct = BPRLoss()

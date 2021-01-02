@@ -20,9 +20,9 @@ import torch
 from torch import nn
 from torch.nn.init import xavier_normal_
 
-from recbole.utils import InputType
-from recbole.model.loss import BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
+from recbole.model.loss import BPRLoss
+from recbole.utils import InputType
 
 
 class FPMC(SequentialRecommender):
@@ -66,19 +66,18 @@ class FPMC(SequentialRecommender):
             xavier_normal_(module.weight.data)
 
     def forward(self, user, item_seq, item_seq_len, next_item):
-
         item_last_click_index = item_seq_len - 1
         item_last_click = torch.gather(item_seq, dim=1, index=item_last_click_index.unsqueeze(1))
-        item_seq_emb = self.LI_emb(item_last_click) # [b,1,emb]
+        item_seq_emb = self.LI_emb(item_last_click)  # [b,1,emb]
 
         user_emb = self.UI_emb(user)
-        user_emb = torch.unsqueeze(user_emb, dim=1) # [b,1,emb]
+        user_emb = torch.unsqueeze(user_emb, dim=1)  # [b,1,emb]
 
         iu_emb = self.IU_emb(next_item)
-        iu_emb = torch.unsqueeze(iu_emb, dim=1) # [b,n,emb] in here n = 1
+        iu_emb = torch.unsqueeze(iu_emb, dim=1)  # [b,n,emb] in here n = 1
 
         il_emb = self.IL_emb(next_item)
-        il_emb = torch.unsqueeze(il_emb, dim=1) # [b,n,emb] in here n = 1
+        il_emb = torch.unsqueeze(il_emb, dim=1)  # [b,n,emb] in here n = 1
 
         # This is the core part of the FPMC model,can be expressed by a combination of a MF and a FMC model
         #  MF
@@ -119,13 +118,13 @@ class FPMC(SequentialRecommender):
 
         user_emb = self.UI_emb(user)
         all_iu_emb = self.IU_emb.weight
-        mf = torch.matmul(user_emb, all_iu_emb.transpose(0,1))
+        mf = torch.matmul(user_emb, all_iu_emb.transpose(0, 1))
         all_il_emb = self.IL_emb.weight
 
         item_last_click_index = item_seq_len - 1
         item_last_click = torch.gather(item_seq, dim=1, index=item_last_click_index.unsqueeze(1))
         item_seq_emb = self.LI_emb(item_last_click)  # [b,1,emb]
-        fmc = torch.matmul(item_seq_emb, all_il_emb.transpose(0,1))
+        fmc = torch.matmul(item_seq_emb, all_il_emb.transpose(0, 1))
         fmc = torch.squeeze(fmc, dim=1)
         score = mf + fmc
         return score

@@ -14,16 +14,16 @@ Reference:
 """
 
 import math
-import numpy as np
 
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import Parameter
 from torch.nn import functional as F
 
-from recbole.model.loss import EmbLoss, BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.layers import TransformerEncoder
+from recbole.model.loss import EmbLoss, BPRLoss
 
 
 class GNN(nn.Module):
@@ -72,16 +72,16 @@ class GNN(nn.Module):
         # [batch_size, max_session_len, embedding_size * 2]
         inputs = torch.cat([input_in, input_out], 2)
 
-        # gi.size equals to gh.size, shape of [batch_size, max_session_len, embdding_size * 3]
+        # gi.size equals to gh.size, shape of [batch_size, max_session_len, embedding_size * 3]
         gi = F.linear(inputs, self.w_ih, self.b_ih)
         gh = F.linear(hidden, self.w_hh, self.b_hh)
         # (batch_size, max_session_len, embedding_size)
         i_r, i_i, i_n = gi.chunk(3, 2)
         h_r, h_i, h_n = gh.chunk(3, 2)
-        resetgate = torch.sigmoid(i_r + h_r)
-        inputgate = torch.sigmoid(i_i + h_i)
-        newgate = torch.tanh(i_n + resetgate * h_n)
-        hy = (1 - inputgate) * hidden + inputgate * newgate
+        reset_gate = torch.sigmoid(i_r + h_r)
+        input_gate = torch.sigmoid(i_i + h_i)
+        new_gate = torch.tanh(i_n + reset_gate * h_n)
+        hy = (1 - input_gate) * hidden + input_gate * new_gate
         return hy
 
     def forward(self, A, hidden):
@@ -91,7 +91,7 @@ class GNN(nn.Module):
 
 
 class GCSAN(SequentialRecommender):
-    r"""GCSAN captures rich local dependencies via graph nerual network,
+    r"""GCSAN captures rich local dependencies via graph neural network,
      and learns long-range dependencies by applying the self-attention mechanism.
      
     Note:

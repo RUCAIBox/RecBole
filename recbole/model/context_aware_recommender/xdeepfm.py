@@ -100,7 +100,7 @@ class xDeepFM(ContextRecommender):
 
     def calculate_reg_loss(self):
         """Calculate the final L2 normalization loss of model parameters.
-        Including weight matrixes of mlp layers, linear layer and convolutional layers.
+        Including weight matrices of mlp layers, linear layer and convolutional layers.
 
         Returns:
             loss(torch.FloatTensor): The L2 Loss tensor. shape of [1,]

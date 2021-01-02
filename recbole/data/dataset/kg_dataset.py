@@ -419,7 +419,7 @@ class KnowledgeBasedDataset(Dataset):
         else ``graph[src, tgt] = self.kg_feat[value_field][src, tgt]``.
 
         Currently, we support graph in `DGL`_ and `PyG`_,
-        and two type of sparse matrixes, ``coo`` and ``csr``.
+        and two type of sparse matrices, ``coo`` and ``csr``.
 
         Args:
             form (str, optional): Format of sparse matrix, or library of graph data structure.
@@ -524,7 +524,7 @@ class KnowledgeBasedDataset(Dataset):
         or ``graph[src, tgt] = [UI-Relation]``.
 
         Currently, we support graph in `DGL`_ and `PyG`_,
-        and two type of sparse matrixes, ``coo`` and ``csr``.
+        and two type of sparse matrices, ``coo`` and ``csr``.
 
         Args:
             form (str, optional): Format of sparse matrix, or library of graph data structure.
