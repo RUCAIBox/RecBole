@@ -118,7 +118,7 @@ class MacridVAE(GeneralRecommender):
         mulist = []
         logvarlist = []
         for k in range(self.kfac):
-            cates_k = torch.reshape(cates[:, k], (1, -1))
+            cates_k = cates[:, k].reshape(1, -1)
             # encoder
             x_k = rating_matrix * cates_k
             h = self.encoder(x_k)
@@ -170,7 +170,7 @@ class MacridVAE(GeneralRecommender):
 
     def reg_loss(self):
         r"""Calculate the L2 normalization loss of model parameters.
-        Including embedding matrixes and weight matrixes of model.
+        Including embedding matrices and weight matrices of model.
 
         Returns:
             loss(torch.FloatTensor): The L2 Loss tensor. shape of [1,]

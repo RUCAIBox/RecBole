@@ -18,10 +18,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import KnowledgeRecommender
-from recbole.model.loss import BPRLoss, EmbMarginLoss
 from recbole.model.init import xavier_uniform_initialization
+from recbole.model.loss import BPRLoss, EmbMarginLoss
+from recbole.utils import InputType
 
 
 class KTUP(KnowledgeRecommender):
@@ -74,7 +74,7 @@ class KTUP(KnowledgeRecommender):
         self.relation_norm_embedding.weight.data = normalize_rel_norm_emb
 
     def _masked_softmax(self, logits):
-        probs = F.softmax(logits, dim=len(logits.shape)-1)
+        probs = F.softmax(logits, dim=len(logits.shape) - 1)
         return probs
 
     def convert_to_one_hot(self, indices, num_classes):
@@ -127,7 +127,8 @@ class KTUP(KnowledgeRecommender):
         return y
 
     def _get_preferences(self, user_e, item_e, use_st_gumbel=False):
-        pref_probs = torch.matmul(user_e + item_e, torch.t(self.pref_embedding.weight + self.relation_embedding.weight)) / 2
+        pref_probs = torch.matmul(user_e + item_e,
+                                  torch.t(self.pref_embedding.weight + self.relation_embedding.weight)) / 2
         if use_st_gumbel:
             # todo: different torch versions may cause the st_gumbel_softmax to report errors, wait to be test
             pref_probs = self.st_gumbel_softmax(pref_probs)
@@ -209,7 +210,8 @@ class KTUP(KnowledgeRecommender):
         loss = self.kg_weight * (kg_loss + orthogonal_loss + reg_loss)
         entity = torch.cat([h, pos_t, neg_t])
         entity = entity[entity < self.n_items]
-        align_loss = self.align_weight * alignLoss(self.item_embedding(entity), self.entity_embedding(entity), self.L1_flag)
+        align_loss = self.align_weight * alignLoss(self.item_embedding(entity), self.entity_embedding(entity),
+                                                   self.L1_flag)
 
         return loss, align_loss
 

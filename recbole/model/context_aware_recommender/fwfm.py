@@ -103,7 +103,7 @@ class FwFM(ContextRecommender):
         para = torch.randn(self.num_fields * self.num_fields * self.embedding_size).\
             expand(batch_size, self.num_fields * self.num_fields * self.embedding_size).\
             to(self.device)  # [batch_size*num_pairs*emb_dim]
-        para = torch.reshape(para, (batch_size, self.num_fields, self.num_fields, self.embedding_size))
+        para = para.reshape(batch_size, self.num_fields, self.num_fields, self.embedding_size)
         r = nn.Parameter(para, requires_grad=True)  # [batch_size, num_fields, num_fields, emb_dim]
 
         fwfm_inter = list()  # [batch_size, num_fields, emb_dim]

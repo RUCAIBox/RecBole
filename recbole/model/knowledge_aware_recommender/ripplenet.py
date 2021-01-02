@@ -12,15 +12,16 @@ Reference:
     in CIKM 2018.
 """
 
-import torch
-import torch.nn as nn
-import numpy as np
 import collections
 
-from recbole.utils import InputType
+import numpy as np
+import torch
+import torch.nn as nn
+
 from recbole.model.abstract_recommender import KnowledgeRecommender
-from recbole.model.loss import BPRLoss, EmbLoss
 from recbole.model.init import xavier_normal_initialization
+from recbole.model.loss import BPRLoss, EmbLoss
+from recbole.utils import InputType
 
 
 class RippleNet(KnowledgeRecommender):
@@ -115,9 +116,9 @@ class RippleNet(KnowledgeRecommender):
                         # self.logger.info("user {} without 1-hop kg facts, fill with padding".format(user))
                         # raise AssertionError("User without facts in 1st hop")
                         n_padding += 1
-                        memories_h = [0 for i in range(self.n_memory)]
-                        memories_r = [0 for i in range(self.n_memory)]
-                        memories_t = [0 for i in range(self.n_memory)]
+                        memories_h = [0 for _ in range(self.n_memory)]
+                        memories_r = [0 for _ in range(self.n_memory)]
+                        memories_t = [0 for _ in range(self.n_memory)]
                         memories_h = torch.LongTensor(memories_h).to(self.device)
                         memories_r = torch.LongTensor(memories_r).to(self.device)
                         memories_t = torch.LongTensor(memories_t).to(self.device)
@@ -259,7 +260,8 @@ class RippleNet(KnowledgeRecommender):
         r"""Conduct reasoning for specific item and user ripple set
 
         Returns:
-            o_list (dict -> torch.cuda.FloatTensor): list of torch.cuda.FloatTensor n_hop * [batch_size, n_item, embedding_size]
+            o_list (dict -> torch.cuda.FloatTensor): list of torch.cuda.FloatTensor
+                n_hop * [batch_size, n_item, embedding_size]
         """
         o_list = []
         for hop in range(self.n_hop):
