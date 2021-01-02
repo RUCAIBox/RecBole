@@ -1192,7 +1192,7 @@ class Dataset(object):
             :class:`~Dataset`: the new :class:`~Dataset` object, whose interaction feature has been updated.
         """
         nxt = copy.copy(self)
-        nxt.inter_feat = pd.DataFrame(new_inter_feat)
+        nxt.inter_feat = new_inter_feat
         return nxt
 
     def _drop_unused_col(self):
