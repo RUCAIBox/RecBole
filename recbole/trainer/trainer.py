@@ -720,7 +720,7 @@ class xgboostTrainer(AbstractTrainer):
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_result, valid_score
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
         # load model
         if self.xgb_model is not None:
             self.model.load_model(self.xgb_model)
@@ -748,7 +748,7 @@ class xgboostTrainer(AbstractTrainer):
 
         return self.best_valid_score, self.best_valid_result
 
-    def evaluate(self, eval_data, load_best_model=True, model_file=None):
+    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
         self.eval_pred = torch.Tensor()
         self.eval_true = torch.Tensor()
 
