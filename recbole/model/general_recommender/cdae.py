@@ -15,11 +15,10 @@ Reference code:
 
 import torch
 import torch.nn as nn
-import numpy as np
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
+from recbole.utils import InputType
 
 
 class CDAE(GeneralRecommender):
@@ -65,7 +64,7 @@ class CDAE(GeneralRecommender):
         self.h_user = nn.Embedding(self.n_users, self.embedding_size)
         self.h_item = nn.Linear(self.n_items, self.embedding_size)
         self.out_layer = nn.Linear(self.embedding_size, self.n_items)
-        
+
         # parameters initialization
         self.apply(xavier_normal_initialization)
 
@@ -74,7 +73,7 @@ class CDAE(GeneralRecommender):
         h_i = self.h_item(h_i)
         h_u = self.h_user(x_users)
         h = torch.add(h_u, h_i)
-        h = self.h_act(h) 
+        h = self.h_act(h)
         out = self.out_layer(h)
         return self.o_act(out)
 
@@ -99,7 +98,7 @@ class CDAE(GeneralRecommender):
         x_users = interaction[self.USER_ID]
         x_items = self.get_rating_matrix(x_users)
         predict = self.forward(x_items, x_users)
-    
+
         if self.loss_type == 'MSE':
             loss_func = nn.MSELoss(reduction='sum')
         elif self.loss_type == 'BCE':
@@ -112,23 +111,21 @@ class CDAE(GeneralRecommender):
         loss += self.reg_weight_1 * (self.h_user.weight.norm(p=1) + self.h_item.weight.norm(p=1))
         # l2-regularization
         loss += self.reg_weight_2 * (self.h_user.weight.norm() + self.h_item.weight.norm())
-              
+
         return loss
-        
 
     def predict(self, interaction):
         users = interaction[self.USER_ID]
         predict_items = interaction[self.ITEM_ID]
 
-        items = self.get_rating_matrix(users) 
+        items = self.get_rating_matrix(users)
         scores = self.forward(items, users)
-        
+
         return scores[[users, predict_items]]
 
     def full_sort_predict(self, interaction):
         users = interaction[self.USER_ID]
-        
+
         items = self.get_rating_matrix(users)
         predict = self.forward(items, users)
         return predict.view(-1)
-

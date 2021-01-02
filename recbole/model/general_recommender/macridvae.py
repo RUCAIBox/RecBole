@@ -18,14 +18,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.one_hot_categorical import OneHotCategorical
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
 from recbole.model.loss import EmbLoss
+from recbole.utils import InputType
 
 
 class MacridVAE(GeneralRecommender):
-    r"""MacridVAE is a item-based model collaborative filtering model that learn disentangled representations from user behavior and simultaneously rank all items for user.
+    r"""MacridVAE is a item-based model collaborative filtering model that learn disentangled representations from user
+    behavior and simultaneously rank all items for user.
 
     We implement the model following the original author
     """
@@ -50,9 +51,9 @@ class MacridVAE(GeneralRecommender):
         self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
         self.history_item_id = self.history_item_id.to(self.device)
         self.history_item_value = self.history_item_value.to(self.device)
-        self.encode_layer_dims = [self.n_items] + self.layers + [self.embedding_size*2]
+        self.encode_layer_dims = [self.n_items] + self.layers + [self.embedding_size * 2]
 
-        self.encoder = self.mlp_layars(self.encode_layer_dims)
+        self.encoder = self.mlp_layers(self.encode_layer_dims)
 
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.k_embedding = nn.Embedding(self.kfac, self.embedding_size)
@@ -78,7 +79,7 @@ class MacridVAE(GeneralRecommender):
         rating_matrix.index_put_((row_indices, col_indices), self.history_item_value[user].flatten())
         return rating_matrix
 
-    def mlp_layars(self,layer_dims):
+    def mlp_layers(self, layer_dims):
         mlp_modules = []
         for i, (d_in, d_out) in enumerate(zip(layer_dims[:-1], layer_dims[1:])):
             mlp_modules.append(nn.Linear(d_in, d_out))
