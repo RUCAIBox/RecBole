@@ -67,14 +67,14 @@ class NegSampleMixin(AbstractDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray: Number of positive item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         raise NotImplementedError('Method [get_pos_len_list] should be implemented.')
 
     def get_user_len_list(self):
         """
         Returns:
-            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
         raise NotImplementedError('Method [get_user_len_list] should be implemented.')
 

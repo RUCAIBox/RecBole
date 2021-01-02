@@ -116,9 +116,9 @@ class SequentialDataLoader(AbstractDataLoader):
         """Data augmentation.
 
         Args:
-            item_list_index (np.ndarray): the index of history items list in interaction.
-            target_index (np.ndarray): the index of items to be predicted in interaction.
-            item_list_length (np.ndarray): history list length.
+            item_list_index (numpy.ndarray): the index of history items list in interaction.
+            target_index (numpy.ndarray): the index of items to be predicted in interaction.
+            item_list_length (numpy.ndarray): history list length.
 
         Returns:
             dict: the augmented data.
@@ -219,14 +219,14 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray: Number of positive item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         return np.ones(self.pr_end, dtype=np.int64)
 
     def get_user_len_list(self):
         """
         Returns:
-            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
         return np.full(self.pr_end, self.times)
 
@@ -278,13 +278,13 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
+            numpy.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
         """
         return np.ones(self.pr_end, dtype=np.int64)
 
     def get_user_len_list(self):
         """
         Returns:
-            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
         return np.full(self.pr_end, self.item_num)

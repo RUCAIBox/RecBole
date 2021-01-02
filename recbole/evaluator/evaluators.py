@@ -105,11 +105,11 @@ class TopKEvaluator(GroupedEvaluator):
         """integrate the results of each batch and evaluate the topk metrics by users
 
         Args:
-            pos_len_list (np.ndarray): a list of users' positive items
-            topk_index (np.ndarray): a matrix which contains the index of the topk items for users
+            pos_len_list (numpy.ndarray): a list of users' positive items
+            topk_index (numpy.ndarray): a matrix which contains the index of the topk items for users
 
         Returns:
-            np.ndarray: a matrix which contains the metrics result
+            numpy.ndarray: a matrix which contains the metrics result
 
         """
         pos_idx_matrix = (topk_index < pos_len_list.reshape(-1, 1))
@@ -245,11 +245,11 @@ class RankEvaluator(GroupedEvaluator):
         """integrate the results of each batch and evaluate the topk metrics by users
 
         Args:
-            pos_len_list (np.ndarray): a list of users' positive items
-            topk_index (np.ndarray): a matrix which contains the index of the topk items for users
+            pos_len_list (numpy.ndarray): a list of users' positive items
+            topk_index (numpy.ndarray): a matrix which contains the index of the topk items for users
 
         Returns:
-            np.ndarray: a matrix which contains the metrics result
+            numpy.ndarray: a matrix which contains the metrics result
 
         """
         result_list = []
@@ -328,8 +328,8 @@ class LossEvaluator(IndividualEvaluator):
         """get metrics result
 
         Args:
-            trues (np.ndarray): the true scores' list
-            preds (np.ndarray): the predict scores' list
+            trues (numpy.ndarray): the true scores' list
+            preds (numpy.ndarray): the predict scores' list
 
         Returns:
             list: a list of metrics result

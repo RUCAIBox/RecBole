@@ -1040,10 +1040,10 @@ class Dataset(object):
 
         Args:
             field (str): Field of external tokens.
-            tokens (str, list or np.ndarray): External tokens.
+            tokens (str, list or numpy.ndarray): External tokens.
 
         Returns:
-            int or np.ndarray: The internal ids of external tokens.
+            int or numpy.ndarray: The internal ids of external tokens.
         """
         if isinstance(tokens, str):
             if tokens in self.field2token_id[field]:
@@ -1061,10 +1061,10 @@ class Dataset(object):
 
         Args:
             field (str): Field of internal ids.
-            ids (int, list, np.ndarray or torch.Tensor): Internal ids.
+            ids (int, list, numpy.ndarray or torch.Tensor): Internal ids.
 
         Returns:
-            str or np.ndarray: The external tokens of internal ids.
+            str or numpy.ndarray: The external tokens of internal ids.
         """
         try:
             return self.field2id_token[field][ids]
