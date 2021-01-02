@@ -14,12 +14,13 @@ recbole.model.abstract_recommender
 """
 
 from logging import getLogger
+
 import numpy as np
 import torch
 import torch.nn as nn
 
-from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
 from recbole.model.layers import FMEmbedding, FMFirstOrderLinear
+from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
 
 
 class AbstractRecommender(nn.Module):
@@ -115,7 +116,7 @@ class SequentialRecommender(AbstractRecommender):
         self.n_items = dataset.num(self.ITEM_ID)
 
     def gather_indexes(self, output, gather_index):
-        """Gathers the vectors at the spexific positions over a minibatch"""
+        """Gathers the vectors at the specific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.shape[-1])
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)

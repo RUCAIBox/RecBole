@@ -14,7 +14,6 @@ recbole.evaluator.utils
 """
 
 import itertools
-from enum import Enum
 
 import numpy as np
 import torch
@@ -67,7 +66,7 @@ def trunc(scores, method):
     try:
         cut_method = getattr(np, method)
     except NotImplementedError:
-        raise NotImplementedError("module 'numpy' has no fuction named '{}'".format(method))
+        raise NotImplementedError("module 'numpy' has no function named '{}'".format(method))
     scores = cut_method(scores)
     return scores
 

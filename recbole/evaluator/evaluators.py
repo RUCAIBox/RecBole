@@ -9,11 +9,13 @@
 # @email   :   tsotfsk@outlook.com, houyupeng@ruc.edu.cn, fzcbupt@gmail.com
 
 
-import torch
-import numpy as np
 from collections import ChainMap
+
+import numpy as np
+import torch
+
+from recbole.evaluator.abstract_evaluator import GroupedEvaluator, IndividualEvaluator
 from recbole.evaluator.metrics import metrics_dict
-from recbole.evaluator.abstract_evaluator import GroupedEvalautor, IndividualEvaluator
 
 # These metrics are typical in topk recommendations
 topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP']}
@@ -28,7 +30,7 @@ group_metrics = ChainMap(topk_metrics, rank_metrics)
 individual_metrics = ChainMap(loss_metrics)
 
 
-class TopKEvaluator(GroupedEvalautor):
+class TopKEvaluator(GroupedEvaluator):
     r"""TopK Evaluator is mainly used in ranking tasks. Now, we support six topk metrics which
        contain `'Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP'`.
 
@@ -57,7 +59,7 @@ class TopKEvaluator(GroupedEvalautor):
         scores_matrix = self.get_score_matrix(scores_tensor, user_len_list)
 
         # get topk
-        _, topk_idx = torch.topk(scores_matrix, max(self.topk), dim=-1)  # nusers x k
+        _, topk_idx = torch.topk(scores_matrix, max(self.topk), dim=-1)  # n_users x k
 
         return topk_idx
 
@@ -129,7 +131,7 @@ class TopKEvaluator(GroupedEvalautor):
         return msg
 
 
-class RankEvaluator(GroupedEvalautor):
+class RankEvaluator(GroupedEvaluator):
     r"""Rank Evaluator is mainly used in ranking tasks except for topk tasks. Now, we support one
        rank metric containing `'GAUC'`.
 
@@ -210,8 +212,7 @@ class RankEvaluator(GroupedEvalautor):
         pos_index = (desc_index < pos_len_list.reshape(-1, 1))
 
         avg_rank = self.average_rank(desc_scores)
-        pos_rank_sum = torch.where(pos_index, avg_rank, torch.zeros_like(avg_rank)). \
-            sum(axis=-1).reshape(-1, 1)
+        pos_rank_sum = torch.where(pos_index, avg_rank, torch.zeros_like(avg_rank)).sum(axis=-1).reshape(-1, 1)
 
         return pos_rank_sum
 
@@ -273,9 +274,9 @@ class LossEvaluator(IndividualEvaluator):
        loss metrics which contain `'AUC', 'RMSE', 'MAE', 'LOGLOSS'`.
 
        Note:
-           The metrics used do not calculate group-based metrics which considers the metrics scores averaged across users.
-           They are also not limited to k. Instead, they calculate the scores on the entire prediction results regardless
-           the users.
+           The metrics used do not calculate group-based metrics which considers the metrics scores averaged
+           across users. They are also not limited to k. Instead, they calculate the scores on the entire
+           prediction results regardless the users.
 
        """
 
