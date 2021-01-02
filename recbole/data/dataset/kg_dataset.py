@@ -16,9 +16,8 @@ import os
 from collections import Counter
 
 import numpy as np
-import pandas as pd
-from scipy.sparse import coo_matrix
 import torch
+from scipy.sparse import coo_matrix
 
 from recbole.data.dataset import Dataset
 from recbole.data.utils import dlapi
@@ -63,6 +62,7 @@ class KnowledgeBasedDataset(Dataset):
 
         ``[UI-Relation]`` is a special relation token.
     """
+
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 

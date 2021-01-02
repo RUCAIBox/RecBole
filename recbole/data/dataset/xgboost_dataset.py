@@ -7,13 +7,8 @@ recbole.data.xgboost_dataset
 ##########################
 """
 
-import numpy as np
-import pandas as pd
-
 from recbole.data.dataset import Dataset
 from recbole.utils import FeatureType
-from recbole.data.interaction import Interaction
-from recbole.data.utils import dlapi
 
 
 class XgboostDataset(Dataset):
@@ -23,6 +18,7 @@ class XgboostDataset(Dataset):
     Attributes:
 
     """
+
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
@@ -34,7 +30,7 @@ class XgboostDataset(Dataset):
                 continue
             if self.field2type[col_name] == FeatureType.TOKEN:
                 col_list.append(col_name)
-            elif self.field2type[col_name] == FeatureType.TOKEN_SEQ or self.field2type[col_name] == FeatureType.FLOAT_SEQ:
+            elif self.field2type[col_name] in {FeatureType.TOKEN_SEQ, FeatureType.FLOAT_SEQ}:
                 feat = feat.drop([col_name], axis=1, inplace=False)
 
         # get hash map
@@ -46,11 +42,11 @@ class XgboostDataset(Dataset):
         for col in self.hash_map:
             if col in feat.keys():
                 for value in feat[col]:
-                    #print(value)
+                    # print(value)
                     if value not in self.hash_map[col]:
                         self.hash_map[col][value] = self.hash_count[col]
                         self.hash_count[col] = self.hash_count[col] + 1
-                        if self.hash_count[col] > self.config['token_num_threhold']:
+                        if self.hash_count[col] > self.config['token_num_threshold']:
                             del_col.append(col)
                             break
 
@@ -74,15 +70,12 @@ class XgboostDataset(Dataset):
         self.hash_map = {}
         self.hash_count = {}
         self.convert_col_list = []
-        if self.config['convert_token_to_onehot'] == True:
-            feat_list = []
-            for feat in (self.inter_feat, self.user_feat, self.item_feat):
+        if self.config['convert_token_to_onehot']:
+            for feat_name in ['inter_feat', 'user_feat', 'item_feat']:
+                feat = getattr(self, feat_name)
                 if feat is not None:
                     feat = self._judge_token_and_convert(feat)
-                feat_list.append(feat)
-            self.inter_feat = feat_list[0]
-            self.user_feat = feat_list[1]
-            self.item_feat = feat_list[2]
+                setattr(self, feat_name, feat)
 
     def _from_scratch(self):
         """Load dataset from scratch.
@@ -96,21 +89,6 @@ class XgboostDataset(Dataset):
         self._data_processing()
         self._convert_token_to_hash()
         self._change_feat_format()
-
-    def join(self, df):
-        """Given interaction feature, join user/item feature into it.
-
-        Args:
-            df (Interaction): Interaction feature to be joint.
-
-        Returns:
-            Interaction: Interaction feature after joining operation.
-        """
-        if self.user_feat is not None and self.uid_field in df:
-            df.update(self.user_feat[df[self.uid_field]])
-        if self.item_feat is not None and self.iid_field in df:
-            df.update(self.item_feat[df[self.iid_field]])
-        return df
 
     def __getitem__(self, index, join=True):
         df = self.inter_feat[index]

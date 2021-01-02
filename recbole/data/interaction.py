@@ -144,7 +144,7 @@ class Interaction(object):
             with keys in selected_field will be sent to device.
 
         Returns:
-            Interaction: a copyed Interaction object with Tensors which are sented to
+            Interaction: a coped Interaction object with Tensors which are sent to
             the specified device.
         """
         ret = {}
@@ -157,7 +157,7 @@ class Interaction(object):
                     ret[k] = self.interaction[k].to(device)
                 else:
                     ret[k] = self.interaction[k]
-        except:
+        except Exception:
             for k in self.interaction:
                 ret[k] = self.interaction[k].to(device)
         return Interaction(ret)
@@ -166,7 +166,7 @@ class Interaction(object):
         """Transfer Tensors in this Interaction object to cpu.
 
         Returns:
-            Interaction: a copyed Interaction object with Tensors which are sented to cpu.
+            Interaction: a coped Interaction object with Tensors which are sent to cpu.
         """
         ret = {}
         for k in self.interaction:

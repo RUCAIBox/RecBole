@@ -12,8 +12,9 @@ recbole.data.dataloader.user_dataloader
 ################################################
 """
 import torch
-from recbole.data.interaction import Interaction, cat_interactions
+
 from recbole.data.dataloader import AbstractDataLoader
+from recbole.data.interaction import Interaction
 from recbole.utils.enum_type import DataLoaderType, InputType
 
 
@@ -61,4 +62,3 @@ class UserDataLoader(AbstractDataLoader):
         cur_data = self.user_list[self.pr: self.pr + self.step]
         self.pr += self.step
         return cur_data
-

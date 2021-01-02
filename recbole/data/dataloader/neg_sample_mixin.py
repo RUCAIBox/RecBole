@@ -94,6 +94,7 @@ class NegSampleByMixin(NegSampleMixin):
             :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
+
     def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] != 'by':
