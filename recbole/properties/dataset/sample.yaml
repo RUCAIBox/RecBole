@@ -38,7 +38,7 @@ not_equal_val: ~
 fields_in_same_space: ~
 preload_weight: ~
 normalize_field: ~
-normalize_all: True
+normalize_all: ~
 
 # Sequential Model Needed
 ITEM_LIST_LENGTH_FIELD: item_length
