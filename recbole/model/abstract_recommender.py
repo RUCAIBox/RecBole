@@ -347,6 +347,15 @@ class ContextRecommender(AbstractRecommender):
 
         return first_sparse_embedding, first_dense_embedding, second_sparse_embedding, second_dense_embedding
 
+    def concat_embed_input_fields(self, interaction):
+        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
+        all_embeddings = []
+        if sparse_embedding is not None:
+            all_embeddings.append(sparse_embedding)
+        if dense_embedding is not None and len(dense_embedding.shape) == 3:
+            all_embeddings.append(dense_embedding)
+        return torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+
     def embed_input_fields(self, interaction):
         """Embed the whole feature columns.
 

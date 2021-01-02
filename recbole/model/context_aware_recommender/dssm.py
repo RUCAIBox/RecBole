@@ -12,13 +12,12 @@ Reference:
     PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
 """
 
-
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.layers import MLPLayers
 from recbole.model.abstract_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers
 
 
 class DSSM(ContextRecommender):
@@ -26,6 +25,7 @@ class DSSM(ContextRecommender):
     and uses cosine distance to calculate the distance between the two semantic vectors.
 
     """
+
     def __init__(self, config, dataset):
         super(DSSM, self).__init__(config, dataset)
 
