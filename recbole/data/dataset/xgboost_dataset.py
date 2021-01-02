@@ -27,6 +27,7 @@ class XgboostDataset(Dataset):
         super().__init__(config, saved_dataset=saved_dataset)
 
     def _judge_token_and_convert(self, feat):
+        # get columns whose type is token
         col_list = []
         for col_name in feat:
             if col_name == self.uid_field or col_name == self.iid_field:
@@ -35,31 +36,53 @@ class XgboostDataset(Dataset):
                 col_list.append(col_name)
             elif self.field2type[col_name] == FeatureType.TOKEN_SEQ or self.field2type[col_name] == FeatureType.FLOAT_SEQ:
                 feat = feat.drop([col_name], axis=1, inplace=False)
-        feat = pd.get_dummies(feat, sparse = True, columns = col_list)
-        for col_name in feat.columns.values.tolist():
-            if col_name not in self.field2type.keys():
-                self.field2type[col_name] = FeatureType.TOKEN
+
+        # get hash map
+        for col in col_list:
+            self.hash_map[col] = dict({})
+            self.hash_count[col] = 0
+
+        del_col = []
+        for col in self.hash_map:
+            if col in feat.keys():
+                for value in feat[col]:
+                    #print(value)
+                    if value not in self.hash_map[col]:
+                        self.hash_map[col][value] = self.hash_count[col]
+                        self.hash_count[col] = self.hash_count[col] + 1
+                        if self.hash_count[col] > self.config['token_num_threhold']:
+                            del_col.append(col)
+                            break
+
+        for col in del_col:
+            del self.hash_count[col]
+            del self.hash_map[col]
+            col_list.remove(col)
+        self.convert_col_list.extend(col_list)
+
+        # transform the original data
+        for col in self.hash_map.keys():
+            if col in feat.keys():
+                feat[col] = feat[col].map(self.hash_map[col])
+
         return feat
 
-    def _convert_token_to_onehot(self):
-        """Convert the data of token type to onehot form
+    def _convert_token_to_hash(self):
+        """Convert the data of token type to hash form
         
         """
+        self.hash_map = {}
+        self.hash_count = {}
+        self.convert_col_list = []
         if self.config['convert_token_to_onehot'] == True:
             feat_list = []
             for feat in (self.inter_feat, self.user_feat, self.item_feat):
-                feat = self._judge_token_and_convert(feat)
+                if feat is not None:
+                    feat = self._judge_token_and_convert(feat)
                 feat_list.append(feat)
-            self.inter_feat_xgb = feat_list[0]
-            self.user_feat_xgb = feat_list[1]
-            self.item_feat_xgb = feat_list[2]
-            self.inter_feat = self.inter_feat_xgb
-            self.user_feat = self.user_feat_xgb
-            self.item_feat = self.item_feat
-        else:
-            self.inter_feat_xgb = self.inter_feat
-            self.user_feat_xgb = self.user_feat
-            self.item_feat_xgb = self.item_feat
+            self.inter_feat = feat_list[0]
+            self.user_feat = feat_list[1]
+            self.item_feat = feat_list[2]
 
     def _from_scratch(self):
         """Load dataset from scratch.
@@ -71,7 +94,7 @@ class XgboostDataset(Dataset):
         self._get_field_from_config()
         self._load_data(self.dataset_name, self.dataset_path)
         self._data_processing()
-        self._convert_token_to_onehot()
+        self._convert_token_to_hash()
         self._change_feat_format()
 
     def join(self, df):
