@@ -50,8 +50,8 @@ class BERT4Rec(SequentialRecommender):
         self.mask_item_length = int(self.mask_ratio * self.max_seq_length)
 
         # define layers and loss
-        self.item_embedding = nn.Embedding(self.n_items+1, self.hidden_size, padding_idx=0)  # mask token add 1
-        self.position_embedding = nn.Embedding(self.max_seq_length+1, self.hidden_size)  # add mask_token at the last
+        self.item_embedding = nn.Embedding(self.n_items + 1, self.hidden_size, padding_idx=0)  # mask token add 1
+        self.position_embedding = nn.Embedding(self.max_seq_length + 1, self.hidden_size)  # add mask_token at the last
         self.trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
                                               hidden_size=self.hidden_size, inner_size=self.inner_size,
                                               hidden_dropout_prob=self.hidden_dropout_prob,
@@ -99,8 +99,8 @@ class BERT4Rec(SequentialRecommender):
 
     def _padding_sequence(self, sequence, max_length):
         pad_len = max_length - len(sequence)
-        sequence = [0]*pad_len + sequence
-        sequence = sequence[-max_length:] # truncate according to the max_length
+        sequence = [0] * pad_len + sequence
+        sequence = sequence[-max_length:]  # truncate according to the max_length
         return sequence
 
     def reconstruct_train_data(self, item_seq):
@@ -237,7 +237,7 @@ class BERT4Rec(SequentialRecommender):
         test_item = interaction[self.ITEM_ID]
         item_seq = self.reconstruct_test_data(item_seq, item_seq_len)
         seq_output = self.forward(item_seq)
-        seq_output = self.gather_indexes(seq_output, item_seq_len-1)  # [B H]
+        seq_output = self.gather_indexes(seq_output, item_seq_len - 1)  # [B H]
         test_item_emb = self.item_embedding(test_item)
         scores = torch.mul(seq_output, test_item_emb).sum(dim=1)  # [B]
         return scores
@@ -247,7 +247,7 @@ class BERT4Rec(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         item_seq = self.reconstruct_test_data(item_seq, item_seq_len)
         seq_output = self.forward(item_seq)
-        seq_output = self.gather_indexes(seq_output, item_seq_len-1)  # [B H]
+        seq_output = self.gather_indexes(seq_output, item_seq_len - 1)  # [B H]
         test_items_emb = self.item_embedding.weight[:self.n_items]  # delete masked token
         scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, item_num]
         return scores

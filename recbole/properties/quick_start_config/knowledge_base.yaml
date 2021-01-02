@@ -1,0 +1,4 @@
+load_col: 
+    inter: ['user_id', 'item_id', 'rating', 'timestamp']
+    kg: ['head_id', 'relation_id', 'tail_id']
+    link: ['item_id', 'entity_id']

@@ -35,20 +35,20 @@ class FwFM(ContextRecommender):
 
         # load parameters info
         self.dropout_prob = config['dropout_prob']
-        self.fields = config['fields'] # a dict; key: field_id; value: feature_list
+        self.fields = config['fields']  # a dict; key: field_id; value: feature_list
 
         self.num_features = self.num_feature_field
-        
+
         self.dropout_layer = nn.Dropout(p=self.dropout_prob)
         self.sigmoid = nn.Sigmoid()
 
         self.feature2id = {}
         self.feature2field = {}
-        
+
         self.feature_names = (self.token_field_names, self.token_seq_field_names, self.float_field_names)
         self.feature_dims = (self.token_field_dims, self.token_seq_field_dims, self.float_field_dims)
         self._get_feature2field()
-        self.num_fields = len(set(self.feature2field.values())) # the number of fields
+        self.num_fields = len(set(self.feature2field.values()))  # the number of fields
         self.num_pair = self.num_fields * self.num_fields
 
         self.loss = nn.BCELoss()
@@ -71,11 +71,10 @@ class FwFM(ContextRecommender):
         fea_id = 0
         for names in self.feature_names:
             if names is not None:
-                print(names)
                 for name in names:
                     self.feature2id[name] = fea_id
                     fea_id += 1
-        
+
         if self.fields is None:
             field_id = 0
             for key, value in self.feature2id.items():
@@ -101,33 +100,27 @@ class FwFM(ContextRecommender):
         """
         # get r(Fi, Fj)
         batch_size = infeature.shape[0]
-        para = torch.randn(self.num_fields*self.num_fields*self.embedding_size).expand(batch_size, self.num_fields*self.num_fields*self.embedding_size).to(self.device) # [batch_size*num_pairs*emb_dim]
-        para = torch.reshape(para, (batch_size, self.num_fields, self.num_fields, self.embedding_size))
-        r = nn.Parameter(para, requires_grad=True) # [batch_size, num_fields, num_fields, emb_dim]
+        para = torch.randn(self.num_fields * self.num_fields * self.embedding_size).\
+            expand(batch_size, self.num_fields * self.num_fields * self.embedding_size).\
+            to(self.device)  # [batch_size*num_pairs*emb_dim]
+        para = para.reshape(batch_size, self.num_fields, self.num_fields, self.embedding_size)
+        r = nn.Parameter(para, requires_grad=True)  # [batch_size, num_fields, num_fields, emb_dim]
 
-        fwfm_inter = list() # [batch_size, num_fields, emb_dim]
+        fwfm_inter = list()  # [batch_size, num_fields, emb_dim]
         for i in range(self.num_features - 1):
             for j in range(i + 1, self.num_features):
                 Fi, Fj = self.feature2field[i], self.feature2field[j]
                 fwfm_inter.append(infeature[:, i] * infeature[:, j] * r[:, Fi, Fj])
         fwfm_inter = torch.stack(fwfm_inter, dim=1)
-        fwfm_inter = torch.sum(fwfm_inter, dim=1) # [batch_size, emb_dim]
-        fwfm_inter = self.dropout_layer(fwfm_inter)  
+        fwfm_inter = torch.sum(fwfm_inter, dim=1)  # [batch_size, emb_dim]
+        fwfm_inter = self.dropout_layer(fwfm_inter)
 
         fwfm_output = torch.sum(fwfm_inter, dim=1, keepdim=True)  # [batch_size, 1]
 
         return fwfm_output
 
     def forward(self, interaction):
-        # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
-        # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        all_embeddings = []
-        if sparse_embedding is not None:
-            all_embeddings.append(sparse_embedding)
-        if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            all_embeddings.append(dense_embedding)
-        fwfm_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        fwfm_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
 
         output = self.sigmoid(self.first_order_linear(interaction) + self.fwfm_layer(fwfm_all_embeddings))
 

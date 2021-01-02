@@ -66,6 +66,11 @@ for reference.
 
 **11/03/2020**: We release the first version of RecBole **v0.1.1**.
 
+## Blogs
+
+[RecBole小白入门系列博客（一）——快速安装和简单上手](https://blog.csdn.net/Turinger_2000/article/details/110414642)
+
+[RecBole小白入门系列博客（二） ——General类模型运行流程](https://blog.csdn.net/Turinger_2000/article/details/110395198)
 
 ## Installation
 RecBole works with the following operating systems:
@@ -182,8 +187,8 @@ We will keep improving our implementations, and update these test results.
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
+| v0.1.2    | 12/06/2020 |  Basic RecBole |
 | v0.1.1    | 11/03/2020 |  Basic RecBole |
-
 
 ## Contributing
 

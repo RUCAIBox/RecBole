@@ -30,7 +30,7 @@ ENTITY_ID_FIELD: entity_id
 
 # Selectively Loading
 load_col:
-    inter: [user_id, item_id, rating, timestamp, label]
+    inter: [user_id, item_id, rating, timestamp]
     user: [user_id, age, gender, occupation]
     item: [item_id, movie_title, release_year, class]
     link: [item_id, entity_id]
@@ -47,12 +47,9 @@ lowest_val: ~
 highest_val: ~
 equal_val: ~
 not_equal_val: ~
-drop_filter_field : False
 
 # Preprocessing
 fields_in_same_space: ~
-fill_nan: True
 preload_weight: ~
-drop_preload_weight: True
 normalize_field: ~
 normalize_all: True

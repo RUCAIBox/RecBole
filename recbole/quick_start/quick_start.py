@@ -8,9 +8,10 @@ recbole.quick_start
 """
 import logging
 from logging import getLogger
-from recbole.utils import init_logger, get_model, get_trainer, init_seed
+
 from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
+from recbole.utils import init_logger, get_model, get_trainer, init_seed
 
 
 def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
@@ -49,10 +50,11 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
 
     # model training
-    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=saved)
+    best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, saved=saved,
+                                                      show_progress=config['show_progress'])
 
     # model evaluation
-    test_result = trainer.evaluate(test_data, load_best_model=saved)
+    test_result = trainer.evaluate(test_data, load_best_model=saved, show_progress=config['show_progress'])
 
     logger.info('best valid result: {}'.format(best_valid_result))
     logger.info('test result: {}'.format(test_result))

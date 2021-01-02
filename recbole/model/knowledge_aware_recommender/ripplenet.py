@@ -12,15 +12,16 @@ Reference:
     in CIKM 2018.
 """
 
-import torch
-import torch.nn as nn
-import numpy as np
 import collections
 
-from recbole.utils import InputType
+import numpy as np
+import torch
+import torch.nn as nn
+
 from recbole.model.abstract_recommender import KnowledgeRecommender
-from recbole.model.loss import BPRLoss, EmbLoss
 from recbole.model.init import xavier_normal_initialization
+from recbole.model.loss import BPRLoss, EmbLoss
+from recbole.utils import InputType
 
 
 class RippleNet(KnowledgeRecommender):
@@ -112,12 +113,12 @@ class RippleNet(KnowledgeRecommender):
                 # we simply copy the ripple set of the last hop here
                 if len(memories_h) == 0:
                     if h == 0:
-                        # print("user {} without 1-hop kg facts, fill with padding".format(user))
+                        # self.logger.info("user {} without 1-hop kg facts, fill with padding".format(user))
                         # raise AssertionError("User without facts in 1st hop")
                         n_padding += 1
-                        memories_h = [0 for i in range(self.n_memory)]
-                        memories_r = [0 for i in range(self.n_memory)]
-                        memories_t = [0 for i in range(self.n_memory)]
+                        memories_h = [0 for _ in range(self.n_memory)]
+                        memories_r = [0 for _ in range(self.n_memory)]
+                        memories_t = [0 for _ in range(self.n_memory)]
                         memories_h = torch.LongTensor(memories_h).to(self.device)
                         memories_r = torch.LongTensor(memories_r).to(self.device)
                         memories_t = torch.LongTensor(memories_t).to(self.device)
@@ -135,7 +136,7 @@ class RippleNet(KnowledgeRecommender):
                     memories_r = torch.LongTensor(memories_r).to(self.device)
                     memories_t = torch.LongTensor(memories_t).to(self.device)
                     ripple_set[user].append((memories_h, memories_r, memories_t))
-        print("{} among {} users are padded".format(n_padding, len(self.user_dict)))
+        self.logger.info("{} among {} users are padded".format(n_padding, len(self.user_dict)))
         return ripple_set
 
     def forward(self, interaction):
@@ -161,7 +162,7 @@ class RippleNet(KnowledgeRecommender):
             head_ent = torch.cat(memories_h[i], dim=0)
             relation = torch.cat(memories_r[i], dim=0)
             tail_ent = torch.cat(memories_t[i], dim=0)
-            # print("Hop {}, size {}".format(i, head_ent.size(), relation.size(), tail_ent.size()))
+            # self.logger.info("Hop {}, size {}".format(i, head_ent.size(), relation.size(), tail_ent.size()))
 
             # [batch size * n_memory, dim]
             self.h_emb_list.append(self.entity_embedding(head_ent))
@@ -259,7 +260,8 @@ class RippleNet(KnowledgeRecommender):
         r"""Conduct reasoning for specific item and user ripple set
 
         Returns:
-            o_list (dict -> torch.cuda.FloatTensor): list of torch.cuda.FloatTensor n_hop * [batch_size, n_item, embedding_size]
+            o_list (dict -> torch.cuda.FloatTensor): list of torch.cuda.FloatTensor
+                n_hop * [batch_size, n_item, embedding_size]
         """
         o_list = []
         for hop in range(self.n_hop):
@@ -332,7 +334,7 @@ class RippleNet(KnowledgeRecommender):
             head_ent = torch.cat(memories_h[i], dim=0)
             relation = torch.cat(memories_r[i], dim=0)
             tail_ent = torch.cat(memories_t[i], dim=0)
-            # print("Hop {}, size {}".format(i, head_ent.size(), relation.size(), tail_ent.size()))
+            # self.logger.info("Hop {}, size {}".format(i, head_ent.size(), relation.size(), tail_ent.size()))
 
             # [batch size * n_memory, dim]
             self.h_emb_list.append(self.entity_embedding(head_ent))

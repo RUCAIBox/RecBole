@@ -25,8 +25,8 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn.init import normal_, xavier_normal_, constant_
 
-from recbole.model.loss import RegLoss, BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
+from recbole.model.loss import RegLoss, BPRLoss
 
 
 class Caser(SequentialRecommender):
@@ -61,7 +61,10 @@ class Caser(SequentialRecommender):
 
         # horizontal conv layer
         lengths = [i + 1 for i in range(self.max_seq_length)]
-        self.conv_h = nn.ModuleList([nn.Conv2d(in_channels=1, out_channels=self.n_h, kernel_size=(i, self.embedding_size)) for i in lengths])
+        self.conv_h = nn.ModuleList([
+            nn.Conv2d(in_channels=1, out_channels=self.n_h, kernel_size=(i, self.embedding_size))
+            for i in lengths
+        ])
 
         # fully-connected layer
         self.fc1_dim_v = self.n_v * self.embedding_size
@@ -95,7 +98,7 @@ class Caser(SequentialRecommender):
 
     def forward(self, user, item_seq):
         # Embedding Look-up
-        # use unsqueeze() to get a 4-D input for convolution layers. (batchsize * 1 * max_length * embedding_size)
+        # use unsqueeze() to get a 4-D input for convolution layers. (batch_size * 1 * max_length * embedding_size)
         item_seq_emb = self.item_embedding(item_seq).unsqueeze(1)
         user_emb = self.user_embedding(user).squeeze(1)
 
@@ -155,7 +158,7 @@ class Caser(SequentialRecommender):
             loss = self.loss_fct(logits, pos_items)
 
         reg_loss = self.reg_loss([self.user_embedding.weight, self.item_embedding.weight,
-                                 self.conv_v.weight,self.fc1.weight, self.fc2.weight])
+                                  self.conv_v.weight, self.fc1.weight, self.fc2.weight])
         loss = loss + self.reg_weight * reg_loss + self.reg_loss_conv_h()
         return loss
 

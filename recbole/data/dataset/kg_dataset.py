@@ -16,9 +16,8 @@ import os
 from collections import Counter
 
 import numpy as np
-import pandas as pd
-from scipy.sparse import coo_matrix
 import torch
+from scipy.sparse import coo_matrix
 
 from recbole.data.dataset import Dataset
 from recbole.data.utils import dlapi
@@ -59,10 +58,11 @@ class KnowledgeBasedDataset(Dataset):
 
     Note:
         :attr:`entity_field` doesn't exist exactly. It's only a symbol,
-        representing entitiy features. E.g. it can be written into ``config['fields_in_same_space']``.
+        representing entity features. E.g. it can be written into ``config['fields_in_same_space']``.
 
         ``[UI-Relation]`` is a special relation token.
     """
+
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
@@ -123,11 +123,11 @@ class KnowledgeBasedDataset(Dataset):
                 'The number of items that have been linked to KG: {}'.format(len(self.item2entity))]
         return '\n'.join(info)
 
-    def _build_feat_list(self):
-        feat_list = super()._build_feat_list()
+    def _build_feat_name_list(self):
+        feat_name_list = super()._build_feat_name_list()
         if self.kg_feat is not None:
-            feat_list.append(self.kg_feat)
-        return feat_list
+            feat_name_list.append('kg_feat')
+        return feat_name_list
 
     def _restore_saved_dataset(self, saved_dataset):
         raise NotImplementedError()
@@ -382,7 +382,7 @@ class KnowledgeBasedDataset(Dataset):
         Returns:
             numpy.ndarray: List of head entities of kg triplets.
         """
-        return self.kg_feat[self.head_entity_field].values
+        return self.kg_feat[self.head_entity_field].numpy()
 
     @property
     @dlapi.set()
@@ -391,7 +391,7 @@ class KnowledgeBasedDataset(Dataset):
         Returns:
             numpy.ndarray: List of tail entities of kg triplets.
         """
-        return self.kg_feat[self.tail_entity_field].values
+        return self.kg_feat[self.tail_entity_field].numpy()
 
     @property
     @dlapi.set()
@@ -400,7 +400,7 @@ class KnowledgeBasedDataset(Dataset):
         Returns:
             numpy.ndarray: List of relations of kg triplets.
         """
-        return self.kg_feat[self.relation_field].values
+        return self.kg_feat[self.relation_field].numpy()
 
     @property
     @dlapi.set()
@@ -419,7 +419,7 @@ class KnowledgeBasedDataset(Dataset):
         else ``graph[src, tgt] = self.kg_feat[value_field][src, tgt]``.
 
         Currently, we support graph in `DGL`_ and `PyG`_,
-        and two type of sparse matrixes, ``coo`` and ``csr``.
+        and two type of sparse matrices, ``coo`` and ``csr``.
 
         Args:
             form (str, optional): Format of sparse matrix, or library of graph data structure.
@@ -447,11 +447,11 @@ class KnowledgeBasedDataset(Dataset):
     def _create_ckg_sparse_matrix(self, form='coo', show_relation=False):
         user_num = self.user_num
 
-        hids = self.kg_feat[self.head_entity_field].values + user_num
-        tids = self.kg_feat[self.tail_entity_field].values + user_num
+        hids = self.head_entities + user_num
+        tids = self.tail_entities + user_num
 
-        uids = self.inter_feat[self.uid_field].values
-        iids = self.inter_feat[self.iid_field].values + user_num
+        uids = self.inter_feat[self.uid_field].numpy()
+        iids = self.inter_feat[self.iid_field].numpy() + user_num
 
         ui_rel_num = len(uids)
         ui_rel_id = self.relation_num - 1
@@ -463,7 +463,7 @@ class KnowledgeBasedDataset(Dataset):
         if not show_relation:
             data = np.ones(len(src))
         else:
-            kg_rel = self.kg_feat[self.relation_field].values
+            kg_rel = self.kg_feat[self.relation_field].numpy()
             ui_rel = np.full(2 * ui_rel_num, ui_rel_id, dtype=kg_rel.dtype)
             data = np.concatenate([ui_rel, kg_rel])
         node_num = self.entity_num + self.user_num
@@ -478,8 +478,8 @@ class KnowledgeBasedDataset(Dataset):
     def _create_ckg_graph(self, form='dgl', show_relation=False):
         user_num = self.user_num
 
-        kg_tensor = self._dataframe_to_interaction(self.kg_feat)
-        inter_tensor = self._dataframe_to_interaction(self.inter_feat)
+        kg_tensor = self.kg_feat
+        inter_tensor = self.inter_feat
 
         head_entity = kg_tensor[self.head_entity_field] + user_num
         tail_entity = kg_tensor[self.tail_entity_field] + user_num
@@ -524,7 +524,7 @@ class KnowledgeBasedDataset(Dataset):
         or ``graph[src, tgt] = [UI-Relation]``.
 
         Currently, we support graph in `DGL`_ and `PyG`_,
-        and two type of sparse matrixes, ``coo`` and ``csr``.
+        and two type of sparse matrices, ``coo`` and ``csr``.
 
         Args:
             form (str, optional): Format of sparse matrix, or library of graph data structure.

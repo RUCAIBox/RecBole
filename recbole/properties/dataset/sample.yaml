@@ -33,15 +33,12 @@ lowest_val: ~
 highest_val: ~
 equal_val: ~
 not_equal_val: ~
-drop_filter_field : True
 
 # Preprocessing
 fields_in_same_space: ~
-fill_nan: True
 preload_weight: ~
-drop_preload_weight: True
 normalize_field: ~
-normalize_all: True
+normalize_all: ~
 
 # Sequential Model Needed
 ITEM_LIST_LENGTH_FIELD: item_length
