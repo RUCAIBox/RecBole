@@ -5,3 +5,4 @@ from recbole.data.dataloader.context_dataloader import *
 from recbole.data.dataloader.sequential_dataloader import *
 from recbole.data.dataloader.knowledge_dataloader import *
 from recbole.data.dataloader.xgboost_dataloader import *
+from recbole.data.dataloader.user_dataloader import *
