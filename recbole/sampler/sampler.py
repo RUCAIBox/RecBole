@@ -14,6 +14,7 @@ recbole.sampler
 """
 
 import copy
+
 import numpy as np
 import torch
 
@@ -32,6 +33,7 @@ class AbstractSampler(object):
         random_list (list or numpy.ndarray): The shuffled result of :meth:`get_random_list`.
         used_ids (numpy.ndarray): The result of :meth:`get_used_ids`.
     """
+
     def __init__(self, distribution):
         self.distribution = ''
         self.random_list = []
@@ -57,14 +59,14 @@ class AbstractSampler(object):
     def get_random_list(self):
         """
         Returns:
-            np.ndarray or list: Random list of value_id.
+            numpy.ndarray or list: Random list of value_id.
         """
         raise NotImplementedError('method [get_random_list] should be implemented')
 
     def get_used_ids(self):
         """
         Returns:
-            np.ndarray: Used ids. Index is key_id, and element is a set of value_ids.
+            numpy.ndarray: Used ids. Index is key_id, and element is a set of value_ids.
         """
         raise NotImplementedError('method [get_used_ids] should be implemented')
 
@@ -102,7 +104,7 @@ class AbstractSampler(object):
         """Sampling by key_ids.
 
         Args:
-            key_ids (np.ndarray or list): Input key_ids.
+            key_ids (numpy.ndarray or list): Input key_ids.
             num (int): Number of sampled value_ids for each key_id.
 
         Returns:
@@ -165,6 +167,7 @@ class Sampler(AbstractSampler):
     Attributes:
         phase (str): the phase of sampler. It will not be set until :meth:`set_phase` is called.
     """
+
     def __init__(self, phases, datasets, distribution='uniform'):
         if not isinstance(phases, list):
             phases = [phases]
@@ -187,7 +190,7 @@ class Sampler(AbstractSampler):
     def get_random_list(self):
         """
         Returns:
-            np.ndarray or list: Random list of item_id.
+            numpy.ndarray or list: Random list of item_id.
         """
         if self.distribution == 'uniform':
             return np.arange(1, self.n_items)
@@ -203,7 +206,7 @@ class Sampler(AbstractSampler):
         """
         Returns:
             dict: Used item_ids is the same as positive item_ids.
-            Key is phase, and value is a np.ndarray which index is user_id, and element is a set of item_ids.
+            Key is phase, and value is a numpy.ndarray which index is user_id, and element is a set of item_ids.
         """
         used_item_id = dict()
         last = [set() for _ in range(self.n_users)]
@@ -241,7 +244,7 @@ class Sampler(AbstractSampler):
         """Sampling by user_ids.
 
         Args:
-            user_ids (np.ndarray or list): Input user_ids.
+            user_ids (numpy.ndarray or list): Input user_ids.
             num (int): Number of sampled item_ids for each user_id.
 
         Returns:
@@ -266,6 +269,7 @@ class KGSampler(AbstractSampler):
         dataset (Dataset): The knowledge graph dataset, which contains triplets in a knowledge graph.
         distribution (str, optional): Distribution of the negative entities. Defaults to 'uniform'.
     """
+
     def __init__(self, dataset, distribution='uniform'):
         self.dataset = dataset
 
@@ -282,7 +286,7 @@ class KGSampler(AbstractSampler):
     def get_random_list(self):
         """
         Returns:
-            np.ndarray or list: Random list of entity_id.
+            numpy.ndarray or list: Random list of entity_id.
         """
         if self.distribution == 'uniform':
             return np.arange(1, self.entity_num)
@@ -294,7 +298,7 @@ class KGSampler(AbstractSampler):
     def get_used_ids(self):
         """
         Returns:
-            np.ndarray: Used entity_ids is the same as tail_entity_ids in knowledge graph.
+            numpy.ndarray: Used entity_ids is the same as tail_entity_ids in knowledge graph.
             Index is head_entity_id, and element is a set of tail_entity_ids.
         """
         used_tail_entity_id = np.array([set() for _ in range(self.entity_num)])
@@ -311,7 +315,7 @@ class KGSampler(AbstractSampler):
         """Sampling by head_entity_ids.
 
         Args:
-            head_entity_ids (np.ndarray or list): Input head_entity_ids.
+            head_entity_ids (numpy.ndarray or list): Input head_entity_ids.
             num (int, optional): Number of sampled entity_ids for each head_entity_id. Defaults to ``1``.
 
         Returns:
@@ -341,6 +345,7 @@ class RepeatableSampler(AbstractSampler):
     Attributes:
         phase (str): the phase of sampler. It will not be set until :meth:`set_phase` is called.
     """
+
     def __init__(self, phases, dataset, distribution='uniform'):
         if not isinstance(phases, list):
             phases = [phases]
@@ -356,7 +361,7 @@ class RepeatableSampler(AbstractSampler):
     def get_random_list(self):
         """
         Returns:
-            np.ndarray or list: Random list of item_id.
+            numpy.ndarray or list: Random list of item_id.
         """
         if self.distribution == 'uniform':
             return np.arange(1, self.n_items)
@@ -368,7 +373,7 @@ class RepeatableSampler(AbstractSampler):
     def get_used_ids(self):
         """
         Returns:
-            np.ndarray: Used item_ids is the same as positive item_ids.
+            numpy.ndarray: Used item_ids is the same as positive item_ids.
             Index is user_id, and element is a set of item_ids.
         """
         return np.array([set() for _ in range(self.n_users)])
@@ -377,7 +382,7 @@ class RepeatableSampler(AbstractSampler):
         """Sampling by user_ids.
 
         Args:
-            user_ids (np.ndarray or list): Input user_ids.
+            user_ids (numpy.ndarray or list): Input user_ids.
             num (int): Number of sampled item_ids for each user_id.
 
         Returns:

@@ -25,11 +25,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
-from recbole.model.loss import BPRLoss, EmbLoss
-from recbole.model.layers import BiGNNLayer, SparseDropout
 from recbole.model.init import xavier_normal_initialization
+from recbole.model.layers import BiGNNLayer, SparseDropout
+from recbole.model.loss import BPRLoss, EmbLoss
+from recbole.utils import InputType
 
 
 class NGCF(GeneralRecommender):
@@ -96,7 +96,7 @@ class NGCF(GeneralRecommender):
         A._update(data_dict)
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)
-        diag = np.array(sumArr.flatten())[0] + 1e-7     # add epsilon to avoid Devide by zero Warning
+        diag = np.array(sumArr.flatten())[0] + 1e-7  # add epsilon to avoid divide by zero Warning
         diag = np.power(diag, -0.5)
         D = sp.diags(diag)
         L = D * A * D
@@ -159,14 +159,14 @@ class NGCF(GeneralRecommender):
 
         user_all_embeddings, item_all_embeddings = self.forward()
         u_embeddings = user_all_embeddings[user]
-        posi_embeddings = item_all_embeddings[pos_item]
-        negi_embeddings = item_all_embeddings[neg_item]
+        pos_embeddings = item_all_embeddings[pos_item]
+        neg_embeddings = item_all_embeddings[neg_item]
 
-        pos_scores = torch.mul(u_embeddings, posi_embeddings).sum(dim=1)
-        neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
+        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)  # calculate BPR Loss
 
-        reg_loss = self.reg_loss(u_embeddings, posi_embeddings, negi_embeddings)  # L2 regularization of embeddings
+        reg_loss = self.reg_loss(u_embeddings, pos_embeddings, neg_embeddings)  # L2 regularization of embeddings
 
         return mf_loss + self.reg_weight * reg_loss
 

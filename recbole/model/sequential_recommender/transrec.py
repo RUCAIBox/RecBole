@@ -15,10 +15,10 @@ Reference:
 import torch
 from torch import nn
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
-from recbole.model.loss import BPRLoss, EmbLoss, RegLoss
 from recbole.model.init import xavier_normal_initialization
+from recbole.model.loss import BPRLoss, EmbLoss, RegLoss
+from recbole.utils import InputType
 
 
 class TransRec(SequentialRecommender):
@@ -41,8 +41,8 @@ class TransRec(SequentialRecommender):
 
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size, padding_idx=0)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.bias = nn.Embedding(self.n_items, 1, padding_idx=0) # Beta popularity bias
-        self.T = nn.Parameter(torch.zeros(self.embedding_size)) # average user representation 'global'
+        self.bias = nn.Embedding(self.n_items, 1, padding_idx=0)  # Beta popularity bias
+        self.T = nn.Parameter(torch.zeros(self.embedding_size))  # average user representation 'global'
 
         self.bpr_loss = BPRLoss()
         self.emb_loss = EmbLoss()
@@ -52,21 +52,21 @@ class TransRec(SequentialRecommender):
         self.apply(xavier_normal_initialization)
 
     def _l2_distance(self, x, y):
-        return torch.sqrt(torch.sum((x - y)**2, dim=-1, keepdim=True))  # [B 1]
+        return torch.sqrt(torch.sum((x - y) ** 2, dim=-1, keepdim=True))  # [B 1]
 
     def gather_last_items(self, item_seq, gather_index):
-        "Gathers the last_item at the spexific positions over a minibatch"
+        """Gathers the last_item at the specific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1)
-        last_items = item_seq.gather(index=gather_index, dim=1) # [B 1]
-        return last_items.squeeze(-1) # [B]
+        last_items = item_seq.gather(index=gather_index, dim=1)  # [B 1]
+        return last_items.squeeze(-1)  # [B]
 
     def forward(self, user, item_seq, item_seq_len):
         # the last item at the last position
-        last_items = self.gather_last_items(item_seq, item_seq_len - 1) # [B]
-        user_emb = self.user_embedding(user) # [B H]
+        last_items = self.gather_last_items(item_seq, item_seq_len - 1)  # [B]
+        user_emb = self.user_embedding(user)  # [B H]
         last_items_emb = self.item_embedding(last_items)  # [B H]
-        T = self.T.expand_as(user_emb) # [B H]
-        seq_output = user_emb + T + last_items_emb # [B H]
+        T = self.T.expand_as(user_emb)  # [B H]
+        seq_output = user_emb + T + last_items_emb  # [B H]
         return seq_output
 
     def calculate_loss(self, interaction):
@@ -117,13 +117,13 @@ class TransRec(SequentialRecommender):
 
         seq_output = self.forward(user, item_seq, item_seq_len)  # [B H]
 
-        test_items_emb = self.item_embedding.weight # [item_num H]
-        test_items_emb = test_items_emb.repeat(seq_output.size(0), 1, 1) # [user_num item_num H]
+        test_items_emb = self.item_embedding.weight  # [item_num H]
+        test_items_emb = test_items_emb.repeat(seq_output.size(0), 1, 1)  # [user_num item_num H]
 
-        user_hidden = seq_output.unsqueeze(1).expand_as(test_items_emb) # [user_num item_num H]
-        test_bias = self.bias.weight # [item_num 1]
-        test_bias = test_bias.repeat(user_hidden.size(0), 1, 1) # [user_num item_num 1]
+        user_hidden = seq_output.unsqueeze(1).expand_as(test_items_emb)  # [user_num item_num H]
+        test_bias = self.bias.weight  # [item_num 1]
+        test_bias = test_bias.repeat(user_hidden.size(0), 1, 1)  # [user_num item_num 1]
 
-        scores = test_bias - self._l2_distance(user_hidden, test_items_emb) # [user_num item_num 1]
+        scores = test_bias - self._l2_distance(user_hidden, test_items_emb)  # [user_num item_num 1]
         scores = scores.squeeze(-1)  # [B n_items]
         return scores

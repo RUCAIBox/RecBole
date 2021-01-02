@@ -22,9 +22,9 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.loss import RegLoss
-from recbole.model.layers import MLPLayers
 from recbole.model.abstract_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers
+from recbole.model.loss import RegLoss
 
 
 class DCN(ContextRecommender):
@@ -32,6 +32,7 @@ class DCN(ContextRecommender):
     automatically construct limited high-degree cross features, and learns the corresponding weights.
 
     """
+
     def __init__(self, config, dataset):
         super(DCN, self).__init__(config, dataset)
 
@@ -94,16 +95,7 @@ class DCN(ContextRecommender):
         return x_l
 
     def forward(self, interaction):
-        # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
-        # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        all_embeddings = []
-        if sparse_embedding is not None:
-            all_embeddings.append(sparse_embedding)
-        if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            all_embeddings.append(dense_embedding)
-
-        dcn_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        dcn_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
         batch_size = dcn_all_embeddings.shape[0]
         dcn_all_embeddings = dcn_all_embeddings.view(batch_size, -1)
 

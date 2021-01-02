@@ -23,7 +23,7 @@ def get_scores(uid_series, model, test_data):
         The score of [pad] and history items will be set into -inf.
 
     Args:
-        uid_series (np.ndarray): User id series
+        uid_series (numpy.ndarray): User id series
         model (AbstractRecommender): Model to predict
         test_data (AbstractDataLoader): The test_data of model
 
@@ -69,7 +69,7 @@ def get_topk(uid_series, model, test_data, k):
     """Calculate the top-k items' scores and ids for each user in uid_series.
 
     Args:
-        uid_series (np.ndarray): User id series
+        uid_series (numpy.ndarray): User id series
         model (AbstractRecommender): Model to predict
         test_data (AbstractDataLoader): The test_data of model
         k (int): The top-k items.

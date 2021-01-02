@@ -45,8 +45,8 @@ class FOSSIL(SequentialRecommender):
 
         # define the layers and loss type
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.user_lamda = nn.Embedding(self.n_users, self.order_len)
-        self.lamda = nn.Parameter(torch.zeros(self.order_len)).to(self.device)
+        self.user_lambda = nn.Embedding(self.n_users, self.order_len)
+        self.lambda_ = nn.Parameter(torch.zeros(self.order_len)).to(self.device)
 
         self.loss_type = config['loss_type']
         if self.loss_type == 'BPR':
@@ -85,9 +85,9 @@ class FOSSIL(SequentialRecommender):
     def reg_loss(self, user_embedding, item_embedding, seq_output):
 
         reg_1 = self.reg_weight
-        loss_1 = reg_1 * torch.norm(user_embedding, p=2)\
-            + reg_1 * torch.norm(item_embedding, p=2)\
-            + reg_1 * torch.norm(seq_output, p=2)
+        loss_1 = reg_1 * torch.norm(user_embedding, p=2) \
+                 + reg_1 * torch.norm(item_embedding, p=2) \
+                 + reg_1 * torch.norm(seq_output, p=2)
 
         return loss_1
 
@@ -114,13 +114,13 @@ class FOSSIL(SequentialRecommender):
         in order to get the inference of past items and the user's taste to the current predict item
         """
 
-        user_lamda = self.user_lamda(user).unsqueeze(dim=2)
+        user_lambda = self.user_lambda(user).unsqueeze(dim=2)
         # batch_size * order_len * 1
-        lamda = self.lamda.unsqueeze(dim=0).unsqueeze(dim=2)
+        lambda_ = self.lambda_.unsqueeze(dim=0).unsqueeze(dim=2)
         # 1 * order_len * 1
-        lamda = torch.add(user_lamda, lamda)
+        lambda_ = torch.add(user_lambda, lambda_)
         # batch_size * order_len * 1
-        high_order_item_embedding = torch.mul(high_order_item_embedding, lamda)
+        high_order_item_embedding = torch.mul(high_order_item_embedding, lambda_)
         # batch_size * order_len * embedding_size
         high_order_item_embedding = high_order_item_embedding.sum(dim=1)
         # batch_size * embedding_size
@@ -147,7 +147,7 @@ class FOSSIL(SequentialRecommender):
         pos_items = interaction[self.POS_ITEM_ID]
         pos_items_emb = self.item_embedding(pos_items)
 
-        user_lamda = self.user_lamda(user)
+        user_lambda = self.user_lambda(user)
         pos_items_embedding = self.item_embedding(pos_items)
         if self.loss_type == 'BPR':
             neg_items = interaction[self.NEG_ITEM_ID]
@@ -155,12 +155,12 @@ class FOSSIL(SequentialRecommender):
             pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)
             neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)
             loss = self.loss_fct(pos_score, neg_score)
-            return loss + self.reg_loss(user_lamda, pos_items_embedding, seq_output)
+            return loss + self.reg_loss(user_lambda, pos_items_embedding, seq_output)
         else:  # self.loss_type = 'CE'
             test_item_emb = self.item_embedding.weight
             logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
             loss = self.loss_fct(logits, pos_items)
-            return loss + self.reg_loss(user_lamda, pos_items_embedding, seq_output)
+            return loss + self.reg_loss(user_lambda, pos_items_embedding, seq_output)
 
     def predict(self, interaction):
 

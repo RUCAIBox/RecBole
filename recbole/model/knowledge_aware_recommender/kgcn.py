@@ -14,14 +14,14 @@ Reference code:
     https://github.com/hwwang55/KGCN
 """
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import KnowledgeRecommender
-from recbole.model.loss import BPRLoss, EmbLoss
 from recbole.model.init import xavier_normal_initialization
+from recbole.model.loss import EmbLoss
+from recbole.utils import InputType
 
 
 class KGCN(KnowledgeRecommender):
@@ -153,10 +153,8 @@ class KGCN(KnowledgeRecommender):
         relations = []
         for i in range(self.n_iter):
             index = torch.flatten(entities[i])
-            neighbor_entities = torch.reshape(torch.index_select(
-                self.adj_entity, 0, index), (self.batch_size, -1))
-            neighbor_relations = torch.reshape(torch.index_select(
-                self.adj_relation, 0, index), (self.batch_size, -1))
+            neighbor_entities = torch.index_select(self.adj_entity, 0, index).reshape(self.batch_size, -1)
+            neighbor_relations = torch.index_select(self.adj_relation, 0, index).reshape(self.batch_size, -1)
             entities.append(neighbor_entities)
             relations.append(neighbor_relations)
         return entities, relations
@@ -178,20 +176,18 @@ class KGCN(KnowledgeRecommender):
         """
         avg = False
         if not avg:
-            user_embeddings = torch.reshape(user_embeddings,
-                                            (self.batch_size, 1, 1, self.embedding_size))  # [batch_size, 1, 1, dim]
+            user_embeddings = user_embeddings.reshape(self.batch_size, 1, 1,
+                                                      self.embedding_size)  # [batch_size, 1, 1, dim]
             user_relation_scores = torch.mean(user_embeddings * neighbor_relations,
                                               dim=-1)  # [batch_size, -1, n_neighbor]
-            user_relation_scores_normalized = self.softmax(
-                user_relation_scores)  # [batch_size, -1, n_neighbor]
+            user_relation_scores_normalized = self.softmax(user_relation_scores)  # [batch_size, -1, n_neighbor]
 
             user_relation_scores_normalized = torch.unsqueeze(user_relation_scores_normalized,
                                                               dim=-1)  # [batch_size, -1, n_neighbor, 1]
             neighbors_aggregated = torch.mean(user_relation_scores_normalized * neighbor_vectors,
                                               dim=2)  # [batch_size, -1, dim]
         else:
-            neighbors_aggregated = torch.mean(
-                neighbor_vectors, dim=2)  # [batch_size, -1, dim]
+            neighbors_aggregated = torch.mean(neighbor_vectors, dim=2)  # [batch_size, -1, dim]
         return neighbors_aggregated
 
     def aggregate(self, user_embeddings, entities, relations):
@@ -221,33 +217,27 @@ class KGCN(KnowledgeRecommender):
                 shape = (self.batch_size, -1,
                          self.neighbor_sample_size, self.embedding_size)
                 self_vectors = entity_vectors[hop]
-                neighbor_vectors = torch.reshape(
-                    entity_vectors[hop + 1], shape)
-                neighbor_relations = torch.reshape(
-                    relation_vectors[hop], shape)
+                neighbor_vectors = entity_vectors[hop + 1].reshape(shape)
+                neighbor_relations = relation_vectors[hop].reshape(shape)
 
                 neighbors_agg = self.mix_neighbor_vectors(neighbor_vectors, neighbor_relations,
                                                           user_embeddings)  # [batch_size, -1, dim]
 
                 if self.aggregator_class == 'sum':
-                    output = torch.reshape(
-                        self_vectors + neighbors_agg, (-1, self.embedding_size))  # [-1, dim]
+                    output = (self_vectors + neighbors_agg).reshape(-1, self.embedding_size)  # [-1, dim]
                 elif self.aggregator_class == 'neighbor':
-                    output = torch.reshape(
-                        neighbors_agg, (-1, self.embedding_size))  # [-1, dim]
+                    output = neighbors_agg.reshape(-1, self.embedding_size)  # [-1, dim]
                 elif self.aggregator_class == 'concat':
                     # [batch_size, -1, dim * 2]
                     output = torch.cat([self_vectors, neighbors_agg], dim=-1)
-                    output = torch.reshape(
-                        output, (-1, self.embedding_size * 2))  # [-1, dim * 2]
+                    output = output.reshape(-1, self.embedding_size * 2)  # [-1, dim * 2]
                 else:
                     raise Exception("Unknown aggregator: " +
                                     self.aggregator_class)
 
                 output = self.linear_layers[i](output)
                 # [batch_size, -1, dim]
-                output = torch.reshape(
-                    output, [self.batch_size, -1, self.embedding_size])
+                output = output.reshape(self.batch_size, -1, self.embedding_size)
 
                 if i == self.n_iter - 1:
                     vector = self.Tanh(output)
@@ -257,8 +247,7 @@ class KGCN(KnowledgeRecommender):
                 entity_vectors_next_iter.append(vector)
             entity_vectors = entity_vectors_next_iter
 
-        item_embeddings = torch.reshape(
-            entity_vectors[0], (self.batch_size, self.embedding_size))
+        item_embeddings = entity_vectors[0].reshape(self.batch_size, self.embedding_size)
 
         return item_embeddings
 

@@ -1,6 +1,6 @@
 # Type of training method
 convert_token_to_onehot: False
-token_num_threhold: 10000
+token_num_threshold: 10000
 
 # DMatrix
 xgb_weight: ~

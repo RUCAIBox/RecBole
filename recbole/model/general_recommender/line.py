@@ -13,14 +13,15 @@ Reference code:
     https://github.com/shenweichen/GraphEmbedding
 """
 
+import random
+
+import numpy as np
 import torch
 import torch.nn as nn
-import random
-import numpy as np
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
+from recbole.utils import InputType
 
 
 class NegSamplingLoss(nn.Module):
@@ -156,9 +157,9 @@ class LINE(GeneralRecommender):
                 score_neg_con = self.context_forward(pos_item, neg_user, 'ii')
 
             return self.loss_fct(ones, score_pos) \
-                + self.loss_fct(-1 * ones, score_neg) \
-                + self.loss_fct(ones, score_pos_con) * self.second_order_loss_weight \
-                + self.loss_fct(-1*ones, score_neg_con) * self.second_order_loss_weight
+                   + self.loss_fct(-1 * ones, score_neg) \
+                   + self.loss_fct(ones, score_pos_con) * self.second_order_loss_weight \
+                   + self.loss_fct(-1 * ones, score_neg_con) * self.second_order_loss_weight
 
     def predict(self, interaction):
 

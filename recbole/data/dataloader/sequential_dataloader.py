@@ -15,9 +15,9 @@ recbole.data.dataloader.sequential_dataloader
 import numpy as np
 import torch
 
-from recbole.data.interaction import Interaction, cat_interactions
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.dataloader.neg_sample_mixin import NegSampleByMixin, NegSampleMixin
+from recbole.data.interaction import Interaction, cat_interactions
 from recbole.utils import DataLoaderType, FeatureSource, FeatureType, InputType
 
 
@@ -116,9 +116,9 @@ class SequentialDataLoader(AbstractDataLoader):
         """Data augmentation.
 
         Args:
-            item_list_index (np.ndarray): the index of history items list in interaction.
-            target_index (np.ndarray): the index of items to be predicted in interaction.
-            item_list_length (np.ndarray): history list length.
+            item_list_index (numpy.ndarray): the index of history items list in interaction.
+            target_index (numpy.ndarray): the index of items to be predicted in interaction.
+            item_list_length (numpy.ndarray): history list length.
 
         Returns:
             dict: the augmented data.
@@ -133,7 +133,7 @@ class SequentialDataLoader(AbstractDataLoader):
             if field != self.uid_field:
                 list_field = getattr(self, f'{field}_list_field')
                 list_len = self.dataset.field2seqlen[list_field]
-                shape = (new_length, list_len) if isinstance(list_len, int) else (new_length, ) + list_len
+                shape = (new_length, list_len) if isinstance(list_len, int) else (new_length,) + list_len
                 list_ftype = self.dataset.field2type[list_field]
                 dtype = torch.int64 if list_ftype in [FeatureType.TOKEN, FeatureType.TOKEN_SEQ] else torch.float64
                 new_dict[list_field] = torch.zeros(shape, dtype=dtype)
@@ -163,6 +163,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
             :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
+
     def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         super().__init__(config, dataset, sampler, neg_sample_args,
@@ -218,14 +219,14 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray: Number of positive item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         return np.ones(self.pr_end, dtype=np.int64)
 
     def get_user_len_list(self):
         """
         Returns:
-            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
         return np.full(self.pr_end, self.times)
 
@@ -277,13 +278,13 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
+            numpy.ndarray or list: Number of positive item for each user in a training/evaluating epoch.
         """
         return np.ones(self.pr_end, dtype=np.int64)
 
     def get_user_len_list(self):
         """
         Returns:
-            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
         return np.full(self.pr_end, self.item_num)

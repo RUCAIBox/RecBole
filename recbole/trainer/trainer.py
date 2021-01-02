@@ -13,20 +13,20 @@ recbole.trainer.trainer
 """
 
 import os
-from tqdm import tqdm
+from logging import getLogger
+from time import time
+
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.optim as optim
 from torch.nn.utils.clip_grad import clip_grad_norm_
-import numpy as np
-import matplotlib.pyplot as plt
+from tqdm import tqdm
 
-from time import time
-from logging import getLogger
-
-from recbole.evaluator import ProxyEvaluator
 from recbole.data.interaction import Interaction
+from recbole.evaluator import ProxyEvaluator
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
-    DataLoaderType, KGDataLoaderState, EvaluatorType
+    DataLoaderType, KGDataLoaderState
 
 
 class AbstractTrainer(object):
@@ -229,7 +229,7 @@ class Trainer(AbstractTrainer):
         train_loss_output = 'epoch %d training [time: %.2fs, ' % (epoch_idx, e_time - s_time)
         if isinstance(losses, tuple):
             des = 'train_loss%d: %.' + str(des) + 'f'
-            train_loss_output += ', '.join( des % (idx + 1, loss) for idx, loss in enumerate(losses))
+            train_loss_output += ', '.join(des % (idx + 1, loss) for idx, loss in enumerate(losses))
         else:
             des = '%.' + str(des) + 'f'
             train_loss_output += 'train loss:' + des % losses
@@ -682,15 +682,15 @@ class xgboostTrainer(AbstractTrainer):
 
             cur_data = sparse.csc_matrix(onehot_data)
 
-        return self.xgb.DMatrix(data = cur_data, 
-                                label = interaction_np[self.label_field], 
-                                weight = self.weight,
-                                base_margin = self.base_margin,
-                                missing = self.missing, 
-                                silent = self.silent, 
-                                feature_names = self.feature_names, 
-                                feature_types = self.feature_types, 
-                                nthread = self.nthread)
+        return self.xgb.DMatrix(data=cur_data,
+                                label=interaction_np[self.label_field],
+                                weight=self.weight,
+                                base_margin=self.base_margin,
+                                missing=self.missing,
+                                silent=self.silent,
+                                feature_names=self.feature_names,
+                                feature_types=self.feature_types,
+                                nthread=self.nthread)
 
     def _train_at_once(self, train_data, valid_data):
         r"""
@@ -701,11 +701,11 @@ class xgboostTrainer(AbstractTrainer):
         """
         self.dtrain = self._interaction_to_DMatrix(train_data)
         self.dvalid = self._interaction_to_DMatrix(valid_data)
-        self.evals = [(self.dtrain,'train'),(self.dvalid, 'valid')]
-        self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round, 
-                        self.evals, self.obj, self.feval, self.maximize, 
-                        self.early_stopping_rounds, self.evals_result, 
-                        self.verbose_eval, self.xgb_model, self.callbacks)
+        self.evals = [(self.dtrain, 'train'), (self.dvalid, 'valid')]
+        self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round,
+                                    self.evals, self.obj, self.feval, self.maximize,
+                                    self.early_stopping_rounds, self.evals_result,
+                                    self.verbose_eval, self.xgb_model, self.callbacks)
 
         self.model.save_model(self.saved_model_file)
         self.xgb_model = self.saved_model_file

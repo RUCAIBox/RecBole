@@ -9,7 +9,7 @@ recbole.model.exlib_recommender.xgboost
 """
 
 import xgboost as xgb
-from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
+from recbole.utils import ModelType, InputType
 
 
 class xgboost(xgb.Booster):
