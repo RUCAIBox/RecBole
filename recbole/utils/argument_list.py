@@ -25,7 +25,7 @@ evaluation_arguments = ['eval_setting',
                         'eval_batch_size']
 
 dataset_arguments = ['field_separator', 'seq_separator',
-                     'USER_ID_FIELD', 'ITEM_ID_FIELD', 'RATING_FIELD', 'TIME_FIELD'
+                     'USER_ID_FIELD', 'ITEM_ID_FIELD', 'RATING_FIELD', 'TIME_FIELD',
                      'seq_len',
                      'LABEL_FIELD', 'threshold',
                      'NEG_PREFIX',

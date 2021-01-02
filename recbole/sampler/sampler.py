@@ -14,6 +14,7 @@ recbole.sampler
 """
 
 import copy
+
 import numpy as np
 import torch
 
@@ -32,6 +33,7 @@ class AbstractSampler(object):
         random_list (list or numpy.ndarray): The shuffled result of :meth:`get_random_list`.
         used_ids (numpy.ndarray): The result of :meth:`get_used_ids`.
     """
+
     def __init__(self, distribution):
         self.distribution = ''
         self.random_list = []
@@ -165,6 +167,7 @@ class Sampler(AbstractSampler):
     Attributes:
         phase (str): the phase of sampler. It will not be set until :meth:`set_phase` is called.
     """
+
     def __init__(self, phases, datasets, distribution='uniform'):
         if not isinstance(phases, list):
             phases = [phases]
@@ -266,6 +269,7 @@ class KGSampler(AbstractSampler):
         dataset (Dataset): The knowledge graph dataset, which contains triplets in a knowledge graph.
         distribution (str, optional): Distribution of the negative entities. Defaults to 'uniform'.
     """
+
     def __init__(self, dataset, distribution='uniform'):
         self.dataset = dataset
 
@@ -341,6 +345,7 @@ class RepeatableSampler(AbstractSampler):
     Attributes:
         phase (str): the phase of sampler. It will not be set until :meth:`set_phase` is called.
     """
+
     def __init__(self, phases, dataset, distribution='uniform'):
         if not isinstance(phases, list):
             phases = [phases]
