@@ -13,13 +13,13 @@ recbole.data.utils
 """
 
 import copy
-import os
 import importlib
+import os
 
 from recbole.config import EvalSetting
+from recbole.data.dataloader import *
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
 from recbole.utils import ModelType
-from recbole.data.dataloader import *
 
 
 def create_dataset(config):
@@ -31,9 +31,10 @@ def create_dataset(config):
     Returns:
         Dataset: Constructed dataset.
     """
-    try:
-        return getattr(importlib.import_module('recbole.data.dataset'), config['model'] + 'Dataset')(config)
-    except AttributeError:
+    dataset_module = importlib.import_module('recbole.data.dataset')
+    if hasattr(dataset_module, config['model'] + 'Dataset'):
+        return getattr(dataset_module, config['model'] + 'Dataset')(config)
+    else:
         model_type = config['MODEL_TYPE']
         if model_type == ModelType.SEQUENTIAL:
             from .dataset import SequentialDataset
@@ -44,6 +45,9 @@ def create_dataset(config):
         elif model_type == ModelType.SOCIAL:
             from .dataset import SocialDataset
             return SocialDataset(config)
+        elif model_type == ModelType.XGBOOST:
+            from .dataset import XgboostDataset
+            return XgboostDataset(config)
         else:
             from .dataset import Dataset
             return Dataset(config)
@@ -85,18 +89,23 @@ def data_preparation(config, dataset, save=False):
     if es.split_args['strategy'] != 'loo' and model_type == ModelType.SEQUENTIAL:
         raise ValueError('Sequential models require "loo" split strategy.')
 
-    builded_datasets = dataset.build(es)
-    train_dataset, valid_dataset, test_dataset = builded_datasets
+    built_datasets = dataset.build(es)
+    train_dataset, valid_dataset, test_dataset = built_datasets
     phases = ['train', 'valid', 'test']
+    sampler = None
 
     if save:
-        save_datasets(config['checkpoint_dir'], name=phases, dataset=builded_datasets)
+        save_datasets(config['checkpoint_dir'], name=phases, dataset=built_datasets)
 
     kwargs = {}
     if config['training_neg_sample_num']:
-        es.neg_sample_by(config['training_neg_sample_num'])
+        if dataset.label_field in dataset.inter_feat:
+            raise ValueError(f'`training_neg_sample_num` should be 0 '
+                             f'if inter_feat have label_field [{dataset.label_field}].')
+        train_distribution = config['training_neg_sample_distribution'] or 'uniform'
+        es.neg_sample_by(by=config['training_neg_sample_num'], distribution=train_distribution)
         if model_type != ModelType.SEQUENTIAL:
-            sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
+            sampler = Sampler(phases, built_datasets, es.neg_sample_args['distribution'])
         else:
             sampler = RepeatableSampler(phases, dataset, es.neg_sample_args['distribution'])
         kwargs['sampler'] = sampler.set_phase('train')
@@ -117,9 +126,16 @@ def data_preparation(config, dataset, save=False):
 
     kwargs = {}
     if len(es_str) > 1 and getattr(es, es_str[1], None):
+        if dataset.label_field in dataset.inter_feat:
+            raise ValueError(f'It can not validate with `{es_str[1]}` '
+                             f'when inter_feat have label_field [{dataset.label_field}].')
         getattr(es, es_str[1])()
-        if 'sampler' not in locals():
-            sampler = Sampler(phases, builded_datasets, es.neg_sample_args['distribution'])
+        if sampler is None:
+            if model_type != ModelType.SEQUENTIAL:
+                sampler = Sampler(phases, built_datasets, es.neg_sample_args['distribution'])
+            else:
+                sampler = RepeatableSampler(phases, dataset, es.neg_sample_args['distribution'])
+        sampler.set_distribution(es.neg_sample_args['distribution'])
         kwargs['sampler'] = [sampler.set_phase('valid'), sampler.set_phase('test')]
         kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
     valid_data, test_data = dataloader_construct(
@@ -163,7 +179,7 @@ def dataloader_construct(name, config, eval_setting, dataset,
     if len(dataset) != len(batch_size):
         raise ValueError('dataset {} and batch_size {} should have the same length'.format(dataset, batch_size))
 
-    kwargs_list = [{} for i in range(len(dataset))]
+    kwargs_list = [{} for _ in range(len(dataset))]
     for key, value in kwargs.items():
         key = [key] * len(dataset)
         if not isinstance(value, list):
@@ -179,11 +195,11 @@ def dataloader_construct(name, config, eval_setting, dataset,
     logger.info(eval_setting)
     logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
 
-    DataLoader = get_data_loader(name, config, eval_setting)
+    dataloader = get_data_loader(name, config, eval_setting)
 
     try:
         ret = [
-            DataLoader(
+            dataloader(
                 config=config,
                 dataset=ds,
                 batch_size=bs,
@@ -233,7 +249,12 @@ def get_data_loader(name, config, eval_setting):
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
     """
     register_table = {
-        'DIN': _get_DIN_data_loader
+        'DIN': _get_DIN_data_loader,
+        "MultiDAE": _get_AE_data_loader,
+        "MultiVAE": _get_AE_data_loader,
+        'MacridVAE': _get_AE_data_loader,
+        'CDAE': _get_AE_data_loader,
+        'ENMF': _get_AE_data_loader
     }
 
     if config['model'] in register_table:
@@ -254,7 +275,7 @@ def get_data_loader(name, config, eval_setting):
         elif neg_sample_strategy == 'by':
             return ContextNegSampleDataLoader
         elif neg_sample_strategy == 'full':
-            raise NotImplementedError('context model\'s full_sort has not been implemented')
+            return ContextFullDataLoader
     elif model_type == ModelType.SEQUENTIAL:
         if neg_sample_strategy == 'none':
             return SequentialDataLoader
@@ -262,6 +283,13 @@ def get_data_loader(name, config, eval_setting):
             return SequentialNegSampleDataLoader
         elif neg_sample_strategy == 'full':
             return SequentialFullDataLoader
+    elif model_type == ModelType.XGBOOST:
+        if neg_sample_strategy == 'none':
+            return XgboostDataLoader
+        elif neg_sample_strategy == 'by':
+            return XgboostNegSampleDataLoader
+        elif neg_sample_strategy == 'full':
+            return XgboostFullDataLoader
     elif model_type == ModelType.KNOWLEDGE:
         if neg_sample_strategy == 'by':
             if name == 'train':
@@ -299,6 +327,29 @@ def _get_DIN_data_loader(name, config, eval_setting):
         return SequentialFullDataLoader
 
 
+def _get_AE_data_loader(name, config, eval_setting):
+    """Customized function for Multi-DAE and Multi-VAE to get correct dataloader class.
+
+    Args:
+        name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
+        config (Config): An instance object of Config, used to record parameter information.
+        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+
+    Returns:
+        type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
+    """
+    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    if name == "train":
+        return UserDataLoader
+    else:
+        if neg_sample_strategy == 'none':
+            return GeneralDataLoader
+        elif neg_sample_strategy == 'by':
+            return GeneralNegSampleDataLoader
+        elif neg_sample_strategy == 'full':
+            return GeneralFullDataLoader
+
+
 class DLFriendlyAPI(object):
     """A Decorator class, which helps copying :class:`Dataset` methods to :class:`DataLoader`.
 
@@ -306,13 +357,15 @@ class DLFriendlyAPI(object):
 
     E.g. if ``train_data`` is an object of :class:`DataLoader`,
     and :meth:`~recbole.data.dataset.dataset.Dataset.num` is a method of :class:`~recbole.data.dataset.dataset.Dataset`,
-    Cause it has been decorated, :meth:`~recbole.data.dataset.dataset.Dataset.num` can be called directly by ``train_data``.
+    Cause it has been decorated, :meth:`~recbole.data.dataset.dataset.Dataset.num` can be called directly by
+    ``train_data``.
 
     See the example of :meth:`set` for details.
 
     Attributes:
         dataloader_apis (set): Register table that saves all the method names of DataLoader Friendly APIs.
     """
+
     def __init__(self):
         self.dataloader_apis = set()
 
@@ -330,9 +383,11 @@ class DLFriendlyAPI(object):
                 def dataset_meth():
                     ...
         """
+
         def decorator(f):
             self.dataloader_apis.add(f.__name__)
             return f
+
         return decorator
 
 

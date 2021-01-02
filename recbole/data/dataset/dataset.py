@@ -23,11 +23,10 @@ import pandas as pd
 import torch
 import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
-from sklearn.impute import SimpleImputer
 
-from recbole.utils import FeatureSource, FeatureType
 from recbole.data.interaction import Interaction
 from recbole.data.utils import dlapi
+from recbole.utils import FeatureSource, FeatureType
 
 
 class Dataset(object):
@@ -78,17 +77,18 @@ class Dataset(object):
 
         time_field (str or None): The same as ``config['TIME_FIELD']``.
 
-        inter_feat (:class:`pandas.DataFrame`): Internal data structure stores the interaction features.
+        inter_feat (:class:`Interaction`): Internal data structure stores the interaction features.
             It's loaded from file ``.inter``.
 
-        user_feat (:class:`pandas.DataFrame` or None): Internal data structure stores the user features.
+        user_feat (:class:`Interaction` or None): Internal data structure stores the user features.
             It's loaded from file ``.user`` if existed.
 
-        item_feat (:class:`pandas.DataFrame` or None): Internal data structure stores the item features.
+        item_feat (:class:`Interaction` or None): Internal data structure stores the item features.
             It's loaded from file ``.item`` if existed.
 
-        feat_list (list): A list contains all the features (:class:`pandas.DataFrame`), including additional features.
+        feat_name_list (list): A list contains all the features' name (:class:`str`), including additional features.
     """
+
     def __init__(self, config, saved_dataset=None):
         self.config = config
         self.dataset_name = config['dataset']
@@ -111,12 +111,12 @@ class Dataset(object):
         self._get_field_from_config()
         self._load_data(self.dataset_name, self.dataset_path)
         self._data_processing()
+        self._change_feat_format()
 
     def _get_preset(self):
         """Initialization useful inside attributes.
         """
         self.dataset_path = self.config['data_path']
-        self._fill_nan_flag = self.config['fill_nan']
 
         self.field2type = {}
         self.field2source = {}
@@ -134,6 +134,10 @@ class Dataset(object):
         self.label_field = self.config['LABEL_FIELD']
         self.time_field = self.config['TIME_FIELD']
 
+        if (self.uid_field is None) ^ (self.iid_field is None):
+            raise ValueError('USER_ID_FIELD and ITEM_ID_FIELD need to be set at the same time '
+                             'or not set at the same time.')
+
         self.logger.debug('uid_field: {}'.format(self.uid_field))
         self.logger.debug('iid_field: {}'.format(self.iid_field))
 
@@ -147,7 +151,7 @@ class Dataset(object):
         - Normalization
         - Preloading weights initialization
         """
-        self.feat_list = self._build_feat_list()
+        self.feat_name_list = self._build_feat_name_list()
         if self.benchmark_filename_list is None:
             self._data_filtering()
 
@@ -175,23 +179,24 @@ class Dataset(object):
         self._filter_by_inter_num()
         self._reset_index()
 
-    def _build_feat_list(self):
+    def _build_feat_name_list(self):
         """Feat list building.
 
-        Any feat loaded by Dataset can be found in ``feat_list``
+        Any feat loaded by Dataset can be found in ``feat_name_list``
 
         Returns:
-            builded feature list.
+            built feature name list.
 
         Note:
             Subclasses can inherit this method to add new feat.
         """
-        feat_list = [feat for feat in [self.inter_feat, self.user_feat, self.item_feat] if feat is not None]
+        feat_name_list = [feat_name for feat_name in ['inter_feat', 'user_feat', 'item_feat']
+                          if getattr(self, feat_name, None) is not None]
         if self.config['additional_feat_suffix'] is not None:
             for suf in self.config['additional_feat_suffix']:
-                if hasattr(self, '{}_feat'.format(suf)):
-                    feat_list.append(getattr(self, '{}_feat'.format(suf)))
-        return feat_list
+                if getattr(self, '{}_feat'.format(suf), None) is not None:
+                    feat_name_list.append('{}_feat'.format(suf))
+        return feat_name_list
 
     def _restore_saved_dataset(self, saved_dataset):
         """Restore saved dataset from ``saved_dataset``.
@@ -310,7 +315,7 @@ class Dataset(object):
 
         For those additional features, e.g. pretrained entity embedding, user can set them
         as ``config['additional_feat_suffix']``, then they will be loaded and stored in
-        :attr:`feat_list`. See :doc:`../user_guide/data/data_args` for details.
+        :attr:`feat_name_list`. See :doc:`../user_guide/data/data_args` for details.
 
         Args:
             token (str): dataset name.
@@ -374,7 +379,7 @@ class Dataset(object):
             pandas.DataFrame: Loaded feature
 
         Note:
-            For sequence features, ``seqlen`` will be loaded, but data in DataFrame will not be cutted off.
+            For sequence features, ``seqlen`` will be loaded, but data in DataFrame will not be cut off.
             Their length is limited only after calling :meth:`~_dict_to_interaction` or
             :meth:`~_dataframe_to_interaction`
         """
@@ -431,24 +436,16 @@ class Dataset(object):
 
     def _user_item_feat_preparation(self):
         """Sort :attr:`user_feat` and :attr:`item_feat` by ``user_id`` or ``item_id``.
-        Missing values will be filled.
+        Missing values will be filled later.
         """
-        flag = False
         if self.user_feat is not None:
             new_user_df = pd.DataFrame({self.uid_field: np.arange(self.user_num)})
             self.user_feat = pd.merge(new_user_df, self.user_feat, on=self.uid_field, how='left')
-            flag = True
             self.logger.debug('ordering user features by user id.')
         if self.item_feat is not None:
             new_item_df = pd.DataFrame({self.iid_field: np.arange(self.item_num)})
             self.item_feat = pd.merge(new_item_df, self.item_feat, on=self.iid_field, how='left')
-            flag = True
             self.logger.debug('ordering item features by user id.')
-        if flag:
-            # CANNOT be removed
-            # user/item feat has been updated, thus feat_list should be updated too.
-            self.feat_list = self._build_feat_list()
-            self._fill_nan_flag = True
 
     def _preload_weight_matrix(self):
         """Transfer preload weight features into :class:`numpy.ndarray` with shape ``[id_token_length]``
@@ -457,30 +454,27 @@ class Dataset(object):
         preload_fields = self.config['preload_weight']
         if preload_fields is None:
             return
-        drop_flag = self.config['drop_preload_weight']
-        if drop_flag is None:
-            drop_flag = True
 
-        self.logger.debug('preload weight matrix for {}, drop=[{}]'.format(preload_fields, drop_flag))
+        self.logger.debug('preload weight matrix for {}'.format(preload_fields))
 
         for preload_id_field in preload_fields:
             preload_value_field = preload_fields[preload_id_field]
             if preload_id_field not in self.field2source:
-                raise ValueError('prelaod id field [{}] not exist'.format(preload_id_field))
+                raise ValueError('preload id field [{}] not exist'.format(preload_id_field))
             if preload_value_field not in self.field2source:
-                raise ValueError('prelaod value field [{}] not exist'.format(preload_value_field))
+                raise ValueError('preload value field [{}] not exist'.format(preload_value_field))
             pid_source = self.field2source[preload_id_field]
             pv_source = self.field2source[preload_value_field]
             if pid_source != pv_source:
-                raise ValueError('preload id field [{}] is from source [{}],'
-                                 'while prelaod value field [{}] is from source [{}], which should be the same'.format(
-                                     preload_id_field, pid_source, preload_value_field, pv_source
-                                 ))
-            for feat in self.feat_list:
+                raise ValueError(f'preload id field [{preload_id_field}] is from source [{pid_source}],'
+                                 f'while preload value field [{preload_value_field}] is from source [{pv_source}], '
+                                 f'which should be the same.')
+            for feat_name in self.feat_name_list:
+                feat = getattr(self, feat_name)
                 if preload_id_field in feat:
                     id_ftype = self.field2type[preload_id_field]
                     if id_ftype != FeatureType.TOKEN:
-                        raise ValueError('prelaod id field [{}] should be type token, but is [{}]'.format(
+                        raise ValueError('preload id field [{}] should be type token, but is [{}]'.format(
                             preload_id_field, id_ftype
                         ))
                     value_ftype = self.field2type[preload_value_field]
@@ -508,9 +502,6 @@ class Dataset(object):
                                                                                                   value_ftype))
                         continue
                     self._preloaded_weight[preload_id_field] = matrix
-                    if drop_flag:
-                        self._del_col(preload_id_field)
-                        self._del_col(preload_value_field)
 
     def _fill_nan(self):
         """Missing value imputation.
@@ -521,23 +512,18 @@ class Dataset(object):
         For fields with type :obj:`~recbole.utils.enum_type.FeatureType.FLOAT`, missing value will be filled by
         the average of original data.
 
-        For sequence features, missing value will be filled by ``[0]``. 
+        For sequence features, missing value will be filled by ``[0]``.
         """
         self.logger.debug('Filling nan')
 
-        if not self._fill_nan_flag:
-            return
-
-        most_freq = SimpleImputer(missing_values=np.nan, strategy='most_frequent', copy=False)
-        aveg = SimpleImputer(missing_values=np.nan, strategy='mean', copy=False)
-
-        for feat in self.feat_list:
+        for feat_name in self.feat_name_list:
+            feat = getattr(self, feat_name)
             for field in feat:
                 ftype = self.field2type[field]
                 if ftype == FeatureType.TOKEN:
-                    feat[field] = most_freq.fit_transform(feat[field].values.reshape(-1, 1))
+                    feat[field].fillna(value=0, inplace=True)
                 elif ftype == FeatureType.FLOAT:
-                    feat[field] = aveg.fit_transform(feat[field].values.reshape(-1, 1))
+                    feat[field].fillna(value=feat[field].mean(), inplace=True)
                 elif ftype.value.endswith('seq'):
                     feat[field] = feat[field].apply(lambda x: [0]
                                                     if (not isinstance(x, np.ndarray) and (not isinstance(x, list)))
@@ -561,7 +547,7 @@ class Dataset(object):
             for field in fields:
                 ftype = self.field2type[field]
                 if field not in self.field2type:
-                    raise ValueError('Field [{}] doesn\'t exist'.format(field))
+                    raise ValueError('Field [{}] does not exist'.format(field))
                 elif ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
                     self.logger.warning('{} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.'.format(field))
         elif self.config['normalize_all']:
@@ -571,7 +557,8 @@ class Dataset(object):
 
         self.logger.debug('Normalized fields: {}'.format(fields))
 
-        for feat in self.feat_list:
+        for feat_name in self.feat_name_list:
+            feat = getattr(self, feat_name)
             for field in feat:
                 if field not in fields:
                     continue
@@ -580,15 +567,19 @@ class Dataset(object):
                     lst = feat[field].values
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, feat))
-                    feat[field] = (lst - mn) / (mx - mn)
+                        self.logger.warning('All the same value in [{}] from [{}_feat]'.format(field, feat))
+                        feat[field] = 1.0
+                    else:
+                        feat[field] = (lst - mn) / (mx - mn)
                 elif ftype == FeatureType.FLOAT_SEQ:
                     split_point = np.cumsum(feat[field].agg(len))[:-1]
                     lst = feat[field].agg(np.concatenate)
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, feat))
-                    lst = (lst - mn) / (mx - mn)
+                        self.logger.warning('All the same value in [{}] from [{}_feat]'.format(field, feat))
+                        lst = 1.0
+                    else:
+                        lst = (lst - mn) / (mx - mn)
                     lst = np.split(lst, split_point)
                     feat[field] = lst
 
@@ -643,16 +634,34 @@ class Dataset(object):
             Lower bound is also called k-core filtering, which means this method will filter loops
             until all the users and items has at least k interactions.
         """
+        if self.uid_field is None or self.iid_field is None:
+            return
+
+        max_user_inter_num = self.config['max_user_inter_num']
+        min_user_inter_num = self.config['min_user_inter_num']
+        max_item_inter_num = self.config['max_item_inter_num']
+        min_item_inter_num = self.config['min_item_inter_num']
+
+        if max_user_inter_num is None and min_user_inter_num is None:
+            user_inter_num = Counter()
+        else:
+            user_inter_num = Counter(self.inter_feat[self.uid_field].values)
+
+        if max_item_inter_num is None and min_item_inter_num is None:
+            item_inter_num = Counter()
+        else:
+            item_inter_num = Counter(self.inter_feat[self.iid_field].values)
+
         while True:
             ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field, feat=self.user_feat,
-                                                           max_num=self.config['max_user_inter_num'],
-                                                           min_num=self.config['min_user_inter_num'])
+                                                           inter_num=user_inter_num,
+                                                           max_num=max_user_inter_num, min_num=min_user_inter_num)
             ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field, feat=self.item_feat,
-                                                           max_num=self.config['max_item_inter_num'],
-                                                           min_num=self.config['min_item_inter_num'])
+                                                           inter_num=item_inter_num,
+                                                           max_num=max_item_inter_num, min_num=min_item_inter_num)
 
             if len(ban_users) == 0 and len(ban_items) == 0:
-                return
+                break
 
             if self.user_feat is not None:
                 dropped_user = self.user_feat[self.uid_field].isin(ban_users)
@@ -663,19 +672,25 @@ class Dataset(object):
                 self.item_feat.drop(self.item_feat.index[dropped_item], inplace=True)
 
             dropped_inter = pd.Series(False, index=self.inter_feat.index)
-            if self.uid_field:
-                dropped_inter |= self.inter_feat[self.uid_field].isin(ban_users)
-            if self.iid_field:
-                dropped_inter |= self.inter_feat[self.iid_field].isin(ban_items)
-            self.logger.debug('[{}] dropped interactions'.format(len(dropped_inter)))
-            self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
+            user_inter = self.inter_feat[self.uid_field]
+            item_inter = self.inter_feat[self.iid_field]
+            dropped_inter |= user_inter.isin(ban_users)
+            dropped_inter |= item_inter.isin(ban_items)
 
-    def _get_illegal_ids_by_inter_num(self, field, feat, max_num=None, min_num=None):
+            user_inter_num -= Counter(user_inter[dropped_inter].values)
+            item_inter_num -= Counter(item_inter[dropped_inter].values)
+
+            dropped_index = self.inter_feat.index[dropped_inter]
+            self.logger.debug('[{}] dropped interactions'.format(len(dropped_index)))
+            self.inter_feat.drop(dropped_index, inplace=True)
+
+    def _get_illegal_ids_by_inter_num(self, field, feat, inter_num, max_num=None, min_num=None):
         """Given inter feat, return illegal ids, whose inter num out of [min_num, max_num]
 
         Args:
             field (str): field name of user_id or item_id.
             feat (pandas.DataFrame): interaction feature.
+            inter_num (Counter): interaction number counter.
             max_num (int, optional): max number of interaction. Defaults to ``None``.
             min_num (int, optional): min number of interaction. Defaults to ``None``.
 
@@ -686,16 +701,9 @@ class Dataset(object):
             field, max_num, min_num
         ))
 
-        if field is None:
-            return set()
-        if max_num is None and min_num is None:
-            return set()
-
         max_num = max_num or np.inf
         min_num = min_num or -1
 
-        ids = self.inter_feat[field].values
-        inter_num = Counter(ids)
         ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
 
         if feat is not None:
@@ -716,14 +724,12 @@ class Dataset(object):
 
         if not filter_field:
             return
-        if self.config['drop_filter_field']:
-            for field in set(filter_field):
-                self._del_col(field)
 
     def _reset_index(self):
-        """Reset index for all feats in :attr:`feat_list`.
+        """Reset index for all feats in :attr:`feat_name_list`.
         """
-        for feat in self.feat_list:
+        for feat_name in self.feat_name_list:
+            feat = getattr(self, feat_name)
             if feat.empty:
                 raise ValueError('Some feat is empty, please check the filtering settings.')
             feat.reset_index(drop=True, inplace=True)
@@ -732,8 +738,8 @@ class Dataset(object):
         """Drop illegal rows by value.
 
         Args:
-            val (float): value that compared to.
-            cmp (function): return False if a row need to be droped
+            val (dict): value that compared to.
+            cmp (Callable): return False if a row need to be dropped
 
         Returns:
             field names that used to compare with val.
@@ -748,23 +754,26 @@ class Dataset(object):
                 raise ValueError('field [{}] not defined in dataset'.format(field))
             if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
                 raise ValueError('field [{}] is not float-like field in dataset, which can\'t be filter'.format(field))
-            for feat in self.feat_list:
+            for feat_name in self.feat_name_list:
+                feat = getattr(self, feat_name)
                 if field in feat:
                     feat.drop(feat.index[cmp(feat[field].values, val[field])], inplace=True)
             filter_field.append(field)
         return filter_field
 
-    def _del_col(self, field):
+    def _del_col(self, feat, field):
         """Delete columns
 
         Args:
-            field (str): field name to be droped.
+            feat (pandas.DataFrame or Interaction): the feat contains field.
+            field (str): field name to be dropped.
         """
         self.logger.debug('delete column [{}]'.format(field))
-        for feat in self.feat_list:
-            if field in feat:
-                feat.drop(columns=field, inplace=True)
-        for dct in [self.field2id_token, self.field2seqlen, self.field2source, self.field2type]:
+        if isinstance(feat, Interaction):
+            feat.drop(column=field)
+        else:
+            feat.drop(columns=field, inplace=True)
+        for dct in [self.field2id_token, self.field2token_id, self.field2seqlen, self.field2source, self.field2type]:
             if field in dct:
                 del dct[field]
 
@@ -777,7 +786,7 @@ class Dataset(object):
 
         Note:
             Key of ``config['threshold']`` if a field name.
-            This field will be droped after label generation.
+            This field will be dropped after label generation.
         """
         threshold = self.config['threshold']
         if threshold is None:
@@ -794,7 +803,7 @@ class Dataset(object):
                 self.inter_feat[self.label_field] = (self.inter_feat[field] >= value).astype(int)
             else:
                 raise ValueError('field [{}] not in inter_feat'.format(field))
-            self._del_col(field)
+            self._del_col(self.inter_feat, field)
 
     def _get_fields_in_same_space(self):
         """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
@@ -916,6 +925,13 @@ class Dataset(object):
                 split_point = np.cumsum(feat[field].agg(len))[:-1]
                 feat[field] = np.split(new_ids, split_point)
 
+    def _change_feat_format(self):
+        """Change feat format from :class:`pandas.DataFrame` to :class:`Interaction`.
+        """
+        for feat_name in self.feat_name_list:
+            feat = getattr(self, feat_name)
+            setattr(self, feat_name, self._dataframe_to_interaction(feat))
+
     @dlapi.set()
     def num(self, field):
         """Given ``field``, for token-like fields, return the number of different tokens after remapping,
@@ -1024,10 +1040,10 @@ class Dataset(object):
 
         Args:
             field (str): Field of external tokens.
-            tokens (str, list or np.ndarray): External tokens.
+            tokens (str, list or numpy.ndarray): External tokens.
 
         Returns:
-            int or np.ndarray: The internal ids of external tokens.
+            int or numpy.ndarray: The internal ids of external tokens.
         """
         if isinstance(tokens, str):
             if tokens in self.field2token_id[field]:
@@ -1045,10 +1061,10 @@ class Dataset(object):
 
         Args:
             field (str): Field of internal ids.
-            ids (int, list, np.ndarray or torch.Tensor): Internal ids.
+            ids (int, list, numpy.ndarray or torch.Tensor): Internal ids.
 
         Returns:
-            str or np.ndarray: The external tokens of internal ids.
+            str or numpy.ndarray: The external tokens of internal ids.
         """
         try:
             return self.field2id_token[field][ids]
@@ -1096,7 +1112,7 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of users' interaction records.
         """
-        return np.mean(self.inter_feat.groupby(self.uid_field).size())
+        return np.mean(list(Counter(self.inter_feat[self.uid_field].numpy()).values()))
 
     @property
     def avg_actions_of_items(self):
@@ -1105,7 +1121,7 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of items' interaction records.
         """
-        return np.mean(self.inter_feat.groupby(self.iid_field).size())
+        return np.mean(list(Counter(self.inter_feat[self.iid_field].numpy()).values()))
 
     @property
     def sparsity(self):
@@ -1115,31 +1131,6 @@ class Dataset(object):
             float: Sparsity of this dataset.
         """
         return 1 - self.inter_num / self.user_num / self.item_num
-
-    @property
-    def uid2index(self):
-        """Sort ``self.inter_feat``,
-        and get the mapping of user_id and index of its interaction records.
-
-        Returns:
-            tuple:
-            - ``numpy.ndarray`` of tuple ``(uid, slice)``,
-              interaction records between slice are all belong to the same uid.
-            - ``numpy.ndarray`` of int,
-              representing number of interaction records of each user.
-        """
-        self._check_field('uid_field')
-        self.sort(by=self.uid_field, ascending=True)
-        uid_list = []
-        start, end = dict(), dict()
-        for i, uid in enumerate(self.inter_feat[self.uid_field].values):
-            if uid not in start:
-                uid_list.append(uid)
-                start[uid] = i
-            end[uid] = i
-        index = [(uid, slice(start[uid], end[uid] + 1)) for uid in uid_list]
-        uid2items_num = [end[uid] - start[uid] + 1 for uid in uid_list]
-        return np.array(index), np.array(uid2items_num)
 
     def _check_field(self, *field_names):
         """Given a name of attribute, check if it's exist.
@@ -1155,15 +1146,15 @@ class Dataset(object):
         """Given interaction feature, join user/item feature into it.
 
         Args:
-            df (pandas.DataFrame): Interaction feature to be joint.
+            df (Interaction): Interaction feature to be joint.
 
         Returns:
-            pandas.DataFrame: Interaction feature after joining operation.
+            Interaction: Interaction feature after joining operation.
         """
         if self.user_feat is not None and self.uid_field in df:
-            df = pd.merge(df, self.user_feat, on=self.uid_field, how='left', suffixes=('_inter', '_user'))
+            df.update(self.user_feat[df[self.uid_field]])
         if self.item_feat is not None and self.iid_field in df:
-            df = pd.merge(df, self.item_feat, on=self.iid_field, how='left', suffixes=('_inter', '_item'))
+            df.update(self.item_feat[df[self.iid_field]])
         return df
 
     def __getitem__(self, index, join=True):
@@ -1195,14 +1186,39 @@ class Dataset(object):
         whose interaction feature is updated with ``new_inter_feat``, and all the other attributes the same.
 
         Args:
-            new_inter_feat (pandas.DataFrame): The new interaction feature need to be updated.
+            new_inter_feat (Interaction): The new interaction feature need to be updated.
 
         Returns:
             :class:`~Dataset`: the new :class:`~Dataset` object, whose interaction feature has been updated.
         """
         nxt = copy.copy(self)
-        nxt.inter_feat = pd.DataFrame(new_inter_feat)
+        nxt.inter_feat = new_inter_feat
         return nxt
+
+    def _drop_unused_col(self):
+        """Drop columns which are loaded for data preparation but not used in model.
+        """
+        unused_col = self.config['unused_col']
+        if unused_col is None:
+            return
+
+        for feat_name, unused_fields in unused_col.items():
+            feat = getattr(self, feat_name + '_feat')
+            for field in unused_fields:
+                if field not in feat:
+                    self.logger.warning('field [{}] is not in [{}_feat], which can not be set in `unused_col`'.format(
+                        field, feat_name))
+                    continue
+                self._del_col(feat, field)
+
+    def _grouped_index(self, group_by_list):
+        index = {}
+        for i, key in enumerate(group_by_list):
+            if key not in index:
+                index[key] = [i]
+            else:
+                index[key].append(i)
+        return index.values()
 
     def _calcu_split_ids(self, tot, ratios):
         """Given split ratios, and total number, calculate the number of each part after splitting.
@@ -1230,7 +1246,7 @@ class Dataset(object):
                 Defaults to ``None``
 
         Returns:
-            list: List of :class:`~Dataset`, whose interaction features has been splitted.
+            list: List of :class:`~Dataset`, whose interaction features has been split.
 
         Note:
             Other than the first one, each part is rounded down.
@@ -1244,15 +1260,16 @@ class Dataset(object):
             split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
             next_index = [range(start, end) for start, end in zip([0] + split_ids, split_ids + [tot_cnt])]
         else:
-            grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
-            next_index = [[] for i in range(len(ratios))]
+            grouped_inter_feat_index = self._grouped_index(self.inter_feat[group_by].numpy())
+            next_index = [[] for _ in range(len(ratios))]
             for grouped_index in grouped_inter_feat_index:
                 tot_cnt = len(grouped_index)
                 split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
                 for index, start, end in zip(next_index, [0] + split_ids, split_ids + [tot_cnt]):
                     index.extend(grouped_index[start: end])
 
-        next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
+        self._drop_unused_col()
+        next_df = [self.inter_feat[index] for index in next_index]
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
@@ -1260,13 +1277,13 @@ class Dataset(object):
         """Split indexes by strategy leave one out.
 
         Args:
-            grouped_index (pandas.DataFrameGroupBy): Index to be splitted.
+            grouped_index (list of list of int): Index to be split.
             leave_one_num (int): Number of parts whose length is expected to be ``1``.
 
         Returns:
-            list: List of index that has been splitted.
+            list: List of index that has been split.
         """
-        next_index = [[] for i in range(leave_one_num + 1)]
+        next_index = [[] for _ in range(leave_one_num + 1)]
         for index in grouped_index:
             index = list(index)
             tot_cnt = len(index)
@@ -1287,32 +1304,34 @@ class Dataset(object):
                 Defaults to ``1``.
 
         Returns:
-            list: List of :class:`~Dataset`, whose interaction features has been splitted.
+            list: List of :class:`~Dataset`, whose interaction features has been split.
         """
         self.logger.debug('leave one out, group_by=[{}], leave_one_num=[{}]'.format(group_by, leave_one_num))
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 
-        grouped_inter_feat_index = self.inter_feat.groupby(by=group_by).groups.values()
+        grouped_inter_feat_index = self._grouped_index(self.inter_feat[group_by].numpy())
         next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num)
-        next_df = [self.inter_feat.loc[index].reset_index(drop=True) for index in next_index]
+
+        self._drop_unused_col()
+        next_df = [self.inter_feat[index] for index in next_index]
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
     def shuffle(self):
         """Shuffle the interaction records inplace.
         """
-        self.inter_feat = self.inter_feat.sample(frac=1).reset_index(drop=True)
+        self.inter_feat.shuffle()
 
     def sort(self, by, ascending=True):
         """Sort the interaction records inplace.
 
         Args:
-            by (str): Field that as the key in the sorting process.
-            ascending (bool, optional): Results are ascending if ``True``, otherwise descending.
+            by (str or list of str): Field that as the key in the sorting process.
+            ascending (bool or list of bool, optional): Results are ascending if ``True``, otherwise descending.
                 Defaults to ``True``
         """
-        self.inter_feat.sort_values(by=by, ascending=ascending, inplace=True, ignore_index=True)
+        self.inter_feat.sort(by=by, ascending=ascending)
 
     def build(self, eval_setting):
         """Processing dataset according to evaluation setting, including Group, Order and Split.
@@ -1323,7 +1342,7 @@ class Dataset(object):
                 Object contains evaluation settings, which guide the data processing procedure.
 
         Returns:
-            list: List of builded :class:`Dataset`.
+            list: List of built :class:`Dataset`.
         """
         if self.benchmark_filename_list is not None:
             cumsum = list(np.cumsum(self.file_size_list))
@@ -1379,22 +1398,22 @@ class Dataset(object):
     def get_user_feature(self):
         """
         Returns:
-            pandas.DataFrame: user features
+            Interaction: user features
         """
         if self.user_feat is None:
             self._check_field('uid_field')
-            return pd.DataFrame({self.uid_field: np.arange(self.user_num)})
+            return Interaction({self.uid_field: torch.arange(self.user_num)})
         else:
             return self.user_feat
 
     def get_item_feature(self):
         """
         Returns:
-            pandas.DataFrame: item features
+            Interaction: item features
         """
         if self.item_feat is None:
             self._check_field('iid_field')
-            return pd.DataFrame({self.iid_field: np.arange(self.item_num)})
+            return Interaction({self.iid_field: torch.arange(self.item_num)})
         else:
             return self.item_feat
 
@@ -1409,7 +1428,7 @@ class Dataset(object):
         else ``matrix[src, tgt] = df_feat[value_field][src, tgt]``.
 
         Args:
-            df_feat (pandas.DataFrame): Feature where src and tgt exist.
+            df_feat (Interaction): Feature where src and tgt exist.
             source_field (str): Source field
             target_field (str): Target field
             form (str, optional): Sparse matrix format. Defaults to ``coo``.
@@ -1419,14 +1438,14 @@ class Dataset(object):
         Returns:
             scipy.sparse: Sparse matrix in form ``coo`` or ``csr``.
         """
-        src = df_feat[source_field].values
-        tgt = df_feat[target_field].values
+        src = df_feat[source_field]
+        tgt = df_feat[target_field]
         if value_field is None:
             data = np.ones(len(df_feat))
         else:
-            if value_field not in df_feat.columns:
+            if value_field not in df_feat:
                 raise ValueError('value_field [{}] should be one of `df_feat`\'s features.'.format(value_field))
-            data = df_feat[value_field].values
+            data = df_feat[value_field]
         mat = coo_matrix((data, (src, tgt)), shape=(self.num(source_field), self.num(target_field)))
 
         if form == 'coo':
@@ -1436,7 +1455,7 @@ class Dataset(object):
         else:
             raise NotImplementedError('sparse matrix format [{}] has not been implemented.'.format(form))
 
-    def _create_graph(self, df_feat, source_field, target_field, form='dgl', value_field=None):
+    def _create_graph(self, tensor_feat, source_field, target_field, form='dgl', value_field=None):
         """Get graph that describe relations between two fields.
 
         Source and target should be token-like fields.
@@ -1447,7 +1466,7 @@ class Dataset(object):
         Currently, we support graph in `DGL`_ and `PyG`_.
 
         Args:
-            df_feat (pandas.DataFrame): Feature where src and tgt exist.
+            tensor_feat (Interaction): Feature where src and tgt exist.
             source_field (str): Source field
             target_field (str): Target field
             form (str, optional): Library of graph data structure. Defaults to ``dgl``.
@@ -1463,7 +1482,6 @@ class Dataset(object):
         .. _PyG:
             https://github.com/rusty1s/pytorch_geometric
         """
-        tensor_feat = self._dataframe_to_interaction(df_feat)
         src = tensor_feat[source_field]
         tgt = tensor_feat[target_field]
 
@@ -1501,7 +1519,7 @@ class Dataset(object):
             scipy.sparse: Sparse matrix in form ``coo`` or ``csr``.
         """
         if not self.uid_field or not self.iid_field:
-            raise ValueError('dataset doesn\'t exist uid/iid, thus can not converted to sparse matrix')
+            raise ValueError('dataset does not exist uid/iid, thus can not converted to sparse matrix.')
         return self._create_sparse_matrix(self.inter_feat, self.uid_field, self.iid_field, form, value_field)
 
     def _history_matrix(self, row, value_field=None):
@@ -1529,13 +1547,13 @@ class Dataset(object):
         """
         self._check_field('uid_field', 'iid_field')
 
-        user_ids, item_ids = self.inter_feat[self.uid_field].values, self.inter_feat[self.iid_field].values
+        user_ids, item_ids = self.inter_feat[self.uid_field].numpy(), self.inter_feat[self.iid_field].numpy()
         if value_field is None:
             values = np.ones(len(self.inter_feat))
         else:
-            if value_field not in self.inter_feat.columns:
+            if value_field not in self.inter_feat:
                 raise ValueError('value_field [{}] should be one of `inter_feat`\'s features.'.format(value_field))
-            values = self.inter_feat[value_field].values
+            values = self.inter_feat[value_field].numpy()
 
         if row == 'user':
             row_num, max_col_num = self.user_num, self.item_num
@@ -1550,7 +1568,7 @@ class Dataset(object):
 
         col_num = np.max(history_len)
         if col_num > max_col_num * 0.2:
-            self.logger.warning('max value of {}\'s history interaction records has reached {}% of the total'.format(
+            self.logger.warning('max value of {}\'s history interaction records has reached {}% of the total.'.format(
                 row, col_num / max_col_num * 100,
             ))
 
@@ -1628,8 +1646,7 @@ class Dataset(object):
             raise ValueError('field [{}] not in preload_weight'.format(field))
         return self._preloaded_weight[field]
 
-    @dlapi.set()
-    def _dataframe_to_interaction(self, data, *args):
+    def _dataframe_to_interaction(self, data):
         """Convert :class:`pandas.DataFrame` to :class:`~recbole.data.interaction.Interaction`.
 
         Args:
@@ -1638,37 +1655,18 @@ class Dataset(object):
         Returns:
             :class:`~recbole.data.interaction.Interaction`: Converted data.
         """
-        data = data.to_dict(orient='list')
-        return self._dict_to_interaction(data, *args)
-
-    @dlapi.set()
-    def _dict_to_interaction(self, data, *args):
-        """Convert :class:`dict` to :class:`~recbole.data.interaction.Interaction`.
-
-        Args:
-            data (dict): data to be converted.
-
-        Returns:
-            :class:`~recbole.data.interaction.Interaction`: Converted data.
-        """
+        new_data = {}
         for k in data:
+            value = data[k].values
             ftype = self.field2type[k]
             if ftype == FeatureType.TOKEN:
-                data[k] = torch.LongTensor(data[k])
+                new_data[k] = torch.LongTensor(value)
             elif ftype == FeatureType.FLOAT:
-                data[k] = torch.FloatTensor(data[k])
+                new_data[k] = torch.FloatTensor(value)
             elif ftype == FeatureType.TOKEN_SEQ:
-                if isinstance(data[k], np.ndarray):
-                    data[k] = torch.LongTensor(data[k][:, :self.field2seqlen[k]])
-                else:
-                    seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in data[k]]
-                    data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+                seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in value]
+                new_data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == FeatureType.FLOAT_SEQ:
-                if isinstance(data[k], np.ndarray):
-                    data[k] = torch.FloatTensor(data[k][:, :self.field2seqlen[k]])
-                else:
-                    seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in data[k]]
-                    data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
-            else:
-                raise ValueError('Illegal ftype [{}]'.format(ftype))
-        return Interaction(data, *args)
+                seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in value]
+                new_data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
+        return Interaction(new_data)

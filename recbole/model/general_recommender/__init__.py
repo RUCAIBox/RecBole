@@ -6,8 +6,13 @@ from recbole.model.general_recommender.fism import FISM
 from recbole.model.general_recommender.gcmc import GCMC
 from recbole.model.general_recommender.itemknn import ItemKNN
 from recbole.model.general_recommender.lightgcn import LightGCN
+from recbole.model.general_recommender.line import LINE
+from recbole.model.general_recommender.macridvae import MacridVAE
+from recbole.model.general_recommender.multidae import MultiDAE
+from recbole.model.general_recommender.multivae import MultiVAE
 from recbole.model.general_recommender.nais import NAIS
 from recbole.model.general_recommender.neumf import NeuMF
 from recbole.model.general_recommender.ngcf import NGCF
 from recbole.model.general_recommender.pop import Pop
 from recbole.model.general_recommender.spectralcf import SpectralCF
+from recbole.model.general_recommender.cdae import CDAE

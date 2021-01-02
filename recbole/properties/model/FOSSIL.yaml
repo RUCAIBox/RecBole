@@ -1,0 +1,5 @@
+embedding_size: 64
+loss_type: "CE"
+reg_weight: 0.00
+order_len: 3
+alpha: 0.6

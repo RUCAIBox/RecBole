@@ -11,12 +11,11 @@ Reference:
     Heng-Tze Cheng et al. "Wide & Deep Learning for Recommender Systems." in RecSys 2016.
 """
 
-import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.layers import MLPLayers
 from recbole.model.abstract_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers
 
 
 class WideDeep(ContextRecommender):
@@ -54,20 +53,11 @@ class WideDeep(ContextRecommender):
                 constant_(module.bias.data, 0)
 
     def forward(self, interaction):
-        # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
-        # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        all_embeddings = []
-        if sparse_embedding is not None:
-            all_embeddings.append(sparse_embedding)
-        if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            all_embeddings.append(dense_embedding)
-        widedeep_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        widedeep_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
         batch_size = widedeep_all_embeddings.shape[0]
         fm_output = self.first_order_linear(interaction)
 
-        deep_output = self.deep_predict_layer(
-            self.mlp_layers(widedeep_all_embeddings.view(batch_size, -1)))
+        deep_output = self.deep_predict_layer(self.mlp_layers(widedeep_all_embeddings.view(batch_size, -1)))
         output = self.sigmoid(fm_output + deep_output)
         return output.squeeze()
 

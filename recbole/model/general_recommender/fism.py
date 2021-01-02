@@ -14,13 +14,12 @@ Reference code:
     https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
 """
 
-from logging import getLogger
-
 import torch
 import torch.nn as nn
+from torch.nn.init import normal_
+
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.utils import InputType
-from torch.nn.init import normal_
 
 
 class FISM(GeneralRecommender):
@@ -37,9 +36,7 @@ class FISM(GeneralRecommender):
 
         # load dataset info
         self.LABEL = config['LABEL_FIELD']
-        self.logger = getLogger()
-
-        # get all users's history interaction information.the history item 
+        # get all users' history interaction information.the history item
         # matrix is padding by the maximum number of a user's interactions
         self.history_item_matrix, self.history_lens, self.mask_mat = self.get_history_info(dataset)
 
@@ -56,7 +53,6 @@ class FISM(GeneralRecommender):
             self.logger.warning('Pay Attetion!! the `split_to` is set to 0. If you catch a OMM error in this case, ' + \
                                 'you need to increase it \n\t\t\tuntil the error disappears. For example, ' + \
                                 'you can append it in the command line such as `--split_to=5`')
-
 
         # define layers and loss
         # construct source and destination item embedding matrix
@@ -92,7 +88,7 @@ class FISM(GeneralRecommender):
         Returns:
             torch.Tensor: reg loss
 
-        """        
+        """
         reg_1, reg_2 = self.reg_weights
         loss_1 = reg_1 * self.item_src_embedding.weight.norm(2)
         loss_2 = reg_2 * self.item_dst_embedding.weight.norm(2)
@@ -132,7 +128,7 @@ class FISM(GeneralRecommender):
 
         Args:
             user_input (torch.Tensor): user input tensor
-            item_num (torch.Tensor): user hitory interaction lens
+            item_num (torch.Tensor): user history interaction lens
             repeats (int, optional): the number of items to be evaluated
             pred_slc (torch.Tensor, optional): continuous index which controls the current evaluation items,
                                               if pred_slc is None, it will evaluate all items
@@ -180,7 +176,8 @@ class FISM(GeneralRecommender):
             else:
                 output = []
                 for mask in self.group:
-                    tmp_output = self.user_forward(user_input[:item_num], item_num, user_bias, repeats=len(mask), pred_slc=mask)
+                    tmp_output = self.user_forward(user_input[:item_num], item_num, user_bias,
+                                                   repeats=len(mask), pred_slc=mask)
                     output.append(tmp_output)
                 output = torch.cat(output, dim=0)
             scores.append(output)

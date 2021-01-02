@@ -13,17 +13,23 @@ recbole.model.abstract_recommender
 ##################################
 """
 
+from logging import getLogger
+
 import numpy as np
 import torch
 import torch.nn as nn
 
-from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
 from recbole.model.layers import FMEmbedding, FMFirstOrderLinear
+from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
 
 
 class AbstractRecommender(nn.Module):
     r"""Base class for all models
     """
+
+    def __init__(self):
+        self.logger = getLogger()
+        super(AbstractRecommender, self).__init__()
 
     def calculate_loss(self, interaction):
         r"""Calculate the training loss for a batch data.
@@ -110,7 +116,7 @@ class SequentialRecommender(AbstractRecommender):
         self.n_items = dataset.num(self.ITEM_ID)
 
     def gather_indexes(self, output, gather_index):
-        """Gathers the vectors at the spexific positions over a minibatch"""
+        """Gathers the vectors at the specific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.shape[-1])
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)
@@ -340,6 +346,15 @@ class ContextRecommender(AbstractRecommender):
             first_sparse_embedding, second_sparse_embedding = None, None
 
         return first_sparse_embedding, first_dense_embedding, second_sparse_embedding, second_dense_embedding
+
+    def concat_embed_input_fields(self, interaction):
+        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
+        all_embeddings = []
+        if sparse_embedding is not None:
+            all_embeddings.append(sparse_embedding)
+        if dense_embedding is not None and len(dense_embedding.shape) == 3:
+            all_embeddings.append(dense_embedding)
+        return torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
 
     def embed_input_fields(self, interaction):
         """Embed the whole feature columns.

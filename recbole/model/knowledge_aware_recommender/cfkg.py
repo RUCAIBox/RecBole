@@ -14,9 +14,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import KnowledgeRecommender
 from recbole.model.init import xavier_normal_initialization
+from recbole.utils import InputType
 
 
 class CFKG(KnowledgeRecommender):

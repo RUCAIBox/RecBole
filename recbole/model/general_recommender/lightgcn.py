@@ -23,10 +23,10 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
-from recbole.model.loss import BPRLoss, EmbLoss
 from recbole.model.init import xavier_uniform_initialization
+from recbole.model.loss import BPRLoss, EmbLoss
+from recbole.utils import InputType
 
 
 class LightGCN(GeneralRecommender):
@@ -45,19 +45,16 @@ class LightGCN(GeneralRecommender):
         super(LightGCN, self).__init__(config, dataset)
 
         # load dataset info
-        self.interaction_matrix = dataset.inter_matrix(
-            form='coo').astype(np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
 
         # load parameters info
         self.latent_dim = config['embedding_size']  # int type:the embedding size of lightGCN
         self.n_layers = config['n_layers']  # int type:the layer num of lightGCN
-        self.reg_weight = config['reg_weight']  # float32 type: the weight decay for l2 normalizaton
+        self.reg_weight = config['reg_weight']  # float32 type: the weight decay for l2 normalization
 
         # define layers and loss
-        self.user_embedding = torch.nn.Embedding(
-            num_embeddings=self.n_users, embedding_dim=self.latent_dim)
-        self.item_embedding = torch.nn.Embedding(
-            num_embeddings=self.n_items, embedding_dim=self.latent_dim)
+        self.user_embedding = torch.nn.Embedding(num_embeddings=self.n_users, embedding_dim=self.latent_dim)
+        self.item_embedding = torch.nn.Embedding(num_embeddings=self.n_items, embedding_dim=self.latent_dim)
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
 
@@ -88,14 +85,12 @@ class LightGCN(GeneralRecommender):
                            self.n_users + self.n_items), dtype=np.float32)
         inter_M = self.interaction_matrix
         inter_M_t = self.interaction_matrix.transpose()
-        data_dict = dict(zip(zip(inter_M.row, inter_M.col+self.n_users),
-                             [1]*inter_M.nnz))
-        data_dict.update(dict(zip(zip(inter_M_t.row+self.n_users, inter_M_t.col),
-                                  [1]*inter_M_t.nnz)))
+        data_dict = dict(zip(zip(inter_M.row, inter_M.col + self.n_users), [1] * inter_M.nnz))
+        data_dict.update(dict(zip(zip(inter_M_t.row + self.n_users, inter_M_t.col), [1] * inter_M_t.nnz)))
         A._update(data_dict)
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)
-        # add epsilon to avoid Devide by zero Warning
+        # add epsilon to avoid divide by zero Warning
         diag = np.array(sumArr.flatten())[0] + 1e-7
         diag = np.power(diag, -0.5)
         D = sp.diags(diag)
@@ -125,14 +120,12 @@ class LightGCN(GeneralRecommender):
         embeddings_list = [all_embeddings]
 
         for layer_idx in range(self.n_layers):
-            all_embeddings = torch.sparse.mm(
-                self.norm_adj_matrix, all_embeddings)
+            all_embeddings = torch.sparse.mm(self.norm_adj_matrix, all_embeddings)
             embeddings_list.append(all_embeddings)
         lightgcn_all_embeddings = torch.stack(embeddings_list, dim=1)
         lightgcn_all_embeddings = torch.mean(lightgcn_all_embeddings, dim=1)
 
-        user_all_embeddings, item_all_embeddings = torch.split(
-            lightgcn_all_embeddings, [self.n_users, self.n_items])
+        user_all_embeddings, item_all_embeddings = torch.split(lightgcn_all_embeddings, [self.n_users, self.n_items])
         return user_all_embeddings, item_all_embeddings
 
     def calculate_loss(self, interaction):
@@ -146,21 +139,20 @@ class LightGCN(GeneralRecommender):
 
         user_all_embeddings, item_all_embeddings = self.forward()
         u_embeddings = user_all_embeddings[user]
-        posi_embeddings = item_all_embeddings[pos_item]
-        negi_embeddings = item_all_embeddings[neg_item]
+        pos_embeddings = item_all_embeddings[pos_item]
+        neg_embeddings = item_all_embeddings[neg_item]
 
         # calculate BPR Loss
-        pos_scores = torch.mul(u_embeddings, posi_embeddings).sum(dim=1)
-        neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
+        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)
 
         # calculate BPR Loss
         u_ego_embeddings = self.user_embedding(user)
-        posi_ego_embeddings = self.item_embedding(pos_item)
-        negi_ego_embeddings = self.item_embedding(neg_item)
+        pos_ego_embeddings = self.item_embedding(pos_item)
+        neg_ego_embeddings = self.item_embedding(neg_item)
 
-        reg_loss = self.reg_loss(
-            u_ego_embeddings, posi_ego_embeddings, negi_ego_embeddings)
+        reg_loss = self.reg_loss(u_ego_embeddings, pos_ego_embeddings, neg_ego_embeddings)
         loss = mf_loss + self.reg_weight * reg_loss
 
         return loss
@@ -184,7 +176,6 @@ class LightGCN(GeneralRecommender):
         u_embeddings = self.restore_user_e[user]
 
         # dot with all item embedding to accelerate
-        scores = torch.matmul(
-            u_embeddings, self.restore_item_e.transpose(0, 1))
+        scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
 
         return scores.view(-1)
