@@ -597,6 +597,7 @@ class xgboostTrainer(AbstractTrainer):
         self.logger = getLogger()
         self.label_field = config['LABEL_FIELD']
         self.xgb_model = config['xgb_model']
+        self.convert_token_to_onehot = self.config['convert_token_to_onehot']
 
         # DMatrix params
         self.weight = config['xgb_weight']
@@ -633,54 +634,85 @@ class xgboostTrainer(AbstractTrainer):
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
 
-    def _interaction_to_DMatrix(self, interaction):
+    def _interaction_to_DMatrix(self, dataloader):
         r"""Convert data format from interaction to DMatrix
 
         Args:
-            interaction (Interaction): Data in the form of 'Interaction'.
+            dataloader (XgboostDataLoader): xgboost dataloader.
         Returns:
             DMatrix: Data in the form of 'DMatrix'.
         """
+        interaction = dataloader.dataset[:]
         interaction_np = interaction.numpy()
         cur_data = np.array([])
+        columns = []
         for key, value in interaction_np.items():
             value = np.resize(value, (value.shape[0], 1))
             if key != self.label_field:
+                columns.append(key)
                 if cur_data.shape[0] == 0:
                     cur_data = value
                 else:
                     cur_data = np.hstack((cur_data, value))
 
-        return self.xgb.DMatrix(data=cur_data,
-                                label=interaction_np[self.label_field],
-                                weight=self.weight,
-                                base_margin=self.base_margin,
-                                missing=self.missing,
-                                silent=self.silent,
-                                feature_names=self.feature_names,
-                                feature_types=self.feature_types,
-                                nthread=self.nthread)
+        if self.convert_token_to_onehot == True:
+            from scipy import sparse
+            from scipy.sparse import dok_matrix
+            convert_col_list = dataloader.dataset.convert_col_list
+            hash_count = dataloader.dataset.hash_count
+
+            new_col = cur_data.shape[1] - len(convert_col_list)
+            for key, values in hash_count.items():
+                new_col = new_col + values
+            onehot_data = dok_matrix((cur_data.shape[0], new_col))
+
+            cur_j = 0
+            new_j = 0
+
+            for key in columns:
+                if key in convert_col_list:
+                    for i in range(cur_data.shape[0]):
+                        onehot_data[i, int(new_j + cur_data[i, cur_j])] = 1
+                    new_j = new_j + hash_count[key] - 1
+                else:
+                    for i in range(cur_data.shape[0]):
+                        onehot_data[i, new_j] = cur_data[i, cur_j]
+                cur_j = cur_j + 1
+                new_j = new_j + 1
+
+            cur_data = sparse.csc_matrix(onehot_data)
+
+        return self.xgb.DMatrix(data = cur_data, 
+                                label = interaction_np[self.label_field], 
+                                weight = self.weight,
+                                base_margin = self.base_margin,
+                                missing = self.missing, 
+                                silent = self.silent, 
+                                feature_names = self.feature_names, 
+                                feature_types = self.feature_types, 
+                                nthread = self.nthread)
 
     def _train_at_once(self, train_data, valid_data):
         r"""
-
+        
         Args:
             train_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
             valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
         """
-        self.dtrain = self._interaction_to_DMatrix(train_data.dataset[:])
-        self.dvalid = self._interaction_to_DMatrix(valid_data.dataset[:])
-        self.evals = [(self.dtrain, 'train'), (self.dvalid, 'valid')]
-        self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round,
-                                    self.evals, self.obj, self.feval, self.maximize,
-                                    self.early_stopping_rounds, self.evals_result,
-                                    self.verbose_eval, self.xgb_model, self.callbacks)
+        self.dtrain = self._interaction_to_DMatrix(train_data)
+        self.dvalid = self._interaction_to_DMatrix(valid_data)
+        self.evals = [(self.dtrain,'train'),(self.dvalid, 'valid')]
+        self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round, 
+                        self.evals, self.obj, self.feval, self.maximize, 
+                        self.early_stopping_rounds, self.evals_result, 
+                        self.verbose_eval, self.xgb_model, self.callbacks)
+
         self.model.save_model(self.saved_model_file)
         self.xgb_model = self.saved_model_file
 
     def _valid_epoch(self, valid_data):
         r"""
-
+        
         Args:
             valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
         """
@@ -720,7 +752,7 @@ class xgboostTrainer(AbstractTrainer):
         self.eval_pred = torch.Tensor()
         self.eval_true = torch.Tensor()
 
-        self.deval = self._interaction_to_DMatrix(eval_data.dataset[:])
+        self.deval = self._interaction_to_DMatrix(eval_data)
         self.eval_true = torch.Tensor(self.deval.get_label())
         self.eval_pred = torch.Tensor(self.model.predict(self.deval))
 
