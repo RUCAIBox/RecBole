@@ -57,7 +57,7 @@ class EvalSetting(object):
             Usually records are sorted by timestamp, or shuffled.
 
         split_args (dict): Args about splitting.
-            usually records are splitted by ratio (eg. 8:1:1),
+            usually records are split by ratio (eg. 8:1:1),
             or by 'leave one out' strategy, which means the last purchase record
             of one user is used for evaluation.
 
@@ -173,7 +173,7 @@ class EvalSetting(object):
         Args:
             field (str or list of str): Name or list of names
             ascending (bool or list of bool): Sort ascending vs. descending. Specify list for multiple sort orders.
-                If this is a list of bools, must match the length of the field
+                If this is a list of bool, must match the length of the field
         """
         if not isinstance(field, list):
             field = [field]

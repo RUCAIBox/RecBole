@@ -29,7 +29,7 @@ class NegSampleMixin(AbstractDataLoader):
         batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
         dl_format (InputType, optional): The input type of dataloader. Defaults to
             :obj:`~recbole.utils.InputType.POINTWISE`.
-        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaluts to ``False``.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
     dl_type = DataLoaderType.NEGSAMPLE
 

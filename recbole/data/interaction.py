@@ -150,14 +150,15 @@ class Interaction(object):
         ret = {}
         if isinstance(selected_field, str):
             selected_field = [selected_field]
-        try:
+
+        if selected_field is not None:
             selected_field = set(selected_field)
             for k in self.interaction:
                 if k in selected_field:
                     ret[k] = self.interaction[k].to(device)
                 else:
                     ret[k] = self.interaction[k]
-        except Exception:
+        else:
             for k in self.interaction:
                 ret[k] = self.interaction[k].to(device)
         return Interaction(ret)

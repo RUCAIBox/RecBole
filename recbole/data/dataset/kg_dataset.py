@@ -58,7 +58,7 @@ class KnowledgeBasedDataset(Dataset):
 
     Note:
         :attr:`entity_field` doesn't exist exactly. It's only a symbol,
-        representing entitiy features. E.g. it can be written into ``config['fields_in_same_space']``.
+        representing entity features. E.g. it can be written into ``config['fields_in_same_space']``.
 
         ``[UI-Relation]`` is a special relation token.
     """
