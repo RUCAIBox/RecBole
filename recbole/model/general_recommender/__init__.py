@@ -7,6 +7,7 @@ from recbole.model.general_recommender.gcmc import GCMC
 from recbole.model.general_recommender.itemknn import ItemKNN
 from recbole.model.general_recommender.lightgcn import LightGCN
 from recbole.model.general_recommender.line import LINE
+from recbole.model.general_recommender.admmslim import ADMMSLIM
 from recbole.model.general_recommender.nais import NAIS
 from recbole.model.general_recommender.neumf import NeuMF
 from recbole.model.general_recommender.ngcf import NGCF

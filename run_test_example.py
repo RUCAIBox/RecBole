@@ -134,6 +134,10 @@ test_examples = {
         'model': 'LINE',
         'dataset': 'ml-100k',
     },
+    'Test ADMMSLIM': {
+        'model': 'ADMMSLIM',
+        'dataset': 'ml-100k',
+    },
 
     # Context-aware Recommendation
     'Test FM': {

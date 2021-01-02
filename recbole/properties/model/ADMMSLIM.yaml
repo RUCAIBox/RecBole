@@ -1,0 +1,6 @@
+lambda1: 3
+lambda2: 150
+rho: 300
+k: 100
+positive_only: False
+center_columns: False
