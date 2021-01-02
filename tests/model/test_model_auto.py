@@ -152,6 +152,12 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_MacridVAE(self):
+        config_dict = {
+            'model': 'MacridVAE',
+        }
+        quick_test(config_dict)
+ 
     def test_CDAE(self):
         config_dict = {
             'model': 'CDAE',
