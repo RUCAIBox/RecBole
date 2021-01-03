@@ -182,5 +182,5 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
             state (KGDataLoaderState): the state of :class:`KnowledgeBasedDataLoader`.
         """
         if state not in set(KGDataLoaderState):
-            raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
+            raise NotImplementedError(f'Kg data loader has no state named [{self.state}].')
         self.state = state

@@ -45,8 +45,8 @@ class SocialDataset(Dataset):
         self.target_field = self.config['TARGET_ID_FIELD']
         self._check_field('source_field', 'target_field')
 
-        self.logger.debug('source_id_field: {}'.format(self.source_field))
-        self.logger.debug('target_id_field: {}'.format(self.target_field))
+        self.logger.debug(f'source_id_field: {self.source_field}')
+        self.logger.debug(f'target_id_field: {self.target_field}')
 
     def _load_data(self, token, dataset_path):
         """Load ``.net`` additionally.
@@ -61,14 +61,14 @@ class SocialDataset(Dataset):
         return feat_name_list
 
     def _load_net(self, dataset_name, dataset_path):
-        net_file_path = os.path.join(dataset_path, '{}.{}'.format(dataset_name, 'net'))
+        net_file_path = os.path.join(dataset_path, f'{dataset_name}.net')
         if os.path.isfile(net_file_path):
             net_feat = self._load_feat(net_file_path, FeatureSource.NET)
             if net_feat is None:
                 raise ValueError('.net file exist, but net_feat is None, please check your load_col')
             return net_feat
         else:
-            raise ValueError('File {} not exist'.format(net_file_path))
+            raise ValueError(f'File {net_file_path} not exist.')
 
     def _get_fields_in_same_space(self):
         """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
@@ -123,5 +123,5 @@ class SocialDataset(Dataset):
 
     def __str__(self):
         info = [super().__str__(),
-                'The number of connections of social network: {}'.format(len(self.net_feat))]
+                f'The number of connections of social network: {len(self.net_feat)}']
         return '\n'.join(info)

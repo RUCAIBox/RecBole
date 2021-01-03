@@ -81,7 +81,7 @@ class XgboostDataset(Dataset):
         """Load dataset from scratch.
         Initialize attributes firstly, then load data from atomic files, pre-process the dataset lastly.
         """
-        self.logger.debug('Loading {} from scratch'.format(self.__class__))
+        self.logger.debug(f'Loading {self.__class__} from scratch.')
 
         self._get_preset()
         self._get_field_from_config()
