@@ -7,6 +7,10 @@
 # @Author : Yushuo Chen
 # @email  : chenyushuo@ruc.edu.cn
 
+"""
+recbole.utils.case_study
+#####################################
+"""
 
 import numpy as np
 import torch
@@ -16,7 +20,7 @@ from recbole.data.dataloader.sequential_dataloader import SequentialFullDataLoad
 
 
 @torch.no_grad()
-def get_scores(uid_series, model, test_data):
+def full_sort_scores(uid_series, model, test_data):
     """Calculate the scores of all items for each user in uid_series.
 
     Note:
@@ -65,7 +69,7 @@ def get_scores(uid_series, model, test_data):
     return scores
 
 
-def get_topk(uid_series, model, test_data, k):
+def full_sort_topk(uid_series, model, test_data, k):
     """Calculate the top-k items' scores and ids for each user in uid_series.
 
     Args:
@@ -79,5 +83,5 @@ def get_topk(uid_series, model, test_data, k):
             - topk_scores (torch.Tensor): The scores of topk items.
             - topk_index (torch.Tensor): The index of topk items, which is also the internal ids of items.
     """
-    scores = get_scores(uid_series, model, test_data)
+    scores = full_sort_scores(uid_series, model, test_data)
     return torch.topk(scores, k)

@@ -27,6 +27,7 @@ ENTITY_ID_FIELD: entity_id
 load_col:
     inter: [user_id, item_id, rating, timestamp]
 unload_col: ~
+unused_col: ~
 
 # Filtering
 max_user_inter_num: ~

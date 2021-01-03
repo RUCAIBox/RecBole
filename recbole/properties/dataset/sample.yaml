@@ -21,6 +21,7 @@ load_col:
     inter: [user_id, item_id]
     # the others
 unload_col: ~
+unused_col: ~
 additional_feat_suffix: ~
 
 # Filtering
