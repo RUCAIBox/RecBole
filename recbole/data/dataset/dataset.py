@@ -429,7 +429,7 @@ class Dataset(object):
             ftype = self.field2type[field]
             if not ftype.value.endswith('seq'):
                 continue
-            df[field].fillna(value='0', inplace=True)
+            df[field].fillna(value='', inplace=True)
             if ftype == FeatureType.TOKEN_SEQ:
                 df[field] = [list(filter(None, _.split(seq_separator))) for _ in df[field].values]
             elif ftype == FeatureType.FLOAT_SEQ:
@@ -513,8 +513,6 @@ class Dataset(object):
 
         For fields with type :obj:`~recbole.utils.enum_type.FeatureType.FLOAT`, missing value will be filled by
         the average of original data.
-
-        For sequence features, missing value will be filled by ``[0]``.
         """
         self.logger.debug('Filling nan')
 
@@ -526,10 +524,6 @@ class Dataset(object):
                     feat[field].fillna(value=0, inplace=True)
                 elif ftype == FeatureType.FLOAT:
                     feat[field].fillna(value=feat[field].mean(), inplace=True)
-                elif ftype.value.endswith('seq'):
-                    feat[field] = feat[field].apply(lambda x: [0]
-                                                    if (not isinstance(x, np.ndarray) and (not isinstance(x, list)))
-                                                    else x)
 
     def _normalize(self):
         """Normalization if ``config['normalize_field']`` or ``config['normalize_all']`` is set.
@@ -541,7 +535,7 @@ class Dataset(object):
         Note:
             Only float-like fields can be normalized.
         """
-        if self.config['normalize_field'] is not None and self.config['normalize_all'] is not None:
+        if self.config['normalize_field'] is not None and self.config['normalize_all'] is True:
             raise ValueError('Normalize_field and normalize_all can\'t be set at the same time.')
 
         if self.config['normalize_field']:
