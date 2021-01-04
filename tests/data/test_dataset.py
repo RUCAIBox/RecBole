@@ -411,6 +411,12 @@ class TestDataset:
                                                             [2., 0., 0.],
                                                             [0., 0., 0.],
                                                             [5., 4., 0.]]).all()
+        assert (dataset.user_feat['profile'].numpy() == [[0, 0, 0],
+                                                         [1, 2, 3],
+                                                         [0, 0, 0],
+                                                         [3, 0, 0],
+                                                         [0, 0, 0],
+                                                         [3, 2, 0]]).all()
 
     def test_set_label_by_threshold(self):
         config_dict = {

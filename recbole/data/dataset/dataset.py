@@ -524,6 +524,8 @@ class Dataset(object):
                     feat[field].fillna(value=0, inplace=True)
                 elif ftype == FeatureType.FLOAT:
                     feat[field].fillna(value=feat[field].mean(), inplace=True)
+                else:
+                    feat[field] = feat[field].apply(lambda x: [] if isinstance(x, float) else x)
 
     def _normalize(self):
         """Normalization if ``config['normalize_field']`` or ``config['normalize_all']`` is set.
