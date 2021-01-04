@@ -30,6 +30,9 @@ jobs:
     - name: Test metrics
       run: |
         python -m pytest -v tests/metrics
+    - name: Test data
+      run: |
+        python -m pytest -v tests/data
     - name: Test evaluation_setting
       run: |
         python -m pytest -v tests/evaluation_setting
