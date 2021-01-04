@@ -144,8 +144,7 @@ class Dataset(object):
     def _data_processing(self):
         """Data preprocessing, including:
 
-        - K-core data filtering
-        - Value-based data filtering
+        - Data filtering
         - Remap ID
         - Missing value imputation
         - Normalization
@@ -166,12 +165,14 @@ class Dataset(object):
         """Data filtering
 
         - Filter missing user_id or item_id
+        - Remove duplicated user-item interaction
         - Value-based data filtering
+        - Remove interaction by user or item
         - K-core data filtering
 
         Note:
             After filtering, feats(``DataFrame``) has non-continuous index,
-            thus :meth:`~recbole.data.dataset.dataset.Dataset._reset_index()` will reset the index of feats.
+            thus :meth:`~recbole.data.dataset.dataset.Dataset._reset_index` will reset the index of feats.
         """
         self._filter_nan_user_or_item()
         self._remove_duplication()
