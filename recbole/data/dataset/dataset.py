@@ -176,6 +176,7 @@ class Dataset(object):
         self._filter_nan_user_or_item()
         self._remove_duplication()
         self._filter_by_field_value()
+        self._filter_inter_by_user_or_item()
         self._filter_by_inter_num()
         self._reset_index()
 
@@ -720,9 +721,6 @@ class Dataset(object):
         filter_field += self._drop_by_value(self.config['equal_val'], lambda x, y: x != y)
         filter_field += self._drop_by_value(self.config['not_equal_val'], lambda x, y: x == y)
 
-        if not filter_field:
-            return
-
     def _reset_index(self):
         """Reset index for all feats in :attr:`feat_name_list`.
         """
@@ -774,6 +772,24 @@ class Dataset(object):
         for dct in [self.field2id_token, self.field2token_id, self.field2seqlen, self.field2source, self.field2type]:
             if field in dct:
                 del dct[field]
+
+    def _filter_inter_by_user_or_item(self):
+        """Remove interaction in inter_feat which user or item is not in user_feat or item_feat.
+        """
+        if self.config['filter_inter_by_user_or_item'] is not True:
+            return
+
+        remained_inter = pd.Series(True, index=self.inter_feat.index)
+
+        if self.user_feat is not None:
+            remained_uids = self.user_feat[self.uid_field].values
+            remained_inter &= self.inter_feat[self.uid_field].isin(remained_uids)
+
+        if self.item_feat is not None:
+            remained_iids = self.item_feat[self.iid_field].values
+            remained_inter &= self.inter_feat[self.iid_field].isin(remained_iids)
+
+        self.inter_feat.drop(self.inter_feat.index[~remained_inter], inplace=True)
 
     def _set_label_by_threshold(self):
         """Generate 0/1 labels according to value of features.
