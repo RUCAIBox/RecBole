@@ -73,18 +73,7 @@ def data_preparation(config, dataset, save=False):
 
     es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
-
-    kwargs = {}
-    if 'RS' in es_str[0]:
-        kwargs['ratios'] = config['split_ratio']
-        if kwargs['ratios'] is None:
-            raise ValueError('`ratios` should be set if `RS` is set')
-    if 'LS' in es_str[0]:
-        kwargs['leave_one_num'] = config['leave_one_num']
-        if kwargs['leave_one_num'] is None:
-            raise ValueError('`leave_one_num` should be set if `LS` is set')
-    kwargs['group_by_user'] = config['group_by_user']
-    getattr(es, es_str[0])(**kwargs)
+    es.set_ordering_and_splitting(es_str[0])
 
     if es.split_args['strategy'] != 'loo' and model_type == ModelType.SEQUENTIAL:
         raise ValueError('Sequential models require "loo" split strategy.')
