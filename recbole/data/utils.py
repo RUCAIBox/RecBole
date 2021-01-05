@@ -75,9 +75,6 @@ def data_preparation(config, dataset, save=False):
     es = EvalSetting(config)
     es.set_ordering_and_splitting(es_str[0])
 
-    if es.split_args['strategy'] != 'loo' and model_type == ModelType.SEQUENTIAL:
-        raise ValueError('Sequential models require "loo" split strategy.')
-
     built_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = built_datasets
     phases = ['train', 'valid', 'test']

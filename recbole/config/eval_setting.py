@@ -163,7 +163,7 @@ class EvalSetting(object):
         """
         self.set_ordering('shuffle')
 
-    def sort_by(self, field, ascending=None):
+    def sort_by(self, field, ascending=True):
         """Setting about Sorting.
 
         Similar with pandas' sort_values_
@@ -175,12 +175,6 @@ class EvalSetting(object):
             ascending (bool or list of bool): Sort ascending vs. descending. Specify list for multiple sort orders.
                 If this is a list of bool, must match the length of the field
         """
-        if not isinstance(field, list):
-            field = [field]
-        if ascending is None:
-            ascending = [True] * len(field)
-            if len(ascending) == 1:
-                ascending = True
         self.set_ordering('by', field=field, ascending=ascending)
 
     def temporal_ordering(self):
