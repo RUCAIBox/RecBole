@@ -1,0 +1,5 @@
+user_id:token	item_id:token	add_user:token	add_item:token	user_list:token_seq
+ua	ia	ub	ie	uc ue
+ub	ib	ue	ic	
+uc	ic	ud	if	ua ub uc
+ud	id	uf	ia	uf

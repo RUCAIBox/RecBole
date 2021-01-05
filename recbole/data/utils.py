@@ -177,7 +177,7 @@ def dataloader_construct(name, config, eval_setting, dataset,
         batch_size = [batch_size] * len(dataset)
 
     if len(dataset) != len(batch_size):
-        raise ValueError('dataset {} and batch_size {} should have the same length'.format(dataset, batch_size))
+        raise ValueError(f'Dataset {dataset} and batch_size {batch_size} should have the same length.')
 
     kwargs_list = [{} for _ in range(len(dataset))]
     for key, value in kwargs.items():
@@ -185,15 +185,15 @@ def dataloader_construct(name, config, eval_setting, dataset,
         if not isinstance(value, list):
             value = [value] * len(dataset)
         if len(dataset) != len(value):
-            raise ValueError('dataset {} and {} {} should have the same length'.format(dataset, key, value))
+            raise ValueError(f'Dataset {dataset} and {key} {value} should have the same length.')
         for kw, k, w in zip(kwargs_list, key, value):
             kw[k] = w
 
     model_type = config['MODEL_TYPE']
     logger = getLogger()
-    logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(model_type, name, dl_format))
+    logger.info(f'Build [{model_type}] DataLoader for [{name}] with format [{dl_format}]')
     logger.info(eval_setting)
-    logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
+    logger.info(f'batch_size = [{batch_size}], shuffle = [{shuffle}]\n')
 
     dataloader = get_data_loader(name, config, eval_setting)
 
@@ -229,7 +229,7 @@ def save_datasets(save_path, name, dataset):
         name = [name]
         dataset = [dataset]
     if len(name) != len(dataset):
-        raise ValueError('len of name {} should equal to len of dataset'.format(name, dataset))
+        raise ValueError(f'Length of name {name} should equal to length of dataset {dataset}.')
     for i, d in enumerate(dataset):
         cur_path = os.path.join(save_path, name[i])
         if not os.path.isdir(cur_path):
@@ -304,7 +304,7 @@ def get_data_loader(name, config, eval_setting):
             raise NotImplementedError('The use of external negative sampling for knowledge model '
                                       'has not been implemented')
     else:
-        raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
+        raise NotImplementedError(f'Model_type [{model_type}] has not been implemented.')
 
 
 def _get_DIN_data_loader(name, config, eval_setting):

@@ -95,7 +95,7 @@ class SequentialDataset(Dataset):
         return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
     def leave_one_out(self, group_by, leave_one_num=1):
-        self.logger.debug('leave one out, group_by=[{}], leave_one_num=[{}]'.format(group_by, leave_one_num))
+        self.logger.debug(f'Leave one out, group_by=[{group_by}], leave_one_num=[{leave_one_num}].')
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 

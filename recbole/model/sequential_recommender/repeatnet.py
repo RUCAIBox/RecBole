@@ -293,20 +293,29 @@ class Explore_Recommendation_Decoder(nn.Module):
 
 def build_map(b_map, device, max_index=None):
     """
-    project the b_map to the place where it in should be
-    like this:
+    project the b_map to the place where it in should be like this:
         item_seq A: [3,4,5]   n_items: 6
+
         after map: A
+
         [0,0,1,0,0,0]
+
         [0,0,0,1,0,0]
+
         [0,0,0,0,1,0]
 
-    batch_size * seq_len ==>> batch_size * seq_len * n_item
+        batch_size * seq_len ==>> batch_size * seq_len * n_item
 
     use in RepeatNet:
+
     [3,4,5] matmul [0,0,1,0,0,0]
-                   [0,0,0,1,0,0] ==>>>   [0,0,3,4,5,0]  it works in the RepeatNet when project the seq item into all items
+
+                   [0,0,0,1,0,0]
+
                    [0,0,0,0,1,0]
+
+    ==>>> [0,0,3,4,5,0] it works in the RepeatNet when project the seq item into all items
+
     batch_size * 1 * seq_len matmul batch_size * seq_len * n_item ==>> batch_size * 1 * n_item
     """
     batch_size, b_len = b_map.size()

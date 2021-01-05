@@ -36,7 +36,7 @@ class NegSampleMixin(AbstractDataLoader):
     def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         if neg_sample_args['strategy'] not in ['by', 'full']:
-            raise ValueError('neg_sample strategy [{}] has not been implemented'.format(neg_sample_args['strategy']))
+            raise ValueError(f"Neg_sample strategy [{neg_sample_args['strategy']}] has not been implemented.")
 
         self.sampler = sampler
         self.neg_sample_args = neg_sample_args
@@ -122,7 +122,7 @@ class NegSampleByMixin(NegSampleMixin):
                 neg_item_feat_col = self.neg_prefix + item_feat_col
                 dataset.copy_field_property(neg_item_feat_col, item_feat_col)
         else:
-            raise ValueError('`neg sampling by` with dl_format [{}] not been implemented'.format(dl_format))
+            raise ValueError(f'`neg sampling by` with dl_format [{dl_format}] not been implemented.')
 
         super().__init__(config, dataset, sampler, neg_sample_args,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)

@@ -80,8 +80,8 @@ class KnowledgeBasedDataset(Dataset):
         self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
         self.set_field_property(self.entity_field, FeatureType.TOKEN, FeatureSource.KG, 1)
 
-        self.logger.debug('relation_field: {}'.format(self.relation_field))
-        self.logger.debug('entity_field: {}'.format(self.entity_field))
+        self.logger.debug(f'relation_field: {self.relation_field}')
+        self.logger.debug(f'entity_field: {self.entity_field}')
 
     def _data_processing(self):
         self._set_field2ent_level()
@@ -117,10 +117,10 @@ class KnowledgeBasedDataset(Dataset):
 
     def __str__(self):
         info = [super().__str__(),
-                'The number of entities: {}'.format(self.entity_num),
-                'The number of relations: {}'.format(self.relation_num),
-                'The number of triples: {}'.format(len(self.kg_feat)),
-                'The number of items that have been linked to KG: {}'.format(len(self.item2entity))]
+                f'The number of entities: {self.entity_num}',
+                f'The number of relations: {self.relation_num}',
+                f'The number of triples: {len(self.kg_feat)}',
+                f'The number of items that have been linked to KG: {len(self.item2entity)}']
         return '\n'.join(info)
 
     def _build_feat_name_list(self):
@@ -136,10 +136,10 @@ class KnowledgeBasedDataset(Dataset):
         raise NotImplementedError()
 
     def _load_kg(self, token, dataset_path):
-        self.logger.debug('loading kg from [{}]'.format(dataset_path))
-        kg_path = os.path.join(dataset_path, '{}.{}'.format(token, 'kg'))
+        self.logger.debug(f'Loading kg from [{dataset_path}].')
+        kg_path = os.path.join(dataset_path, f'{token}.kg')
         if not os.path.isfile(kg_path):
-            raise ValueError('[{}.{}] not found in [{}]'.format(token, 'kg', dataset_path))
+            raise ValueError(f'[{token}.kg] not found in [{dataset_path}].')
         df = self._load_feat(kg_path, FeatureSource.KG)
         self._check_kg(df)
         return df
@@ -151,10 +151,10 @@ class KnowledgeBasedDataset(Dataset):
         assert self.relation_field in kg, kg_warn_message.format(self.relation_field)
 
     def _load_link(self, token, dataset_path):
-        self.logger.debug('loading link from [{}]'.format(dataset_path))
-        link_path = os.path.join(dataset_path, '{}.{}'.format(token, 'link'))
+        self.logger.debug(f'Loading link from [{dataset_path}].')
+        link_path = os.path.join(dataset_path, f'{token}.link')
         if not os.path.isfile(link_path):
-            raise ValueError('[{}.{}] not found in [{}]'.format(token, 'link', dataset_path))
+            raise ValueError(f'[{token}.link] not found in [{dataset_path}].')
         df = self._load_feat(link_path, 'link')
         self._check_link(df)
 
@@ -207,7 +207,7 @@ class KnowledgeBasedDataset(Dataset):
             if self._contain_ent_field(field_set):
                 field_set = self._remove_ent_field(field_set)
                 ent_fields.update(field_set)
-        self.logger.debug('ent_fields: {}'.format(fields_in_same_space))
+        self.logger.debug(f'ent_fields: {fields_in_same_space}')
         return ent_fields
 
     def _remove_ent_field(self, field_set):
@@ -268,7 +268,7 @@ class KnowledgeBasedDataset(Dataset):
             source = self.field2source[ent_field]
             if not isinstance(source, str):
                 source = source.value
-            feat = getattr(self, '{}_feat'.format(source))
+            feat = getattr(self, f'{source}_feat')
             entity_list = feat[ent_field].values
             for i, entity_id in enumerate(entity_list):
                 if entity_id in self.entity2item:
@@ -309,7 +309,7 @@ class KnowledgeBasedDataset(Dataset):
             if self.item_feat is not None:
                 feats.append(self.item_feat)
         else:
-            feats = [getattr(self, '{}_feat'.format(source))]
+            feats = [getattr(self, f'{source}_feat')]
         for feat in feats:
             old_idx = feat[field].values
             new_idx = np.array([idmap[_] for _ in old_idx])
@@ -473,7 +473,7 @@ class KnowledgeBasedDataset(Dataset):
         elif form == 'csr':
             return mat.tocsr()
         else:
-            raise NotImplementedError('sparse matrix format [{}] has not been implemented.'.format(form))
+            raise NotImplementedError(f'Sparse matrix format [{form}] has not been implemented.')
 
     def _create_ckg_graph(self, form='dgl', show_relation=False):
         user_num = self.user_num
@@ -510,7 +510,7 @@ class KnowledgeBasedDataset(Dataset):
             graph = Data(edge_index=torch.stack([src, tgt]), edge_attr=edge_attr)
             return graph
         else:
-            raise NotImplementedError('graph format [{}] has not been implemented.'.format(form))
+            raise NotImplementedError(f'Graph format [{form}] has not been implemented.')
 
     @dlapi.set()
     def ckg_graph(self, form='coo', value_field=None):
@@ -542,9 +542,7 @@ class KnowledgeBasedDataset(Dataset):
             https://github.com/rusty1s/pytorch_geometric
         """
         if value_field is not None and value_field != self.relation_field:
-            raise ValueError('value_field [{}] can only be [{}] in ckg_graph.'.format(
-                value_field, self.relation_field
-            ))
+            raise ValueError(f'Value_field [{value_field}] can only be [{self.relation_field}] in ckg_graph.')
         show_relation = value_field is not None
 
         if form in ['coo', 'csr']:
