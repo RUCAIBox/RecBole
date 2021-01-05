@@ -1,0 +1,5 @@
+user_id:token	age:float	profile:token_seq
+ua	0	a b c
+ub	1	
+uc	2	c
+ue	3	c b

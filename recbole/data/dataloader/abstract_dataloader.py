@@ -60,6 +60,8 @@ class AbstractDataLoader(object):
         self.history_item_matrix = self.dataset.history_item_matrix
         self.history_user_matrix = self.dataset.history_user_matrix
         self.inter_matrix = self.dataset.inter_matrix
+        self.get_user_feature = self.dataset.get_user_feature
+        self.get_item_feature = self.dataset.get_item_feature
 
         for dataset_attr in self.dataset._dataloader_apis:
             try:
@@ -80,7 +82,7 @@ class AbstractDataLoader(object):
         pass
 
     def data_preprocess(self):
-        """This function is used to do some data preprocess, such as pre-neg-sampling and pre-data-augmentation.
+        """This function is used to do some data preprocess, such as pre-data-augmentation.
         By default, it will do nothing.
         """
         pass
@@ -127,24 +129,13 @@ class AbstractDataLoader(object):
             raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
         if self.batch_size != batch_size:
             self.batch_size = batch_size
-            self.logger.warning('Batch size is changed to {}'.format(batch_size))
+            self.logger.warning(f'Batch size is changed to {batch_size}.')
 
-    def get_user_feature(self):
-        """It is similar to :meth:`~recbole.data.dataset.dataset.Dataset.get_user_feature`, but it will return an
-        :class:`~recbole.data.interaction.Interaction` of user feature instead of a :class:`pandas.DataFrame`.
+    def upgrade_batch_size(self, batch_size):
+        """Upgrade the batch_size of the dataloader, if input batch_size is bigger than current batch_size.
 
-        Returns:
-            Interaction: The interaction of user feature.
+        Args:
+            batch_size (int): the new batch_size of dataloader.
         """
-        user_df = self.dataset.get_user_feature()
-        return self._dataframe_to_interaction(user_df)
-
-    def get_item_feature(self):
-        """It is similar to :meth:`~recbole.data.dataset.dataset.Dataset.get_item_feature`, but it will return an
-        :class:`~recbole.data.interaction.Interaction` of item feature instead of a :class:`pandas.DataFrame`.
-
-        Returns:
-            Interaction: The interaction of item feature.
-        """
-        item_df = self.dataset.get_item_feature()
-        return self._dataframe_to_interaction(item_df)
+        if self.batch_size < batch_size:
+            self.set_batch_size(batch_size)

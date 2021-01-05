@@ -1,4 +1,5 @@
 from recbole.model.general_recommender.bpr import BPR
+from recbole.model.general_recommender.cdae import CDAE
 from recbole.model.general_recommender.convncf import ConvNCF
 from recbole.model.general_recommender.dgcf import DGCF
 from recbole.model.general_recommender.dmf import DMF
@@ -6,6 +7,10 @@ from recbole.model.general_recommender.fism import FISM
 from recbole.model.general_recommender.gcmc import GCMC
 from recbole.model.general_recommender.itemknn import ItemKNN
 from recbole.model.general_recommender.lightgcn import LightGCN
+from recbole.model.general_recommender.line import LINE
+from recbole.model.general_recommender.macridvae import MacridVAE
+from recbole.model.general_recommender.multidae import MultiDAE
+from recbole.model.general_recommender.multivae import MultiVAE
 from recbole.model.general_recommender.nais import NAIS
 from recbole.model.general_recommender.neumf import NeuMF
 from recbole.model.general_recommender.ngcf import NGCF

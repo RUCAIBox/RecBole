@@ -21,27 +21,26 @@ load_col:
     inter: [user_id, item_id]
     # the others
 unload_col: ~
+unused_col: ~
 additional_feat_suffix: ~
 
 # Filtering
 rm_dup_inter: ~
-max_user_inter_num: ~
-min_user_inter_num: 0
-max_item_inter_num: ~
-min_item_inter_num: 0
 lowest_val: ~
 highest_val: ~
 equal_val: ~
 not_equal_val: ~
-drop_filter_field : True
+filter_inter_by_user_or_item: True
+max_user_inter_num: ~
+min_user_inter_num: 0
+max_item_inter_num: ~
+min_item_inter_num: 0
 
 # Preprocessing
 fields_in_same_space: ~
-fill_nan: True
 preload_weight: ~
-drop_preload_weight: True
 normalize_field: ~
-normalize_all: True
+normalize_all: ~
 
 # Sequential Model Needed
 ITEM_LIST_LENGTH_FIELD: item_length

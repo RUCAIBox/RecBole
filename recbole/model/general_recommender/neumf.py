@@ -19,9 +19,9 @@ import torch
 import torch.nn as nn
 from torch.nn.init import normal_
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.layers import MLPLayers
+from recbole.utils import InputType
 
 
 class NeuMF(GeneralRecommender):
@@ -57,10 +57,10 @@ class NeuMF(GeneralRecommender):
         self.item_mf_embedding = nn.Embedding(self.n_items, self.mf_embedding_size)
         self.user_mlp_embedding = nn.Embedding(self.n_users, self.mlp_embedding_size)
         self.item_mlp_embedding = nn.Embedding(self.n_items, self.mlp_embedding_size)
-        self.mlp_layers = MLPLayers([2 * self.mlp_embedding_size] + self.mlp_hidden_size)
+        self.mlp_layers = MLPLayers([2 * self.mlp_embedding_size] + self.mlp_hidden_size, self.dropout_prob)
         self.mlp_layers.logger = None  # remove logger to use torch.save()
         if self.mf_train and self.mlp_train:
-            self.predict_layer = nn.Linear(self.mf_embedding_size + self.mlp_hidden_size[-1], 1, self.dropout_prob)
+            self.predict_layer = nn.Linear(self.mf_embedding_size + self.mlp_hidden_size[-1], 1)
         elif self.mf_train:
             self.predict_layer = nn.Linear(self.mf_embedding_size, 1)
         elif self.mlp_train:
@@ -107,9 +107,9 @@ class NeuMF(GeneralRecommender):
         user_mlp_e = self.user_mlp_embedding(user)
         item_mlp_e = self.item_mlp_embedding(item)
         if self.mf_train:
-            mf_output = torch.mul(user_mf_e, item_mf_e)     # [batch_size, embedding_size]
+            mf_output = torch.mul(user_mf_e, item_mf_e)  # [batch_size, embedding_size]
         if self.mlp_train:
-            mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))   # [batch_size, layers[-1]]
+            mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))  # [batch_size, layers[-1]]
         if self.mf_train and self.mlp_train:
             output = self.sigmoid(self.predict_layer(torch.cat((mf_output, mlp_output), -1)))
         elif self.mf_train:

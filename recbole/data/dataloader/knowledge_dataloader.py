@@ -13,6 +13,7 @@ recbole.data.dataloader.knowledge_dataloader
 """
 
 from recbole.data.dataloader import AbstractDataLoader, GeneralNegSampleDataLoader
+from recbole.data.interaction import Interaction
 from recbole.utils import InputType, KGDataLoaderState
 
 
@@ -63,24 +64,17 @@ class KGDataLoader(AbstractDataLoader):
         return len(self.dataset.kg_feat)
 
     def _shuffle(self):
-        self.dataset.kg_feat = self.dataset.kg_feat.sample(frac=1).reset_index(drop=True)
+        self.dataset.kg_feat.shuffle()
 
     def _next_batch_data(self):
-        cur_data = self.dataset.kg_feat[self.pr: self.pr + self.step]
+        cur_data = self._neg_sampling(self.dataset.kg_feat[self.pr: self.pr + self.step])
         self.pr += self.step
-        if self.real_time:
-            cur_data = self._neg_sampling(cur_data)
-        return self._dataframe_to_interaction(cur_data)
-
-    def data_preprocess(self):
-        """Do neg-sampling before training/evaluation.
-        """
-        self.dataset.kg_feat = self._neg_sampling(self.dataset.kg_feat)
+        return cur_data
 
     def _neg_sampling(self, kg_feat):
-        hids = kg_feat[self.hid_field].to_list()
+        hids = kg_feat[self.hid_field]
         neg_tids = self.sampler.sample_by_entity_ids(hids, self.neg_sample_num)
-        kg_feat.insert(len(kg_feat.columns), self.neg_tid_field, neg_tids)
+        kg_feat.update(Interaction({self.neg_tid_field: neg_tids}))
         return kg_feat
 
 
@@ -129,65 +123,51 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
 
         # using kg_sampler and dl_format is pairwise
         self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler,
-                                          batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=shuffle)
+                                          batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=True)
 
-        self.main_dataloader = self.general_dataloader
+        self.state = None
 
         super().__init__(config, dataset,
                          batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
-    @property
-    def pr(self):
-        """Pointer of :class:`KnowledgeBasedDataLoader`. It would be affect by self.state.
-        """
-        return self.main_dataloader.pr
-
-    @pr.setter
-    def pr(self, value):
-        self.main_dataloader.pr = value
-
     def __iter__(self):
-        if not hasattr(self, 'state') or not hasattr(self, 'main_dataloader'):
-            raise ValueError('The dataloader\'s state and main_dataloader must be set '
-                             'when using the kg based dataloader')
-        return super().__iter__()
+        if self.state is None:
+            raise ValueError('The dataloader\'s state must be set when using the kg based dataloader, '
+                             'you should call set_mode() before __iter__()')
+        if self.state == KGDataLoaderState.KG:
+            return self.kg_dataloader.__iter__()
+        elif self.state == KGDataLoaderState.RS:
+            return self.general_dataloader.__iter__()
+        elif self.state == KGDataLoaderState.RSKG:
+            self.kg_dataloader.__iter__()
+            self.general_dataloader.__iter__()
+            return self
 
     def _shuffle(self):
-        if self.state == KGDataLoaderState.RSKG:
-            self.general_dataloader._shuffle()
-            self.kg_dataloader._shuffle()
-        else:
-            self.main_dataloader._shuffle()
+        pass
 
     def __next__(self):
-        if self.pr >= self.pr_end:
-            if self.state == KGDataLoaderState.RSKG:
-                self.general_dataloader.pr = 0
-                self.kg_dataloader.pr = 0
-            else:
-                self.pr = 0
+        if self.general_dataloader.pr >= self.general_dataloader.pr_end:
+            self.general_dataloader.pr = 0
+            self.kg_dataloader.pr = 0
             raise StopIteration()
         return self._next_batch_data()
 
     def __len__(self):
-        return len(self.main_dataloader)
+        return len(self.general_dataloader)
 
     @property
     def pr_end(self):
-        return self.main_dataloader.pr_end
+        return self.general_dataloader.pr_end
 
     def _next_batch_data(self):
-        if self.state == KGDataLoaderState.KG:
-            return self.kg_dataloader._next_batch_data()
-        elif self.state == KGDataLoaderState.RS:
-            return self.general_dataloader._next_batch_data()
-        elif self.state == KGDataLoaderState.RSKG:
-            if self.kg_dataloader.pr >= self.kg_dataloader.pr_end:
-                self.kg_dataloader.pr = 0
-            kg_data = self.kg_dataloader._next_batch_data()
-            rec_data = self.general_dataloader._next_batch_data()
-            rec_data.update(kg_data)
-            return rec_data
+        try:
+            kg_data = self.kg_dataloader.__next__()
+        except StopIteration:
+            kg_data = self.kg_dataloader.__next__()
+        rec_data = self.general_dataloader.__next__()
+        rec_data.update(kg_data)
+        return rec_data
 
     def set_mode(self, state):
         """Set the mode of :class:`KnowledgeBasedDataLoader`, it can be set to three states:
@@ -202,13 +182,5 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
             state (KGDataLoaderState): the state of :class:`KnowledgeBasedDataLoader`.
         """
         if state not in set(KGDataLoaderState):
-            raise NotImplementedError('kg data loader has no state named [{}]'.format(self.state))
+            raise NotImplementedError(f'Kg data loader has no state named [{self.state}].')
         self.state = state
-        if self.state == KGDataLoaderState.RS:
-            self.main_dataloader = self.general_dataloader
-        elif self.state == KGDataLoaderState.KG:
-            self.main_dataloader = self.kg_dataloader
-        else:   # RSKG
-            kgpr = self.kg_dataloader.pr_end
-            rspr = self.general_dataloader.pr_end
-            self.main_dataloader = self.general_dataloader if rspr < kgpr else self.kg_dataloader

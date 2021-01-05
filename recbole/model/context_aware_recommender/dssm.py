@@ -12,13 +12,12 @@ Reference:
     PS Huang et al. "Learning Deep Structured Semantic Models for Web Search using Clickthrough Data" in CIKM 2013.
 """
 
-
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.layers import MLPLayers
 from recbole.model.abstract_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers
 
 
 class DSSM(ContextRecommender):
@@ -26,6 +25,7 @@ class DSSM(ContextRecommender):
     and uses cosine distance to calculate the distance between the two semantic vectors.
 
     """
+
     def __init__(self, config, dataset):
         super(DSSM, self).__init__(config, dataset)
 
@@ -43,7 +43,7 @@ class DSSM(ContextRecommender):
         self.item_mlp_layers = MLPLayers(item_size_list, self.dropout_prob, activation='tanh', bn=True)
 
         self.loss = nn.BCELoss()
-        self.sigmod = nn.Sigmoid()
+        self.sigmoid = nn.Sigmoid()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -86,7 +86,7 @@ class DSSM(ContextRecommender):
         item_dnn_out = self.item_mlp_layers(embed_item.view(batch_size, -1))
         score = torch.cosine_similarity(user_dnn_out, item_dnn_out, dim=1)
 
-        sig_score = self.sigmod(score)
+        sig_score = self.sigmoid(score)
         return sig_score.squeeze()
 
     def calculate_loss(self, interaction):

@@ -13,6 +13,7 @@ recbole.data.interaction
 """
 
 import numpy as np
+import torch
 
 
 class Interaction(object):
@@ -81,13 +82,20 @@ class Interaction(object):
 
     def __init__(self, interaction, pos_len_list=None, user_len_list=None):
         self.interaction = interaction
+        self.pos_len_list = self.user_len_list = None
+        self.set_additional_info(pos_len_list, user_len_list)
+        for k in self.interaction:
+            if not isinstance(self.interaction[k], torch.Tensor):
+                raise ValueError(f'Interaction [{interaction}] should only contains torch.Tensor')
+        self.length = -1
+        for k in self.interaction:
+            self.length = max(self.length, self.interaction[k].shape[0])
+
+    def set_additional_info(self, pos_len_list=None, user_len_list=None):
         self.pos_len_list = pos_len_list
         self.user_len_list = user_len_list
         if (self.pos_len_list is None) ^ (self.user_len_list is None):
             raise ValueError('pos_len_list and user_len_list should be both None or valued.')
-        for k in self.interaction:
-            self.length = self.interaction[k].shape[0]
-            break
 
     def __iter__(self):
         return self.interaction.__iter__()
@@ -101,19 +109,31 @@ class Interaction(object):
                 ret[k] = self.interaction[k][index]
             return Interaction(ret)
 
+    def __contains__(self, item):
+        return item in self.interaction
+
     def __len__(self):
         return self.length
 
     def __str__(self):
-        info = ['The batch_size of interaction: {}'.format(self.length)]
+        info = [f'The batch_size of interaction: {self.length}']
         for k in self.interaction:
-            temp_str = "    {}, {}, {}".format(k, self.interaction[k].shape, self.interaction[k].device.type)
+            inter = self.interaction[k]
+            temp_str = f"    {k}, {inter.shape}, {inter.device.type}, {inter.dtype}"
             info.append(temp_str)
         info.append('\n')
         return '\n'.join(info)
 
     def __repr__(self):
         return self.__str__()
+
+    @property
+    def columns(self):
+        """
+        Returns:
+            list of str: The columns of interaction.
+        """
+        return list(self.interaction.keys())
 
     def to(self, device, selected_field=None):
         """Transfer Tensors in this Interaction object to the specified device.
@@ -124,20 +144,21 @@ class Interaction(object):
             with keys in selected_field will be sent to device.
 
         Returns:
-            Interaction: a copyed Interaction object with Tensors which are sented to
+            Interaction: a coped Interaction object with Tensors which are sent to
             the specified device.
         """
         ret = {}
         if isinstance(selected_field, str):
             selected_field = [selected_field]
-        try:
+
+        if selected_field is not None:
             selected_field = set(selected_field)
             for k in self.interaction:
                 if k in selected_field:
                     ret[k] = self.interaction[k].to(device)
                 else:
                     ret[k] = self.interaction[k]
-        except:
+        else:
             for k in self.interaction:
                 ret[k] = self.interaction[k].to(device)
         return Interaction(ret)
@@ -146,7 +167,7 @@ class Interaction(object):
         """Transfer Tensors in this Interaction object to cpu.
 
         Returns:
-            Interaction: a copyed Interaction object with Tensors which are sented to cpu.
+            Interaction: a coped Interaction object with Tensors which are sent to cpu.
         """
         ret = {}
         for k in self.interaction:
@@ -214,8 +235,114 @@ class Interaction(object):
 
     def update(self, new_inter):
         """Similar to ``dict.update()``
+
+        Args:
+            new_inter (Interaction): current interaction will be updated by new_inter.
         """
         for k in new_inter.interaction:
             self.interaction[k] = new_inter.interaction[k]
-        self.pos_len_list = new_inter.pos_len_list
-        self.user_len_list = new_inter.user_len_list
+        if new_inter.pos_len_list is not None:
+            self.pos_len_list = new_inter.pos_len_list
+        if new_inter.user_len_list is not None:
+            self.user_len_list = new_inter.user_len_list
+
+    def drop(self, column):
+        """Drop column in interaction.
+
+        Args:
+            column (str): the column to be dropped.
+        """
+        if column not in self.interaction:
+            raise ValueError(f'Column [{column}] is not in [{self}].')
+        del self.interaction[column]
+
+    def _reindex(self, index):
+        """Reset the index of interaction inplace.
+
+        Args:
+            index: the new index of current interaction.
+        """
+        for k in self.interaction:
+            self.interaction[k] = self.interaction[k][index]
+        if self.pos_len_list is not None:
+            self.pos_len_list = self.pos_len_list[index]
+        if self.user_len_list is not None:
+            self.user_len_list = self.user_len_list[index]
+
+    def shuffle(self):
+        """Shuffle current interaction inplace.
+        """
+        index = torch.randperm(self.length)
+        self._reindex(index)
+
+    def sort(self, by, ascending=True):
+        """Sort the current interaction inplace.
+
+        Args:
+            by (str or list of str): Field that as the key in the sorting process.
+            ascending (bool or list of bool, optional): Results are ascending if ``True``, otherwise descending.
+                Defaults to ``True``
+        """
+        if isinstance(by, str):
+            if by not in self.interaction:
+                raise ValueError(f'[{by}] is not exist in interaction [{self}].')
+            by = [by]
+        elif isinstance(by, (list, tuple)):
+            for b in by:
+                if b not in self.interaction:
+                    raise ValueError(f'[{b}] is not exist in interaction [{self}].')
+        else:
+            raise TypeError(f'Wrong type of by [{by}].')
+
+        if isinstance(ascending, bool):
+            ascending = [ascending]
+        elif isinstance(ascending, (list, tuple)):
+            for a in ascending:
+                if not isinstance(a, bool):
+                    raise TypeError(f'Wrong type of ascending [{ascending}].')
+        else:
+            raise TypeError(f'Wrong type of ascending [{ascending}].')
+
+        if len(by) != len(ascending):
+            if len(ascending) == 1:
+                ascending = ascending * len(by)
+            else:
+                raise ValueError(f'by [{by}] and ascending [{ascending}] should have same length.')
+
+        for b, a in zip(by[::-1], ascending[::-1]):
+            index = np.argsort(self.interaction[b], kind='stable')
+            if not a:
+                index = index[::-1]
+            self._reindex(index)
+
+    def add_prefix(self, prefix):
+        """Add prefix to current interaction's columns.
+
+        Args:
+            prefix (str): The prefix to be added.
+        """
+        self.interaction = {prefix + key: value for key, value in self.interaction.items()}
+
+
+def cat_interactions(interactions):
+    """Concatenate list of interactions to single interaction.
+
+    Args:
+        interactions (list of :class:`Interaction`): List of interactions to be concatenated.
+
+    Returns:
+        :class:`Interaction`: Concatenated interaction.
+    """
+    if not isinstance(interactions, (list, tuple)):
+        raise TypeError(f'Interactions [{interactions}] should be list or tuple.')
+    if len(interactions) == 0:
+        raise ValueError(f'Interactions [{interactions}] should have some interactions.')
+
+    columns_set = set(interactions[0].columns)
+    for inter in interactions:
+        if columns_set != set(inter.columns):
+            raise ValueError(f'Interactions [{interactions}] should have some interactions.')
+
+    new_inter = {col: torch.cat([inter[col] for inter in interactions])
+                 for col in columns_set}
+    return Interaction(new_inter)

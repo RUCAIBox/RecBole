@@ -1,0 +1,4 @@
+embedding_size: 64
+loss_type: 'BPR'
+pooling_type: "average"
+reg_weight: [0.00,0.00]

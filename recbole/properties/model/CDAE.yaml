@@ -1,0 +1,7 @@
+loss_type: BCE
+hid_activation: relu
+out_activation: sigmoid
+corruption_ratio: 0.5
+embedding_size: 64
+reg_weight_1: 0.
+reg_weight_2: 0.01

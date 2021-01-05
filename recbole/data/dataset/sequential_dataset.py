@@ -12,9 +12,9 @@ recbole.data.sequential_dataset
 ###############################
 """
 
-import numpy as np
-import pandas as pd
 import copy
+
+import numpy as np
 
 from recbole.data.dataset import Dataset
 
@@ -34,6 +34,7 @@ class SequentialDataset(Dataset):
         item_list_length (numpy.ndarray): List of item sequences' length after augmentation.
 
     """
+
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
@@ -60,7 +61,7 @@ class SequentialDataset(Dataset):
             See :class:`SequentialDataset`'s attributes for details.
 
         Note:
-            Actually, we do not realy generate these new item sequences.
+            Actually, we do not really generate these new item sequences.
             One user's item sequence is stored only once in memory.
             We store the index (slice) of each item sequence after augmentation,
             which saves memory and accelerates a lot.
@@ -75,7 +76,7 @@ class SequentialDataset(Dataset):
         last_uid = None
         uid_list, item_list_index, target_index, item_list_length = [], [], [], []
         seq_start = 0
-        for i, uid in enumerate(self.inter_feat[self.uid_field].values):
+        for i, uid in enumerate(self.inter_feat[self.uid_field].numpy()):
             if last_uid != uid:
                 last_uid = uid
                 seq_start = i
@@ -94,13 +95,15 @@ class SequentialDataset(Dataset):
         return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
     def leave_one_out(self, group_by, leave_one_num=1):
-        self.logger.debug('leave one out, group_by=[{}], leave_one_num=[{}]'.format(group_by, leave_one_num))
+        self.logger.debug(f'Leave one out, group_by=[{group_by}], leave_one_num=[{leave_one_num}].')
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 
         self.prepare_data_augmentation()
-        grouped_index = pd.DataFrame(self.uid_list).groupby(by=0).groups.values()
+        grouped_index = self._grouped_index(self.uid_list)
         next_index = self._split_index_by_leave_one_out(grouped_index, leave_one_num)
+
+        self._drop_unused_col()
         next_ds = []
         for index in next_index:
             ds = copy.copy(self)
