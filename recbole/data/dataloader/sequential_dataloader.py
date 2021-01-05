@@ -72,8 +72,10 @@ class SequentialDataLoader(AbstractDataLoader):
         self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
         dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
 
-        self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
-            dataset.prepare_data_augmentation()
+        self.uid_list = dataset.uid_list
+        self.item_list_index = dataset.item_list_index
+        self.target_index = dataset.target_index
+        self.item_list_length = dataset.item_list_length
         self.pre_processed_data = None
 
         super().__init__(config, dataset,
