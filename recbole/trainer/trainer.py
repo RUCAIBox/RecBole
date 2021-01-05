@@ -127,7 +127,7 @@ class Trainer(AbstractTrainer):
             epoch_idx (int): The current epoch id.
             loss_func (function): The loss function of :attr:`model`. If it is ``None``, the loss function will be
                 :attr:`self.model.calculate_loss`. Defaults to ``None``.
-            show_progress (bool): Show progress of epoch training. Defaults to ``False``.
+            show_progress (bool): Show the progress of training epoch. Defaults to ``False``.
 
         Returns:
             float/tuple: The sum of loss returned by all batches in this epoch. If the loss in each batch contains
@@ -169,7 +169,7 @@ class Trainer(AbstractTrainer):
 
         Args:
             valid_data (DataLoader): the valid data.
-            show_progress (bool): Show progress of epoch evaluate. Defaults to ``False``.
+            show_progress (bool): Show the progress of evaluate epoch. Defaults to ``False``.
 
         Returns:
             float: valid score
@@ -244,7 +244,7 @@ class Trainer(AbstractTrainer):
                                                If it's None, the early_stopping is invalid.
             verbose (bool, optional): whether to write training and evaluation information to logger, default: True
             saved (bool, optional): whether to save the model parameters, default: True
-            show_progress (bool): Show progress of epoch training and evaluate. Defaults to ``False``.
+            show_progress (bool): Show the progress of training epoch and evaluate epoch. Defaults to ``False``.
             callback_fn (callable): Optional callback function executed at end of epoch.
                                     Includes (epoch_idx, valid_score) input arguments.
 
@@ -341,10 +341,10 @@ class Trainer(AbstractTrainer):
                                               It should be set True, if users want to test the model after training.
             model_file (str, optional): the saved model file, default: None. If users want to test the previously
                                         trained model file, they can set this parameter.
-            show_progress (bool): Show progress of epoch evaluate. Defaults to ``False``.
+            show_progress (bool): Show the progress of evaluate epoch. Defaults to ``False``.
 
         Returns:
-            dict: eval result, key is the eval metric and value in the corresponding metric value
+            dict: eval result, key is the eval metric and value in the corresponding metric value.
         """
         if not eval_data:
             return
@@ -413,8 +413,8 @@ class Trainer(AbstractTrainer):
         r"""Plot the train loss in each epoch
 
         Args:
-            show (bool, optional): whether to show this figure, default: True
-            save_path (str, optional): the data path to save the figure, default: None.
+            show (bool, optional): Whether to show this figure, default: True
+            save_path (str, optional): The data path to save the figure, default: None.
                                        If it's None, it will not be saved.
         """
         epochs = list(self.train_loss_dict.keys())
