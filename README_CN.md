@@ -186,9 +186,9 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 
 如果想贡献代码，请先在issue中提出问题，然后再提PR。
 
-我们对[@tszumowski](https://github.com/tszumowski), [@rowedenny](https://github.com/rowedenny) 等用户提出的建议表示感谢。
+我们对[@tszumowski](https://github.com/tszumowski), [@rowedenny](https://github.com/rowedenny), [@deklanw](https://github.com/deklanw) 等用户提出的建议表示感谢。
 
-我们也对[@rowedenny](https://github.com/rowedenny) 等用户做出的贡献表示感谢。
+我们也对[@rowedenny](https://github.com/rowedenny), [@deklanw](https://github.com/deklanw) 等用户做出的贡献表示感谢。
 
 
 ## 引用
