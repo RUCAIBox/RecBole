@@ -107,7 +107,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
             for i in range(1, len(inters_num)):
                 if new_batch_size + inters_num[i] > self.batch_size:
                     break
-                batch_num = i
+                batch_num = i + 1
                 new_batch_size += inters_num[i]
             self.step = batch_num
             self.upgrade_batch_size(new_batch_size)
