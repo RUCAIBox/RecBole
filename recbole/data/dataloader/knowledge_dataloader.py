@@ -154,11 +154,17 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         return self._next_batch_data()
 
     def __len__(self):
-        return len(self.general_dataloader)
+        if self.state == KGDataLoaderState.KG:
+            return len(self.kg_dataloader)
+        else:
+            return len(self.general_dataloader)
 
     @property
     def pr_end(self):
-        return self.general_dataloader.pr_end
+        if self.state == KGDataLoaderState.KG:
+            return self.kg_dataloader.pr_end
+        else:
+            return self.general_dataloader.pr_end
 
     def _next_batch_data(self):
         try:
