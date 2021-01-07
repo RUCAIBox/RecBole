@@ -12,9 +12,9 @@ recbole.data.sequential_dataset
 ###############################
 """
 
-import numpy as np
-import pandas as pd
 import copy
+
+import numpy as np
 
 from recbole.data.dataset import Dataset
 
@@ -34,6 +34,7 @@ class SequentialDataset(Dataset):
         item_list_length (numpy.ndarray): List of item sequences' length after augmentation.
 
     """
+
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
@@ -60,7 +61,7 @@ class SequentialDataset(Dataset):
             See :class:`SequentialDataset`'s attributes for details.
 
         Note:
-            Actually, we do not realy generate these new item sequences.
+            Actually, we do not really generate these new item sequences.
             One user's item sequence is stored only once in memory.
             We store the index (slice) of each item sequence after augmentation,
             which saves memory and accelerates a lot.

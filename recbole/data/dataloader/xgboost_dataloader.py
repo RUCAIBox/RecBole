@@ -12,11 +12,13 @@ recbole.data.dataloader.xgboost_dataloader
 ################################################
 """
 
-from recbole.data.dataloader.general_dataloader import GeneralDataLoader, GeneralNegSampleDataLoader, GeneralFullDataLoader
+from recbole.data.dataloader.general_dataloader import GeneralDataLoader, GeneralNegSampleDataLoader, \
+    GeneralFullDataLoader
 
 
 class XgboostDataLoader(GeneralDataLoader):
-    """:class:`XgboostDataLoader` is inherit from :class:`~recbole.data.dataloader.general_dataloader.GeneralDataLoader`,
+    """:class:`XgboostDataLoader` is inherit from
+    :class:`~recbole.data.dataloader.general_dataloader.GeneralDataLoader`,
     and didn't add/change anything at all.
     """
     pass

@@ -17,14 +17,14 @@ import torch
 from torch import nn
 
 from recbole.model.abstract_recommender import SequentialRecommender
-from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder, FeatureSeqEmbLayer, VanillaAttention
+from recbole.model.loss import BPRLoss
 
 
 class FDSA(SequentialRecommender):
     r"""
     FDSA is similar with the GRU4RecF implemented in RecBole, which uses two different Transformer encoders to
-    encode items and features respectively and concatenates the two subparts's outputs as the final output.
+    encode items and features respectively and concatenates the two subparts' outputs as the final output.
 
     """
 

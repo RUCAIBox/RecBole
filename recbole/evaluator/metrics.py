@@ -16,9 +16,10 @@ recbole.evaluator.metrics
 from logging import getLogger
 
 import numpy as np
-from recbole.evaluator.utils import _binary_clf_curve
 from sklearn.metrics import auc as sk_auc
-from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+from recbole.evaluator.utils import _binary_clf_curve
 
 
 #    TopK Metrics    #
@@ -100,7 +101,7 @@ def recall_(pos_index, pos_len):
     .. math::
         \mathrm {Recall@K} = \frac{|Rel_u\cap Rec_u|}{Rel_u}
 
-    :math:`Rel_u` is the set of items relavent to user :math:`U`,
+    :math:`Rel_u` is the set of items relevant to user :math:`U`,
     :math:`Rec_u` is the top K items recommended to users.
     We obtain the result by calculating the average :math:`Recall@K` of each user.
 
@@ -155,7 +156,7 @@ def precision_(pos_index, pos_len):
     .. math::
         \mathrm {Precision@K} = \frac{|Rel_u \cap Rec_u|}{Rec_u}
 
-    :math:`Rel_u` is the set of items relavent to user :math:`U`,
+    :math:`Rel_u` is the set of items relevant to user :math:`U`,
     :math:`Rec_u` is the top K items recommended to users.
     We obtain the result by calculating the average :math:`Precision@K` of each user.
 

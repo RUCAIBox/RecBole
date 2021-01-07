@@ -12,8 +12,8 @@ import torch
 from torch import nn
 
 from recbole.model.abstract_recommender import SequentialRecommender
-from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder, FeatureSeqEmbLayer
+from recbole.model.loss import BPRLoss
 
 
 class SASRecF(SequentialRecommender):
@@ -130,7 +130,7 @@ class SASRecF(SequentialRecommender):
                                       output_all_encoded_layers=True)
         output = trm_output[-1]
         seq_output = self.gather_indexes(output, item_seq_len - 1)
-        return seq_output # [B H]
+        return seq_output  # [B H]
 
     def calculate_loss(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]

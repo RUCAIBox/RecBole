@@ -17,6 +17,7 @@ Reference:
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_, constant_, normal_
+
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
 

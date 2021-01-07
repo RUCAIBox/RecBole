@@ -18,7 +18,7 @@ Reference code:
 
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_normal_, constant_
+from torch.nn.init import xavier_normal_
 
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss

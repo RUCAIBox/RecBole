@@ -194,6 +194,13 @@ class Config(object):
 
         return final_model, final_model_class, final_dataset
 
+    def _update_internal_config_dict(self, file):
+        with open(file, 'r', encoding='utf-8') as f:
+            config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+            if config_dict is not None:
+                self.internal_config_dict.update(config_dict)
+        return config_dict
+
     def _load_internal_config_dict(self, model, model_class, dataset):
         current_path = os.path.dirname(os.path.realpath(__file__))
         overall_init_file = os.path.join(current_path, '../properties/overall.yaml')
@@ -201,71 +208,45 @@ class Config(object):
         sample_init_file = os.path.join(current_path, '../properties/dataset/sample.yaml')
         dataset_init_file = os.path.join(current_path, '../properties/dataset/' + dataset + '.yaml')
 
-        context_aware_init = os.path.join(current_path, '../properties/quick_start_config/context-aware.yaml')
-        context_aware_on_ml_100k_init = os.path.join(current_path, '../properties/quick_start_config/context-aware_ml-100k.yaml')
-        DIN_init = os.path.join(current_path, '../properties/quick_start_config/sequential_DIN.yaml')
-        DIN_on_ml_100k_init = os.path.join(current_path, '../properties/quick_start_config/sequential_DIN_on_ml-100k.yaml')
-        sequential_init = os.path.join(current_path, '../properties/quick_start_config/sequential.yaml')
-        special_sequential_on_ml_100k_init = os.path.join(current_path, '../properties/quick_start_config/special_sequential_on_ml-100k.yaml')
-        sequential_embedding_model_init = os.path.join(current_path, '../properties/quick_start_config/sequential_embedding_model.yaml')
-        knowledge_base_init = os.path.join(current_path, '../properties/quick_start_config/knowledge_base.yaml')
+        quick_start_config_path = os.path.join(current_path, '../properties/quick_start_config/')
+        context_aware_init = os.path.join(quick_start_config_path, 'context-aware.yaml')
+        context_aware_on_ml_100k_init = os.path.join(quick_start_config_path, 'context-aware_ml-100k.yaml')
+        DIN_init = os.path.join(quick_start_config_path, 'sequential_DIN.yaml')
+        DIN_on_ml_100k_init = os.path.join(quick_start_config_path, 'sequential_DIN_on_ml-100k.yaml')
+        sequential_init = os.path.join(quick_start_config_path, 'sequential.yaml')
+        special_sequential_on_ml_100k_init = os.path.join(quick_start_config_path, 'special_sequential_on_ml-100k.yaml')
+        sequential_embedding_model_init = os.path.join(quick_start_config_path, 'sequential_embedding_model.yaml')
+        knowledge_base_init = os.path.join(quick_start_config_path, 'knowledge_base.yaml')
 
         self.internal_config_dict = dict()
         for file in [overall_init_file, model_init_file, sample_init_file, dataset_init_file]:
             if os.path.isfile(file):
-                with open(file, 'r', encoding='utf-8') as f:
-                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
-                    if file == dataset_init_file:
-                        self.parameters['Dataset'] += [key for key in config_dict.keys() if
-                                                       key not in self.parameters['Dataset']]
-                    if config_dict is not None:
-                        self.internal_config_dict.update(config_dict)
+                config_dict = self._update_internal_config_dict(file)
+                if file == dataset_init_file:
+                    self.parameters['Dataset'] += [key for key in config_dict.keys() if
+                                                   key not in self.parameters['Dataset']]
+
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
-        elif self.internal_config_dict['MODEL_TYPE'] == ModelType.CONTEXT or self.internal_config_dict['MODEL_TYPE'] == ModelType.XGBOOST:
-            with open(context_aware_init, 'r', encoding='utf-8') as f:
-                config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
-                if config_dict is not None:
-                    self.internal_config_dict.update(config_dict)
+        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.XGBOOST}:
+            self._update_internal_config_dict(context_aware_init)
             if dataset == 'ml-100k':
-                with open(context_aware_on_ml_100k_init, 'r', encoding='utf-8') as f:
-                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
-                    if config_dict is not None:
-                        self.internal_config_dict.update(config_dict)
-    
+                self._update_internal_config_dict(context_aware_on_ml_100k_init)
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
             if model == 'DIN':
-                with open(DIN_init, 'r', encoding='utf-8') as f:
-                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
-                    if config_dict is not None:
-                        self.internal_config_dict.update(config_dict)
+                self._update_internal_config_dict(DIN_init)
                 if dataset == 'ml-100k':
-                    with open(DIN_on_ml_100k_init, 'r', encoding='utf-8') as f:
-                        config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
-                        if config_dict is not None:
-                            self.internal_config_dict.update(config_dict)
+                    self._update_internal_config_dict(DIN_on_ml_100k_init)
             elif model in ['GRU4RecKG', 'KSR']:
-                with open(sequential_embedding_model_init, 'r', encoding='utf-8') as f:
-                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
-                    if config_dict is not None:
-                        self.internal_config_dict.update(config_dict) 
+                self._update_internal_config_dict(sequential_embedding_model_init)
             else:
-                with open(sequential_init, 'r', encoding='utf-8') as f:
-                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
-                    if config_dict is not None:
-                        self.internal_config_dict.update(config_dict)
+                self._update_internal_config_dict(sequential_init)
                 if dataset == 'ml-100k' and model in ['GRU4RecF', 'SASRecF', 'FDSA', 'S3Rec']:
-                    with open(special_sequential_on_ml_100k_init, 'r', encoding='utf-8') as f:
-                        config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
-                        if config_dict is not None:
-                            self.internal_config_dict.update(config_dict)
-        
+                    self._update_internal_config_dict(special_sequential_on_ml_100k_init)
+
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.KNOWLEDGE:
-            with open(knowledge_base_init, 'r', encoding='utf-8') as f:
-                config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
-                if config_dict is not None:
-                    self.internal_config_dict.update(config_dict)
+            self._update_internal_config_dict(knowledge_base_init)
 
     def _get_final_config_dict(self):
         final_config_dict = dict()

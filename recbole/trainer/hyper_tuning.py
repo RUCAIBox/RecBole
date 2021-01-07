@@ -9,8 +9,9 @@ recbole.trainer.hyper_tuning
 ############################
 """
 
-import numpy as np
 from functools import partial
+
+import numpy as np
 
 from recbole.utils.utils import dict2str
 
@@ -43,7 +44,6 @@ def _parameters(space):
     if isinstance(space, dict):
         space = list(space.values())
     for node in _recursiveFindNodes(space, 'switch'):
-
         # Find the name of this parameter
         paramNode = node.pos_args[0]
         assert paramNode.name == 'hyperopt_param'
@@ -211,7 +211,7 @@ class HyperTuning(object):
                     high = para_value[1]
                     q = para_value[2]
                     space[para_name] = hp.quniform(para_name, float(low), float(high), float(q))
-            elif para_type =='loguniform':
+            elif para_type == 'loguniform':
                 for para_name in config_dict['loguniform']:
                     para_value = config_dict['loguniform'][para_name]
                     low = para_value[0]
