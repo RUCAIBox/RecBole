@@ -13,7 +13,7 @@ import os
 
 import pytest
 
-from recbole.config import Config
+from recbole.config import Config, EvalSetting
 from recbole.data import create_dataset
 from recbole.utils import init_seed
 
@@ -25,6 +25,15 @@ def new_dataset(config_dict=None, config_file_list=None):
     init_seed(config['seed'], config['reproducibility'])
     logging.basicConfig(level=logging.ERROR)
     return create_dataset(config)
+
+
+def split_dataset(config_dict=None, config_file_list=None):
+    dataset = new_dataset(config_dict=config_dict, config_file_list=config_file_list)
+    config = dataset.config
+    es_str = [_.strip() for _ in config['eval_setting'].split(',')]
+    es = EvalSetting(config)
+    es.set_ordering_and_splitting(es_str[0])
+    return dataset.build(es)
 
 
 class TestDataset:
@@ -457,6 +466,104 @@ class TestDataset:
         dataset = new_dataset(config_dict=config_dict)
         assert (dataset.inter_feat['rating'].numpy() == [0., .25, 1., .75, .5]).all()
         assert (dataset.inter_feat['star'].numpy() == [4., 2., 0., 1., 3.]).all()
+
+    def test_TO_RS_811(self):
+        config_dict = {
+            'model': 'BPR',
+            'dataset': 'build_dataset',
+            'data_path': current_path,
+            'load_col': None,
+            'eval_setting': 'TO_RS',
+            'split_ratio': [0.8, 0.1, 0.1],
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17))).all()
+        assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(17, 19))).all()
+        assert (test_dataset.inter_feat['item_id'].numpy() == list(range(19, 21))).all()
+
+    def test_TO_RS_820(self):
+        config_dict = {
+            'model': 'BPR',
+            'dataset': 'build_dataset',
+            'data_path': current_path,
+            'load_col': None,
+            'eval_setting': 'TO_RS',
+            'split_ratio': [0.8, 0.2, 0.0],
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17))).all()
+        assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(17, 21))).all()
+        assert len(test_dataset.inter_feat) == 0
+
+    def test_TO_RS_802(self):
+        config_dict = {
+            'model': 'BPR',
+            'dataset': 'build_dataset',
+            'data_path': current_path,
+            'load_col': None,
+            'eval_setting': 'TO_RS',
+            'split_ratio': [0.8, 0.0, 0.2],
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17))).all()
+        assert len(valid_dataset.inter_feat) == 0
+        assert (test_dataset.inter_feat['item_id'].numpy() == list(range(17, 21))).all()
+
+    def test_TO_LS(self):
+        config_dict = {
+            'model': 'BPR',
+            'dataset': 'build_dataset',
+            'data_path': current_path,
+            'load_col': None,
+            'eval_setting': 'TO_LS',
+            'leave_one_num': 2,
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 19))).all()
+        assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(19, 20))).all()
+        assert (test_dataset.inter_feat['item_id'].numpy() == list(range(20, 21))).all()
+
+    def test_RO_RS_811(self):
+        config_dict = {
+            'model': 'BPR',
+            'dataset': 'build_dataset',
+            'data_path': current_path,
+            'load_col': None,
+            'eval_setting': 'RO_RS',
+            'split_ratio': [0.8, 0.1, 0.1],
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert len(train_dataset.inter_feat) == 16
+        assert len(valid_dataset.inter_feat) == 2
+        assert len(test_dataset.inter_feat) == 2
+
+    def test_TO_RS_820(self):
+        config_dict = {
+            'model': 'BPR',
+            'dataset': 'build_dataset',
+            'data_path': current_path,
+            'load_col': None,
+            'eval_setting': 'RO_RS',
+            'split_ratio': [0.8, 0.2, 0.0],
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert len(train_dataset.inter_feat) == 16
+        assert len(valid_dataset.inter_feat) == 4
+        assert len(test_dataset.inter_feat) == 0
+
+    def test_RO_RS_802(self):
+        config_dict = {
+            'model': 'BPR',
+            'dataset': 'build_dataset',
+            'data_path': current_path,
+            'load_col': None,
+            'eval_setting': 'RO_RS',
+            'split_ratio': [0.8, 0.0, 0.2],
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert len(train_dataset.inter_feat) == 16
+        assert len(valid_dataset.inter_feat) == 0
+        assert len(test_dataset.inter_feat) == 4
 
 
 if __name__ == "__main__":
