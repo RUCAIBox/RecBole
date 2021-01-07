@@ -19,6 +19,7 @@ eval_step: 1
 stopping_step: 10
 clip_grad_norm: ~
 # clip_grad_norm:  {'max_norm': 5, 'norm_type': 2}
+weight_decay: 0.0
 
 # evaluation settings
 eval_setting: RO_RS,full
