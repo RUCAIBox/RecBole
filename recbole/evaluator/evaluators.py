@@ -4,7 +4,7 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/04, 2020/08/11, 2020/12/18
+# @Time    :   2021/01/07, 2020/08/11, 2020/12/18
 # @Author  :   Kaiyuan Li, Yupeng Hou, Zhichao Feng
 # @email   :   tsotfsk@outlook.com, houyupeng@ruc.edu.cn, fzcbupt@gmail.com
 
@@ -39,11 +39,11 @@ class TopKEvaluator(GroupedEvaluator):
     r"""TopK Evaluator is mainly used in ranking tasks. Now, we support six topk metrics which
        contain `'Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP'`.
 
-   Note:
+    Note:
        The metrics used calculate group-based metrics which considers the metrics scores averaged
        across users. Some of them are also limited to k.
 
-   """
+    """
 
     def __init__(self, config, metrics):
         super().__init__(config, metrics)
@@ -53,20 +53,29 @@ class TopKEvaluator(GroupedEvaluator):
 
     def collect(self, interaction, scores_tensor):
         """collect the topk intermediate result of one batch, this function mainly
-       implements padding and TopK finding. It is called at the end of each batch
+        implements padding and TopK finding. It is called at the end of each batch
 
-       Args:
-           interaction (Interaction): :class:`AbstractEvaluator` of the batch
-           scores_tensor (tensor): the tensor of model output with size of `(N, )`
+        Args:
+            interaction (Interaction): :class:`AbstractEvaluator` of the batch
+            scores_tensor (tensor): the tensor of model output with size of `(N, )`
+
+        Returns:
+            torch.Tensor : a matrix contain topk matrix and shape matrix
 
        """
         user_len_list = interaction.user_len_list
+        
         scores_matrix = self.get_score_matrix(scores_tensor, user_len_list)
+        scores_matrix = torch.flip(scores_matrix, dims=[-1])
+        shape_matrix = torch.full((len(user_len_list), 1), scores_matrix.shape[1],
+                                  device=scores_matrix.device)
 
         # get topk
         _, topk_idx = torch.topk(scores_matrix, max(self.topk), dim=-1)  # n_users x k
 
-        return topk_idx
+        # pack top_idx and shape_matrix
+        result = torch.cat((topk_idx, shape_matrix), dim=1)
+        return result
 
     def evaluate(self, batch_matrix_list, eval_data):
         """calculate the metrics of all batches. It is called at the end of each epoch
@@ -80,12 +89,16 @@ class TopKEvaluator(GroupedEvaluator):
 
         """
         pos_len_list = eval_data.get_pos_len_list()
-        topk_idx = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
+        batch_result = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
+
+        # unpack top_idx and shape_matrix
+        topk_idx = batch_result[:, :-1]
+        shapes = batch_result[:, -1]
 
         assert len(pos_len_list) == len(topk_idx)
         # get metrics
         metric_dict = {}
-        result_list = self._calculate_metrics(pos_len_list, topk_idx)
+        result_list = self._calculate_metrics(pos_len_list, topk_idx, shapes)
         for metric, value in zip(self.metrics, result_list):
             for k in self.topk:
                 key = '{}@{}'.format(metric, k)
@@ -106,18 +119,19 @@ class TopKEvaluator(GroupedEvaluator):
         else:
             raise TypeError('The topk must be a integer, list')
 
-    def _calculate_metrics(self, pos_len_list, topk_index):
+    def _calculate_metrics(self, pos_len_list, topk_idx, shapes):
         """integrate the results of each batch and evaluate the topk metrics by users
 
         Args:
             pos_len_list (numpy.ndarray): a list of users' positive items
-            topk_index (numpy.ndarray): a matrix which contains the index of the topk items for users
+            topk_idx (numpy.ndarray): a matrix which contains the index of the topk items for users
+            shapes (numpy.ndarray): a list which contains the columns of the padded batch matrix
 
         Returns:
             numpy.ndarray: a matrix which contains the metrics result
 
         """
-        pos_idx_matrix = (topk_index < pos_len_list.reshape(-1, 1))
+        pos_idx_matrix = (topk_idx >= (shapes - pos_len_list).reshape(-1, 1))
         result_list = []
         for metric in self.metrics:
             metric_fuc = metrics_dict[metric.lower()]
@@ -138,13 +152,13 @@ class TopKEvaluator(GroupedEvaluator):
 
 class RankEvaluator(GroupedEvaluator):
     r"""Rank Evaluator is mainly used in ranking tasks except for topk tasks. Now, we support one
-       rank metric containing `'GAUC'`.
+    rank metric containing `'GAUC'`.
 
-       Note:
-           The metrics used calculate group-based metrics which considers the metrics scores averaged
-           across users except for top-k metrics.
+    Note:
+        The metrics used calculate group-based metrics which considers the metrics scores averaged
+        across users except for top-k metrics.
 
-       """
+    """
 
     def __init__(self, config, metrics):
         super().__init__(config, metrics)
@@ -251,7 +265,7 @@ class RankEvaluator(GroupedEvaluator):
 
         Args:
             pos_len_list (numpy.ndarray): a list of users' positive items
-            topk_index (numpy.ndarray): a matrix which contains the index of the topk items for users
+            topk_idx (numpy.ndarray): a matrix which contains the index of the topk items for users
 
         Returns:
             numpy.ndarray: a matrix which contains the metrics result
@@ -276,14 +290,14 @@ class RankEvaluator(GroupedEvaluator):
 
 class LossEvaluator(IndividualEvaluator):
     r"""Loss Evaluator is mainly used in rating prediction and click through rate prediction. Now, we support four
-       loss metrics which contain `'AUC', 'RMSE', 'MAE', 'LOGLOSS'`.
+    loss metrics which contain `'AUC', 'RMSE', 'MAE', 'LOGLOSS'`.
 
-       Note:
-           The metrics used do not calculate group-based metrics which considers the metrics scores averaged
-           across users. They are also not limited to k. Instead, they calculate the scores on the entire
-           prediction results regardless the users.
+    Note:
+        The metrics used do not calculate group-based metrics which considers the metrics scores averaged
+        across users. They are also not limited to k. Instead, they calculate the scores on the entire
+        prediction results regardless the users.
 
-       """
+    """
 
     def __init__(self, config, metrics):
         super().__init__(config, metrics)
