@@ -23,6 +23,8 @@ def zero_mean_columns(a):
     return a - np.mean(a, axis=0)
 
 # https://github.com/RUCAIBox/RecBole/issues/622
+
+
 def add_noise(t, mag=1e-5):
     return t + mag * torch.rand(t.shape)
 
@@ -59,12 +61,11 @@ class ADMMSLIM(GeneralRecommender):
         else:
             G = (X.T @ X).toarray()
 
-
-        # alpha = 0 corresponds to this case
+        # alpha = 0 corresponds to this case (non-item specific L2 reg):
         # diag = (lambda2 + rho) * np.identity(num_items)
 
-        # add 1 to means to prevent singular matrix in what follows
-        diag = (lambda2 + rho) * np.diag(np.power(self.item_means + 1, alpha / 2))
+        diag = lambda2 * np.diag(np.power(self.item_means, alpha)) + \
+            rho * np.identity(num_items)
 
         P = np.linalg.inv(G + diag)
         B_aux = P @ G
@@ -100,9 +101,11 @@ class ADMMSLIM(GeneralRecommender):
         user_interactions = self.interaction_matrix[user, :].toarray()
 
         if self.center_columns:
-            r = (((user_interactions - self.item_means) * self.item_similarity[:, item].T).sum(axis=1)).flatten() + self.item_means[item]
+            r = (((user_interactions - self.item_means) *
+                  self.item_similarity[:, item].T).sum(axis=1)).flatten() + self.item_means[item]
         else:
-            r = (user_interactions * self.item_similarity[:, item].T).sum(axis=1).flatten()
+            r = (user_interactions *
+                 self.item_similarity[:, item].T).sum(axis=1).flatten()
 
         return add_noise(torch.from_numpy(r))
 
@@ -112,7 +115,8 @@ class ADMMSLIM(GeneralRecommender):
         user_interactions = self.interaction_matrix[user, :].toarray()
 
         if self.center_columns:
-            r = ((user_interactions - self.item_means) @ self.item_similarity + self.item_means).flatten()
+            r = ((user_interactions - self.item_means) @
+                 self.item_similarity + self.item_means).flatten()
         else:
             r = (user_interactions @ self.item_similarity).flatten()
 

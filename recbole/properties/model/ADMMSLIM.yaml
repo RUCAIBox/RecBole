@@ -1,6 +1,6 @@
 lambda1: 3
 lambda2: 200
-alpha: 0.25
+alpha: 0.50
 rho: 4000
 k: 100
 positive_only: True
