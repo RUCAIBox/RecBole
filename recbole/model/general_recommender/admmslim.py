@@ -44,13 +44,14 @@ class ADMMSLIM(GeneralRecommender):
 
         lambda1 = config['lambda1']
         lambda2 = config['lambda2']
+        alpha = config['alpha']
         rho = config['rho']
         k = config['k']
         positive_only = config['positive_only']
         self.center_columns = config['center_columns']
+        self.item_means = X.mean(axis=0).getA1()
 
         if self.center_columns:
-            self.item_means = X.mean(axis=0).getA1()
             zero_mean_X = X.toarray() - self.item_means
             G = (zero_mean_X.T @ zero_mean_X)
             # large memory cost because we need to make X dense to subtract mean, delete asap
@@ -58,7 +59,13 @@ class ADMMSLIM(GeneralRecommender):
         else:
             G = (X.T @ X).toarray()
 
-        diag = (lambda2 + rho) * np.identity(num_items)
+
+        # alpha = 0 corresponds to this case
+        # diag = (lambda2 + rho) * np.identity(num_items)
+
+        # add 1 to means to prevent singular matrix in what follows
+        diag = (lambda2 + rho) * np.diag(np.power(self.item_means + 1, alpha / 2))
+
         P = np.linalg.inv(G + diag)
         B_aux = P @ G
 
@@ -93,12 +100,11 @@ class ADMMSLIM(GeneralRecommender):
         user_interactions = self.interaction_matrix[user, :].toarray()
 
         if self.center_columns:
-            user_interactions -= self.item_means
+            r = (((user_interactions - self.item_means) * self.item_similarity[:, item].T).sum(axis=1)).flatten() + self.item_means[item]
+        else:
+            r = (user_interactions * self.item_similarity[:, item].T).sum(axis=1).flatten()
 
-        r = torch.from_numpy(
-            (user_interactions * self.item_similarity[:, item].T).sum(axis=1).flatten())
-
-        return add_noise(r)
+        return add_noise(torch.from_numpy(r))
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID].cpu().numpy()
@@ -106,9 +112,8 @@ class ADMMSLIM(GeneralRecommender):
         user_interactions = self.interaction_matrix[user, :].toarray()
 
         if self.center_columns:
-            user_interactions -= self.item_means
+            r = ((user_interactions - self.item_means) @ self.item_similarity + self.item_means).flatten()
+        else:
+            r = (user_interactions @ self.item_similarity).flatten()
 
-        r = user_interactions @ self.item_similarity
-        r = torch.from_numpy(r.flatten())
-
-        return add_noise(r)
+        return add_noise(torch.from_numpy(r))
