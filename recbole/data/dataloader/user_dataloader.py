@@ -35,13 +35,11 @@ class UserDataLoader(AbstractDataLoader):
     """
     dl_type = DataLoaderType.ORIGIN
 
-    def __init__(self, config, dataset,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(self, config, dataset, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.uid_field = dataset.uid_field
         self.user_list = Interaction({self.uid_field: torch.arange(dataset.user_num)})
 
-        super().__init__(config=config, dataset=dataset,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config=config, dataset=dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def setup(self):
         """Make sure that the :attr:`shuffle` is True. If :attr:`shuffle` is False, it will be changed to True
@@ -59,6 +57,6 @@ class UserDataLoader(AbstractDataLoader):
         self.user_list.shuffle()
 
     def _next_batch_data(self):
-        cur_data = self.user_list[self.pr: self.pr + self.step]
+        cur_data = self.user_list[self.pr:self.pr + self.step]
         self.pr += self.step
         return cur_data

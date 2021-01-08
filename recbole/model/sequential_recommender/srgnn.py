@@ -3,7 +3,6 @@
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
 
-
 r"""
 SRGNN
 ################################################
@@ -63,7 +62,7 @@ class GNN(nn.Module):
         """
 
         input_in = torch.matmul(A[:, :, :A.size(1)], self.linear_edge_in(hidden)) + self.b_iah
-        input_out = torch.matmul(A[:, :, A.size(1): 2 * A.size(1)], self.linear_edge_out(hidden)) + self.b_ioh
+        input_out = torch.matmul(A[:, :, A.size(1):2 * A.size(1)], self.linear_edge_out(hidden)) + self.b_ioh
         # [batch_size, max_session_len, embedding_size * 2]
         inputs = torch.cat([input_in, input_out], 2)
 

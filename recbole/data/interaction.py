@@ -343,6 +343,5 @@ def cat_interactions(interactions):
         if columns_set != set(inter.columns):
             raise ValueError(f'Interactions [{interactions}] should have some interactions.')
 
-    new_inter = {col: torch.cat([inter[col] for inter in interactions])
-                 for col in columns_set}
+    new_inter = {col: torch.cat([inter[col] for inter in interactions]) for col in columns_set}
     return Interaction(new_inter)

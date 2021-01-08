@@ -165,7 +165,8 @@ class NAIS(GeneralRecommender):
         if self.algorithm == 'prod':
             mlp_input = inter * target.unsqueeze(1)  # batch_size x max_len x embedding_size
         else:
-            mlp_input = torch.cat([inter, target.unsqueeze(1).expand_as(inter)], dim=2)  # batch_size x max_len x embedding_size*2
+            mlp_input = torch.cat([inter, target.unsqueeze(1).expand_as(inter)],
+                                  dim=2)  # batch_size x max_len x embedding_size*2
         mlp_output = self.mlp_layers(mlp_input)  # batch_size x max_len x weight_size
 
         logits = torch.matmul(mlp_output, self.weight_layer).squeeze(2)  # batch_size x max_len

@@ -34,10 +34,8 @@ class GeneralDataLoader(AbstractDataLoader):
     """
     dl_type = DataLoaderType.ORIGIN
 
-    def __init__(self, config, dataset,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        super().__init__(config, dataset,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+    def __init__(self, config, dataset, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+        super().__init__(config, dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     @property
     def pr_end(self):
@@ -47,7 +45,7 @@ class GeneralDataLoader(AbstractDataLoader):
         self.dataset.shuffle()
 
     def _next_batch_data(self):
-        cur_data = self.dataset[self.pr: self.pr + self.step]
+        cur_data = self.dataset[self.pr:self.pr + self.step]
         self.pr += self.step
         return cur_data
 
@@ -70,14 +68,16 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
 
-    def __init__(self, config, dataset, sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(
+        self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
+    ):
         self.uid_field = dataset.uid_field
         self.iid_field = dataset.iid_field
         self.uid_list, self.uid2index, self.uid2items_num = None, None, None
 
-        super().__init__(config, dataset, sampler, neg_sample_args,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(
+            config, dataset, sampler, neg_sample_args, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle
+        )
 
     def setup(self):
         if self.user_inter_in_one_batch:
@@ -132,7 +132,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
 
     def _next_batch_data(self):
         if self.user_inter_in_one_batch:
-            uid_list = self.uid_list[self.pr: self.pr + self.step]
+            uid_list = self.uid_list[self.pr:self.pr + self.step]
             data_list = []
             for uid in uid_list:
                 index = self.uid2index[uid]
@@ -144,7 +144,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
             self.pr += self.step
             return cur_data
         else:
-            cur_data = self._neg_sampling(self.dataset[self.pr: self.pr + self.step])
+            cur_data = self._neg_sampling(self.dataset[self.pr:self.pr + self.step])
             self.pr += self.step
             return cur_data
 
@@ -167,7 +167,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
         new_data[self.iid_field][pos_inter_num:] = neg_iids
         new_data = self.dataset.join(new_data)
         labels = torch.zeros(pos_inter_num * self.times)
-        labels[: pos_inter_num] = 1.0
+        labels[:pos_inter_num] = 1.0
         new_data.update(Interaction({self.label_field: labels}))
         return new_data
 
@@ -203,8 +203,9 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
     """
     dl_type = DataLoaderType.FULL
 
-    def __init__(self, config, dataset, sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(
+        self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
+    ):
         if neg_sample_args['strategy'] != 'full':
             raise ValueError('neg_sample strategy in GeneralFullDataLoader() should be `full`')
 
@@ -232,8 +233,9 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         self.uid_list = torch.tensor(self.uid_list)
         self.user_df = dataset.join(Interaction({uid_field: self.uid_list}))
 
-        super().__init__(config, dataset, sampler, neg_sample_args,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(
+            config, dataset, sampler, neg_sample_args, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle
+        )
 
     def _set_user_property(self, uid, used_item, positive_item):
         if uid is None:
@@ -260,7 +262,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
-        user_df = self.user_df[self.pr: self.pr + self.step]
+        user_df = self.user_df[self.pr:self.pr + self.step]
         cur_data = self._neg_sampling(user_df)
         self.pr += self.step
         return cur_data

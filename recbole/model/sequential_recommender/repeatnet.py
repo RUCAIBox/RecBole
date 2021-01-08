@@ -52,20 +52,23 @@ class RepeatNet(SequentialRecommender):
         # define the layers and loss function
         self.item_matrix = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.gru = nn.GRU(self.embedding_size, self.hidden_size, batch_first=True)
-        self.repeat_explore_mechanism = Repeat_Explore_Mechanism(self.device,
-                                                                 hidden_size=self.hidden_size,
-                                                                 seq_len=self.max_seq_length,
-                                                                 dropout_prob=self.dropout_prob)
-        self.repeat_recommendation_decoder = Repeat_Recommendation_Decoder(self.device,
-                                                                           hidden_size=self.hidden_size,
-                                                                           seq_len=self.max_seq_length,
-                                                                           num_item=self.n_items,
-                                                                           dropout_prob=self.dropout_prob)
-        self.explore_recommendation_decoder = Explore_Recommendation_Decoder(hidden_size=self.hidden_size,
-                                                                             seq_len=self.max_seq_length,
-                                                                             num_item=self.n_items,
-                                                                             device=self.device,
-                                                                             dropout_prob=self.dropout_prob)
+        self.repeat_explore_mechanism = Repeat_Explore_Mechanism(
+            self.device, hidden_size=self.hidden_size, seq_len=self.max_seq_length, dropout_prob=self.dropout_prob
+        )
+        self.repeat_recommendation_decoder = Repeat_Recommendation_Decoder(
+            self.device,
+            hidden_size=self.hidden_size,
+            seq_len=self.max_seq_length,
+            num_item=self.n_items,
+            dropout_prob=self.dropout_prob
+        )
+        self.explore_recommendation_decoder = Explore_Recommendation_Decoder(
+            hidden_size=self.hidden_size,
+            seq_len=self.max_seq_length,
+            num_item=self.n_items,
+            device=self.device,
+            dropout_prob=self.dropout_prob
+        )
 
         self.loss_fct = F.nll_loss
 
@@ -92,18 +95,15 @@ class RepeatNet(SequentialRecommender):
         # last_memory: batch_size * hidden_size
         timeline_mask = (item_seq == 0)
 
-        self.repeat_explore = self.repeat_explore_mechanism.forward(all_memory=all_memory,
-                                                                    last_memory=last_memory)
+        self.repeat_explore = self.repeat_explore_mechanism.forward(all_memory=all_memory, last_memory=last_memory)
         # batch_size * 2
-        repeat_recommendation_decoder = self.repeat_recommendation_decoder.forward(all_memory=all_memory,
-                                                                                   last_memory=last_memory,
-                                                                                   item_seq=item_seq,
-                                                                                   mask=timeline_mask)
+        repeat_recommendation_decoder = self.repeat_recommendation_decoder.forward(
+            all_memory=all_memory, last_memory=last_memory, item_seq=item_seq, mask=timeline_mask
+        )
         # batch_size * num_item
-        explore_recommendation_decoder = self.explore_recommendation_decoder.forward(all_memory=all_memory,
-                                                                                     last_memory=last_memory,
-                                                                                     item_seq=item_seq,
-                                                                                     mask=timeline_mask)
+        explore_recommendation_decoder = self.explore_recommendation_decoder.forward(
+            all_memory=all_memory, last_memory=last_memory, item_seq=item_seq, mask=timeline_mask
+        )
         # batch_size * num_item
         prediction = repeat_recommendation_decoder * self.repeat_explore[:, 0].unsqueeze(1) \
                      + explore_recommendation_decoder * self.repeat_explore[:, 1].unsqueeze(1)

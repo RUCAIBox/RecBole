@@ -21,8 +21,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from recbole.evaluator.utils import _binary_clf_curve
 
-
 #    TopK Metrics    #
+
 
 def hit_(pos_index, pos_len):
     r"""Hit_ (also known as hit ratio at :math:`N`) is a way of calculating how many 'hits' you have
@@ -194,15 +194,19 @@ def gauc_(user_len_list, pos_len_list, pos_rank_sum):
     non_zero_idx = np.full(len(user_len_list), True, dtype=np.bool)
     if any_without_pos:
         logger = getLogger()
-        logger.warning("No positive samples in some users, "
-                       "true positive value should be meaningless, "
-                       "these users have been removed from GAUC calculation")
+        logger.warning(
+            "No positive samples in some users, "
+            "true positive value should be meaningless, "
+            "these users have been removed from GAUC calculation"
+        )
         non_zero_idx *= (pos_len_list != 0)
     if any_without_neg:
         logger = getLogger()
-        logger.warning("No negative samples in some users, "
-                       "false positive value should be meaningless, "
-                       "these users have been removed from GAUC calculation")
+        logger.warning(
+            "No negative samples in some users, "
+            "false positive value should be meaningless, "
+            "these users have been removed from GAUC calculation"
+        )
         non_zero_idx *= (neg_len_list != 0)
     if any_without_pos or any_without_neg:
         item_list = user_len_list, neg_len_list, pos_len_list, pos_rank_sum
@@ -249,16 +253,14 @@ def auc_(trues, preds):
 
     if fps[-1] <= 0:
         logger = getLogger()
-        logger.warning("No negative samples in y_true, "
-                       "false positive value should be meaningless")
+        logger.warning("No negative samples in y_true, " "false positive value should be meaningless")
         fpr = np.repeat(np.nan, fps.shape)
     else:
         fpr = fps / fps[-1]
 
     if tps[-1] <= 0:
         logger = getLogger()
-        logger.warning("No positive samples in y_true, "
-                       "true positive value should be meaningless")
+        logger.warning("No positive samples in y_true, " "true positive value should be meaningless")
         tpr = np.repeat(np.nan, tps.shape)
     else:
         tpr = tps / tps[-1]
@@ -267,6 +269,7 @@ def auc_(trues, preds):
 
 
 # Loss based Metrics #
+
 
 def mae_(trues, preds):
     r"""`Mean absolute error regression loss`__
@@ -313,7 +316,7 @@ def log_loss_(trues, preds):
     eps = 1e-15
     preds = np.float64(preds)
     preds = np.clip(preds, eps, 1 - eps)
-    loss = np.sum(- trues * np.log(preds) - (1 - trues) * np.log(1 - preds))
+    loss = np.sum(-trues * np.log(preds) - (1 - trues) * np.log(1 - preds))
 
     return loss / len(preds)
 
@@ -324,18 +327,14 @@ def log_loss_(trues, preds):
 # def coverage_():
 #     raise NotImplementedError
 
-
 # def gini_index_():
 #     raise NotImplementedError
-
 
 # def shannon_entropy_():
 #     raise NotImplementedError
 
-
 # def diversity_():
 #     raise NotImplementedError
-
 
 """Function name and function mapper.
 Useful when we have to serialize evaluation metric names
