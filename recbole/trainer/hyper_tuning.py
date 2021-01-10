@@ -75,8 +75,10 @@ def _validate_space_exhaustive_search(space):
     for node in dfs(as_apply(space)):
         if node.name in implicit_stochastic_symbols:
             if node.name not in supported_stochastic_symbols:
-                raise ExhaustiveSearchError('Exhaustive search is only possible with the following stochastic symbols: '
-                                            '' + ', '.join(supported_stochastic_symbols))
+                raise ExhaustiveSearchError(
+                    'Exhaustive search is only possible with the following stochastic symbols: '
+                    '' + ', '.join(supported_stochastic_symbols)
+                )
 
 
 def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000):
@@ -86,8 +88,12 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
     from hyperopt import pyll
     from hyperopt.base import miscs_update_idxs_vals
     # Build a hash set for previous trials
-    hashset = set([hash(frozenset([(key, value[0]) if len(value) > 0 else ((key, None))
-                                   for key, value in trial['misc']['vals'].items()])) for trial in trials.trials])
+    hashset = set([
+        hash(
+            frozenset([(key, value[0]) if len(value) > 0 else ((key, None))
+                       for key, value in trial['misc']['vals'].items()])
+        ) for trial in trials.trials
+    ])
 
     rng = np.random.RandomState(seed)
     rval = []
@@ -96,19 +102,16 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
         nbSucessiveFailures = 0
         while not newSample:
             # -- sample new specs, idxs, vals
-            idxs, vals = pyll.rec_eval(
-                domain.s_idxs_vals,
-                memo={
-                    domain.s_new_ids: [new_id],
-                    domain.s_rng: rng,
-                })
+            idxs, vals = pyll.rec_eval(domain.s_idxs_vals, memo={
+                domain.s_new_ids: [new_id],
+                domain.s_rng: rng,
+            })
             new_result = domain.new_result()
             new_misc = dict(tid=new_id, cmd=domain.cmd, workdir=domain.workdir)
             miscs_update_idxs_vals([new_misc], idxs, vals)
 
             # Compare with previous hashes
-            h = hash(frozenset([(key, value[0]) if len(value) > 0 else (
-                (key, None)) for key, value in vals.items()]))
+            h = hash(frozenset([(key, value[0]) if len(value) > 0 else ((key, None)) for key, value in vals.items()]))
             if h not in hashset:
                 newSample = True
             else:
@@ -119,8 +122,7 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
                 # No more samples to produce
                 return []
 
-        rval.extend(trials.new_trial_docs([new_id],
-                                          [None], [new_result], [new_misc]))
+        rval.extend(trials.new_trial_docs([new_id], [None], [new_result], [new_misc]))
     return rval
 
 
@@ -136,8 +138,16 @@ class HyperTuning(object):
         https://github.com/hyperopt/hyperopt/issues/200
     """
 
-    def __init__(self, objective_function, space=None, params_file=None, params_dict=None, fixed_config_file_list=None,
-                 algo='exhaustive', max_evals=100):
+    def __init__(
+        self,
+        objective_function,
+        space=None,
+        params_file=None,
+        params_dict=None,
+        fixed_config_file_list=None,
+        algo='exhaustive',
+        max_evals=100
+    ):
         self.best_score = None
         self.best_params = None
         self.best_test_result = None
@@ -288,7 +298,7 @@ class HyperTuning(object):
                     self._print_result(result_dict)
 
         if bigger:
-            score = - score
+            score = -score
         return {'loss': score, 'status': hyperopt.STATUS_OK}
 
     def run(self):

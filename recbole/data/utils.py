@@ -73,21 +73,7 @@ def data_preparation(config, dataset, save=False):
 
     es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
-
-    kwargs = {}
-    if 'RS' in es_str[0]:
-        kwargs['ratios'] = config['split_ratio']
-        if kwargs['ratios'] is None:
-            raise ValueError('`ratios` should be set if `RS` is set')
-    if 'LS' in es_str[0]:
-        kwargs['leave_one_num'] = config['leave_one_num']
-        if kwargs['leave_one_num'] is None:
-            raise ValueError('`leave_one_num` should be set if `LS` is set')
-    kwargs['group_by_user'] = config['group_by_user']
-    getattr(es, es_str[0])(**kwargs)
-
-    if es.split_args['strategy'] != 'loo' and model_type == ModelType.SEQUENTIAL:
-        raise ValueError('Sequential models require "loo" split strategy.')
+    es.set_ordering_and_splitting(es_str[0])
 
     built_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = built_datasets
@@ -100,8 +86,10 @@ def data_preparation(config, dataset, save=False):
     kwargs = {}
     if config['training_neg_sample_num']:
         if dataset.label_field in dataset.inter_feat:
-            raise ValueError(f'`training_neg_sample_num` should be 0 '
-                             f'if inter_feat have label_field [{dataset.label_field}].')
+            raise ValueError(
+                f'`training_neg_sample_num` should be 0 '
+                f'if inter_feat have label_field [{dataset.label_field}].'
+            )
         train_distribution = config['training_neg_sample_distribution'] or 'uniform'
         es.neg_sample_by(by=config['training_neg_sample_num'], distribution=train_distribution)
         if model_type != ModelType.SEQUENTIAL:
@@ -127,8 +115,10 @@ def data_preparation(config, dataset, save=False):
     kwargs = {}
     if len(es_str) > 1 and getattr(es, es_str[1], None):
         if dataset.label_field in dataset.inter_feat:
-            raise ValueError(f'It can not validate with `{es_str[1]}` '
-                             f'when inter_feat have label_field [{dataset.label_field}].')
+            raise ValueError(
+                f'It can not validate with `{es_str[1]}` '
+                f'when inter_feat have label_field [{dataset.label_field}].'
+            )
         getattr(es, es_str[1])()
         if sampler is None:
             if model_type != ModelType.SEQUENTIAL:
@@ -150,9 +140,9 @@ def data_preparation(config, dataset, save=False):
     return train_data, valid_data, test_data
 
 
-def dataloader_construct(name, config, eval_setting, dataset,
-                         dl_format=InputType.POINTWISE,
-                         batch_size=1, shuffle=False, **kwargs):
+def dataloader_construct(
+    name, config, eval_setting, dataset, dl_format=InputType.POINTWISE, batch_size=1, shuffle=False, **kwargs
+):
     """Get a correct dataloader class by calling :func:`get_data_loader` to construct dataloader.
 
     Args:
@@ -177,7 +167,7 @@ def dataloader_construct(name, config, eval_setting, dataset,
         batch_size = [batch_size] * len(dataset)
 
     if len(dataset) != len(batch_size):
-        raise ValueError('dataset {} and batch_size {} should have the same length'.format(dataset, batch_size))
+        raise ValueError(f'Dataset {dataset} and batch_size {batch_size} should have the same length.')
 
     kwargs_list = [{} for _ in range(len(dataset))]
     for key, value in kwargs.items():
@@ -185,28 +175,22 @@ def dataloader_construct(name, config, eval_setting, dataset,
         if not isinstance(value, list):
             value = [value] * len(dataset)
         if len(dataset) != len(value):
-            raise ValueError('dataset {} and {} {} should have the same length'.format(dataset, key, value))
+            raise ValueError(f'Dataset {dataset} and {key} {value} should have the same length.')
         for kw, k, w in zip(kwargs_list, key, value):
             kw[k] = w
 
     model_type = config['MODEL_TYPE']
     logger = getLogger()
-    logger.info('Build [{}] DataLoader for [{}] with format [{}]'.format(model_type, name, dl_format))
+    logger.info(f'Build [{model_type}] DataLoader for [{name}] with format [{dl_format}]')
     logger.info(eval_setting)
-    logger.info('batch_size = [{}], shuffle = [{}]\n'.format(batch_size, shuffle))
+    logger.info(f'batch_size = [{batch_size}], shuffle = [{shuffle}]\n')
 
     dataloader = get_data_loader(name, config, eval_setting)
 
     try:
         ret = [
-            dataloader(
-                config=config,
-                dataset=ds,
-                batch_size=bs,
-                dl_format=dl_format,
-                shuffle=shuffle,
-                **kw
-            ) for ds, bs, kw in zip(dataset, batch_size, kwargs_list)
+            dataloader(config=config, dataset=ds, batch_size=bs, dl_format=dl_format, shuffle=shuffle, **kw)
+            for ds, bs, kw in zip(dataset, batch_size, kwargs_list)
         ]
     except TypeError:
         raise ValueError('training_neg_sample_num should be 0')
@@ -229,7 +213,7 @@ def save_datasets(save_path, name, dataset):
         name = [name]
         dataset = [dataset]
     if len(name) != len(dataset):
-        raise ValueError('len of name {} should equal to len of dataset'.format(name, dataset))
+        raise ValueError(f'Length of name {name} should equal to length of dataset {dataset}.')
     for i, d in enumerate(dataset):
         cur_path = os.path.join(save_path, name[i])
         if not os.path.isdir(cur_path):
@@ -301,10 +285,11 @@ def get_data_loader(name, config, eval_setting):
         elif neg_sample_strategy == 'none':
             # return GeneralDataLoader
             # TODO 训练也可以为none? 看general的逻辑似乎是都可以为None
-            raise NotImplementedError('The use of external negative sampling for knowledge model '
-                                      'has not been implemented')
+            raise NotImplementedError(
+                'The use of external negative sampling for knowledge model has not been implemented'
+            )
     else:
-        raise NotImplementedError('model_type [{}] has not been implemented'.format(model_type))
+        raise NotImplementedError(f'Model_type [{model_type}] has not been implemented.')
 
 
 def _get_DIN_data_loader(name, config, eval_setting):

@@ -25,6 +25,7 @@ from recbole.utils import InputType
 
 
 class NegSamplingLoss(nn.Module):
+
     def __init__(self):
         super(NegSamplingLoss, self).__init__()
 
@@ -68,8 +69,7 @@ class LINE(GeneralRecommender):
 
     def get_used_ids(self):
         cur = np.array([set() for _ in range(self.n_items)])
-        for iid, uid in zip(self.interaction_feat[self.USER_ID].numpy(),
-                            self.interaction_feat[self.ITEM_ID].numpy()):
+        for iid, uid in zip(self.interaction_feat[self.USER_ID].numpy(), self.interaction_feat[self.ITEM_ID].numpy()):
             cur[iid].add(uid)
         return cur
 
@@ -83,9 +83,10 @@ class LINE(GeneralRecommender):
         key_ids = np.tile(key_ids, 1)
         while len(check_list) > 0:
             value_ids[check_list] = self.random_num(len(check_list))
-            check_list = np.array([i for i, used, v in
-                                   zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
-                                   if v in used])
+            check_list = np.array([
+                i for i, used, v in zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
+                if v in used
+            ])
 
         return torch.tensor(value_ids, device=self.device)
 
@@ -94,7 +95,7 @@ class LINE(GeneralRecommender):
         self.random_pr %= self.random_list_length
         while True:
             if self.random_pr + num <= self.random_list_length:
-                value_id.append(self.random_list[self.random_pr: self.random_pr + num])
+                value_id.append(self.random_list[self.random_pr:self.random_pr + num])
                 self.random_pr += num
                 break
             else:

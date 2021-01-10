@@ -61,12 +61,15 @@ class FOSSIL(SequentialRecommender):
 
     def inverse_seq_item_embedding(self, seq_item_embedding, seq_item_len):
         """
-        inverse seq_item_embedding like this:
-            simple to 2-dim
+        inverse seq_item_embedding like this (simple to 2-dim):
+
         [1,2,3,0,0,0] -- ??? -- >> [0,0,0,1,2,3]
+
         first: [0,0,0,0,0,0] concat [1,2,3,0,0,0]
+
         using gather_indexes: to get one by one
-            first get 3,then 2,last 1
+
+        first get 3,then 2,last 1
         """
         zeros = torch.zeros_like(seq_item_embedding, dtype=torch.float).to(self.device)
         # batch_size * seq_len * embedding_size
@@ -74,8 +77,9 @@ class FOSSIL(SequentialRecommender):
         # batch_size * 2_mul_seq_len * embedding_size
         embedding_list = list()
         for i in range(self.order_len):
-            embedding = self.gather_indexes(item_embedding_zeros,
-                                            self.max_seq_length + seq_item_len - self.order_len + i)
+            embedding = self.gather_indexes(
+                item_embedding_zeros, self.max_seq_length + seq_item_len - self.order_len + i
+            )
             embedding_list.append(embedding.unsqueeze(1))
         short_item_embedding = torch.cat(embedding_list, dim=1)
         # batch_size * short_len * embedding_size

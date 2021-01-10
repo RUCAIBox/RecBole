@@ -49,12 +49,22 @@ class SHAN(SequentialRecommender):
 
         self.long_w = nn.Linear(self.embedding_size, self.embedding_size)
         self.long_b = nn.Parameter(
-            uniform_(tensor=torch.zeros(self.embedding_size), a=-np.sqrt(3 / self.embedding_size),
-                     b=np.sqrt(3 / self.embedding_size)), requires_grad=True).to(self.device)
+            uniform_(
+                tensor=torch.zeros(self.embedding_size),
+                a=-np.sqrt(3 / self.embedding_size),
+                b=np.sqrt(3 / self.embedding_size)
+            ),
+            requires_grad=True
+        ).to(self.device)
         self.long_short_w = nn.Linear(self.embedding_size, self.embedding_size)
         self.long_short_b = nn.Parameter(
-            uniform_(tensor=torch.zeros(self.embedding_size), a=-np.sqrt(3 / self.embedding_size),
-                     b=np.sqrt(3 / self.embedding_size)), requires_grad=True).to(self.device)
+            uniform_(
+                tensor=torch.zeros(self.embedding_size),
+                a=-np.sqrt(3 / self.embedding_size),
+                b=np.sqrt(3 / self.embedding_size)
+            ),
+            requires_grad=True
+        ).to(self.device)
 
         self.relu = nn.ReLU()
 
@@ -112,8 +122,9 @@ class SHAN(SequentialRecommender):
 
         # get the mask
         mask = seq_item.data.eq(0)
-        long_term_attention_based_pooling_layer = self.long_term_attention_based_pooling_layer(seq_item_embedding,
-                                                                                               user_embedding, mask)
+        long_term_attention_based_pooling_layer = self.long_term_attention_based_pooling_layer(
+            seq_item_embedding, user_embedding, mask
+        )
         # batch_size * 1 * embedding_size
 
         short_item_embedding = seq_item_embedding[:, -self.short_item_length:, :]
@@ -125,9 +136,9 @@ class SHAN(SequentialRecommender):
         long_short_item_embedding = torch.cat([long_term_attention_based_pooling_layer, short_item_embedding], dim=1)
         # batch_size * 1_plus_short_item_length * embedding_size
 
-        long_short_item_embedding = self.long_and_short_term_attention_based_pooling_layer(long_short_item_embedding,
-                                                                                           user_embedding,
-                                                                                           mask_long_short)
+        long_short_item_embedding = self.long_and_short_term_attention_based_pooling_layer(
+            long_short_item_embedding, user_embedding, mask_long_short
+        )
         # batch_size * embedding_size
 
         return long_short_item_embedding
@@ -206,8 +217,8 @@ class SHAN(SequentialRecommender):
         if mask is not None:
             user_item_embedding.masked_fill_(mask, -1e9)
         user_item_embedding = nn.Softmax(dim=1)(user_item_embedding)
-        user_item_embedding = torch.mul(seq_item_embedding_value, user_item_embedding.unsqueeze(2)).sum(dim=1,
-                                                                                                        keepdim=True)
+        user_item_embedding = torch.mul(seq_item_embedding_value,
+                                        user_item_embedding.unsqueeze(2)).sum(dim=1, keepdim=True)
         # batch_size * 1 * embedding_size
 
         return user_item_embedding

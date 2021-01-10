@@ -45,14 +45,20 @@ class SASRecF(SequentialRecommender):
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
         self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size)
-        self.feature_embed_layer = FeatureSeqEmbLayer(dataset, self.hidden_size, self.selected_features,
-                                                      self.pooling_mode, self.device)
+        self.feature_embed_layer = FeatureSeqEmbLayer(
+            dataset, self.hidden_size, self.selected_features, self.pooling_mode, self.device
+        )
 
-        self.trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
-                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
-                                              hidden_dropout_prob=self.hidden_dropout_prob,
-                                              attn_dropout_prob=self.attn_dropout_prob,
-                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+        self.trm_encoder = TransformerEncoder(
+            n_layers=self.n_layers,
+            n_heads=self.n_heads,
+            hidden_size=self.hidden_size,
+            inner_size=self.inner_size,
+            hidden_dropout_prob=self.hidden_dropout_prob,
+            attn_dropout_prob=self.attn_dropout_prob,
+            hidden_act=self.hidden_act,
+            layer_norm_eps=self.layer_norm_eps
+        )
 
         self.concat_layer = nn.Linear(self.hidden_size * (1 + self.num_feature_field), self.hidden_size)
 
@@ -126,8 +132,7 @@ class SASRecF(SequentialRecommender):
         input_emb = self.dropout(input_emb)
 
         extended_attention_mask = self.get_attention_mask(item_seq)
-        trm_output = self.trm_encoder(input_emb, extended_attention_mask,
-                                      output_all_encoded_layers=True)
+        trm_output = self.trm_encoder(input_emb, extended_attention_mask, output_all_encoded_layers=True)
         output = trm_output[-1]
         seq_output = self.gather_indexes(output, item_seq_len - 1)
         return seq_output  # [B H]

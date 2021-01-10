@@ -7,7 +7,6 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
-
 r"""
 GRU4RecKG
 ################################################
