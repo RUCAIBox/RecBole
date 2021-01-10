@@ -16,9 +16,8 @@ import os
 from collections import Counter
 
 import numpy as np
-import pandas as pd
-from scipy.sparse import coo_matrix
 import torch
+from scipy.sparse import coo_matrix
 
 from recbole.data.dataset import Dataset
 from recbole.data.utils import dlapi
@@ -59,10 +58,11 @@ class KnowledgeBasedDataset(Dataset):
 
     Note:
         :attr:`entity_field` doesn't exist exactly. It's only a symbol,
-        representing entitiy features. E.g. it can be written into ``config['fields_in_same_space']``.
+        representing entity features. E.g. it can be written into ``config['fields_in_same_space']``.
 
         ``[UI-Relation]`` is a special relation token.
     """
+
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
@@ -419,7 +419,7 @@ class KnowledgeBasedDataset(Dataset):
         else ``graph[src, tgt] = self.kg_feat[value_field][src, tgt]``.
 
         Currently, we support graph in `DGL`_ and `PyG`_,
-        and two type of sparse matrixes, ``coo`` and ``csr``.
+        and two type of sparse matrices, ``coo`` and ``csr``.
 
         Args:
             form (str, optional): Format of sparse matrix, or library of graph data structure.
@@ -524,7 +524,7 @@ class KnowledgeBasedDataset(Dataset):
         or ``graph[src, tgt] = [UI-Relation]``.
 
         Currently, we support graph in `DGL`_ and `PyG`_,
-        and two type of sparse matrixes, ``coo`` and ``csr``.
+        and two type of sparse matrices, ``coo`` and ``csr``.
 
         Args:
             form (str, optional): Format of sparse matrix, or library of graph data structure.

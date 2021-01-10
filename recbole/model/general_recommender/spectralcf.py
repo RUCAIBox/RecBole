@@ -18,10 +18,10 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
-from recbole.model.loss import BPRLoss, EmbLoss
 from recbole.model.init import xavier_uniform_initialization
+from recbole.model.loss import BPRLoss, EmbLoss
+from recbole.utils import InputType
 
 
 class SpectralCF(GeneralRecommender):
@@ -98,10 +98,8 @@ class SpectralCF(GeneralRecommender):
                            self.n_users + self.n_items), dtype=np.float32)
         inter_M = self.interaction_matrix
         inter_M_t = self.interaction_matrix.transpose()
-        data_dict = dict(zip(zip(inter_M.row, inter_M.col+self.n_users),
-                             [1]*inter_M.nnz))
-        data_dict.update(dict(zip(zip(inter_M_t.row+self.n_users, inter_M_t.col),
-                                  [1]*inter_M_t.nnz)))
+        data_dict = dict(zip(zip(inter_M.row, inter_M.col + self.n_users), [1] * inter_M.nnz))
+        data_dict.update(dict(zip(zip(inter_M_t.row + self.n_users, inter_M_t.col), [1] * inter_M_t.nnz)))
         A._update(data_dict)
 
         # norm adj matrix
@@ -172,14 +170,13 @@ class SpectralCF(GeneralRecommender):
 
         user_all_embeddings, item_all_embeddings = self.forward()
         u_embeddings = user_all_embeddings[user]
-        posi_embeddings = item_all_embeddings[pos_item]
-        negi_embeddings = item_all_embeddings[neg_item]
-        pos_scores = torch.mul(u_embeddings, posi_embeddings).sum(dim=1)
-        neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
+        pos_embeddings = item_all_embeddings[pos_item]
+        neg_embeddings = item_all_embeddings[neg_item]
+        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
 
         mf_loss = self.mf_loss(pos_scores, neg_scores)
-        reg_loss = self.reg_loss(
-            u_embeddings, posi_embeddings, negi_embeddings)
+        reg_loss = self.reg_loss(u_embeddings, pos_embeddings, neg_embeddings)
         loss = mf_loss + self.reg_weight * reg_loss
 
         return loss

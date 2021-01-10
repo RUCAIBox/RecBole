@@ -13,14 +13,12 @@ recbole.data.dataloader.general_dataloader
 """
 
 import numpy as np
-import pandas as pd
 import torch
-from tqdm import tqdm
 
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.dataloader.neg_sample_mixin import NegSampleMixin, NegSampleByMixin
-from recbole.utils import DataLoaderType, InputType
 from recbole.data.interaction import Interaction, cat_interactions
+from recbole.utils import DataLoaderType, InputType
 
 
 class GeneralDataLoader(AbstractDataLoader):
@@ -71,6 +69,7 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
             :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
+
     def __init__(self, config, dataset, sampler, neg_sample_args,
                  batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.uid_field = dataset.uid_field
@@ -175,14 +174,14 @@ class GeneralNegSampleDataLoader(NegSampleByMixin, AbstractDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray: Number of positive item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         return self.uid2items_num[self.uid_list]
 
     def get_user_len_list(self):
         """
         Returns:
-            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
         return self.uid2items_num[self.uid_list] * self.times
 
@@ -286,13 +285,13 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray: Number of positive item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         return self.uid2items_num[self.uid_list]
 
     def get_user_len_list(self):
         """
         Returns:
-            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
         return np.full(self.pr_end, self.item_num)

@@ -13,12 +13,13 @@ Reference:
 
 
 """
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
+from torch.nn.init import normal_, uniform_
+
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
-from torch.nn.init import normal_, uniform_
 
 
 class SHAN(SequentialRecommender):

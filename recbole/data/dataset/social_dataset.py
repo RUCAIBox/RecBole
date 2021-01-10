@@ -14,9 +14,6 @@ recbole.data.social_dataset
 
 import os
 
-import numpy as np
-from scipy.sparse import coo_matrix
-
 from recbole.data.dataset import Dataset
 from recbole.data.utils import dlapi
 from recbole.utils import FeatureSource
@@ -37,6 +34,7 @@ class SocialDataset(Dataset):
         net_feat (pandas.DataFrame): Internal data structure stores the network features.
             It's loaded from file ``.net``.
     """
+
     def __init__(self, config, saved_dataset=None):
         super().__init__(config, saved_dataset=saved_dataset)
 
@@ -62,7 +60,7 @@ class SocialDataset(Dataset):
             feat_name_list.append('net_feat')
         return feat_name_list
 
-    def _load_net(self, dataset_name, dataset_path): 
+    def _load_net(self, dataset_name, dataset_path):
         net_file_path = os.path.join(dataset_path, '{}.{}'.format(dataset_name, 'net'))
         if os.path.isfile(net_file_path):
             net_feat = self._load_feat(net_file_path, FeatureSource.NET)
@@ -71,7 +69,7 @@ class SocialDataset(Dataset):
             return net_feat
         else:
             raise ValueError('File {} not exist'.format(net_file_path))
-            
+
     def _get_fields_in_same_space(self):
         """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
 
@@ -83,7 +81,7 @@ class SocialDataset(Dataset):
         """
         fields_in_same_space = super()._get_fields_in_same_space()
         fields_in_same_space = [_ for _ in fields_in_same_space if (self.source_field not in _) and
-                                                                   (self.target_field not in _)]
+                                (self.target_field not in _)]
         for field_set in fields_in_same_space:
             if self.uid_field in field_set:
                 field_set.update({self.source_field, self.target_field})
@@ -98,7 +96,7 @@ class SocialDataset(Dataset):
         else ``graph[src, tgt] = self.net_feat[value_field][src, tgt]``.
 
         Currently, we support graph in `DGL`_ and `PyG`_,
-        and two type of sparse matrixes, ``coo`` and ``csr``.
+        and two type of sparse matrices, ``coo`` and ``csr``.
 
         Args:
             form (str, optional): Format of sparse matrix, or library of graph data structure.

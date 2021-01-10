@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Time     : 2020/11/22 8:30
 # @Author   : Shao Weiqi
-# @Reviewer : Lin Kun
-# @Email    : shaoweiqi@ruc.edu.cn
+# @Reviewer : Lin Kun, Fan xinyan
+# @Email    : shaoweiqi@ruc.edu.cn, xinyan.fan@ruc.edu.cn
 
 r"""
 RepeatNet
@@ -19,11 +19,11 @@ Reference code:
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 from torch.nn.init import xavier_normal_, constant_
 
-from torch.nn import functional as F
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
+from recbole.utils import InputType
 
 
 class RepeatNet(SequentialRecommender):

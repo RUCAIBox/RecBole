@@ -14,7 +14,6 @@ recbole.evaluator.utils
 """
 
 import itertools
-from enum import Enum
 
 import numpy as np
 import torch
@@ -54,20 +53,20 @@ def trunc(scores, method):
     """Round the scores by using the given method
 
     Args:
-        scores (np.ndarray): scores
+        scores (numpy.ndarray): scores
         method (str): one of ['ceil', 'floor', 'around']
 
     Raises:
         NotImplementedError: method error
 
     Returns:
-        np.ndarray: processed scores
+        numpy.ndarray: processed scores
     """
 
     try:
         cut_method = getattr(np, method)
     except NotImplementedError:
-        raise NotImplementedError("module 'numpy' has no fuction named '{}'".format(method))
+        raise NotImplementedError("module 'numpy' has no function named '{}'".format(method))
     scores = cut_method(scores)
     return scores
 
@@ -76,11 +75,11 @@ def cutoff(scores, threshold):
     """cut of the scores based on threshold
 
     Args:
-        scores (np.ndarray): scores
+        scores (numpy.ndarray): scores
         threshold (float): between 0 and 1
 
     Returns:
-        np.ndarray: processed scores
+        numpy.ndarray: processed scores
     """
     return np.where(scores > threshold, 1, 0)
 
@@ -93,7 +92,7 @@ def _binary_clf_curve(trues, preds):
         preds (numpy.ndarray): the predict scores' list
 
     Returns:
-        fps (np.ndarray): A count of false positives, at index i being the number of negative
+        fps (numpy.ndarray): A count of false positives, at index i being the number of negative
         samples assigned a score >= thresholds[i]
         preds (numpy.ndarray): An increasing count of true positives, at index i being the number
         of positive samples assigned a score >= thresholds[i].

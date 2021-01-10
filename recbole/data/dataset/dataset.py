@@ -24,9 +24,9 @@ import torch
 import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 
-from recbole.utils import FeatureSource, FeatureType
 from recbole.data.interaction import Interaction
 from recbole.data.utils import dlapi
+from recbole.utils import FeatureSource, FeatureType
 
 
 class Dataset(object):
@@ -88,6 +88,7 @@ class Dataset(object):
 
         feat_name_list (list): A list contains all the features' name (:class:`str`), including additional features.
     """
+
     def __init__(self, config, saved_dataset=None):
         self.config = config
         self.dataset_name = config['dataset']
@@ -378,7 +379,7 @@ class Dataset(object):
             pandas.DataFrame: Loaded feature
 
         Note:
-            For sequence features, ``seqlen`` will be loaded, but data in DataFrame will not be cutted off.
+            For sequence features, ``seqlen`` will be loaded, but data in DataFrame will not be cut off.
             Their length is limited only after calling :meth:`~_dict_to_interaction` or
             :meth:`~_dataframe_to_interaction`
         """
@@ -459,22 +460,21 @@ class Dataset(object):
         for preload_id_field in preload_fields:
             preload_value_field = preload_fields[preload_id_field]
             if preload_id_field not in self.field2source:
-                raise ValueError('prelaod id field [{}] not exist'.format(preload_id_field))
+                raise ValueError('preload id field [{}] not exist'.format(preload_id_field))
             if preload_value_field not in self.field2source:
-                raise ValueError('prelaod value field [{}] not exist'.format(preload_value_field))
+                raise ValueError('preload value field [{}] not exist'.format(preload_value_field))
             pid_source = self.field2source[preload_id_field]
             pv_source = self.field2source[preload_value_field]
             if pid_source != pv_source:
-                raise ValueError('preload id field [{}] is from source [{}],'
-                                 'while prelaod value field [{}] is from source [{}], which should be the same'.format(
-                                     preload_id_field, pid_source, preload_value_field, pv_source
-                                 ))
+                raise ValueError(f'preload id field [{preload_id_field}] is from source [{pid_source}],'
+                                 f'while preload value field [{preload_value_field}] is from source [{pv_source}], '
+                                 f'which should be the same.')
             for feat_name in self.feat_name_list:
                 feat = getattr(self, feat_name)
                 if preload_id_field in feat:
                     id_ftype = self.field2type[preload_id_field]
                     if id_ftype != FeatureType.TOKEN:
-                        raise ValueError('prelaod id field [{}] should be type token, but is [{}]'.format(
+                        raise ValueError('preload id field [{}] should be type token, but is [{}]'.format(
                             preload_id_field, id_ftype
                         ))
                     value_ftype = self.field2type[preload_value_field]
@@ -547,7 +547,7 @@ class Dataset(object):
             for field in fields:
                 ftype = self.field2type[field]
                 if field not in self.field2type:
-                    raise ValueError('Field [{}] doesn\'t exist'.format(field))
+                    raise ValueError('Field [{}] does not exist'.format(field))
                 elif ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
                     self.logger.warning('{} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.'.format(field))
         elif self.config['normalize_all']:
@@ -567,15 +567,19 @@ class Dataset(object):
                     lst = feat[field].values
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, feat))
-                    feat[field] = (lst - mn) / (mx - mn)
+                        self.logger.warning('All the same value in [{}] from [{}_feat]'.format(field, feat))
+                        feat[field] = 1.0
+                    else:
+                        feat[field] = (lst - mn) / (mx - mn)
                 elif ftype == FeatureType.FLOAT_SEQ:
                     split_point = np.cumsum(feat[field].agg(len))[:-1]
                     lst = feat[field].agg(np.concatenate)
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        raise ValueError('All the same value in [{}] from [{}_feat]'.format(field, feat))
-                    lst = (lst - mn) / (mx - mn)
+                        self.logger.warning('All the same value in [{}] from [{}_feat]'.format(field, feat))
+                        lst = 1.0
+                    else:
+                        lst = (lst - mn) / (mx - mn)
                     lst = np.split(lst, split_point)
                     feat[field] = lst
 
@@ -734,8 +738,8 @@ class Dataset(object):
         """Drop illegal rows by value.
 
         Args:
-            val (float): value that compared to.
-            cmp (function): return False if a row need to be droped
+            val (dict): value that compared to.
+            cmp (Callable): return False if a row need to be dropped
 
         Returns:
             field names that used to compare with val.
@@ -782,7 +786,7 @@ class Dataset(object):
 
         Note:
             Key of ``config['threshold']`` if a field name.
-            This field will be droped after label generation.
+            This field will be dropped after label generation.
         """
         threshold = self.config['threshold']
         if threshold is None:
@@ -1036,10 +1040,10 @@ class Dataset(object):
 
         Args:
             field (str): Field of external tokens.
-            tokens (str, list or np.ndarray): External tokens.
+            tokens (str, list or numpy.ndarray): External tokens.
 
         Returns:
-            int or np.ndarray: The internal ids of external tokens.
+            int or numpy.ndarray: The internal ids of external tokens.
         """
         if isinstance(tokens, str):
             if tokens in self.field2token_id[field]:
@@ -1057,10 +1061,10 @@ class Dataset(object):
 
         Args:
             field (str): Field of internal ids.
-            ids (int, list, np.ndarray or torch.Tensor): Internal ids.
+            ids (int, list, numpy.ndarray or torch.Tensor): Internal ids.
 
         Returns:
-            str or np.ndarray: The external tokens of internal ids.
+            str or numpy.ndarray: The external tokens of internal ids.
         """
         try:
             return self.field2id_token[field][ids]
@@ -1242,7 +1246,7 @@ class Dataset(object):
                 Defaults to ``None``
 
         Returns:
-            list: List of :class:`~Dataset`, whose interaction features has been splitted.
+            list: List of :class:`~Dataset`, whose interaction features has been split.
 
         Note:
             Other than the first one, each part is rounded down.
@@ -1257,7 +1261,7 @@ class Dataset(object):
             next_index = [range(start, end) for start, end in zip([0] + split_ids, split_ids + [tot_cnt])]
         else:
             grouped_inter_feat_index = self._grouped_index(self.inter_feat[group_by].numpy())
-            next_index = [[] for i in range(len(ratios))]
+            next_index = [[] for _ in range(len(ratios))]
             for grouped_index in grouped_inter_feat_index:
                 tot_cnt = len(grouped_index)
                 split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
@@ -1273,13 +1277,13 @@ class Dataset(object):
         """Split indexes by strategy leave one out.
 
         Args:
-            grouped_index (list of list of int): Index to be splitted.
+            grouped_index (list of list of int): Index to be split.
             leave_one_num (int): Number of parts whose length is expected to be ``1``.
 
         Returns:
-            list: List of index that has been splitted.
+            list: List of index that has been split.
         """
-        next_index = [[] for i in range(leave_one_num + 1)]
+        next_index = [[] for _ in range(leave_one_num + 1)]
         for index in grouped_index:
             index = list(index)
             tot_cnt = len(index)
@@ -1300,7 +1304,7 @@ class Dataset(object):
                 Defaults to ``1``.
 
         Returns:
-            list: List of :class:`~Dataset`, whose interaction features has been splitted.
+            list: List of :class:`~Dataset`, whose interaction features has been split.
         """
         self.logger.debug('leave one out, group_by=[{}], leave_one_num=[{}]'.format(group_by, leave_one_num))
         if group_by is None:
@@ -1338,7 +1342,7 @@ class Dataset(object):
                 Object contains evaluation settings, which guide the data processing procedure.
 
         Returns:
-            list: List of builded :class:`Dataset`.
+            list: List of built :class:`Dataset`.
         """
         if self.benchmark_filename_list is not None:
             cumsum = list(np.cumsum(self.file_size_list))
@@ -1515,7 +1519,7 @@ class Dataset(object):
             scipy.sparse: Sparse matrix in form ``coo`` or ``csr``.
         """
         if not self.uid_field or not self.iid_field:
-            raise ValueError('dataset doesn\'t exist uid/iid, thus can not converted to sparse matrix')
+            raise ValueError('dataset does not exist uid/iid, thus can not converted to sparse matrix.')
         return self._create_sparse_matrix(self.inter_feat, self.uid_field, self.iid_field, form, value_field)
 
     def _history_matrix(self, row, value_field=None):
@@ -1564,7 +1568,7 @@ class Dataset(object):
 
         col_num = np.max(history_len)
         if col_num > max_col_num * 0.2:
-            self.logger.warning('max value of {}\'s history interaction records has reached {}% of the total'.format(
+            self.logger.warning('max value of {}\'s history interaction records has reached {}% of the total.'.format(
                 row, col_num / max_col_num * 100,
             ))
 
