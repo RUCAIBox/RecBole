@@ -207,8 +207,9 @@ class DGCF(GeneralRecommender):
 
                     # get the attentive weights
                     # .... A_factor_values is a dense tensor with the size of [num_edge, 1]
-                    A_factor_values = torch.sum(head_factor_embeddings * torch.tanh(tail_factor_embeddings),
-                                                dim=1, keepdim=True)
+                    A_factor_values = torch.sum(
+                        head_factor_embeddings * torch.tanh(tail_factor_embeddings), dim=1, keepdim=True
+                    )
 
                     # update the attentive weights
                     A_iter_values.append(A_factor_values)

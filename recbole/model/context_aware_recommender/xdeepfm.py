@@ -48,8 +48,10 @@ class xDeepFM(ContextRecommender):
         if not self.direct:
             self.cin_layer_size = list(map(lambda x: int(x // 2 * 2), temp_cin_size))
             if self.cin_layer_size[:-1] != temp_cin_size[:-1]:
-                self.logger.warning('Layer size of CIN should be even except for the last layer when direct is True.'
-                                    'It is changed to {}'.format(self.cin_layer_size))
+                self.logger.warning(
+                    'Layer size of CIN should be even except for the last layer when direct is True.'
+                    'It is changed to {}'.format(self.cin_layer_size)
+                )
 
         # Create a convolutional layer for each CIN layer
         self.conv1d_list = []
@@ -63,8 +65,7 @@ class xDeepFM(ContextRecommender):
                 self.field_nums.append(layer_size // 2)
 
         # Create MLP layer
-        size_list = [self.embedding_size * self.num_feature_field
-                     ] + self.mlp_hidden_size + [1]
+        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size + [1]
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout_prob)
 
         # Get the output size of CIN
@@ -156,8 +157,7 @@ class xDeepFM(ContextRecommender):
                 next_hidden = output
             else:
                 if i != len(self.cin_layer_size) - 1:
-                    next_hidden, direct_connect = torch.split(
-                        output, 2 * [layer_size // 2], 1)
+                    next_hidden, direct_connect = torch.split(output, 2 * [layer_size // 2], 1)
                 else:
                     direct_connect = output
                     next_hidden = 0

@@ -62,8 +62,7 @@ class Caser(SequentialRecommender):
         # horizontal conv layer
         lengths = [i + 1 for i in range(self.max_seq_length)]
         self.conv_h = nn.ModuleList([
-            nn.Conv2d(in_channels=1, out_channels=self.n_h, kernel_size=(i, self.embedding_size))
-            for i in lengths
+            nn.Conv2d(in_channels=1, out_channels=self.n_h, kernel_size=(i, self.embedding_size)) for i in lengths
         ])
 
         # fully-connected layer
@@ -157,8 +156,9 @@ class Caser(SequentialRecommender):
             logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
             loss = self.loss_fct(logits, pos_items)
 
-        reg_loss = self.reg_loss([self.user_embedding.weight, self.item_embedding.weight,
-                                  self.conv_v.weight, self.fc1.weight, self.fc2.weight])
+        reg_loss = self.reg_loss([
+            self.user_embedding.weight, self.item_embedding.weight, self.conv_v.weight, self.fc1.weight, self.fc2.weight
+        ])
         loss = loss + self.reg_weight * reg_loss + self.reg_loss_conv_h()
         return loss
 

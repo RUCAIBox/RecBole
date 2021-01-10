@@ -55,11 +55,6 @@ class SequentialDataset(Dataset):
 
         ``u1, <i1, i2, i3> | i4``
 
-        Returns:
-            Tuple of ``self.uid_list``, ``self.item_list_index``,
-            ``self.target_index``, ``self.item_list_length``.
-            See :class:`SequentialDataset`'s attributes for details.
-
         Note:
             Actually, we do not really generate these new item sequences.
             One user's item sequence is stored only once in memory.
@@ -67,8 +62,6 @@ class SequentialDataset(Dataset):
             which saves memory and accelerates a lot.
         """
         self.logger.debug('prepare_data_augmentation')
-        if hasattr(self, 'uid_list'):
-            return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
         self._check_field('uid_field', 'time_field')
         max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH']
@@ -92,12 +85,13 @@ class SequentialDataset(Dataset):
         self.item_list_index = np.array(item_list_index)
         self.target_index = np.array(target_index)
         self.item_list_length = np.array(item_list_length)
-        return self.uid_list, self.item_list_index, self.target_index, self.item_list_length
 
     def leave_one_out(self, group_by, leave_one_num=1):
-        self.logger.debug('leave one out, group_by=[{}], leave_one_num=[{}]'.format(group_by, leave_one_num))
+        self.logger.debug(f'Leave one out, group_by=[{group_by}], leave_one_num=[{leave_one_num}].')
         if group_by is None:
-            raise ValueError('leave one out strategy require a group field')
+            raise ValueError('Leave one out strategy require a group field.')
+        if group_by != self.uid_field:
+            raise ValueError('Sequential models require group by user.')
 
         self.prepare_data_augmentation()
         grouped_index = self._grouped_index(self.uid_list)
@@ -111,3 +105,21 @@ class SequentialDataset(Dataset):
                 setattr(ds, field, np.array(getattr(ds, field)[index]))
             next_ds.append(ds)
         return next_ds
+
+    def build(self, eval_setting):
+        ordering_args = eval_setting.ordering_args
+        if ordering_args['strategy'] == 'shuffle':
+            raise ValueError('Ordering strategy `shuffle` is not supported in sequential models.')
+        elif ordering_args['strategy'] == 'by':
+            if ordering_args['field'] != self.time_field:
+                raise ValueError('Sequential models require `TO` (time ordering) strategy.')
+            if ordering_args['ascending'] is not True:
+                raise ValueError('Sequential models require `time_field` to sort in ascending order.')
+
+        group_field = eval_setting.group_field
+
+        split_args = eval_setting.split_args
+        if split_args['strategy'] == 'loo':
+            return self.leave_one_out(group_by=group_field, leave_one_num=split_args['leave_one_num'])
+        else:
+            ValueError('Sequential models require `loo` (leave one out) split strategy.')

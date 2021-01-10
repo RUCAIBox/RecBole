@@ -52,16 +52,13 @@ class KGNNLS(KnowledgeRecommender):
 
         # define embedding
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
-        self.entity_embedding = nn.Embedding(
-            self.n_entities, self.embedding_size)
-        self.relation_embedding = nn.Embedding(
-            self.n_relations + 1, self.embedding_size)
+        self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
+        self.relation_embedding = nn.Embedding(self.n_relations + 1, self.embedding_size)
 
         # sample neighbors and construct interaction table
         kg_graph = dataset.kg_graph(form='coo', value_field='relation_id')
         adj_entity, adj_relation = self.construct_adj(kg_graph)
-        self.adj_entity, self.adj_relation = adj_entity.to(
-            self.device), adj_relation.to(self.device)
+        self.adj_entity, self.adj_relation = adj_entity.to(self.device), adj_relation.to(self.device)
 
         inter_feat = dataset.dataset.inter_feat
         pos_users = inter_feat[dataset.dataset.uid_field]
@@ -74,9 +71,12 @@ class KGNNLS(KnowledgeRecommender):
         self.softmax = nn.Softmax(dim=-1)
         self.linear_layers = torch.nn.ModuleList()
         for i in range(self.n_iter):
-            self.linear_layers.append(nn.Linear(
-                self.embedding_size if not self.aggregator_class == 'concat' else self.embedding_size * 2,
-                self.embedding_size))
+            self.linear_layers.append(
+                nn.Linear(
+                    self.embedding_size if not self.aggregator_class == 'concat' else self.embedding_size * 2,
+                    self.embedding_size
+                )
+            )
         self.ReLU = nn.ReLU()
         self.Tanh = nn.Tanh()
 
@@ -173,11 +173,13 @@ class KGNNLS(KnowledgeRecommender):
             neighbors = kg_dict[entity]
             n_neighbors = len(neighbors)
             if n_neighbors >= self.neighbor_sample_size:
-                sampled_indices = np.random.choice(list(range(n_neighbors)), size=self.neighbor_sample_size,
-                                                   replace=False)
+                sampled_indices = np.random.choice(
+                    list(range(n_neighbors)), size=self.neighbor_sample_size, replace=False
+                )
             else:
-                sampled_indices = np.random.choice(list(range(n_neighbors)), size=self.neighbor_sample_size,
-                                                   replace=True)
+                sampled_indices = np.random.choice(
+                    list(range(n_neighbors)), size=self.neighbor_sample_size, replace=True
+                )
             adj_entity[entity] = np.array([neighbors[i][0] for i in sampled_indices])
             adj_relation[entity] = np.array([neighbors[i][1] for i in sampled_indices])
 
@@ -241,13 +243,18 @@ class KGNNLS(KnowledgeRecommender):
                 neighbor_relations = relation_vectors[hop].reshape(shape)
 
                 # mix_neighbor_vectors
-                user_embeddings = user_embeddings.reshape(self.batch_size, 1, 1, self.embedding_size)  # [batch_size, 1, 1, dim]
-                user_relation_scores = torch.mean(user_embeddings * neighbor_relations,
-                                                  dim=-1)  # [batch_size, -1, n_neighbor]
-                user_relation_scores_normalized = torch.unsqueeze(self.softmax(user_relation_scores),
-                                                                  dim=-1)  # [batch_size, -1, n_neighbor, 1]
-                neighbors_agg = torch.mean(user_relation_scores_normalized * neighbor_vectors,
-                                           dim=2)  # [batch_size, -1, dim]
+                user_embeddings = user_embeddings.reshape(
+                    self.batch_size, 1, 1, self.embedding_size
+                )  # [batch_size, 1, 1, dim]
+                user_relation_scores = torch.mean(
+                    user_embeddings * neighbor_relations, dim=-1
+                )  # [batch_size, -1, n_neighbor]
+                user_relation_scores_normalized = torch.unsqueeze(
+                    self.softmax(user_relation_scores), dim=-1
+                )  # [batch_size, -1, n_neighbor, 1]
+                neighbors_agg = torch.mean(
+                    user_relation_scores_normalized * neighbor_vectors, dim=2
+                )  # [batch_size, -1, dim]
 
                 if self.aggregator_class == 'sum':
                     output = (self_vectors + neighbors_agg).reshape(-1, self.embedding_size)  # [-1, dim]
@@ -337,18 +344,22 @@ class KGNNLS(KnowledgeRecommender):
                 masks = reset_masks[hop]
                 self_labels = entity_labels[hop]
                 neighbor_labels = entity_labels[hop + 1].reshape(self.batch_size, -1, self.neighbor_sample_size)
-                neighbor_relations = relation_vectors[hop].reshape(self.batch_size, -1, self.neighbor_sample_size,
-                                                                   self.embedding_size)
+                neighbor_relations = relation_vectors[hop].reshape(
+                    self.batch_size, -1, self.neighbor_sample_size, self.embedding_size
+                )
 
                 # mix_neighbor_labels
-                user_embeddings = user_embeddings.reshape(self.batch_size, 1, 1,
-                                                          self.embedding_size)  # [batch_size, 1, 1, dim]
-                user_relation_scores = torch.mean(user_embeddings * neighbor_relations,
-                                                  dim=-1)  # [batch_size, -1, n_neighbor]
+                user_embeddings = user_embeddings.reshape(
+                    self.batch_size, 1, 1, self.embedding_size
+                )  # [batch_size, 1, 1, dim]
+                user_relation_scores = torch.mean(
+                    user_embeddings * neighbor_relations, dim=-1
+                )  # [batch_size, -1, n_neighbor]
                 user_relation_scores_normalized = self.softmax(user_relation_scores)  # [batch_size, -1, n_neighbor]
 
-                neighbors_aggregated_label = torch.mean(user_relation_scores_normalized * neighbor_labels,
-                                                        dim=2)  # [batch_size, -1, dim] # [batch_size, -1]
+                neighbors_aggregated_label = torch.mean(
+                    user_relation_scores_normalized * neighbor_labels, dim=2
+                )  # [batch_size, -1, dim] # [batch_size, -1]
                 output = masks.float() * self_labels + \
                          torch.logical_not(masks).float() * neighbors_aggregated_label
 
@@ -384,8 +395,7 @@ class KGNNLS(KnowledgeRecommender):
         user_e = self.user_embedding(user)
         entities, relations = self.get_neighbors(item)
 
-        predicted_labels = self.label_smoothness_predict(
-            user_e, user, entities, relations)
+        predicted_labels = self.label_smoothness_predict(user_e, user, entities, relations)
         ls_loss = self.bce_loss(predicted_labels, target)
         return ls_loss
 
@@ -393,8 +403,7 @@ class KGNNLS(KnowledgeRecommender):
         user = interaction[self.USER_ID]
         pos_item = interaction[self.ITEM_ID]
         neg_item = interaction[self.NEG_ITEM_ID]
-        target = torch.zeros(
-            len(user) * 2, dtype=torch.float32).to(self.device)
+        target = torch.zeros(len(user) * 2, dtype=torch.float32).to(self.device)
         target[:len(user)] = 1
 
         users = torch.cat((user, user))
@@ -420,11 +429,9 @@ class KGNNLS(KnowledgeRecommender):
         user_index = interaction[self.USER_ID]
         item_index = torch.tensor(range(self.n_items)).to(self.device)
 
-        user = torch.unsqueeze(user_index, dim=1).repeat(
-            1, item_index.shape[0])
+        user = torch.unsqueeze(user_index, dim=1).repeat(1, item_index.shape[0])
         user = torch.flatten(user)
-        item = torch.unsqueeze(item_index, dim=0).repeat(
-            user_index.shape[0], 1)
+        item = torch.unsqueeze(item_index, dim=0).repeat(user_index.shape[0], 1)
         item = torch.flatten(item)
 
         user_e, item_e = self.forward(user, item)
