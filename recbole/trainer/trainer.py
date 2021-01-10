@@ -145,9 +145,7 @@ class Trainer(AbstractTrainer):
                 enumerate(train_data),
                 total=len(train_data),
                 desc=f"Train {epoch_idx:>5}",
-            )
-            if show_progress
-            else enumerate(train_data)
+            ) if show_progress else enumerate(train_data)
         )
         for batch_idx, interaction in iter_data:
             interaction = interaction.to(self.device)
@@ -214,8 +212,10 @@ class Trainer(AbstractTrainer):
 
         # load architecture params from checkpoint
         if checkpoint['config']['model'].lower() != self.config['model'].lower():
-            self.logger.warning('Architecture configuration given in config file is different from that of checkpoint. '
-                                'This may yield an exception while state_dict is being loaded.')
+            self.logger.warning(
+                'Architecture configuration given in config file is different from that of checkpoint. '
+                'This may yield an exception while state_dict is being loaded.'
+            )
         self.model.load_state_dict(checkpoint['state_dict'])
 
         # load optimizer state from checkpoint only when optimizer type is not changed
@@ -280,8 +280,12 @@ class Trainer(AbstractTrainer):
                 valid_start_time = time()
                 valid_score, valid_result = self._valid_epoch(valid_data, show_progress=show_progress)
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
-                    valid_score, self.best_valid_score, self.cur_step,
-                    max_step=self.stopping_step, bigger=self.valid_metric_bigger)
+                    valid_score,
+                    self.best_valid_score,
+                    self.cur_step,
+                    max_step=self.stopping_step,
+                    bigger=self.valid_metric_bigger
+                )
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
@@ -375,9 +379,7 @@ class Trainer(AbstractTrainer):
                 enumerate(eval_data),
                 total=len(eval_data),
                 desc=f"Evaluate   ",
-            )
-            if show_progress
-            else enumerate(eval_data)
+            ) if show_progress else enumerate(eval_data)
         )
         for batch_idx, batched_data in iter_data:
             if eval_data.dl_type == DataLoaderType.FULL:
@@ -456,9 +458,9 @@ class KGTrainer(Trainer):
         if interaction_state in [KGDataLoaderState.RSKG, KGDataLoaderState.RS]:
             return super()._train_epoch(train_data, epoch_idx, show_progress=show_progress)
         elif interaction_state in [KGDataLoaderState.KG]:
-            return super()._train_epoch(train_data, epoch_idx,
-                                        loss_func=self.model.calculate_kg_loss,
-                                        show_progress=show_progress)
+            return super()._train_epoch(
+                train_data, epoch_idx, loss_func=self.model.calculate_kg_loss, show_progress=show_progress
+            )
         return None
 
 
@@ -477,9 +479,9 @@ class KGATTrainer(Trainer):
 
         # train kg
         train_data.set_mode(KGDataLoaderState.KG)
-        kg_total_loss = super()._train_epoch(train_data, epoch_idx,
-                                             loss_func=self.model.calculate_kg_loss,
-                                             show_progress=show_progress)
+        kg_total_loss = super()._train_epoch(
+            train_data, epoch_idx, loss_func=self.model.calculate_kg_loss, show_progress=show_progress
+        )
 
         # update A
         self.model.eval()
@@ -528,9 +530,10 @@ class S3RecTrainer(Trainer):
                 self.logger.info(train_loss_output)
 
             if (epoch_idx + 1) % self.config['save_step'] == 0:
-                saved_model_file = os.path.join(self.checkpoint_dir,
-                                                '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'],
-                                                                      str(epoch_idx + 1)))
+                saved_model_file = os.path.join(
+                    self.checkpoint_dir,
+                    '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1))
+                )
                 self.save_pretrained_model(epoch_idx, saved_model_file)
                 update_output = 'Saving current: %s' % saved_model_file
                 if verbose:
@@ -562,17 +565,17 @@ class MKRTrainer(Trainer):
         # train rs
         self.logger.info('Train RS')
         train_data.set_mode(KGDataLoaderState.RS)
-        rs_total_loss = super()._train_epoch(train_data, epoch_idx,
-                                             loss_func=self.model.calculate_rs_loss,
-                                             show_progress=show_progress)
+        rs_total_loss = super()._train_epoch(
+            train_data, epoch_idx, loss_func=self.model.calculate_rs_loss, show_progress=show_progress
+        )
 
         # train kg
         if epoch_idx % self.kge_interval == 0:
             self.logger.info('Train KG')
             train_data.set_mode(KGDataLoaderState.KG)
-            kg_total_loss = super()._train_epoch(train_data, epoch_idx,
-                                                 loss_func=self.model.calculate_kg_loss,
-                                                 show_progress=show_progress)
+            kg_total_loss = super()._train_epoch(
+                train_data, epoch_idx, loss_func=self.model.calculate_kg_loss, show_progress=show_progress
+            )
 
         return rs_total_loss, kg_total_loss
 
@@ -685,15 +688,17 @@ class xgboostTrainer(AbstractTrainer):
 
             cur_data = sparse.csc_matrix(onehot_data)
 
-        return self.xgb.DMatrix(data=cur_data,
-                                label=interaction_np[self.label_field],
-                                weight=self.weight,
-                                base_margin=self.base_margin,
-                                missing=self.missing,
-                                silent=self.silent,
-                                feature_names=self.feature_names,
-                                feature_types=self.feature_types,
-                                nthread=self.nthread)
+        return self.xgb.DMatrix(
+            data=cur_data,
+            label=interaction_np[self.label_field],
+            weight=self.weight,
+            base_margin=self.base_margin,
+            missing=self.missing,
+            silent=self.silent,
+            feature_names=self.feature_names,
+            feature_types=self.feature_types,
+            nthread=self.nthread
+        )
 
     def _train_at_once(self, train_data, valid_data):
         r"""
@@ -705,10 +710,10 @@ class xgboostTrainer(AbstractTrainer):
         self.dtrain = self._interaction_to_DMatrix(train_data)
         self.dvalid = self._interaction_to_DMatrix(valid_data)
         self.evals = [(self.dtrain, 'train'), (self.dvalid, 'valid')]
-        self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round,
-                                    self.evals, self.obj, self.feval, self.maximize,
-                                    self.early_stopping_rounds, self.evals_result,
-                                    self.verbose_eval, self.xgb_model, self.callbacks)
+        self.model = self.xgb.train(
+            self.params, self.dtrain, self.num_boost_round, self.evals, self.obj, self.feval, self.maximize,
+            self.early_stopping_rounds, self.evals_result, self.verbose_eval, self.xgb_model, self.callbacks
+        )
 
         self.model.save_model(self.saved_model_file)
         self.xgb_model = self.saved_model_file

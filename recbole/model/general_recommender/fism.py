@@ -3,7 +3,6 @@
 # @Author  :   Kaiyuan Li
 # @email   :   tsotfsk@outlook.com
 
-
 """
 FISM
 #######################################
@@ -176,8 +175,9 @@ class FISM(GeneralRecommender):
             else:
                 output = []
                 for mask in self.group:
-                    tmp_output = self.user_forward(user_input[:item_num], item_num, user_bias,
-                                                   repeats=len(mask), pred_slc=mask)
+                    tmp_output = self.user_forward(
+                        user_input[:item_num], item_num, user_bias, repeats=len(mask), pred_slc=mask
+                    )
                     output.append(tmp_output)
                 output = torch.cat(output, dim=0)
             scores.append(output)

@@ -47,8 +47,9 @@ def full_sort_scores(uid_series, model, test_data):
         history_index = history_row, history_col
     elif isinstance(test_data, SequentialFullDataLoader):
         index = np.isin(test_data.uid_list, uid_series)
-        input_interaction = test_data.augmentation(test_data.item_list_index[index],
-                                                   test_data.target_index[index], test_data.item_list_length[index])
+        input_interaction = test_data.augmentation(
+            test_data.item_list_index[index], test_data.target_index[index], test_data.item_list_length[index]
+        )
         history_index = None
     else:
         raise NotImplementedError

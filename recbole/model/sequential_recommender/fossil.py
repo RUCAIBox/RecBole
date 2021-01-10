@@ -77,8 +77,9 @@ class FOSSIL(SequentialRecommender):
         # batch_size * 2_mul_seq_len * embedding_size
         embedding_list = list()
         for i in range(self.order_len):
-            embedding = self.gather_indexes(item_embedding_zeros,
-                                            self.max_seq_length + seq_item_len - self.order_len + i)
+            embedding = self.gather_indexes(
+                item_embedding_zeros, self.max_seq_length + seq_item_len - self.order_len + i
+            )
             embedding_list.append(embedding.unsqueeze(1))
         short_item_embedding = torch.cat(embedding_list, dim=1)
         # batch_size * short_len * embedding_size

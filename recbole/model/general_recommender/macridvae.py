@@ -111,8 +111,7 @@ class MacridVAE(GeneralRecommender):
             cates_dist = OneHotCategorical(logits=cates_logits)
             cates_sample = cates_dist.sample()
             cates_mode = torch.softmax(cates_logits, dim=1)
-            cates = (self.training * cates_sample +
-                     (1 - self.training) * cates_mode)
+            cates = (self.training * cates_sample + (1 - self.training) * cates_mode)
 
         probs = None
         mulist = []

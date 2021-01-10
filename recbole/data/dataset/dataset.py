@@ -135,8 +135,9 @@ class Dataset(object):
         self.time_field = self.config['TIME_FIELD']
 
         if (self.uid_field is None) ^ (self.iid_field is None):
-            raise ValueError('USER_ID_FIELD and ITEM_ID_FIELD need to be set at the same time '
-                             'or not set at the same time.')
+            raise ValueError(
+                'USER_ID_FIELD and ITEM_ID_FIELD need to be set at the same time or not set at the same time.'
+            )
 
         self.logger.debug(f'uid_field: {self.uid_field}')
         self.logger.debug(f'iid_field: {self.iid_field}')
@@ -192,8 +193,10 @@ class Dataset(object):
         Note:
             Subclasses can inherit this method to add new feat.
         """
-        feat_name_list = [feat_name for feat_name in ['inter_feat', 'user_feat', 'item_feat']
-                          if getattr(self, feat_name, None) is not None]
+        feat_name_list = [
+            feat_name for feat_name in ['inter_feat', 'user_feat', 'item_feat']
+            if getattr(self, feat_name, None) is not None
+        ]
         if self.config['additional_feat_suffix'] is not None:
             for suf in self.config['additional_feat_suffix']:
                 if getattr(self, f'{suf}_feat', None) is not None:
@@ -469,16 +472,19 @@ class Dataset(object):
             pid_source = self.field2source[preload_id_field]
             pv_source = self.field2source[preload_value_field]
             if pid_source != pv_source:
-                raise ValueError(f'Preload id field [{preload_id_field}] is from source [{pid_source}],'
-                                 f'while preload value field [{preload_value_field}] is from source [{pv_source}], '
-                                 f'which should be the same.')
+                raise ValueError(
+                    f'Preload id field [{preload_id_field}] is from source [{pid_source}],'
+                    f'while preload value field [{preload_value_field}] is from source [{pv_source}], '
+                    f'which should be the same.'
+                )
             for feat_name in self.feat_name_list:
                 feat = getattr(self, feat_name)
                 if preload_id_field in feat:
                     id_ftype = self.field2type[preload_id_field]
                     if id_ftype != FeatureType.TOKEN:
-                        raise ValueError(f'Preload id field [{preload_id_field}] should be type token, '
-                                         f'but is [{id_ftype}].')
+                        raise ValueError(
+                            f'Preload id field [{preload_id_field}] should be type token, but is [{id_ftype}].'
+                        )
                     value_ftype = self.field2type[preload_value_field]
                     token_num = self.num(preload_id_field)
                     if value_ftype == FeatureType.FLOAT:
@@ -499,9 +505,10 @@ class Dataset(object):
                             else:
                                 matrix[pid] = prow[:max_len]
                     else:
-                        self.logger.warning(f'Field [{preload_value_field}] with type [{value_ftype}] is not '
-                                            f'\'float\' or \'float_seq\', '
-                                            f'which will not be handled by preload matrix.')
+                        self.logger.warning(
+                            f'Field [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, '
+                            f'which will not be handled by preload matrix.'
+                        )
                         continue
                     self._preloaded_weight[preload_id_field] = matrix
 
@@ -589,14 +596,16 @@ class Dataset(object):
             if feat is not None:
                 dropped_feat = feat.index[feat[field].isnull()]
                 if len(dropped_feat):
-                    self.logger.warning(f'In {name}_feat, line {list(dropped_feat + 2)}, {field} do not exist, '
-                                        f'so they will be removed.')
+                    self.logger.warning(
+                        f'In {name}_feat, line {list(dropped_feat + 2)}, {field} do not exist, so they will be removed.'
+                    )
                     feat.drop(feat.index[dropped_feat], inplace=True)
             if field is not None:
                 dropped_inter = self.inter_feat.index[self.inter_feat[field].isnull()]
                 if len(dropped_inter):
-                    self.logger.warning(f'In inter_feat, line {list(dropped_inter + 2)}, {field} do not exist, '
-                                        f'so they will be removed')
+                    self.logger.warning(
+                        f'In inter_feat, line {list(dropped_inter + 2)}, {field} do not exist, so they will be removed.'
+                    )
                     self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
     def _remove_duplication(self):
@@ -615,11 +624,14 @@ class Dataset(object):
 
         if self.time_field in self.inter_feat:
             self.inter_feat.sort_values(by=[self.time_field], ascending=True, inplace=True)
-            self.logger.info(f'Records in original dataset have been sorted by value of '
-                             f'[{self.time_field}] in ascending order.')
+            self.logger.info(
+                f'Records in original dataset have been sorted by value of [{self.time_field}] in ascending order.'
+            )
         else:
-            self.logger.warning(f'Timestamp field has not been loaded or specified, '
-                                f'thus strategy [{keep}] of duplication removal may be meaningless.')
+            self.logger.warning(
+                f'Timestamp field has not been loaded or specified, '
+                f'thus strategy [{keep}] of duplication removal may be meaningless.'
+            )
         self.inter_feat.drop_duplicates(subset=[self.uid_field, self.iid_field], keep=keep, inplace=True)
 
     def _filter_by_inter_num(self):
@@ -651,12 +663,20 @@ class Dataset(object):
             item_inter_num = Counter(self.inter_feat[self.iid_field].values)
 
         while True:
-            ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field, feat=self.user_feat,
-                                                           inter_num=user_inter_num,
-                                                           max_num=max_user_inter_num, min_num=min_user_inter_num)
-            ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field, feat=self.item_feat,
-                                                           inter_num=item_inter_num,
-                                                           max_num=max_item_inter_num, min_num=min_item_inter_num)
+            ban_users = self._get_illegal_ids_by_inter_num(
+                field=self.uid_field,
+                feat=self.user_feat,
+                inter_num=user_inter_num,
+                max_num=max_user_inter_num,
+                min_num=min_user_inter_num
+            )
+            ban_items = self._get_illegal_ids_by_inter_num(
+                field=self.iid_field,
+                feat=self.item_feat,
+                inter_num=item_inter_num,
+                max_num=max_item_inter_num,
+                min_num=min_item_inter_num
+            )
 
             if len(ban_users) == 0 and len(ban_items) == 0:
                 break
@@ -1181,11 +1201,13 @@ class Dataset(object):
     def __str__(self):
         info = [self.dataset_name]
         if self.uid_field:
-            info.extend([f'The number of users: {self.user_num}',
-                         f'Average actions of users: {self.avg_actions_of_users}'])
+            info.extend([
+                f'The number of users: {self.user_num}', f'Average actions of users: {self.avg_actions_of_users}'
+            ])
         if self.iid_field:
-            info.extend([f'The number of items: {self.item_num}',
-                         f'Average actions of items: {self.avg_actions_of_items}'])
+            info.extend([
+                f'The number of items: {self.item_num}', f'Average actions of items: {self.avg_actions_of_items}'
+            ])
         info.append(f'The number of inters: {self.inter_num}')
         if self.uid_field and self.iid_field:
             info.append(f'The sparsity of the dataset: {self.sparsity * 100}%')
@@ -1217,8 +1239,9 @@ class Dataset(object):
             feat = getattr(self, feat_name + '_feat')
             for field in unused_fields:
                 if field not in feat:
-                    self.logger.warning(f'Field [{field}] is not in [{feat_name}_feat], '
-                                        f'which can not be set in `unused_col`.')
+                    self.logger.warning(
+                        f'Field [{field}] is not in [{feat_name}_feat], which can not be set in `unused_col`.'
+                    )
                     continue
                 self._del_col(feat, field)
 
@@ -1277,7 +1300,7 @@ class Dataset(object):
                 tot_cnt = len(grouped_index)
                 split_ids = self._calcu_split_ids(tot=tot_cnt, ratios=ratios)
                 for index, start, end in zip(next_index, [0] + split_ids, split_ids + [tot_cnt]):
-                    index.extend(grouped_index[start: end])
+                    index.extend(grouped_index[start:end])
 
         self._drop_unused_col()
         next_df = [self.inter_feat[index] for index in next_index]
@@ -1357,7 +1380,7 @@ class Dataset(object):
         """
         if self.benchmark_filename_list is not None:
             cumsum = list(np.cumsum(self.file_size_list))
-            datasets = [self.copy(self.inter_feat[start: end]) for start, end in zip([0] + cumsum[:-1], cumsum)]
+            datasets = [self.copy(self.inter_feat[start:end]) for start, end in zip([0] + cumsum[:-1], cumsum)]
             return datasets
 
         ordering_args = eval_setting.ordering_args
@@ -1579,8 +1602,10 @@ class Dataset(object):
 
         col_num = np.max(history_len)
         if col_num > max_col_num * 0.2:
-            self.logger.warning(f'Max value of {row}\'s history interaction records has reached '
-                                f'{col_num / max_col_num * 100}% of the total.')
+            self.logger.warning(
+                f'Max value of {row}\'s history interaction records has reached '
+                f'{col_num / max_col_num * 100}% of the total.'
+            )
 
         history_matrix = np.zeros((row_num, col_num), dtype=np.int64)
         history_value = np.zeros((row_num, col_num))

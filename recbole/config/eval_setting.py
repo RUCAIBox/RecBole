@@ -7,7 +7,6 @@
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
-
 """
 recbole.config.eval_setting
 ################################

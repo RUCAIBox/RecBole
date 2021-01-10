@@ -80,8 +80,9 @@ class SocialDataset(Dataset):
             - ``source_id`` and ``target_id`` should be remapped with ``user_id``.
         """
         fields_in_same_space = super()._get_fields_in_same_space()
-        fields_in_same_space = [_ for _ in fields_in_same_space if (self.source_field not in _) and
-                                (self.target_field not in _)]
+        fields_in_same_space = [
+            _ for _ in fields_in_same_space if (self.source_field not in _) and (self.target_field not in _)
+        ]
         for field_set in fields_in_same_space:
             if self.uid_field in field_set:
                 field_set.update({self.source_field, self.target_field})
@@ -122,6 +123,5 @@ class SocialDataset(Dataset):
             raise NotImplementedError('net graph format [{}] has not been implemented.')
 
     def __str__(self):
-        info = [super().__str__(),
-                f'The number of connections of social network: {len(self.net_feat)}']
+        info = [super().__str__(), f'The number of connections of social network: {len(self.net_feat)}']
         return '\n'.join(info)

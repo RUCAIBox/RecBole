@@ -86,8 +86,10 @@ def data_preparation(config, dataset, save=False):
     kwargs = {}
     if config['training_neg_sample_num']:
         if dataset.label_field in dataset.inter_feat:
-            raise ValueError(f'`training_neg_sample_num` should be 0 '
-                             f'if inter_feat have label_field [{dataset.label_field}].')
+            raise ValueError(
+                f'`training_neg_sample_num` should be 0 '
+                f'if inter_feat have label_field [{dataset.label_field}].'
+            )
         train_distribution = config['training_neg_sample_distribution'] or 'uniform'
         es.neg_sample_by(by=config['training_neg_sample_num'], distribution=train_distribution)
         if model_type != ModelType.SEQUENTIAL:
@@ -113,8 +115,10 @@ def data_preparation(config, dataset, save=False):
     kwargs = {}
     if len(es_str) > 1 and getattr(es, es_str[1], None):
         if dataset.label_field in dataset.inter_feat:
-            raise ValueError(f'It can not validate with `{es_str[1]}` '
-                             f'when inter_feat have label_field [{dataset.label_field}].')
+            raise ValueError(
+                f'It can not validate with `{es_str[1]}` '
+                f'when inter_feat have label_field [{dataset.label_field}].'
+            )
         getattr(es, es_str[1])()
         if sampler is None:
             if model_type != ModelType.SEQUENTIAL:
@@ -136,9 +140,9 @@ def data_preparation(config, dataset, save=False):
     return train_data, valid_data, test_data
 
 
-def dataloader_construct(name, config, eval_setting, dataset,
-                         dl_format=InputType.POINTWISE,
-                         batch_size=1, shuffle=False, **kwargs):
+def dataloader_construct(
+    name, config, eval_setting, dataset, dl_format=InputType.POINTWISE, batch_size=1, shuffle=False, **kwargs
+):
     """Get a correct dataloader class by calling :func:`get_data_loader` to construct dataloader.
 
     Args:
@@ -185,14 +189,8 @@ def dataloader_construct(name, config, eval_setting, dataset,
 
     try:
         ret = [
-            dataloader(
-                config=config,
-                dataset=ds,
-                batch_size=bs,
-                dl_format=dl_format,
-                shuffle=shuffle,
-                **kw
-            ) for ds, bs, kw in zip(dataset, batch_size, kwargs_list)
+            dataloader(config=config, dataset=ds, batch_size=bs, dl_format=dl_format, shuffle=shuffle, **kw)
+            for ds, bs, kw in zip(dataset, batch_size, kwargs_list)
         ]
     except TypeError:
         raise ValueError('training_neg_sample_num should be 0')
@@ -287,8 +285,9 @@ def get_data_loader(name, config, eval_setting):
         elif neg_sample_strategy == 'none':
             # return GeneralDataLoader
             # TODO 训练也可以为none? 看general的逻辑似乎是都可以为None
-            raise NotImplementedError('The use of external negative sampling for knowledge model '
-                                      'has not been implemented')
+            raise NotImplementedError(
+                'The use of external negative sampling for knowledge model has not been implemented'
+            )
     else:
         raise NotImplementedError(f'Model_type [{model_type}] has not been implemented.')
 
