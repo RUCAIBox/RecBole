@@ -204,7 +204,7 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 ```
 
 ## 项目团队
-RecBole由 [中国人民大学, 北京邮电大学, 华东师范大学](https://www.recbole.io/about.html) 的同学和老师进行开发和维护。 
+RecBole由 [中国人民大学, 北京邮电大学, 华东师范大学](https://www.recbole.io/cn/about.html) 的同学和老师进行开发和维护。 
 
 ## 免责声明
 RecBole 基于 [MIT License](./LICENSE) 进行开发，本项目的所有数据和代码只能被用于学术目的。
