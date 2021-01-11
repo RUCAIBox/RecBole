@@ -64,7 +64,7 @@ class Trainer(AbstractTrainer):
 
     Initializing the Trainer needs two parameters: `config` and `model`. `config` records the parameters information
     for controlling training and evaluation, such as `learning_rate`, `epochs`, `eval_step` and so on.
-    More information can be found in [placeholder]. `model` is the instantiated object of a Model Class.
+    `model` is the instantiated object of a Model Class.
 
     """
 
