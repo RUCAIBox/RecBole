@@ -11,7 +11,7 @@ recbole.utils.logger
 import logging
 import os
 
-from recbole.utils.utils import get_local_time
+from recbole.utils import get_local_time, ensure_dir
 
 
 def init_logger(config):
@@ -30,8 +30,7 @@ def init_logger(config):
     """
     LOGROOT = './log/'
     dir_name = os.path.dirname(LOGROOT)
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
+    ensure_dir(dir_name)
 
     logfilename = '{}-{}.log'.format(config['model'], get_local_time())
 
