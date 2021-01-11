@@ -69,7 +69,8 @@ class NCEPLRec(GeneralRecommender):
         V_star = Vt.T @ sqrt_Sigma
 
         Q = R @ V_star
-        W = np.linalg.inv(Q.T @ Q + reg_weight * np.identity(rank)) @ Q.T @ R
+        # Vt.shape[0] instead of rank for cases when the interaction matrix is smaller than given rank
+        W = np.linalg.inv(Q.T @ Q + reg_weight * np.identity(Vt.shape[0])) @ Q.T @ R
 
         # instead of computing and storing the entire score matrix, just store Q and W and compute the scores on demand
 
