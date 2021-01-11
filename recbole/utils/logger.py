@@ -11,7 +11,7 @@ recbole.utils.logger
 import logging
 import os
 
-from recbole.utils import get_local_time, ensure_dir
+from recbole.utils.utils import get_local_time, ensure_dir
 
 
 def init_logger(config):
