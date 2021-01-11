@@ -75,12 +75,14 @@ class MKR(KnowledgeRecommender):
         # parameters initialization
         self.apply(xavier_normal_initialization)
 
-    def forward(self, user_indices=None, item_indices=None, head_indices=None,
-                relation_indices=None, tail_indices=None):
+    def forward(
+        self, user_indices=None, item_indices=None, head_indices=None, relation_indices=None, tail_indices=None
+    ):
         self.item_embeddings = self.item_embeddings_lookup(item_indices)
         self.head_embeddings = self.entity_embeddings_lookup(head_indices)
         self.item_embeddings, self.head_embeddings = self.cc_unit(
-            [self.item_embeddings, self.head_embeddings])  # calculate feature interactions between items and entities
+            [self.item_embeddings, self.head_embeddings]
+        )  # calculate feature interactions between items and entities
 
         if user_indices is not None:
             # RS
@@ -112,8 +114,8 @@ class MKR(KnowledgeRecommender):
             self.tail_pred = torch.sigmoid(self.tail_pred)
             self.scores_kge = torch.sigmoid(torch.sum(self.tail_embeddings * self.tail_pred, 1))
             self.rmse = torch.mean(
-                torch.sqrt(torch.sum(torch.pow(self.tail_embeddings -
-                                               self.tail_pred, 2), 1) / self.embedding_size))
+                torch.sqrt(torch.sum(torch.pow(self.tail_embeddings - self.tail_pred, 2), 1) / self.embedding_size)
+            )
             outputs = [self.head_embeddings, self.tail_embeddings, self.scores_kge, self.rmse]
 
         return outputs

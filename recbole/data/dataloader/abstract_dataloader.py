@@ -42,8 +42,7 @@ class AbstractDataLoader(object):
     """
     dl_type = None
 
-    def __init__(self, config, dataset,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(self, config, dataset, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.config = config
         self.logger = getLogger()
         self.dataset = dataset

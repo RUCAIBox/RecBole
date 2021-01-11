@@ -91,7 +91,7 @@ class AbstractSampler(object):
         self.random_pr %= self.random_list_length
         while True:
             if self.random_pr + num <= self.random_list_length:
-                value_id.append(self.random_list[self.random_pr: self.random_pr + num])
+                value_id.append(self.random_list[self.random_pr:self.random_pr + num])
                 self.random_pr += num
                 break
             else:
@@ -147,9 +147,10 @@ class AbstractSampler(object):
             key_ids = np.tile(key_ids, num)
             while len(check_list) > 0:
                 value_ids[check_list] = self.random_num(len(check_list))
-                check_list = np.array([i for i, used, v in
-                                       zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
-                                       if v in used])
+                check_list = np.array([
+                    i for i, used, v in zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
+                    if v in used
+                ])
         return torch.tensor(value_ids)
 
 
@@ -218,9 +219,11 @@ class Sampler(AbstractSampler):
 
         for used_item_set in used_item_id[self.phases[-1]]:
             if len(used_item_set) + 1 == self.n_items:  # [pad] is a item.
-                raise ValueError('Some users have interacted with all items, '
-                                 'which we can not sample negative items for them. '
-                                 'Please set `max_user_inter_num` to filter those users.')
+                raise ValueError(
+                    'Some users have interacted with all items, '
+                    'which we can not sample negative items for them. '
+                    'Please set `max_user_inter_num` to filter those users.'
+                )
         return used_item_id
 
     def set_phase(self, phase):
@@ -307,8 +310,10 @@ class KGSampler(AbstractSampler):
 
         for used_tail_set in used_tail_entity_id:
             if len(used_tail_set) + 1 == self.entity_num:  # [pad] is a entity.
-                raise ValueError('Some head entities have relation with all entities, '
-                                 'which we can not sample negative entities for them.')
+                raise ValueError(
+                    'Some head entities have relation with all entities, '
+                    'which we can not sample negative entities for them.'
+                )
         return used_tail_entity_id
 
     def sample_by_entity_ids(self, head_entity_ids, num=1):

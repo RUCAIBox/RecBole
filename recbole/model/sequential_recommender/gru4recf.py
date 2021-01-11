@@ -56,8 +56,9 @@ class GRU4RecF(SequentialRecommender):
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.feature_embed_layer = FeatureSeqEmbLayer(dataset, self.embedding_size, self.selected_features,
-                                                      self.pooling_mode, self.device)
+        self.feature_embed_layer = FeatureSeqEmbLayer(
+            dataset, self.embedding_size, self.selected_features, self.pooling_mode, self.device
+        )
         self.item_gru_layers = nn.GRU(
             input_size=self.embedding_size,
             hidden_size=self.hidden_size,

@@ -33,16 +33,16 @@ class NegSampleMixin(AbstractDataLoader):
     """
     dl_type = DataLoaderType.NEGSAMPLE
 
-    def __init__(self, config, dataset, sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(
+        self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
+    ):
         if neg_sample_args['strategy'] not in ['by', 'full']:
             raise ValueError(f"Neg_sample strategy [{neg_sample_args['strategy']}] has not been implemented.")
 
         self.sampler = sampler
         self.neg_sample_args = neg_sample_args
 
-        super().__init__(config, dataset,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config, dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def setup(self):
         """Do batch size adaptation.
@@ -95,8 +95,9 @@ class NegSampleByMixin(NegSampleMixin):
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
 
-    def __init__(self, config, dataset, sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(
+        self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
+    ):
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in GeneralInteractionBasedDataLoader() should be `by`')
 
@@ -124,8 +125,9 @@ class NegSampleByMixin(NegSampleMixin):
         else:
             raise ValueError(f'`neg sampling by` with dl_format [{dl_format}] not been implemented.')
 
-        super().__init__(config, dataset, sampler, neg_sample_args,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(
+            config, dataset, sampler, neg_sample_args, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle
+        )
 
     def _neg_sample_by_pair_wise_sampling(self, *args):
         """Pair-wise sampling.

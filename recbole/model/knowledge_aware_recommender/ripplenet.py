@@ -3,7 +3,6 @@
 # @Author : gaole he
 # @Email  : hegaole@ruc.edu.cn
 
-
 r"""
 RippleNet
 #####################################################

@@ -123,9 +123,7 @@ class ComputeSimilarity:
 
         # End while on columns
 
-        W_sparse = sp.csr_matrix((values, (rows, cols)),
-                                 shape=(self.n_columns, self.n_columns),
-                                 dtype=np.float32)
+        W_sparse = sp.csr_matrix((values, (rows, cols)), shape=(self.n_columns, self.n_columns), dtype=np.float32)
         return W_sparse.tocsc()
 
 

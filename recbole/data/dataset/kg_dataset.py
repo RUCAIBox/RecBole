@@ -116,11 +116,13 @@ class KnowledgeBasedDataset(Dataset):
         self.item2entity, self.entity2item = self._load_link(self.dataset_name, self.dataset_path)
 
     def __str__(self):
-        info = [super().__str__(),
-                f'The number of entities: {self.entity_num}',
-                f'The number of relations: {self.relation_num}',
-                f'The number of triples: {len(self.kg_feat)}',
-                f'The number of items that have been linked to KG: {len(self.item2entity)}']
+        info = [
+            super().__str__(),
+            f'The number of entities: {self.entity_num}',
+            f'The number of relations: {self.relation_num}',
+            f'The number of triples: {len(self.kg_feat)}',
+            f'The number of items that have been linked to KG: {len(self.item2entity)}'
+        ]  # yapf: disable
         return '\n'.join(info)
 
     def _build_feat_name_list(self):
@@ -179,9 +181,7 @@ class KnowledgeBasedDataset(Dataset):
             - ``head_entity_id`` and ``target_entity_id`` should be remapped with ``item_id``.
         """
         fields_in_same_space = super()._get_fields_in_same_space()
-        fields_in_same_space = [
-            _ for _ in fields_in_same_space if not self._contain_ent_field(_)
-        ]
+        fields_in_same_space = [_ for _ in fields_in_same_space if not self._contain_ent_field(_)]
         ent_fields = self._get_ent_fields_in_same_space()
         for field_set in fields_in_same_space:
             if self.iid_field in field_set:

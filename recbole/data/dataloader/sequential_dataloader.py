@@ -43,8 +43,7 @@ class SequentialDataLoader(AbstractDataLoader):
     """
     dl_type = DataLoaderType.ORIGIN
 
-    def __init__(self, config, dataset,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(self, config, dataset, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
         self.uid_field = dataset.uid_field
         self.iid_field = dataset.iid_field
         self.time_field = dataset.time_field
@@ -72,12 +71,13 @@ class SequentialDataLoader(AbstractDataLoader):
         self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
         dataset.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
 
-        self.uid_list, self.item_list_index, self.target_index, self.item_list_length = \
-            dataset.prepare_data_augmentation()
+        self.uid_list = dataset.uid_list
+        self.item_list_index = dataset.item_list_index
+        self.target_index = dataset.target_index
+        self.item_list_length = dataset.item_list_length
         self.pre_processed_data = None
 
-        super().__init__(config, dataset,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config, dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def data_preprocess(self):
         """Do data augmentation before training/evaluation.
@@ -105,9 +105,9 @@ class SequentialDataLoader(AbstractDataLoader):
 
     def _get_processed_data(self, index):
         if self.real_time:
-            cur_data = self.augmentation(self.item_list_index[index],
-                                         self.target_index[index],
-                                         self.item_list_length[index])
+            cur_data = self.augmentation(
+                self.item_list_index[index], self.target_index[index], self.item_list_length[index]
+            )
         else:
             cur_data = self.pre_processed_data[index]
         return cur_data
@@ -164,10 +164,12 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
 
-    def __init__(self, config, dataset, sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        super().__init__(config, dataset, sampler, neg_sample_args,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+    def __init__(
+        self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
+    ):
+        super().__init__(
+            config, dataset, sampler, neg_sample_args, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle
+        )
 
     def _batch_size_adaptation(self):
         batch_num = max(self.batch_size // self.times, 1)
@@ -192,9 +194,9 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
             data_len = len(data[self.uid_field])
             data_list = []
             for i in range(data_len):
-                uids = data[self.uid_field][i: i + 1]
+                uids = data[self.uid_field][i:i + 1]
                 neg_iids = self.sampler.sample_by_user_ids(uids, self.neg_sample_by)
-                cur_data = data[i: i + 1]
+                cur_data = data[i:i + 1]
                 data_list.append(self.sampling_func(cur_data, neg_iids))
             return cat_interactions(data_list)
         else:
@@ -212,7 +214,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         new_data = data.repeat(self.times)
         new_data[self.iid_field][pos_inter_num:] = neg_iids
         labels = torch.zeros(pos_inter_num * self.times)
-        labels[: pos_inter_num] = 1.0
+        labels[:pos_inter_num] = 1.0
         new_data.update(Interaction({self.label_field: labels}))
         return new_data
 
@@ -248,10 +250,12 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
     """
     dl_type = DataLoaderType.FULL
 
-    def __init__(self, config, dataset, sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
-        super().__init__(config, dataset, sampler, neg_sample_args,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+    def __init__(
+        self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
+    ):
+        super().__init__(
+            config, dataset, sampler, neg_sample_args, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle
+        )
 
     def _batch_size_adaptation(self):
         pass

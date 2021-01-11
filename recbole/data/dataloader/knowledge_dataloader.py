@@ -35,8 +35,7 @@ class KGDataLoader(AbstractDataLoader):
             However, in :class:`KGDataLoader`, it's guaranteed to be ``True``.
     """
 
-    def __init__(self, config, dataset, sampler,
-                 batch_size=1, dl_format=InputType.PAIRWISE, shuffle=False):
+    def __init__(self, config, dataset, sampler, batch_size=1, dl_format=InputType.PAIRWISE, shuffle=False):
         self.sampler = sampler
         self.neg_sample_num = 1
 
@@ -48,8 +47,7 @@ class KGDataLoader(AbstractDataLoader):
         self.neg_tid_field = self.neg_prefix + self.tid_field
         dataset.copy_field_property(self.neg_tid_field, self.tid_field)
 
-        super().__init__(config, dataset,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config, dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def setup(self):
         """Make sure that the :attr:`shuffle` is True. If :attr:`shuffle` is False, it will be changed to True
@@ -67,7 +65,7 @@ class KGDataLoader(AbstractDataLoader):
         self.dataset.kg_feat.shuffle()
 
     def _next_batch_data(self):
-        cur_data = self._neg_sampling(self.dataset.kg_feat[self.pr: self.pr + self.step])
+        cur_data = self._neg_sampling(self.dataset.kg_feat[self.pr:self.pr + self.step])
         self.pr += self.step
         return cur_data
 
@@ -112,28 +110,44 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
             and user-item interaction information.
     """
 
-    def __init__(self, config, dataset, sampler, kg_sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(
+        self,
+        config,
+        dataset,
+        sampler,
+        kg_sampler,
+        neg_sample_args,
+        batch_size=1,
+        dl_format=InputType.POINTWISE,
+        shuffle=False
+    ):
 
         # using sampler
-        self.general_dataloader = GeneralNegSampleDataLoader(config=config, dataset=dataset,
-                                                             sampler=sampler, neg_sample_args=neg_sample_args,
-                                                             batch_size=batch_size, dl_format=dl_format,
-                                                             shuffle=shuffle)
+        self.general_dataloader = GeneralNegSampleDataLoader(
+            config=config,
+            dataset=dataset,
+            sampler=sampler,
+            neg_sample_args=neg_sample_args,
+            batch_size=batch_size,
+            dl_format=dl_format,
+            shuffle=shuffle
+        )
 
         # using kg_sampler and dl_format is pairwise
-        self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler,
-                                          batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=True)
+        self.kg_dataloader = KGDataLoader(
+            config, dataset, kg_sampler, batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=True
+        )
 
         self.state = None
 
-        super().__init__(config, dataset,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config, dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def __iter__(self):
         if self.state is None:
-            raise ValueError('The dataloader\'s state must be set when using the kg based dataloader, '
-                             'you should call set_mode() before __iter__()')
+            raise ValueError(
+                'The dataloader\'s state must be set when using the kg based dataloader, '
+                'you should call set_mode() before __iter__()'
+            )
         if self.state == KGDataLoaderState.KG:
             return self.kg_dataloader.__iter__()
         elif self.state == KGDataLoaderState.RS:
@@ -154,11 +168,17 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         return self._next_batch_data()
 
     def __len__(self):
-        return len(self.general_dataloader)
+        if self.state == KGDataLoaderState.KG:
+            return len(self.kg_dataloader)
+        else:
+            return len(self.general_dataloader)
 
     @property
     def pr_end(self):
-        return self.general_dataloader.pr_end
+        if self.state == KGDataLoaderState.KG:
+            return self.kg_dataloader.pr_end
+        else:
+            return self.general_dataloader.pr_end
 
     def _next_batch_data(self):
         try:
