@@ -2,6 +2,10 @@ r"""
 NCE-PLRec
 ################################################
 Reference:
+    Ga Wu, et al. "Noise Contrastive Estimation for One-Class Collaborative Filtering" in Sigir 2019.
+
+Reference code:
+    https://github.com/wuga214/NCE_Projected_LRec
 """
 
 
@@ -69,9 +73,8 @@ class NCEPLRec(GeneralRecommender):
 
         # instead of computing and storing the entire score matrix, just store Q and W and compute the scores on demand
 
-        # torch doesn't support sparse tensor slicing, so will do everything with np/scipy
-        self.user_embeddings = Q
-        self.item_embeddings = W
+        self.user_embeddings = torch.from_numpy(Q)
+        self.item_embeddings = torch.from_numpy(W)
 
     def forward(self):
         pass
@@ -80,13 +83,13 @@ class NCEPLRec(GeneralRecommender):
         return torch.nn.Parameter(torch.zeros(1))
 
     def predict(self, interaction):
-        user = interaction[self.USER_ID].cpu().numpy()
-        item = interaction[self.ITEM_ID].cpu().numpy()
+        user = interaction[self.USER_ID]
+        item = interaction[self.ITEM_ID]
 
-        return torch.from_numpy((self.user_embeddings[user, :] * self.item_embeddings[:, item].T).sum(axis=1))
+        return (self.user_embeddings[user, :] * self.item_embeddings[:, item].T).sum(axis=1)
 
     def full_sort_predict(self, interaction):
-        user = interaction[self.USER_ID].cpu().numpy()
+        user = interaction[self.USER_ID]
 
         r = self.user_embeddings[user, :] @ self.item_embeddings
-        return torch.from_numpy(r.flatten())
+        return r.flatten()
