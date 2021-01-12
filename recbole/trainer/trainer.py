@@ -16,7 +16,6 @@ import os
 from logging import getLogger
 from time import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.optim as optim
@@ -422,6 +421,7 @@ class Trainer(AbstractTrainer):
             save_path (str, optional): The data path to save the figure, default: None.
                                        If it's None, it will not be saved.
         """
+        import matplotlib.pyplot as plt
         epochs = list(self.train_loss_dict.keys())
         epochs.sort()
         values = [float(self.train_loss_dict[epoch]) for epoch in epochs]
