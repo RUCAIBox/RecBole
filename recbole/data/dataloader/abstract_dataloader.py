@@ -55,13 +55,6 @@ class AbstractDataLoader(object):
         if self.real_time is None:
             self.real_time = True
 
-        self.join = self.dataset.join
-        self.history_item_matrix = self.dataset.history_item_matrix
-        self.history_user_matrix = self.dataset.history_user_matrix
-        self.inter_matrix = self.dataset.inter_matrix
-        self.get_user_feature = self.dataset.get_user_feature
-        self.get_item_feature = self.dataset.get_item_feature
-
         for dataset_attr in self.dataset._dataloader_apis:
             try:
                 flag = hasattr(self.dataset, dataset_attr)

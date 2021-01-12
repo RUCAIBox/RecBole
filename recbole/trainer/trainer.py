@@ -16,7 +16,6 @@ import os
 from logging import getLogger
 from time import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.optim as optim
@@ -64,7 +63,7 @@ class Trainer(AbstractTrainer):
 
     Initializing the Trainer needs two parameters: `config` and `model`. `config` records the parameters information
     for controlling training and evaluation, such as `learning_rate`, `epochs`, `eval_step` and so on.
-    More information can be found in [placeholder]. `model` is the instantiated object of a Model Class.
+    `model` is the instantiated object of a Model Class.
 
     """
 
@@ -422,6 +421,7 @@ class Trainer(AbstractTrainer):
             save_path (str, optional): The data path to save the figure, default: None.
                                        If it's None, it will not be saved.
         """
+        import matplotlib.pyplot as plt
         epochs = list(self.train_loss_dict.keys())
         epochs.sort()
         values = [float(self.train_loss_dict[epoch]) for epoch in epochs]

@@ -1173,6 +1173,7 @@ class Dataset(object):
             if getattr(self, field_name, None) is None:
                 raise ValueError(f'{field_name} isn\'t set.')
 
+    @dlapi.set()
     def join(self, df):
         """Given interaction feature, join user/item feature into it.
 
@@ -1429,6 +1430,7 @@ class Dataset(object):
             if df is not None:
                 df.to_csv(os.path.join(filepath, f'{name}.csv'))
 
+    @dlapi.set()
     def get_user_feature(self):
         """
         Returns:
@@ -1440,6 +1442,7 @@ class Dataset(object):
         else:
             return self.user_feat
 
+    @dlapi.set()
     def get_item_feature(self):
         """
         Returns:
@@ -1536,6 +1539,7 @@ class Dataset(object):
         else:
             raise NotImplementedError(f'Graph format [{form}] has not been implemented.')
 
+    @dlapi.set()
     def inter_matrix(self, form='coo', value_field=None):
         """Get sparse matrix that describe interactions between user_id and item_id.
 
@@ -1617,6 +1621,7 @@ class Dataset(object):
 
         return torch.LongTensor(history_matrix), torch.FloatTensor(history_value), torch.LongTensor(history_len)
 
+    @dlapi.set()
     def history_item_matrix(self, value_field=None):
         """Get dense matrix describe user's history interaction records.
 
@@ -1641,6 +1646,7 @@ class Dataset(object):
         """
         return self._history_matrix(row='user', value_field=value_field)
 
+    @dlapi.set()
     def history_user_matrix(self, value_field=None):
         """Get dense matrix describe item's history interaction records.
 
