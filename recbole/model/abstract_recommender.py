@@ -91,7 +91,6 @@ class GeneralRecommender(AbstractRecommender):
         self.n_items = dataset.num(self.ITEM_ID)
 
         # load parameters info
-        self.batch_size = config['train_batch_size']
         self.device = config['device']
 
 
@@ -145,7 +144,6 @@ class KnowledgeRecommender(AbstractRecommender):
         self.n_relations = dataset.num(self.RELATION_ID)
 
         # load parameters info
-        self.batch_size = config['train_batch_size']
         self.device = config['device']
 
 

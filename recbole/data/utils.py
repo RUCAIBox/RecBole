@@ -19,7 +19,7 @@ import os
 from recbole.config import EvalSetting
 from recbole.data.dataloader import *
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
-from recbole.utils import ModelType
+from recbole.utils import ModelType, ensure_dir
 
 
 def create_dataset(config):
@@ -216,8 +216,7 @@ def save_datasets(save_path, name, dataset):
         raise ValueError(f'Length of name {name} should equal to length of dataset {dataset}.')
     for i, d in enumerate(dataset):
         cur_path = os.path.join(save_path, name[i])
-        if not os.path.isdir(cur_path):
-            os.makedirs(cur_path)
+        ensure_dir(cur_path)
         d.save(cur_path)
 
 
