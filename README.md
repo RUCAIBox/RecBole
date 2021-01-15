@@ -212,4 +212,4 @@ If you find RecBole useful for your research or development, please cite the fol
 RecBole is developed and maintained by [RUC, BUPT, ECNU](https://www.recbole.io/about.html).
 
 ## License
-RecBole uses [MIT License](./LICENSE).
+RecBole uses [MIT License](./LICENSE). 
