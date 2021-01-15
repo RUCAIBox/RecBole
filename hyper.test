@@ -1,4 +1,4 @@
-learning_rate loguniform -8,0
-embedding_size choice [64,96,128]
-train_batch_size choice [512,1024,2048]
-mlp_hidden_size choice ['[64,64,64]','[128,128]']
+learning_rate choice [0.05,0.01,0.005]
+dropout_prob choice [0.5,0.3,0.1]
+negative_weight choice [0.001,0.005,0.01,0.02,0.05]
+embedding_size choice [64]
