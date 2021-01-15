@@ -14,9 +14,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import KnowledgeRecommender
 from recbole.model.init import xavier_normal_initialization
+from recbole.utils import InputType
 
 
 class CFKG(KnowledgeRecommender):
@@ -83,7 +83,7 @@ class CFKG(KnowledgeRecommender):
 
     def _get_score(self, h_e, t_e, r_e):
         if self.loss_function == 'transe':
-            return - torch.norm(h_e + r_e - t_e, p=2, dim=1)
+            return -torch.norm(h_e + r_e - t_e, p=2, dim=1)
         else:
             return torch.mul(h_e + r_e, t_e).sum(dim=1)
 
@@ -124,4 +124,4 @@ class InnerProductLoss(nn.Module):
     def forward(self, anchor, positive, negative):
         pos_score = torch.mul(anchor, positive).sum(dim=1)
         neg_score = torch.mul(anchor, negative).sum(dim=1)
-        return (F.softplus(- pos_score) + F.softplus(neg_score)).mean()
+        return (F.softplus(-pos_score) + F.softplus(neg_score)).mean()

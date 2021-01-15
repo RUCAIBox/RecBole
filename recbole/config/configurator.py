@@ -19,7 +19,7 @@ import yaml
 import torch
 from logging import getLogger
 
-from recbole.evaluator import loss_metrics, topk_metrics
+from recbole.evaluator import group_metrics, individual_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
     general_arguments, training_arguments, evaluation_arguments, dataset_arguments
 
@@ -89,14 +89,16 @@ class Config(object):
         loader = yaml.FullLoader
         loader.add_implicit_resolver(
             u'tag:yaml.org,2002:float',
-            re.compile(u'''^(?:
+            re.compile(
+                u'''^(?:
              [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
             |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
             |\\.[0-9_]+(?:[eE][-+][0-9]+)?
             |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
             |[-+]?\\.(?:inf|Inf|INF)
-            |\\.(?:nan|NaN|NAN))$''', re.X),
-            list(u'-+0123456789.'))
+            |\\.(?:nan|NaN|NAN))$''', re.X
+            ), list(u'-+0123456789.')
+        )
         return loader
 
     def _convert_config_dict(self, config_dict):
@@ -175,7 +177,8 @@ class Config(object):
             except KeyError:
                 raise KeyError(
                     'model need to be specified in at least one of the these ways: '
-                    '[model variable, config file, config dict, command line] ')
+                    '[model variable, config file, config dict, command line] '
+                )
         if not isinstance(model, str):
             final_model_class = model
             final_model = model.__name__
@@ -187,12 +190,21 @@ class Config(object):
             try:
                 final_dataset = self.external_config_dict['dataset']
             except KeyError:
-                raise KeyError('dataset need to be specified in at least one of the these ways: '
-                               '[dataset variable, config file, config dict, command line] ')
+                raise KeyError(
+                    'dataset need to be specified in at least one of the these ways: '
+                    '[dataset variable, config file, config dict, command line] '
+                )
         else:
             final_dataset = dataset
 
         return final_model, final_model_class, final_dataset
+
+    def _update_internal_config_dict(self, file):
+        with open(file, 'r', encoding='utf-8') as f:
+            config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
+            if config_dict is not None:
+                self.internal_config_dict.update(config_dict)
+        return config_dict
 
     def _load_internal_config_dict(self, model, model_class, dataset):
         current_path = os.path.dirname(os.path.realpath(__file__))
@@ -201,65 +213,46 @@ class Config(object):
         sample_init_file = os.path.join(current_path, '../properties/dataset/sample.yaml')
         dataset_init_file = os.path.join(current_path, '../properties/dataset/' + dataset + '.yaml')
 
+        quick_start_config_path = os.path.join(current_path, '../properties/quick_start_config/')
+        context_aware_init = os.path.join(quick_start_config_path, 'context-aware.yaml')
+        context_aware_on_ml_100k_init = os.path.join(quick_start_config_path, 'context-aware_ml-100k.yaml')
+        DIN_init = os.path.join(quick_start_config_path, 'sequential_DIN.yaml')
+        DIN_on_ml_100k_init = os.path.join(quick_start_config_path, 'sequential_DIN_on_ml-100k.yaml')
+        sequential_init = os.path.join(quick_start_config_path, 'sequential.yaml')
+        special_sequential_on_ml_100k_init = os.path.join(quick_start_config_path, 'special_sequential_on_ml-100k.yaml')
+        sequential_embedding_model_init = os.path.join(quick_start_config_path, 'sequential_embedding_model.yaml')
+        knowledge_base_init = os.path.join(quick_start_config_path, 'knowledge_base.yaml')
+
         self.internal_config_dict = dict()
         for file in [overall_init_file, model_init_file, sample_init_file, dataset_init_file]:
             if os.path.isfile(file):
-                with open(file, 'r', encoding='utf-8') as f:
-                    config_dict = yaml.load(f.read(), Loader=self.yaml_loader)
-                    if file == dataset_init_file:
-                        self.parameters['Dataset'] += [key for key in config_dict.keys() if
-                                                       key not in self.parameters['Dataset']]
-                    if config_dict is not None:
-                        self.internal_config_dict.update(config_dict)
+                config_dict = self._update_internal_config_dict(file)
+                if file == dataset_init_file:
+                    self.parameters['Dataset'] += [
+                        key for key in config_dict.keys() if key not in self.parameters['Dataset']
+                    ]
+
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
-        elif self.internal_config_dict['MODEL_TYPE'] == ModelType.CONTEXT:
-            self.internal_config_dict.update({
-                'eval_setting': 'RO_RS',
-                'group_by_user': False,
-                'training_neg_sample_num': 0,
-                'metrics': ['AUC', 'LogLoss'],
-                'valid_metric': 'AUC',
-            })
+        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.XGBOOST}:
+            self._update_internal_config_dict(context_aware_init)
             if dataset == 'ml-100k':
-                self.internal_config_dict.update({
-                    'threshold': {'rating': 4},
-                    'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                                 'user': ['user_id', 'age', 'gender', 'occupation'],
-                                 'item': ['item_id', 'release_year', 'class']},
-                })
-
+                self._update_internal_config_dict(context_aware_on_ml_100k_init)
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
             if model == 'DIN':
-                self.internal_config_dict.update({
-                    'eval_setting': 'TO_LS, uni100',
-                    'metrics': ['AUC', 'LogLoss'],
-                    'valid_metric': 'AUC',
-                })
+                self._update_internal_config_dict(DIN_init)
                 if dataset == 'ml-100k':
-                    self.internal_config_dict.update({
-                        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                                     'user': ['user_id', 'age', 'gender', 'occupation'],
-                                     'item': ['item_id', 'release_year']},
-                    })
-
+                    self._update_internal_config_dict(DIN_on_ml_100k_init)
+            elif model in ['GRU4RecKG', 'KSR']:
+                self._update_internal_config_dict(sequential_embedding_model_init)
             else:
-                self.internal_config_dict.update({
-                    'eval_setting': 'TO_LS,full',
-                })
+                self._update_internal_config_dict(sequential_init)
                 if dataset == 'ml-100k' and model in ['GRU4RecF', 'SASRecF', 'FDSA', 'S3Rec']:
-                    self.internal_config_dict.update({
-                        'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                                     'item': ['item_id', 'release_year', 'class']},
-                    })
+                    self._update_internal_config_dict(special_sequential_on_ml_100k_init)
 
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.KNOWLEDGE:
-            self.internal_config_dict.update({
-                'load_col': {'inter': ['user_id', 'item_id', 'rating', 'timestamp'],
-                             'kg': ['head_id', 'relation_id', 'tail_id'],
-                             'link': ['item_id', 'entity_id']}
-            })
+            self._update_internal_config_dict(knowledge_base_init)
 
     def _get_final_config_dict(self):
         final_config_dict = dict()
@@ -285,17 +278,16 @@ class Config(object):
             elif self.final_config_dict['loss_type'] in ['BPR']:
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.PAIRWISE
         else:
-            raise ValueError('Either Model has attr \'input_type\','
-                             'or arg \'loss_type\' should exist in config.')
+            raise ValueError('Either Model has attr \'input_type\',' 'or arg \'loss_type\' should exist in config.')
 
         eval_type = None
         for metric in self.final_config_dict['metrics']:
-            if metric.lower() in loss_metrics:
+            if metric.lower() in individual_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.RANKING:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
                     eval_type = EvaluatorType.INDIVIDUAL
-            if metric.lower() in topk_metrics:
+            if metric.lower() in group_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.INDIVIDUAL:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
@@ -337,10 +329,10 @@ class Config(object):
         args_info = ''
         for category in self.parameters:
             args_info += category + ' Hyper Parameters: \n'
-            args_info += '\n'.join(
-                ["{}={}".format(arg, value)
-                 for arg, value in self.final_config_dict.items()
-                 if arg in self.parameters[category]])
+            args_info += '\n'.join([
+                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
+                if arg in self.parameters[category]
+            ])
             args_info += '\n\n'
         return args_info
 

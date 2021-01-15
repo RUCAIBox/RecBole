@@ -16,10 +16,10 @@ Reference code:
 import torch
 import torch.nn as nn
 
-from recbole.utils import InputType
-from recbole.model.layers import MLPLayers
 from recbole.model.abstract_recommender import KnowledgeRecommender
 from recbole.model.init import xavier_normal_initialization
+from recbole.model.layers import MLPLayers
+from recbole.utils import InputType
 
 
 class MKR(KnowledgeRecommender):
@@ -38,8 +38,8 @@ class MKR(KnowledgeRecommender):
         self.LABEL = config['LABEL_FIELD']
         self.embedding_size = config['embedding_size']
         self.kg_embedding_size = config['kg_embedding_size']
-        self.L = config['low_layers_num'] # the number of low layers
-        self.H = config['high_layers_num'] # the number of high layers
+        self.L = config['low_layers_num']  # the number of low layers
+        self.H = config['high_layers_num']  # the number of high layers
         self.reg_weight = config['reg_weight']
         self.use_inner_product = config['use_inner_product']
         self.dropout_prob = config['dropout_prob']
@@ -75,24 +75,28 @@ class MKR(KnowledgeRecommender):
         # parameters initialization
         self.apply(xavier_normal_initialization)
 
-    def forward(self, user_indices=None, item_indices=None, head_indices=None,
-                relation_indices=None, tail_indices=None):
+    def forward(
+        self, user_indices=None, item_indices=None, head_indices=None, relation_indices=None, tail_indices=None
+    ):
         self.item_embeddings = self.item_embeddings_lookup(item_indices)
         self.head_embeddings = self.entity_embeddings_lookup(head_indices)
-        self.item_embeddings, self.head_embeddings = self.cc_unit([self.item_embeddings, self.head_embeddings]) # calculate feature interactions between items and entities
+        self.item_embeddings, self.head_embeddings = self.cc_unit(
+            [self.item_embeddings, self.head_embeddings]
+        )  # calculate feature interactions between items and entities
 
         if user_indices is not None:
             # RS
             self.user_embeddings = self.user_embeddings_lookup(user_indices)
             self.user_embeddings = self.user_mlp(self.user_embeddings)
-            
-            if self.use_inner_product: # get scores by inner product.
-                self.scores = torch.sum(self.user_embeddings * self.item_embeddings, 1) # [batch_size]
-            else: # get scores by mlp layers
-                self.user_item_concat = torch.cat([self.user_embeddings, self.item_embeddings], 1) # [batch_size, emb_dim*2]
+
+            if self.use_inner_product:  # get scores by inner product.
+                self.scores = torch.sum(self.user_embeddings * self.item_embeddings, 1)  # [batch_size]
+            else:  # get scores by mlp layers
+                self.user_item_concat = torch.cat([self.user_embeddings, self.item_embeddings],
+                                                  1)  # [batch_size, emb_dim*2]
                 self.user_item_concat = self.rs_mlp(self.user_item_concat)
-                
-                self.scores = torch.squeeze(self.rs_pred_mlp(self.user_item_concat)) # [batch_size]
+
+                self.scores = torch.squeeze(self.rs_pred_mlp(self.user_item_concat))  # [batch_size]
             self.scores_normalized = torch.sigmoid(self.scores)
             outputs = [self.user_embeddings, self.item_embeddings, self.scores, self.scores_normalized]
 
@@ -101,16 +105,17 @@ class MKR(KnowledgeRecommender):
             self.tail_embeddings = self.entity_embeddings_lookup(tail_indices)
             self.relation_embeddings = self.relation_embeddings_lookup(relation_indices)
             self.tail_embeddings = self.tail_mlp(self.tail_embeddings)
-            
-            self.head_relation_concat = torch.cat([self.head_embeddings, self.relation_embeddings], 1) # [batch_size, emb_dim*2]
+
+            self.head_relation_concat = torch.cat([self.head_embeddings, self.relation_embeddings],
+                                                  1)  # [batch_size, emb_dim*2]
             self.head_relation_concat = self.kge_mlp(self.head_relation_concat)
 
-            self.tail_pred = self.kge_pred_mlp(self.head_relation_concat) # [batch_size, 1]
+            self.tail_pred = self.kge_pred_mlp(self.head_relation_concat)  # [batch_size, 1]
             self.tail_pred = torch.sigmoid(self.tail_pred)
             self.scores_kge = torch.sigmoid(torch.sum(self.tail_embeddings * self.tail_pred, 1))
             self.rmse = torch.mean(
-                torch.sqrt(torch.sum(torch.pow(self.tail_embeddings -
-                           self.tail_pred, 2), 1) / self.embedding_size))
+                torch.sqrt(torch.sum(torch.pow(self.tail_embeddings - self.tail_pred, 2), 1) / self.embedding_size)
+            )
             outputs = [self.head_embeddings, self.tail_embeddings, self.scores_kge, self.rmse]
 
         return outputs
@@ -179,6 +184,7 @@ class CrossCompressUnit(nn.Module):
     r"""This is Cross&Compress Unit for MKR model to model feature interactions between items and entities.
 
     """
+
     def __init__(self, dim):
         super(CrossCompressUnit, self).__init__()
         self.dim = dim
@@ -194,7 +200,7 @@ class CrossCompressUnit(nn.Module):
         e = torch.unsqueeze(e, 1)
         # [batch_size, dim, dim]
         c_matrix = torch.matmul(v, e)
-        c_matrix_transpose = c_matrix.permute(0,2,1)
+        c_matrix_transpose = c_matrix.permute(0, 2, 1)
         # [batch_size * dim, dim]
         c_matrix = c_matrix.view(-1, self.dim)
         c_matrix_transpose = c_matrix_transpose.contiguous().view(-1, self.dim)

@@ -1,0 +1,3 @@
+embedding_size: 64
+order: 2
+second_order_loss_weight: 1

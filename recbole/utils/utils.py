@@ -8,12 +8,14 @@ recbole.utils.utils
 ################################
 """
 
-import os
 import datetime
 import importlib
+import os
 import random
-import torch
+
 import numpy as np
+import torch
+
 from recbole.utils.enum_type import ModelType
 
 
@@ -50,18 +52,20 @@ def get_model(model_name):
         Recommender: model class
     """
     model_submodule = [
-        'general_recommender',
-        'context_aware_recommender',
-        'sequential_recommender',
-        'knowledge_aware_recommender'
+        'general_recommender', 'context_aware_recommender', 'sequential_recommender', 'knowledge_aware_recommender',
+        'exlib_recommender'
     ]
 
     model_file_name = model_name.lower()
+    model_module = None
     for submodule in model_submodule:
-        module_path = '.'.join(['...model', submodule, model_file_name])
+        module_path = '.'.join(['recbole.model', submodule, model_file_name])
         if importlib.util.find_spec(module_path, __name__):
             model_module = importlib.import_module(module_path, __name__)
+            break
 
+    if model_module is None:
+        raise ValueError('`model_name` [{}] is not the name of an existing model.'.format(model_name))
     model_class = getattr(model_module, model_name)
     return model_class
 
@@ -159,7 +163,7 @@ def dict2str(result_dict):
 
     result_str = ''
     for metric, value in result_dict.items():
-        result_str += str(metric) + ' : ' + '%.04f' % value + '    '
+        result_str += str(metric) + ' : ' + str(value) + '    '
     return result_str
 
 
