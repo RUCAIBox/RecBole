@@ -84,8 +84,8 @@ class KSR(SequentialRecommender):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight)
         elif isinstance(module, nn.GRU):
-            xavier_uniform_(self.gru_layers.weight_hh_l0)
-            xavier_uniform_(self.gru_layers.weight_ih_l0)
+            xavier_uniform_(module.weight_hh_l0)
+            xavier_uniform_(module.weight_ih_l0)
 
     def _get_kg_embedding(self, head):
         """Difference:

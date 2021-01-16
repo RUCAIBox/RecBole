@@ -22,14 +22,14 @@
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
-Our library includes 53 recommendation algorithms, covering four major categories:
+Our library includes 65 recommendation algorithms, covering four major categories:
 
 + General Recommendation
 + Sequential Recommendation
 + Context-aware Recommendation
 + Knowledge-based Recommendation
 
-We design a unified and flexible data file format, and provide the support for 27 benchmark recommendation datasets.
+We design a unified and flexible data file format, and provide the support for 28 benchmark recommendation datasets.
 A user can apply the provided script to process the original data copy, or simply download the processed datasets
 by our team.
 
@@ -45,8 +45,8 @@ by our team.
 + **General and extensible data structure.** We design general and extensible data structures to unify the formatting and
 usage of various recommendation datasets.
 
-+ **Comprehensive benchmark models and datasets.** We implement 53 commonly used recommendation algorithms, and provide
-the formatted copies of 27 recommendation datasets.
++ **Comprehensive benchmark models and datasets.** We implement 65 commonly used recommendation algorithms, and provide
+the formatted copies of 28 recommendation datasets.
 
 + **Efficient GPU-accelerated execution.** We optimize the efficiency of our library with a number of improved techniques
 oriented to the GPU environment.
@@ -56,6 +56,8 @@ for testing and comparing recommendation algorithms.
 
 
 ## RecBole News
+**15/01/2021**: We release RecBole [v0.2.0](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.0).
+
 **12/10/2020**: 我们发布了[RecBole小白入门系列中文博客（持续更新中）](https://blog.csdn.net/Turinger_2000/article/details/111182852) 。
 
 **12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
@@ -182,6 +184,7 @@ We will keep improving our implementations, and update these test results.
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
+| v0.2.0    | 15/01/2021 |  RecBole |
 | v0.1.1    | 11/03/2020 |  Basic RecBole |
 
 ## Contributing
