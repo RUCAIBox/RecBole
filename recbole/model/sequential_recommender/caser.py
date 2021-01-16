@@ -36,6 +36,7 @@ class Caser(SequentialRecommender):
         We did not use the sliding window to generate training instances as in the paper, in order that
         the generation method we used is common to other sequential models.
         For comparison with other models, we set the parameter T in the paper as 1.
+        In addition, to prevent excessive CNN layers (ValueError: Training loss is nan), please make sure the parameters MAX_ITEM_LIST_LENGTH small, such as 10.
     """
 
     def __init__(self, config, dataset):
