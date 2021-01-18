@@ -18,14 +18,13 @@ Reference code:
     https://github.com/AaronHeee/Neural-Attentive-Item-Similarity-Model
 """
 
-from logging import getLogger
-
 import torch
 import torch.nn as nn
+from torch.nn.init import constant_, normal_, xavier_normal_
+
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.layers import MLPLayers
 from recbole.utils import InputType
-from torch.nn.init import constant_, normal_, xavier_normal_
 
 
 class NAIS(GeneralRecommender):
@@ -45,9 +44,8 @@ class NAIS(GeneralRecommender):
 
         # load dataset info
         self.LABEL = config['LABEL_FIELD']
-        self.logger = getLogger()
 
-        # get all users's history interaction information.the history item 
+        # get all users' history interaction information.the history item
         # matrix is padding by the maximum number of a user's interactions
         self.history_item_matrix, self.history_lens, self.mask_mat = self.get_history_info(dataset)
 
@@ -76,7 +74,7 @@ class NAIS(GeneralRecommender):
         self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.bias = nn.Parameter(torch.zeros(self.n_items))
         if self.algorithm == 'concat':
-            self.mlp_layers = MLPLayers([self.embedding_size*2, self.weight_size])
+            self.mlp_layers = MLPLayers([self.embedding_size * 2, self.weight_size])
         elif self.algorithm == 'prod':
             self.mlp_layers = MLPLayers([self.embedding_size, self.weight_size])
         else:
@@ -89,7 +87,7 @@ class NAIS(GeneralRecommender):
             self.logger.info('use pretrain from [{}]...'.format(self.pretrain_path))
             self._load_pretrain()
         else:
-            self.logger.info('unuse pretrain...')
+            self.logger.info('unused pretrain...')
             self.apply(self._init_weights)
 
     def _init_weights(self, module):
@@ -143,7 +141,7 @@ class NAIS(GeneralRecommender):
         Returns:
             torch.Tensor: reg loss
 
-        """  
+        """
         reg_1, reg_2, reg_3 = self.reg_weights
         loss_1 = reg_1 * self.item_src_embedding.weight.norm(2)
         loss_2 = reg_2 * self.item_dst_embedding.weight.norm(2)
@@ -167,7 +165,8 @@ class NAIS(GeneralRecommender):
         if self.algorithm == 'prod':
             mlp_input = inter * target.unsqueeze(1)  # batch_size x max_len x embedding_size
         else:
-            mlp_input = torch.cat([inter, target.unsqueeze(1).expand_as(inter)], dim=2)  # batch_size x max_len x embedding_size*2
+            mlp_input = torch.cat([inter, target.unsqueeze(1).expand_as(inter)],
+                                  dim=2)  # batch_size x max_len x embedding_size*2
         mlp_output = self.mlp_layers(mlp_input)  # batch_size x max_len x weight_size
 
         logits = torch.matmul(mlp_output, self.weight_layer).squeeze(2)  # batch_size x max_len
@@ -177,9 +176,9 @@ class NAIS(GeneralRecommender):
         """softmax the unmasked user history items and get the final output
 
         Args:
-            similarity (torch.Tensor): the similarity between the histoy items and target items
+            similarity (torch.Tensor): the similarity between the history items and target items
             logits (torch.Tensor): the initial weights of the history items
-            item_num (torch.Tensor): user hitory interaction lengths
+            item_num (torch.Tensor): user history interaction lengths
             bias (torch.Tensor): bias
             batch_mask_mat (torch.Tensor): the mask of user history interactions
 
@@ -189,7 +188,7 @@ class NAIS(GeneralRecommender):
         """
         exp_logits = torch.exp(logits)  # batch_size x max_len
 
-        exp_logits = batch_mask_mat * exp_logits   # batch_size x max_len
+        exp_logits = batch_mask_mat * exp_logits  # batch_size x max_len
         exp_sum = torch.sum(exp_logits, dim=1, keepdim=True)
         exp_sum = torch.pow(exp_sum, self.beta)
         weights = torch.div(exp_logits, exp_sum)
@@ -203,9 +202,9 @@ class NAIS(GeneralRecommender):
         """softmax the user history features and get the final output
 
         Args:
-            similarity (torch.Tensor): the similarity between the histoy items and target items
+            similarity (torch.Tensor): the similarity between the history items and target items
             logits (torch.Tensor): the initial weights of the history items
-            item_num (torch.Tensor): user hitory interaction lengths
+            item_num (torch.Tensor): user history interaction lengths
             bias (torch.Tensor): bias
 
         Returns:
@@ -241,7 +240,7 @@ class NAIS(GeneralRecommender):
 
         Args:
             user_input (torch.Tensor): user input tensor
-            item_num (torch.Tensor): user hitory interaction lens
+            item_num (torch.Tensor): user history interaction lens
             repeats (int, optional): the number of items to be evaluated
             pred_slc (torch.Tensor, optional): continuous index which controls the current evaluation items,
                                               if pred_slc is None, it will evaluate all items

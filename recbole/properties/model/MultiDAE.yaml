@@ -1,0 +1,3 @@
+mlp_hidden_size: [600]
+latent_dimension: 64
+dropout_prob: 0.5

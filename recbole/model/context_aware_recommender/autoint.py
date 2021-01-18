@@ -13,12 +13,12 @@ Reference:
 """
 
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.layers import MLPLayers
 from recbole.model.abstract_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers
 
 
 class AutoInt(ContextRecommender):
@@ -95,15 +95,7 @@ class AutoInt(ContextRecommender):
         return att_output
 
     def forward(self, interaction):
-        # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
-        # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        all_embeddings = []
-        if sparse_embedding is not None:
-            all_embeddings.append(sparse_embedding)
-        if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            all_embeddings.append(dense_embedding)
-        autoint_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        autoint_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
         output = self.first_order_linear(interaction) + self.autoint_layer(autoint_all_embeddings)
         return self.sigmoid(output.squeeze(1))
 

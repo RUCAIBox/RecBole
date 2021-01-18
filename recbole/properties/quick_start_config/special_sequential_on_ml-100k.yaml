@@ -1,0 +1,3 @@
+load_col: 
+    inter: ['user_id', 'item_id', 'rating', 'timestamp']
+    item: ['item_id', 'release_year', 'class']

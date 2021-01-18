@@ -15,8 +15,8 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 
-from recbole.utils import InputType, ModelType
 from recbole.model.abstract_recommender import GeneralRecommender
+from recbole.utils import InputType, ModelType
 
 
 class ComputeSimilarity:
@@ -123,14 +123,11 @@ class ComputeSimilarity:
 
         # End while on columns
 
-        W_sparse = sp.csr_matrix((values, (rows, cols)),
-                                 shape=(self.n_columns, self.n_columns),
-                                 dtype=np.float32)
+        W_sparse = sp.csr_matrix((values, (rows, cols)), shape=(self.n_columns, self.n_columns), dtype=np.float32)
         return W_sparse.tocsc()
 
 
 class ItemKNN(GeneralRecommender):
-
     r"""ItemKNN is a basic model that compute item similarity with the interaction matrix.
 
     """
