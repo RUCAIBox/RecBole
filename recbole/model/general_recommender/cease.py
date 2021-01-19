@@ -90,7 +90,8 @@ class CEASE(GeneralRecommender):
         reg_weight = config['reg_weight']
         included_features = config['included_features']
 
-        tag_item_matrix = item_feat_weight * encode_categorical_item_features(dataset, included_features)
+        tag_item_matrix = item_feat_weight * \
+            encode_categorical_item_features(dataset, included_features)
 
         # just directly calculate the entire score matrix in init
         # (can't be done incrementally)
