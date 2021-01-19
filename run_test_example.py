@@ -150,6 +150,10 @@ test_examples = {
         'model': 'CEASE',
         'dataset': 'ml-100k',
     },
+    'Test ADDEASE': {
+        'model': 'ADDEASE',
+        'dataset': 'ml-100k',
+    },
 
     # Context-aware Recommendation
     'Test FM': {

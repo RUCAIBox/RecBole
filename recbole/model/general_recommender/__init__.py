@@ -1,3 +1,4 @@
+from recbole.model.general_recommender.addease import ADDEASE
 from recbole.model.general_recommender.bpr import BPR
 from recbole.model.general_recommender.cease import CEASE
 from recbole.model.general_recommender.convncf import ConvNCF
