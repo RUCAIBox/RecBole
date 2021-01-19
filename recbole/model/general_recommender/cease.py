@@ -21,7 +21,7 @@ from recbole.model.abstract_recommender import GeneralRecommender
 from sklearn.preprocessing import MultiLabelBinarizer, OneHotEncoder
 
 
-def encode_categorical_item_features(dataset, included_features):
+def encode_categorical_item_features(dataset, selected_features):
     item_features = dataset.get_item_feature()
 
     mlb = MultiLabelBinarizer(sparse_output=True)
@@ -29,7 +29,7 @@ def encode_categorical_item_features(dataset, included_features):
 
     encoded_feats = []
 
-    for feat in included_features:
+    for feat in selected_features:
         t = dataset.field2type[feat]
         feat_frame = item_features[feat].numpy()
 
@@ -88,10 +88,10 @@ class CEASE(GeneralRecommender):
 
         item_feat_weight = config['item_feat_weight']
         reg_weight = config['reg_weight']
-        included_features = config['included_features']
+        selected_features = config['selected_features']
 
         tag_item_matrix = item_feat_weight * \
-            encode_categorical_item_features(dataset, included_features)
+            encode_categorical_item_features(dataset, selected_features)
 
         # just directly calculate the entire score matrix in init
         # (can't be done incrementally)
