@@ -1,0 +1,23 @@
+convert_token_to_onehot: False
+token_num_threshold: 10000
+
+# Dataset
+lgb_silent: False
+
+# Train
+lgb_model: ~
+lgb_params: 
+    boosting: gbdt
+    num_leaves: 90
+    min_data_in_leaf: 30
+    max_depth: -1
+    learning_rate: 0.1
+    objective: binary
+    lambda_l1: 0.1
+    metric: ['auc', 'binary_logloss']
+    force_row_wise: True
+lgb_learning_rates: ~
+lgb_num_boost_round: 300
+lgb_early_stopping_rounds: ~
+lgb_verbose_eval: 100
+
