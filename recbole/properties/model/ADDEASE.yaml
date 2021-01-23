@@ -1,0 +1,4 @@
+item_feat_proportion: 0.001
+inter_reg_weight: 350.0
+item_reg_weight: 150.0
+selected_features: ['class']

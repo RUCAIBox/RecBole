@@ -146,6 +146,14 @@ test_examples = {
         'model': 'MacridVAE',
         'dataset': 'ml-100k',
     },
+    'Test CEASE': {
+        'model': 'CEASE',
+        'dataset': 'ml-100k',
+    },
+    'Test ADDEASE': {
+        'model': 'ADDEASE',
+        'dataset': 'ml-100k',
+    },
 
     # Context-aware Recommendation
     'Test FM': {

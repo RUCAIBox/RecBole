@@ -1,0 +1,3 @@
+item_feat_weight: 10.0
+reg_weight: 350.0
+selected_features: ['class']
