@@ -106,6 +106,26 @@ class SequentialDataset(Dataset):
             next_ds.append(ds)
         return next_ds
 
+    def inter_matrix(self, form='coo', value_field=None):
+        """Get sparse matrix that describe interactions between user_id and item_id.
+        Sparse matrix has shape (user_num, item_num).
+        For a row of <src, tgt>, ``matrix[src, tgt] = 1`` if ``value_field`` is ``None``,
+        else ``matrix[src, tgt] = self.inter_feat[src, tgt]``.
+        Args:
+            form (str, optional): Sparse matrix format. Defaults to ``coo``.
+            value_field (str, optional): Data of sparse matrix, which should exist in ``df_feat``.
+                Defaults to ``None``.
+        Returns:
+            scipy.sparse: Sparse matrix in form ``coo`` or ``csr``.
+        """
+        if not self.uid_field or not self.iid_field:
+            raise ValueError('dataset does not exist uid/iid, thus can not converted to sparse matrix.')
+
+        self.logger.warning('Load interaction matrix may lead to label leakage from testing phase, this implementation '
+                            'only provides the interactions corresponding to specific phase')
+        local_inter_feat = self.inter_feat[self.uid_list]
+        return self._create_sparse_matrix(local_inter_feat, self.uid_field, self.iid_field, form, value_field)
+
     def build(self, eval_setting):
         ordering_args = eval_setting.ordering_args
         if ordering_args['strategy'] == 'shuffle':
