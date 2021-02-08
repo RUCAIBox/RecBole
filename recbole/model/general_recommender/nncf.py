@@ -153,7 +153,7 @@ class NNCF(GeneralRecommender):
 
     # Count the similarity of node and direct neighbors using jaccard method
     def count_jaccard(self, inters, node, neigh_list, kind):
-        if kind is 'u':
+        if kind == 'u':
             if node in neigh_list:
                 return 0
             vec_node = inters[:, node]
