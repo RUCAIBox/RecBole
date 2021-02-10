@@ -5,4 +5,3 @@ anneal_cap: 0.2
 epsilon: 0.1
 mixture_weights: [0.15, 0.75, 0.1]
 gamma: 0.005
-training_neg_sample_num: 0
