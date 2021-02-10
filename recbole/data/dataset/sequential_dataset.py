@@ -84,7 +84,7 @@ class SequentialDataset(Dataset):
         self.uid_list = np.array(uid_list)
         self.item_list_index = np.array(item_list_index)
         self.target_index = np.array(target_index)
-        self.item_list_length = np.array(item_list_length)
+        self.item_list_length = np.array(item_list_length, dtype=np.int64)
 
     def leave_one_out(self, group_by, leave_one_num=1):
         self.logger.debug(f'Leave one out, group_by=[{group_by}], leave_one_num=[{leave_one_num}].')
