@@ -3,7 +3,7 @@
 # @Email  : 254170321@qq.com
 
 """
-recbole.data.xgboost_dataset
+recbole.data.decisiontree_dataset
 ##########################
 """
 
@@ -11,8 +11,8 @@ from recbole.data.dataset import Dataset
 from recbole.utils import FeatureType
 
 
-class XgboostDataset(Dataset):
-    """:class:`XgboostDataset` is based on :class:`~recbole.data.dataset.dataset.Dataset`,
+class DecisionTreeDataset(Dataset):
+    """:class:`DecisionTreeDataset` is based on :class:`~recbole.data.dataset.dataset.Dataset`,
     and 
 
     Attributes:

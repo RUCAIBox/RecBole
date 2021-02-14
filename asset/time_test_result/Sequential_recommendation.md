@@ -175,24 +175,28 @@ load_col:
 | KSR              | - | - | - |
 | GRU4RecKG        | - | - | - |
 
-#### Config file of DIGINETICA dataset:
+#### Config file of Yelp dataset:
 
 ```
 # dataset config
 field_separator: "\t"
 seq_separator: " "
-USER_ID_FIELD: session_id
-ITEM_ID_FIELD: item_id
-TIME_FIELD: timestamp
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: business_id
+RATING_FIELD: stars
+TIME_FIELD: date
 NEG_PREFIX: neg_
 ITEM_LIST_LENGTH_FIELD: item_length
 LIST_SUFFIX: _list
 MAX_ITEM_LIST_LENGTH: 20
 POSITION_FIELD: position_id
 load_col:
-  inter: [session_id, item_id, timestamp]
-min_user_inter_num: 6
-min_item_inter_num: 1
+  inter: [user_id, business_id, stars, date]
+min_user_inter_num: 10
+min_item_inter_num: 4
+lowest_val:
+  stars: 3
+drop_filter_field: True
 
 # training and evaluation
 epochs: 500
@@ -201,6 +205,7 @@ eval_batch_size: 2048
 valid_metric: MRR@10
 eval_setting: TO_LS,full
 training_neg_sample_num: 0
+
 ```
 
 Other parameters (including model parameters) are default value. 

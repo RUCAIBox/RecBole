@@ -45,9 +45,9 @@ def create_dataset(config):
         elif model_type == ModelType.SOCIAL:
             from .dataset import SocialDataset
             return SocialDataset(config)
-        elif model_type == ModelType.XGBOOST:
-            from .dataset import XgboostDataset
-            return XgboostDataset(config)
+        elif model_type == ModelType.DECISIONTREE:
+            from .dataset import DecisionTreeDataset
+            return DecisionTreeDataset(config)
         else:
             from .dataset import Dataset
             return Dataset(config)
@@ -266,13 +266,13 @@ def get_data_loader(name, config, eval_setting):
             return SequentialNegSampleDataLoader
         elif neg_sample_strategy == 'full':
             return SequentialFullDataLoader
-    elif model_type == ModelType.XGBOOST:
+    elif model_type == ModelType.DECISIONTREE:
         if neg_sample_strategy == 'none':
-            return XgboostDataLoader
+            return DecisionTreeDataLoader
         elif neg_sample_strategy == 'by':
-            return XgboostNegSampleDataLoader
+            return DecisionTreeNegSampleDataLoader
         elif neg_sample_strategy == 'full':
-            return XgboostFullDataLoader
+            return DecisionTreeFullDataLoader
     elif model_type == ModelType.KNOWLEDGE:
         if neg_sample_strategy == 'by':
             if name == 'train':
