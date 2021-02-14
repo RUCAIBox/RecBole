@@ -75,11 +75,16 @@ class S3Rec(SequentialRecommender):
         self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size)
         self.feature_embedding = nn.Embedding(self.n_features, self.hidden_size, padding_idx=0)
 
-        self.trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
-                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
-                                              hidden_dropout_prob=self.hidden_dropout_prob,
-                                              attn_dropout_prob=self.attn_dropout_prob,
-                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+        self.trm_encoder = TransformerEncoder(
+            n_layers=self.n_layers,
+            n_heads=self.n_heads,
+            hidden_size=self.hidden_size,
+            inner_size=self.inner_size,
+            hidden_dropout_prob=self.hidden_dropout_prob,
+            attn_dropout_prob=self.attn_dropout_prob,
+            hidden_act=self.hidden_act,
+            layer_norm_eps=self.layer_norm_eps
+        )
 
         self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
         self.dropout = nn.Dropout(self.hidden_dropout_prob)
@@ -176,14 +181,13 @@ class S3Rec(SequentialRecommender):
         input_emb = self.LayerNorm(input_emb)
         input_emb = self.dropout(input_emb)
         attention_mask = self.get_attention_mask(item_seq, bidirectional=bidirectional)
-        trm_output = self.trm_encoder(input_emb,
-                                      attention_mask,
-                                      output_all_encoded_layers=True)
+        trm_output = self.trm_encoder(input_emb, attention_mask, output_all_encoded_layers=True)
         seq_output = trm_output[-1]  # [B L H]
         return seq_output
 
-    def pretrain(self, features, masked_item_sequence, pos_items, neg_items,
-                 masked_segment_sequence, pos_segment, neg_segment):
+    def pretrain(
+        self, features, masked_item_sequence, pos_items, neg_items, masked_segment_sequence, pos_segment, neg_segment
+    ):
         """Pretrain out model using four pre-training tasks:
 
             1. Associated Attribute Prediction
@@ -317,14 +321,14 @@ class S3Rec(SequentialRecommender):
                 sample_length = random.randint(1, len(instance) // 2)
                 start_id = random.randint(0, len(instance) - sample_length)
                 neg_start_id = random.randint(0, len(long_sequence) - sample_length)
-                pos_segment = instance[start_id: start_id + sample_length]
+                pos_segment = instance[start_id:start_id + sample_length]
                 neg_segment = long_sequence[neg_start_id:neg_start_id + sample_length]
                 masked_segment = instance[:start_id] + [self.mask_token] * sample_length \
                                  + instance[start_id + sample_length:]
-                pos_segment = [self.mask_token] * start_id + pos_segment + [self.mask_token] * (
-                        len(instance) - (start_id + sample_length))
-                neg_segment = [self.mask_token] * start_id + neg_segment + [self.mask_token] * (
-                        len(instance) - (start_id + sample_length))
+                pos_segment = [self.mask_token] * start_id + pos_segment + \
+                              [self.mask_token] * (len(instance) - (start_id + sample_length))
+                neg_segment = [self.mask_token] * start_id + neg_segment + \
+                              [self.mask_token] * (len(instance) - (start_id + sample_length))
             masked_segment_list.append(self._padding_zero_at_left(masked_segment))
             pos_segment_list.append(self._padding_zero_at_left(pos_segment))
             neg_segment_list.append(self._padding_zero_at_left(neg_segment))
@@ -351,8 +355,9 @@ class S3Rec(SequentialRecommender):
             masked_segment_sequence, pos_segment, neg_segment \
                 = self.reconstruct_pretrain_data(item_seq, item_seq_len)
 
-            loss = self.pretrain(features, masked_item_sequence, pos_items, neg_items,
-                                 masked_segment_sequence, pos_segment, neg_segment)
+            loss = self.pretrain(
+                features, masked_item_sequence, pos_items, neg_items, masked_segment_sequence, pos_segment, neg_segment
+            )
         # finetune
         else:
             pos_items = interaction[self.POS_ITEM_ID]

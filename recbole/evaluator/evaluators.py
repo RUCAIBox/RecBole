@@ -13,7 +13,6 @@ recbole.evaluator.evaluators
 #####################################
 """
 
-
 from collections import ChainMap
 
 import numpy as np
@@ -64,11 +63,10 @@ class TopKEvaluator(GroupedEvaluator):
 
        """
         user_len_list = interaction.user_len_list
-        
+
         scores_matrix = self.get_score_matrix(scores_tensor, user_len_list)
         scores_matrix = torch.flip(scores_matrix, dims=[-1])
-        shape_matrix = torch.full((len(user_len_list), 1), scores_matrix.shape[1],
-                                  device=scores_matrix.device)
+        shape_matrix = torch.full((len(user_len_list), 1), scores_matrix.shape[1], device=scores_matrix.device)
 
         # get topk
         _, topk_idx = torch.topk(scores_matrix, max(self.topk), dim=-1)  # n_users x k
@@ -114,8 +112,10 @@ class TopKEvaluator(GroupedEvaluator):
                 self.topk = [self.topk]
             for topk in self.topk:
                 if topk <= 0:
-                    raise ValueError('topk must be a positive integer or a list of positive integers, '
-                                     'but get `{}`'.format(topk))
+                    raise ValueError(
+                        'topk must be a positive integer or a list of positive integers, '
+                        'but get `{}`'.format(topk)
+                    )
         else:
             raise TypeError('The topk must be a integer, list')
 
@@ -369,8 +369,4 @@ class LossEvaluator(IndividualEvaluator):
         return msg
 
 
-metric_eval_bind = [
-    (topk_metrics, TopKEvaluator),
-    (loss_metrics, LossEvaluator),
-    (rank_metrics, RankEvaluator)
-]
+metric_eval_bind = [(topk_metrics, TopKEvaluator), (loss_metrics, LossEvaluator), (rank_metrics, RankEvaluator)]

@@ -55,7 +55,7 @@ class CDAE(GeneralRecommender):
         if self.out_activation == 'sigmoid':
             self.o_act = nn.Sigmoid()
         elif self.out_activation == 'relu':
-            self.o_act = nn.Sigmoid()
+            self.o_act = nn.ReLU()
         else:
             raise ValueError('Invalid output layer activation function')
 

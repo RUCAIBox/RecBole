@@ -1,4 +1,5 @@
 from recbole.model.general_recommender.bpr import BPR
+from recbole.model.general_recommender.cdae import CDAE
 from recbole.model.general_recommender.convncf import ConvNCF
 from recbole.model.general_recommender.dgcf import DGCF
 from recbole.model.general_recommender.dmf import DMF
@@ -16,4 +17,3 @@ from recbole.model.general_recommender.neumf import NeuMF
 from recbole.model.general_recommender.ngcf import NGCF
 from recbole.model.general_recommender.pop import Pop
 from recbole.model.general_recommender.spectralcf import SpectralCF
-from recbole.model.general_recommender.cdae import CDAE

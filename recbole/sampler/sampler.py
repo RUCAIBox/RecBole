@@ -44,7 +44,7 @@ class AbstractSampler(object):
 
     def set_distribution(self, distribution):
         """Set the distribution of sampler.
-            
+
         Args:
             distribution (str): Distribution of the negative items.
         """
@@ -91,7 +91,7 @@ class AbstractSampler(object):
         self.random_pr %= self.random_list_length
         while True:
             if self.random_pr + num <= self.random_list_length:
-                value_id.append(self.random_list[self.random_pr: self.random_pr + num])
+                value_id.append(self.random_list[self.random_pr:self.random_pr + num])
                 self.random_pr += num
                 break
             else:
@@ -147,9 +147,10 @@ class AbstractSampler(object):
             key_ids = np.tile(key_ids, num)
             while len(check_list) > 0:
                 value_ids[check_list] = self.random_num(len(check_list))
-                check_list = np.array([i for i, used, v in
-                                       zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
-                                       if v in used])
+                check_list = np.array([
+                    i for i, used, v in zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
+                    if v in used
+                ])
         return torch.tensor(value_ids)
 
 
@@ -174,7 +175,7 @@ class Sampler(AbstractSampler):
         if not isinstance(datasets, list):
             datasets = [datasets]
         if len(phases) != len(datasets):
-            raise ValueError('phases {} and datasets {} should have the same length'.format(phases, datasets))
+            raise ValueError(f'Phases {phases} and datasets {datasets} should have the same length.')
 
         self.phases = phases
         self.datasets = datasets
@@ -200,7 +201,7 @@ class Sampler(AbstractSampler):
                 random_item_list.extend(dataset.inter_feat[self.iid_field].numpy())
             return random_item_list
         else:
-            raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
+            raise NotImplementedError(f'Distribution [{self.distribution}] has not been implemented.')
 
     def get_used_ids(self):
         """
@@ -218,9 +219,11 @@ class Sampler(AbstractSampler):
 
         for used_item_set in used_item_id[self.phases[-1]]:
             if len(used_item_set) + 1 == self.n_items:  # [pad] is a item.
-                raise ValueError('Some users have interacted with all items, '
-                                 'which we can not sample negative items for them. '
-                                 'Please set `max_user_inter_num` to filter those users.')
+                raise ValueError(
+                    'Some users have interacted with all items, '
+                    'which we can not sample negative items for them. '
+                    'Please set `max_user_inter_num` to filter those users.'
+                )
         return used_item_id
 
     def set_phase(self, phase):
@@ -234,7 +237,7 @@ class Sampler(AbstractSampler):
             is set to the value of corresponding phase.
         """
         if phase not in self.phases:
-            raise ValueError('phase [{}] not exist'.format(phase))
+            raise ValueError(f'Phase [{phase}] not exist.')
         new_sampler = copy.copy(self)
         new_sampler.phase = phase
         new_sampler.used_ids = new_sampler.used_ids[phase]
@@ -259,7 +262,7 @@ class Sampler(AbstractSampler):
         except IndexError:
             for user_id in user_ids:
                 if user_id < 0 or user_id >= self.n_users:
-                    raise ValueError('user_id [{}] not exist'.format(user_id))
+                    raise ValueError(f'user_id [{user_id}] not exist.')
 
 
 class KGSampler(AbstractSampler):
@@ -293,7 +296,7 @@ class KGSampler(AbstractSampler):
         elif self.distribution == 'popularity':
             return list(self.hid_list) + list(self.tid_list)
         else:
-            raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
+            raise NotImplementedError(f'Distribution [{self.distribution}] has not been implemented.')
 
     def get_used_ids(self):
         """
@@ -307,8 +310,10 @@ class KGSampler(AbstractSampler):
 
         for used_tail_set in used_tail_entity_id:
             if len(used_tail_set) + 1 == self.entity_num:  # [pad] is a entity.
-                raise ValueError('Some head entities have relation with all entities, '
-                                 'which we can not sample negative entities for them.')
+                raise ValueError(
+                    'Some head entities have relation with all entities, '
+                    'which we can not sample negative entities for them.'
+                )
         return used_tail_entity_id
 
     def sample_by_entity_ids(self, head_entity_ids, num=1):
@@ -330,7 +335,7 @@ class KGSampler(AbstractSampler):
         except IndexError:
             for head_entity_id in head_entity_ids:
                 if head_entity_id not in self.head_entities:
-                    raise ValueError('head_entity_id [{}] not exist'.format(head_entity_id))
+                    raise ValueError(f'head_entity_id [{head_entity_id}] not exist.')
 
 
 class RepeatableSampler(AbstractSampler):
@@ -368,7 +373,7 @@ class RepeatableSampler(AbstractSampler):
         elif self.distribution == 'popularity':
             return self.dataset.inter_feat[self.iid_field].numpy()
         else:
-            raise NotImplementedError('Distribution [{}] has not been implemented'.format(self.distribution))
+            raise NotImplementedError(f'Distribution [{self.distribution}] has not been implemented.')
 
     def get_used_ids(self):
         """
@@ -397,7 +402,7 @@ class RepeatableSampler(AbstractSampler):
         except IndexError:
             for user_id in user_ids:
                 if user_id < 0 or user_id >= self.n_users:
-                    raise ValueError('user_id [{}] not exist'.format(user_id))
+                    raise ValueError(f'user_id [{user_id}] not exist.')
 
     def set_phase(self, phase):
         """Get the sampler of corresponding phase.
@@ -409,7 +414,7 @@ class RepeatableSampler(AbstractSampler):
             Sampler: the copy of this sampler, and :attr:`phase` is set the same as input phase.
         """
         if phase not in self.phases:
-            raise ValueError('phase [{}] not exist'.format(phase))
+            raise ValueError(f'Phase [{phase}] not exist.')
         new_sampler = copy.copy(self)
         new_sampler.phase = phase
         return new_sampler

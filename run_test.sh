@@ -2,15 +2,21 @@
 
 
 python -m pytest -v tests/metrics
-printf "metrics tests finished\n"
+echo "metrics tests finished"
+
 python -m pytest -v tests/config/test_config.py
 python -m pytest -v tests/config/test_overall.py
 export PYTHONPATH=.
 python tests/config/test_command_line.py --use_gpu=False --valid_metric=Recall@10 --split_ratio=[0.7,0.2,0.1] --metrics=['Recall@10'] --epochs=200 --eval_setting='LO_RS' --learning_rate=0.3
-printf "config tests finished\n"
+echo "config tests finished"
+
 python -m pytest -v tests/evaluation_setting
-printf "evaluation_setting tests finished\n"
+echo "evaluation_setting tests finished"
+
 python -m pytest -v tests/model/test_model_auto.py
 python -m pytest -v tests/model/test_model_manual.py
-printf "model tests finished\n"
+echo "model tests finished"
 
+python -m pytest -v tests/data/test_dataset.py
+python -m pytest -v tests/data/test_dataloader.py
+echo "data tests finished"
