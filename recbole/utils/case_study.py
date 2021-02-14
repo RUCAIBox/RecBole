@@ -7,6 +7,10 @@
 # @Author : Yushuo Chen
 # @email  : chenyushuo@ruc.edu.cn
 
+"""
+recbole.utils.case_study
+#####################################
+"""
 
 import numpy as np
 import torch
@@ -16,7 +20,7 @@ from recbole.data.dataloader.sequential_dataloader import SequentialFullDataLoad
 
 
 @torch.no_grad()
-def get_scores(uid_series, model, test_data):
+def full_sort_scores(uid_series, model, test_data):
     """Calculate the scores of all items for each user in uid_series.
 
     Note:
@@ -37,14 +41,15 @@ def get_scores(uid_series, model, test_data):
     if isinstance(test_data, GeneralFullDataLoader):
         index = np.isin(test_data.user_df[uid_field].numpy(), uid_series)
         input_interaction = test_data.user_df[index]
-        history_item = test_data.uid2history_item[input_interaction[uid_field]]
+        history_item = test_data.uid2history_item[input_interaction[uid_field].numpy()]
         history_row = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
         history_col = torch.cat(list(history_item))
         history_index = history_row, history_col
     elif isinstance(test_data, SequentialFullDataLoader):
         index = np.isin(test_data.uid_list, uid_series)
-        input_interaction = test_data.augmentation(test_data.item_list_index[index],
-                                                   test_data.target_index[index], test_data.item_list_length[index])
+        input_interaction = test_data.augmentation(
+            test_data.item_list_index[index], test_data.target_index[index], test_data.item_list_length[index]
+        )
         history_index = None
     else:
         raise NotImplementedError
@@ -65,7 +70,7 @@ def get_scores(uid_series, model, test_data):
     return scores
 
 
-def get_topk(uid_series, model, test_data, k):
+def full_sort_topk(uid_series, model, test_data, k):
     """Calculate the top-k items' scores and ids for each user in uid_series.
 
     Args:
@@ -79,5 +84,5 @@ def get_topk(uid_series, model, test_data, k):
             - topk_scores (torch.Tensor): The scores of topk items.
             - topk_index (torch.Tensor): The index of topk items, which is also the internal ids of items.
     """
-    scores = get_scores(uid_series, model, test_data)
+    scores = full_sort_scores(uid_series, model, test_data)
     return torch.topk(scores, k)

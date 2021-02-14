@@ -27,16 +27,19 @@ ENTITY_ID_FIELD: entity_id
 load_col:
     inter: [user_id, item_id, rating, timestamp]
 unload_col: ~
+unused_col: ~
 
 # Filtering
-max_user_inter_num: ~
-min_user_inter_num: ~
-max_item_inter_num: ~
-min_item_inter_num: ~
+rm_dup_inter: ~
 lowest_val: ~
 highest_val: ~
 equal_val: ~
 not_equal_val: ~
+filter_inter_by_user_or_item: True
+max_user_inter_num: ~
+min_user_inter_num: ~
+max_item_inter_num: ~
+min_item_inter_num: ~
 
 # Preprocessing
 fields_in_same_space: ~

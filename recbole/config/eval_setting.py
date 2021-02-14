@@ -7,7 +7,6 @@
 # @Author : Yupeng Hou, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
 
-
 """
 recbole.config.eval_setting
 ################################
@@ -163,7 +162,7 @@ class EvalSetting(object):
         """
         self.set_ordering('shuffle')
 
-    def sort_by(self, field, ascending=None):
+    def sort_by(self, field, ascending=True):
         """Setting about Sorting.
 
         Similar with pandas' sort_values_
@@ -175,12 +174,6 @@ class EvalSetting(object):
             ascending (bool or list of bool): Sort ascending vs. descending. Specify list for multiple sort orders.
                 If this is a list of bool, must match the length of the field
         """
-        if not isinstance(field, list):
-            field = [field]
-        if ascending is None:
-            ascending = [True] * len(field)
-            if len(ascending) == 1:
-                ascending = True
         self.set_ordering('by', field=field, ascending=ascending)
 
     def temporal_ordering(self):
@@ -277,6 +270,40 @@ class EvalSetting(object):
             distribution (str): distribution of sampler, either ``uniform`` or ``popularity``.
         """
         self.set_neg_sampling(strategy='by', by=by, distribution=distribution)
+
+    def set_ordering_and_splitting(self, es_str):
+        """Setting about ordering and split method.
+
+        Args:
+            es_str (str): Ordering and splitting method string. Either ``RO_RS``, ``RO_LS``, ``TO_RS`` or ``TO_LS``.
+        """
+        args = es_str.split('_')
+        if len(args) != 2:
+            raise ValueError(f'`{es_str}` is invalid eval_setting.')
+        ordering_args, split_args = args
+
+        if self.config['group_by_user']:
+            self.group_by_user()
+
+        if ordering_args == 'RO':
+            self.random_ordering()
+        elif ordering_args == 'TO':
+            self.temporal_ordering()
+        else:
+            raise NotImplementedError(f'Ordering args `{ordering_args}` is not implemented.')
+
+        if split_args == 'RS':
+            ratios = self.config['split_ratio']
+            if ratios is None:
+                raise ValueError('`ratios` should be set if `RS` is set.')
+            self.split_by_ratio(ratios)
+        elif split_args == 'LS':
+            leave_one_num = self.config['leave_one_num']
+            if leave_one_num is None:
+                raise ValueError('`leave_one_num` should be set if `LS` is set.')
+            self.leave_one_out(leave_one_num=leave_one_num)
+        else:
+            raise NotImplementedError(f'Split args `{split_args}` is not implemented.')
 
     def RO_RS(self, ratios=(0.8, 0.1, 0.1), group_by_user=True):
         """Preset about Random Ordering and Ratio-based Splitting.

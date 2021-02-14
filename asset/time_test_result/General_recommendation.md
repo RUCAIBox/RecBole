@@ -77,7 +77,7 @@ Other parameters (including model parameters) are default value.
 | BPRMF      | 4.42              | 52.81             | 1.08    |
 | NeuMF      | 11.33             | 238.92            | 1.26     |
 | DMF        | 20.62             | 68.89             | 7.12     |
-| NAIS       | -                 | -                 | -           |
+| NAIS       | -                 | -                 | Out of Memory       |
 | NGCF       | 52.50             | 51.60             | 2.00     |
 | GCMC       | 93.15             |                     1810.43 | 3.17     |
 | LightGCN   | 30.21             | 47.12             | 1.58     |
@@ -127,13 +127,13 @@ Other parameters (including model parameters) are default value.
 | BPRMF      | 6.31                      | 120.03                    | 1.29            |
 | NeuMF      | 17.38                     | 2069.53                   | 1.67            |
 | DMF        | 43.96                     | 173.13                    | 9.22            |
-| NAIS       | -                         | -                         | -               |
+| NAIS       | -                         | -                         | Out of Memory               |
 | NGCF       | 122.90                    | 129.59                    | 3.28            |
 | GCMC       | 299.36                    | 9833.24                   | 5.96            |
 | LightGCN   | 67.91                     | 116.16                    | 2.02            |
 | DGCF       | 1542.00                   | 119.00                    | 17.17           |
 | ConvNCF    | 87.56                     | 11155.31                  | 1.62            |
-| FISM       | -                         | -                         | -               |
+| FISM       | -                         | -                         | Out of Memory     |
 | SpectralCF | 138.99                    | 133.37                    | 3.10            |
 
 #### Config file of Yelp dataset:

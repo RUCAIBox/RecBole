@@ -70,8 +70,8 @@ class GRU4Rec(SequentialRecommender):
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight)
         elif isinstance(module, nn.GRU):
-            xavier_uniform_(self.gru_layers.weight_hh_l0)
-            xavier_uniform_(self.gru_layers.weight_ih_l0)
+            xavier_uniform_(module.weight_hh_l0)
+            xavier_uniform_(module.weight_ih_l0)
 
     def forward(self, item_seq, item_seq_len):
         item_seq_emb = self.item_embedding(item_seq)
