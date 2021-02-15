@@ -74,7 +74,6 @@ class Config(object):
 
         self.model, self.model_class, self.dataset = self._get_model_and_dataset(model, dataset)
         self._load_internal_config_dict(self.model, self.model_class, self.dataset)
-        self._parameter_check() # add
         self.final_config_dict = self._get_final_config_dict()
         self._set_default_parameters()
         self._init_device()
@@ -85,7 +84,6 @@ class Config(object):
         self.parameters['Training'] = training_arguments
         self.parameters['Evaluation'] = evaluation_arguments
         self.parameters['Dataset'] = dataset_arguments
-        self.hyper_params = set(general_arguments + training_arguments + evaluation_arguments + dataset_arguments)
 
     def _build_yaml_loader(self):
         loader = yaml.FullLoader
@@ -107,13 +105,12 @@ class Config(object):
         r"""This function convert the str parameters to their original type.
 
         """
-        self.input_params.update(config_dict.keys()) ## add
         for key in config_dict:
             param = config_dict[key]
-            if not isinstance(param, str):  
+            if not isinstance(param, str):
                 continue
-            try:    
-                value = eval(param) 
+            try:
+                value = eval(param)
                 if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
                     value = param
             except (NameError, SyntaxError, TypeError):
@@ -131,13 +128,10 @@ class Config(object):
 
     def _load_config_files(self, file_list):
         file_config_dict = dict()
-        self.input_params = set()
         if file_list:
             for file in file_list:
                 with open(file, 'r', encoding='utf-8') as f:
-                    config_update = yaml.load(f.read(), Loader=self.yaml_loader)
-                    self.input_params.update(config_update.keys())  ## add
-                    file_config_dict.update(config_update)
+                    file_config_dict.update(yaml.load(f.read(), Loader=self.yaml_loader))
         return file_config_dict
 
     def _load_variable_config_dict(self, config_dict):
@@ -162,7 +156,6 @@ class Config(object):
                     raise SyntaxError("There are duplicate commend arg '%s' with different value." % arg)
                 else:
                     cmd_config_dict[cmd_arg_name] = cmd_arg_value
-                    
         if len(unrecognized_args) > 0:
             logger = getLogger()
             logger.warning('command line args [{}] will not be used in RecBole'.format(' '.join(unrecognized_args)))
@@ -177,7 +170,7 @@ class Config(object):
         self.external_config_dict = external_config_dict
 
     def _get_model_and_dataset(self, model, dataset):
-        
+
         if model is None:
             try:
                 model = self.external_config_dict['model']
@@ -203,7 +196,7 @@ class Config(object):
                 )
         else:
             final_dataset = dataset
-            
+
         return final_model, final_model_class, final_dataset
 
     def _update_internal_config_dict(self, file):
@@ -238,8 +231,6 @@ class Config(object):
                     self.parameters['Dataset'] += [
                         key for key in config_dict.keys() if key not in self.parameters['Dataset']
                     ]
-                elif file == model_init_file:   # add
-                    self.model_params = set(config_dict.keys())
 
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
@@ -262,17 +253,6 @@ class Config(object):
 
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.KNOWLEDGE:
             self._update_internal_config_dict(knowledge_base_init)
-        
-    def _parameter_check(self):
-        diff_set = self.input_params - self.hyper_params - self.model_params
-        if 'model' in diff_set:
-            diff_set.remove('model')
-        diff_num = len(diff_set)
-        if diff_num > 0:
-            params = ""
-            for param in diff_set:
-                params += "'" + param + "',"
-            raise ValueError('Unexpected keyword parameters ' + params[:-1] + ' appeared.')
 
     def _get_final_config_dict(self):
         final_config_dict = dict()
