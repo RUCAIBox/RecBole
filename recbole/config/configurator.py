@@ -234,12 +234,11 @@ class Config(object):
         for file in [overall_init_file, model_init_file, sample_init_file, dataset_init_file]:
             if os.path.isfile(file):
                 config_dict = self._update_internal_config_dict(file)
+                self.hyper_params.update(config_dict.keys())
                 if file == dataset_init_file:
                     self.parameters['Dataset'] += [
                         key for key in config_dict.keys() if key not in self.parameters['Dataset']
                     ]
-                elif file == model_init_file:   # add
-                    self.model_params = set(config_dict.keys())
 
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
@@ -264,7 +263,7 @@ class Config(object):
             self._update_internal_config_dict(knowledge_base_init)
         
     def _parameter_check(self):
-        diff_set = self.input_params - self.hyper_params - self.model_params
+        diff_set = self.input_params - self.hyper_params
         if 'model' in diff_set:
             diff_set.remove('model')
         if 'dataset' in diff_set:
