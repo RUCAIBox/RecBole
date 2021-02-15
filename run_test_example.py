@@ -146,6 +146,10 @@ test_examples = {
         'model': 'MacridVAE',
         'dataset': 'ml-100k',
     },
+    'Test NNCF': {
+        'model': 'NNCF',
+        'dataset': 'ml-100k',
+    },
 
     # Context-aware Recommendation
     'Test FM': {
