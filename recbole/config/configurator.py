@@ -267,6 +267,8 @@ class Config(object):
         diff_set = self.input_params - self.hyper_params - self.model_params
         if 'model' in diff_set:
             diff_set.remove('model')
+        if 'dataset' in diff_set:
+            diff_set.remove('dataset')
         diff_num = len(diff_set)
         if diff_num > 0:
             params = ""
