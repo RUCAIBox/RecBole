@@ -234,7 +234,8 @@ class Config(object):
         for file in [overall_init_file, model_init_file, sample_init_file, dataset_init_file]:
             if os.path.isfile(file):
                 config_dict = self._update_internal_config_dict(file)
-                self.hyper_params.update(config_dict.keys())
+                if config_dict is not None:
+                    self.hyper_params.update(config_dict.keys())
                 if file == dataset_init_file:
                     self.parameters['Dataset'] += [
                         key for key in config_dict.keys() if key not in self.parameters['Dataset']
@@ -268,6 +269,8 @@ class Config(object):
             diff_set.remove('model')
         if 'dataset' in diff_set:
             diff_set.remove('dataset')
+        if 'config_files' in diff_set:
+            diff_set.remove('config_files')
         diff_num = len(diff_set)
         if diff_num > 0:
             params = ""
