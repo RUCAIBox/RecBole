@@ -261,11 +261,11 @@ class Config(object):
         final_config_dict.update(self.external_config_dict)
         return final_config_dict
     
-    # def _parameter_check(self, file_list):
-    #     diff_set = set(self.external_config_dict.keys()) - set(self.internal_config_dict.keys()) - {'model', 'dataset', 'config_files'}
-    #     diff_num = len(diff_set)
-    #     if diff_num > 0:
-    #         raise ValueError("Unexpected keyword parameters '" + diff_set.pop() + "' appeared.")
+    def _parameter_check(self, file_list):
+        diff_set = set(self.external_config_dict.keys()) - set(self.internal_config_dict.keys()) - {'model', 'dataset', 'config_files'}
+        diff_num = len(diff_set)
+        if diff_num > 0:
+            raise ValueError("Unexpected keyword parameters '" + diff_set.pop() + "' appeared.")
 
     def _set_default_parameters(self):
 
