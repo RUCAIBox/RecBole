@@ -3,7 +3,6 @@
 # @Author : Jingsen Zhang
 # @Email  : zhangjingsen@ruc.edu.cn
 
-
 r"""
 NextItNet
 ################################################
@@ -36,6 +35,7 @@ class NextItNet(SequentialRecommender):
         and then stop the generating process. Although the number of parameters in residual block (a) is less
         than it in residual block (b), the performance of b is better than a.
         So in our model, we use residual block (b).
+        In addition, when dilations is not equal to 1, the training may be slow. To  speed up the efficiency, please set the parameters "reproducibility" False.
     """
 
     def __init__(self, config, dataset):
@@ -54,9 +54,11 @@ class NextItNet(SequentialRecommender):
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
 
         # residual blocks    dilations in blocks:[1,2,4,8,1,2,4,8,...]
-        rb = [ResidualBlock_b(self.residual_channels, self.residual_channels,
-                              kernel_size=self.kernel_size, dilation=dilation)
-              for dilation in self.dilations]
+        rb = [
+            ResidualBlock_b(
+                self.residual_channels, self.residual_channels, kernel_size=self.kernel_size, dilation=dilation
+            ) for dilation in self.dilations
+        ]
         self.residual_blocks = nn.Sequential(*rb)
 
         # fully-connected layer
@@ -181,8 +183,8 @@ class ResidualBlock_a(nn.Module):
         """
         inputs_pad = x.permute(0, 2, 1)  # [batch_size, embed_size, seq_len]
         inputs_pad = inputs_pad.unsqueeze(2)  # [batch_size, embed_size, 1, seq_len]
-        pad = nn.ZeroPad2d(
-            ((self.kernel_size - 1) * dilation, 0, 0, 0))  # padding operation  args：(left,right,top,bottom)
+        pad = nn.ZeroPad2d(((self.kernel_size - 1) * dilation, 0, 0, 0))
+        # padding operation  args：(left,right,top,bottom)
         inputs_pad = pad(inputs_pad)  # [batch_size, embed_size, 1, seq_len+(self.kernel_size-1)*dilations]
         return inputs_pad
 

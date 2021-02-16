@@ -74,7 +74,7 @@ class DGCF(GeneralRecommender):
         self.n_layers = config['n_layers']
         self.reg_weight = config['reg_weight']
         self.cor_weight = config['cor_weight']
-        n_batch = dataset.dataset.inter_num // self.batch_size + 1
+        n_batch = dataset.dataset.inter_num // config['train_batch_size'] + 1
         self.cor_batch_size = int(max(self.n_users / n_batch, self.n_items / n_batch))
         # ensure embedding can be divided into <n_factors> intent
         assert self.embedding_size % self.n_factors == 0
@@ -207,8 +207,9 @@ class DGCF(GeneralRecommender):
 
                     # get the attentive weights
                     # .... A_factor_values is a dense tensor with the size of [num_edge, 1]
-                    A_factor_values = torch.sum(head_factor_embeddings * torch.tanh(tail_factor_embeddings),
-                                                dim=1, keepdim=True)
+                    A_factor_values = torch.sum(
+                        head_factor_embeddings * torch.tanh(tail_factor_embeddings), dim=1, keepdim=True
+                    )
 
                     # update the attentive weights
                     A_iter_values.append(A_factor_values)

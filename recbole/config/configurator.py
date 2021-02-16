@@ -89,14 +89,16 @@ class Config(object):
         loader = yaml.FullLoader
         loader.add_implicit_resolver(
             u'tag:yaml.org,2002:float',
-            re.compile(u'''^(?:
+            re.compile(
+                u'''^(?:
              [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
             |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
             |\\.[0-9_]+(?:[eE][-+][0-9]+)?
             |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
             |[-+]?\\.(?:inf|Inf|INF)
-            |\\.(?:nan|NaN|NAN))$''', re.X),
-            list(u'-+0123456789.'))
+            |\\.(?:nan|NaN|NAN))$''', re.X
+            ), list(u'-+0123456789.')
+        )
         return loader
 
     def _convert_config_dict(self, config_dict):
@@ -175,7 +177,8 @@ class Config(object):
             except KeyError:
                 raise KeyError(
                     'model need to be specified in at least one of the these ways: '
-                    '[model variable, config file, config dict, command line] ')
+                    '[model variable, config file, config dict, command line] '
+                )
         if not isinstance(model, str):
             final_model_class = model
             final_model = model.__name__
@@ -187,8 +190,10 @@ class Config(object):
             try:
                 final_dataset = self.external_config_dict['dataset']
             except KeyError:
-                raise KeyError('dataset need to be specified in at least one of the these ways: '
-                               '[dataset variable, config file, config dict, command line] ')
+                raise KeyError(
+                    'dataset need to be specified in at least one of the these ways: '
+                    '[dataset variable, config file, config dict, command line] '
+                )
         else:
             final_dataset = dataset
 
@@ -223,13 +228,14 @@ class Config(object):
             if os.path.isfile(file):
                 config_dict = self._update_internal_config_dict(file)
                 if file == dataset_init_file:
-                    self.parameters['Dataset'] += [key for key in config_dict.keys() if
-                                                   key not in self.parameters['Dataset']]
+                    self.parameters['Dataset'] += [
+                        key for key in config_dict.keys() if key not in self.parameters['Dataset']
+                    ]
 
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
-        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.XGBOOST}:
+        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.DECISIONTREE}:
             self._update_internal_config_dict(context_aware_init)
             if dataset == 'ml-100k':
                 self._update_internal_config_dict(context_aware_on_ml_100k_init)
@@ -272,8 +278,7 @@ class Config(object):
             elif self.final_config_dict['loss_type'] in ['BPR']:
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.PAIRWISE
         else:
-            raise ValueError('Either Model has attr \'input_type\','
-                             'or arg \'loss_type\' should exist in config.')
+            raise ValueError('Either Model has attr \'input_type\',' 'or arg \'loss_type\' should exist in config.')
 
         eval_type = None
         for metric in self.final_config_dict['metrics']:
@@ -324,10 +329,10 @@ class Config(object):
         args_info = ''
         for category in self.parameters:
             args_info += category + ' Hyper Parameters: \n'
-            args_info += '\n'.join(
-                ["{}={}".format(arg, value)
-                 for arg, value in self.final_config_dict.items()
-                 if arg in self.parameters[category]])
+            args_info += '\n'.join([
+                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
+                if arg in self.parameters[category]
+            ])
             args_info += '\n\n'
         return args_info
 

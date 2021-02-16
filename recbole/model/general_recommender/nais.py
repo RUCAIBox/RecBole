@@ -63,6 +63,10 @@ class NAIS(GeneralRecommender):
         if self.split_to > 0:
             self.logger.info('split the n_items to {} pieces'.format(self.split_to))
             self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
+        else:
+            self.logger.warning('Pay Attetion!! the `split_to` is set to 0. If you catch a OMM error in this case, ' + \
+                                'you need to increase it \n\t\t\tuntil the error disappears. For example, ' + \
+                                'you can append it in the command line such as `--split_to=5`')
 
         # define layers and loss
         # construct source and destination item embedding matrix
@@ -161,7 +165,8 @@ class NAIS(GeneralRecommender):
         if self.algorithm == 'prod':
             mlp_input = inter * target.unsqueeze(1)  # batch_size x max_len x embedding_size
         else:
-            mlp_input = torch.cat([inter, target.unsqueeze(1).expand_as(inter)], dim=2)  # batch_size x max_len x embedding_size*2
+            mlp_input = torch.cat([inter, target.unsqueeze(1).expand_as(inter)],
+                                  dim=2)  # batch_size x max_len x embedding_size*2
         mlp_output = self.mlp_layers(mlp_input)  # batch_size x max_len x weight_size
 
         logits = torch.matmul(mlp_output, self.weight_layer).squeeze(2)  # batch_size x max_len

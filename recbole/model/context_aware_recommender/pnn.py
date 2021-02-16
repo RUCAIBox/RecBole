@@ -50,8 +50,7 @@ class PNN(ContextRecommender):
 
         if self.use_outer:
             product_out_dim += self.num_pair
-            self.outer_product = OuterProductLayer(
-                self.num_feature_field, self.embedding_size, device=self.device)
+            self.outer_product = OuterProductLayer(self.num_feature_field, self.embedding_size, device=self.device)
         size_list = [product_out_dim] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, self.dropout_prob, bn=False)
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)

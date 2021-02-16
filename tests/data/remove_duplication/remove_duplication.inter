@@ -1,0 +1,4 @@
+user_id:token	item_id:token	timestamp:float
+1	1	1
+1	1	0
+1	1	2
