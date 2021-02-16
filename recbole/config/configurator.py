@@ -3,14 +3,9 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2020/10/9
-# @Author : Shanlei Mu, Yupeng Hou
-# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
-
-# UPDATE
-# @Time   : 2021/2/17
-# @Author : Jiawei Guan
-# @Email  : Guanjw@ruc.edu.cn
+# @Time   : 2020/10/04, 2020/10/9, 2021/2/17
+# @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan
+# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn
 
 """
 recbole.config.configurator
