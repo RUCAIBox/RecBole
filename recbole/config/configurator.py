@@ -3,9 +3,9 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2020/10/9
-# @Author : Shanlei Mu, Yupeng Hou
-# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
+# @Time   : 2020/10/04, 2020/10/9, 2021/2/17
+# @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan
+# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn
 
 """
 recbole.config.configurator
@@ -75,6 +75,7 @@ class Config(object):
         self.model, self.model_class, self.dataset = self._get_model_and_dataset(model, dataset)
         self._load_internal_config_dict(self.model, self.model_class, self.dataset)
         self.final_config_dict = self._get_final_config_dict()
+        self._parameter_check()
         self._set_default_parameters()
         self._init_device()
 
@@ -235,7 +236,7 @@ class Config(object):
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
-        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.XGBOOST}:
+        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.DECISIONTREE}:
             self._update_internal_config_dict(context_aware_init)
             if dataset == 'ml-100k':
                 self._update_internal_config_dict(context_aware_on_ml_100k_init)
@@ -259,6 +260,12 @@ class Config(object):
         final_config_dict.update(self.internal_config_dict)
         final_config_dict.update(self.external_config_dict)
         return final_config_dict
+    
+    def _parameter_check(self):
+        diff_set = set(self.external_config_dict.keys()) - set(self.internal_config_dict.keys()) - {'model', 'dataset', 'config_files'}
+        diff_num = len(diff_set)
+        if diff_num > 0:
+            raise ValueError("Unexpected keyword parameters '" + diff_set.pop() + "' appeared.")
 
     def _set_default_parameters(self):
 

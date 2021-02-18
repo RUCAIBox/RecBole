@@ -35,6 +35,7 @@ class NextItNet(SequentialRecommender):
         and then stop the generating process. Although the number of parameters in residual block (a) is less
         than it in residual block (b), the performance of b is better than a.
         So in our model, we use residual block (b).
+        In addition, when dilations is not equal to 1, the training may be slow. To  speed up the efficiency, please set the parameters "reproducibility" False.
     """
 
     def __init__(self, config, dataset):

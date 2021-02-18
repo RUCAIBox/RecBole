@@ -26,7 +26,7 @@ class ModelType(Enum):
     KNOWLEDGE = 4
     SOCIAL = 5
     TRADITIONAL = 6
-    XGBOOST = 7
+    DECISIONTREE = 7
 
 
 class DataLoaderType(Enum):
