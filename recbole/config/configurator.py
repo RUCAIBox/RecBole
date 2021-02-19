@@ -3,7 +3,7 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2020/10/9, 2021/2/17
+# @Time   : 2020/10/04, 2020/10/9, 2021/2/19
 # @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan
 # @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn
 
@@ -326,37 +326,20 @@ class Config(object):
         return key in self.final_config_dict
 
     def __str__(self):
-        args_dict = {}
-        for category in self.parameters:
-            args_dict[category] = {}
-        args_dict['Model'] = {}
-        other_params = set(self.external_config_dict.keys()) - set(self.internal_config_dict.keys()) - {'model', 'dataset', 'config_files'}
-        if len(other_params) > 0:
-            args_dict['Other'] = {}
-
-        for arg, value in self.final_config_dict.items():
-            if arg in other_params:
-                args_dict['Other'][arg] = value
-            else:
-                flag = 1
-                for category in self.parameters:
-                    if arg in self.parameters[category]:
-                        args_dict[category][arg] = value
-                        flag = 0
-                        break
-                if flag:
-                    args_dict['Model'][arg] = value
-
         args_info = ''
-        for i, category in enumerate(args_dict.keys()):
-            if i < 4:
-               args_info += category + ' Hyper Parameters: \n'
-            else:
-                args_info += category + ' Parameters: \n'
+        for category in self.parameters:
+            args_info += category + ' Hyper Parameters: \n'
             args_info += '\n'.join([
-                "{}={}".format(arg, value) for arg, value in args_dict[category].items()
+                "{}={}".format(arg, self.final_config_dict[arg]) for arg in self.parameters[category]
             ])
             args_info += '\n\n'
+            
+        args_info += 'Other Hyper Parameters: \n'
+        args_info += '\n'.join([
+                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
+                if arg not in sum(list(self.parameters.values()) + [['model', 'dataset', 'config_files']], [])
+            ])
+        args_info += '\n\n'
         return args_info
 
     def __repr__(self):
