@@ -1483,6 +1483,7 @@ class Dataset(object):
             if value_field not in df_feat:
                 raise ValueError(f'Value_field [{value_field}] should be one of `df_feat`\'s features.')
             data = df_feat[value_field]
+        print("hhhhh ",data.dtype)
         mat = coo_matrix((data, (src, tgt)), shape=(self.num(source_field), self.num(target_field)))
 
         if form == 'coo':
