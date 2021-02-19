@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15, 2020/11/20
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan, Chen Yang
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com
+# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15, 2020/11/20, 2021/2/16
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan, Chen Yang, Haoran Cheng
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com, 1871530482@qq.com
 
 r"""
 recbole.trainer.trainer
@@ -767,3 +767,89 @@ class xgboostTrainer(AbstractTrainer):
         batch_matrix_list = [[torch.stack((self.eval_true, self.eval_pred), 1)]]
         result = self.evaluator.evaluate(batch_matrix_list, eval_data)
         return result
+
+
+class RaCTTrainer(Trainer):
+    r"""RaCTTrainer is designed for RaCT, which is an actor-critic reinforcement learning based general recommenders.
+        It includes three training stages: actor pre-training, critic pre-training and actor-critic training. 
+
+        """
+    
+    def __init__(self, config, model):
+        super(RaCTTrainer, self).__init__(config, model)
+
+    def _build_optimizer(self):
+        r"""Init the Optimizer
+
+        Returns:
+            torch.optim: the optimizer
+        """
+        params = filter(lambda p: p.requires_grad, self.model.parameters())
+
+        if self.learner.lower() == 'adam':
+            optimizer = optim.Adam(params, lr=self.learning_rate, weight_decay=self.weight_decay)
+        elif self.learner.lower() == 'sgd':
+            optimizer = optim.SGD(params, lr=self.learning_rate, weight_decay=self.weight_decay)
+        elif self.learner.lower() == 'adagrad':
+            optimizer = optim.Adagrad(params, lr=self.learning_rate, weight_decay=self.weight_decay)
+        elif self.learner.lower() == 'rmsprop':
+            optimizer = optim.RMSprop(params, lr=self.learning_rate, weight_decay=self.weight_decay)
+        elif self.learner.lower() == 'sparse_adam':
+            optimizer = optim.SparseAdam(params, lr=self.learning_rate)
+            if self.weight_decay > 0:
+                self.logger.warning('Sparse Adam cannot argument received argument [{weight_decay}]')
+        else:
+            self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
+            optimizer = optim.Adam(params, lr=self.learning_rate)
+        return optimizer
+
+    def save_pretrained_model(self, epoch, saved_model_file):
+        r"""Store the model parameters information and training information.
+
+        Args:
+            epoch (int): the current epoch id
+            saved_model_file (str): file name for saved pretrained model
+
+        """
+        state = {
+            'config': self.config,
+            'epoch': epoch,
+            'state_dict': self.model.state_dict(),
+            'optimizer': self.optimizer.state_dict(),
+        }
+        torch.save(state, saved_model_file)
+
+    def pretrain(self, train_data, verbose=True, show_progress=False):
+    
+        for epoch_idx in range(self.start_epoch, self.epochs):
+            # train
+            training_start_time = time()
+            train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
+            self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
+            training_end_time = time()
+            train_loss_output = \
+                self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
+            if verbose:
+                self.logger.info(train_loss_output)
+
+            if (epoch_idx + 1) % self.config['save_step'] == 0:
+                saved_model_file = os.path.join(
+                    self.checkpoint_dir,
+                    '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1))
+                )
+                self.save_pretrained_model(epoch_idx, saved_model_file)
+                update_output = 'Saving current: %s' % saved_model_file
+                if verbose:
+                    self.logger.info(update_output)
+
+        return self.best_valid_score, self.best_valid_result
+
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
+        if self.model.train_stage == 'actor_pretrain':
+            return self.pretrain(train_data, verbose, show_progress)
+        elif self.model.train_stage == "critic_pretrain":
+            return self.pretrain(train_data, verbose, show_progress)
+        elif self.model.train_stage == 'finetune':
+            return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
+        else:
+            raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
