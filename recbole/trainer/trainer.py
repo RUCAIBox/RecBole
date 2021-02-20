@@ -434,7 +434,7 @@ class Trainer(AbstractTrainer):
         plt.xticks(my_x_ticks)
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
-        plt.title(self.config['model']+' '+time.strftime("%Y-%m-%d", time.localtime()))
+        plt.title(self.config['model']+' '+time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time())))
         if show:
             plt.show()
         if save_path:
