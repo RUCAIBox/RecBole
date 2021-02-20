@@ -41,7 +41,7 @@ def full_sort_scores(uid_series, model, test_data):
     if isinstance(test_data, GeneralFullDataLoader):
         index = np.isin(test_data.user_df[uid_field].numpy(), uid_series)
         input_interaction = test_data.user_df[index]
-        history_item = test_data.uid2history_item[input_interaction[uid_field]]
+        history_item = test_data.uid2history_item[input_interaction[uid_field].numpy()]
         history_row = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
         history_col = torch.cat(list(history_item))
         history_index = history_row, history_col
