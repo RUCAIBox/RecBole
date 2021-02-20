@@ -87,7 +87,6 @@ class Trainer(AbstractTrainer):
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
         self.weight_decay = config['weight_decay']
         self.draw_pic = config['draw_pic']
-        # self.model = config['model']
 
         self.start_epoch = 0
         self.cur_step = 0
