@@ -62,5 +62,5 @@ def init_logger(config):
     sh = logging.StreamHandler()
     sh.setLevel(level)
     sh.setFormatter(sformatter)
-    
+
     logging.basicConfig(level=level, handlers=[fh, sh])
