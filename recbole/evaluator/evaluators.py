@@ -66,7 +66,6 @@ class TopKEvaluator(GroupedEvaluator):
 
         scores_matrix = self.get_score_matrix(scores_tensor, user_len_list)
         random_index = torch.randperm(scores_matrix.shape[1], device=scores_matrix.device)
-        import pdb; pdb.set_trace()
         shuffle_scores = scores_matrix.index_select(1, random_index)
 
         # get topk
