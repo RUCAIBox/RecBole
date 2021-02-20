@@ -51,7 +51,6 @@ class TopKEvaluator(GroupedEvaluator):
         self._check_args()
 
 
-    @profile
     def collect(self, interaction, scores_tensor):
         """collect the topk intermediate result of one batch, this function mainly
         implements padding and TopK finding. It is called at the end of each batch
