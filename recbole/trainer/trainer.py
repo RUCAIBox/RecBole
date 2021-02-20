@@ -86,6 +86,7 @@ class Trainer(AbstractTrainer):
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
         self.weight_decay = config['weight_decay']
+        self.draw_pic = config['draw_pic']
 
         self.start_epoch = 0
         self.cur_step = 0
@@ -241,7 +242,7 @@ class Trainer(AbstractTrainer):
             train_loss_output += 'train loss:' + des % losses
         return train_loss_output + ']'
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None, model=None):
         r"""Train the model based on the train data and the valid data.
 
         Args:
@@ -313,6 +314,7 @@ class Trainer(AbstractTrainer):
                     if verbose:
                         self.logger.info(stop_output)
                     break
+        self.plot_train_loss(model=model, save_path=model+'_train_loss_graph.jpg')
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
@@ -417,7 +419,7 @@ class Trainer(AbstractTrainer):
             result_list.append(result)
         return torch.cat(result_list, dim=0)
 
-    def plot_train_loss(self, show=True, save_path=None):
+    def plot_train_loss(self, show=True, save_path=None, model=None):
         r"""Plot the train loss in each epoch
 
         Args:
@@ -426,17 +428,21 @@ class Trainer(AbstractTrainer):
                                        If it's None, it will not be saved.
         """
         import matplotlib.pyplot as plt
-        epochs = list(self.train_loss_dict.keys())
-        epochs.sort()
-        values = [float(self.train_loss_dict[epoch]) for epoch in epochs]
-        plt.plot(epochs, values)
-        plt.xticks(epochs)
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        if show:
-            plt.show()
-        if save_path:
-            plt.savefig(save_path)
+        import time
+        if self.draw_pic:
+            epochs = list(self.train_loss_dict.keys())
+            epochs.sort()
+            values = [float(self.train_loss_dict[epoch]) for epoch in epochs]
+            plt.plot(epochs, values)
+            my_x_ticks = np.arange(0,len(epochs),int(len(epochs)/10))
+            plt.xticks(my_x_ticks)
+            plt.xlabel('Epoch')
+            plt.ylabel('Loss')
+            plt.title(model+' '+time.strftime("%Y-%m-%d", time.localtime()))
+            if show:
+                plt.show()
+            if save_path:
+                plt.savefig(save_path)
 
 
 class KGTrainer(Trainer):
