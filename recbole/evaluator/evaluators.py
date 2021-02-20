@@ -50,7 +50,6 @@ class TopKEvaluator(GroupedEvaluator):
         self.topk = config['topk']
         self._check_args()
 
-
     def collect(self, interaction, scores_tensor):
         """collect the topk intermediate result of one batch, this function mainly
         implements padding and TopK finding. It is called at the end of each batch
@@ -67,6 +66,7 @@ class TopKEvaluator(GroupedEvaluator):
 
         scores_matrix = self.get_score_matrix(scores_tensor, user_len_list)
         random_index = torch.randperm(scores_matrix.shape[1], device=scores_matrix.device)
+        import pdb; pdb.set_trace()
         shuffle_scores = scores_matrix.index_select(1, random_index)
 
         # get topk
@@ -238,7 +238,7 @@ class RankEvaluator(GroupedEvaluator):
             eval_data (Dataset): the class of test data
 
         Returns:
-            dict: such as ``{'GAUC:0.9286}``
+            dict: such as ``{'GAUC': 0.9286}``
 
         """
         pos_len_list = eval_data.get_pos_len_list()
@@ -277,8 +277,6 @@ class RankEvaluator(GroupedEvaluator):
         msg = 'The Rank Evaluator Info:\n' + \
               '\tMetrics:[' + \
               ', '.join([rank_metrics[metric.lower()] for metric in self.metrics]) + \
-              '], TopK:[' + \
-              ', '.join(map(str, self.topk)) + \
               ']'
         return msg
 
