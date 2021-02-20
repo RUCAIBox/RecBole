@@ -2,8 +2,6 @@
 # @Time   : 2021/2/28
 # @Author : Lanling Xu
 # @Email  : xulanling_sherry@163.com 
-# python run_recbole.py --model RecVAE
-# python run_recbole.py --model=CDAE --dataset=lastfm --config_files=lastfm.yaml
 
 r"""
 RecVAE
