@@ -50,6 +50,8 @@ class TopKEvaluator(GroupedEvaluator):
         self.topk = config['topk']
         self._check_args()
 
+
+    @profile
     def collect(self, interaction, scores_tensor):
         """collect the topk intermediate result of one batch, this function mainly
         implements padding and TopK finding. It is called at the end of each batch
@@ -59,21 +61,20 @@ class TopKEvaluator(GroupedEvaluator):
             scores_tensor (tensor): the tensor of model output with size of `(N, )`
 
         Returns:
-            torch.Tensor : a matrix contain topk matrix and shape matrix
+            torch.Tensor : matrix including indexes of the top-k items
 
        """
         user_len_list = interaction.user_len_list
 
         scores_matrix = self.get_score_matrix(scores_tensor, user_len_list)
-        scores_matrix = torch.flip(scores_matrix, dims=[-1])
-        shape_matrix = torch.full((len(user_len_list), 1), scores_matrix.shape[1], device=scores_matrix.device)
+        random_index = torch.randperm(scores_matrix.shape[1], device=scores_matrix.device)
+        shuffle_scores = scores_matrix.index_select(1, random_index)
 
         # get topk
-        _, topk_idx = torch.topk(scores_matrix, max(self.topk), dim=-1)  # n_users x k
+        _, shuffle_topk_idx = torch.topk(shuffle_scores, max(self.topk), dim=-1)  # n_users x k
+        topk_idx = random_index[shuffle_topk_idx]
 
-        # pack top_idx and shape_matrix
-        result = torch.cat((topk_idx, shape_matrix), dim=1)
-        return result
+        return topk_idx
 
     def evaluate(self, batch_matrix_list, eval_data):
         """calculate the metrics of all batches. It is called at the end of each epoch
@@ -87,16 +88,12 @@ class TopKEvaluator(GroupedEvaluator):
 
         """
         pos_len_list = eval_data.get_pos_len_list()
-        batch_result = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
-
-        # unpack top_idx and shape_matrix
-        topk_idx = batch_result[:, :-1]
-        shapes = batch_result[:, -1]
+        topk_idx = torch.cat(batch_matrix_list, dim=0).cpu().numpy()
 
         assert len(pos_len_list) == len(topk_idx)
         # get metrics
         metric_dict = {}
-        result_list = self._calculate_metrics(pos_len_list, topk_idx, shapes)
+        result_list = self._calculate_metrics(pos_len_list, topk_idx)
         for metric, value in zip(self.metrics, result_list):
             for k in self.topk:
                 key = '{}@{}'.format(metric, k)
@@ -119,19 +116,18 @@ class TopKEvaluator(GroupedEvaluator):
         else:
             raise TypeError('The topk must be a integer, list')
 
-    def _calculate_metrics(self, pos_len_list, topk_idx, shapes):
+    def _calculate_metrics(self, pos_len_list, topk_idx):
         """integrate the results of each batch and evaluate the topk metrics by users
 
         Args:
             pos_len_list (numpy.ndarray): a list of users' positive items
             topk_idx (numpy.ndarray): a matrix which contains the index of the topk items for users
-            shapes (numpy.ndarray): a list which contains the columns of the padded batch matrix
 
         Returns:
             numpy.ndarray: a matrix which contains the metrics result
 
         """
-        pos_idx_matrix = (topk_idx >= (shapes - pos_len_list).reshape(-1, 1))
+        pos_idx_matrix = (topk_idx < pos_len_list.reshape(-1, 1))
         result_list = []
         for metric in self.metrics:
             metric_fuc = metrics_dict[metric.lower()]
@@ -189,7 +185,7 @@ class RankEvaluator(GroupedEvaluator):
             torch.Tensor: average_rank
 
         Example:
-            >>> average_rank(tensor([[1,2,2,2,3,3,6],[2,2,2,2,4,4,5]]))
+            >>> average_rank(tensor([[1,2,2,2,3,3,6],[2,2,2,2,4,5,5]]))
             tensor([[1.0000, 3.0000, 3.0000, 3.0000, 5.5000, 5.5000, 7.0000],
             [2.5000, 2.5000, 2.5000, 2.5000, 5.0000, 6.5000, 6.5000]])
 
