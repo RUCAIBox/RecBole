@@ -120,13 +120,13 @@ def ndcg_(pos_index, pos_len):
             \mathrm {DCG@K}=\sum_{i=1}^{K} \frac{2^{rel_i}-1}{\log_{2}{(i+1)}}\\
             \mathrm {IDCG@K}=\sum_{i=1}^{K}\frac{1}{\log_{2}{(i+1)}}\\
             \mathrm {NDCG_u@K}=\frac{DCG_u@K}{IDCG_u@K}\\
-            \mathrm {NDCG@K}=\frac{\sum \nolimits_{u \in u^{te}NDCG_u@K}}{|u^{te}|}
+            \mathrm {NDCG@K}=\frac{\sum \nolimits_{u \in U^{te}NDCG_u@K}}{|U^{te}|}
         \end{gather}
 
     :math:`K` stands for recommending :math:`K` items.
     And the :math:`rel_i` is the relevance of the item in position :math:`i` in the recommendation list.
-    :math:`2^{rel_i}` equals to 1 if the item hits otherwise 0.
-    :math:`U^{te}` is for all users in the test set.
+    :math:`{rel_i}` equals to 1 if the item is ground truth otherwise 0.
+    :math:`U^{te}` stands for all users in the test set.
 
     """
     len_rank = np.full_like(pos_len, pos_index.shape[1])
