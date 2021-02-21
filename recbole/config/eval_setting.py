@@ -203,7 +203,7 @@ class EvalSetting(object):
         legal_strategy = {'none', 'by_ratio', 'by_value', 'loo'}
         if strategy not in legal_strategy:
             raise ValueError('Split Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
-        if strategy == 'loo' and self.group_by is None:
+        if strategy == 'loo' and self.group_field is None:
             raise ValueError('Leave-One-Out request group firstly')
         self.split_args = {'strategy': strategy}
         self.split_args.update(kwargs)
@@ -251,7 +251,7 @@ class EvalSetting(object):
             distribution (str): distribution of sampler, either 'uniform' or 'popularity'.
 
         Example:
-            >>> es.neg_sample_to(100)
+            >>> es.full()
             >>> es.neg_sample_by(1)
         """
         legal_strategy = {'none', 'full', 'by'}

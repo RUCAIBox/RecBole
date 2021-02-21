@@ -334,6 +334,13 @@ class Config(object):
                 if arg in self.parameters[category]
             ])
             args_info += '\n\n'
+            
+        args_info += 'Other Hyper Parameters: \n'
+        args_info += '\n'.join([
+                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
+                if arg not in sum(list(self.parameters.values()) + [['model', 'dataset', 'config_files']], [])
+            ])
+        args_info += '\n\n'
         return args_info
 
     def __repr__(self):
