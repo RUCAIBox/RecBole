@@ -49,7 +49,6 @@ class RecVAE(GeneralRecommender):
         self.latent_dim = config['latent_dimension']
         self.dropout_prob = config['dropout_prob']
         self.anneal_cap = config['anneal_cap']
-        self.epsilon = config['epsilon']
         self.mixture_weights = config['mixture_weights']
         self.gamma = config['gamma']
 
@@ -97,7 +96,7 @@ class RecVAE(GeneralRecommender):
             mlp_modules.append(nn.Linear(d_in, d_out))
             if i != len(layer_dims[:-1]) - 1:
                 mlp_modules.append(Swish())
-                mlp_modules.append(nn.LayerNorm(d_out, eps=self.epsilon))
+                mlp_modules.append(nn.LayerNorm(d_out, eps=0.1))
         return nn.Sequential(*mlp_modules)
 
     def reparameterize(self, mu, logvar):
