@@ -418,3 +418,41 @@ class RepeatableSampler(AbstractSampler):
         new_sampler = copy.copy(self)
         new_sampler.phase = phase
         return new_sampler
+
+
+class SeqSampler(AbstractSampler):
+    def __init__(self, dataset, distribution='uniform'):
+        self.dataset = dataset
+
+        self.iid_field = dataset.iid_field
+        self.n_users = dataset.user_num
+        self.n_items = dataset.item_num
+
+        super().__init__(distribution=distribution)
+
+    def get_used_ids(self):
+        return None
+
+    def get_random_list(self):
+        """
+        Returns:
+            numpy.ndarray or list: Random list of item_id.
+        """
+        return np.arange(1, self.n_items)
+
+    def sample_neg_sequence(self, pos_sequence):
+        """
+        """
+        total_num = len(pos_sequence)
+        value_ids = np.zeros(total_num, dtype=np.int64)
+        check_list = np.arange(total_num)
+        while len(check_list) > 0:
+            value_ids[check_list] = self.random_num(len(check_list))
+            check_index = np.where(value_ids[check_list] == pos_sequence[check_list])
+            check_list = check_list[check_index]
+            # check_list = np.array([
+            #     i for i, used, v in zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
+            #     if v in used
+            # ])
+
+        return torch.tensor(value_ids)
