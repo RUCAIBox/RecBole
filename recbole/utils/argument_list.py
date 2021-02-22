@@ -19,7 +19,11 @@ training_arguments = [
     'training_neg_sample_num',
     'training_neg_sample_distribution',
     'eval_step', 'stopping_step',
-    'checkpoint_dir'
+    'checkpoint_dir',
+    'clip_grad_norm',
+    'loss_decimal_place',
+    'weight_decay',
+    'draw_pic'
 ]
 
 evaluation_arguments = [
@@ -28,7 +32,8 @@ evaluation_arguments = [
     'split_ratio', 'leave_one_num',
     'real_time_process',
     'metrics', 'topk', 'valid_metric',
-    'eval_batch_size'
+    'eval_batch_size',
+    'metric_decimal_place'
 ]
 
 dataset_arguments = [
