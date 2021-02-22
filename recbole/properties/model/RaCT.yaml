@@ -1,5 +1,5 @@
 mlp_hidden_size: [600]
-latent_dimension: 200
+latent_dimension: 256
 dropout_prob: 0.5
 anneal_cap: 0.2
 total_anneal_steps: 200000
@@ -8,5 +8,5 @@ critic_layers_2: 100
 critic_layers_3: 10
 metrics_k: 100
 train_stage: 'finetune'
-save_step: 100
-pre_model_path: './saved/RaCT-ml-100k-300.pth'
+pretrain_epochs: 50
+pre_model_path: './saved/RaCT-lastfm-50.pth'

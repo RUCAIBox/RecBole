@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # @Time   : 2021/2/16
 # @Author : Haoran Cheng
-# @Email  : 1871530482@qq.com
+# @Email  : chenghaoran29@foxmail.com
 
 r"""
 RaCT
 ################################################
 Reference:
-    
+    Sam Lobel et al. "RaCT: Towards Amortized Ranking-Critical Training for Collaborative Filtering." in ICLR 2020.
 
 """
 

@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/19, 2020/9/17, 2020/8/31
-# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
+# @Time   : 2020/10/19, 2020/9/17, 2020/8/31, 2021/2/20
+# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li, Haoran Cheng
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com, chenghaoran29@foxmail.com
 
 """
 recbole.data.utils
@@ -237,7 +237,8 @@ def get_data_loader(name, config, eval_setting):
         "MultiVAE": _get_AE_data_loader,
         'MacridVAE': _get_AE_data_loader,
         'CDAE': _get_AE_data_loader,
-        'ENMF': _get_AE_data_loader
+        'ENMF': _get_AE_data_loader,
+        'RaCT': _get_AE_data_loader
     }
 
     if config['model'] in register_table:

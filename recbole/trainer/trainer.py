@@ -5,7 +5,7 @@
 # UPDATE:
 # @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15, 2020/11/20, 2021/2/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan, Chen Yang, Haoran Cheng
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com, 1871530482@qq.com
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com, chenghaoran29@foxmail.com
 
 r"""
 recbole.trainer.trainer
@@ -777,6 +777,7 @@ class RaCTTrainer(Trainer):
     
     def __init__(self, config, model):
         super(RaCTTrainer, self).__init__(config, model)
+        self.pretrain_epochs = self.config['pretrain_epochs']
 
     def _build_optimizer(self):
         r"""Init the Optimizer
@@ -821,7 +822,7 @@ class RaCTTrainer(Trainer):
 
     def pretrain(self, train_data, verbose=True, show_progress=False):
     
-        for epoch_idx in range(self.start_epoch, self.epochs):
+        for epoch_idx in range(self.start_epoch, self.pretrain_epochs):
             # train
             training_start_time = time()
             train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
@@ -832,7 +833,7 @@ class RaCTTrainer(Trainer):
             if verbose:
                 self.logger.info(train_loss_output)
 
-            if (epoch_idx + 1) % self.config['save_step'] == 0:
+            if (epoch_idx + 1) % self.pretrain_epochs == 0:
                 saved_model_file = os.path.join(
                     self.checkpoint_dir,
                     '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1))
