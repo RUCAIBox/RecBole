@@ -28,7 +28,7 @@ from sklearn.metrics import jaccard_score
 
 class NNCF(GeneralRecommender):
     r"""NNCF is an neural network enhanced matrix factorization model which also captures neighborhood information.
-    We implement the the NNCF model with three ways to precess neighborhood information.
+    We implement the NNCF model with three ways to process neighborhood information.
     """
     input_type = InputType.POINTWISE
 
@@ -75,12 +75,13 @@ class NNCF(GeneralRecommender):
         # choose the method to use neighborhood information
         if self.neigh_info_method == "random":
             self.u_neigh, self.i_neigh = self.get_neigh_random()
-        elif self.use_knn == "knn":
+        elif self.neigh_info_method == "knn":
             self.u_neigh, self.i_neigh = self.get_neigh_knn()
-        elif self.use_louvain == "louvain":
+        elif self.neigh_info_method == "louvain":
             self.u_neigh, self.i_neigh = self.get_neigh_louvain()
         else:
-            raise RuntimeError('you need to choose the right algorithm of processing neighborhood information.')
+            raise RuntimeError('You need to choose the right algorithm of processing neighborhood information. \
+                The parameter neigh_info_method can be set to random, knn or louvain.')
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -92,6 +93,14 @@ class NNCF(GeneralRecommender):
     # Unify embedding length
     def Max_ner(self, lst, max_ner):
         r"""Unify embedding length of neighborhood information.
+
+        Args:
+            lst (int): The input list contains node's neighbors.
+            max_ner (int): The number of neighbors we choose for each node.
+
+        Returns:
+            int: The list of a node's neighbors, shape: [number of nodes, max_ner]
+
 
         """
         for i in range(len(lst)):
@@ -105,12 +114,32 @@ class NNCF(GeneralRecommender):
 
     # Find other nodes in the same community
     def get_community_member(self, partition, community_dict, node, kind):
+        r"""Find other nodes in the same community.
+
+        Args:
+            partition (int): The input dict that contains the community each node belongs.
+            community_dict (int): The input dict that shows the nodes each community contains.
+            node (int): The id of the input node.
+            kind (char): The type of the input node.
+
+        Returns:
+            int: The list of a node's community neighbors.
+
+        """
         comm = community_dict[partition[node]]
         return [x for x in comm if x.startswith(kind)]
 
     # Prepare neiborhood embeddings, i.e. I(u) and U(i)
     def prepare_vector_element(self, partition, relation, community_dict):
-        r"""Find other nodes in the same community.
+        r"""Prepare neiborhood embeddings, i.e. I(u) and U(i).
+
+        Args:
+            partition (int): The input dict that contains the community each node belongs.
+            relation (int): The input list that contains the relationships of users and items.
+            community_dict (int): The input dict that shows the nodes each community contains.
+
+        Returns:
+            int: The list of a batch of nodes' neighbors.
 
         """
         item2user_neighbor_lst = [[] for _ in range(self.n_items)]  
@@ -176,7 +205,16 @@ class NNCF(GeneralRecommender):
 
     # Count the similarity of node and direct neighbors using jaccard method
     def count_jaccard(self, inters, node, neigh_list, kind):
-        r""" Count the similarity of node and direct neighbors using jaccard method.
+        r""" Count the similarity of node and its direct neighbors using jaccard method.
+
+        Args:
+            inters (int): The input list that contains the relationships of users and items.
+            node (int): The id of the input node.
+            neigh_list (int): The input list that contains the neighbors of the input node.
+            kind (char): The type of the input node.
+
+        Returns:
+            float: The list of jaccard similarity score between the node and its neighbors.
 
         """
         if kind == 'u':
@@ -295,6 +333,14 @@ class NNCF(GeneralRecommender):
     # Get neighborhood embeddings
     def get_neigh_info(self, user, item):
         r"""Get neighborhood embeddings.
+
+        Args:
+            user (torch.LongTensor): The input tensor that contains user's id, shape: [batch_size, ]
+            item (torch.LongTensor): The input tensor that contains item's id, shape: [batch_size, ]
+
+        Returns:
+            torch.FloatTensor: The neighborhood embedding tensor of a batch of user, shape: [batch_size, neigh_embedding_size]
+            torch.FloatTensor: The neighborhood embedding tensor of a batch of item, shape: [batch_size, neigh_embedding_size]
 
         """
         batch_u_neigh = self.u_neigh[user]
