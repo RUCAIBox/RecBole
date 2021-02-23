@@ -3,6 +3,17 @@
 # @Author : Chengyuan Li
 # @Email  : 2017202049@ruc.edu.cn
 
+r"""
+NNCF
+################################################
+Reference:
+    Ting Bai et al. "A Neural Collaborative Filtering Model with Interaction-based Neighborhood." in CIKM 2017.
+
+Reference code:
+    https://github.com/Tbbaby/NNCF-Pytorch
+
+"""
+
 import torch
 import torch.nn as nn
 from torch.nn.init import normal_
@@ -12,13 +23,13 @@ from recbole.model.layers import MLPLayers
 from recbole.utils import InputType
 
 import numpy as np
-import networkx as nx
-import community
 from sklearn.metrics import jaccard_score
 
 
 class NNCF(GeneralRecommender):
-
+    r"""NNCF is an neural network enhanced matrix factorization model which also captures neighborhood information.
+    We implement the the NNCF model with three ways to precess neighborhood information.
+    """
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
@@ -37,9 +48,7 @@ class NNCF(GeneralRecommender):
         self.pool_kernel_size = config['pool_kernel_size']
         self.mlp_hidden_size = config['mlp_hidden_size']
         self.neigh_num = config['neigh_num']
-        self.use_random = config['use_random']
-        self.use_knn = config['use_knn']
-        self.use_louvain = config['use_louvain']
+        self.neigh_info_method = config['neigh_info_method']
         self.resolution = config['resolution']
 
         # define layers and loss
@@ -58,19 +67,20 @@ class NNCF(GeneralRecommender):
         conved_size = self.neigh_num - (self.conv_kernel_size - 1)
         pooled_size = (conved_size - (self.pool_kernel_size - 1) - 1) // self.pool_kernel_size + 1
         self.mlp_layers = MLPLayers([2 * pooled_size * self.num_conv_kernel + self.ui_embedding_size] + self.mlp_hidden_size, config['dropout'])
-        self.sigmoid = nn.Sigmoid()
         self.out_layer = nn.Sequential(nn.Linear(self.mlp_hidden_size[-1], 1),
                                        nn.Sigmoid())
         self.dropout_layer = torch.nn.Dropout(p=config['dropout'])
         self.loss = nn.BCELoss()
 
         # choose the method to use neighborhood information
-        if self.use_random:
+        if self.neigh_info_method == "random":
             self.u_neigh, self.i_neigh = self.get_neigh_random()
-        elif self.use_knn:
+        elif self.use_knn == "knn":
             self.u_neigh, self.i_neigh = self.get_neigh_knn()
-        elif self.use_louvain:
+        elif self.use_louvain == "louvain":
             self.u_neigh, self.i_neigh = self.get_neigh_louvain()
+        else:
+            raise RuntimeError('you need to choose the right algorithm of processing neighborhood information.')
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -81,6 +91,9 @@ class NNCF(GeneralRecommender):
 
     # Unify embedding length
     def Max_ner(self, lst, max_ner):
+        r"""Unify embedding length of neighborhood information.
+
+        """
         for i in range(len(lst)):
             if len(lst[i]) >= max_ner:
                 lst[i] = lst[i][:max_ner]
@@ -97,6 +110,9 @@ class NNCF(GeneralRecommender):
 
     # Prepare neiborhood embeddings, i.e. I(u) and U(i)
     def prepare_vector_element(self, partition, relation, community_dict):
+        r"""Find other nodes in the same community.
+
+        """
         item2user_neighbor_lst = [[] for _ in range(self.n_items)]  
         user2item_neighbor_lst = [[] for _ in range(self.n_users)]  
 
@@ -124,16 +140,23 @@ class NNCF(GeneralRecommender):
 
     # Get neighborhood embeddings using louvain method
     def get_neigh_louvain(self):
+        r"""Get neighborhood information using louvain algorithm.
+
+        Returns:
+            torch.IntTensor: The neighborhood nodes of a batch of user or item, shape: [batch_size, neigh_num]
+        """
         inter_M = self.interaction_matrix
         pairs = list(zip(inter_M.row, inter_M.col))
 
         tmp_relation = []
         for i in range(len(pairs)):
             tmp_relation.append(['user_' + str(pairs[i][0]), 'item_' + str(pairs[i][1])])
-
+        
+        import networkx as nx
         G = nx.Graph()
         G.add_edges_from(tmp_relation)
         resolution = self.resolution
+        import community
         partition = community.best_partition(G, resolution=resolution)
 
         community_dict = {}
@@ -153,6 +176,9 @@ class NNCF(GeneralRecommender):
 
     # Count the similarity of node and direct neighbors using jaccard method
     def count_jaccard(self, inters, node, neigh_list, kind):
+        r""" Count the similarity of node and direct neighbors using jaccard method.
+
+        """
         if kind == 'u':
             if node in neigh_list:
                 return 0
@@ -176,6 +202,11 @@ class NNCF(GeneralRecommender):
 
     # Get neighborhood embeddings using knn method
     def get_neigh_knn(self):
+        r"""Get neighborhood information using knn algorithm.
+
+        Returns:
+            torch.IntTensor: The neighborhood nodes of a batch of user or item, shape: [batch_size, neigh_num]
+        """
         inter_M = self.interaction_matrix
         pairs = list(zip(inter_M.row, inter_M.col))
         ui_inters = np.zeros((self.n_users, self.n_items), dtype=np.int8)
@@ -191,7 +222,6 @@ class NNCF(GeneralRecommender):
             if len(neigh_list) == 0:
                 u_neigh.append(self.neigh_num * [0])
             elif direct_neigh_num < self.neigh_num:
-                tmp_k = self.neigh_num - direct_neigh_num
                 knn_neigh_dict = {}
                 for i in range(self.n_items):
                     score = self.count_jaccard(ui_inters, i, neigh_list, 'u')
@@ -210,7 +240,6 @@ class NNCF(GeneralRecommender):
             if len(neigh_list) == 0:
                 i_neigh.append(self.neigh_num * [0])
             elif direct_neigh_num < self.neigh_num:
-                tmp_k = self.neigh_num - direct_neigh_num
                 knn_neigh_dict = {}
                 for i in range(self.n_users):
                     score = self.count_jaccard(ui_inters, i, neigh_list, 'i')
@@ -229,6 +258,11 @@ class NNCF(GeneralRecommender):
 
     # Get neighborhood embeddings using random method
     def get_neigh_random(self):
+        r"""Get neighborhood information using random algorithm.
+
+        Returns:
+            torch.IntTensor: The neighborhood nodes of a batch of user or item, shape: [batch_size, neigh_num]
+        """
         inter_M = self.interaction_matrix
         pairs = list(zip(inter_M.row, inter_M.col))
         ui_inters = np.zeros((self.n_users, self.n_items), dtype=np.int8)
@@ -260,7 +294,9 @@ class NNCF(GeneralRecommender):
 
     # Get neighborhood embeddings
     def get_neigh_info(self, user, item):
-        batch = user.size(0)
+        r"""Get neighborhood embeddings.
+
+        """
         batch_u_neigh = self.u_neigh[user]
         batch_i_neigh = self.i_neigh[item]
         return batch_u_neigh, batch_i_neigh
