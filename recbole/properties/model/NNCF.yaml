@@ -7,9 +7,8 @@ mlp_hidden_size: [128,64,32,16]
 neigh_num: 20
 dropout: 0.5
 
-# The method to use neighborhood information
-use_random: True
-use_knn: False
-use_louvain: False
+# The method to use neighborhood information, you can choose random, knn or louvain algorithom 
+# e.g. neigh_info_method: "knn" or neigh_info_method: "louvain"
+neigh_info_method: "random"
 
 resolution: 1
