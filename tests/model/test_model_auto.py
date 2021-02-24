@@ -174,6 +174,12 @@ class TestGeneralRecommender(unittest.TestCase):
             'training_neg_sample_num': 0
         }
         quick_test(config_dict)
+        
+    def test_NNCF(self):
+        config_dict = {
+            'model': 'NNCF',
+        }
+        quick_test(config_dict)
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
