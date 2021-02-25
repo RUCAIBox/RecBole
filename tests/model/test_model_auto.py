@@ -140,6 +140,12 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_ease(self):
+        config_dict = {
+            'model': 'EASE',
+        }
+        quick_test(config_dict)
+
     def test_MultiDAE(self):
         config_dict = {
             'model': 'MultiDAE',
@@ -180,6 +186,7 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'NNCF',
         }
         quick_test(config_dict)
+        
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
