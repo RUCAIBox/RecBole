@@ -8,8 +8,14 @@
 # @Author  :   Zhichao Feng
 # @email   :   fzcbupt@gmail.com
 
-from recbole.evaluator.evaluators import metric_eval_bind, group_metrics, individual_metrics
+"""
+recbole.evaluator.proxy_evaluator
+#####################################
+"""
+
 from collections import ChainMap
+
+from recbole.evaluator.evaluators import metric_eval_bind, group_metrics, individual_metrics
 
 
 class ProxyEvaluator(object):
@@ -17,6 +23,7 @@ class ProxyEvaluator(object):
     for example, TopkEvaluator for top-k metrics, and summarize the results of all evaluators.
 
    """
+
     def __init__(self, config):
         self.config = config
         self.valid_metrics = ChainMap(group_metrics, individual_metrics)
@@ -32,9 +39,9 @@ class ProxyEvaluator(object):
 
         """
         evaluator_list = []
-        metrics_set = {metric.lower() for metric in self.metrics}
+        metrics_list = [metric.lower() for metric in self.metrics]
         for metrics, evaluator in metric_eval_bind:
-            used_metrics = list(metrics_set.intersection(set(metrics.keys())))
+            used_metrics = [metric for metric in metrics_list if metric in metrics]
             if used_metrics:
                 evaluator_list.append(evaluator(self.config, used_metrics))
         return evaluator_list

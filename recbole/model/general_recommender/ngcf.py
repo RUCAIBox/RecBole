@@ -25,42 +25,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
-from recbole.model.loss import BPRLoss, EmbLoss
-from recbole.model.layers import BiGNNLayer
 from recbole.model.init import xavier_normal_initialization
-
-
-def sparse_dropout(x, rate, noise_shape):
-    r"""This is a function that execute Dropout on Pytorch sparse tensor.
-
-    A random dropout will be applied to the input sparse tensor.
-
-    Note:
-        input tensor SHOULD be a sparse float tensor.
-        we suggest to use '._nnz()' as the shape of sparse tensor for an easy calling.
-
-    Args:
-        x (torch.sparse.FloatTensor): The input sparse tensor.
-        rate (float): Dropout rate which should in [0,1].
-        noise_shape(tuple): Shape of the input sparse tensor. suggest '._nnz()'
-
-    Returns:
-        torch.sparse.FloatTensor: The result sparse tensor after dropout.
-
-    """
-    random_tensor = 1 - rate
-    random_tensor += torch.rand(noise_shape).to(x.device)
-    dropout_mask = torch.floor(random_tensor).type(torch.bool)
-    i = x._indices()
-    v = x._values()
-
-    i = i[:, dropout_mask]
-    v = v[dropout_mask]
-
-    out = torch.sparse.FloatTensor(i, v, x.shape).to(x.device)
-    return out * (1. / (1 - rate))
+from recbole.model.layers import BiGNNLayer, SparseDropout
+from recbole.model.loss import BPRLoss, EmbLoss
+from recbole.utils import InputType
 
 
 class NGCF(GeneralRecommender):
@@ -84,6 +53,7 @@ class NGCF(GeneralRecommender):
         self.reg_weight = config['reg_weight']
 
         # define layers and loss
+        self.sparse_dropout = SparseDropout(self.node_dropout)
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.GNNlayers = torch.nn.ModuleList()
@@ -119,14 +89,12 @@ class NGCF(GeneralRecommender):
         A = sp.dok_matrix((self.n_users + self.n_items, self.n_users + self.n_items), dtype=np.float32)
         inter_M = self.interaction_matrix
         inter_M_t = self.interaction_matrix.transpose()
-        data_dict = dict(zip(zip(inter_M.row, inter_M.col + self.n_users),
-                             [1] * inter_M.nnz))
-        data_dict.update(dict(zip(zip(inter_M_t.row + self.n_users, inter_M_t.col),
-                                  [1] * inter_M_t.nnz)))
+        data_dict = dict(zip(zip(inter_M.row, inter_M.col + self.n_users), [1] * inter_M.nnz))
+        data_dict.update(dict(zip(zip(inter_M_t.row + self.n_users, inter_M_t.col), [1] * inter_M_t.nnz)))
         A._update(data_dict)
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)
-        diag = np.array(sumArr.flatten())[0] + 1e-7     # add epsilon to avoid Devide by zero Warning
+        diag = np.array(sumArr.flatten())[0] + 1e-7  # add epsilon to avoid divide by zero Warning
         diag = np.power(diag, -0.5)
         D = sp.diags(diag)
         L = D * A * D
@@ -162,9 +130,8 @@ class NGCF(GeneralRecommender):
         return ego_embeddings
 
     def forward(self):
-        # A_hat: spare tensor with shape of [n_items+n_users,n_items+n_users]
-        A_hat = sparse_dropout(self.norm_adj_matrix, self.node_dropout,
-                               self.norm_adj_matrix._nnz()) if self.node_dropout != 0 else self.norm_adj_matrix
+
+        A_hat = self.sparse_dropout(self.norm_adj_matrix) if self.node_dropout != 0 else self.norm_adj_matrix
         all_embeddings = self.get_ego_embeddings()
         embeddings_list = [all_embeddings]
         for gnn in self.GNNlayers:
@@ -190,14 +157,14 @@ class NGCF(GeneralRecommender):
 
         user_all_embeddings, item_all_embeddings = self.forward()
         u_embeddings = user_all_embeddings[user]
-        posi_embeddings = item_all_embeddings[pos_item]
-        negi_embeddings = item_all_embeddings[neg_item]
+        pos_embeddings = item_all_embeddings[pos_item]
+        neg_embeddings = item_all_embeddings[neg_item]
 
-        pos_scores = torch.mul(u_embeddings, posi_embeddings).sum(dim=1)
-        neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
+        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)  # calculate BPR Loss
 
-        reg_loss = self.reg_loss(u_embeddings, posi_embeddings, negi_embeddings)  # L2 regularization of embeddings
+        reg_loss = self.reg_loss(u_embeddings, pos_embeddings, neg_embeddings)  # L2 regularization of embeddings
 
         return mf_loss + self.reg_weight * reg_loss
 

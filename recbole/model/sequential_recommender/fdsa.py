@@ -17,14 +17,14 @@ import torch
 from torch import nn
 
 from recbole.model.abstract_recommender import SequentialRecommender
-from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder, FeatureSeqEmbLayer, VanillaAttention
+from recbole.model.loss import BPRLoss
 
 
 class FDSA(SequentialRecommender):
     r"""
     FDSA is similar with the GRU4RecF implemented in RecBole, which uses two different Transformer encoders to
-    encode items and features respectively and concatenates the two subparts's outputs as the final output.
+    encode items and features respectively and concatenates the two subparts' outputs as the final output.
 
     """
 
@@ -53,22 +53,33 @@ class FDSA(SequentialRecommender):
         self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
         self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size)
 
-        self.feature_embed_layer = FeatureSeqEmbLayer(dataset, self.hidden_size, self.selected_features,
-                                                      self.pooling_mode, self.device)
+        self.feature_embed_layer = FeatureSeqEmbLayer(
+            dataset, self.hidden_size, self.selected_features, self.pooling_mode, self.device
+        )
 
-        self.item_trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
-                                                   hidden_size=self.hidden_size, inner_size=self.inner_size,
-                                                   hidden_dropout_prob=self.hidden_dropout_prob,
-                                                   attn_dropout_prob=self.attn_dropout_prob,
-                                                   hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+        self.item_trm_encoder = TransformerEncoder(
+            n_layers=self.n_layers,
+            n_heads=self.n_heads,
+            hidden_size=self.hidden_size,
+            inner_size=self.inner_size,
+            hidden_dropout_prob=self.hidden_dropout_prob,
+            attn_dropout_prob=self.attn_dropout_prob,
+            hidden_act=self.hidden_act,
+            layer_norm_eps=self.layer_norm_eps
+        )
 
         self.feature_att_layer = VanillaAttention(self.hidden_size, self.hidden_size)
         # For simplicity, we use same architecture for item_trm and feature_trm
-        self.feature_trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
-                                                      hidden_size=self.hidden_size, inner_size=self.inner_size,
-                                                      hidden_dropout_prob=self.hidden_dropout_prob,
-                                                      attn_dropout_prob=self.attn_dropout_prob,
-                                                      hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+        self.feature_trm_encoder = TransformerEncoder(
+            n_layers=self.n_layers,
+            n_heads=self.n_heads,
+            hidden_size=self.hidden_size,
+            inner_size=self.inner_size,
+            hidden_dropout_prob=self.hidden_dropout_prob,
+            attn_dropout_prob=self.attn_dropout_prob,
+            hidden_act=self.hidden_act,
+            layer_norm_eps=self.layer_norm_eps
+        )
 
         self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
         self.dropout = nn.Dropout(self.hidden_dropout_prob)
@@ -149,14 +160,12 @@ class FDSA(SequentialRecommender):
 
         extended_attention_mask = self.get_attention_mask(item_seq)
 
-        item_trm_output = self.item_trm_encoder(item_trm_input,
-                                                extended_attention_mask,
-                                                output_all_encoded_layers=True)
+        item_trm_output = self.item_trm_encoder(item_trm_input, extended_attention_mask, output_all_encoded_layers=True)
         item_output = item_trm_output[-1]
 
-        feature_trm_output = self.feature_trm_encoder(feature_trm_input,
-                                                      extended_attention_mask,
-                                                      output_all_encoded_layers=True)  # [B Len H]
+        feature_trm_output = self.feature_trm_encoder(
+            feature_trm_input, extended_attention_mask, output_all_encoded_layers=True
+        )  # [B Len H]
         feature_output = feature_trm_output[-1]
 
         item_output = self.gather_indexes(item_output, item_seq_len - 1)  # [B H]

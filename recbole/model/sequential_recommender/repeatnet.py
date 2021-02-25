@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Time     : 2020/11/22 8:30
 # @Author   : Shao Weiqi
-# @Reviewer : Lin Kun
-# @Email    : shaoweiqi@ruc.edu.cn
+# @Reviewer : Lin Kun, Fan xinyan
+# @Email    : shaoweiqi@ruc.edu.cn, xinyan.fan@ruc.edu.cn
 
 r"""
 RepeatNet
@@ -19,11 +19,11 @@ Reference code:
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 from torch.nn.init import xavier_normal_, constant_
 
-from torch.nn import functional as F
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import SequentialRecommender
+from recbole.utils import InputType
 
 
 class RepeatNet(SequentialRecommender):
@@ -52,20 +52,23 @@ class RepeatNet(SequentialRecommender):
         # define the layers and loss function
         self.item_matrix = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.gru = nn.GRU(self.embedding_size, self.hidden_size, batch_first=True)
-        self.repeat_explore_mechanism = Repeat_Explore_Mechanism(self.device,
-                                                                 hidden_size=self.hidden_size,
-                                                                 seq_len=self.max_seq_length,
-                                                                 dropout_prob=self.dropout_prob)
-        self.repeat_recommendation_decoder = Repeat_Recommendation_Decoder(self.device,
-                                                                           hidden_size=self.hidden_size,
-                                                                           seq_len=self.max_seq_length,
-                                                                           num_item=self.n_items,
-                                                                           dropout_prob=self.dropout_prob)
-        self.explore_recommendation_decoder = Explore_Recommendation_Decoder(hidden_size=self.hidden_size,
-                                                                             seq_len=self.max_seq_length,
-                                                                             num_item=self.n_items,
-                                                                             device=self.device,
-                                                                             dropout_prob=self.dropout_prob)
+        self.repeat_explore_mechanism = Repeat_Explore_Mechanism(
+            self.device, hidden_size=self.hidden_size, seq_len=self.max_seq_length, dropout_prob=self.dropout_prob
+        )
+        self.repeat_recommendation_decoder = Repeat_Recommendation_Decoder(
+            self.device,
+            hidden_size=self.hidden_size,
+            seq_len=self.max_seq_length,
+            num_item=self.n_items,
+            dropout_prob=self.dropout_prob
+        )
+        self.explore_recommendation_decoder = Explore_Recommendation_Decoder(
+            hidden_size=self.hidden_size,
+            seq_len=self.max_seq_length,
+            num_item=self.n_items,
+            device=self.device,
+            dropout_prob=self.dropout_prob
+        )
 
         self.loss_fct = F.nll_loss
 
@@ -92,18 +95,15 @@ class RepeatNet(SequentialRecommender):
         # last_memory: batch_size * hidden_size
         timeline_mask = (item_seq == 0)
 
-        self.repeat_explore = self.repeat_explore_mechanism.forward(all_memory=all_memory,
-                                                                    last_memory=last_memory)
+        self.repeat_explore = self.repeat_explore_mechanism.forward(all_memory=all_memory, last_memory=last_memory)
         # batch_size * 2
-        repeat_recommendation_decoder = self.repeat_recommendation_decoder.forward(all_memory=all_memory,
-                                                                                   last_memory=last_memory,
-                                                                                   item_seq=item_seq,
-                                                                                   mask=timeline_mask)
+        repeat_recommendation_decoder = self.repeat_recommendation_decoder.forward(
+            all_memory=all_memory, last_memory=last_memory, item_seq=item_seq, mask=timeline_mask
+        )
         # batch_size * num_item
-        explore_recommendation_decoder = self.explore_recommendation_decoder.forward(all_memory=all_memory,
-                                                                                     last_memory=last_memory,
-                                                                                     item_seq=item_seq,
-                                                                                     mask=timeline_mask)
+        explore_recommendation_decoder = self.explore_recommendation_decoder.forward(
+            all_memory=all_memory, last_memory=last_memory, item_seq=item_seq, mask=timeline_mask
+        )
         # batch_size * num_item
         prediction = repeat_recommendation_decoder * self.repeat_explore[:, 0].unsqueeze(1) \
                      + explore_recommendation_decoder * self.repeat_explore[:, 1].unsqueeze(1)
@@ -293,20 +293,29 @@ class Explore_Recommendation_Decoder(nn.Module):
 
 def build_map(b_map, device, max_index=None):
     """
-    project the b_map to the place where it in should be
-    like this:
+    project the b_map to the place where it in should be like this:
         item_seq A: [3,4,5]   n_items: 6
+
         after map: A
+
         [0,0,1,0,0,0]
+
         [0,0,0,1,0,0]
+
         [0,0,0,0,1,0]
 
-    batch_size * seq_len ==>> batch_size * seq_len * n_item
+        batch_size * seq_len ==>> batch_size * seq_len * n_item
 
     use in RepeatNet:
+
     [3,4,5] matmul [0,0,1,0,0,0]
-                   [0,0,0,1,0,0] ==>>>   [0,0,3,4,5,0]  it works in the RepeatNet when project the seq item into all items
+
+                   [0,0,0,1,0,0]
+
                    [0,0,0,0,1,0]
+
+    ==>>> [0,0,3,4,5,0] it works in the RepeatNet when project the seq item into all items
+
     batch_size * 1 * seq_len matmul batch_size * seq_len * n_item ==>> batch_size * 1 * n_item
     """
     batch_size, b_len = b_map.size()

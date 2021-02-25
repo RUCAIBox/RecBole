@@ -16,13 +16,12 @@ Reference code:
 import torch
 import torch.nn as nn
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.layers import MLPLayers, CNNLayers
+from recbole.utils import InputType
 
 
 class ConvNCFBPRLoss(nn.Module):
-
     """ ConvNCFBPRLoss, based on Bayesian Personalized Ranking,
     
     Shape:
@@ -38,9 +37,10 @@ class ConvNCFBPRLoss(nn.Module):
         >>> output = loss(pos_score, neg_score)
         >>> output.backward()
     """
+
     def __init__(self):
         super(ConvNCFBPRLoss, self).__init__()
-    
+
     def forward(self, pos_score, neg_score):
         distance = pos_score - neg_score
         loss = torch.sum(torch.log((1 + torch.exp(-distance))))
@@ -94,7 +94,7 @@ class ConvNCF(GeneralRecommender):
 
     def reg_loss(self):
         r"""Calculate the L2 normalization loss of model parameters.
-        Including embedding matrixes and weight matrixes of model.
+        Including embedding matrices and weight matrices of model.
 
         Returns:
             loss(torch.FloatTensor): The L2 Loss tensor. shape of [1,]
@@ -118,7 +118,7 @@ class ConvNCF(GeneralRecommender):
 
         pos_item_score = self.forward(user, pos_item)
         neg_item_score = self.forward(user, neg_item)
-        
+
         loss = self.loss(pos_item_score, neg_item_score)
         opt_loss = loss + self.reg_loss()
 

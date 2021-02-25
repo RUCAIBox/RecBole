@@ -11,18 +11,18 @@ Reference:
     He X, Chua T S. "Neural factorization machines for sparse predictive analytics" in SIGIR 2017
 """
 
-import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.layers import BaseFactorizationMachine, MLPLayers
 from recbole.model.abstract_recommender import ContextRecommender
+from recbole.model.layers import BaseFactorizationMachine, MLPLayers
 
 
 class NFM(ContextRecommender):
     """ NFM replace the fm part as a mlp to model the feature interaction.
 
     """
+
     def __init__(self, config, dataset):
         super(NFM, self).__init__(config, dataset)
 
@@ -51,18 +51,11 @@ class NFM(ContextRecommender):
                 constant_(module.bias.data, 0)
 
     def forward(self, interaction):
-        # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
-        # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        all_embeddings = []
-        if sparse_embedding is not None:
-            all_embeddings.append(sparse_embedding)
-        if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            all_embeddings.append(dense_embedding)
-        nfm_all_embeddings = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        nfm_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
         bn_nfm_all_embeddings = self.bn(self.fm(nfm_all_embeddings))
 
-        output = self.sigmoid(self.predict_layer(self.mlp_layers(bn_nfm_all_embeddings)) + self.first_order_linear(interaction))
+        output = self.predict_layer(self.mlp_layers(bn_nfm_all_embeddings)) + self.first_order_linear(interaction)
+        output = self.sigmoid(output)
         return output.squeeze()
 
     def calculate_loss(self, interaction):

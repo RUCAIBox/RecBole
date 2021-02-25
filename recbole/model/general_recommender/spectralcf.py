@@ -18,10 +18,10 @@ import numpy as np
 import scipy.sparse as sp
 import torch
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
-from recbole.model.loss import BPRLoss, EmbLoss
 from recbole.model.init import xavier_uniform_initialization
+from recbole.model.loss import BPRLoss, EmbLoss
+from recbole.utils import InputType
 
 
 class SpectralCF(GeneralRecommender):
@@ -58,22 +58,21 @@ class SpectralCF(GeneralRecommender):
 
         # generate intermediate data
         # "A_hat = I + L" is equivalent to "A_hat = U U^T + U \Lambda U^T"
-        self.interaction_matrix = dataset.inter_matrix(
-            form='coo').astype(np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
         I = self.get_eye_mat(self.n_items + self.n_users)
         L = self.get_laplacian_matrix()
         A_hat = I + L
         self.A_hat = A_hat.to(self.device)
 
         # define layers and loss
-        self.user_embedding = torch.nn.Embedding(
-            num_embeddings=self.n_users, embedding_dim=self.emb_dim)
-        self.item_embedding = torch.nn.Embedding(
-            num_embeddings=self.n_items, embedding_dim=self.emb_dim)
-        self.filters = torch.nn.ParameterList(
-            [torch.nn.Parameter(torch.normal(mean=0.01, std=0.02, size=(self.emb_dim, self.emb_dim)).to(self.device),
-                                requires_grad=True)
-             for _ in range(self.n_layers)])
+        self.user_embedding = torch.nn.Embedding(num_embeddings=self.n_users, embedding_dim=self.emb_dim)
+        self.item_embedding = torch.nn.Embedding(num_embeddings=self.n_items, embedding_dim=self.emb_dim)
+        self.filters = torch.nn.ParameterList([
+            torch.nn.Parameter(
+                torch.normal(mean=0.01, std=0.02, size=(self.emb_dim, self.emb_dim)).to(self.device),
+                requires_grad=True
+            ) for _ in range(self.n_layers)
+        ])
 
         self.sigmoid = torch.nn.Sigmoid()
         self.mf_loss = BPRLoss()
@@ -94,14 +93,11 @@ class SpectralCF(GeneralRecommender):
             Sparse tensor of the laplacian matrix.
         """
         # build adj matrix
-        A = sp.dok_matrix((self.n_users + self.n_items,
-                           self.n_users + self.n_items), dtype=np.float32)
+        A = sp.dok_matrix((self.n_users + self.n_items, self.n_users + self.n_items), dtype=np.float32)
         inter_M = self.interaction_matrix
         inter_M_t = self.interaction_matrix.transpose()
-        data_dict = dict(zip(zip(inter_M.row, inter_M.col+self.n_users),
-                             [1]*inter_M.nnz))
-        data_dict.update(dict(zip(zip(inter_M_t.row+self.n_users, inter_M_t.col),
-                                  [1]*inter_M_t.nnz)))
+        data_dict = dict(zip(zip(inter_M.row, inter_M.col + self.n_users), [1] * inter_M.nnz))
+        data_dict.update(dict(zip(zip(inter_M_t.row + self.n_users, inter_M_t.col), [1] * inter_M_t.nnz)))
         A._update(data_dict)
 
         # norm adj matrix
@@ -153,13 +149,11 @@ class SpectralCF(GeneralRecommender):
 
         for k in range(self.n_layers):
             all_embeddings = torch.sparse.mm(self.A_hat, all_embeddings)
-            all_embeddings = self.sigmoid(
-                torch.mm(all_embeddings, self.filters[k]))
+            all_embeddings = self.sigmoid(torch.mm(all_embeddings, self.filters[k]))
             embeddings_list.append(all_embeddings)
 
         new_embeddings = torch.cat(embeddings_list, dim=1)
-        user_all_embeddings, item_all_embeddings = torch.split(
-            new_embeddings, [self.n_users, self.n_items])
+        user_all_embeddings, item_all_embeddings = torch.split(new_embeddings, [self.n_users, self.n_items])
         return user_all_embeddings, item_all_embeddings
 
     def calculate_loss(self, interaction):
@@ -172,14 +166,13 @@ class SpectralCF(GeneralRecommender):
 
         user_all_embeddings, item_all_embeddings = self.forward()
         u_embeddings = user_all_embeddings[user]
-        posi_embeddings = item_all_embeddings[pos_item]
-        negi_embeddings = item_all_embeddings[neg_item]
-        pos_scores = torch.mul(u_embeddings, posi_embeddings).sum(dim=1)
-        neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
+        pos_embeddings = item_all_embeddings[pos_item]
+        neg_embeddings = item_all_embeddings[neg_item]
+        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
 
         mf_loss = self.mf_loss(pos_scores, neg_scores)
-        reg_loss = self.reg_loss(
-            u_embeddings, posi_embeddings, negi_embeddings)
+        reg_loss = self.reg_loss(u_embeddings, pos_embeddings, neg_embeddings)
         loss = mf_loss + self.reg_weight * reg_loss
 
         return loss
@@ -201,6 +194,5 @@ class SpectralCF(GeneralRecommender):
             self.restore_user_e, self.restore_item_e = self.forward()
         u_embeddings = self.restore_user_e[user]
 
-        scores = torch.matmul(
-            u_embeddings, self.restore_item_e.transpose(0, 1))
+        scores = torch.matmul(u_embeddings, self.restore_item_e.transpose(0, 1))
         return scores.view(-1)

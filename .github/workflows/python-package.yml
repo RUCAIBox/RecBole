@@ -23,12 +23,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest
         pip install dgl
+        pip install xgboost
+        pip install community
+        pip install networkx
+        pip install python-louvain
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
+        
     # Use "python -m pytest" instead of "pytest" to fix imports
     - name: Test metrics
       run: |
         python -m pytest -v tests/metrics
+    - name: Test data
+      run: |
+        python -m pytest -v tests/data
     - name: Test evaluation_setting
       run: |
         python -m pytest -v tests/evaluation_setting

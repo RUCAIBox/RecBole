@@ -1,0 +1,14 @@
+ui_embedding_size: 64
+neigh_embedding_size: 32
+num_conv_kernel: 128
+conv_kernel_size: 5
+pool_kernel_size: 5
+mlp_hidden_size: [128,64,32,16]
+neigh_num: 20
+dropout: 0.5
+
+# The method to use neighborhood information, you can choose random, knn or louvain algorithom 
+# e.g. neigh_info_method: "knn" or neigh_info_method: "louvain"
+neigh_info_method: "random"
+
+resolution: 1
