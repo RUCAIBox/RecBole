@@ -131,7 +131,8 @@ class RecVAE(GeneralRecommender):
             anneal = self.anneal_cap
 
         # Composite prior
-        post_mu, post_logvar = self.encoder_old(rating_matrix), self.encoder_old(rating_matrix)
+        h = self.encoder_old(F.normalize(rating_matrix))
+        post_mu, post_logvar = h, h
         stnd_prior = self.log_norm_pdf(r, self.mu_prior, self.logvar_prior)
         post_prior = self.log_norm_pdf(r, post_mu, post_logvar)
         unif_prior = self.log_norm_pdf(r, self.mu_prior, self.logvar_uniform_prior)
