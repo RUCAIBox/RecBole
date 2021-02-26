@@ -189,7 +189,7 @@ class RankEvaluator(GroupedEvaluator):
             torch.Tensor: average_rank
 
         Example:
-            >>> average_rank(tensor([[1,2,2,2,3,3,6],[2,2,2,2,4,4,5]]))
+            >>> average_rank(tensor([[1,2,2,2,3,3,6],[2,2,2,2,4,5,5]]))
             tensor([[1.0000, 3.0000, 3.0000, 3.0000, 5.5000, 5.5000, 7.0000],
             [2.5000, 2.5000, 2.5000, 2.5000, 5.0000, 6.5000, 6.5000]])
 
@@ -243,7 +243,7 @@ class RankEvaluator(GroupedEvaluator):
             eval_data (Dataset): the class of test data
 
         Returns:
-            dict: such as ``{'GAUC:0.9286}``
+            dict: such as ``{'GAUC': 0.9286}``
 
         """
         pos_len_list = eval_data.get_pos_len_list()
@@ -282,8 +282,6 @@ class RankEvaluator(GroupedEvaluator):
         msg = 'The Rank Evaluator Info:\n' + \
               '\tMetrics:[' + \
               ', '.join([rank_metrics[metric.lower()] for metric in self.metrics]) + \
-              '], TopK:[' + \
-              ', '.join(map(str, self.topk)) + \
               ']'
         return msg
 
