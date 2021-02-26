@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15, 2020/11/20
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan, Chen Yang
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com
+# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15, 2020/11/20, 2021/2/20
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan, Chen Yang, Yibo Li
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com, 2018202152@ruc.edu.cn
 
 r"""
 recbole.trainer.trainer
@@ -86,6 +86,7 @@ class Trainer(AbstractTrainer):
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
         self.weight_decay = config['weight_decay']
+        self.draw_pic = config['draw_pic']
 
         self.start_epoch = 0
         self.cur_step = 0
@@ -309,6 +310,8 @@ class Trainer(AbstractTrainer):
                     if verbose:
                         self.logger.info(stop_output)
                     break
+        if self.draw_pic:
+            self.plot_train_loss(save_path=self.config['model']+'_train_loss_graph.pdf')
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
@@ -422,13 +425,16 @@ class Trainer(AbstractTrainer):
                                        If it's None, it will not be saved.
         """
         import matplotlib.pyplot as plt
+        import time
         epochs = list(self.train_loss_dict.keys())
         epochs.sort()
         values = [float(self.train_loss_dict[epoch]) for epoch in epochs]
         plt.plot(epochs, values)
-        plt.xticks(epochs)
+        my_x_ticks = np.arange(0,len(epochs),int(len(epochs)/10))
+        plt.xticks(my_x_ticks)
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
+        plt.title(self.config['model']+' '+time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time())))
         if show:
             plt.show()
         if save_path:

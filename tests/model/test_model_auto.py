@@ -140,6 +140,12 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_ease(self):
+        config_dict = {
+            'model': 'EASE',
+        }
+        quick_test(config_dict)
+
     def test_MultiDAE(self):
         config_dict = {
             'model': 'MultiDAE',
@@ -174,6 +180,13 @@ class TestGeneralRecommender(unittest.TestCase):
             'training_neg_sample_num': 0
         }
         quick_test(config_dict)
+        
+    def test_NNCF(self):
+        config_dict = {
+            'model': 'NNCF',
+        }
+        quick_test(config_dict)
+        
 
 
 class TestContextRecommender(unittest.TestCase):
