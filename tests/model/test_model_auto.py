@@ -182,6 +182,14 @@ class TestGeneralRecommender(unittest.TestCase):
             'training_neg_sample_num': 0
         }
         quick_test(config_dict)
+        
+    def test_ease(self):
+        config_dict = {
+            'model': 'EASE',
+        }
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset

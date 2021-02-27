@@ -146,7 +146,10 @@ test_examples = {
         'model': 'MacridVAE',
         'dataset': 'ml-100k',
     },
-
+    'Test EASE': {
+        'model': 'EASE',
+        'dataset': 'ml-100k',
+    },
     # Context-aware Recommendation
     'Test FM': {
         'model': 'FM',
