@@ -121,7 +121,7 @@ class Trainer(AbstractTrainer):
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         return optimizer
 
-    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False, n_epochs=1, dropout_prob=None):
         r"""Train the model in an epoch
 
         Args:
@@ -146,23 +146,27 @@ class Trainer(AbstractTrainer):
                 desc=f"Train {epoch_idx:>5}",
             ) if show_progress else enumerate(train_data)
         )
-        for batch_idx, interaction in iter_data:
-            interaction = interaction.to(self.device)
-            self.optimizer.zero_grad()
-            losses = loss_func(interaction)
-            if isinstance(losses, tuple):
-                loss = sum(losses)
-                loss_tuple = tuple(per_loss.item() for per_loss in losses)
-                total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
-            else:
-                loss = losses
-                total_loss = losses.item() if total_loss is None else total_loss + losses.item()
-            self._check_nan(loss)
-            loss.backward()
-            if self.clip_grad_norm:
-                clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
-            self.optimizer.step()
-        return total_loss
+        for epoch in range(n_epochs):
+            for batch_idx, interaction in iter_data:
+                interaction = interaction.to(self.device)
+                self.optimizer.zero_grad()
+                if dropout_prob is None:
+                    losses = loss_func(interaction)
+                else:
+                    losses = loss_func(interaction, dropout_prob=dropout_prob)
+                if isinstance(losses, tuple):
+                    loss = sum(losses)
+                    loss_tuple = tuple(per_loss.item() for per_loss in losses)
+                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+                else:
+                    loss = losses
+                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
+                self._check_nan(loss)
+                loss.backward()
+                if self.clip_grad_norm:
+                    clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
+                self.optimizer.step()
+            return total_loss
 
     def _valid_epoch(self, valid_data, show_progress=False):
         r"""Valid the model with valid data
@@ -767,3 +771,78 @@ class xgboostTrainer(AbstractTrainer):
         batch_matrix_list = [[torch.stack((self.eval_true, self.eval_pred), 1)]]
         result = self.evaluator.evaluate(batch_matrix_list, eval_data)
         return result
+
+
+class RecVAETrainer(Trainer):
+    r"""RecVAETrainer is designed for RecVAE, which is a general recommender.
+
+    """
+
+    def __init__(self, config, model):
+        super(RecVAETrainer, self).__init__(config, model)
+        self.dropout_prob = config['dropout_prob']
+        self.n_enc_epochs = config['n_enc_epochs']
+        self.n_dec_epochs = config['n_dec_epochs']
+  
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
+        if saved and self.start_epoch >= self.epochs:
+            self._save_checkpoint(-1)
+
+        for epoch_idx in range(self.start_epoch, self.epochs):
+            # alternate training
+            training_start_time = time()
+            train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress, 
+                                           n_epochs=self.n_enc_epochs, dropout_prob=self.dropout_prob)
+            self.model.update_prior()
+            train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress, 
+                                           n_epochs=self.n_dec_epochs, dropout_prob=0)
+            self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
+            training_end_time = time()
+            train_loss_output = \
+                self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
+            if verbose:
+                self.logger.info(train_loss_output)
+
+            # eval
+            if self.eval_step <= 0 or not valid_data:
+                if saved:
+                    self._save_checkpoint(epoch_idx)
+                    update_output = 'Saving current: %s' % self.saved_model_file
+                    if verbose:
+                        self.logger.info(update_output)
+                continue
+            if (epoch_idx + 1) % self.eval_step == 0:
+                valid_start_time = time()
+                valid_score, valid_result = self._valid_epoch(valid_data, show_progress=show_progress)
+                self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
+                    valid_score,
+                    self.best_valid_score,
+                    self.cur_step,
+                    max_step=self.stopping_step,
+                    bigger=self.valid_metric_bigger
+                )
+                valid_end_time = time()
+                valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
+                                     (epoch_idx, valid_end_time - valid_start_time, valid_score)
+                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                if verbose:
+                    self.logger.info(valid_score_output)
+                    self.logger.info(valid_result_output)
+                if update_flag:
+                    if saved:
+                        self._save_checkpoint(epoch_idx)
+                        update_output = 'Saving current best: %s' % self.saved_model_file
+                        if verbose:
+                            self.logger.info(update_output)
+                    self.best_valid_result = valid_result
+
+                if callback_fn:
+                    callback_fn(epoch_idx, valid_score)
+
+                if stop_flag:
+                    stop_output = 'Finished training, best eval result in epoch %d' % \
+                                  (epoch_idx - self.cur_step * self.eval_step)
+                    if verbose:
+                        self.logger.info(stop_output)
+                    break
+        return self.best_valid_score, self.best_valid_result
