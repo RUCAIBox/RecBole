@@ -8,7 +8,7 @@
 # @Email  : 254170321@qq.com
 
 """
-recbole.data.dataloader.xgboost_dataloader
+recbole.data.dataloader.decisiontree_dataloader
 ################################################
 """
 
@@ -16,24 +16,24 @@ from recbole.data.dataloader.general_dataloader import GeneralDataLoader, Genera
     GeneralFullDataLoader
 
 
-class XgboostDataLoader(GeneralDataLoader):
-    """:class:`XgboostDataLoader` is inherit from
+class DecisionTreeDataLoader(GeneralDataLoader):
+    """:class:`DecisionTreeDataLoader` is inherit from
     :class:`~recbole.data.dataloader.general_dataloader.GeneralDataLoader`,
     and didn't add/change anything at all.
     """
     pass
 
 
-class XgboostNegSampleDataLoader(GeneralNegSampleDataLoader):
-    """:class:`XgboostNegSampleDataLoader` is inherit from
+class DecisionTreeNegSampleDataLoader(GeneralNegSampleDataLoader):
+    """:class:`DecisionTreeNegSampleDataLoader` is inherit from
     :class:`~recbole.data.dataloader.general_dataloader.GeneralNegSampleDataLoader`,
     and didn't add/change anything at all.
     """
     pass
 
 
-class XgboostFullDataLoader(GeneralFullDataLoader):
-    """:class:`XgboostFullDataLoader` is inherit from
+class DecisionTreeFullDataLoader(GeneralFullDataLoader):
+    """:class:`DecisionTreeFullDataLoader` is inherit from
     :class:`~recbole.data.dataloader.general_dataloader.GeneralFullDataLoader`,
     and didn't add/change anything at all.
     """

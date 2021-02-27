@@ -235,7 +235,7 @@ class Config(object):
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
-        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.XGBOOST}:
+        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.DECISIONTREE}:
             self._update_internal_config_dict(context_aware_init)
             if dataset == 'ml-100k':
                 self._update_internal_config_dict(context_aware_on_ml_100k_init)
