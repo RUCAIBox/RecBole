@@ -93,36 +93,36 @@ class Trainer(AbstractTrainer):
         self.best_valid_score = -1
         self.best_valid_result = None
         self.train_loss_dict = dict()
-        self.optimizer = self._build_optimizer()
+        self.optimizer = self._build_optimizer(self.model.parameters())
         self.eval_type = config['eval_type']
         self.evaluator = ProxyEvaluator(config)
         self.item_tensor = None
         self.tot_item_num = None
 
-    def _build_optimizer(self):
+    def _build_optimizer(self, params):
         r"""Init the Optimizer
 
         Returns:
             torch.optim: the optimizer
         """
         if self.learner.lower() == 'adam':
-            optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+            optimizer = optim.Adam(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'sgd':
-            optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+            optimizer = optim.SGD(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'adagrad':
-            optimizer = optim.Adagrad(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+            optimizer = optim.Adagrad(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'rmsprop':
-            optimizer = optim.RMSprop(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+            optimizer = optim.RMSprop(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'sparse_adam':
-            optimizer = optim.SparseAdam(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.SparseAdam(params, lr=self.learning_rate)
             if self.weight_decay > 0:
                 self.logger.warning('Sparse Adam cannot argument received argument [{weight_decay}]')
         else:
             self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
-            optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.Adam(params, lr=self.learning_rate)
         return optimizer
 
-    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False, n_epochs=1, dropout_prob=None):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         r"""Train the model in an epoch
 
         Args:
@@ -147,27 +147,23 @@ class Trainer(AbstractTrainer):
                 desc=f"Train {epoch_idx:>5}",
             ) if show_progress else enumerate(train_data)
         )
-        for epoch in range(n_epochs):
-            for batch_idx, interaction in iter_data:
-                interaction = interaction.to(self.device)
-                self.optimizer.zero_grad()
-                if dropout_prob is None:
-                    losses = loss_func(interaction)
-                else:
-                    losses = loss_func(interaction, dropout_prob=dropout_prob)
-                if isinstance(losses, tuple):
-                    loss = sum(losses)
-                    loss_tuple = tuple(per_loss.item() for per_loss in losses)
-                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
-                else:
-                    loss = losses
-                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
-                self._check_nan(loss)
-                loss.backward()
-                if self.clip_grad_norm:
-                    clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
-                self.optimizer.step()
-            return total_loss
+        for batch_idx, interaction in iter_data:
+            interaction = interaction.to(self.device)
+            self.optimizer.zero_grad()
+            losses = loss_func(interaction)
+            if isinstance(losses, tuple):
+                loss = sum(losses)
+                loss_tuple = tuple(per_loss.item() for per_loss in losses)
+                total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+            else:
+                loss = losses
+                total_loss = losses.item() if total_loss is None else total_loss + losses.item()
+            self._check_nan(loss)
+            loss.backward()
+            if self.clip_grad_norm:
+                clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
+            self.optimizer.step()
+        return total_loss
 
     def _valid_epoch(self, valid_data, show_progress=False):
         r"""Valid the model with valid data
@@ -865,18 +861,57 @@ class RecVAETrainer(Trainer):
         self.n_enc_epochs = config['n_enc_epochs']
         self.n_dec_epochs = config['n_dec_epochs']
   
+    def _train_epoch(self, train_data, epoch_idx, n_epochs, dropout_prob, opts, loss_func=None, show_progress=False):
+        self.model.train()
+        loss_func = loss_func or self.model.calculate_loss
+        total_loss = None
+        iter_data = (
+            tqdm(
+                enumerate(train_data),
+                total=len(train_data),
+                desc=f"Train {epoch_idx:>5}",
+            ) if show_progress else enumerate(train_data)
+        )
+        for epoch in range(n_epochs):
+            for batch_idx, interaction in iter_data:
+                interaction = interaction.to(self.device)
+                for optimizer in opts:
+                    optimizer.zero_grad()
+                losses = loss_func(interaction, dropout_prob=dropout_prob)
+                if isinstance(losses, tuple):
+                    loss = sum(losses)
+                    loss_tuple = tuple(per_loss.item() for per_loss in losses)
+                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
+                else:
+                    loss = losses
+                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
+                self._check_nan(loss)
+                loss.backward()
+                if self.clip_grad_norm:
+                    clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
+                for optimizer in opts:
+                    optimizer.step()
+                    
+        return total_loss
+  
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         if saved and self.start_epoch >= self.epochs:
             self._save_checkpoint(-1)
+
+        encoder_params = set(self.model.encoder.parameters())
+        decoder_params = set(self.model.decoder.parameters())
+
+        optimizer_encoder = self._build_optimizer(encoder_params)
+        optimizer_decoder = self._build_optimizer(decoder_params)
 
         for epoch_idx in range(self.start_epoch, self.epochs):
             # alternate training
             training_start_time = time()
             train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress, 
-                                           n_epochs=self.n_enc_epochs, dropout_prob=self.dropout_prob)
+                                           n_epochs=self.n_enc_epochs, dropout_prob=self.dropout_prob, opts=[optimizer_encoder])
             self.model.update_prior()
             train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress, 
-                                           n_epochs=self.n_dec_epochs, dropout_prob=0)
+                                           n_epochs=self.n_dec_epochs, dropout_prob=0, opts=[optimizer_decoder])
             self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
             training_end_time = time()
             train_loss_output = \
