@@ -764,7 +764,8 @@ class xgboostTrainer(DecisionTreeTrainer):
         self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round, self.evals, 
                                     early_stopping_rounds = self.early_stopping_rounds, 
                                     evals_result = self.evals_result,
-                                    verbose_eval = self.verbose_eval, 
+                                    verbose_eval = self.verbose_eval,
+                                    xgb_model = self.boost_model,
                                     callbacks = self.callbacks)
         self.model.save_model(self.saved_model_file)
         self.boost_model = self.saved_model_file
