@@ -152,8 +152,9 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'MultiVAE',
             'training_neg_sample_num': 0
         }
-        quick_test(config_dict)
-
+        objective_function(config_dict=config_dict,
+                           config_file_list=config_file_list, saved=False)
+        
     def test_MacridVAE(self):
         config_dict = {
             'model': 'MacridVAE',
@@ -165,6 +166,12 @@ class TestGeneralRecommender(unittest.TestCase):
         config_dict = {
             'model': 'CDAE',
             'training_neg_sample_num': 0
+        }
+        quick_test(config_dict)
+        
+    def test_enmf(self):
+        config_dict = {
+            'model': 'ENMF',
         }
         quick_test(config_dict)
 
