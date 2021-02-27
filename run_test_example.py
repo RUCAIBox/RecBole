@@ -150,6 +150,11 @@ test_examples = {
         'model': 'EASE',
         'dataset': 'ml-100k',
     },
+    'Test NNCF': {
+        'model': 'NNCF',
+        'dataset': 'ml-100k',
+    },
+
     # Context-aware Recommendation
     'Test FM': {
         'model': 'FM',
