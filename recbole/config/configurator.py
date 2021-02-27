@@ -3,9 +3,9 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2020/10/9
-# @Author : Shanlei Mu, Yupeng Hou
-# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
+# @Time   : 2020/10/04, 2020/10/9, 2021/2/17
+# @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan
+# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn
 
 """
 recbole.config.configurator
@@ -235,7 +235,7 @@ class Config(object):
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
-        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.XGBOOST}:
+        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.DECISIONTREE}:
             self._update_internal_config_dict(context_aware_init)
             if dataset == 'ml-100k':
                 self._update_internal_config_dict(context_aware_on_ml_100k_init)
@@ -334,6 +334,13 @@ class Config(object):
                 if arg in self.parameters[category]
             ])
             args_info += '\n\n'
+            
+        args_info += 'Other Hyper Parameters: \n'
+        args_info += '\n'.join([
+                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
+                if arg not in sum(list(self.parameters.values()) + [['model', 'dataset', 'config_files']], [])
+            ])
+        args_info += '\n\n'
         return args_info
 
     def __repr__(self):

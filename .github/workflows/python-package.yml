@@ -24,6 +24,9 @@ jobs:
         pip install pytest
         pip install dgl
         pip install xgboost
+        pip install community
+        pip install networkx
+        pip install python-louvain
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
     # Use "python -m pytest" instead of "pytest" to fix imports
@@ -44,4 +47,4 @@ jobs:
         python -m pytest -v tests/config/test_config.py
         export PYTHONPATH=.
         python tests/config/test_command_line.py --use_gpu=False --valid_metric=Recall@10 --split_ratio=[0.7,0.2,0.1] --metrics=['Recall@10'] --epochs=200 --eval_setting='LO_RS' --learning_rate=0.3
-    
+

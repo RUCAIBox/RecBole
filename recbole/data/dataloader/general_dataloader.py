@@ -230,7 +230,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
                 positive_item = set()
             positive_item.add(iid)
         self._set_user_property(last_uid, uid2used_item[last_uid], positive_item)
-        self.uid_list = torch.tensor(self.uid_list)
+        self.uid_list = torch.tensor(self.uid_list, dtype=torch.int64)
         self.user_df = dataset.join(Interaction({uid_field: self.uid_list}))
 
         super().__init__(

@@ -4,8 +4,9 @@
 
 # UPDATE:
 # @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15, 2020/11/20, 2021/2/16
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan, Chen Yang, Haoran Cheng
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com, chenghaoran29@foxmail.com
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan, Chen Yang, Haoran Cheng, Yibo Li
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com, chenghaoran29@foxmail.com, 2018202152@ruc.edu.cn
+
 
 r"""
 recbole.trainer.trainer
@@ -86,6 +87,7 @@ class Trainer(AbstractTrainer):
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
         self.weight_decay = config['weight_decay']
+        self.draw_pic = config['draw_pic']
 
         self.start_epoch = 0
         self.cur_step = 0
@@ -309,6 +311,8 @@ class Trainer(AbstractTrainer):
                     if verbose:
                         self.logger.info(stop_output)
                     break
+        if self.draw_pic:
+            self.plot_train_loss(save_path=self.config['model']+'_train_loss_graph.pdf')
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
@@ -422,13 +426,16 @@ class Trainer(AbstractTrainer):
                                        If it's None, it will not be saved.
         """
         import matplotlib.pyplot as plt
+        import time
         epochs = list(self.train_loss_dict.keys())
         epochs.sort()
         values = [float(self.train_loss_dict[epoch]) for epoch in epochs]
         plt.plot(epochs, values)
-        plt.xticks(epochs)
+        my_x_ticks = np.arange(0,len(epochs),int(len(epochs)/10))
+        plt.xticks(my_x_ticks)
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
+        plt.title(self.config['model']+' '+time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time())))
         if show:
             plt.show()
         if save_path:
@@ -590,41 +597,16 @@ class TraditionalTrainer(Trainer):
         self.epochs = 1  # Set the epoch to 1 when running memory based model
 
 
-class xgboostTrainer(AbstractTrainer):
-    """xgboostTrainer is designed for XGBOOST.
+class DecisionTreeTrainer(AbstractTrainer):
+    """DecisionTreeTrainer is designed for DecisionTree model.
 
     """
-
     def __init__(self, config, model):
-        super(xgboostTrainer, self).__init__(config, model)
-
-        self.xgb = __import__('xgboost')
+        super(DecisionTreeTrainer, self).__init__(config, model)
 
         self.logger = getLogger()
         self.label_field = config['LABEL_FIELD']
-        self.xgb_model = config['xgb_model']
         self.convert_token_to_onehot = self.config['convert_token_to_onehot']
-
-        # DMatrix params
-        self.weight = config['xgb_weight']
-        self.base_margin = config['xgb_base_margin']
-        self.missing = config['xgb_missing']
-        self.silent = config['xgb_silent']
-        self.feature_names = config['xgb_feature_names']
-        self.feature_types = config['xgb_feature_types']
-        self.nthread = config['xgb_nthread']
-
-        # train params
-        self.params = config['xgb_params']
-        self.num_boost_round = config['xgb_num_boost_round']
-        self.evals = ()
-        self.obj = config['xgb_obj']
-        self.feval = config['xgb_feval']
-        self.maximize = config['xgb_maximize']
-        self.early_stopping_rounds = config['xgb_early_stopping_rounds']
-        self.evals_result = {}
-        self.verbose_eval = config['xgb_verbose_eval']
-        self.callbacks = None
 
         # evaluator
         self.eval_type = config['eval_type']
@@ -640,13 +622,14 @@ class xgboostTrainer(AbstractTrainer):
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
 
-    def _interaction_to_DMatrix(self, dataloader):
-        r"""Convert data format from interaction to DMatrix
+    def _interaction_to_sparse(self, dataloader):
+        r"""Convert data format from interaction to sparse or numpy
 
         Args:
-            dataloader (XgboostDataLoader): xgboost dataloader.
+            dataloader (DecisionTreeDataLoader): DecisionTreeDataLoader dataloader.
         Returns:
-            DMatrix: Data in the form of 'DMatrix'.
+            cur_data (sparse or numpy): data.
+            interaction_np[self.label_field] (numpy): label.
         """
         interaction = dataloader.dataset[:]
         interaction_np = interaction.numpy()
@@ -688,41 +671,16 @@ class xgboostTrainer(AbstractTrainer):
 
             cur_data = sparse.csc_matrix(onehot_data)
 
-        return self.xgb.DMatrix(
-            data=cur_data,
-            label=interaction_np[self.label_field],
-            weight=self.weight,
-            base_margin=self.base_margin,
-            missing=self.missing,
-            silent=self.silent,
-            feature_names=self.feature_names,
-            feature_types=self.feature_types,
-            nthread=self.nthread
-        )
+        return cur_data, interaction_np[self.label_field]
 
-    def _train_at_once(self, train_data, valid_data):
-        r"""
-
-        Args:
-            train_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
-            valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
-        """
-        self.dtrain = self._interaction_to_DMatrix(train_data)
-        self.dvalid = self._interaction_to_DMatrix(valid_data)
-        self.evals = [(self.dtrain, 'train'), (self.dvalid, 'valid')]
-        self.model = self.xgb.train(
-            self.params, self.dtrain, self.num_boost_round, self.evals, self.obj, self.feval, self.maximize,
-            self.early_stopping_rounds, self.evals_result, self.verbose_eval, self.xgb_model, self.callbacks
-        )
-
-        self.model.save_model(self.saved_model_file)
-        self.xgb_model = self.saved_model_file
+    def _interaction_to_lib_datatype(self, dataloader):
+        pass
 
     def _valid_epoch(self, valid_data):
         r"""
 
         Args:
-            valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
+            valid_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
         """
         valid_result = self.evaluate(valid_data)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
@@ -730,8 +688,8 @@ class xgboostTrainer(AbstractTrainer):
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
         # load model
-        if self.xgb_model is not None:
-            self.model.load_model(self.xgb_model)
+        if self.boost_model is not None:
+            self.model.load_model(self.boost_model)
 
         self.best_valid_score = 0.
         self.best_valid_result = 0.
@@ -756,11 +714,68 @@ class xgboostTrainer(AbstractTrainer):
 
         return self.best_valid_score, self.best_valid_result
 
+    def evaluate(self):
+        pass
+
+
+class xgboostTrainer(DecisionTreeTrainer):
+    """xgboostTrainer is designed for XGBOOST.
+
+    """
+
+    def __init__(self, config, model):
+        super(xgboostTrainer, self).__init__(config, model)
+
+        self.xgb = __import__('xgboost')
+        self.boost_model = config['xgb_model']
+        self.silent = config['xgb_silent']
+        self.nthread = config['xgb_nthread']
+
+        # train params
+        self.params = config['xgb_params']
+        self.num_boost_round = config['xgb_num_boost_round']
+        self.evals = ()
+        self.early_stopping_rounds = config['xgb_early_stopping_rounds']
+        self.evals_result = {}
+        self.verbose_eval = config['xgb_verbose_eval']
+        self.callbacks = None
+
+    def _interaction_to_lib_datatype(self, dataloader):
+        r"""Convert data format from interaction to DMatrix
+
+        Args:
+            dataloader (DecisionTreeDataLoader): xgboost dataloader.
+        Returns:
+            DMatrix: Data in the form of 'DMatrix'.
+        """
+        data, label = self._interaction_to_sparse(dataloader)
+        return self.xgb.DMatrix(data = data, label = label, silent = self.silent, nthread = self.nthread)
+
+    def _train_at_once(self, train_data, valid_data):
+        r"""
+
+        Args:
+            train_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
+            valid_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
+        """
+        self.dtrain = self._interaction_to_lib_datatype(train_data)
+        self.dvalid = self._interaction_to_lib_datatype(valid_data)
+        self.evals = [(self.dtrain, 'train'), (self.dvalid, 'valid')]
+        self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round, self.evals,
+                                    early_stopping_rounds = self.early_stopping_rounds,
+                                    evals_result = self.evals_result,
+                                    verbose_eval = self.verbose_eval,
+                                    xgb_model = self.boost_model,
+                                    callbacks = self.callbacks)
+
+        self.model.save_model(self.saved_model_file)
+        self.boost_model = self.saved_model_file
+
     def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
         self.eval_pred = torch.Tensor()
         self.eval_true = torch.Tensor()
 
-        self.deval = self._interaction_to_DMatrix(eval_data)
+        self.deval = self._interaction_to_lib_datatype(eval_data)
         self.eval_true = torch.Tensor(self.deval.get_label())
         self.eval_pred = torch.Tensor(self.model.predict(self.deval))
 
@@ -854,3 +869,68 @@ class RaCTTrainer(Trainer):
             return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
             raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
+class lightgbmTrainer(DecisionTreeTrainer):
+    """lightgbmTrainer is designed for lightgbm.
+
+    """
+
+    def __init__(self, config, model):
+        super(lightgbmTrainer, self).__init__(config, model)
+
+        self.lgb = __import__('lightgbm')
+        self.boost_model = config['lgb_model']
+        self.silent = config['lgb_silent']
+
+        # train params
+        self.params = config['lgb_params']
+        self.num_boost_round = config['lgb_num_boost_round']
+        self.evals = ()
+        self.early_stopping_rounds = config['lgb_early_stopping_rounds']
+        self.evals_result = {}
+        self.verbose_eval = config['lgb_verbose_eval']
+        self.learning_rates = config['lgb_learning_rates']
+        self.callbacks = None
+
+    def _interaction_to_lib_datatype(self, dataloader):
+        r"""Convert data format from interaction to Dataset
+
+        Args:
+            dataloader (DecisionTreeDataLoader): xgboost dataloader.
+        Returns:
+            dataset(lgb.Dataset): Data in the form of 'lgb.Dataset'.
+        """
+        data, label = self._interaction_to_sparse(dataloader)
+        return self.lgb.Dataset(data = data, label = label, silent = self.silent)
+
+    def _train_at_once(self, train_data, valid_data):
+        r"""
+
+        Args:
+            train_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
+            valid_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
+        """
+        self.dtrain = self._interaction_to_lib_datatype(train_data)
+        self.dvalid = self._interaction_to_lib_datatype(valid_data)
+        self.evals = [self.dtrain, self.dvalid]
+        self.model = self.lgb.train(self.params, self.dtrain, self.num_boost_round, self.evals,
+                                    early_stopping_rounds = self.early_stopping_rounds,
+                                    evals_result = self.evals_result,
+                                    verbose_eval = self.verbose_eval,
+                                    learning_rates = self.learning_rates,
+                                    init_model = self.boost_model,
+                                    callbacks = self.callbacks)
+
+        self.model.save_model(self.saved_model_file)
+        self.boost_model = self.saved_model_file
+
+    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
+        self.eval_pred = torch.Tensor()
+        self.eval_true = torch.Tensor()
+
+        self.deval_data, self.deval_label = self._interaction_to_sparse(eval_data)
+        self.eval_true = torch.Tensor(self.deval_label)
+        self.eval_pred = torch.Tensor(self.model.predict(self.deval_data))
+
+        batch_matrix_list = [[torch.stack((self.eval_true, self.eval_pred), 1)]]
+        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
+        return result
