@@ -602,8 +602,8 @@ class TraditionalTrainer(Trainer):
 
 class DecisionTreeTrainer(AbstractTrainer):
     """DecisionTreeTrainer is designed for DecisionTree model.
-    
-    """    
+
+    """
     def __init__(self, config, model):
         super(DecisionTreeTrainer, self).__init__(config, model)
 
@@ -675,7 +675,6 @@ class DecisionTreeTrainer(AbstractTrainer):
             cur_data = sparse.csc_matrix(onehot_data)
 
         return cur_data, interaction_np[self.label_field]
-    
     def _interaction_to_lib_datatype(self, dataloader):
         pass
 
@@ -723,7 +722,6 @@ class DecisionTreeTrainer(AbstractTrainer):
 
 class xgboostTrainer(DecisionTreeTrainer):
     """xgboostTrainer is designed for XGBOOST.
-    
     """
 
     def __init__(self, config, model):
@@ -756,7 +754,6 @@ class xgboostTrainer(DecisionTreeTrainer):
 
     def _train_at_once(self, train_data, valid_data):
         r"""
-        
         Args:
             train_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
             valid_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
@@ -768,12 +765,9 @@ class xgboostTrainer(DecisionTreeTrainer):
                                     early_stopping_rounds = self.early_stopping_rounds, 
                                     evals_result = self.evals_result,
                                     verbose_eval = self.verbose_eval, 
-                                    xgb_model = self.boost_model, 
                                     callbacks = self.callbacks)
-
         self.model.save_model(self.saved_model_file)
         self.boost_model = self.saved_model_file
-
     def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
         self.eval_pred = torch.Tensor()
         self.eval_true = torch.Tensor()
@@ -789,7 +783,6 @@ class xgboostTrainer(DecisionTreeTrainer):
 
 class lightgbmTrainer(DecisionTreeTrainer):
     """lightgbmTrainer is designed for lightgbm.
-    
     """
 
     def __init__(self, config, model):
@@ -822,7 +815,6 @@ class lightgbmTrainer(DecisionTreeTrainer):
 
     def _train_at_once(self, train_data, valid_data):
         r"""
-        
         Args:
             train_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
             valid_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
@@ -830,12 +822,12 @@ class lightgbmTrainer(DecisionTreeTrainer):
         self.dtrain = self._interaction_to_lib_datatype(train_data)
         self.dvalid = self._interaction_to_lib_datatype(valid_data)
         self.evals = [self.dtrain, self.dvalid]
-        self.model = self.lgb.train(self.params, self.dtrain, self.num_boost_round, self.evals, 
-                                    early_stopping_rounds = self.early_stopping_rounds, 
+        self.model = self.lgb.train(self.params, self.dtrain, self.num_boost_round, self.evals,
+                                    early_stopping_rounds = self.early_stopping_rounds,
                                     evals_result = self.evals_result,
-                                    verbose_eval = self.verbose_eval, 
+                                    verbose_eval = self.verbose_eval,
                                     learning_rates = self.learning_rates,
-                                    init_model = self.boost_model, 
+                                    init_model = self.boost_model,
                                     callbacks = self.callbacks)
 
         self.model.save_model(self.saved_model_file)

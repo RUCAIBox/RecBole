@@ -140,6 +140,12 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_ease(self):
+        config_dict = {
+            'model': 'EASE',
+        }
+        quick_test(config_dict)
+
     def test_MultiDAE(self):
         config_dict = {
             'model': 'MultiDAE',
@@ -152,9 +158,15 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'MultiVAE',
             'training_neg_sample_num': 0
         }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
-        
+        quick_test(config_dict)
+
+    def test_enmf(self):
+        config_dict = {
+            'model': 'ENMF',
+            'training_neg_sample_num': 0,
+        }
+        quick_test(config_dict)
+ 
     def test_MacridVAE(self):
         config_dict = {
             'model': 'MacridVAE',
@@ -168,11 +180,10 @@ class TestGeneralRecommender(unittest.TestCase):
             'training_neg_sample_num': 0
         }
         quick_test(config_dict)
-
-    def test_enmf(self):
+        
+    def test_NNCF(self):
         config_dict = {
-            'model': 'ENMF',
-            'training_neg_sample_num': 0,
+            'model': 'NNCF',
         }
         quick_test(config_dict)
 
@@ -180,19 +191,6 @@ class TestGeneralRecommender(unittest.TestCase):
         config_dict = {
             'model': 'RecVAE',
             'training_neg_sample_num': 0
-        }
-        quick_test(config_dict)
-        
-    def test_ease(self):
-        config_dict = {
-            'model': 'EASE',
-        }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
-        
-    def test_NNCF(self):
-        config_dict = {
-            'model': 'NNCF',
         }
         quick_test(config_dict)
 

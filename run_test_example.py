@@ -134,6 +134,10 @@ test_examples = {
         'model': 'LINE',
         'dataset': 'ml-100k',
     },
+    'Test EASE': {
+        'model': 'EASE',
+        'dataset': 'ml-100k',
+    },
     'Test MultiDAE': {
         'model': 'MultiDAE',
         'dataset': 'ml-100k',
@@ -144,10 +148,6 @@ test_examples = {
     },
     'Test MacridVAE': {
         'model': 'MacridVAE',
-        'dataset': 'ml-100k',
-    },
-    'Test EASE': {
-        'model': 'EASE',
         'dataset': 'ml-100k',
     },
     'Test NNCF': {
