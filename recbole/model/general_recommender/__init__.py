@@ -13,6 +13,7 @@ from recbole.model.general_recommender.line import LINE
 from recbole.model.general_recommender.macridvae import MacridVAE
 from recbole.model.general_recommender.multidae import MultiDAE
 from recbole.model.general_recommender.multivae import MultiVAE
+from recbole.model.general_recommender.enmf import ENMF
 from recbole.model.general_recommender.nais import NAIS
 from recbole.model.general_recommender.neumf import NeuMF
 from recbole.model.general_recommender.ngcf import NGCF
