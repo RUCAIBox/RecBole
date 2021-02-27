@@ -761,8 +761,8 @@ class xgboostTrainer(DecisionTreeTrainer):
         self.dtrain = self._interaction_to_lib_datatype(train_data)
         self.dvalid = self._interaction_to_lib_datatype(valid_data)
         self.evals = [(self.dtrain, 'train'), (self.dvalid, 'valid')]
-        self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round, self.evals, 
-                                    early_stopping_rounds = self.early_stopping_rounds, 
+        self.model = self.xgb.train(self.params, self.dtrain, self.num_boost_round, self.evals,
+                                    early_stopping_rounds = self.early_stopping_rounds,
                                     evals_result = self.evals_result,
                                     verbose_eval = self.verbose_eval,
                                     xgb_model = self.boost_model,
