@@ -86,7 +86,7 @@ class Interaction(object):
         self.set_additional_info(pos_len_list, user_len_list)
         for k in self.interaction:
             if not isinstance(self.interaction[k], torch.Tensor):
-                raise ValueError('interaction [{}] should only contains torch.Tensor'.format(interaction))
+                raise ValueError(f'Interaction [{interaction}] should only contains torch.Tensor')
         self.length = -1
         for k in self.interaction:
             self.length = max(self.length, self.interaction[k].shape[0])
@@ -116,10 +116,10 @@ class Interaction(object):
         return self.length
 
     def __str__(self):
-        info = ['The batch_size of interaction: {}'.format(self.length)]
+        info = [f'The batch_size of interaction: {self.length}']
         for k in self.interaction:
             inter = self.interaction[k]
-            temp_str = "    {}, {}, {}, {}".format(k, inter.shape, inter.device.type, inter.dtype)
+            temp_str = f"    {k}, {inter.shape}, {inter.device.type}, {inter.dtype}"
             info.append(temp_str)
         info.append('\n')
         return '\n'.join(info)
@@ -253,7 +253,7 @@ class Interaction(object):
             column (str): the column to be dropped.
         """
         if column not in self.interaction:
-            raise ValueError('column [{}] is not in [{}]'.format(column, self))
+            raise ValueError(f'Column [{column}] is not in [{self}].')
         del self.interaction[column]
 
     def _reindex(self, index):
@@ -285,29 +285,29 @@ class Interaction(object):
         """
         if isinstance(by, str):
             if by not in self.interaction:
-                raise ValueError('[{}] is not exist in interaction [{}]'.format(by, self))
+                raise ValueError(f'[{by}] is not exist in interaction [{self}].')
             by = [by]
         elif isinstance(by, (list, tuple)):
             for b in by:
                 if b not in self.interaction:
-                    raise ValueError('[{}] is not exist in interaction [{}]'.format(b, self))
+                    raise ValueError(f'[{b}] is not exist in interaction [{self}].')
         else:
-            raise TypeError('wrong type of by [{}]'.format(by))
+            raise TypeError(f'Wrong type of by [{by}].')
 
         if isinstance(ascending, bool):
             ascending = [ascending]
         elif isinstance(ascending, (list, tuple)):
             for a in ascending:
                 if not isinstance(a, bool):
-                    raise TypeError('wrong type of ascending [{}]'.format(ascending))
+                    raise TypeError(f'Wrong type of ascending [{ascending}].')
         else:
-            raise TypeError('wrong type of ascending [{}]'.format(ascending))
+            raise TypeError(f'Wrong type of ascending [{ascending}].')
 
         if len(by) != len(ascending):
             if len(ascending) == 1:
                 ascending = ascending * len(by)
             else:
-                raise ValueError('by [{}] and ascending [{}] should have same length'.format(by, ascending))
+                raise ValueError(f'by [{by}] and ascending [{ascending}] should have same length.')
 
         for b, a in zip(by[::-1], ascending[::-1]):
             index = np.argsort(self.interaction[b], kind='stable')
@@ -334,15 +334,14 @@ def cat_interactions(interactions):
         :class:`Interaction`: Concatenated interaction.
     """
     if not isinstance(interactions, (list, tuple)):
-        raise TypeError('interactions [{}] should be list or tuple'.format(interactions))
+        raise TypeError(f'Interactions [{interactions}] should be list or tuple.')
     if len(interactions) == 0:
-        raise ValueError('interactions [{}] should have some interactions'.format(interactions))
+        raise ValueError(f'Interactions [{interactions}] should have some interactions.')
 
     columns_set = set(interactions[0].columns)
     for inter in interactions:
         if columns_set != set(inter.columns):
-            raise ValueError('interactions [{}] should have some interactions'.format(interactions))
+            raise ValueError(f'Interactions [{interactions}] should have some interactions.')
 
-    new_inter = {col: torch.cat([inter[col] for inter in interactions])
-                 for col in columns_set}
+    new_inter = {col: torch.cat([inter[col] for inter in interactions]) for col in columns_set}
     return Interaction(new_inter)

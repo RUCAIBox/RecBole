@@ -90,8 +90,7 @@ class NeuMF(GeneralRecommender):
                 m1.weight.data.copy_(m2.weight)
                 m1.bias.data.copy_(m2.bias)
 
-        predict_weight = torch.cat([mf.predict_layer.weight,
-                                    mlp.predict_layer.weight], dim=1)
+        predict_weight = torch.cat([mf.predict_layer.weight, mlp.predict_layer.weight], dim=1)
         predict_bias = mf.predict_layer.bias + mlp.predict_layer.bias
 
         self.predict_layer.weight.data.copy_(0.5 * predict_weight)

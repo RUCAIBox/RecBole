@@ -3,7 +3,6 @@
 # @Author : Jin Huang and Shanlei Mu
 # @Email  : Betsyj.huang@gmail.com and slmu@ruc.edu.cn
 
-
 r"""
 KSR
 ################################################
@@ -77,16 +76,16 @@ class KSR(SequentialRecommender):
         # parameters initialization
         self.apply(self._init_weights)
         self.entity_embedding.weight.data.copy_(torch.from_numpy(self.entity_embedding_matrix[:self.n_items]))
-        self.relation_Matrix = torch.from_numpy(self.relation_embedding_matrix[:self.n_relations]).to(
-            self.device)  # [R H]
+        self.relation_Matrix = torch.from_numpy(self.relation_embedding_matrix[:self.n_relations]
+                                                ).to(self.device)  # [R H]
 
     def _init_weights(self, module):
         """ Initialize the weights """
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight)
         elif isinstance(module, nn.GRU):
-            xavier_uniform_(self.gru_layers.weight_hh_l0)
-            xavier_uniform_(self.gru_layers.weight_ih_l0)
+            xavier_uniform_(module.weight_hh_l0)
+            xavier_uniform_(module.weight_ih_l0)
 
     def _get_kg_embedding(self, head):
         """Difference:
@@ -100,8 +99,8 @@ class KSR(SequentialRecommender):
         return head_e, tail_Matrix
 
     def _memory_update_cell(self, user_memory, update_memory):
-        z = torch.sigmoid(torch.mul(user_memory, update_memory).sum(-1).float()).unsqueeze(
-            -1)  # [B R 1], the gate vector
+        z = torch.sigmoid(torch.mul(user_memory,
+                                    update_memory).sum(-1).float()).unsqueeze(-1)  # [B R 1], the gate vector
         updated_user_memory = (1.0 - z) * user_memory + z * update_memory
         return updated_user_memory
 
@@ -110,8 +109,8 @@ class KSR(SequentialRecommender):
         step_length = item_seq.size()[1]
         last_item = item_seq_len - 1
         # init user memory with 0s
-        user_memory = torch.zeros(item_seq.size()[0], self.n_relations, self.embedding_size).float().to(
-            self.device)  # [B R H]
+        user_memory = torch.zeros(item_seq.size()[0], self.n_relations,
+                                  self.embedding_size).float().to(self.device)  # [B R H]
         last_user_memory = torch.zeros_like(user_memory)
         for i in range(step_length):  # [len]
             _, update_memory = self._get_kg_embedding(item_seq[:, i])  # [B R H]
@@ -166,7 +165,8 @@ class KSR(SequentialRecommender):
             return loss
         else:  # self.loss_type = 'CE'
             test_items_emb = self.dense_layer_i(
-                torch.cat((self.item_embedding.weight, self.entity_embedding.weight), -1))  # [n_items H]
+                torch.cat((self.item_embedding.weight, self.entity_embedding.weight), -1)
+            )  # [n_items H]
             logits = torch.matmul(seq_output, test_items_emb.transpose(0, 1))
             loss = self.loss_fct(logits, pos_items)
             return loss
@@ -185,6 +185,7 @@ class KSR(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
         test_items_emb = self.dense_layer_i(
-            torch.cat((self.item_embedding.weight, self.entity_embedding.weight), -1))  # [n_items H]
+            torch.cat((self.item_embedding.weight, self.entity_embedding.weight), -1)
+        )  # [n_items H]
         scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
         return scores

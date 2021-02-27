@@ -13,7 +13,6 @@ recbole.evaluator.evaluators
 #####################################
 """
 
-
 from collections import ChainMap
 
 import numpy as np
@@ -64,11 +63,10 @@ class TopKEvaluator(GroupedEvaluator):
 
        """
         user_len_list = interaction.user_len_list
-        
+
         scores_matrix = self.get_score_matrix(scores_tensor, user_len_list)
         scores_matrix = torch.flip(scores_matrix, dims=[-1])
-        shape_matrix = torch.full((len(user_len_list), 1), scores_matrix.shape[1],
-                                  device=scores_matrix.device)
+        shape_matrix = torch.full((len(user_len_list), 1), scores_matrix.shape[1], device=scores_matrix.device)
 
         # get topk
         _, topk_idx = torch.topk(scores_matrix, max(self.topk), dim=-1)  # n_users x k
@@ -114,8 +112,10 @@ class TopKEvaluator(GroupedEvaluator):
                 self.topk = [self.topk]
             for topk in self.topk:
                 if topk <= 0:
-                    raise ValueError('topk must be a positive integer or a list of positive integers, '
-                                     'but get `{}`'.format(topk))
+                    raise ValueError(
+                        'topk must be a positive integer or a list of positive integers, '
+                        'but get `{}`'.format(topk)
+                    )
         else:
             raise TypeError('The topk must be a integer, list')
 
@@ -189,7 +189,7 @@ class RankEvaluator(GroupedEvaluator):
             torch.Tensor: average_rank
 
         Example:
-            >>> average_rank(tensor([[1,2,2,2,3,3,6],[2,2,2,2,4,4,5]]))
+            >>> average_rank(tensor([[1,2,2,2,3,3,6],[2,2,2,2,4,5,5]]))
             tensor([[1.0000, 3.0000, 3.0000, 3.0000, 5.5000, 5.5000, 7.0000],
             [2.5000, 2.5000, 2.5000, 2.5000, 5.0000, 6.5000, 6.5000]])
 
@@ -243,7 +243,7 @@ class RankEvaluator(GroupedEvaluator):
             eval_data (Dataset): the class of test data
 
         Returns:
-            dict: such as ``{'GAUC:0.9286}``
+            dict: such as ``{'GAUC': 0.9286}``
 
         """
         pos_len_list = eval_data.get_pos_len_list()
@@ -282,8 +282,6 @@ class RankEvaluator(GroupedEvaluator):
         msg = 'The Rank Evaluator Info:\n' + \
               '\tMetrics:[' + \
               ', '.join([rank_metrics[metric.lower()] for metric in self.metrics]) + \
-              '], TopK:[' + \
-              ', '.join(map(str, self.topk)) + \
               ']'
         return msg
 
@@ -369,8 +367,4 @@ class LossEvaluator(IndividualEvaluator):
         return msg
 
 
-metric_eval_bind = [
-    (topk_metrics, TopKEvaluator),
-    (loss_metrics, LossEvaluator),
-    (rank_metrics, RankEvaluator)
-]
+metric_eval_bind = [(topk_metrics, TopKEvaluator), (loss_metrics, LossEvaluator), (rank_metrics, RankEvaluator)]
