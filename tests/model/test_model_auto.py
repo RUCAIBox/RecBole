@@ -6,7 +6,7 @@
 # UPDATE
 # @Time    :   2020/11/17
 # @Author  :   Xingyu Pan
-# @email   :   panxy@ruc.edu.cn  
+# @email   :   panxy@ruc.edu.cn
 
 import os
 import unittest
@@ -161,7 +161,7 @@ class TestGeneralRecommender(unittest.TestCase):
             'training_neg_sample_num': 0
         }
         quick_test(config_dict)
- 
+
     def test_CDAE(self):
         config_dict = {
             'model': 'CDAE',
