@@ -3,9 +3,11 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/28 2020/10/13, 2020/11/10
-# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/10/28 2020/10/13, 2020/11/10 2021/2/28
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen， Junlin He
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn , mr.h@bupt.edu.cn
+
+
 
 """
 recbole.data.dataset
@@ -27,6 +29,9 @@ from scipy.sparse import coo_matrix
 from recbole.data.interaction import Interaction
 from recbole.data.utils import dlapi
 from recbole.utils import FeatureSource, FeatureType
+
+import matplotlib.pyplot as plt
+import pandas as pd
 
 
 class Dataset(object):
@@ -1200,15 +1205,73 @@ class Dataset(object):
         return self.__str__()
 
     def __str__(self):
+        """output and visualize the basic information of users and items.
+        """
         info = [self.dataset_name]
         if self.uid_field:
             info.extend([
                 f'The number of users: {self.user_num}', f'Average actions of users: {self.avg_actions_of_users}'
             ])
+
+            k = list(Counter(self.inter_feat[self.uid_field].numpy()).values())
+
+            min_act_num = min(k)
+            max_act_num = max(k)
+            with_min_act_user = k.index(min_act_num)
+            with_max_act_user = k.index(max_act_num)
+            info.append(f'user: {with_max_act_user} has max act_num:{max_act_num}')
+            info.append(f'user: {with_min_act_user} has min act_num:{min_act_num}')
+
+            plt.figure(figsize=(20, 8), dpi=80)
+
+            plt.subplot(1, 1, 1)
+            x = list(range(0, len(k)))
+            plt.plot(x, k, label="num_of_act", color="#87CEFA")
+
+            plt.xticks(np.arange(0, len(x), 100))
+            plt.yticks(np.arange(min_act_num, max_act_num + 1, 100))
+
+            plt.xlabel('User')
+            plt.ylabel('num_of_act')
+
+            plt.title('action nums of each user')
+
+            plt.legend(loc="upper right")
+
+            plt.savefig('user_condition.png')
+            # Generate item_num histogram corresponding to each user
+
         if self.iid_field:
             info.extend([
                 f'The number of items: {self.item_num}', f'Average actions of items: {self.avg_actions_of_items}'
             ])
+            k = list(Counter(self.inter_feat[self.iid_field].numpy()).values())
+            min_act_num = min(k)
+            max_act_num = max(k)
+            with_min_act_item = k.index(min_act_num)
+            with_max_act_item = k.index(max_act_num)
+            info.append(f'item: {with_max_act_item} has max act_num:{max_act_num}')
+            info.append(f'item: {with_min_act_item} has min act_num:{min_act_num}')
+
+            plt.figure(figsize=(20, 8), dpi=80)
+
+            plt.subplot(1, 1, 1)
+            x = list(range(0, len(k)))
+            plt.plot(x, k, label="num_of_act", color="#87CEFA")
+
+            plt.xticks(np.arange(0, len(x), 100))
+            plt.yticks(np.arange(min_act_num, max_act_num + 1,100))
+
+            plt.xlabel('Item')
+            plt.ylabel('num_of_act')
+
+            plt.title('action nums of each item')
+
+            plt.legend(loc="upper right")
+
+            plt.savefig('item_condition.png')
+            # Generate item_num histogram corresponding to each user
+
         info.append(f'The number of inters: {self.inter_num}')
         if self.uid_field and self.iid_field:
             info.append(f'The sparsity of the dataset: {self.sparsity * 100}%')
