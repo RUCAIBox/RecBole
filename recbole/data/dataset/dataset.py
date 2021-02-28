@@ -7,8 +7,6 @@
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen， Junlin He
 # @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn , mr.h@bupt.edu.cn
 
-
-
 """
 recbole.data.dataset
 ##########################
@@ -31,7 +29,6 @@ from recbole.data.utils import dlapi
 from recbole.utils import FeatureSource, FeatureType
 
 import matplotlib.pyplot as plt
-import pandas as pd
 
 
 class Dataset(object):
@@ -97,6 +94,7 @@ class Dataset(object):
     def __init__(self, config, saved_dataset=None):
         self.config = config
         self.dataset_name = config['dataset']
+        self.dataset_visualize = config['dataset_visualize']
         self.logger = getLogger()
         self._dataloader_apis = {'field2type', 'field2source', 'field2id_token'}
         self._dataloader_apis.update(dlapi.dataloader_apis)
@@ -1212,65 +1210,85 @@ class Dataset(object):
             info.extend([
                 f'The number of users: {self.user_num}', f'Average actions of users: {self.avg_actions_of_users}'
             ])
-
+            # count the min and max act_num of users
             k = list(Counter(self.inter_feat[self.uid_field].numpy()).values())
-
             min_act_num = min(k)
             max_act_num = max(k)
             with_min_act_user = k.index(min_act_num)
             with_max_act_user = k.index(max_act_num)
-            info.append(f'user: {with_max_act_user} has max act_num:{max_act_num}')
-            info.append(f'user: {with_min_act_user} has min act_num:{min_act_num}')
+            info.append(f'User: {with_max_act_user} has max inter_num:{max_act_num}')
+            info.append(f'User: {with_min_act_user} has min inter_num:{min_act_num}')
 
-            plt.figure(figsize=(20, 8), dpi=80)
+            # visualize
+            if self.dataset_visualize:
+                n = len(k)
+                count = [0, 0, 0, 0, 0]
+                interval = (max_act_num - min_act_num + 1) / 5
+                interval = int(interval)
+                base = interval + min_act_num
+                limit = [min_act_num, base, base + interval, base + interval * 2, base + interval * 3, max_act_num]
 
-            plt.subplot(1, 1, 1)
-            x = list(range(0, len(k)))
-            plt.plot(x, k, label="num_of_act", color="#87CEFA")
+                for i in range(0, n):
+                    for j in range(0, len(count)):
+                        if k[i] == limit[0]:
+                            count[0] = count[0] + 1
+                            break
+                        if limit[j] < k[i] <= limit[j + 1]:
+                            count[j] = count[j] + 1
+                            break
 
-            plt.xticks(np.arange(0, len(x), 100))
-            plt.yticks(np.arange(min_act_num, max_act_num + 1, 100))
-
-            plt.xlabel('User')
-            plt.ylabel('num_of_act')
-
-            plt.title('action nums of each user')
-
-            plt.legend(loc="upper right")
-
-            plt.savefig('user_condition.png')
-            # Generate item_num histogram corresponding to each user
+                plt.figure(figsize=(6, 4), dpi=80)
+                num_list = [
+                    f'[{limit[0]}:{limit[1]}]', f'[{limit[1] + 1}:{limit[2]}]', f'[{limit[2] + 1}:{limit[3]}]',
+                    f'[{limit[3] + 1}:{limit[4]}]', f'[{limit[4] + 1}:{limit[5]}]'
+                ]
+                plt.bar(num_list, [i / n for i in count], color="#87CEFA", width=0.3)
+                plt.xlabel('Inter_num')
+                plt.ylabel('Portion')
+                plt.title('Proportion of users in different intervals')
+                plt.savefig('user_inter_num.pdf')
 
         if self.iid_field:
             info.extend([
                 f'The number of items: {self.item_num}', f'Average actions of items: {self.avg_actions_of_items}'
             ])
+            # count the min and max act_num of items
             k = list(Counter(self.inter_feat[self.iid_field].numpy()).values())
             min_act_num = min(k)
             max_act_num = max(k)
             with_min_act_item = k.index(min_act_num)
             with_max_act_item = k.index(max_act_num)
-            info.append(f'item: {with_max_act_item} has max act_num:{max_act_num}')
-            info.append(f'item: {with_min_act_item} has min act_num:{min_act_num}')
+            info.append(f'Item: {with_max_act_item} has max inter_num:{max_act_num}')
+            info.append(f'Item: {with_min_act_item} has min inter_num:{min_act_num}')
 
-            plt.figure(figsize=(20, 8), dpi=80)
+            # visualize
+            if self.dataset_visualize:
+                n = len(k)
+                count = [0, 0, 0, 0, 0]
+                interval = (max_act_num - min_act_num + 1) / 5
+                interval = int(interval)
+                base = interval + min_act_num
+                limit = [min_act_num, base, base + interval, base + interval * 2, base + interval * 3, max_act_num]
 
-            plt.subplot(1, 1, 1)
-            x = list(range(0, len(k)))
-            plt.plot(x, k, label="num_of_act", color="#87CEFA")
+                for i in range(0, n):
+                    for j in range(0, len(count)):
+                        if k[i] == limit[0]:
+                            count[0] = count[0] + 1
+                            break
+                        if limit[j] < k[i] <= limit[j + 1]:
+                            count[j] = count[j] + 1
+                            break
 
-            plt.xticks(np.arange(0, len(x), 100))
-            plt.yticks(np.arange(min_act_num, max_act_num + 1,100))
-
-            plt.xlabel('Item')
-            plt.ylabel('num_of_act')
-
-            plt.title('action nums of each item')
-
-            plt.legend(loc="upper right")
-
-            plt.savefig('item_condition.png')
-            # Generate item_num histogram corresponding to each user
+                plt.figure(figsize=(6, 4), dpi=80)
+                num_list = [
+                    f'[{limit[0]}:{limit[1]}]', f'[{limit[1] + 1}:{limit[2]}]', f'[{limit[2] + 1}:{limit[3]}]',
+                    f'[{limit[3] + 1}:{limit[4]}]', f'[{limit[4] + 1}:{limit[5]}]'
+                ]
+                plt.bar(num_list, [i / n for i in count], color="#87CEFA", width=0.3)
+                plt.xlabel('Inter_num')
+                plt.ylabel('Portion')
+                plt.title('Proportion of items in different intervals')
+                plt.savefig('item_inter_num.pdf')
 
         info.append(f'The number of inters: {self.inter_num}')
         if self.uid_field and self.iid_field:
