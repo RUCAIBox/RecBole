@@ -75,7 +75,6 @@ class Config(object):
         self.model, self.model_class, self.dataset = self._get_model_and_dataset(model, dataset)
         self._load_internal_config_dict(self.model, self.model_class, self.dataset)
         self.final_config_dict = self._get_final_config_dict()
-        self._parameter_check()
         self._set_default_parameters()
         self._init_device()
 
@@ -260,12 +259,6 @@ class Config(object):
         final_config_dict.update(self.internal_config_dict)
         final_config_dict.update(self.external_config_dict)
         return final_config_dict
-    
-    def _parameter_check(self):
-        diff_set = set(self.external_config_dict.keys()) - set(self.internal_config_dict.keys()) - {'model', 'dataset', 'config_files'}
-        diff_num = len(diff_set)
-        if diff_num > 0:
-            raise ValueError("Unexpected keyword parameters '" + diff_set.pop() + "' appeared.")
 
     def _set_default_parameters(self):
 
@@ -341,6 +334,13 @@ class Config(object):
                 if arg in self.parameters[category]
             ])
             args_info += '\n\n'
+            
+        args_info += 'Other Hyper Parameters: \n'
+        args_info += '\n'.join([
+                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
+                if arg not in sum(list(self.parameters.values()) + [['model', 'dataset', 'config_files']], [])
+            ])
+        args_info += '\n\n'
         return args_info
 
     def __repr__(self):

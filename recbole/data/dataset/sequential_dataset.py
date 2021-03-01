@@ -111,10 +111,12 @@ class SequentialDataset(Dataset):
         Sparse matrix has shape (user_num, item_num).
         For a row of <src, tgt>, ``matrix[src, tgt] = 1`` if ``value_field`` is ``None``,
         else ``matrix[src, tgt] = self.inter_feat[src, tgt]``.
+
         Args:
             form (str, optional): Sparse matrix format. Defaults to ``coo``.
             value_field (str, optional): Data of sparse matrix, which should exist in ``df_feat``.
                 Defaults to ``None``.
+
         Returns:
             scipy.sparse: Sparse matrix in form ``coo`` or ``csr``.
         """
