@@ -76,8 +76,14 @@ class EvalSetting(object):
         self.group_field = None
         self.ordering_args = None
         self.split_args = None
-        self.neg_sample_args = {'strategy': 'none'}
+        self.neg_sample_args = None
 
+        self.es_str = [_.strip() for _ in config['eval_setting'].split(',')]
+        self.set_ordering_and_splitting(self.es_str[0])
+        if len(self.es_str) > 1 and getattr(self, self.es_str[1], None):
+            getattr(self, self.es_str[1])()
+        else:
+            self.neg_sample_args = {'strategy': 'none'}
         presetting_args = ['group_field', 'ordering_args', 'split_args', 'neg_sample_args']
         for args in presetting_args:
             if config[args] is not None:

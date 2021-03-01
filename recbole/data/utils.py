@@ -71,9 +71,7 @@ def data_preparation(config, dataset, save=False):
     """
     model_type = config['MODEL_TYPE']
 
-    es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
-    es.set_ordering_and_splitting(es_str[0])
 
     built_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = built_datasets
@@ -85,22 +83,23 @@ def data_preparation(config, dataset, save=False):
 
     kwargs = {}
     if config['training_neg_sample_num']:
+        config['train_neg_sample_args'] = {'strategy': 'by', 'by': config['training_neg_sample_num'], 'distribution': config['training_neg_sample_distribution'] or 'uniform'}
         if dataset.label_field in dataset.inter_feat:
             raise ValueError(
                 f'`training_neg_sample_num` should be 0 '
                 f'if inter_feat have label_field [{dataset.label_field}].'
             )
-        train_distribution = config['training_neg_sample_distribution'] or 'uniform'
-        es.neg_sample_by(by=config['training_neg_sample_num'], distribution=train_distribution)
         if model_type != ModelType.SEQUENTIAL:
-            sampler = Sampler(phases, built_datasets, es.neg_sample_args['distribution'])
+            sampler = Sampler(phases, built_datasets, config['train_neg_sample_args']['distribution'])
         else:
-            sampler = RepeatableSampler(phases, dataset, es.neg_sample_args['distribution'])
+            sampler = RepeatableSampler(phases, dataset, config['train_neg_sample_args']['distribution'])
         kwargs['sampler'] = sampler.set_phase('train')
-        kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
+        kwargs['neg_sample_args'] = copy.deepcopy(config['train_neg_sample_args'])
         if model_type == ModelType.KNOWLEDGE:
-            kg_sampler = KGSampler(dataset, es.neg_sample_args['distribution'])
+            kg_sampler = KGSampler(dataset, config['train_neg_sample_args']['distribution'])
             kwargs['kg_sampler'] = kg_sampler
+    else:
+        config['train_neg_sample_args'] = None
     train_data = dataloader_construct(
         name='train',
         config=config,
@@ -113,13 +112,12 @@ def data_preparation(config, dataset, save=False):
     )
 
     kwargs = {}
-    if len(es_str) > 1 and getattr(es, es_str[1], None):
+    if len(es.es_str) > 1 and getattr(es, es.es_str[1], None):
         if dataset.label_field in dataset.inter_feat:
             raise ValueError(
-                f'It can not validate with `{es_str[1]}` '
+                f'It can not validate with `{es.es_str[1]}` '
                 f'when inter_feat have label_field [{dataset.label_field}].'
             )
-        getattr(es, es_str[1])()
         if sampler is None:
             if model_type != ModelType.SEQUENTIAL:
                 sampler = Sampler(phases, built_datasets, es.neg_sample_args['distribution'])
@@ -244,7 +242,10 @@ def get_data_loader(name, config, eval_setting):
         return register_table[config['model']](name, config, eval_setting)
 
     model_type = config['MODEL_TYPE']
-    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    if name == 'train' and config['train_neg_sample_args'] != None:
+        neg_sample_strategy = config['train_neg_sample_args']['strategy']
+    else:
+        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
     if model_type == ModelType.GENERAL or model_type == ModelType.TRADITIONAL:
         if neg_sample_strategy == 'none':
             return GeneralDataLoader
