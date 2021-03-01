@@ -21,6 +21,7 @@ clip_grad_norm: ~
 # clip_grad_norm:  {'max_norm': 5, 'norm_type': 2}
 weight_decay: 0.0
 draw_pic: False
+print_latex_code: False
 
 # evaluation settings
 eval_setting: RO_RS,full

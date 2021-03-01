@@ -55,7 +55,7 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     )
 
     # model evaluation
-    test_result = trainer.evaluate(test_data, load_best_model=saved, show_progress=config['show_progress'])
+    test_result = trainer.evaluate(test_data, load_best_model=saved, show_progress=config['show_progress'], test_evaluate=True)
 
     logger.info('best valid result: {}'.format(best_valid_result))
     logger.info('test result: {}'.format(test_result))

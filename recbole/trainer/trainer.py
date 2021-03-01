@@ -87,6 +87,7 @@ class Trainer(AbstractTrainer):
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
         self.weight_decay = config['weight_decay']
         self.draw_pic = config['draw_pic']
+        self.print_latex_code = config['print_latex_code']
 
         self.start_epoch = 0
         self.cur_step = 0
@@ -341,7 +342,7 @@ class Trainer(AbstractTrainer):
         return interaction, scores
 
     @torch.no_grad()
-    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
+    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False, test_evaluate=False):
         r"""Evaluate the model based on the eval data.
 
         Args:
@@ -397,7 +398,9 @@ class Trainer(AbstractTrainer):
             batch_matrix = self.evaluator.collect(interaction, scores)
             batch_matrix_list.append(batch_matrix)
         result = self.evaluator.evaluate(batch_matrix_list, eval_data)
-
+        if test_evaluate:
+            if self.print_latex_code:
+                self.output_latex_code(result)
         return result
 
     def _spilt_predict(self, interaction, batch_size):
@@ -440,10 +443,35 @@ class Trainer(AbstractTrainer):
         if save_path:
             plt.savefig(save_path)
 
+    def output_latex_code(self, result):
+        import time
+        evaluate_index = list(result.keys())
+        values = list(result.values())
+        print(evaluate_index)
+        print(values)
+        index=[]
+        tmp_values=[]
+        c_control=[]
+        for i in range(len(evaluate_index)):
+            index+=' & '
+            index+=evaluate_index[i]
+            tmp_values+=' & $'
+            tmp_values+=str(values[i])
+            tmp_values+='$'
+            c_control+='c'
+        index=''.join(index)
+        tmp_values=''.join(tmp_values)
+        c_control=''.join(c_control)
+        text='\\begin{tabular}{l|'+c_control+'}\n\t\hline\n\tEvaluation metrics'+index+' \\\\\n\t\hline\n\t\hline\n\t'+self.config['model']+tmp_values+' \\\\\n\t\hline\n\end{tabular}'
+        save_path=self.config['model']+'_'+time.strftime("%Y-%m-%d", time.localtime())+'_latex_code.tex'
+        file_handle=open(save_path,mode='w')
+        file_handle.write(text)
+
 
 class KGTrainer(Trainer):
     r"""KGTrainer is designed for Knowledge-aware recommendation methods. Some of these models need to train the
-    recommendation related task and knowledge related task alternately.
+    recommendation related task and knowledge relat
+    ed task alternately.
 
     """
 
@@ -675,13 +703,13 @@ class DecisionTreeTrainer(AbstractTrainer):
     def _interaction_to_lib_datatype(self, dataloader):
         pass
 
-    def _valid_epoch(self, valid_data):
+    def _valid_epoch(self, valid_data, epoch_idx):
         r"""
 
         Args:
             valid_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
         """
-        valid_result = self.evaluate(valid_data)
+        valid_result = self.evaluate(valid_data,epoch_idx)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_result, valid_score
 
@@ -699,7 +727,7 @@ class DecisionTreeTrainer(AbstractTrainer):
             if (epoch_idx + 1) % self.eval_step == 0:
                 # evaluate
                 valid_start_time = time()
-                valid_result, valid_score = self._valid_epoch(valid_data)
+                valid_result, valid_score = self._valid_epoch(valid_data,epoch_idx)
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)

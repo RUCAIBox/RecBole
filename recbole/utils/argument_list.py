@@ -23,7 +23,8 @@ training_arguments = [
     'clip_grad_norm',
     'loss_decimal_place',
     'weight_decay',
-    'draw_pic'
+    'draw_pic',
+    'print_latex_code'
 ]
 
 evaluation_arguments = [
