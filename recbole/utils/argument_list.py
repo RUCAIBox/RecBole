@@ -11,6 +11,7 @@ general_arguments = [
     'state',
     'data_path',
     'show_progress',
+    'dataset_visualize'
 ]
 
 training_arguments = [

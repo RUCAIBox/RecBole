@@ -7,6 +7,7 @@ reproducibility: True
 data_path: 'dataset/'
 checkpoint_dir: 'saved'
 show_progress: True
+dataset_visualize: False
 
 # training settings
 epochs: 300
