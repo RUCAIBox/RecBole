@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/22, 2020/8/31
-# @Author : Yupeng Hou, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/10/22, 2020/8/31, 2021/3/1
+# @Author : Yupeng Hou, Yushuo Chen, Jiawei Guan
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, guanjw@ruc.edu.cn
 
 """
 recbole.config.eval_setting
