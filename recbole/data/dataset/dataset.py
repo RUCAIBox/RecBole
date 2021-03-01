@@ -5,7 +5,7 @@
 # UPDATE:
 # @Time   : 2020/10/28 2020/10/13, 2020/11/10 2021/2/28
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen， Junlin He
-# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn , mr.h@bupt.edu.cn
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn, mr.h@bupt.edu.cn
 
 """
 recbole.data.dataset
@@ -23,12 +23,11 @@ import pandas as pd
 import torch
 import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
+import matplotlib.pyplot as plt
 
 from recbole.data.interaction import Interaction
 from recbole.data.utils import dlapi
 from recbole.utils import FeatureSource, FeatureType
-
-import matplotlib.pyplot as plt
 
 
 class Dataset(object):
