@@ -470,8 +470,7 @@ class Trainer(AbstractTrainer):
 
 class KGTrainer(Trainer):
     r"""KGTrainer is designed for Knowledge-aware recommendation methods. Some of these models need to train the
-    recommendation related task and knowledge relat
-    ed task alternately.
+    recommendation related task and knowledge related task alternately.
 
     """
 
@@ -703,13 +702,13 @@ class DecisionTreeTrainer(AbstractTrainer):
     def _interaction_to_lib_datatype(self, dataloader):
         pass
 
-    def _valid_epoch(self, valid_data, epoch_idx):
+    def _valid_epoch(self, valid_data):
         r"""
 
         Args:
             valid_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
         """
-        valid_result = self.evaluate(valid_data,epoch_idx)
+        valid_result = self.evaluate(valid_data)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_result, valid_score
 
@@ -727,7 +726,7 @@ class DecisionTreeTrainer(AbstractTrainer):
             if (epoch_idx + 1) % self.eval_step == 0:
                 # evaluate
                 valid_start_time = time()
-                valid_result, valid_score = self._valid_epoch(valid_data,epoch_idx)
+                valid_result, valid_score = self._valid_epoch(valid_data)
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
