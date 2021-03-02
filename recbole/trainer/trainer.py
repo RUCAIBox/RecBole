@@ -869,6 +869,8 @@ class RaCTTrainer(Trainer):
             return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
             raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
+        
+
 class lightgbmTrainer(DecisionTreeTrainer):
     """lightgbmTrainer is designed for lightgbm.
 

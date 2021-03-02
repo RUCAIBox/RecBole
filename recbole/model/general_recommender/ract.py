@@ -49,17 +49,16 @@ class RaCT(GeneralRecommender):
         self.encoder = self.mlp_layers(self.encode_layer_dims)
         self.decoder = self.mlp_layers(self.decode_layer_dims)
 
-        self.critic_layers_1 = config["critic_layers_1"]
-        self.critic_layers_2 = config["critic_layers_2"]
-        self.critic_layers_3 = config["critic_layers_3"]
+        self.critic_layers = config["critic_layers"]
         self.metrics_k = config["metrics_k"]
         self.number_of_seen_items = 0
         self.number_of_unseen_items = 0
+        self.critic_layer_dims = [3] + self.critic_layers + [1]
 
         self.input_matrix = None
         self.predict_matrix = None
         self.true_matrix = None
-        self.critic_net = self.construct_critic_layers()
+        self.critic_net = self.construct_critic_layers(self.critic_layer_dims)
 
         self.train_stage = config['train_stage']
         self.pre_model_path = config['pre_model_path'] 
@@ -170,17 +169,15 @@ class RaCT(GeneralRecommender):
         critic_inputs.append(actor_loss)
         return torch.stack(critic_inputs, dim=1)
 
-    def construct_critic_layers(self):
+    def construct_critic_layers(self, layer_dims):
         mlp_modules = []
         mlp_modules.append(nn.BatchNorm1d(3))
-        mlp_modules.append(nn.Linear(3, self.critic_layers_1))
-        mlp_modules.append(nn.ReLU())
-        mlp_modules.append(nn.Linear(self.critic_layers_1, self.critic_layers_2))
-        mlp_modules.append(nn.ReLU())
-        mlp_modules.append(nn.Linear(self.critic_layers_2, self.critic_layers_3))
-        mlp_modules.append(nn.ReLU())
-        mlp_modules.append(nn.Linear(self.critic_layers_3, 1))
-        mlp_modules.append(nn.Sigmoid())
+        for i, (d_in, d_out) in enumerate(zip(layer_dims[:-1], layer_dims[1:])):
+            mlp_modules.append(nn.Linear(d_in, d_out))
+            if i != len(layer_dims[:-1]) - 1:
+                mlp_modules.append(nn.ReLU())
+            else:
+                mlp_modules.append(nn.Sigmoid())
         return nn.Sequential(*mlp_modules)
 
     def calculate_ndcg(self, predict_matrix, true_matrix, input_matrix, k):
