@@ -6,7 +6,7 @@
 # UPDATE
 # @Time    :   2020/11/17
 # @Author  :   Xingyu Pan
-# @email   :   panxy@ruc.edu.cn  
+# @email   :   panxy@ruc.edu.cn
 
 import os
 import unittest
@@ -140,30 +140,54 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_ease(self):
+        config_dict = {
+            'model': 'EASE',
+        }
+        quick_test(config_dict)
+
     def test_MultiDAE(self):
         config_dict = {
             'model': 'MultiDAE',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
     def test_MultiVAE(self):
         config_dict = {
             'model': 'MultiVAE',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
-    def test_MacridVAE(self):
+    def test_enmf(self):
         config_dict = {
-            'model': 'MacridVAE',
+            'model': 'ENMF',
+            'training_neg_sample_num': 0,
         }
         quick_test(config_dict)
  
+    def test_MacridVAE(self):
+        config_dict = {
+            'model': 'MacridVAE',
+            'training_neg_sample_num': 0
+        }
+        quick_test(config_dict)
+
     def test_CDAE(self):
         config_dict = {
             'model': 'CDAE',
             'training_neg_sample_num': 0
         }
         quick_test(config_dict)
+        
+    def test_NNCF(self):
+        config_dict = {
+            'model': 'NNCF',
+        }
+        quick_test(config_dict)
+        
+
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset

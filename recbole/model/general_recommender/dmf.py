@@ -20,9 +20,9 @@ import torch
 import torch.nn as nn
 from torch.nn.init import normal_
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.layers import MLPLayers
+from recbole.utils import InputType
 
 
 class DMF(GeneralRecommender):
@@ -102,7 +102,8 @@ class DMF(GeneralRecommender):
 
         # Following lines construct tensor of shape [B,n_users] using the tensor of shape [B,H]
         col_indices = self.history_user_id[item].flatten()
-        row_indices = torch.arange(item.shape[0]).to(self.device).repeat_interleave(self.history_user_id.shape[1], dim=0)
+        row_indices = torch.arange(item.shape[0]).to(self.device). \
+            repeat_interleave(self.history_user_id.shape[1], dim=0)
         matrix_01 = torch.zeros(1).to(self.device).repeat(item.shape[0], self.n_users)
         matrix_01.index_put_((row_indices, col_indices), self.history_user_value[item].flatten())
         item = self.item_linear(matrix_01)
@@ -149,8 +150,8 @@ class DMF(GeneralRecommender):
         """
         # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
         col_indices = self.history_item_id[user].flatten()
-        row_indices = torch.arange(user.shape[0]).to(self.device).repeat_interleave(self.history_item_id.shape[1],
-                                                                                    dim=0)
+        row_indices = torch.arange(user.shape[0]).to(self.device)
+        row_indices = row_indices.repeat_interleave(self.history_item_id.shape[1], dim=0)
         matrix_01 = torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
         matrix_01.index_put_((row_indices, col_indices), self.history_item_value[user].flatten())
         user = self.user_linear(matrix_01)
@@ -170,7 +171,8 @@ class DMF(GeneralRecommender):
         col = interaction_matrix.col
         i = torch.LongTensor([row, col])
         data = torch.FloatTensor(interaction_matrix.data)
-        item_matrix = torch.sparse.FloatTensor(i, data, torch.Size(interaction_matrix.shape)).to(self.device).transpose(0, 1)
+        item_matrix = torch.sparse.FloatTensor(i, data, torch.Size(interaction_matrix.shape)).to(self.device).\
+            transpose(0, 1)
         item = torch.sparse.mm(item_matrix, self.item_linear.weight.t())
 
         item = self.item_fc_layers(item)

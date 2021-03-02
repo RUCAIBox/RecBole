@@ -3,7 +3,6 @@
 # @Author : Yujie Lu
 # @Email  : yujielu1998@gmail.com
 
-
 r"""
 SRGNN
 ################################################
@@ -15,16 +14,16 @@ Reference code:
     https://github.com/CRIPAC-DIG/SR-GNN
 
 """
-import numpy as np
 import math
 
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import Parameter
 from torch.nn import functional as F
 
-from recbole.model.loss import BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
+from recbole.model.loss import BPRLoss
 
 
 class GNN(nn.Module):
@@ -58,25 +57,25 @@ class GNN(nn.Module):
                 [batch_size, max_session_len, embedding_size]
 
         Returns:
-            torch.FloatTensor:Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
+            torch.FloatTensor: Latent vectors of nodes,shape of [batch_size, max_session_len, embedding_size]
 
         """
 
         input_in = torch.matmul(A[:, :, :A.size(1)], self.linear_edge_in(hidden)) + self.b_iah
-        input_out = torch.matmul(A[:, :, A.size(1): 2 * A.size(1)], self.linear_edge_out(hidden)) + self.b_ioh
+        input_out = torch.matmul(A[:, :, A.size(1):2 * A.size(1)], self.linear_edge_out(hidden)) + self.b_ioh
         # [batch_size, max_session_len, embedding_size * 2]
         inputs = torch.cat([input_in, input_out], 2)
 
-        # gi.size equals to gh.size, shape of [batch_size, max_session_len, embdding_size * 3]
+        # gi.size equals to gh.size, shape of [batch_size, max_session_len, embedding_size * 3]
         gi = F.linear(inputs, self.w_ih, self.b_ih)
         gh = F.linear(hidden, self.w_hh, self.b_hh)
         # (batch_size, max_session_len, embedding_size)
         i_r, i_i, i_n = gi.chunk(3, 2)
         h_r, h_i, h_n = gh.chunk(3, 2)
-        resetgate = torch.sigmoid(i_r + h_r)
-        inputgate = torch.sigmoid(i_i + h_i)
-        newgate = torch.tanh(i_n + resetgate * h_n)
-        hy = (1 - inputgate) * hidden + inputgate * newgate
+        reset_gate = torch.sigmoid(i_r + h_r)
+        input_gate = torch.sigmoid(i_i + h_i)
+        new_gate = torch.tanh(i_n + reset_gate * h_n)
+        hy = (1 - input_gate) * hidden + input_gate * new_gate
         return hy
 
     def forward(self, A, hidden):
@@ -90,7 +89,7 @@ class SRGNN(SequentialRecommender):
     In addition to considering the connection between the item and the adjacent item,
     it also considers the connection with other interactive items.
 
-    Such as: A example of a session sequence(eg:item1, item2, item3, item2, item4) and the connecion matrix A
+    Such as: A example of a session sequence(eg:item1, item2, item3, item2, item4) and the connection matrix A
 
     Outgoing edges:
         === ===== ===== ===== =====

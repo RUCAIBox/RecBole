@@ -24,9 +24,9 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.utils import InputType
-from recbole.model.layers import MLPLayers, SequenceAttLayer, ContextSeqEmbLayer
 from recbole.model.abstract_recommender import SequentialRecommender
+from recbole.model.layers import MLPLayers, SequenceAttLayer, ContextSeqEmbLayer
+from recbole.utils import InputType
 
 
 class DIN(SequentialRecommender):
@@ -61,24 +61,14 @@ class DIN(SequentialRecommender):
         # self.dnn_list = [(3 * self.num_feature_field['item'] + self.num_feature_field['user'])
         #                  * self.embedding_size] + self.mlp_hidden_size
         num_item_feature = len(self.item_feat.interaction.keys())
-        self.dnn_list = [
-            (3 * num_item_feature) * self.embedding_size
-        ] + self.mlp_hidden_size
-        self.att_list = [
-            4 * num_item_feature * self.embedding_size
-        ] + self.mlp_hidden_size
+        self.dnn_list = [3 * num_item_feature * self.embedding_size] + self.mlp_hidden_size
+        self.att_list = [4 * num_item_feature * self.embedding_size] + self.mlp_hidden_size
 
-        mask_mat = torch.arange(self.max_seq_length).to(self.device).view(
-            1, -1)  # init mask
-        self.attention = SequenceAttLayer(mask_mat,
-                                          self.att_list,
-                                          activation='Sigmoid',
-                                          softmax_stag=False,
-                                          return_seq_weight=False)
-        self.dnn_mlp_layers = MLPLayers(self.dnn_list,
-                                        activation='Dice',
-                                        dropout=self.dropout_prob,
-                                        bn=True)
+        mask_mat = torch.arange(self.max_seq_length).to(self.device).view(1, -1)  # init mask
+        self.attention = SequenceAttLayer(
+            mask_mat, self.att_list, activation='Sigmoid', softmax_stag=False, return_seq_weight=False
+        )
+        self.dnn_mlp_layers = MLPLayers(self.dnn_list, activation='Dice', dropout=self.dropout_prob, bn=True)
 
         self.embedding_layer = ContextSeqEmbLayer(dataset, self.embedding_size, self.pooling_mode, self.device)
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
@@ -128,8 +118,7 @@ class DIN(SequentialRecommender):
         user_emb = user_emb.squeeze()
 
         # input the DNN to get the prediction score
-        din_in = torch.cat([user_emb, target_item_feat_emb,
-                            user_emb * target_item_feat_emb], dim=-1)
+        din_in = torch.cat([user_emb, target_item_feat_emb, user_emb * target_item_feat_emb], dim=-1)
         din_out = self.dnn_mlp_layers(din_in)
         preds = self.dnn_predict_layers(din_out)
         preds = self.sigmoid(preds)

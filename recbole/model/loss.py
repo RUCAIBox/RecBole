@@ -7,20 +7,17 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
-
 """
 recbole.model.loss
 #######################
 Common Loss in recommender system
 """
 
-
 import torch
 import torch.nn as nn
 
 
 class BPRLoss(nn.Module):
-
     """ BPRLoss, based on Bayesian Personalized Ranking
 
     Args:
@@ -39,12 +36,13 @@ class BPRLoss(nn.Module):
         >>> output = loss(pos_score, neg_score)
         >>> output.backward()
     """
+
     def __init__(self, gamma=1e-10):
         super(BPRLoss, self).__init__()
         self.gamma = gamma
 
     def forward(self, pos_score, neg_score):
-        loss = - torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
+        loss = -torch.log(self.gamma + torch.sigmoid(pos_score - neg_score)).mean()
         return loss
 
 
@@ -52,6 +50,7 @@ class RegLoss(nn.Module):
     """ RegLoss, L2 regularization on model parameters
 
     """
+
     def __init__(self):
         super(RegLoss, self).__init__()
 
@@ -69,6 +68,7 @@ class EmbLoss(nn.Module):
     """ EmbLoss, regularization on embeddings
 
     """
+
     def __init__(self, norm=2):
         super(EmbLoss, self).__init__()
         self.norm = norm

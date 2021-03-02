@@ -19,8 +19,8 @@ import torch
 from torch import nn
 
 from recbole.model.abstract_recommender import SequentialRecommender
-from recbole.model.loss import BPRLoss
 from recbole.model.layers import TransformerEncoder
+from recbole.model.loss import BPRLoss
 
 
 class SASRec(SequentialRecommender):
@@ -29,7 +29,7 @@ class SASRec(SequentialRecommender):
 
     NOTE:
         In the author's implementation, the Point-Wise Feed-Forward Network (PFFN) is implemented
-        by CNN with 1x1 kernel. In this implementation, we follows the original BERT implmentation
+        by CNN with 1x1 kernel. In this implementation, we follows the original BERT implementation
         using Fully Connected Layer to implement the PFFN.
     """
 
@@ -39,7 +39,7 @@ class SASRec(SequentialRecommender):
         # load parameters info
         self.n_layers = config['n_layers']
         self.n_heads = config['n_heads']
-        self.hidden_size = config['hidden_size'] # same as embedding_size
+        self.hidden_size = config['hidden_size']  # same as embedding_size
         self.inner_size = config['inner_size']  # the dimensionality in feed-forward layer
         self.hidden_dropout_prob = config['hidden_dropout_prob']
         self.attn_dropout_prob = config['attn_dropout_prob']
@@ -50,13 +50,18 @@ class SASRec(SequentialRecommender):
         self.loss_type = config['loss_type']
 
         # define layers and loss
-        self.item_embedding = nn.Embedding(self.n_items, self.hidden_size , padding_idx=0)
+        self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
         self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size)
-        self.trm_encoder = TransformerEncoder(n_layers=self.n_layers, n_heads=self.n_heads,
-                                              hidden_size=self.hidden_size, inner_size=self.inner_size,
-                                              hidden_dropout_prob=self.hidden_dropout_prob,
-                                              attn_dropout_prob=self.attn_dropout_prob,
-                                              hidden_act=self.hidden_act, layer_norm_eps=self.layer_norm_eps)
+        self.trm_encoder = TransformerEncoder(
+            n_layers=self.n_layers,
+            n_heads=self.n_heads,
+            hidden_size=self.hidden_size,
+            inner_size=self.inner_size,
+            hidden_dropout_prob=self.hidden_dropout_prob,
+            attn_dropout_prob=self.attn_dropout_prob,
+            hidden_act=self.hidden_act,
+            layer_norm_eps=self.layer_norm_eps
+        )
 
         self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
         self.dropout = nn.Dropout(self.hidden_dropout_prob)
@@ -111,12 +116,10 @@ class SASRec(SequentialRecommender):
 
         extended_attention_mask = self.get_attention_mask(item_seq)
 
-        trm_output = self.trm_encoder(input_emb,
-                                      extended_attention_mask,
-                                      output_all_encoded_layers=True)
+        trm_output = self.trm_encoder(input_emb, extended_attention_mask, output_all_encoded_layers=True)
         output = trm_output[-1]
         output = self.gather_indexes(output, item_seq_len - 1)
-        return output # [B H]
+        return output  # [B H]
 
     def calculate_loss(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]

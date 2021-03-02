@@ -15,10 +15,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
 from recbole.model.layers import MLPLayers
+from recbole.utils import InputType
 
 
 class MultiDAE(GeneralRecommender):
@@ -32,7 +32,7 @@ class MultiDAE(GeneralRecommender):
         super(MultiDAE, self).__init__(config, dataset)
 
         self.layers = config["mlp_hidden_size"]
-        self.lat_dim = config['latent_dimendion']
+        self.lat_dim = config['latent_dimension']
         self.drop_out = config['dropout_prob']
 
         self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
@@ -43,7 +43,7 @@ class MultiDAE(GeneralRecommender):
         self.decode_layer_dims = [self.lat_dim] + self.encode_layer_dims[::-1][1:]
 
         self.encoder = MLPLayers(self.encode_layer_dims, activation='tanh')
-        self.decoder = self.mlp_layars(self.decode_layer_dims)
+        self.decoder = self.mlp_layers(self.decode_layer_dims)
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
@@ -65,7 +65,7 @@ class MultiDAE(GeneralRecommender):
         rating_matrix.index_put_((row_indices, col_indices), self.history_item_value[user].flatten())
         return rating_matrix
 
-    def mlp_layars(self, layer_dims):
+    def mlp_layers(self, layer_dims):
         mlp_modules = []
         for i, (d_in, d_out) in enumerate(zip(layer_dims[:-1], layer_dims[1:])):
             mlp_modules.append(nn.Linear(d_in, d_out))

@@ -1,0 +1,5 @@
+user_id:token	item_id:token	rating:float	time_list:float_seq
+ua	ia	0	1 2 3
+ub	ib	1	2
+uc	ic	2	
+ud	id		5 4

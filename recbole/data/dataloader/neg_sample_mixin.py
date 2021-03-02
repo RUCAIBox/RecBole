@@ -29,20 +29,20 @@ class NegSampleMixin(AbstractDataLoader):
         batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
         dl_format (InputType, optional): The input type of dataloader. Defaults to
             :obj:`~recbole.utils.InputType.POINTWISE`.
-        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaluts to ``False``.
+        shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
     dl_type = DataLoaderType.NEGSAMPLE
 
-    def __init__(self, config, dataset, sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(
+        self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
+    ):
         if neg_sample_args['strategy'] not in ['by', 'full']:
-            raise ValueError('neg_sample strategy [{}] has not been implemented'.format(neg_sample_args['strategy']))
+            raise ValueError(f"Neg_sample strategy [{neg_sample_args['strategy']}] has not been implemented.")
 
         self.sampler = sampler
         self.neg_sample_args = neg_sample_args
 
-        super().__init__(config, dataset,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config, dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def setup(self):
         """Do batch size adaptation.
@@ -67,14 +67,14 @@ class NegSampleMixin(AbstractDataLoader):
     def get_pos_len_list(self):
         """
         Returns:
-            np.ndarray: Number of positive item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
         raise NotImplementedError('Method [get_pos_len_list] should be implemented.')
 
     def get_user_len_list(self):
         """
         Returns:
-            np.ndarray: Number of all item for each user in a training/evaluating epoch.
+            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
         raise NotImplementedError('Method [get_user_len_list] should be implemented.')
 
@@ -94,8 +94,10 @@ class NegSampleByMixin(NegSampleMixin):
             :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
-    def __init__(self, config, dataset, sampler, neg_sample_args,
-                 batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+
+    def __init__(
+        self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
+    ):
         if neg_sample_args['strategy'] != 'by':
             raise ValueError('neg_sample strategy in GeneralInteractionBasedDataLoader() should be `by`')
 
@@ -121,10 +123,11 @@ class NegSampleByMixin(NegSampleMixin):
                 neg_item_feat_col = self.neg_prefix + item_feat_col
                 dataset.copy_field_property(neg_item_feat_col, item_feat_col)
         else:
-            raise ValueError('`neg sampling by` with dl_format [{}] not been implemented'.format(dl_format))
+            raise ValueError(f'`neg sampling by` with dl_format [{dl_format}] not been implemented.')
 
-        super().__init__(config, dataset, sampler, neg_sample_args,
-                         batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(
+            config, dataset, sampler, neg_sample_args, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle
+        )
 
     def _neg_sample_by_pair_wise_sampling(self, *args):
         """Pair-wise sampling.

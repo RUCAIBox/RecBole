@@ -17,9 +17,9 @@ import torch
 from torch import nn
 
 from recbole.model.abstract_recommender import SequentialRecommender
-from recbole.model.loss import BPRLoss
-from recbole.model.layers import FeatureSeqEmbLayer
 from recbole.model.init import xavier_normal_initialization
+from recbole.model.layers import FeatureSeqEmbLayer
+from recbole.model.loss import BPRLoss
 
 
 class GRU4RecF(SequentialRecommender):
@@ -34,7 +34,7 @@ class GRU4RecF(SequentialRecommender):
         (3)  Weighted sum of outputs from two different RNNs.
 
     We implemented the optimal parallel version(2), which uses different RNNs to
-    encode items and features respectively and concatenates the two subparts's
+    encode items and features respectively and concatenates the two subparts'
     outputs as the final output. The different RNN encoders are trained simultaneously.
     """
 
@@ -56,8 +56,9 @@ class GRU4RecF(SequentialRecommender):
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.feature_embed_layer = FeatureSeqEmbLayer(dataset, self.embedding_size, self.selected_features,
-                                                      self.pooling_mode, self.device)
+        self.feature_embed_layer = FeatureSeqEmbLayer(
+            dataset, self.embedding_size, self.selected_features, self.pooling_mode, self.device
+        )
         self.item_gru_layers = nn.GRU(
             input_size=self.embedding_size,
             hidden_size=self.hidden_size,
@@ -106,12 +107,12 @@ class GRU4RecF(SequentialRecommender):
 
         feat_num, embedding_size = table_shape[-2], table_shape[-1]
         feature_emb = feature_table.view(table_shape[:-2] + (feat_num * embedding_size,))
-        feature_gru_output, _ = self.feature_gru_layers(feature_emb) # [B Len H]
+        feature_gru_output, _ = self.feature_gru_layers(feature_emb)  # [B Len H]
 
         output_concat = torch.cat((item_gru_output, feature_gru_output), -1)  # [B Len 2*H]
         output = self.dense_layer(output_concat)
         output = self.gather_indexes(output, item_seq_len - 1)  # [B H]
-        return output # [B H]
+        return output  # [B H]
 
     def calculate_loss(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
@@ -120,10 +121,10 @@ class GRU4RecF(SequentialRecommender):
         pos_items = interaction[self.POS_ITEM_ID]
         if self.loss_type == 'BPR':
             neg_items = interaction[self.NEG_ITEM_ID]
-            pos_items_emb = self.item_embedding(pos_items) # [B H]
-            neg_items_emb = self.item_embedding(neg_items) # [B H]
-            pos_score = torch.sum(seq_output*pos_items_emb, dim=-1) # [B]
-            neg_score = torch.sum(seq_output*neg_items_emb, dim=-1) # [B]
+            pos_items_emb = self.item_embedding(pos_items)  # [B H]
+            neg_items_emb = self.item_embedding(neg_items)  # [B H]
+            pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)  # [B]
+            neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)  # [B]
             loss = self.loss_fct(pos_score, neg_score)
             return loss
         else:  # self.loss_type = 'CE'

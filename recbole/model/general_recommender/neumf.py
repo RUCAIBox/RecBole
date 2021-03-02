@@ -19,9 +19,9 @@ import torch
 import torch.nn as nn
 from torch.nn.init import normal_
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.layers import MLPLayers
+from recbole.utils import InputType
 
 
 class NeuMF(GeneralRecommender):
@@ -90,8 +90,7 @@ class NeuMF(GeneralRecommender):
                 m1.weight.data.copy_(m2.weight)
                 m1.bias.data.copy_(m2.bias)
 
-        predict_weight = torch.cat([mf.predict_layer.weight,
-                                    mlp.predict_layer.weight], dim=1)
+        predict_weight = torch.cat([mf.predict_layer.weight, mlp.predict_layer.weight], dim=1)
         predict_bias = mf.predict_layer.bias + mlp.predict_layer.bias
 
         self.predict_layer.weight.data.copy_(0.5 * predict_weight)
@@ -107,9 +106,9 @@ class NeuMF(GeneralRecommender):
         user_mlp_e = self.user_mlp_embedding(user)
         item_mlp_e = self.item_mlp_embedding(item)
         if self.mf_train:
-            mf_output = torch.mul(user_mf_e, item_mf_e)     # [batch_size, embedding_size]
+            mf_output = torch.mul(user_mf_e, item_mf_e)  # [batch_size, embedding_size]
         if self.mlp_train:
-            mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))   # [batch_size, layers[-1]]
+            mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))  # [batch_size, layers[-1]]
         if self.mf_train and self.mlp_train:
             output = self.sigmoid(self.predict_layer(torch.cat((mf_output, mlp_output), -1)))
         elif self.mf_train:

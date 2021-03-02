@@ -7,19 +7,19 @@
 # @Author : Shanlei Mu, Yupeng Hou
 # @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
 
-
 """
 recbole.model.abstract_recommender
 ##################################
 """
 
 from logging import getLogger
+
 import numpy as np
 import torch
 import torch.nn as nn
 
-from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
 from recbole.model.layers import FMEmbedding, FMFirstOrderLinear
+from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
 
 
 class AbstractRecommender(nn.Module):
@@ -91,7 +91,6 @@ class GeneralRecommender(AbstractRecommender):
         self.n_items = dataset.num(self.ITEM_ID)
 
         # load parameters info
-        self.batch_size = config['train_batch_size']
         self.device = config['device']
 
 
@@ -115,7 +114,7 @@ class SequentialRecommender(AbstractRecommender):
         self.n_items = dataset.num(self.ITEM_ID)
 
     def gather_indexes(self, output, gather_index):
-        """Gathers the vectors at the spexific positions over a minibatch"""
+        """Gathers the vectors at the specific positions over a minibatch"""
         gather_index = gather_index.view(-1, 1, 1).expand(-1, -1, output.shape[-1])
         output_tensor = output.gather(dim=1, index=gather_index)
         return output_tensor.squeeze(1)
@@ -145,7 +144,6 @@ class KnowledgeRecommender(AbstractRecommender):
         self.n_relations = dataset.num(self.RELATION_ID)
 
         # load parameters info
-        self.batch_size = config['train_batch_size']
         self.device = config['device']
 
 
@@ -220,11 +218,13 @@ class ContextRecommender(AbstractRecommender):
             self.num_feature_field += 1
         if len(self.token_field_dims) > 0:
             self.token_field_offsets = np.array((0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long)
-            self.token_embedding_table = FMEmbedding(self.token_field_dims, self.token_field_offsets,
-                                                     self.embedding_size)
+            self.token_embedding_table = FMEmbedding(
+                self.token_field_dims, self.token_field_offsets, self.embedding_size
+            )
         if len(self.float_field_dims) > 0:
-            self.float_embedding_table = nn.Embedding(np.sum(self.float_field_dims, dtype=np.int32),
-                                                      self.embedding_size)
+            self.float_embedding_table = nn.Embedding(
+                np.sum(self.float_field_dims, dtype=np.int32), self.embedding_size
+            )
         if len(self.token_seq_field_dims) > 0:
             self.token_seq_embedding_table = nn.ModuleList()
             for token_seq_field_dim in self.token_seq_field_dims:
@@ -335,8 +335,10 @@ class ContextRecommender(AbstractRecommender):
             first_dense_embedding, second_dense_embedding = None, None
 
         if sparse_embedding is not None:
-            sizes = [self.user_token_seq_field_num, self.item_token_seq_field_num,
-                     self.user_token_field_num, self.item_token_field_num]
+            sizes = [
+                self.user_token_seq_field_num, self.item_token_seq_field_num, self.user_token_field_num,
+                self.item_token_field_num
+            ]
             first_token_seq_embedding, second_token_seq_embedding, first_token_embedding, second_token_embedding = \
                 torch.split(sparse_embedding, sizes, dim=1)
             first_sparse_embedding = torch.cat([first_token_seq_embedding, first_token_embedding], dim=1)
@@ -345,6 +347,15 @@ class ContextRecommender(AbstractRecommender):
             first_sparse_embedding, second_sparse_embedding = None, None
 
         return first_sparse_embedding, first_dense_embedding, second_sparse_embedding, second_dense_embedding
+
+    def concat_embed_input_fields(self, interaction):
+        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
+        all_embeddings = []
+        if sparse_embedding is not None:
+            all_embeddings.append(sparse_embedding)
+        if dense_embedding is not None and len(dense_embedding.shape) == 3:
+            all_embeddings.append(dense_embedding)
+        return torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
 
     def embed_input_fields(self, interaction):
         """Embed the whole feature columns.
@@ -358,8 +369,10 @@ class ContextRecommender(AbstractRecommender):
         """
         float_fields = []
         for field_name in self.float_field_names:
-            float_fields.append(interaction[field_name]
-                                if len(interaction[field_name].shape) == 2 else interaction[field_name].unsqueeze(1))
+            if len(interaction[field_name].shape) == 2:
+                float_fields.append(interaction[field_name])
+            else:
+                float_fields.append(interaction[field_name].unsqueeze(1))
         if len(float_fields) > 0:
             float_fields = torch.cat(float_fields, dim=1)  # [batch_size, num_float_field]
         else:
