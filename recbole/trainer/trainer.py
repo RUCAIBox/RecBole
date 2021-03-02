@@ -1,4 +1,5 @@
 # @Time   : 2020/6/26
+# @Time   : 2020/6/26
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
@@ -857,11 +858,10 @@ class RecVAETrainer(Trainer):
 
     def __init__(self, config, model):
         super(RecVAETrainer, self).__init__(config, model)
-        self.dropout_prob = config['dropout_prob']
         self.n_enc_epochs = config['n_enc_epochs']
         self.n_dec_epochs = config['n_dec_epochs']
   
-    def _train_epoch(self, train_data, epoch_idx, n_epochs, dropout_prob, opts, loss_func=None, show_progress=False):
+    def _train_epoch(self, train_data, epoch_idx, n_epochs, optimizer, encoder_flag, loss_func=None, show_progress=False):
         self.model.train()
         loss_func = loss_func or self.model.calculate_loss
         total_loss = None
@@ -875,9 +875,8 @@ class RecVAETrainer(Trainer):
         for epoch in range(n_epochs):
             for batch_idx, interaction in iter_data:
                 interaction = interaction.to(self.device)
-                for optimizer in opts:
-                    optimizer.zero_grad()
-                losses = loss_func(interaction, dropout_prob=dropout_prob)
+                optimizer.zero_grad()
+                losses = loss_func(interaction, encoder_flag=encoder_flag)
                 if isinstance(losses, tuple):
                     loss = sum(losses)
                     loss_tuple = tuple(per_loss.item() for per_loss in losses)
@@ -889,8 +888,7 @@ class RecVAETrainer(Trainer):
                 loss.backward()
                 if self.clip_grad_norm:
                     clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
-                for optimizer in opts:
-                    optimizer.step()
+                optimizer.step()
                     
         return total_loss
   
@@ -908,10 +906,10 @@ class RecVAETrainer(Trainer):
             # alternate training
             training_start_time = time()
             train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress, 
-                                           n_epochs=self.n_enc_epochs, dropout_prob=self.dropout_prob, opts=[optimizer_encoder])
+                                           n_epochs=self.n_enc_epochs, encoder_flag=True, optimizer=optimizer_encoder)
             self.model.update_prior()
             train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress, 
-                                           n_epochs=self.n_dec_epochs, dropout_prob=0, opts=[optimizer_decoder])
+                                           n_epochs=self.n_dec_epochs, encoder_flag=False, optimizer=optimizer_decoder)
             self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
             training_end_time = time()
             train_loss_output = \

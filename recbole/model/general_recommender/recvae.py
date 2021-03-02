@@ -154,15 +154,19 @@ class RecVAE(GeneralRecommender):
         else:
             return mu
 
-    def forward(self, rating_matrix, dropout_prob=0.5):
+    def forward(self, rating_matrix, dropout_prob):
         mu, logvar = self.encoder(rating_matrix, dropout_prob=dropout_prob)
         z = self.reparameterize(mu, logvar)
         x_pred = self.decoder(z)
         return x_pred, mu, logvar, z
 
-    def calculate_loss(self, interaction, dropout_prob=0.5):
+    def calculate_loss(self, interaction, encoder_flag):
         user = interaction[self.USER_ID]
         rating_matrix = self.get_rating_matrix(user)
+        if encoder_flag:
+            dropout_prob = self.dropout_prob
+        else:
+            dropout_prob = 0
         x_pred, mu, logvar, z = self.forward(rating_matrix, dropout_prob)
 
         if self.gamma:
