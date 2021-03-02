@@ -180,7 +180,10 @@ def dataloader_construct(
     logger.info(eval_setting)
     logger.info(f'batch_size = [{batch_size}], shuffle = [{shuffle}]\n')
 
-    dataloader = get_data_loader(name, config, eval_setting.neg_sample_args)
+    if 'neg_sample_args' in kwargs:
+        dataloader = get_data_loader(name, config, kwargs['neg_sample_args'])
+    else:
+        dataloader = get_data_loader(name, config, eval_setting.neg_sample_args)
 
     try:
         ret = [
