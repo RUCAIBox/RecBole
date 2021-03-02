@@ -83,7 +83,6 @@ def data_preparation(config, dataset, save=False):
 
     kwargs = {}
     if config['training_neg_sample_num']:
-        config['train_neg_sample_args'] = {'strategy': 'by', 'by': config['training_neg_sample_num'], 'distribution': config['training_neg_sample_distribution'] or 'uniform'}
         if dataset.label_field in dataset.inter_feat:
             raise ValueError(
                 f'`training_neg_sample_num` should be 0 '
@@ -98,8 +97,6 @@ def data_preparation(config, dataset, save=False):
         if model_type == ModelType.KNOWLEDGE:
             kg_sampler = KGSampler(dataset, config['train_neg_sample_args']['distribution'])
             kwargs['kg_sampler'] = kg_sampler
-    else:
-        config['train_neg_sample_args'] = None
     train_data = dataloader_construct(
         name='train',
         config=config,
@@ -112,7 +109,7 @@ def data_preparation(config, dataset, save=False):
     )
 
     kwargs = {}
-    if len(es.es_str) > 1 and getattr(es, es.es_str[1], None):
+    if es.neg_sample_args['strategy'] != 'none':
         if dataset.label_field in dataset.inter_feat:
             raise ValueError(
                 f'It can not validate with `{es.es_str[1]}` '
@@ -183,7 +180,7 @@ def dataloader_construct(
     logger.info(eval_setting)
     logger.info(f'batch_size = [{batch_size}], shuffle = [{shuffle}]\n')
 
-    dataloader = get_data_loader(name, config, eval_setting)
+    dataloader = get_data_loader(name, config, eval_setting.neg_sample_args)
 
     try:
         ret = [
@@ -218,13 +215,13 @@ def save_datasets(save_path, name, dataset):
         d.save(cur_path)
 
 
-def get_data_loader(name, config, eval_setting):
+def get_data_loader(name, config, neg_sample_args):
     """Return a dataloader class according to :attr:`config` and :attr:`eval_setting`.
 
     Args:
         name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
         config (Config): An instance object of Config, used to record parameter information.
-        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+        neg_sample_args (dict) : Settings of negative sampling.
 
     Returns:
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
@@ -239,13 +236,13 @@ def get_data_loader(name, config, eval_setting):
     }
 
     if config['model'] in register_table:
-        return register_table[config['model']](name, config, eval_setting)
+        return register_table[config['model']](name, config, neg_sample_args)
 
     model_type = config['MODEL_TYPE']
     if name == 'train' and config['train_neg_sample_args'] != None:
         neg_sample_strategy = config['train_neg_sample_args']['strategy']
     else:
-        neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+        neg_sample_strategy = neg_sample_args['strategy']
     if model_type == ModelType.GENERAL or model_type == ModelType.TRADITIONAL:
         if neg_sample_strategy == 'none':
             return GeneralDataLoader
@@ -292,18 +289,18 @@ def get_data_loader(name, config, eval_setting):
         raise NotImplementedError(f'Model_type [{model_type}] has not been implemented.')
 
 
-def _get_DIN_data_loader(name, config, eval_setting):
+def _get_DIN_data_loader(name, config, neg_sample_args):
     """Customized function for DIN to get correct dataloader class.
 
     Args:
         name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
         config (Config): An instance object of Config, used to record parameter information.
-        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+        neg_sample_args : Settings of negative sampling.
 
     Returns:
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
     """
-    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    neg_sample_strategy = neg_sample_args['strategy']
     if neg_sample_strategy == 'none':
         return SequentialDataLoader
     elif neg_sample_strategy == 'by':
@@ -312,18 +309,18 @@ def _get_DIN_data_loader(name, config, eval_setting):
         return SequentialFullDataLoader
 
 
-def _get_AE_data_loader(name, config, eval_setting):
+def _get_AE_data_loader(name, config, neg_sample_args):
     """Customized function for Multi-DAE and Multi-VAE to get correct dataloader class.
 
     Args:
         name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
         config (Config): An instance object of Config, used to record parameter information.
-        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+        neg_sample_args (dict): Settings of negative sampling.
 
     Returns:
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
     """
-    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    neg_sample_strategy = neg_sample_args['strategy']
     if name == "train":
         return UserDataLoader
     else:
