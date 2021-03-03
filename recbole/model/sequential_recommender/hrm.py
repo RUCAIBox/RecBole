@@ -18,7 +18,7 @@ Reference code:
 
 import torch
 import torch.nn as nn
-from torch.nn.init import xavier_normal_, constant_
+from torch.nn.init import xavier_normal_
 
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
@@ -112,7 +112,9 @@ class HRM(SequentialRecommender):
             high_order_item_embedding = torch.div(high_order_item_embedding, seq_item_len.unsqueeze(1).float())
             # batch_size * embedding_size
         hybrid_user_embedding = self.dropout(
-            torch.cat([user_embedding.unsqueeze(dim=1), high_order_item_embedding.unsqueeze(dim=1)], dim=1))
+            torch.cat([user_embedding.unsqueeze(dim=1),
+                       high_order_item_embedding.unsqueeze(dim=1)], dim=1)
+        )
         # batch_size * 2_mul_embedding_size
 
         # layer 2

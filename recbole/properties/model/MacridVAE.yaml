@@ -1,0 +1,10 @@
+embedding_size: 64
+drop_out: 0.5
+kfac: 10
+nogb: False
+std: 0.01
+encoder_hidden_size: [600]
+tau: 0.1
+anneal_cap: 0.2
+total_anneal_steps: 200000
+reg_weights: [0, 0]

@@ -5,18 +5,18 @@
 
 r"""
 recbole.model.exlib_recommender.xgboost
-#############################
+########################################
 """
 
 import xgboost as xgb
-from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
+from recbole.utils import ModelType, InputType
 
 
 class xgboost(xgb.Booster):
     r"""xgboost is inherited from xgb.Booster
 
     """
-    type = ModelType.CONTEXT
+    type = ModelType.DECISIONTREE
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):

@@ -17,6 +17,7 @@ Reference:
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_, constant_, normal_
+
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
 
@@ -74,10 +75,16 @@ class HGN(SequentialRecommender):
     def reg_loss(self, user_embedding, item_embedding, seq_item_embedding):
 
         reg_1, reg_2 = self.reg_weight
-        loss_1 = reg_1 * torch.norm(self.w1.weight, p=2) + reg_1 * torch.norm(self.w2.weight, p=2) + reg_1 * torch.norm(
-            self.w3.weight, p=2) + reg_1 * torch.norm(self.w4.weight, p=2)
-        loss_2 = reg_2 * torch.norm(user_embedding, p=2) + reg_2 * torch.norm(item_embedding, p=2) + reg_2 * torch.norm(
-            seq_item_embedding, p=2)
+        loss_1_part_1 = reg_1 * torch.norm(self.w1.weight, p=2)
+        loss_1_part_2 = reg_1 * torch.norm(self.w2.weight, p=2)
+        loss_1_part_3 = reg_1 * torch.norm(self.w3.weight, p=2)
+        loss_1_part_4 = reg_1 * torch.norm(self.w4.weight, p=2)
+        loss_1 = loss_1_part_1 + loss_1_part_2 + loss_1_part_3 + loss_1_part_4
+
+        loss_2_part_1 = reg_2 * torch.norm(user_embedding, p=2)
+        loss_2_part_2 = reg_2 * torch.norm(item_embedding, p=2)
+        loss_2_part_3 = reg_2 * torch.norm(seq_item_embedding, p=2)
+        loss_2 = loss_2_part_1 + loss_2_part_2 + loss_2_part_3
 
         return loss_1 + loss_2
 

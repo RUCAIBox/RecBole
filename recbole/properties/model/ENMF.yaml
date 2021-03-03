@@ -1,0 +1,4 @@
+embedding_size: 64
+dropout_prob: 0.7
+reg_weight: 0.0
+negative_weight: 0.5

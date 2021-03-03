@@ -138,6 +138,26 @@ test_examples = {
         'model': 'SLIMElastic',
         'dataset': 'ml-100k',
     },
+    'Test EASE': {
+        'model': 'EASE',
+        'dataset': 'ml-100k',
+    },
+    'Test MultiDAE': {
+        'model': 'MultiDAE',
+        'dataset': 'ml-100k',
+    },
+    'Test MultiVAE': {
+        'model': 'LINE',
+        'dataset': 'ml-100k',
+    },
+    'Test MacridVAE': {
+        'model': 'MacridVAE',
+        'dataset': 'ml-100k',
+    },
+    'Test NNCF': {
+        'model': 'NNCF',
+        'dataset': 'ml-100k',
+    },
 
     # Context-aware Recommendation
     'Test FM': {

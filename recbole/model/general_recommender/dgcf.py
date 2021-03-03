@@ -18,17 +18,18 @@ Reference code:
     https://github.com/xiangwang1223/disentangled_graph_collaborative_filtering
 """
 
-import numpy as np
 import random as rd
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import GeneralRecommender
-from recbole.model.loss import BPRLoss, EmbLoss
 from recbole.model.init import xavier_normal_initialization
+from recbole.model.loss import BPRLoss, EmbLoss
+from recbole.utils import InputType
 
 
 def sample_cor_samples(n_users, n_items, cor_batch_size):
@@ -44,7 +45,7 @@ def sample_cor_samples(n_users, n_items, cor_batch_size):
 
     Note:
         We have to sample some embedded representations out of all nodes.
-        Becasue we have no way to store cor-distance for each pair.
+        Because we have no way to store cor-distance for each pair.
     """
     cor_users = rd.sample(list(range(n_users)), cor_batch_size)
     cor_items = rd.sample(list(range(n_items)), cor_batch_size)
@@ -73,7 +74,7 @@ class DGCF(GeneralRecommender):
         self.n_layers = config['n_layers']
         self.reg_weight = config['reg_weight']
         self.cor_weight = config['cor_weight']
-        n_batch = dataset.dataset.inter_num // self.batch_size + 1
+        n_batch = dataset.dataset.inter_num // config['train_batch_size'] + 1
         self.cor_batch_size = int(max(self.n_users / n_batch, self.n_items / n_batch))
         # ensure embedding can be divided into <n_factors> intent
         assert self.embedding_size % self.n_factors == 0
@@ -117,9 +118,9 @@ class DGCF(GeneralRecommender):
 
     def _get_ego_embeddings(self):
         # concat of user embeddings and item embeddings
-        user_embd = self.user_embedding.weight
-        item_embd = self.item_embedding.weight
-        ego_embeddings = torch.cat([user_embd, item_embd], dim=0)
+        user_emb = self.user_embedding.weight
+        item_emb = self.item_embedding.weight
+        ego_embeddings = torch.cat([user_emb, item_emb], dim=0)
         return ego_embeddings
 
     def build_matrix(self, A_values):
@@ -169,7 +170,8 @@ class DGCF(GeneralRecommender):
             layer_embeddings = []
 
             # split the input embedding table
-            # .... ego_layer_embeddings is a (n_factors)-leng list of embeddings [n_users+n_items, embed_size/n_factors]
+            # .... ego_layer_embeddings is a (n_factors)-length list of embeddings
+            # [n_users+n_items, embed_size/n_factors]
             ego_layer_embeddings = torch.chunk(ego_embeddings, self.n_factors, 1)
             for t in range(0, self.n_iterations):
                 iter_embeddings = []
@@ -194,19 +196,20 @@ class DGCF(GeneralRecommender):
                     # get the factor-wise embeddings
                     # .... head_factor_embeddings is a dense tensor with the size of [all_h_list, embed_size/n_factors]
                     # .... analogous to tail_factor_embeddings
-                    head_factor_embedings = torch.index_select(factor_embeddings, dim=0, index=self.all_h_list)
-                    tail_factor_embedings = torch.index_select(ego_layer_embeddings[i], dim=0, index=self.all_t_list)
+                    head_factor_embeddings = torch.index_select(factor_embeddings, dim=0, index=self.all_h_list)
+                    tail_factor_embeddings = torch.index_select(ego_layer_embeddings[i], dim=0, index=self.all_t_list)
 
                     # .... constrain the vector length
                     # .... make the following attentive weights within the range of (0,1)
                     # to adapt to torch version
-                    head_factor_embedings = F.normalize(head_factor_embedings, p=2, dim=1)
-                    tail_factor_embedings = F.normalize(tail_factor_embedings, p=2, dim=1)
+                    head_factor_embeddings = F.normalize(head_factor_embeddings, p=2, dim=1)
+                    tail_factor_embeddings = F.normalize(tail_factor_embeddings, p=2, dim=1)
 
                     # get the attentive weights
                     # .... A_factor_values is a dense tensor with the size of [num_edge, 1]
-                    A_factor_values = torch.sum(head_factor_embedings * torch.tanh(tail_factor_embedings),
-                                                dim=1, keepdim=True)
+                    A_factor_values = torch.sum(
+                        head_factor_embeddings * torch.tanh(tail_factor_embeddings), dim=1, keepdim=True
+                    )
 
                     # update the attentive weights
                     A_iter_values.append(A_factor_values)
@@ -243,18 +246,18 @@ class DGCF(GeneralRecommender):
 
         user_all_embeddings, item_all_embeddings = self.forward()
         u_embeddings = user_all_embeddings[user]
-        posi_embeddings = item_all_embeddings[pos_item]
-        negi_embeddings = item_all_embeddings[neg_item]
+        pos_embeddings = item_all_embeddings[pos_item]
+        neg_embeddings = item_all_embeddings[neg_item]
 
-        pos_scores = torch.mul(u_embeddings, posi_embeddings).sum(dim=1)
-        neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
+        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)
 
-        # cul regularizer
+        # cul regularized
         u_ego_embeddings = self.user_embedding(user)
-        posi_ego_embeddings = self.item_embedding(pos_item)
-        negi_ego_embeddings = self.item_embedding(neg_item)
-        reg_loss = self.reg_loss(u_ego_embeddings, posi_ego_embeddings, negi_ego_embeddings)
+        pos_ego_embeddings = self.item_embedding(pos_item)
+        neg_ego_embeddings = self.item_embedding(neg_item)
+        reg_loss = self.reg_loss(u_ego_embeddings, pos_ego_embeddings, neg_ego_embeddings)
 
         if self.n_factors > 1 and self.cor_weight > 1e-9:
             cor_users, cor_items = sample_cor_samples(self.n_users, self.n_items, self.cor_batch_size)

@@ -8,12 +8,14 @@ recbole.utils.utils
 ################################
 """
 
-import os
 import datetime
 import importlib
+import os
 import random
-import torch
+
 import numpy as np
+import torch
+
 from recbole.utils.enum_type import ModelType
 
 
@@ -50,10 +52,7 @@ def get_model(model_name):
         Recommender: model class
     """
     model_submodule = [
-        'general_recommender',
-        'context_aware_recommender',
-        'sequential_recommender',
-        'knowledge_aware_recommender',
+        'general_recommender', 'context_aware_recommender', 'sequential_recommender', 'knowledge_aware_recommender',
         'exlib_recommender'
     ]
 
@@ -164,7 +163,7 @@ def dict2str(result_dict):
 
     result_str = ''
     for metric, value in result_dict.items():
-        result_str += str(metric) + ' : ' + '%.04f' % value + '    '
+        result_str += str(metric) + ' : ' + str(value) + '    '
     return result_str
 
 

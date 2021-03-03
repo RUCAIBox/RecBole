@@ -23,10 +23,9 @@ Reference code:
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
-from logging import getLogger
 
-from recbole.model.layers import MLPLayers, activation_layer
 from recbole.model.abstract_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers, activation_layer
 
 
 class xDeepFM(ContextRecommender):
@@ -49,8 +48,10 @@ class xDeepFM(ContextRecommender):
         if not self.direct:
             self.cin_layer_size = list(map(lambda x: int(x // 2 * 2), temp_cin_size))
             if self.cin_layer_size[:-1] != temp_cin_size[:-1]:
-                self.logger.warning('Layer size of CIN should be even except for the last layer when direct is True.'
-                                    'It is changed to {}'.format(self.cin_layer_size))
+                self.logger.warning(
+                    'Layer size of CIN should be even except for the last layer when direct is True.'
+                    'It is changed to {}'.format(self.cin_layer_size)
+                )
 
         # Create a convolutional layer for each CIN layer
         self.conv1d_list = []
@@ -64,8 +65,7 @@ class xDeepFM(ContextRecommender):
                 self.field_nums.append(layer_size // 2)
 
         # Create MLP layer
-        size_list = [self.embedding_size * self.num_feature_field
-                     ] + self.mlp_hidden_size + [1]
+        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size + [1]
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout_prob)
 
         # Get the output size of CIN
@@ -101,7 +101,7 @@ class xDeepFM(ContextRecommender):
 
     def calculate_reg_loss(self):
         """Calculate the final L2 normalization loss of model parameters.
-        Including weight matrixes of mlp layers, linear layer and convolutional layers.
+        Including weight matrices of mlp layers, linear layer and convolutional layers.
 
         Returns:
             loss(torch.FloatTensor): The L2 Loss tensor. shape of [1,]
@@ -157,8 +157,7 @@ class xDeepFM(ContextRecommender):
                 next_hidden = output
             else:
                 if i != len(self.cin_layer_size) - 1:
-                    next_hidden, direct_connect = torch.split(
-                        output, 2 * [layer_size // 2], 1)
+                    next_hidden, direct_connect = torch.split(output, 2 * [layer_size // 2], 1)
                 else:
                     direct_connect = output
                     next_hidden = 0
@@ -170,15 +169,8 @@ class xDeepFM(ContextRecommender):
         return result
 
     def forward(self, interaction):
-        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        all_embeddings = []
-        if sparse_embedding is not None:
-            all_embeddings.append(sparse_embedding)
-        if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            all_embeddings.append(dense_embedding)
-
         # Get the output of CIN.
-        xdeepfm_input = torch.cat(all_embeddings, dim=1)  # [batch_size, num_field, embed_dim]
+        xdeepfm_input = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
         cin_output = self.compressed_interaction_network(xdeepfm_input)
         cin_output = self.cin_linear(cin_output)
 

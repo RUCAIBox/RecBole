@@ -8,7 +8,7 @@ r"""
 FFM
 #####################################################
 Reference:
-    Yuchin Juan et al. "Field-aware Factorization Machines for CTR Prediction" in RecSys 2016.
+    Yuchin Juan et al. "Field-aware Factorization Machines for CTR Prediction" in RecSys 2016.
 
 Reference code:
     https://github.com/rixwew/pytorch-fm
@@ -37,19 +37,22 @@ class FFM(ContextRecommender):
         super(FFM, self).__init__(config, dataset)
 
         # load parameters info
-        self.fields = config['fields'] # a dict; key: field_id; value: feature_list
+        self.fields = config['fields']  # a dict; key: field_id; value: feature_list
 
         self.sigmoid = nn.Sigmoid()
 
         self.feature2id = {}
         self.feature2field = {}
-        
+
         self.feature_names = (self.token_field_names, self.float_field_names, self.token_seq_field_names)
         self.feature_dims = (self.token_field_dims, self.float_field_dims, self.token_seq_field_dims)
         self._get_feature2field()
         self.num_fields = len(set(self.feature2field.values()))  # the number of fields
 
-        self.ffm = FieldAwareFactorizationMachine(self.feature_names, self.feature_dims, self.feature2id, self.feature2field, self.num_fields, self.embedding_size, self.device)
+        self.ffm = FieldAwareFactorizationMachine(
+            self.feature_names, self.feature_dims, self.feature2id, self.feature2field, self.num_fields,
+            self.embedding_size, self.device
+        )
         self.loss = nn.BCELoss()
 
         # parameters initialization
@@ -73,7 +76,7 @@ class FFM(ContextRecommender):
                 for name in names:
                     self.feature2id[name] = fea_id
                     fea_id += 1
-        
+
         if self.fields is None:
             field_id = 0
             for key, value in self.feature2id.items():
@@ -96,25 +99,25 @@ class FFM(ContextRecommender):
             for tn in self.token_field_names:
                 token_ffm_input.append(torch.unsqueeze(interaction[tn], 1))
             if len(token_ffm_input) > 0:
-                token_ffm_input = torch.cat(token_ffm_input, dim=1) # [batch_size, num_token_features]
+                token_ffm_input = torch.cat(token_ffm_input, dim=1)  # [batch_size, num_token_features]
         float_ffm_input = []
         if self.float_field_names is not None:
             for fn in self.float_field_names:
                 float_ffm_input.append(torch.unsqueeze(interaction[fn], 1))
             if len(float_ffm_input) > 0:
-                float_ffm_input = torch.cat(float_ffm_input, dim=1) # [batch_size, num_float_features]
+                float_ffm_input = torch.cat(float_ffm_input, dim=1)  # [batch_size, num_float_features]
         token_seq_ffm_input = []
         if self.token_seq_field_names is not None:
             for tsn in self.token_seq_field_names:
-                token_seq_ffm_input.append(interaction[tsn]) # a list
+                token_seq_ffm_input.append(interaction[tsn])  # a list
 
-        return (token_ffm_input, float_ffm_input, token_seq_ffm_input)
+        return token_ffm_input, float_ffm_input, token_seq_ffm_input
 
     def forward(self, interaction):
         ffm_input = self.get_ffm_input(interaction)
         ffm_output = torch.sum(torch.sum(self.ffm(ffm_input), dim=1), dim=1, keepdim=True)
         output = self.sigmoid(self.first_order_linear(interaction) + ffm_output)
-        
+
         return output.squeeze()
 
     def calculate_loss(self, interaction):
@@ -144,7 +147,8 @@ class FieldAwareFactorizationMachine(nn.Module):
 
         self.feature2id = feature2id
         self.feature2field = feature2field
-        self.num_features = len(self.token_feature_names) + len(self.float_feature_names) + len(self.token_seq_feature_names)
+        self.num_features = len(self.token_feature_names) + len(self.float_feature_names) \
+                            + len(self.token_seq_feature_names)
         self.num_fields = num_fields
         self.embed_dim = embed_dim
         self.device = device
@@ -201,7 +205,7 @@ class FieldAwareFactorizationMachine(nn.Module):
         token_input_x_emb = self._emb_token_ffm_input(token_ffm_input)
         float_input_x_emb = self._emb_float_ffm_input(float_ffm_input)
         token_seq_input_x_emb = self._emb_token_seq_ffm_input(token_seq_ffm_input)
-        
+
         input_x_emb = self._get_input_x_emb(token_input_x_emb, float_input_x_emb, token_seq_input_x_emb)
 
         output = list()
@@ -215,24 +219,17 @@ class FieldAwareFactorizationMachine(nn.Module):
     def _get_input_x_emb(self, token_input_x_emb, float_input_x_emb, token_seq_input_x_emb):
         # merge different types of field-aware embeddings
         input_x_emb = []  # [num_fields: [batch_size, num_fields, emb_dim]]
-        if len(self.token_feature_names) > 0 and len(self.float_feature_names) > 0 and len(self.token_seq_feature_names) > 0:
-            for i in range(self.num_fields):
-                input_x_emb.append(torch.cat([token_input_x_emb[i], float_input_x_emb[i], token_seq_input_x_emb[i]], dim=1))
-        elif len(self.token_feature_names) > 0 and len(self.float_feature_names) > 0:
-            for i in range(self.num_fields):
-                input_x_emb.append(torch.cat([token_input_x_emb[i], float_input_x_emb[i]], dim=1))
-        elif len(self.float_feature_names) > 0 and len(self.token_seq_feature_names) > 0:
-            for i in range(self.num_fields):
-                input_x_emb.append(torch.cat([float_input_x_emb[i], token_seq_input_x_emb[i]], dim=1))
-        elif len(self.token_feature_names) > 0 and len(self.token_seq_feature_names) > 0:
-            for i in range(self.num_fields):
-                input_x_emb.append(torch.cat([token_input_x_emb[i], token_seq_input_x_emb[i]], dim=1))
-        elif len(self.token_feature_names) > 0:
-            input_x_emb = token_input_x_emb
-        elif len(self.float_feature_names) > 0:
-            input_x_emb = float_input_x_emb
-        elif len(self.token_seq_feature_names) > 0:
-            input_x_emb = token_seq_input_x_emb
+
+        zip_args = []
+        if len(self.token_feature_names) > 0:
+            zip_args.append(token_input_x_emb)
+        if len(self.float_feature_names) > 0:
+            zip_args.append(float_input_x_emb)
+        if len(self.token_seq_feature_names) > 0:
+            zip_args.append(token_seq_input_x_emb)
+
+        for tensors in zip(*zip_args):
+            input_x_emb.append(torch.cat(tensors, dim=1))
 
         return input_x_emb
 
@@ -241,7 +238,9 @@ class FieldAwareFactorizationMachine(nn.Module):
         token_input_x_emb = []
         if len(self.token_feature_names) > 0:
             token_input_x = token_ffm_input + token_ffm_input.new_tensor(self.token_offsets).unsqueeze(0)
-            token_input_x_emb = [self.token_embeddings[i](token_input_x) for i in range(self.num_fields)] # [num_fields: [batch_size, num_token_features, emb_dim]]
+            token_input_x_emb = [
+                self.token_embeddings[i](token_input_x) for i in range(self.num_fields)
+            ]  # [num_fields: [batch_size, num_token_features, emb_dim]]
 
         return token_input_x_emb
 
@@ -249,8 +248,13 @@ class FieldAwareFactorizationMachine(nn.Module):
         # get float field-aware embeddings
         float_input_x_emb = []
         if len(self.float_feature_names) > 0:
-            index = torch.arange(0, self.num_float_features).unsqueeze(0).expand_as(float_ffm_input).long().to(self.device) # [batch_size, num_float_features]
-            float_input_x_emb = [torch.mul(self.float_embeddings[i](index), float_ffm_input.unsqueeze(2)) for i in range(self.num_fields)] # [num_fields: [batch_size, num_float_features, emb_dim]]
+            index = torch.arange(0, self.num_float_features).unsqueeze(0).expand_as(float_ffm_input).long().to(
+                self.device
+            )  # [batch_size, num_float_features]
+            float_input_x_emb = [
+                torch.mul(self.float_embeddings[i](index), float_ffm_input.unsqueeze(2))
+                for i in range(self.num_fields)
+            ]  # [num_fields: [batch_size, num_float_features, emb_dim]]
 
         return float_input_x_emb
 
@@ -276,6 +280,8 @@ class FieldAwareFactorizationMachine(nn.Module):
                     result = result.unsqueeze(1)  # [batch_size, 1, embed_dim]
 
                     token_seq_result.append(result)
-                token_seq_input_x_emb.append(torch.cat(token_seq_result, dim=1)) # [num_fields: batch_size, num_token_seq_features, embed_dim]
+                token_seq_input_x_emb.append(
+                    torch.cat(token_seq_result, dim=1)
+                )  # [num_fields: batch_size, num_token_seq_features, embed_dim]
 
         return token_seq_input_x_emb

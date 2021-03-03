@@ -20,8 +20,8 @@ import torch
 import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 
-from recbole.model.layers import MLPLayers
 from recbole.model.abstract_recommender import ContextRecommender
+from recbole.model.layers import MLPLayers
 
 
 class PNN(ContextRecommender):
@@ -50,8 +50,7 @@ class PNN(ContextRecommender):
 
         if self.use_outer:
             product_out_dim += self.num_pair
-            self.outer_product = OuterProductLayer(
-                self.num_feature_field, self.embedding_size, device=self.device)
+            self.outer_product = OuterProductLayer(self.num_feature_field, self.embedding_size, device=self.device)
         size_list = [product_out_dim] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, self.dropout_prob, bn=False)
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
@@ -64,7 +63,7 @@ class PNN(ContextRecommender):
 
     def reg_loss(self):
         """Calculate the L2 normalization loss of model parameters.
-        Including weight matrixes of mlp layers.
+        Including weight matrices of mlp layers.
 
         Returns:
             loss(torch.FloatTensor): The L2 Loss tensor. shape of [1,]
@@ -84,15 +83,7 @@ class PNN(ContextRecommender):
                 constant_(module.bias.data, 0)
 
     def forward(self, interaction):
-        # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
-        # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
-        sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
-        all_embeddings = []
-        if sparse_embedding is not None:
-            all_embeddings.append(sparse_embedding)
-        if dense_embedding is not None and len(dense_embedding.shape) == 3:
-            all_embeddings.append(dense_embedding)
-        pnn_all_embeddings = torch.cat(all_embeddings, dim=1)   # [batch_size, num_field, embed_dim]
+        pnn_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
         batch_size = pnn_all_embeddings.shape[0]
         # linear part
         linear_part = pnn_all_embeddings.view(batch_size, -1)  # [batch_size,num_field*embed_dim]
@@ -104,7 +95,7 @@ class PNN(ContextRecommender):
         if self.use_outer:
             outer_product = self.outer_product(pnn_all_embeddings).view(batch_size, -1)  # [batch_size,num_pairs]
             output.append(outer_product)
-        output = torch.cat(output, dim=1)   # [batch_size,d]
+        output = torch.cat(output, dim=1)  # [batch_size,d]
 
         output = self.predict_layer(self.mlp_layers(output))  # [batch_size,1]
         output = self.sigmoid(output)
@@ -125,6 +116,7 @@ class InnerProductLayer(nn.Module):
     product or inner product between feature vectors.
 
     """
+
     def __init__(self, num_feature_field, device):
         """
         Args:
@@ -159,7 +151,7 @@ class InnerProductLayer(nn.Module):
 
 
 class OuterProductLayer(nn.Module):
-    """OutterProduct Layer used in PNN. This implemention is
+    """OuterProduct Layer used in PNN. This implementation is
     adapted from code that the author of the paper published on https://github.com/Atomu2014/product-nets.
     """
 

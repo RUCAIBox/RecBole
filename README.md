@@ -11,23 +11,25 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 
-[HomePage] | [Docs] | [Datasets] | [Paper]
+[HomePage] | [Docs] | [Datasets] | [Paper] | [Blogs] | [中文版]
 
 [HomePage]: https://recbole.io/
 [Docs]: https://recbole.io/docs/
 [Datasets]: https://github.com/RUCAIBox/RecDatasets
 [Paper]: https://arxiv.org/abs/2011.01731
+[Blogs]: https://blog.csdn.net/Turinger_2000/article/details/111182852
+[中文版]: README_CN.md
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
-Our library includes 53 recommendation algorithms, covering four major categories:
+Our library includes 65 recommendation algorithms, covering four major categories:
 
 + General Recommendation
 + Sequential Recommendation
 + Context-aware Recommendation
 + Knowledge-based Recommendation
 
-We design a unified and flexible data file format, and provide the support for 27 benchmark recommendation datasets.
+We design a unified and flexible data file format, and provide the support for 28 benchmark recommendation datasets.
 A user can apply the provided script to process the original data copy, or simply download the processed datasets
 by our team.
 
@@ -43,8 +45,8 @@ by our team.
 + **General and extensible data structure.** We design general and extensible data structures to unify the formatting and
 usage of various recommendation datasets.
 
-+ **Comprehensive benchmark models and datasets.** We implement 53 commonly used recommendation algorithms, and provide
-the formatted copies of 27 recommendation datasets.
++ **Comprehensive benchmark models and datasets.** We implement 65 commonly used recommendation algorithms, and provide
+the formatted copies of 28 recommendation datasets.
 
 + **Efficient GPU-accelerated execution.** We optimize the efficiency of our library with a number of improved techniques
 oriented to the GPU environment.
@@ -52,7 +54,12 @@ oriented to the GPU environment.
 + **Extensive and standard evaluation protocols.** We support a series of widely adopted evaluation protocols or settings
 for testing and comparing recommendation algorithms.
 
+
 ## RecBole News
+**01/15/2021**: We release RecBole [v0.2.0](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.0).
+
+**12/10/2020**: 我们发布了[RecBole小白入门系列中文博客（持续更新中）](https://blog.csdn.net/Turinger_2000/article/details/111182852) 。
+
 **12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
 
 **11/29/2020**: We constructed preliminary experiments to test the time and memory cost on three
@@ -161,20 +168,23 @@ python run_recbole.py --model=[model_name]
 
 
 ## Time and Memory Costs
-We constructed preliminary experiments to test the time and memory cost on three different-sized datasets  (small, medium and large). For detailed information, you can click the following links.<br> 
+We constructed preliminary experiments to test the time and memory cost on three different-sized datasets 
+(small, medium and large). For detailed information, you can click the following links.
 
-* [General recommendation models](asset/time_test_result/General_recommendation.md)<br>
-* [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)<br>
-* [Context-aware recommendation models](asset/time_test_result/Context-aware_recommendation.md)<br>
-* [Knowledge-based recommendation models](asset/time_test_result/Knowledge-based_recommendation.md)<br>
+* [General recommendation models](asset/time_test_result/General_recommendation.md)
+* [Sequential recommendation models](asset/time_test_result/Sequential_recommendation.md)
+* [Context-aware recommendation models](asset/time_test_result/Context-aware_recommendation.md)
+* [Knowledge-based recommendation models](asset/time_test_result/Knowledge-based_recommendation.md)
 
-NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library (based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. We will keep improving our implementations, and update these test results.
+NOTE: Our test results only gave the approximate time and memory cost of our implementations in the RecBole library
+(based on our machine server).  Any feedback or suggestions about the implementations and test are welcome. 
+We will keep improving our implementations, and update these test results.
 
 
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
-| v0.1.2    | 12/06/2020 |  Basic RecBole |
+| v0.2.0    | 01/15/2021 |  RecBole |
 | v0.1.1    | 11/03/2020 |  Basic RecBole |
 
 ## Contributing
@@ -185,6 +195,9 @@ We welcome all contributions from bug fixes to new features and extensions.
 
 We expect all contributions discussed in the issue tracker and going through PRs.
 
+We thank the insightful suggestions from [@tszumowski](https://github.com/tszumowski), [@rowedenny](https://github.com/rowedenny), [@deklanw](https://github.com/deklanw) et.al.
+
+We thank the nice contributions through PRs from [@rowedenny](https://github.com/rowedenny)，[@deklanw](https://github.com/deklanw) et.al.
 
 ## Cite
 If you find RecBole useful for your research or development, please cite the following [paper](https://arxiv.org/abs/2011.01731):

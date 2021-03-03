@@ -21,8 +21,8 @@ import torch
 from torch import nn
 from torch.nn.init import normal_
 
-from recbole.model.loss import BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
+from recbole.model.loss import BPRLoss
 
 
 class STAMP(SequentialRecommender):
