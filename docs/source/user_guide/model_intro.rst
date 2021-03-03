@@ -30,6 +30,7 @@ General Recommendation
    model/general/cdae
    model/general/enmf
    model/general/nncf
+   model/general/ease
 
 
 Context-aware Recommendation
