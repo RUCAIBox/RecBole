@@ -25,6 +25,133 @@ from recbole.utils import InputType
 import numpy as np
 from sklearn.metrics import jaccard_score
 
+class ComputeSimilarity:
+
+    def __init__(self, dataMatrix, topk):
+        r"""Compute the similarity of users and items.
+        Args:
+            dataMatrix (scipy.sparse.coo_matrix): The sparse data matrix.
+            topk (int) : The k value in KNN.
+        """
+
+        super(ComputeSimilarity, self).__init__()
+
+        self.n_rows, self.n_columns = dataMatrix.shape
+        self.TopK = min(topk, self.n_columns)
+        self.dataMatrix = dataMatrix.copy().tocsr()
+
+    def compute_similarity(self, block_size=100):
+        r"""Compute the similarity for the given dataset.
+
+        Args:
+            block_size(int): divide matrix to :math:`n\_columns \div block\_size` to calculate cosine_distance
+
+        Returns:
+            list: The similar nodes of users, shape: [number of users, neigh_num]
+            list: The similar nodes of items, shape: [number of items, neigh_num]
+        """
+        u_neigh = []
+        i_neigh = []
+
+        self.dataMatrix = self.dataMatrix.astype(np.float32)
+
+        # Compute sum of squared values to be used in normalization
+        sumOfSquared_u = np.array(self.dataMatrix.power(2).sum(axis=1)).ravel()
+        sumOfSquared_u = np.sqrt(sumOfSquared_u)
+        sumOfSquared_i = np.array(self.dataMatrix.power(2).sum(axis=0)).ravel()
+        sumOfSquared_i = np.sqrt(sumOfSquared_i)
+
+        end_col_local = self.n_columns
+        start_col_block = 0
+
+        # Compute all similarities for each item using vectorization
+        while start_col_block < end_col_local:
+
+            end_col_block = min(start_col_block + block_size, end_col_local)
+            this_block_size = end_col_block - start_col_block
+
+            # All data points for a given item
+            item_data = self.dataMatrix[:, start_col_block:end_col_block]
+            item_data = item_data.toarray().squeeze()
+
+            if item_data.ndim == 1:
+                item_data = np.expand_dims(item_data, axis=1)
+
+            # Compute item similarities
+            this_block_weights = self.dataMatrix.T.dot(item_data)
+            for col_index_in_block in range(this_block_size):
+
+                if this_block_size == 1:
+                    this_column_weights = this_block_weights.squeeze()
+                else:
+                    this_column_weights = this_block_weights[:, col_index_in_block]
+
+                columnIndex = col_index_in_block + start_col_block
+                this_column_weights[columnIndex] = 0.0
+
+                # Apply normalization, ensure denominator != 0
+                denominator = sumOfSquared_i[columnIndex] * sumOfSquared_i + 1e-6
+                this_column_weights = np.multiply(this_column_weights, 1 / denominator)
+
+                # Sort indices and select TopK
+                # Sorting is done in three steps. Faster then plain np.argsort for higher number of items
+                # - Partition the data to extract the set of relevant items
+                # - Sort only the relevant items
+                # - Get the original item index
+                relevant_items_partition = (-this_column_weights).argpartition(self.TopK - 1)[0:self.TopK]
+                relevant_items_partition_sorting = np.argsort(-this_column_weights[relevant_items_partition])
+                top_k_idx = relevant_items_partition[relevant_items_partition_sorting]
+                i_neigh.append(top_k_idx)
+
+            start_col_block += block_size
+        # End while on columns
+
+        end_row_local = self.n_rows
+        start_row_block = 0
+
+        # Compute all similarities for each user using vectorization
+        while start_row_block < end_row_local:
+
+            end_row_block = min(start_row_block + block_size, end_row_local)
+            this_block_size = end_row_block - start_row_block
+
+            # All data points for a given user
+            user_data = self.dataMatrix[start_row_block:end_row_block, :]
+            user_data = user_data.toarray().squeeze()
+
+            if user_data.ndim == 1:
+                user_data = np.expand_dims(user_data, axis=1)
+
+            # Compute user similarities
+            this_block_weights = self.dataMatrix.dot(user_data.T)
+            for row_index_in_block in range(this_block_size):
+
+                if this_block_size == 1:
+                    this_row_weights = this_row_weights.squeeze()
+                else:
+                    this_row_weights = this_block_weights[:, row_index_in_block]
+
+                rowIndex = row_index_in_block + start_row_block
+                this_row_weights[rowIndex] = 0.0
+
+                # Apply normalization, ensure denominator != 0
+                denominator = sumOfSquared_u[rowIndex] * sumOfSquared_u + 1e-6
+                this_row_weights = np.multiply(this_row_weights, 1 / denominator)
+
+                # Sort indices and select TopK
+                # Sorting is done in three steps. Faster then plain np.argsort for higher number of users
+                # - Partition the data to extract the set of relevant users
+                # - Sort only the relevant users
+                # - Get the original user index
+                relevant_users_partition = (-this_row_weights).argpartition(self.TopK - 1)[0:self.TopK]
+                relevant_users_partition_sorting = np.argsort(-this_row_weights[relevant_users_partition])
+                top_k_idx = relevant_users_partition[relevant_users_partition_sorting]
+                u_neigh.append(top_k_idx)
+
+            start_row_block += block_size
+            # End while on rows
+
+        return u_neigh, i_neigh
 
 class NNCF(GeneralRecommender):
     r"""NNCF is an neural network enhanced matrix factorization model which also captures neighborhood information.
@@ -37,8 +164,7 @@ class NNCF(GeneralRecommender):
 
         # load dataset info
         self.LABEL = config['LABEL_FIELD']
-        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(
-            np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
 
         # load parameters info
         self.ui_embedding_size = config['ui_embedding_size']
@@ -212,46 +338,11 @@ class NNCF(GeneralRecommender):
         i_neigh = torch.tensor(i_neigh, device=self.device)
         return u_neigh, i_neigh
 
-    # Count the similarity of node and direct neighbors using jaccard method
-    def count_jaccard(self, inters, node, neigh_list, kind):
-        r""" Count the similarity of the node and its direct neighbors using jaccard similarity.
-
-        Args:
-            inters (list): The input list that contains the relationships of users and items.
-            node (int): The id of the input node.
-            neigh_list (list): The input list that contains the neighbors of the input node.
-            kind (char): The type of the input node.
-
-        Returns:
-            list: The list of jaccard similarity score between the node and its neighbors.
-
-        """
-        if kind == 'u':
-            if node in neigh_list:
-                return 0
-            vec_node = inters[:, node]
-            score = 0
-            for neigh in neigh_list:
-                vec_neigh = inters[:, neigh]
-                tmp = jaccard_score(vec_node, vec_neigh)
-                score += tmp
-            return score
-        else:
-            if node in neigh_list:
-                return 0
-            vec_node = inters[node]
-            score = 0
-            for neigh in neigh_list:
-                vec_neigh = inters[neigh]
-                tmp = jaccard_score(vec_node, vec_neigh)
-                score += tmp
-            return score
-
     # Get neighborhood embeddings using knn method
     def get_neigh_knn(self):
         r"""Get neighborhood information using knn algorithm.
         Find direct neighbors of each node, if the number of direct neighbors is less than neigh_num, 
-        add other similar neighbors using jaccard similarity.
+        add other similar neighbors using knn algorithm.
         Otherwise, select random top k direct neighbors, k equals to the number of neighbors. 
 
         Returns:
@@ -264,6 +355,9 @@ class NNCF(GeneralRecommender):
         for i in range(len(pairs)):
             ui_inters[pairs[i][0], pairs[i][1]] = 1
 
+        # Get similar neighbors using knn algorithm
+        user_knn, item_knn = ComputeSimilarity(self.interaction_matrix, topk=self.neigh_num).compute_similarity()
+
         u_neigh, i_neigh = [], []
 
         for u in range(self.n_users):
@@ -272,13 +366,9 @@ class NNCF(GeneralRecommender):
             if len(neigh_list) == 0:
                 u_neigh.append(self.neigh_num * [0])
             elif direct_neigh_num < self.neigh_num:
-                knn_neigh_dict = {}
-                for i in range(self.n_items):
-                    score = self.count_jaccard(ui_inters, i, neigh_list, 'u')
-                    knn_neigh_dict[i] = score
-                knn_neigh_dict_sorted = dict(sorted(knn_neigh_dict.items(), key=lambda item:item[1], reverse=True))
-                knn_neigh_list = knn_neigh_dict_sorted.keys()
-                neigh_list = list(neigh_list) + list(knn_neigh_list)
+                tmp_k = self.neigh_num - direct_neigh_num
+                mask = np.random.randint(0, len(neigh_list), size=1)
+                neigh_list = list(neigh_list) + list(item_knn[neigh_list[mask[0]]])
                 u_neigh.append(neigh_list[:self.neigh_num])
             else:
                 mask = np.random.randint(0, len(neigh_list), size=self.neigh_num)
@@ -290,13 +380,9 @@ class NNCF(GeneralRecommender):
             if len(neigh_list) == 0:
                 i_neigh.append(self.neigh_num * [0])
             elif direct_neigh_num < self.neigh_num:
-                knn_neigh_dict = {}
-                for i in range(self.n_users):
-                    score = self.count_jaccard(ui_inters, i, neigh_list, 'i')
-                    knn_neigh_dict[i] = score
-                knn_neigh_dict_sorted = dict(sorted(knn_neigh_dict.items(), key=lambda item:item[1], reverse=True))
-                knn_neigh_list = knn_neigh_dict_sorted.keys()
-                neigh_list = list(neigh_list) + list(knn_neigh_list)
+                tmp_k = self.neigh_num - direct_neigh_num
+                mask = np.random.randint(0, len(neigh_list), size=1)
+                neigh_list = list(neigh_list) + list(user_knn[neigh_list[mask[0]]])
                 i_neigh.append(neigh_list[:self.neigh_num])
             else:
                 mask = np.random.randint(0, len(neigh_list), size=self.neigh_num)
