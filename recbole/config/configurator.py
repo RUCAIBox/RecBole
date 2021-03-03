@@ -77,6 +77,7 @@ class Config(object):
         self.final_config_dict = self._get_final_config_dict()
         self._set_default_parameters()
         self._init_device()
+        self._set_train_neg_sample_args()
 
     def _init_parameters_category(self):
         self.parameters = dict()
@@ -308,6 +309,16 @@ class Config(object):
         if use_gpu:
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self.final_config_dict['gpu_id'])
         self.final_config_dict['device'] = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
+
+    def _set_train_neg_sample_args(self):
+        if self.final_config_dict['training_neg_sample_num']:
+            self.final_config_dict['train_neg_sample_args'] = {
+                'strategy': 'by', 
+                'by': self.final_config_dict['training_neg_sample_num'], 
+                'distribution': self.final_config_dict['training_neg_sample_distribution'] or 'uniform'
+                }
+        else:
+            self.final_config_dict['train_neg_sample_args'] = {'strategy': 'none'}
 
     def __setitem__(self, key, value):
         if not isinstance(key, str):

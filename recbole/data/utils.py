@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/19, 2020/9/17, 2020/8/31
-# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
+# @Time   : 2020/10/19, 2020/9/17, 2020/8/31, 2021/3/1
+# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li, Jiawei Guan
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com, guanjw@ruc.edu.cn
 
 """
 recbole.data.utils
@@ -71,9 +71,7 @@ def data_preparation(config, dataset, save=False):
     """
     model_type = config['MODEL_TYPE']
 
-    es_str = [_.strip() for _ in config['eval_setting'].split(',')]
     es = EvalSetting(config)
-    es.set_ordering_and_splitting(es_str[0])
 
     built_datasets = dataset.build(es)
     train_dataset, valid_dataset, test_dataset = built_datasets
@@ -90,16 +88,14 @@ def data_preparation(config, dataset, save=False):
                 f'`training_neg_sample_num` should be 0 '
                 f'if inter_feat have label_field [{dataset.label_field}].'
             )
-        train_distribution = config['training_neg_sample_distribution'] or 'uniform'
-        es.neg_sample_by(by=config['training_neg_sample_num'], distribution=train_distribution)
         if model_type != ModelType.SEQUENTIAL:
-            sampler = Sampler(phases, built_datasets, es.neg_sample_args['distribution'])
+            sampler = Sampler(phases, built_datasets, config['train_neg_sample_args']['distribution'])
         else:
-            sampler = RepeatableSampler(phases, dataset, es.neg_sample_args['distribution'])
+            sampler = RepeatableSampler(phases, dataset, config['train_neg_sample_args']['distribution'])
         kwargs['sampler'] = sampler.set_phase('train')
-        kwargs['neg_sample_args'] = copy.deepcopy(es.neg_sample_args)
+        kwargs['neg_sample_args'] = copy.deepcopy(config['train_neg_sample_args'])
         if model_type == ModelType.KNOWLEDGE:
-            kg_sampler = KGSampler(dataset, es.neg_sample_args['distribution'])
+            kg_sampler = KGSampler(dataset, config['train_neg_sample_args']['distribution'])
             kwargs['kg_sampler'] = kg_sampler
     train_data = dataloader_construct(
         name='train',
@@ -113,13 +109,12 @@ def data_preparation(config, dataset, save=False):
     )
 
     kwargs = {}
-    if len(es_str) > 1 and getattr(es, es_str[1], None):
+    if es.neg_sample_args['strategy'] != 'none':
         if dataset.label_field in dataset.inter_feat:
             raise ValueError(
-                f'It can not validate with `{es_str[1]}` '
+                f'It can not validate with `{es.es_str[1]}` '
                 f'when inter_feat have label_field [{dataset.label_field}].'
             )
-        getattr(es, es_str[1])()
         if sampler is None:
             if model_type != ModelType.SEQUENTIAL:
                 sampler = Sampler(phases, built_datasets, es.neg_sample_args['distribution'])
@@ -185,7 +180,10 @@ def dataloader_construct(
     logger.info(eval_setting)
     logger.info(f'batch_size = [{batch_size}], shuffle = [{shuffle}]\n')
 
-    dataloader = get_data_loader(name, config, eval_setting)
+    if 'neg_sample_args' in kwargs:
+        dataloader = get_data_loader(name, config, kwargs['neg_sample_args'])
+    else:
+        dataloader = get_data_loader(name, config, eval_setting.neg_sample_args)
 
     try:
         ret = [
@@ -220,13 +218,13 @@ def save_datasets(save_path, name, dataset):
         d.save(cur_path)
 
 
-def get_data_loader(name, config, eval_setting):
+def get_data_loader(name, config, neg_sample_args):
     """Return a dataloader class according to :attr:`config` and :attr:`eval_setting`.
 
     Args:
         name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
         config (Config): An instance object of Config, used to record parameter information.
-        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+        neg_sample_args (dict) : Settings of negative sampling.
 
     Returns:
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
@@ -241,10 +239,13 @@ def get_data_loader(name, config, eval_setting):
     }
 
     if config['model'] in register_table:
-        return register_table[config['model']](name, config, eval_setting)
+        return register_table[config['model']](name, config, neg_sample_args)
 
     model_type = config['MODEL_TYPE']
-    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    if name == 'train' and config['train_neg_sample_args'] != None:
+        neg_sample_strategy = config['train_neg_sample_args']['strategy']
+    else:
+        neg_sample_strategy = neg_sample_args['strategy']
     if model_type == ModelType.GENERAL or model_type == ModelType.TRADITIONAL:
         if neg_sample_strategy == 'none':
             return GeneralDataLoader
@@ -291,18 +292,18 @@ def get_data_loader(name, config, eval_setting):
         raise NotImplementedError(f'Model_type [{model_type}] has not been implemented.')
 
 
-def _get_DIN_data_loader(name, config, eval_setting):
+def _get_DIN_data_loader(name, config, neg_sample_args):
     """Customized function for DIN to get correct dataloader class.
 
     Args:
         name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
         config (Config): An instance object of Config, used to record parameter information.
-        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+        neg_sample_args : Settings of negative sampling.
 
     Returns:
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
     """
-    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    neg_sample_strategy = neg_sample_args['strategy']
     if neg_sample_strategy == 'none':
         return SequentialDataLoader
     elif neg_sample_strategy == 'by':
@@ -311,18 +312,18 @@ def _get_DIN_data_loader(name, config, eval_setting):
         return SequentialFullDataLoader
 
 
-def _get_AE_data_loader(name, config, eval_setting):
+def _get_AE_data_loader(name, config, neg_sample_args):
     """Customized function for Multi-DAE and Multi-VAE to get correct dataloader class.
 
     Args:
         name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
         config (Config): An instance object of Config, used to record parameter information.
-        eval_setting (EvalSetting): An instance object of EvalSetting, used to record evaluation settings.
+        neg_sample_args (dict): Settings of negative sampling.
 
     Returns:
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
     """
-    neg_sample_strategy = eval_setting.neg_sample_args['strategy']
+    neg_sample_strategy = neg_sample_args['strategy']
     if name == "train":
         return UserDataLoader
     else:
