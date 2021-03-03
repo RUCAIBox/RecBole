@@ -10,18 +10,17 @@ Introduction
 
 **Authors:** Harald Steck
 
-**Abstract:** Combining simple elements from the literature, we dene a linear model that is geared toward sparse data, in particular implicit
+**Abstract:** Combining simple elements from the literature, we define a linear model that is geared toward sparse data, in particular implicit
 feedback data for recommender systems. We show that its training objective has a closed-form solution, and discuss the resulting
-conceptual insights. Surprisingly, this simple model achieves better ranking accuracy than various state-of-the-art collaborative-
-ltering approaches, including deep non-linear models, on most of
-the publicly available data-sets used in our experiments.
+conceptual insights. Surprisingly, this simple model achieves better ranking accuracy than various state-of-the-art collaborative
+filtering approaches, including deep non-linear models, on most of the publicly available data-sets used in our experiments.
 
 Running with RecBole
 -------------------------
 
 **Model Hyper-Parameters:**
 
-- ``reg_weight (float)`` : The L2 regularization weight of the weights. Defaults to ``250.0``.
+- ``reg_weight (float)`` : The L2 regularization weight. Defaults to ``250.0``.
 
 
 
