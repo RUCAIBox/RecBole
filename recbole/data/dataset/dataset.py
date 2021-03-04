@@ -618,7 +618,7 @@ class Dataset(object):
             will be sorted by :attr:`time_field` in ascending order.
         """
         keep = self.config['rm_dup_inter']
-        if keep is not True:
+        if keep is None:
             return
         self._check_field('uid_field', 'iid_field')
 
