@@ -6,7 +6,7 @@
 # UPDATE
 # @Time    :   2020/11/17
 # @Author  :   Xingyu Pan
-# @email   :   panxy@ruc.edu.cn  
+# @email   :   panxy@ruc.edu.cn
 
 import os
 import unittest
@@ -140,6 +140,12 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_ease(self):
+        config_dict = {
+            'model': 'EASE',
+        }
+        quick_test(config_dict)
+
     def test_MultiDAE(self):
         config_dict = {
             'model': 'MultiDAE',
@@ -167,13 +173,27 @@ class TestGeneralRecommender(unittest.TestCase):
             'training_neg_sample_num': 0
         }
         quick_test(config_dict)
- 
+
     def test_CDAE(self):
         config_dict = {
             'model': 'CDAE',
             'training_neg_sample_num': 0
         }
         quick_test(config_dict)
+        
+    def test_NNCF(self):
+        config_dict = {
+            'model': 'NNCF',
+        }
+        quick_test(config_dict)
+        
+
+    def test_slimelastic(self):
+        config_dict = {
+            'model': 'SLIMElastic',
+        }
+        quick_test(config_dict)
+
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
@@ -738,6 +758,7 @@ class TestKnowledgeRecommender(unittest.TestCase):
             'aggregator': 'concat',
         }
         quick_test(config_dict)
+
 
 
 if __name__ == '__main__':
