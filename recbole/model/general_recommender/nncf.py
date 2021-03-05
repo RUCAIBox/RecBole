@@ -21,137 +21,9 @@ from torch.nn.init import normal_
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.layers import MLPLayers
 from recbole.utils import InputType
+from recbole.model.general_recommender.itemknn import ComputeSimilarity
 
 import numpy as np
-from sklearn.metrics import jaccard_score
-
-class ComputeSimilarity:
-
-    def __init__(self, dataMatrix, topk):
-        r"""Compute the similarity of users and items.
-        Args:
-            dataMatrix (scipy.sparse.coo_matrix): The sparse data matrix.
-            topk (int) : The k value in KNN.
-        """
-
-        super(ComputeSimilarity, self).__init__()
-
-        self.n_rows, self.n_columns = dataMatrix.shape
-        self.TopK = min(topk, self.n_columns)
-        self.dataMatrix = dataMatrix.copy().tocsr()
-
-    def compute_similarity(self, block_size=100):
-        r"""Compute the similarity for the given dataset.
-
-        Args:
-            block_size(int): divide matrix to :math:`n\_columns \div block\_size` to calculate cosine_distance
-
-        Returns:
-            list: The similar nodes of users, shape: [number of users, neigh_num]
-            list: The similar nodes of items, shape: [number of items, neigh_num]
-        """
-        u_neigh = []
-        i_neigh = []
-
-        self.dataMatrix = self.dataMatrix.astype(np.float32)
-
-        # Compute sum of squared values to be used in normalization
-        sumOfSquared_u = np.array(self.dataMatrix.power(2).sum(axis=1)).ravel()
-        sumOfSquared_u = np.sqrt(sumOfSquared_u)
-        sumOfSquared_i = np.array(self.dataMatrix.power(2).sum(axis=0)).ravel()
-        sumOfSquared_i = np.sqrt(sumOfSquared_i)
-
-        end_col_local = self.n_columns
-        start_col_block = 0
-
-        # Compute all similarities for each item using vectorization
-        while start_col_block < end_col_local:
-
-            end_col_block = min(start_col_block + block_size, end_col_local)
-            this_block_size = end_col_block - start_col_block
-
-            # All data points for a given item
-            item_data = self.dataMatrix[:, start_col_block:end_col_block]
-            item_data = item_data.toarray().squeeze()
-
-            if item_data.ndim == 1:
-                item_data = np.expand_dims(item_data, axis=1)
-
-            # Compute item similarities
-            this_block_weights = self.dataMatrix.T.dot(item_data)
-            for col_index_in_block in range(this_block_size):
-
-                if this_block_size == 1:
-                    this_column_weights = this_block_weights.squeeze()
-                else:
-                    this_column_weights = this_block_weights[:, col_index_in_block]
-
-                columnIndex = col_index_in_block + start_col_block
-                this_column_weights[columnIndex] = 0.0
-
-                # Apply normalization, ensure denominator != 0
-                denominator = sumOfSquared_i[columnIndex] * sumOfSquared_i + 1e-6
-                this_column_weights = np.multiply(this_column_weights, 1 / denominator)
-
-                # Sort indices and select TopK
-                # Sorting is done in three steps. Faster then plain np.argsort for higher number of items
-                # - Partition the data to extract the set of relevant items
-                # - Sort only the relevant items
-                # - Get the original item index
-                relevant_items_partition = (-this_column_weights).argpartition(self.TopK - 1)[0:self.TopK]
-                relevant_items_partition_sorting = np.argsort(-this_column_weights[relevant_items_partition])
-                top_k_idx = relevant_items_partition[relevant_items_partition_sorting]
-                i_neigh.append(top_k_idx)
-
-            start_col_block += block_size
-        # End while on columns
-
-        end_row_local = self.n_rows
-        start_row_block = 0
-
-        # Compute all similarities for each user using vectorization
-        while start_row_block < end_row_local:
-
-            end_row_block = min(start_row_block + block_size, end_row_local)
-            this_block_size = end_row_block - start_row_block
-
-            # All data points for a given user
-            user_data = self.dataMatrix[start_row_block:end_row_block, :]
-            user_data = user_data.toarray().squeeze()
-
-            if user_data.ndim == 1:
-                user_data = np.expand_dims(user_data, axis=1)
-
-            # Compute user similarities
-            this_block_weights = self.dataMatrix.dot(user_data.T)
-            for row_index_in_block in range(this_block_size):
-
-                if this_block_size == 1:
-                    this_row_weights = this_row_weights.squeeze()
-                else:
-                    this_row_weights = this_block_weights[:, row_index_in_block]
-
-                rowIndex = row_index_in_block + start_row_block
-                this_row_weights[rowIndex] = 0.0
-
-                # Apply normalization, ensure denominator != 0
-                denominator = sumOfSquared_u[rowIndex] * sumOfSquared_u + 1e-6
-                this_row_weights = np.multiply(this_row_weights, 1 / denominator)
-
-                # Sort indices and select TopK
-                # Sorting is done in three steps. Faster then plain np.argsort for higher number of users
-                # - Partition the data to extract the set of relevant users
-                # - Sort only the relevant users
-                # - Get the original user index
-                relevant_users_partition = (-this_row_weights).argpartition(self.TopK - 1)[0:self.TopK]
-                relevant_users_partition_sorting = np.argsort(-this_row_weights[relevant_users_partition])
-                top_k_idx = relevant_users_partition[relevant_users_partition_sorting]
-                u_neigh.append(top_k_idx)
-
-            start_row_block += block_size
-            # End while on rows
-
-        return u_neigh, i_neigh
 
 class NNCF(GeneralRecommender):
     r"""NNCF is an neural network enhanced matrix factorization model which also captures neighborhood information.
@@ -356,7 +228,8 @@ class NNCF(GeneralRecommender):
             ui_inters[pairs[i][0], pairs[i][1]] = 1
 
         # Get similar neighbors using knn algorithm
-        user_knn, item_knn = ComputeSimilarity(self.interaction_matrix, topk=self.neigh_num).compute_similarity()
+        user_knn, w_user = ComputeSimilarity(self.interaction_matrix.tocsr(), topk=self.neigh_num).compute_users_similarity()
+        item_knn, w_item = ComputeSimilarity(self.interaction_matrix.tocsr(), topk=self.neigh_num).compute_items_similarity()
 
         u_neigh, i_neigh = [], []
 
