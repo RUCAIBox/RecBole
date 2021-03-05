@@ -364,14 +364,14 @@ class TestDataset:
         item_list = dataset.token2id('item_id', ['ia', 'ib', 'ic', 'id'])
         assert (user_list == [1, 2, 3, 4]).all()
         assert (item_list == [1, 2, 3, 4]).all()
-        assert (dataset.inter_feat['user_id'].numpy() == [1, 2, 3, 4]).all()
-        assert (dataset.inter_feat['item_id'].numpy() == [1, 2, 3, 4]).all()
-        assert (dataset.inter_feat['add_user'].numpy() == [1, 2, 3, 4]).all()
-        assert (dataset.inter_feat['add_item'].numpy() == [1, 2, 3, 4]).all()
-        assert (dataset.inter_feat['user_list'].numpy() == [[1, 2, 0],
-                                                            [0, 0, 0],
-                                                            [3, 4, 1],
-                                                            [5, 0, 0]]).all()
+        assert (dataset.inter_feat['user_id'] == [1, 2, 3, 4]).all()
+        assert (dataset.inter_feat['item_id'] == [1, 2, 3, 4]).all()
+        assert (dataset.inter_feat['add_user'] == [1, 2, 3, 4]).all()
+        assert (dataset.inter_feat['add_item'] == [1, 2, 3, 4]).all()
+        assert (dataset.inter_feat['user_list'][0] == [1, 2]).all()
+        assert (dataset.inter_feat['user_list'][1] == []).all()
+        assert (dataset.inter_feat['user_list'][2] == [3, 4, 1]).all()
+        assert (dataset.inter_feat['user_list'][3] == [5]).all()
 
     def test_remap_id_with_fields_in_same_space(self):
         config_dict = {
@@ -389,14 +389,14 @@ class TestDataset:
         item_list = dataset.token2id('item_id', ['ia', 'ib', 'ic', 'id', 'ie', 'if'])
         assert (user_list == [1, 2, 3, 4, 5, 6]).all()
         assert (item_list == [1, 2, 3, 4, 5, 6]).all()
-        assert (dataset.inter_feat['user_id'].numpy() == [1, 2, 3, 4]).all()
-        assert (dataset.inter_feat['item_id'].numpy() == [1, 2, 3, 4]).all()
-        assert (dataset.inter_feat['add_user'].numpy() == [2, 5, 4, 6]).all()
-        assert (dataset.inter_feat['add_item'].numpy() == [5, 3, 6, 1]).all()
-        assert (dataset.inter_feat['user_list'].numpy() == [[3, 5, 0],
-                                                            [0, 0, 0],
-                                                            [1, 2, 3],
-                                                            [6, 0, 0]]).all()
+        assert (dataset.inter_feat['user_id'] == [1, 2, 3, 4]).all()
+        assert (dataset.inter_feat['item_id'] == [1, 2, 3, 4]).all()
+        assert (dataset.inter_feat['add_user'] == [2, 5, 4, 6]).all()
+        assert (dataset.inter_feat['add_item'] == [5, 3, 6, 1]).all()
+        assert (dataset.inter_feat['user_list'][0] == [3, 5]).all()
+        assert (dataset.inter_feat['user_list'][1] == []).all()
+        assert (dataset.inter_feat['user_list'][2] == [1, 2, 3]).all()
+        assert (dataset.inter_feat['user_list'][3] == [6]).all()
 
     def test_ui_feat_preparation_and_fill_nan(self):
         config_dict = {
@@ -416,16 +416,16 @@ class TestDataset:
         assert dataset.inter_feat['rating'][3] == 1.0
         assert dataset.user_feat['age'][4] == 1.5
         assert dataset.item_feat['price'][4] == 1.5
-        assert (dataset.inter_feat['time_list'].numpy() == [[1., 2., 3.],
-                                                            [2., 0., 0.],
-                                                            [0., 0., 0.],
-                                                            [5., 4., 0.]]).all()
-        assert (dataset.user_feat['profile'].numpy() == [[0, 0, 0],
-                                                         [1, 2, 3],
-                                                         [0, 0, 0],
-                                                         [3, 0, 0],
-                                                         [0, 0, 0],
-                                                         [3, 2, 0]]).all()
+        assert (dataset.inter_feat['time_list'][0] == [1., 2., 3.]).all()
+        assert (dataset.inter_feat['time_list'][1] == [2.]).all()
+        assert (dataset.inter_feat['time_list'][2] == []).all()
+        assert (dataset.inter_feat['time_list'][3] == [5, 4]).all()
+        assert (dataset.user_feat['profile'][0] == []).all()
+        assert (dataset.user_feat['profile'][1] == [1, 2, 3]).all()
+        assert (dataset.user_feat['profile'][2] == []).all()
+        assert (dataset.user_feat['profile'][3] == [3]).all()
+        assert (dataset.user_feat['profile'][4] == []).all()
+        assert (dataset.user_feat['profile'][5] == [3, 2]).all()
 
     def test_set_label_by_threshold(self):
         config_dict = {
@@ -440,7 +440,7 @@ class TestDataset:
             'normalize_all': None,
         }
         dataset = new_dataset(config_dict=config_dict)
-        assert (dataset.inter_feat['label'].numpy() == [1., 0., 1., 0.]).all()
+        assert (dataset.inter_feat['label'] == [1., 0., 1., 0.]).all()
 
     def test_normalize_all(self):
         config_dict = {
@@ -451,8 +451,8 @@ class TestDataset:
             'normalize_all': True,
         }
         dataset = new_dataset(config_dict=config_dict)
-        assert (dataset.inter_feat['rating'].numpy() == [0., .25, 1., .75, .5]).all()
-        assert (dataset.inter_feat['star'].numpy() == [1., .5, 0., .25, 0.75]).all()
+        assert (dataset.inter_feat['rating'] == [0., .25, 1., .75, .5]).all()
+        assert (dataset.inter_feat['star'] == [1., .5, 0., .25, 0.75]).all()
 
     def test_normalize_field(self):
         config_dict = {
@@ -464,8 +464,8 @@ class TestDataset:
             'normalize_all': False,
         }
         dataset = new_dataset(config_dict=config_dict)
-        assert (dataset.inter_feat['rating'].numpy() == [0., .25, 1., .75, .5]).all()
-        assert (dataset.inter_feat['star'].numpy() == [4., 2., 0., 1., 3.]).all()
+        assert (dataset.inter_feat['rating'] == [0., .25, 1., .75, .5]).all()
+        assert (dataset.inter_feat['star'] == [4., 2., 0., 1., 3.]).all()
 
     def test_TO_RS_811(self):
         config_dict = {
@@ -537,7 +537,7 @@ class TestDataset:
         assert len(valid_dataset.inter_feat) == 2
         assert len(test_dataset.inter_feat) == 2
 
-    def test_TO_RS_820(self):
+    def test_RO_RS_820(self):
         config_dict = {
             'model': 'BPR',
             'dataset': 'build_dataset',
