@@ -22,7 +22,7 @@ from recbole.utils import InputType, ModelType
 class ComputeSimilarity:
 
     def __init__(self, dataMatrix, topk=100, shrink=0, normalize=True):
-        r"""Computes the cosine similarity on the columns of dataMatrix
+        r"""Computes the cosine similarity of dataMatrix
 
         If it is computed on :math:`URM=|users| \times |items|`, pass the URM.
 
@@ -45,19 +45,21 @@ class ComputeSimilarity:
 
         self.dataMatrix = dataMatrix.copy()
 
-    def compute_similarity(self, block_size=100):
+    def compute_items_similarity(self, block_size=100):
         r"""Compute the similarity for the given dataset
 
         Args:
             block_size(int): divide matrix to :math:`n\_columns \div block\_size` to calculate cosine_distance
 
         Returns:
+            list: The similar nodes of items, shape: [number of items, neigh_num]
             scipy.sparse.csr_matrix: sparse matrix W shape of (self.n_columns, self.n_columns)
         """
 
         values = []
         rows = []
         cols = []
+        i_neigh = []
 
         self.dataMatrix = self.dataMatrix.astype(np.float32)
 
@@ -110,7 +112,8 @@ class ComputeSimilarity:
                 relevant_items_partition = (-this_column_weights).argpartition(self.TopK - 1)[0:self.TopK]
                 relevant_items_partition_sorting = np.argsort(-this_column_weights[relevant_items_partition])
                 top_k_idx = relevant_items_partition[relevant_items_partition_sorting]
-
+                i_neigh.append(top_k_idx)
+                
                 # Incrementally build sparse matrix, do not add zeros
                 notZerosMask = this_column_weights[top_k_idx] != 0.0
                 numNotZeros = np.sum(notZerosMask)
@@ -124,7 +127,91 @@ class ComputeSimilarity:
         # End while on columns
 
         W_sparse = sp.csr_matrix((values, (rows, cols)), shape=(self.n_columns, self.n_columns), dtype=np.float32)
-        return W_sparse.tocsc()
+        return i_neigh, W_sparse.tocsc()
+
+    def compute_users_similarity(self, block_size=100):
+        r"""Compute the similarity for the given dataset
+
+        Args:
+            block_size(int): divide matrix to :math:`n\_rows \div block\_size` to calculate cosine_distance
+
+        Returns:
+            list: The similar nodes of users, shape: [number of users, neigh_num]
+            scipy.sparse.csr_matrix: sparse matrix W shape of (self.n_rows, self.n_rows)
+        """
+
+        values = []
+        rows = []
+        cols = []
+        u_neigh= []
+
+        self.dataMatrix = self.dataMatrix.astype(np.float32)
+
+        # Compute sum of squared values to be used in normalization
+        sumOfSquared = np.array(self.dataMatrix.power(2).sum(axis=1)).ravel()
+        sumOfSquared = np.sqrt(sumOfSquared)
+
+        end_row_local = self.n_rows
+        start_row_block = 0
+
+        # Compute all similarities for each user using vectorization
+        while start_row_block < end_row_local:
+
+            end_row_block = min(start_row_block + block_size, end_row_local)
+            this_block_size = end_row_block - start_row_block
+
+            # All data points for a given item
+            user_data = self.dataMatrix[start_row_block:end_row_block, :]
+            user_data = user_data.toarray().squeeze()
+
+            if user_data.ndim == 1:
+                user_data = np.expand_dims(user_data, axis=1)
+
+            # Compute user similarities
+
+            this_block_weights = self.dataMatrix.dot(user_data.T)
+            for row_index_in_block in range(this_block_size):
+
+                if this_block_size == 1:
+                    this_row_weights = this_block_weights.squeeze()
+                else:
+                    this_row_weights = this_block_weights[:, row_index_in_block]
+
+                rowIndex = row_index_in_block + start_row_block
+                this_row_weights[rowIndex] = 0.0
+
+                # Apply normalization and shrinkage, ensure denominator != 0
+                if self.normalize:
+                    denominator = sumOfSquared[rowIndex] * sumOfSquared + self.shrink + 1e-6
+                    this_row_weights = np.multiply(this_row_weights, 1 / denominator)
+
+                elif self.shrink != 0:
+                    this_row_weights = this_column_weights / self.shrink
+
+                # Sort indices and select TopK
+                # Sorting is done in three steps. Faster then plain np.argsort for higher number of users
+                # - Partition the data to extract the set of relevant users
+                # - Sort only the relevant users
+                # - Get the original user index
+                relevant_users_partition = (-this_row_weights).argpartition(self.TopK - 1)[0:self.TopK]
+                relevant_users_partition_sorting = np.argsort(-this_row_weights[relevant_users_partition])
+                top_k_idx = relevant_users_partition[relevant_users_partition_sorting]
+
+                # Incrementally build sparse matrix, do not add zeros
+                notZerosMask = this_row_weights[top_k_idx] != 0.0
+                numNotZeros = np.sum(notZerosMask)
+
+                values.extend(this_row_weights[top_k_idx][notZerosMask])
+                cols.extend(top_k_idx[notZerosMask])
+                rows.extend(np.ones(numNotZeros) * rowIndex)
+                u_neigh.append(top_k_idx)
+
+            start_row_block += block_size
+
+        # End while on rows
+
+        W_sparse = sp.csr_matrix((values, (rows, cols)), shape=(self.n_rows, self.n_rows), dtype=np.float32)
+        return u_neigh, W_sparse.tocsc()
 
 
 class ItemKNN(GeneralRecommender):
@@ -144,7 +231,7 @@ class ItemKNN(GeneralRecommender):
         self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
         shape = self.interaction_matrix.shape
         assert self.n_users == shape[0] and self.n_items == shape[1]
-        self.w = ComputeSimilarity(self.interaction_matrix, topk=self.k, shrink=self.shrink).compute_similarity()
+        _, self.w = ComputeSimilarity(self.interaction_matrix, topk=self.k, shrink=self.shrink).compute_items_similarity()
         self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
 
         self.fake_loss = torch.nn.Parameter(torch.zeros(1))
