@@ -78,18 +78,5 @@ class DecisionTreeDataset(Dataset):
                 setattr(self, feat_name, feat)
 
     def _from_scratch(self):
-        """Load dataset from scratch.
-        Initialize attributes firstly, then load data from atomic files, pre-process the dataset lastly.
-        """
-        self.logger.debug(f'Loading {self.__class__} from scratch.')
-
-        self._get_preset()
-        self._get_field_from_config()
-        self._load_data(self.dataset_name, self.dataset_path)
-        self._data_processing()
+        super()._from_scratch()
         self._convert_token_to_hash()
-        self._change_feat_format()
-
-    def __getitem__(self, index, join=True):
-        df = self.inter_feat[index]
-        return self.join(df) if join else df

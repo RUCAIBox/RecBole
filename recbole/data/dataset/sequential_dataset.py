@@ -129,6 +129,8 @@ class SequentialDataset(Dataset):
         return self._create_sparse_matrix(local_inter_feat, self.uid_field, self.iid_field, form, value_field)
 
     def build(self, eval_setting):
+        self._change_feat_format()
+
         ordering_args = eval_setting.ordering_args
         if ordering_args['strategy'] == 'shuffle':
             raise ValueError('Ordering strategy `shuffle` is not supported in sequential models.')

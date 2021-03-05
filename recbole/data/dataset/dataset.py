@@ -105,13 +105,12 @@ class Dataset(object):
         """Load dataset from scratch.
         Initialize attributes firstly, then load data from atomic files, pre-process the dataset lastly.
         """
-        self.logger.debug(f'Loading {self.__class__} from scratch')
+        self.logger.debug(f'Loading {self.__class__} from scratch.')
 
         self._get_preset()
         self._get_field_from_config()
         self._load_data(self.dataset_name, self.dataset_path)
         self._data_processing()
-        self._change_feat_format()
 
     def _get_preset(self):
         """Initialization useful inside attributes.
@@ -434,9 +433,9 @@ class Dataset(object):
                 continue
             df[field].fillna(value='', inplace=True)
             if ftype == FeatureType.TOKEN_SEQ:
-                df[field] = [list(filter(None, _.split(seq_separator))) for _ in df[field].values]
+                df[field] = [np.array(list(filter(None, _.split(seq_separator)))) for _ in df[field].values]
             elif ftype == FeatureType.FLOAT_SEQ:
-                df[field] = [list(map(float, filter(None, _.split(seq_separator)))) for _ in df[field].values]
+                df[field] = [np.array(list(map(float, filter(None, _.split(seq_separator))))) for _ in df[field].values]
             self.field2seqlen[field] = max(map(len, df[field].values))
         return df
 
@@ -532,7 +531,8 @@ class Dataset(object):
                 elif ftype == FeatureType.FLOAT:
                     feat[field].fillna(value=feat[field].mean(), inplace=True)
                 else:
-                    feat[field] = feat[field].apply(lambda x: [] if isinstance(x, float) else x)
+                    dtype = np.int64 if ftype == FeatureType.TOKEN_SEQ else np.float
+                    feat[field] = feat[field].apply(lambda x: np.array([], dtype=dtype) if isinstance(x, float) else x)
 
     def _normalize(self):
         """Normalization if ``config['normalize_field']`` or ``config['normalize_all']`` is set.
@@ -1143,7 +1143,10 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of users' interaction records.
         """
-        return np.mean(list(Counter(self.inter_feat[self.uid_field].numpy()).values()))
+        if isinstance(self.inter_feat, pd.DataFrame):
+            return np.mean(self.inter_feat.groupby(self.uid_field).size())
+        else:
+            return np.mean(list(Counter(self.inter_feat[self.uid_field].numpy()).values()))
 
     @property
     def avg_actions_of_items(self):
@@ -1152,7 +1155,10 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of items' interaction records.
         """
-        return np.mean(list(Counter(self.inter_feat[self.iid_field].numpy()).values()))
+        if isinstance(self.inter_feat, pd.DataFrame):
+            return np.mean(self.inter_feat.groupby(self.iid_field).size())
+        else:
+            return np.mean(list(Counter(self.inter_feat[self.iid_field].numpy()).values()))
 
     @property
     def sparsity(self):
@@ -1379,6 +1385,8 @@ class Dataset(object):
         Returns:
             list: List of built :class:`Dataset`.
         """
+        self._change_feat_format()
+
         if self.benchmark_filename_list is not None:
             cumsum = list(np.cumsum(self.file_size_list))
             datasets = [self.copy(self.inter_feat[start:end]) for start, end in zip([0] + cumsum[:-1], cumsum)]
