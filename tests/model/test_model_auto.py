@@ -194,6 +194,12 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_slimelastic(self):
+        config_dict = {
+            'model': 'SLIMElastic',
+        }
+        quick_test(config_dict)
+
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
@@ -758,6 +764,7 @@ class TestKnowledgeRecommender(unittest.TestCase):
             'aggregator': 'concat',
         }
         quick_test(config_dict)
+
 
 
 if __name__ == '__main__':

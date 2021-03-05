@@ -20,5 +20,6 @@ from recbole.model.general_recommender.ngcf import NGCF
 from recbole.model.general_recommender.nncf import NNCF
 from recbole.model.general_recommender.pop import Pop
 from recbole.model.general_recommender.recvae import RecVAE
+from recbole.model.general_recommender.slimelastic import SLIMElastic
 from recbole.model.general_recommender.spectralcf import SpectralCF
 

@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/22, 2020/8/31
-# @Author : Yupeng Hou, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/10/22, 2020/8/31, 2021/3/1
+# @Author : Yupeng Hou, Yushuo Chen, Jiawei Guan
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, guanjw@ruc.edu.cn
 
 """
 recbole.config.eval_setting
@@ -78,6 +78,12 @@ class EvalSetting(object):
         self.split_args = None
         self.neg_sample_args = {'strategy': 'none'}
 
+        self.es_str = [_.strip() for _ in config['eval_setting'].split(',')]
+        self.set_ordering_and_splitting(self.es_str[0])
+        if len(self.es_str) > 1:
+            if getattr(self, self.es_str[1], None) == None:
+                raise ValueError('Incorrect setting of negative sampling.')
+            getattr(self, self.es_str[1])()
         presetting_args = ['group_field', 'ordering_args', 'split_args', 'neg_sample_args']
         for args in presetting_args:
             if config[args] is not None:
