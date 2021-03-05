@@ -94,33 +94,33 @@ class Trainer(AbstractTrainer):
         self.best_valid_score = -1
         self.best_valid_result = None
         self.train_loss_dict = dict()
-        self.optimizer = self._build_optimizer()
+        self.optimizer = self._build_optimizer(self.model.parameters())
         self.eval_type = config['eval_type']
         self.evaluator = ProxyEvaluator(config)
         self.item_tensor = None
         self.tot_item_num = None
 
-    def _build_optimizer(self):
+    def _build_optimizer(self, params):
         r"""Init the Optimizer
 
         Returns:
             torch.optim: the optimizer
         """
         if self.learner.lower() == 'adam':
-            optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+            optimizer = optim.Adam(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'sgd':
-            optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+            optimizer = optim.SGD(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'adagrad':
-            optimizer = optim.Adagrad(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+            optimizer = optim.Adagrad(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'rmsprop':
-            optimizer = optim.RMSprop(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+            optimizer = optim.RMSprop(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'sparse_adam':
-            optimizer = optim.SparseAdam(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.SparseAdam(params, lr=self.learning_rate)
             if self.weight_decay > 0:
                 self.logger.warning('Sparse Adam cannot argument received argument [{weight_decay}]')
         else:
             self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
-            optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.Adam(params, lr=self.learning_rate)
         return optimizer
 
     def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
@@ -793,31 +793,6 @@ class RaCTTrainer(Trainer):
     def __init__(self, config, model):
         super(RaCTTrainer, self).__init__(config, model)
         self.pretrain_epochs = self.config['pretrain_epochs']
-
-    def _build_optimizer(self):
-        r"""Init the Optimizer
-
-        Returns:
-            torch.optim: the optimizer
-        """
-        params = filter(lambda p: p.requires_grad, self.model.parameters())
-
-        if self.learner.lower() == 'adam':
-            optimizer = optim.Adam(params, lr=self.learning_rate, weight_decay=self.weight_decay)
-        elif self.learner.lower() == 'sgd':
-            optimizer = optim.SGD(params, lr=self.learning_rate, weight_decay=self.weight_decay)
-        elif self.learner.lower() == 'adagrad':
-            optimizer = optim.Adagrad(params, lr=self.learning_rate, weight_decay=self.weight_decay)
-        elif self.learner.lower() == 'rmsprop':
-            optimizer = optim.RMSprop(params, lr=self.learning_rate, weight_decay=self.weight_decay)
-        elif self.learner.lower() == 'sparse_adam':
-            optimizer = optim.SparseAdam(params, lr=self.learning_rate)
-            if self.weight_decay > 0:
-                self.logger.warning('Sparse Adam cannot argument received argument [{weight_decay}]')
-        else:
-            self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
-            optimizer = optim.Adam(params, lr=self.learning_rate)
-        return optimizer
 
     def save_pretrained_model(self, epoch, saved_model_file):
         r"""Store the model parameters information and training information.
