@@ -193,7 +193,7 @@ def get_data_loader(name, config, neg_sample_args):
         'MacridVAE': _get_AE_data_loader,
         'CDAE': _get_AE_data_loader,
         'ENMF': _get_AE_data_loader,
-        'RaCT': _get_AE_data_loader
+        'RaCT': _get_AE_data_loader,
         'RecVAE': _get_AE_data_loader
     }
 
