@@ -255,8 +255,8 @@ Then, we can use NewModel in RecBole as follows (e.g., `run.py`):
         # model evaluation
         test_result = trainer.evaluate(test_data)
 
-        logger.info('\033[1;34mbest valid result\033[0m: {}'.format(best_valid_result))
-        logger.info('\033[1;34mtest result\033[0m: {}'.format(test_result))
+        logger.info('best valid result: {}'.format(best_valid_result))
+        logger.info('test result: {}'.format(test_result))
 
 Then, we can run NewModel:
 
