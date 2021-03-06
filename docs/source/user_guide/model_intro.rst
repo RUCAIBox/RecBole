@@ -31,6 +31,9 @@ General Recommendation
    model/general/enmf
    model/general/nncf
    model/general/ract
+   model/general/recvae
+   model/general/ease
+   model/general/slimelastic
 
 
 Context-aware Recommendation

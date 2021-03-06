@@ -134,6 +134,10 @@ test_examples = {
         'model': 'LINE',
         'dataset': 'ml-100k',
     },
+    'Test SLIMElastic': {
+        'model': 'SLIMElastic',
+        'dataset': 'ml-100k',
+    },
     'Test EASE': {
         'model': 'EASE',
         'dataset': 'ml-100k',
@@ -359,13 +363,15 @@ def run_test_examples():
     for idx, example in enumerate(test_examples.keys()):
         if example in closed_examples:
             continue
-        print('\n\n Begin to run %d / %d example: %s \n\n' % (idx + 1, n_examples, example))
+        print('\n\n Begin to run %d / %d example: %s \n\n' %
+              (idx + 1, n_examples, example))
         try:
             config_dict = test_examples[example]
             if 'epochs' not in config_dict:
                 config_dict['epochs'] = 1
             run_recbole(config_dict=config_dict, saved=False)
-            print('\n\n Running %d / %d example successfully: %s \n\n' % (idx + 1, n_examples, example))
+            print('\n\n Running %d / %d example successfully: %s \n\n' %
+                  (idx + 1, n_examples, example))
             success_examples.append(example)
         except Exception:
             print(traceback.format_exc())
