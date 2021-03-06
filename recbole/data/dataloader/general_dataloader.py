@@ -207,7 +207,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
     ):
         if neg_sample_args['strategy'] != 'full':
-            raise ValueError('neg_sample strategy in GeneralFullDataLoader() should be `full`')
+            raise ValueError('\033[1;31mneg_sample strategy in GeneralFullDataLoader() should be `full`\033[0m')
 
         uid_field = dataset.uid_field
         iid_field = dataset.iid_field

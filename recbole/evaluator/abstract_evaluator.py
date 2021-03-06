@@ -114,7 +114,7 @@ class IndividualEvaluator(BaseEvaluator):
         """it is called when evaluation sample distribution is `full`.
 
         """
-        raise NotImplementedError('full sort can\'t use IndividualEvaluator')
+        raise NotImplementedError('\033[1;31mfull sort can\'t use IndividualEvaluator\033[0m')
 
     def get_score_matrix(self, true_scores, pred_scores):
         """get score matrix
@@ -133,4 +133,4 @@ class IndividualEvaluator(BaseEvaluator):
 
     def _check_args(self):
         if self.full:
-            raise NotImplementedError('full sort can\'t use IndividualEvaluator')
+            raise NotImplementedError('\033[1;31mfull sort can\'t use IndividualEvaluator\033[0m')

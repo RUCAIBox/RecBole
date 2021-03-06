@@ -326,7 +326,7 @@ class ContextRecommender(AbstractRecommender):
 
         """
         if not self.double_tower:
-            raise RuntimeError('Please check your model hyper parameters and set \'double tower\' as True')
+            raise RuntimeError('\033[1;31mPlease check your model hyper parameters and set \'double tower\' as True\033[0m')
         sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
         if dense_embedding is not None:
             first_dense_embedding, second_dense_embedding = \

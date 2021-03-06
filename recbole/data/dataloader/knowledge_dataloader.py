@@ -55,7 +55,7 @@ class KGDataLoader(AbstractDataLoader):
         """
         if self.shuffle is False:
             self.shuffle = True
-            self.logger.warning('\033[1;31mkg based dataloader must shuffle the data\033[0m')
+            self.logger.warning('\033[1;33mkg based dataloader must shuffle the data\033[0m')
 
     @property
     def pr_end(self):
@@ -145,8 +145,8 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
     def __iter__(self):
         if self.state is None:
             raise ValueError(
-                'The dataloader\'s state must be set when using the kg based dataloader, '
-                'you should call set_mode() before __iter__()'
+                '\033[1;31mThe dataloader\'s state must be set when using the kg based dataloader, \033[0m'
+                '\033[1;31myou should call set_mode() before __iter__()\033[0m'
             )
         if self.state == KGDataLoaderState.KG:
             return self.kg_dataloader.__iter__()
@@ -202,5 +202,5 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
             state (KGDataLoaderState): the state of :class:`KnowledgeBasedDataLoader`.
         """
         if state not in set(KGDataLoaderState):
-            raise NotImplementedError(f'Kg data loader has no state named [{self.state}].')
+            raise NotImplementedError(f'\033[1;31mKg data loader has no state named [{self.state}].\033[0m')
         self.state = state

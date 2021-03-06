@@ -113,7 +113,7 @@ def activation_layer(activation_name='relu', emb_dim=None):
     elif issubclass(activation_name, nn.Module):
         activation = activation_name()
     else:
-        raise NotImplementedError("activation function {} is not implemented".format(activation_name))
+        raise NotImplementedError("\033[1;31mactivation function {} is not implemented\033[0m".format(activation_name))
 
     return activation
 
@@ -352,8 +352,8 @@ class MultiHeadAttention(nn.Module):
         super(MultiHeadAttention, self).__init__()
         if hidden_size % n_heads != 0:
             raise ValueError(
-                "The hidden size (%d) is not a multiple of the number of attention "
-                "heads (%d)" % (hidden_size, n_heads)
+                "\033[1;31mThe hidden size (%d) is not a multiple of the number of attention \033[0m"
+                "\033[1;31mheads (%d)\033[0m" % (hidden_size, n_heads)
             )
 
         self.num_attention_heads = n_heads
@@ -795,7 +795,7 @@ class ContextSeqEmbLayer(ContextSeqEmbAbstractLayer):
         try:
             assert self.pooling_mode in ['mean', 'max', 'sum']
         except AssertionError:
-            raise AssertionError("Make sure 'pooling_mode' in ['mean', 'max', 'sum']!")
+            raise AssertionError("\033[1;31mMake sure 'pooling_mode' in ['mean', 'max', 'sum']!\033[0m")
         self.get_fields_name_dim()
         self.get_embedding()
 
@@ -820,7 +820,7 @@ class FeatureSeqEmbLayer(ContextSeqEmbAbstractLayer):
         try:
             assert self.pooling_mode in ['mean', 'max', 'sum']
         except AssertionError:
-            raise AssertionError("Make sure 'pooling_mode' in ['mean', 'max', 'sum']!")
+            raise AssertionError("\033[1;31mMake sure 'pooling_mode' in ['mean', 'max', 'sum']!\033[0m")
         self.get_fields_name_dim()
         self.get_embedding()
 
@@ -866,7 +866,7 @@ class CNNLayers(nn.Module):
         self.num_of_nets = len(self.channels) - 1
 
         if len(kernels) != len(strides) or self.num_of_nets != (len(kernels)):
-            raise RuntimeError('channels, kernels and strides don\'t match\n')
+            raise RuntimeError('\033[1;31mchannels, kernels and strides don\'t match\n\033[0m')
 
         cnn_modules = []
 

@@ -70,7 +70,7 @@ class BERT4Rec(SequentialRecommender):
         try:
             assert self.loss_type in ['BPR', 'CE']
         except AssertionError:
-            raise AssertionError("Make sure 'loss_type' in ['BPR', 'CE']!")
+            raise AssertionError("\033[1;31mMake sure 'loss_type' in ['BPR', 'CE']!\033[0m")
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -232,7 +232,7 @@ class BERT4Rec(SequentialRecommender):
                    / torch.sum(targets)
             return loss
         else:
-            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
+            raise NotImplementedError("\033[1;31mMake sure 'loss_type' in ['BPR', 'CE']!\033[0m")
 
     def predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]

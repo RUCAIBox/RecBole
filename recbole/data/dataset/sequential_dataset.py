@@ -89,9 +89,9 @@ class SequentialDataset(Dataset):
     def leave_one_out(self, group_by, leave_one_num=1):
         self.logger.debug(f'Leave one out, group_by=[{group_by}], leave_one_num=[{leave_one_num}].')
         if group_by is None:
-            raise ValueError('Leave one out strategy require a group field.')
+            raise ValueError('\033[1;31mLeave one out strategy require a group field.\033[0m')
         if group_by != self.uid_field:
-            raise ValueError('Sequential models require group by user.')
+            raise ValueError('\033[1;31mSequential models require group by user.\033[0m')
 
         self.prepare_data_augmentation()
         grouped_index = self._grouped_index(self.uid_list)
@@ -121,10 +121,10 @@ class SequentialDataset(Dataset):
             scipy.sparse: Sparse matrix in form ``coo`` or ``csr``.
         """
         if not self.uid_field or not self.iid_field:
-            raise ValueError('dataset does not exist uid/iid, thus can not converted to sparse matrix.')
+            raise ValueError('\033[1;31mdataset does not exist uid/iid, thus can not converted to sparse matrix.\033[0m')
 
-        self.logger.warning('\033[1;31mLoad interaction matrix may lead to label leakage from testing phase, this implementation \033[0m'
-                            '\033[1;31monly provides the interactions corresponding to specific phase\033[0m')
+        self.logger.warning('\033[1;33mLoad interaction matrix may lead to label leakage from testing phase, this implementation \033[0m'
+                            '\033[1;33monly provides the interactions corresponding to specific phase\033[0m')
         local_inter_feat = self.inter_feat[self.uid_list]
         return self._create_sparse_matrix(local_inter_feat, self.uid_field, self.iid_field, form, value_field)
 
@@ -133,12 +133,12 @@ class SequentialDataset(Dataset):
 
         ordering_args = eval_setting.ordering_args
         if ordering_args['strategy'] == 'shuffle':
-            raise ValueError('Ordering strategy `shuffle` is not supported in sequential models.')
+            raise ValueError('\033[1;31mOrdering strategy `shuffle` is not supported in sequential models.\033[0m')
         elif ordering_args['strategy'] == 'by':
             if ordering_args['field'] != self.time_field:
-                raise ValueError('Sequential models require `TO` (time ordering) strategy.')
+                raise ValueError('\033[1;31mSequential models require `TO` (time ordering) strategy.\033[0m')
             if ordering_args['ascending'] is not True:
-                raise ValueError('Sequential models require `time_field` to sort in ascending order.')
+                raise ValueError('\033[1;31mSequential models require `time_field` to sort in ascending order.\033[0m')
 
         group_field = eval_setting.group_field
 
@@ -146,4 +146,4 @@ class SequentialDataset(Dataset):
         if split_args['strategy'] == 'loo':
             return self.leave_one_out(group_by=group_field, leave_one_num=split_args['leave_one_num'])
         else:
-            ValueError('Sequential models require `loo` (leave one out) split strategy.')
+            ValueError('\033[1;31mSequential models require `loo` (leave one out) split strategy.\033[0m')

@@ -65,7 +65,7 @@ def get_model(model_name):
             break
 
     if model_module is None:
-        raise ValueError('`model_name` [{}] is not the name of an existing model.'.format(model_name))
+        raise ValueError('\033[1;31m`model_name` [{}] is not the name of an existing model.\033[0m'.format(model_name))
     model_class = getattr(model_module, model_name)
     return model_class
 

@@ -42,14 +42,14 @@ class AbstractTrainer(object):
         r"""Train the model based on the train data.
 
         """
-        raise NotImplementedError('Method [next] should be implemented.')
+        raise NotImplementedError('\033[1;31mMethod [next] should be implemented.\033[0m')
 
     def evaluate(self, eval_data):
         r"""Evaluate the model based on the eval data.
 
         """
 
-        raise NotImplementedError('Method [next] should be implemented.')
+        raise NotImplementedError('\033[1;31mMethod [next] should be implemented.\033[0m')
 
 
 class Trainer(AbstractTrainer):
@@ -116,9 +116,9 @@ class Trainer(AbstractTrainer):
         elif self.learner.lower() == 'sparse_adam':
             optimizer = optim.SparseAdam(params, lr=self.learning_rate)
             if self.weight_decay > 0:
-                self.logger.warning('\033[1;31mSparse Adam cannot argument received argument [{weight_decay}]\033[0m')
+                self.logger.warning('\033[1;33mSparse Adam cannot argument received argument [{weight_decay}]\033[0m')
         else:
-            self.logger.warning('\033[1;31mReceived unrecognized optimizer, set default Adam optimizer\033[0m')
+            self.logger.warning('\033[1;33mReceived unrecognized optimizer, set default Adam optimizer\033[0m')
             optimizer = optim.Adam(params, lr=self.learning_rate)
         return optimizer
 
@@ -213,8 +213,8 @@ class Trainer(AbstractTrainer):
         # load architecture params from checkpoint
         if checkpoint['config']['model'].lower() != self.config['model'].lower():
             self.logger.warning(
-                '\033[1;31mArchitecture configuration given in config file is different from that of checkpoint.\33[0m '
-                '\033[1;31mThis may yield an exception while state_dict is being loaded.\033[0m'
+                '\033[1;33mArchitecture configuration given in config file is different from that of checkpoint.\33[0m '
+                '\033[1;33mThis may yield an exception while state_dict is being loaded.\033[0m'
             )
         self.model.load_state_dict(checkpoint['state_dict'])
 
@@ -225,7 +225,7 @@ class Trainer(AbstractTrainer):
 
     def _check_nan(self, loss):
         if torch.isnan(loss):
-            raise ValueError('Training loss is nan')
+            raise ValueError('\033[1;31mTraining loss is nan\033[0m')
 
     def _generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
         des = self.config['loss_decimal_place'] or 4
@@ -553,7 +553,7 @@ class S3RecTrainer(Trainer):
         elif self.model.train_stage == 'finetune':
             return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
-            raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
+            raise ValueError("\033[1;31mPlease make sure that the 'train_stage' is 'pretrain' or 'finetune' \033[0m")
 
 
 class MKRTrainer(Trainer):

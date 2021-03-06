@@ -41,7 +41,7 @@ class HGN(SequentialRecommender):
         self.pool_type = config["pooling_type"]
 
         if self.pool_type not in ["max", "average"]:
-            raise NotImplementedError("Make sure 'loss_type' in ['max', 'average']!")
+            raise NotImplementedError("\033[1;31mMake sure 'loss_type' in ['max', 'average']!\033[0m")
 
         # define the layers and loss function
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
@@ -67,7 +67,7 @@ class HGN(SequentialRecommender):
         elif self.loss_type == 'CE':
             self.loss_fct = nn.CrossEntropyLoss()
         else:
-            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
+            raise NotImplementedError("\033[1;31mMake sure 'loss_type' in ['BPR', 'CE']!\033[0m")
 
         # init the parameters of the model
         self.apply(self._init_weights)

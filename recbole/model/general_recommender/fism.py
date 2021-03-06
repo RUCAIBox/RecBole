@@ -49,9 +49,9 @@ class FISM(GeneralRecommender):
         if self.split_to > 0:
             self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
         else:
-            self.logger.warning('\033[1;31mPay Attetion!! the `split_to` is set to 0. If you catch a OMM error in this case,\033[0m ' + \
-                                '\033[1;31myou need to increase it \n\t\t\tuntil the error disappears. For example, \033[0m' + \
-                                '\033[1;31myou can append it in the command line such as `--split_to=5`\033[0m')
+            self.logger.warning('\033[1;33mPay Attetion!! the `split_to` is set to 0. If you catch a OMM error in this case,\033[0m ' + \
+                                '\033[1;33myou need to increase it \n\t\t\tuntil the error disappears. For example, \033[0m' + \
+                                '\033[1;33myou can append it in the command line such as `--split_to=5`\033[0m')
 
         # define layers and loss
         # construct source and destination item embedding matrix

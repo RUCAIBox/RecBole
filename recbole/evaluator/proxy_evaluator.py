@@ -101,9 +101,9 @@ class ProxyEvaluator(object):
             if isinstance(self.metrics, str):
                 self.metrics = [self.metrics]
         else:
-            raise TypeError('metrics must be str or list')
+            raise TypeError('\033[1;31mmetrics must be str or list\033[0m')
 
         # Convert metric to lowercase
         for m in self.metrics:
             if m.lower() not in self.valid_metrics:
-                raise ValueError("There is no metric named {}!".format(m))
+                raise ValueError("\033[1;31mThere is no metric named {}!\033[0m".format(m))

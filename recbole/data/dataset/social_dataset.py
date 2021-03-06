@@ -65,10 +65,10 @@ class SocialDataset(Dataset):
         if os.path.isfile(net_file_path):
             net_feat = self._load_feat(net_file_path, FeatureSource.NET)
             if net_feat is None:
-                raise ValueError('.net file exist, but net_feat is None, please check your load_col')
+                raise ValueError('\033[1;31m.net file exist, but net_feat is None, please check your load_col\033[0m')
             return net_feat
         else:
-            raise ValueError(f'File {net_file_path} not exist.')
+            raise ValueError(f'\033[1;31mFile {net_file_path} not exist.\033[0m')
 
     def _get_fields_in_same_space(self):
         """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
@@ -120,7 +120,7 @@ class SocialDataset(Dataset):
         elif form in ['dgl', 'pyg']:
             return self._create_graph(*args)
         else:
-            raise NotImplementedError('net graph format [{}] has not been implemented.')
+            raise NotImplementedError('\033[1;31mnet graph format [{}] has not been implemented.\033[0m')
 
     def __str__(self):
         info = [super().__str__(), f'The number of connections of social network: {len(self.net_feat)}']

@@ -37,7 +37,7 @@ class NegSampleMixin(AbstractDataLoader):
         self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
     ):
         if neg_sample_args['strategy'] not in ['by', 'full']:
-            raise ValueError(f"Neg_sample strategy [{neg_sample_args['strategy']}] has not been implemented.")
+            raise ValueError(f"\033[1;31mNeg_sample strategy [{neg_sample_args['strategy']}] has not been implemented.\033[0m")
 
         self.sampler = sampler
         self.neg_sample_args = neg_sample_args
@@ -52,7 +52,7 @@ class NegSampleMixin(AbstractDataLoader):
     def _batch_size_adaptation(self):
         """Adjust the batch size to ensure that each positive and negative interaction can be in a batch.
         """
-        raise NotImplementedError('Method [batch_size_adaptation] should be implemented.')
+        raise NotImplementedError('\033[1;31mMethod [batch_size_adaptation] should be implemented.\033[0m')
 
     def _neg_sampling(self, inter_feat):
         """
@@ -62,21 +62,21 @@ class NegSampleMixin(AbstractDataLoader):
         Returns:
             The user-item interaction table with negative example.
         """
-        raise NotImplementedError('Method [neg_sampling] should be implemented.')
+        raise NotImplementedError('\033[1;31mMethod [neg_sampling] should be implemented.\033[0m')
 
     def get_pos_len_list(self):
         """
         Returns:
             numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
         """
-        raise NotImplementedError('Method [get_pos_len_list] should be implemented.')
+        raise NotImplementedError('\033[1;31mMethod [get_pos_len_list] should be implemented.\033[0m')
 
     def get_user_len_list(self):
         """
         Returns:
             numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
-        raise NotImplementedError('Method [get_user_len_list] should be implemented.')
+        raise NotImplementedError('\033[1;31mMethod [get_user_len_list] should be implemented.\033[0m')
 
 
 class NegSampleByMixin(NegSampleMixin):
@@ -99,7 +99,7 @@ class NegSampleByMixin(NegSampleMixin):
         self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
     ):
         if neg_sample_args['strategy'] != 'by':
-            raise ValueError('neg_sample strategy in GeneralInteractionBasedDataLoader() should be `by`')
+            raise ValueError('\033[1;31mneg_sample strategy in GeneralInteractionBasedDataLoader() should be `by`\033[0m')
 
         self.user_inter_in_one_batch = (sampler.phase != 'train') and (config['eval_type'] != EvaluatorType.INDIVIDUAL)
         self.neg_sample_by = neg_sample_args['by']
@@ -123,7 +123,7 @@ class NegSampleByMixin(NegSampleMixin):
                 neg_item_feat_col = self.neg_prefix + item_feat_col
                 dataset.copy_field_property(neg_item_feat_col, item_feat_col)
         else:
-            raise ValueError(f'`neg sampling by` with dl_format [{dl_format}] not been implemented.')
+            raise ValueError(f'\033[1;31m`neg sampling by` with dl_format [{dl_format}] not been implemented.\033[0m')
 
         super().__init__(
             config, dataset, sampler, neg_sample_args, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle
@@ -132,9 +132,9 @@ class NegSampleByMixin(NegSampleMixin):
     def _neg_sample_by_pair_wise_sampling(self, *args):
         """Pair-wise sampling.
         """
-        raise NotImplementedError('Method [neg_sample_by_pair_wise_sampling] should be implemented.')
+        raise NotImplementedError('\033[1;31mMethod [neg_sample_by_pair_wise_sampling] should be implemented.\033[0m')
 
     def _neg_sample_by_point_wise_sampling(self, *args):
         """Point-wise sampling.
         """
-        raise NotImplementedError('Method [neg_sample_by_point_wise_sampling] should be implemented.')
+        raise NotImplementedError('\033[1;31mMethod [neg_sample_by_point_wise_sampling] should be implemented.\033[0m')

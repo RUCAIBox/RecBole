@@ -64,9 +64,9 @@ class NAIS(GeneralRecommender):
             self.logger.info('split the n_items to {} pieces'.format(self.split_to))
             self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
         else:
-            self.logger.warning('\033[1;31mPay Attetion!! the `split_to` is set to 0. If you catch a OMM error in this case,\033[0m] ' + \
-                                '\033[1;31myou need to increase it \n\t\t\tuntil the error disappears. For example,\033[0m ' + \
-                                '\033[1;31myou can append it in the command line such as `--split_to=5`\033[0m')
+            self.logger.warning('\033[1;33mPay Attetion!! the `split_to` is set to 0. If you catch a OMM error in this case,\033[0m] ' + \
+                                '\033[1;33myou need to increase it \n\t\t\tuntil the error disappears. For example,\033[0m ' + \
+                                '\033[1;33myou can append it in the command line such as `--split_to=5`\033[0m')
 
         # define layers and loss
         # construct source and destination item embedding matrix
@@ -78,7 +78,7 @@ class NAIS(GeneralRecommender):
         elif self.algorithm == 'prod':
             self.mlp_layers = MLPLayers([self.embedding_size, self.weight_size])
         else:
-            raise ValueError("NAIS just support attention type in ['concat', 'prod'] but get {}".format(self.algorithm))
+            raise ValueError("\033[1;31mNAIS just support attention type in ['concat', 'prod'] but get {}\033[0m".format(self.algorithm))
         self.weight_layer = nn.Parameter(torch.ones(self.weight_size, 1))
         self.bceloss = nn.BCELoss()
 

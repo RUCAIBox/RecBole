@@ -82,7 +82,7 @@ class EvalSetting(object):
         self.set_ordering_and_splitting(self.es_str[0])
         if len(self.es_str) > 1:
             if getattr(self, self.es_str[1], None) == None:
-                raise ValueError('Incorrect setting of negative sampling.')
+                raise ValueError('\033[1;31mIncorrect setting of negative sampling.')
             getattr(self, self.es_str[1])()
         presetting_args = ['group_field', 'ordering_args', 'split_args', 'neg_sample_args']
         for args in presetting_args:
@@ -159,7 +159,7 @@ class EvalSetting(object):
         """
         legal_strategy = {'none', 'shuffle', 'by'}
         if strategy not in legal_strategy:
-            raise ValueError('Ordering Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
+            raise ValueError('\033[1;31mOrdering Strategy [{}] should in {}\033[0m'.format(strategy, list(legal_strategy)))
         self.ordering_args = {'strategy': strategy}
         self.ordering_args.update(kwargs)
 
@@ -208,9 +208,9 @@ class EvalSetting(object):
         """
         legal_strategy = {'none', 'by_ratio', 'by_value', 'loo'}
         if strategy not in legal_strategy:
-            raise ValueError('Split Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
+            raise ValueError('\033[1;31mSplit Strategy [{}] should in {}\033[0m'.format(strategy, list(legal_strategy)))
         if strategy == 'loo' and self.group_field is None:
-            raise ValueError('Leave-One-Out request group firstly')
+            raise ValueError('\033[1;31mLeave-One-Out request group firstly\033[0m')
         self.split_args = {'strategy': strategy}
         self.split_args.update(kwargs)
 
@@ -225,7 +225,7 @@ class EvalSetting(object):
                 E.g. ``leave_one_num = 2`` if you have one validation dataset and one test dataset.
         """
         if self.group_field is None:
-            raise ValueError('Leave one out request grouped dataset, please set group field.')
+            raise ValueError('\033[1;31mLeave one out request grouped dataset, please set group field.\033[0m')
         self.set_splitting(strategy='loo', leave_one_num=leave_one_num)
 
     def split_by_ratio(self, ratios):
@@ -236,13 +236,13 @@ class EvalSetting(object):
                 No need to normalize. It's ok with either `[0.8, 0.1, 0.1]`, `[8, 1, 1]` or `[56, 7, 7]`
         """
         if not isinstance(ratios, list):
-            raise ValueError('ratios [{}] should be list'.format(ratios))
+            raise ValueError('\033[1;31mratios [{}] should be list\033[0m'.format(ratios))
         self.set_splitting(strategy='by_ratio', ratios=ratios)
 
     def _split_by_value(self, field, values, ascending=True):
-        raise NotImplementedError('Split by value has not been implemented.')
+        raise NotImplementedError('\033[1;31mSplit by value has not been implemented.\033[0m')
         if not isinstance(field, str):
-            raise ValueError('field [{}] should be str'.format(field))
+            raise ValueError('\033[1;31mfield [{}] should be str\033[0m'.format(field))
         if not isinstance(values, list):
             values = [values]
         values.sort(reverse=(not ascending))
@@ -262,9 +262,9 @@ class EvalSetting(object):
         """
         legal_strategy = {'none', 'full', 'by'}
         if strategy not in legal_strategy:
-            raise ValueError('Negative Sampling Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
+            raise ValueError('\033[1;31mNegative Sampling Strategy [{}] should in {}\033[0m'.format(strategy, list(legal_strategy)))
         if strategy == 'full' and distribution != 'uniform':
-            raise ValueError('Full Sort can not be sampled by distribution [{}]'.format(distribution))
+            raise ValueError('\033[1;31mFull Sort can not be sampled by distribution [{}]\033[0m'.format(distribution))
         self.neg_sample_args = {'strategy': strategy, 'distribution': distribution}
         self.neg_sample_args.update(kwargs)
 
@@ -285,7 +285,7 @@ class EvalSetting(object):
         """
         args = es_str.split('_')
         if len(args) != 2:
-            raise ValueError(f'`{es_str}` is invalid eval_setting.')
+            raise ValueError(f'\033[1;31m`{es_str}` is invalid eval_setting.\0mm[0m')
         ordering_args, split_args = args
 
         if self.config['group_by_user']:
@@ -296,20 +296,20 @@ class EvalSetting(object):
         elif ordering_args == 'TO':
             self.temporal_ordering()
         else:
-            raise NotImplementedError(f'Ordering args `{ordering_args}` is not implemented.')
+            raise NotImplementedError(f'\033[1;31mOrdering args `{ordering_args}` is not implemented.\033[0m')
 
         if split_args == 'RS':
             ratios = self.config['split_ratio']
             if ratios is None:
-                raise ValueError('`ratios` should be set if `RS` is set.')
+                raise ValueError('\033[1;31m`ratios` should be set if `RS` is set.\033[0m')
             self.split_by_ratio(ratios)
         elif split_args == 'LS':
             leave_one_num = self.config['leave_one_num']
             if leave_one_num is None:
-                raise ValueError('`leave_one_num` should be set if `LS` is set.')
+                raise ValueError('\033[1;31m`leave_one_num` should be set if `LS` is set.\033[0m')
             self.leave_one_out(leave_one_num=leave_one_num)
         else:
-            raise NotImplementedError(f'Split args `{split_args}` is not implemented.')
+            raise NotImplementedError(f'\033[1;31mSplit args `{split_args}` is not implemented.\033[0m')
 
     def RO_RS(self, ratios=(0.8, 0.1, 0.1), group_by_user=True):
         """Preset about Random Ordering and Ratio-based Splitting.

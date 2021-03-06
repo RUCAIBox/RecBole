@@ -135,7 +135,7 @@ class Dataset(object):
 
         if (self.uid_field is None) ^ (self.iid_field is None):
             raise ValueError(
-                'USER_ID_FIELD and ITEM_ID_FIELD need to be set at the same time or not set at the same time.'
+                '\033[1;31mUSER_ID_FIELD and ITEM_ID_FIELD need to be set at the same time or not set at the same time.\033[0m'
             )
 
         self.logger.debug(f'\033[0;34muid_field\033[0m: {self.uid_field}')
@@ -211,7 +211,7 @@ class Dataset(object):
         self.logger.debug(f'\033[0;32mRestoring dataset from [{saved_dataset}].\033[0m')
 
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
-            raise ValueError(f'Filepath [{saved_dataset}] need to be a dir.')
+            raise ValueError(f'\033[1;31mFilepath [{saved_dataset}] need to be a dir.\033[0m')
 
         with open(os.path.join(saved_dataset, 'basic-info.json')) as file:
             basic_info = json.load(file)
@@ -261,7 +261,7 @@ class Dataset(object):
         if self.benchmark_filename_list is None:
             inter_feat_path = os.path.join(dataset_path, f'{token}.inter')
             if not os.path.isfile(inter_feat_path):
-                raise ValueError(f'File {inter_feat_path} not exist.')
+                raise ValueError(f'\033[1;31mFile {inter_feat_path} not exist.\033[0m')
 
             inter_feat = self._load_feat(inter_feat_path, FeatureSource.INTERACTION)
             self.logger.debug(f'Interaction feature loaded successfully from [{inter_feat_path}].')
@@ -276,7 +276,7 @@ class Dataset(object):
                     sub_inter_feats.append(temp)
                     sub_inter_lens.append(len(temp))
                 else:
-                    raise ValueError(f'File {file_path} not exist.')
+                    raise ValueError(f'\033[1;31mFile {file_path} not exist.\033[0m')
             inter_feat = pd.concat(sub_inter_feats)
             self.inter_feat, self.file_size_list = inter_feat, sub_inter_lens
 
@@ -306,9 +306,9 @@ class Dataset(object):
 
         field = getattr(self, field_name, None)
         if feat is not None and field is None:
-            raise ValueError(f'{field_name} must be exist if {source.value}_feat exist.')
+            raise ValueError(f'\033[1;31m{field_name} must be exist if {source.value}_feat exist.\033[0m')
         if feat is not None and field not in feat:
-            raise ValueError(f'{field_name} must be loaded if {source.value}_feat is loaded.')
+            raise ValueError(f'\033[1;31m{field_name} must be loaded if {source.value}_feat is loaded.\033[0m')
 
         if field in self.field2source:
             self.field2source[field] = FeatureSource(source.value + '_id')
@@ -329,12 +329,12 @@ class Dataset(object):
             return
         for suf in self.config['additional_feat_suffix']:
             if hasattr(self, f'{suf}_feat'):
-                raise ValueError(f'{suf}_feat already exist.')
+                raise ValueError(f'\033[1;31m{suf}_feat already exist.\033[0m')
             feat_path = os.path.join(dataset_path, f'{token}.{suf}')
             if os.path.isfile(feat_path):
                 feat = self._load_feat(feat_path, suf)
             else:
-                raise ValueError(f'Additional feature file [{feat_path}] not found.')
+                raise ValueError(f'\033[1;31mAdditional feature file [{feat_path}] not found.\033[0m')
             setattr(self, f'{suf}_feat', feat)
 
     def _get_load_and_unload_col(self, source):
@@ -364,7 +364,7 @@ class Dataset(object):
             unload_col = None
 
         if load_col and unload_col:
-            raise ValueError(f'load_col [{load_col}] and unload_col [{unload_col}] can not be set the same time.')
+            raise ValueError(f'\033[1;31mload_col [{load_col}] and unload_col [{unload_col}] can not be set the same time.\033[0m')
 
         self.logger.debug(f'\033[0;35m[{source}]: \033[0m')
         self.logger.debug(f'\t \033[0;34mload_col\033[0m: [{load_col}]')
@@ -405,7 +405,7 @@ class Dataset(object):
             try:
                 ftype = FeatureType(ftype)
             except ValueError:
-                raise ValueError(f'Type {ftype} from field {field} is not supported.')
+                raise ValueError(f'\033[1;31mType {ftype} from field {field} is not supported.\033[0m')
             if load_col is not None and field not in load_col:
                 continue
             if unload_col is not None and field in unload_col:
@@ -420,7 +420,7 @@ class Dataset(object):
             dtype[field_type] = np.float64 if ftype == FeatureType.FLOAT else str
 
         if len(columns) == 0:
-            self.logger.warning(f'No columns has been loaded from [{source}]')
+            self.logger.warning(f'\033[1;33mNo columns has been loaded from [{source}]\033[0m')
             return None
 
         df = pd.read_csv(filepath, delimiter=self.config['field_separator'], usecols=usecols, dtype=dtype)
@@ -465,16 +465,16 @@ class Dataset(object):
         for preload_id_field in preload_fields:
             preload_value_field = preload_fields[preload_id_field]
             if preload_id_field not in self.field2source:
-                raise ValueError(f'Preload id field [{preload_id_field}] not exist.')
+                raise ValueError(f'\033[1;31mPreload id field [{preload_id_field}] not exist.\033[0m')
             if preload_value_field not in self.field2source:
-                raise ValueError(f'Preload value field [{preload_value_field}] not exist.')
+                raise ValueError(f'\033[1;31mPreload value field [{preload_value_field}] not exist.\033[0m')
             pid_source = self.field2source[preload_id_field]
             pv_source = self.field2source[preload_value_field]
             if pid_source != pv_source:
                 raise ValueError(
-                    f'Preload id field [{preload_id_field}] is from source [{pid_source}],'
-                    f'while preload value field [{preload_value_field}] is from source [{pv_source}], '
-                    f'which should be the same.'
+                    f'\033[1;31mPreload id field [{preload_id_field}] is from source [{pid_source}],\033[0m'
+                    f'\033[1;31mwhile preload value field [{preload_value_field}] is from source [{pv_source}], \033[0m'
+                    f'\033[1;31mwhich should be the same.\033[0m'
                 )
             for feat_name in self.feat_name_list:
                 feat = getattr(self, feat_name)
@@ -482,7 +482,7 @@ class Dataset(object):
                     id_ftype = self.field2type[preload_id_field]
                     if id_ftype != FeatureType.TOKEN:
                         raise ValueError(
-                            f'Preload id field [{preload_id_field}] should be type token, but is [{id_ftype}].'
+                            f'\033[1;31mPreload id field [{preload_id_field}] should be type token, but is [{id_ftype}].\033[0m'
                         )
                     value_ftype = self.field2type[preload_value_field]
                     token_num = self.num(preload_id_field)
@@ -505,8 +505,8 @@ class Dataset(object):
                                 matrix[pid] = prow[:max_len]
                     else:
                         self.logger.warning(
-                            f'\033[1;31mField [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, \033[0m'
-                            f'\033[1;31mwhich will not be handled by preload matrix.\033[0m'
+                            f'\033[1;33mField [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, \033[0m'
+                            f'\033[1;33mwhich will not be handled by preload matrix.\033[0m'
                         )
                         continue
                     self._preloaded_weight[preload_id_field] = matrix
@@ -545,16 +545,16 @@ class Dataset(object):
             Only float-like fields can be normalized.
         """
         if self.config['normalize_field'] is not None and self.config['normalize_all'] is True:
-            raise ValueError('Normalize_field and normalize_all can\'t be set at the same time.')
+            raise ValueError('\033[1;31mNormalize_field and normalize_all can\'t be set at the same time.\033[0m')
 
         if self.config['normalize_field']:
             fields = self.config['normalize_field']
             for field in fields:
                 ftype = self.field2type[field]
                 if field not in self.field2type:
-                    raise ValueError(f'Field [{field}] does not exist.')
+                    raise ValueError(f'\033[1;31mField [{field}] does not exist.\033[0m')
                 elif ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
-                    self.logger.warning(f'\033[1;31m{field} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.\033[0m')
+                    self.logger.warning(f'\033[1;33m{field} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.\033[0m')
         elif self.config['normalize_all']:
             fields = self.float_like_fields
         else:
@@ -572,7 +572,7 @@ class Dataset(object):
                     lst = feat[field].values
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        self.logger.warning(f'\033[1;31mAll the same value in [{field}] from [{feat}_feat].\033[0m')
+                        self.logger.warning(f'\033[1;33mAll the same value in [{field}] from [{feat}_feat].\033[0m')
                         feat[field] = 1.0
                     else:
                         feat[field] = (lst - mn) / (mx - mn)
@@ -581,7 +581,7 @@ class Dataset(object):
                     lst = feat[field].agg(np.concatenate)
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        self.logger.warning(f'\033[1;31mAll the same value in [{field}] from [{feat}_feat].\033[0m')
+                        self.logger.warning(f'\033[1;33mAll the same value in [{field}] from [{feat}_feat].\033[0m')
                         lst = 1.0
                     else:
                         lst = (lst - mn) / (mx - mn)
@@ -597,14 +597,14 @@ class Dataset(object):
                 dropped_feat = feat.index[feat[field].isnull()]
                 if len(dropped_feat):
                     self.logger.warning(
-                        f'\033[1;31mIn {name}_feat, line {list(dropped_feat + 2)}, {field} do not exist, so they will be removed.\033[0m'
+                        f'\033[1;33mIn {name}_feat, line {list(dropped_feat + 2)}, {field} do not exist, so they will be removed.\033[0m'
                     )
                     feat.drop(feat.index[dropped_feat], inplace=True)
             if field is not None:
                 dropped_inter = self.inter_feat.index[self.inter_feat[field].isnull()]
                 if len(dropped_inter):
                     self.logger.warning(
-                        f'\033[1;31mIn inter_feat, line {list(dropped_inter + 2)}, {field} do not exist, so they will be removed.\033[0m'
+                        f'\033[1;33mIn inter_feat, line {list(dropped_inter + 2)}, {field} do not exist, so they will be removed.\033[0m'
                     )
                     self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
@@ -629,8 +629,8 @@ class Dataset(object):
             )
         else:
             self.logger.warning(
-                f'\033[1;31mTimestamp field has not been loaded or specified, \033[0m'
-                f'\033[1;31mthus strategy [{keep}] of duplication removal may be meaningless.\033[0m'
+                f'\033[1;33mTimestamp field has not been loaded or specified, \033[0m'
+                f'\033[1;33mthus strategy [{keep}] of duplication removal may be meaningless.\033[0m'
             )
         self.inter_feat.drop_duplicates(subset=[self.uid_field, self.iid_field], keep=keep, inplace=True)
 
@@ -744,7 +744,7 @@ class Dataset(object):
         for feat_name in self.feat_name_list:
             feat = getattr(self, feat_name)
             if feat.empty:
-                raise ValueError('Some feat is empty, please check the filtering settings.')
+                raise ValueError('\033[1;31mSome feat is empty, please check the filtering settings.\033[0m')
             feat.reset_index(drop=True, inplace=True)
 
     def _drop_by_value(self, val, cmp):
@@ -764,9 +764,9 @@ class Dataset(object):
         filter_field = []
         for field in val:
             if field not in self.field2type:
-                raise ValueError(f'Field [{field}] not defined in dataset.')
+                raise ValueError(f'\033[1;31mField [{field}] not defined in dataset.\033[0m')
             if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
-                raise ValueError(f'Field [{field}] is not float-like field in dataset, which can\'t be filter.')
+                raise ValueError(f'\033[1;31mField [{field}] is not float-like field in dataset, which can\'t be filter.\033[0m')
             for feat_name in self.feat_name_list:
                 feat = getattr(self, feat_name)
                 if field in feat:
@@ -826,14 +826,14 @@ class Dataset(object):
         self.logger.debug(f'Set label by {threshold}.')
 
         if len(threshold) != 1:
-            raise ValueError('Threshold length should be 1.')
+            raise ValueError('\033[1;31mThreshold length should be 1.\033[0m')
 
         self.set_field_property(self.label_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
         for field, value in threshold.items():
             if field in self.inter_feat:
                 self.inter_feat[self.label_field] = (self.inter_feat[field] >= value).astype(int)
             else:
-                raise ValueError(f'Field [{field}] not in inter_feat.')
+                raise ValueError(f'\033[1;31mField [{field}] not in inter_feat.\033[0m')
             self._del_col(self.inter_feat, field)
 
     def _get_fields_in_same_space(self):
@@ -858,14 +858,14 @@ class Dataset(object):
             elif count == 1:
                 continue
             else:
-                raise ValueError(f'Field [{field}] occurred in `fields_in_same_space` more than one time.')
+                raise ValueError(f'\033[1;31mField [{field}] occurred in `fields_in_same_space` more than one time.\033[0m')
 
         for field_set in fields_in_same_space:
             if self.uid_field in field_set and self.iid_field in field_set:
-                raise ValueError('uid_field and iid_field can\'t in the same ID space')
+                raise ValueError('\033[1;31muid_field and iid_field can\'t in the same ID space\033[0m')
             for field in field_set:
                 if field not in token_like_fields:
-                    raise ValueError(f'Field [{field}] is not a token-like field.')
+                    raise ValueError(f'\033[1;31mField [{field}] is not a token-like field.\033[0m')
 
         fields_in_same_space.extend(additional)
         return fields_in_same_space
@@ -975,7 +975,7 @@ class Dataset(object):
             int: The number of different tokens (``1`` if ``field`` is a float-like field).
         """
         if field not in self.field2type:
-            raise ValueError(f'Field [{field}] not defined in dataset.')
+            raise ValueError(f'\033[1;31mField [{field}] not defined in dataset.\033[0m')
         if self.field2type[field] not in {FeatureType.TOKEN, FeatureType.TOKEN_SEQ}:
             return self.field2seqlen[field]
         else:
@@ -1080,11 +1080,11 @@ class Dataset(object):
             if tokens in self.field2token_id[field]:
                 return self.field2token_id[field][tokens]
             else:
-                raise ValueError('token [{}] is not existed')
+                raise ValueError('\033[1;31mtoken [{}] is not existed\033[0m')
         elif isinstance(tokens, (list, np.ndarray)):
             return np.array([self.token2id(field, token) for token in tokens])
         else:
-            raise TypeError('The type of tokens [{}] is not supported')
+            raise TypeError('\033[1;31mThe type of tokens [{}] is not supported\033[0m')
 
     @dlapi.set()
     def id2token(self, field, ids):
@@ -1101,9 +1101,9 @@ class Dataset(object):
             return self.field2id_token[field][ids]
         except IndexError:
             if isinstance(ids, list):
-                raise ValueError(f'[{ids}] is not a one-dimensional list.')
+                raise ValueError(f'\033[1;31m[{ids}] is not a one-dimensional list.\033[0m')
             else:
-                raise ValueError(f'[{ids}] is not a valid ids.')
+                raise ValueError(f'\033[1;31m[{ids}] is not a valid ids.\033[0m')
 
     @property
     @dlapi.set()
@@ -1177,7 +1177,7 @@ class Dataset(object):
         """
         for field_name in field_names:
             if getattr(self, field_name, None) is None:
-                raise ValueError(f'{field_name} isn\'t set.')
+                raise ValueError(f'\033[1;31m{field_name} isn\'t set.\033[0m')
 
     @dlapi.set()
     def join(self, df):
@@ -1247,7 +1247,7 @@ class Dataset(object):
             for field in unused_fields:
                 if field not in feat:
                     self.logger.warning(
-                        f'\033[1;31mField [{field}] is not in [{feat_name}_feat], which can not be set in `unused_col`.\033[0m'
+                        f'\033[1;33mField [{field}] is not in [{feat_name}_feat], which can not be set in `unused_col`.\033[0m'
                     )
                     continue
                 self._del_col(feat, field)
@@ -1349,7 +1349,7 @@ class Dataset(object):
         """
         self.logger.debug(f'leave one out, group_by=[{group_by}], leave_one_num=[{leave_one_num}]')
         if group_by is None:
-            raise ValueError('leave one out strategy require a group field')
+            raise ValueError('\033[1;31mleave one out strategy require a group field\033[0m')
 
         grouped_inter_feat_index = self._grouped_index(self.inter_feat[group_by].numpy())
         next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num)
@@ -1419,7 +1419,7 @@ class Dataset(object):
             filepath (str): path of saved dir.
         """
         if (filepath is None) or (not os.path.isdir(filepath)):
-            raise ValueError(f'Filepath [{filepath}] need to be a dir.')
+            raise ValueError(f'\033[1;31mFilepath [{filepath}] need to be a dir.\033[0m')
 
         self.logger.debug(f'Saving into [{filepath}]')
         basic_info = {
@@ -1489,7 +1489,7 @@ class Dataset(object):
             data = np.ones(len(df_feat))
         else:
             if value_field not in df_feat:
-                raise ValueError(f'Value_field [{value_field}] should be one of `df_feat`\'s features.')
+                raise ValueError(f'\033[1;31mValue_field [{value_field}] should be one of `df_feat`\'s features.\033[0m')
             data = df_feat[value_field]
         mat = coo_matrix((data, (src, tgt)), shape=(self.num(source_field), self.num(target_field)))
 
@@ -1498,7 +1498,7 @@ class Dataset(object):
         elif form == 'csr':
             return mat.tocsr()
         else:
-            raise NotImplementedError(f'Sparse matrix format [{form}] has not been implemented.')
+            raise NotImplementedError(f'\033[1;31mSparse matrix format [{form}] has not been implemented.\033[0m')
 
     def _create_graph(self, tensor_feat, source_field, target_field, form='dgl', value_field=None):
         """Get graph that describe relations between two fields.
@@ -1545,7 +1545,7 @@ class Dataset(object):
             graph = Data(edge_index=torch.stack([src, tgt]), edge_attr=edge_attr)
             return graph
         else:
-            raise NotImplementedError(f'Graph format [{form}] has not been implemented.')
+            raise NotImplementedError(f'\033[1;31mGraph format [{form}] has not been implemented.\033[0m')
 
     @dlapi.set()
     def inter_matrix(self, form='coo', value_field=None):
@@ -1565,7 +1565,7 @@ class Dataset(object):
             scipy.sparse: Sparse matrix in form ``coo`` or ``csr``.
         """
         if not self.uid_field or not self.iid_field:
-            raise ValueError('dataset does not exist uid/iid, thus can not converted to sparse matrix.')
+            raise ValueError('\033[1;31mdataset does not exist uid/iid, thus can not converted to sparse matrix.\033[0m')
         return self._create_sparse_matrix(self.inter_feat, self.uid_field, self.iid_field, form, value_field)
 
     def _history_matrix(self, row, value_field=None):
@@ -1598,7 +1598,7 @@ class Dataset(object):
             values = np.ones(len(self.inter_feat))
         else:
             if value_field not in self.inter_feat:
-                raise ValueError(f'Value_field [{value_field}] should be one of `inter_feat`\'s features.')
+                raise ValueError(f'\033[1;31mValue_field [{value_field}] should be one of `inter_feat`\'s features.\033[0m')
             values = self.inter_feat[value_field].numpy()
 
         if row == 'user':
@@ -1615,8 +1615,8 @@ class Dataset(object):
         col_num = np.max(history_len)
         if col_num > max_col_num * 0.2:
             self.logger.warning(
-                f'\033[1;31mMax value of {row}\'s history interaction records has reached \033[0m'
-                f'\033[1;31m{col_num / max_col_num * 100}% of the total.\033[0m'
+                f'\033[1;33mMax value of {row}\'s history interaction records has reached \033[0m'
+                f'\033[1;33m{col_num / max_col_num * 100}% of the total.\033[0m'
             )
 
         history_matrix = np.zeros((row_num, col_num), dtype=np.int64)
@@ -1692,7 +1692,7 @@ class Dataset(object):
             numpy.ndarray: preloaded weight matrix. See :doc:`../user_guide/data/data_args` for details.
         """
         if field not in self._preloaded_weight:
-            raise ValueError(f'Field [{field}] not in preload_weight')
+            raise ValueError(f'\033[1;31mField [{field}] not in preload_weight\033[0m')
         return self._preloaded_weight[field]
 
     def _dataframe_to_interaction(self, data):
