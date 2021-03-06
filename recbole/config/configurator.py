@@ -3,7 +3,7 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2020/10/9, 2021/2/17
+# @Time   : 2020/10/04, 2021/3/2, 2021/2/17
 # @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan
 # @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn
 
@@ -349,7 +349,7 @@ class Config(object):
         args_info += '\033[1;35mOther Hyper Parameters: \033[0m\n'
         args_info += '\n'.join([
                 "\033[0;36m{}\033[0m = \033[33m{}\033[0m".format(arg, value) for arg, value in self.final_config_dict.items()
-                if arg not in sum(list(self.parameters.values()) + [['model', 'dataset', 'config_files']], [])
+                if arg not in {_ for args in self.parameters.values() for _ in args}.union({'model', 'dataset', 'config_files'})
             ])
         args_info += '\n\n'
         return args_info

@@ -186,7 +186,13 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'NNCF',
         }
         quick_test(config_dict)
-        
+
+    def test_RecVAE(self):
+        config_dict = {
+            'model': 'RecVAE',
+            'training_neg_sample_num': 0
+        }
+        quick_test(config_dict)
 
     def test_slimelastic(self):
         config_dict = {
