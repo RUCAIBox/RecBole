@@ -259,7 +259,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         return len(self.uid_list)
 
     def _shuffle(self):
-        self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
+        self.logger.warnning('\033[1;31mGeneralFullDataLoader can\'t shuffle\033[0m')
 
     def _next_batch_data(self):
         user_df = self.user_df[self.pr:self.pr + self.step]

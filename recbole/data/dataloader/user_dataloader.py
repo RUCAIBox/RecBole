@@ -47,7 +47,7 @@ class UserDataLoader(AbstractDataLoader):
         """
         if self.shuffle is False:
             self.shuffle = True
-            self.logger.warning('UserDataLoader must shuffle the data')
+            self.logger.warning('\033[1;31mUserDataLoader must shuffle the data\033[0m')
 
     @property
     def pr_end(self):

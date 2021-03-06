@@ -159,7 +159,7 @@ class Config(object):
                     cmd_config_dict[cmd_arg_name] = cmd_arg_value
         if len(unrecognized_args) > 0:
             logger = getLogger()
-            logger.warning('command line args [{}] will not be used in RecBole'.format(' '.join(unrecognized_args)))
+            logger.warning('\033[1;31mcommand line args [{}] will not be used in RecBole\033[0m'.format(' '.join(unrecognized_args)))
         cmd_config_dict = self._convert_config_dict(cmd_config_dict)
         return cmd_config_dict
 
@@ -337,18 +337,18 @@ class Config(object):
         return key in self.final_config_dict
 
     def __str__(self):
-        args_info = ''
+        args_info = '\n'
         for category in self.parameters:
-            args_info += category + ' Hyper Parameters: \n'
+            args_info += '\033[1;35m' + category + ' Hyper Parameters: \033[0m\n'
             args_info += '\n'.join([
-                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
+                "\033[0;36m{}\033[0m = \033[33m{}\033[0m".format(arg, value) for arg, value in self.final_config_dict.items()
                 if arg in self.parameters[category]
             ])
             args_info += '\n\n'
             
-        args_info += 'Other Hyper Parameters: \n'
+        args_info += '\033[1;35mOther Hyper Parameters: \033[0m\n'
         args_info += '\n'.join([
-                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
+                "\033[0;36m{}\033[0m = \033[33m{}\033[0m".format(arg, value) for arg, value in self.final_config_dict.items()
                 if arg not in sum(list(self.parameters.values()) + [['model', 'dataset', 'config_files']], [])
             ])
         args_info += '\n\n'

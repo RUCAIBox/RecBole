@@ -90,27 +90,27 @@ class EvalSetting(object):
                 setattr(self, args, config[args])
 
     def __str__(self):
-        info = ['Evaluation Setting:']
+        info = ['\033[1;35mEvaluation Setting:\033[0m']
 
         if self.group_field:
-            info.append('Group by {}'.format(self.group_field))
+            info.append('\033[1;34mGroup by\033[0m {}'.format(self.group_field))
         else:
-            info.append('No Grouping')
+            info.append('\033[0;33mNo Grouping\033[0m')
 
         if self.ordering_args is not None and self.ordering_args['strategy'] != 'none':
-            info.append('Ordering: {}'.format(self.ordering_args))
+            info.append('\033[1;34mOrdering\033[0m: {}'.format(self.ordering_args))
         else:
-            info.append('No Ordering')
+            info.append('\033[0;33mNo Ordering\033[0m')
 
         if self.split_args is not None and self.split_args['strategy'] != 'none':
-            info.append('Splitting: {}'.format(self.split_args))
+            info.append('\033[1;34mSplitting\033[0m: {}'.format(self.split_args))
         else:
-            info.append('No Splitting')
+            info.append('\033[0;33mNo Splitting\033[0m')
 
         if self.neg_sample_args is not None and self.neg_sample_args['strategy'] != 'none':
-            info.append('Negative Sampling: {}'.format(self.neg_sample_args))
+            info.append('\033[1;34mNegative Sampling\033[0m: {}'.format(self.neg_sample_args))
         else:
-            info.append('No Negative Sampling')
+            info.append('\033[0;33mNo Negative Sampling\033[0m')
 
         return '\n\t'.join(info)
 

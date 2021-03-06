@@ -116,9 +116,9 @@ class Trainer(AbstractTrainer):
         elif self.learner.lower() == 'sparse_adam':
             optimizer = optim.SparseAdam(self.model.parameters(), lr=self.learning_rate)
             if self.weight_decay > 0:
-                self.logger.warning('Sparse Adam cannot argument received argument [{weight_decay}]')
+                self.logger.warning('\033[1;31mSparse Adam cannot argument received argument [{weight_decay}]\033[0m')
         else:
-            self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
+            self.logger.warning('\033[1;31mReceived unrecognized optimizer, set default Adam optimizer\033[0m')
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         return optimizer
 
@@ -144,7 +144,7 @@ class Trainer(AbstractTrainer):
             tqdm(
                 enumerate(train_data),
                 total=len(train_data),
-                desc=f"Train {epoch_idx:>5}",
+                desc=f"\033[1;35mTrain {epoch_idx:>5}\033[0m",
             ) if show_progress else enumerate(train_data)
         )
         for batch_idx, interaction in iter_data:
@@ -213,8 +213,8 @@ class Trainer(AbstractTrainer):
         # load architecture params from checkpoint
         if checkpoint['config']['model'].lower() != self.config['model'].lower():
             self.logger.warning(
-                'Architecture configuration given in config file is different from that of checkpoint. '
-                'This may yield an exception while state_dict is being loaded.'
+                '\033[1;31mArchitecture configuration given in config file is different from that of checkpoint.\33[0m '
+                '\033[1;31mThis may yield an exception while state_dict is being loaded.\033[0m'
             )
         self.model.load_state_dict(checkpoint['state_dict'])
 
@@ -229,13 +229,13 @@ class Trainer(AbstractTrainer):
 
     def _generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
         des = self.config['loss_decimal_place'] or 4
-        train_loss_output = 'epoch %d training [time: %.2fs, ' % (epoch_idx, e_time - s_time)
+        train_loss_output = '\033[1;32mepoch %d training\033[0m [\033[1;34mtime\033[0m: %.2fs, ' % (epoch_idx, e_time - s_time)
         if isinstance(losses, tuple):
-            des = 'train_loss%d: %.' + str(des) + 'f'
+            des = '\033[1;34mtrain_loss%d\033[0m: %.' + str(des) + 'f'
             train_loss_output += ', '.join(des % (idx + 1, loss) for idx, loss in enumerate(losses))
         else:
             des = '%.' + str(des) + 'f'
-            train_loss_output += 'train loss:' + des % losses
+            train_loss_output += '\033[1;34mtrain loss\033[0m:' + des % losses
         return train_loss_output + ']'
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
@@ -272,7 +272,7 @@ class Trainer(AbstractTrainer):
             if self.eval_step <= 0 or not valid_data:
                 if saved:
                     self._save_checkpoint(epoch_idx)
-                    update_output = 'Saving current: %s' % self.saved_model_file
+                    update_output = '\033[1;32mSaving current\033[0m: %s' % self.saved_model_file
                     if verbose:
                         self.logger.info(update_output)
                 continue
@@ -287,16 +287,16 @@ class Trainer(AbstractTrainer):
                     bigger=self.valid_metric_bigger
                 )
                 valid_end_time = time()
-                valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
+                valid_score_output = "\033[1;32mepoch %d evaluating\033[0m [\033[1;34mtime\033[0m: %.2fs, \033[1;34mvalid_score\033[0m: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                valid_result_output = '\033[1;34mvalid result\033[0m: \n' + dict2str(valid_result)
                 if verbose:
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
                 if update_flag:
                     if saved:
                         self._save_checkpoint(epoch_idx)
-                        update_output = 'Saving current best: %s' % self.saved_model_file
+                        update_output = '\033[1;34mSaving current best\033[0m: %s' % self.saved_model_file
                         if verbose:
                             self.logger.info(update_output)
                     self.best_valid_result = valid_result
@@ -380,7 +380,7 @@ class Trainer(AbstractTrainer):
             tqdm(
                 enumerate(eval_data),
                 total=len(eval_data),
-                desc=f"Evaluate   ",
+                desc=f"\033[1;35mEvaluate\033[0m   ",
             ) if show_progress else enumerate(eval_data)
         )
         for batch_idx, batched_data in iter_data:
@@ -541,7 +541,7 @@ class S3RecTrainer(Trainer):
                     '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1))
                 )
                 self.save_pretrained_model(epoch_idx, saved_model_file)
-                update_output = 'Saving current: %s' % saved_model_file
+                update_output = '\033[0;34mSaving current\033[0m: %s' % saved_model_file
                 if verbose:
                     self.logger.info(update_output)
 
@@ -701,9 +701,9 @@ class DecisionTreeTrainer(AbstractTrainer):
                 valid_start_time = time()
                 valid_result, valid_score = self._valid_epoch(valid_data)
                 valid_end_time = time()
-                valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
+                valid_score_output = "\033[0;34mepoch %d evaluating [time\033[0m: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                valid_result_output = '\033[0;34mvalid result\033[0m: \n' + dict2str(valid_result)
                 if verbose:
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)

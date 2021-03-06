@@ -71,7 +71,7 @@ class AbstractRecommender(nn.Module):
         """
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
-        return super().__str__() + '\nTrainable parameters: {}'.format(params)
+        return super().__str__() + '\n\033[1;34mTrainable parameters\033[0m: {}'.format(params)
 
 
 class GeneralRecommender(AbstractRecommender):

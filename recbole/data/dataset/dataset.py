@@ -105,7 +105,7 @@ class Dataset(object):
         """Load dataset from scratch.
         Initialize attributes firstly, then load data from atomic files, pre-process the dataset lastly.
         """
-        self.logger.debug(f'Loading {self.__class__} from scratch.')
+        self.logger.debug(f'\033[0;32mLoading {self.__class__} from scratch.\033[0m')
 
         self._get_preset()
         self._get_field_from_config()
@@ -138,8 +138,8 @@ class Dataset(object):
                 'USER_ID_FIELD and ITEM_ID_FIELD need to be set at the same time or not set at the same time.'
             )
 
-        self.logger.debug(f'uid_field: {self.uid_field}')
-        self.logger.debug(f'iid_field: {self.iid_field}')
+        self.logger.debug(f'\033[0;34muid_field\033[0m: {self.uid_field}')
+        self.logger.debug(f'\033[0;34miid_field\033[0m: {self.iid_field}')
 
     def _data_processing(self):
         """Data preprocessing, including:
@@ -208,7 +208,7 @@ class Dataset(object):
         Args:
             saved_dataset (str): path for the saved dataset.
         """
-        self.logger.debug(f'Restoring dataset from [{saved_dataset}].')
+        self.logger.debug(f'\033[0;32mRestoring dataset from [{saved_dataset}].\033[0m')
 
         if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
             raise ValueError(f'Filepath [{saved_dataset}] need to be a dir.')
@@ -366,9 +366,9 @@ class Dataset(object):
         if load_col and unload_col:
             raise ValueError(f'load_col [{load_col}] and unload_col [{unload_col}] can not be set the same time.')
 
-        self.logger.debug(f'[{source}]: ')
-        self.logger.debug(f'\t load_col: [{load_col}]')
-        self.logger.debug(f'\t unload_col: [{unload_col}]')
+        self.logger.debug(f'\033[0;35m[{source}]: \033[0m')
+        self.logger.debug(f'\t \033[0;34mload_col\033[0m: [{load_col}]')
+        self.logger.debug(f'\t \033[0;34munload_col\033[0m: [{unload_col}]')
         return load_col, unload_col
 
     def _load_feat(self, filepath, source):
@@ -388,7 +388,7 @@ class Dataset(object):
             Their length is limited only after calling :meth:`~_dict_to_interaction` or
             :meth:`~_dataframe_to_interaction`
         """
-        self.logger.debug(f'Loading feature from [{filepath}] (source: [{source}]).')
+        self.logger.debug(f'\033[0;32mLoading feature from [{filepath}] (source: [{source}]).\033[0m')
 
         load_col, unload_col = self._get_load_and_unload_col(source)
         if load_col == set():
@@ -446,11 +446,11 @@ class Dataset(object):
         if self.user_feat is not None:
             new_user_df = pd.DataFrame({self.uid_field: np.arange(self.user_num)})
             self.user_feat = pd.merge(new_user_df, self.user_feat, on=self.uid_field, how='left')
-            self.logger.debug('ordering user features by user id.')
+            self.logger.debug('\033[0;32mordering user features by user id.\033[0m')
         if self.item_feat is not None:
             new_item_df = pd.DataFrame({self.iid_field: np.arange(self.item_num)})
             self.item_feat = pd.merge(new_item_df, self.item_feat, on=self.iid_field, how='left')
-            self.logger.debug('ordering item features by user id.')
+            self.logger.debug('\033[0;32mordering item features by user id.\033[0m')
 
     def _preload_weight_matrix(self):
         """Transfer preload weight features into :class:`numpy.ndarray` with shape ``[id_token_length]``
@@ -505,8 +505,8 @@ class Dataset(object):
                                 matrix[pid] = prow[:max_len]
                     else:
                         self.logger.warning(
-                            f'Field [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, '
-                            f'which will not be handled by preload matrix.'
+                            f'\033[1;31mField [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, \033[0m'
+                            f'\033[1;31mwhich will not be handled by preload matrix.\033[0m'
                         )
                         continue
                     self._preloaded_weight[preload_id_field] = matrix
@@ -520,7 +520,7 @@ class Dataset(object):
         For fields with type :obj:`~recbole.utils.enum_type.FeatureType.FLOAT`, missing value will be filled by
         the average of original data.
         """
-        self.logger.debug('Filling nan')
+        self.logger.debug('\033[0;32mFilling nan\033[0m')
 
         for feat_name in self.feat_name_list:
             feat = getattr(self, feat_name)
@@ -554,13 +554,13 @@ class Dataset(object):
                 if field not in self.field2type:
                     raise ValueError(f'Field [{field}] does not exist.')
                 elif ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
-                    self.logger.warning(f'{field} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.')
+                    self.logger.warning(f'\033[1;31m{field} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.\033[0m')
         elif self.config['normalize_all']:
             fields = self.float_like_fields
         else:
             return
 
-        self.logger.debug(f'Normalized fields: {fields}')
+        self.logger.debug(f'\033[0;34mNormalized fields\033[0m: {fields}')
 
         for feat_name in self.feat_name_list:
             feat = getattr(self, feat_name)
@@ -572,7 +572,7 @@ class Dataset(object):
                     lst = feat[field].values
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        self.logger.warning(f'All the same value in [{field}] from [{feat}_feat].')
+                        self.logger.warning(f'\033[1;31mAll the same value in [{field}] from [{feat}_feat].\033[0m')
                         feat[field] = 1.0
                     else:
                         feat[field] = (lst - mn) / (mx - mn)
@@ -581,7 +581,7 @@ class Dataset(object):
                     lst = feat[field].agg(np.concatenate)
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        self.logger.warning(f'All the same value in [{field}] from [{feat}_feat].')
+                        self.logger.warning(f'\033[1;31mAll the same value in [{field}] from [{feat}_feat].\033[0m')
                         lst = 1.0
                     else:
                         lst = (lst - mn) / (mx - mn)
@@ -597,14 +597,14 @@ class Dataset(object):
                 dropped_feat = feat.index[feat[field].isnull()]
                 if len(dropped_feat):
                     self.logger.warning(
-                        f'In {name}_feat, line {list(dropped_feat + 2)}, {field} do not exist, so they will be removed.'
+                        f'\033[1;31mIn {name}_feat, line {list(dropped_feat + 2)}, {field} do not exist, so they will be removed.\033[0m'
                     )
                     feat.drop(feat.index[dropped_feat], inplace=True)
             if field is not None:
                 dropped_inter = self.inter_feat.index[self.inter_feat[field].isnull()]
                 if len(dropped_inter):
                     self.logger.warning(
-                        f'In inter_feat, line {list(dropped_inter + 2)}, {field} do not exist, so they will be removed.'
+                        f'\033[1;31mIn inter_feat, line {list(dropped_inter + 2)}, {field} do not exist, so they will be removed.\033[0m'
                     )
                     self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
@@ -629,8 +629,8 @@ class Dataset(object):
             )
         else:
             self.logger.warning(
-                f'Timestamp field has not been loaded or specified, '
-                f'thus strategy [{keep}] of duplication removal may be meaningless.'
+                f'\033[1;31mTimestamp field has not been loaded or specified, \033[0m'
+                f'\033[1;31mthus strategy [{keep}] of duplication removal may be meaningless.\033[0m'
             )
         self.inter_feat.drop_duplicates(subset=[self.uid_field, self.iid_field], keep=keep, inplace=True)
 
@@ -715,7 +715,7 @@ class Dataset(object):
         Returns:
             set: illegal ids, whose inter num out of [min_num, max_num]
         """
-        self.logger.debug(f'get_illegal_ids_by_inter_num: field=[{field}], max_num=[{max_num}], min_num=[{min_num}]')
+        self.logger.debug(f'\033[0;34mget_illegal_ids_by_inter_num\033[0m: field=[{field}], max_num=[{max_num}], min_num=[{min_num}]')
 
         max_num = max_num or np.inf
         min_num = min_num or -1
@@ -760,7 +760,7 @@ class Dataset(object):
         if val is None:
             return []
 
-        self.logger.debug(f'drop_by_value: val={val}')
+        self.logger.debug(f'\033[0;34mdrop_by_value\033[0m: val={val}')
         filter_field = []
         for field in val:
             if field not in self.field2type:
@@ -908,7 +908,7 @@ class Dataset(object):
         """Get ``config['fields_in_same_space']`` firstly, and remap each.
         """
         fields_in_same_space = self._get_fields_in_same_space()
-        self.logger.debug(f'fields_in_same_space: {fields_in_same_space}')
+        self.logger.debug(f'\033[0;34mfields_in_same_space\033[0m: {fields_in_same_space}')
         for field_set in fields_in_same_space:
             remap_list = self._get_remap_list(field_set)
             self._remap(remap_list)
@@ -1206,19 +1206,19 @@ class Dataset(object):
         return self.__str__()
 
     def __str__(self):
-        info = [self.dataset_name]
+        info = ['\033[1;35m' + self.dataset_name + '\033[0m']
         if self.uid_field:
             info.extend([
-                f'The number of users: {self.user_num}', f'Average actions of users: {self.avg_actions_of_users}'
+                f'\033[0;34mThe number of users\033[0m: {self.user_num}', f'\033[0;34mAverage actions of users\033[0m: {self.avg_actions_of_users}'
             ])
         if self.iid_field:
             info.extend([
-                f'The number of items: {self.item_num}', f'Average actions of items: {self.avg_actions_of_items}'
+                f'\033[0;34mThe number of items\033[0m: {self.item_num}', f'\033[0;34mAverage actions of items\033[0m: {self.avg_actions_of_items}'
             ])
-        info.append(f'The number of inters: {self.inter_num}')
+        info.append(f'\033[0;34mThe number of inters\033[0m: {self.inter_num}')
         if self.uid_field and self.iid_field:
-            info.append(f'The sparsity of the dataset: {self.sparsity * 100}%')
-        info.append(f'Remain Fields: {list(self.field2type)}')
+            info.append(f'\033[0;34mThe sparsity of the dataset\033[0m: {self.sparsity * 100}%')
+        info.append(f'\033[0;34mRemain Fields\033[0m: {list(self.field2type)}')
         return '\n'.join(info)
 
     def copy(self, new_inter_feat):
@@ -1247,7 +1247,7 @@ class Dataset(object):
             for field in unused_fields:
                 if field not in feat:
                     self.logger.warning(
-                        f'Field [{field}] is not in [{feat_name}_feat], which can not be set in `unused_col`.'
+                        f'\033[1;31mField [{field}] is not in [{feat_name}_feat], which can not be set in `unused_col`.\033[0m'
                     )
                     continue
                 self._del_col(feat, field)
@@ -1615,8 +1615,8 @@ class Dataset(object):
         col_num = np.max(history_len)
         if col_num > max_col_num * 0.2:
             self.logger.warning(
-                f'Max value of {row}\'s history interaction records has reached '
-                f'{col_num / max_col_num * 100}% of the total.'
+                f'\033[1;31mMax value of {row}\'s history interaction records has reached \033[0m'
+                f'\033[1;31m{col_num / max_col_num * 100}% of the total.\033[0m'
             )
 
         history_matrix = np.zeros((row_num, col_num), dtype=np.int64)

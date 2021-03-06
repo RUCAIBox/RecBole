@@ -93,7 +93,7 @@ class GCMC(GeneralRecommender):
             div = self.gcn_output_dim // len(self.support)
             if self.gcn_output_dim % len(self.support) != 0:
                 self.logger.warning(
-                    "HIDDEN[0] (=%d) of stack layer is adjusted to %d (in %d splits)." %
+                    "\033[1;31mHIDDEN[0] (=%d) of stack layer is adjusted to %d (in %d splits).\033[0m" %
                     (self.gcn_output_dim, len(self.support) * div, len(self.support))
                 )
             self.gcn_output_dim = len(self.support) * div

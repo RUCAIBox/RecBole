@@ -45,8 +45,8 @@ class SocialDataset(Dataset):
         self.target_field = self.config['TARGET_ID_FIELD']
         self._check_field('source_field', 'target_field')
 
-        self.logger.debug(f'source_id_field: {self.source_field}')
-        self.logger.debug(f'target_id_field: {self.target_field}')
+        self.logger.debug(f'\033[0;34msource_id_field\033[0m: {self.source_field}')
+        self.logger.debug(f'\033[0;34mtarget_id_field\033[0m: {self.target_field}')
 
     def _load_data(self, token, dataset_path):
         """Load ``.net`` additionally.

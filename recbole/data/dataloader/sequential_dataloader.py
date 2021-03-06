@@ -264,7 +264,7 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
         pass
 
     def _shuffle(self):
-        self.logger.warnning('SequentialFullDataLoader can\'t shuffle')
+        self.logger.warnning('\033[1;31mSequentialFullDataLoader can\'t shuffle\033[0m')
 
     def _next_batch_data(self):
         interaction = super()._next_batch_data()

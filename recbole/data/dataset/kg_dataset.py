@@ -80,8 +80,8 @@ class KnowledgeBasedDataset(Dataset):
         self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
         self.set_field_property(self.entity_field, FeatureType.TOKEN, FeatureSource.KG, 1)
 
-        self.logger.debug(f'relation_field: {self.relation_field}')
-        self.logger.debug(f'entity_field: {self.entity_field}')
+        self.logger.debug(f'\033[0;34mrelation_field\033[0m: {self.relation_field}')
+        self.logger.debug(f'\033[0;34mentity_field\033[0m: {self.entity_field}')
 
     def _data_processing(self):
         self._set_field2ent_level()
@@ -138,7 +138,7 @@ class KnowledgeBasedDataset(Dataset):
         raise NotImplementedError()
 
     def _load_kg(self, token, dataset_path):
-        self.logger.debug(f'Loading kg from [{dataset_path}].')
+        self.logger.debug(f'\033[0;32mLoading kg from [{dataset_path}].\033[0m')
         kg_path = os.path.join(dataset_path, f'{token}.kg')
         if not os.path.isfile(kg_path):
             raise ValueError(f'[{token}.kg] not found in [{dataset_path}].')
@@ -153,7 +153,7 @@ class KnowledgeBasedDataset(Dataset):
         assert self.relation_field in kg, kg_warn_message.format(self.relation_field)
 
     def _load_link(self, token, dataset_path):
-        self.logger.debug(f'Loading link from [{dataset_path}].')
+        self.logger.debug(f'\033[0;32mLoading link from [{dataset_path}].\033[0m')
         link_path = os.path.join(dataset_path, f'{token}.link')
         if not os.path.isfile(link_path):
             raise ValueError(f'[{token}.link] not found in [{dataset_path}].')
@@ -207,7 +207,7 @@ class KnowledgeBasedDataset(Dataset):
             if self._contain_ent_field(field_set):
                 field_set = self._remove_ent_field(field_set)
                 ent_fields.update(field_set)
-        self.logger.debug(f'ent_fields: {fields_in_same_space}')
+        self.logger.debug(f'\033[0;34ment_fields\033[0m: {fields_in_same_space}')
         return ent_fields
 
     def _remove_ent_field(self, field_set):
