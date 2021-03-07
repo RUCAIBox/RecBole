@@ -10,9 +10,16 @@ recbole.utils.logger
 
 import logging
 import os
+import colorlog
 
 from recbole.utils.utils import get_local_time, ensure_dir
 
+log_colors_config = {
+    'DEBUG': 'cyan',
+    'WARNING': 'yellow',
+    'ERROR': 'red',
+    'CRITICAL': 'red',
+}
 
 def init_logger(config):
     """
@@ -36,13 +43,13 @@ def init_logger(config):
 
     logfilepath = os.path.join(LOGROOT, logfilename)
 
-    filefmt = "%(asctime)-15s %(levelname)s %(message)s"
+    filefmt = "%(asctime)-15s %(levelname)s  %(message)s"
     filedatefmt = "%a %d %b %Y %H:%M:%S"
     fileformatter = logging.Formatter(filefmt, filedatefmt)
 
-    sfmt = "%(asctime)-15s %(levelname)s %(message)s"
+    sfmt = "%(log_color)s%(asctime)-15s %(levelname)s  %(message)s"
     sdatefmt = "%d %b %H:%M"
-    sformatter = logging.Formatter(sfmt, sdatefmt)
+    sformatter = colorlog.ColoredFormatter(sfmt, sdatefmt, log_colors=log_colors_config)
     if config['state'] is None or config['state'].lower() == 'info':
         level = logging.INFO
     elif config['state'].lower() == 'debug':

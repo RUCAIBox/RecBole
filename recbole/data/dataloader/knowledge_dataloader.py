@@ -55,7 +55,7 @@ class KGDataLoader(AbstractDataLoader):
         """
         if self.shuffle is False:
             self.shuffle = True
-            self.logger.warning('\033[1;33mkg based dataloader must shuffle the data\033[0m')
+            self.logger.warning('kg based dataloader must shuffle the data')
 
     @property
     def pr_end(self):

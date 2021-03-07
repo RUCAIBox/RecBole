@@ -116,9 +116,9 @@ class Trainer(AbstractTrainer):
         elif self.learner.lower() == 'sparse_adam':
             optimizer = optim.SparseAdam(params, lr=self.learning_rate)
             if self.weight_decay > 0:
-                self.logger.warning('\033[1;33mSparse Adam cannot argument received argument [{weight_decay}]\033[0m')
+                self.logger.warning('Sparse Adam cannot argument received argument [{weight_decay}]')
         else:
-            self.logger.warning('\033[1;33mReceived unrecognized optimizer, set default Adam optimizer\033[0m')
+            self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
             optimizer = optim.Adam(params, lr=self.learning_rate)
         return optimizer
 
@@ -213,8 +213,8 @@ class Trainer(AbstractTrainer):
         # load architecture params from checkpoint
         if checkpoint['config']['model'].lower() != self.config['model'].lower():
             self.logger.warning(
-                '\033[1;33mArchitecture configuration given in config file is different from that of checkpoint.\33[0m '
-                '\033[1;33mThis may yield an exception while state_dict is being loaded.\033[0m'
+                'Architecture configuration given in config file is different from that of checkpoint. '
+                'This may yield an exception while state_dict is being loaded.'
             )
         self.model.load_state_dict(checkpoint['state_dict'])
 

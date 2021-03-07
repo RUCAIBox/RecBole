@@ -166,17 +166,17 @@ def gauc_(user_len_list, pos_len_list, pos_rank_sum):
     if any_without_pos:
         logger = getLogger()
         logger.warning(
-            "\033[1;33mNo positive samples in some users, \033[0m"
-            "\033[1;33mtrue positive value should be meaningless, \033[0m"
-            "\033[1;33mthese users have been removed from GAUC calculation\033[0m"
+            "No positive samples in some users, "
+            "true positive value should be meaningless, "
+            "these users have been removed from GAUC calculation"
         )
         non_zero_idx *= (pos_len_list != 0)
     if any_without_neg:
         logger = getLogger()
         logger.warning(
-            "\033[1;33mNo negative samples in some users, \033[0m"
-            "\033[1;33mfalse positive value should be meaningless, \033[0m"
-            "\033[1;33mthese users have been removed from GAUC calculation\033[0m"
+            "No negative samples in some users, "
+            "false positive value should be meaningless, "
+            "these users have been removed from GAUC calculation"
         )
         non_zero_idx *= (neg_len_list != 0)
     if any_without_pos or any_without_neg:
@@ -219,14 +219,14 @@ def auc_(trues, preds):
 
     if fps[-1] <= 0:
         logger = getLogger()
-        logger.warning("\033[1;33mNo negative samples in y_true, \033[0m" "\033[1;33mfalse positive value should be meaningless\033[0m")
+        logger.warning("No negative samples in y_true, " "false positive value should be meaningless")
         fpr = np.repeat(np.nan, fps.shape)
     else:
         fpr = fps / fps[-1]
 
     if tps[-1] <= 0:
         logger = getLogger()
-        logger.warning("\033[1;33mNo positive samples in y_true, \033[0m" "\033[1;33mtrue positive value should be meaningless\033[0m")
+        logger.warning("No positive samples in y_true, " "true positive value should be meaningless")
         tpr = np.repeat(np.nan, tps.shape)
     else:
         tpr = tps / tps[-1]
@@ -279,7 +279,7 @@ def log_loss_(trues, preds):
 
 # TODO
 # def coverage_():
-#     raise NotImplemented
+#     raise NotImplementedError
 
 # def gini_index_():
 #     raise NotImplementedError

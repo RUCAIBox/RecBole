@@ -121,7 +121,7 @@ class AbstractDataLoader(object):
             raise PermissionError('\033[1;31mCannot change dataloader\'s batch_size while iteration\033[0m')
         if self.batch_size != batch_size:
             self.batch_size = batch_size
-            self.logger.warning(f'\033[1;33mBatch size is changed to {batch_size}\033[0m.')
+            self.logger.warning(f'Batch size is changed to {batch_size}.')
 
     def upgrade_batch_size(self, batch_size):
         """Upgrade the batch_size of the dataloader, if input batch_size is bigger than current batch_size.

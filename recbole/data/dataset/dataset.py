@@ -420,7 +420,7 @@ class Dataset(object):
             dtype[field_type] = np.float64 if ftype == FeatureType.FLOAT else str
 
         if len(columns) == 0:
-            self.logger.warning(f'\033[1;33mNo columns has been loaded from [{source}]\033[0m')
+            self.logger.warning(f'No columns has been loaded from [{source}]')
             return None
 
         df = pd.read_csv(filepath, delimiter=self.config['field_separator'], usecols=usecols, dtype=dtype)
@@ -505,8 +505,8 @@ class Dataset(object):
                                 matrix[pid] = prow[:max_len]
                     else:
                         self.logger.warning(
-                            f'\033[1;33mField [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, \033[0m'
-                            f'\033[1;33mwhich will not be handled by preload matrix.\033[0m'
+                            f'Field [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, \033[0m'
+                            f'which will not be handled by preload matrix.'
                         )
                         continue
                     self._preloaded_weight[preload_id_field] = matrix
@@ -554,7 +554,7 @@ class Dataset(object):
                 if field not in self.field2type:
                     raise ValueError(f'\033[1;31mField [{field}] does not exist.\033[0m')
                 elif ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
-                    self.logger.warning(f'\033[1;33m{field} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.\033[0m')
+                    self.logger.warning(f'{field} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.')
         elif self.config['normalize_all']:
             fields = self.float_like_fields
         else:
@@ -572,7 +572,7 @@ class Dataset(object):
                     lst = feat[field].values
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        self.logger.warning(f'\033[1;33mAll the same value in [{field}] from [{feat}_feat].\033[0m')
+                        self.logger.warning(f'All the same value in [{field}] from [{feat}_feat].')
                         feat[field] = 1.0
                     else:
                         feat[field] = (lst - mn) / (mx - mn)
@@ -581,7 +581,7 @@ class Dataset(object):
                     lst = feat[field].agg(np.concatenate)
                     mx, mn = max(lst), min(lst)
                     if mx == mn:
-                        self.logger.warning(f'\033[1;33mAll the same value in [{field}] from [{feat}_feat].\033[0m')
+                        self.logger.warning(f'All the same value in [{field}] from [{feat}_feat].')
                         lst = 1.0
                     else:
                         lst = (lst - mn) / (mx - mn)
@@ -597,14 +597,14 @@ class Dataset(object):
                 dropped_feat = feat.index[feat[field].isnull()]
                 if len(dropped_feat):
                     self.logger.warning(
-                        f'\033[1;33mIn {name}_feat, line {list(dropped_feat + 2)}, {field} do not exist, so they will be removed.\033[0m'
+                        f'In {name}_feat, line {list(dropped_feat + 2)}, {field} do not exist, so they will be removed.'
                     )
                     feat.drop(feat.index[dropped_feat], inplace=True)
             if field is not None:
                 dropped_inter = self.inter_feat.index[self.inter_feat[field].isnull()]
                 if len(dropped_inter):
                     self.logger.warning(
-                        f'\033[1;33mIn inter_feat, line {list(dropped_inter + 2)}, {field} do not exist, so they will be removed.\033[0m'
+                        f'In inter_feat, line {list(dropped_inter + 2)}, {field} do not exist, so they will be removed.'
                     )
                     self.inter_feat.drop(self.inter_feat.index[dropped_inter], inplace=True)
 
@@ -629,8 +629,8 @@ class Dataset(object):
             )
         else:
             self.logger.warning(
-                f'\033[1;33mTimestamp field has not been loaded or specified, \033[0m'
-                f'\033[1;33mthus strategy [{keep}] of duplication removal may be meaningless.\033[0m'
+                f'Timestamp field has not been loaded or specified, '
+                f'thus strategy [{keep}] of duplication removal may be meaningless.'
             )
         self.inter_feat.drop_duplicates(subset=[self.uid_field, self.iid_field], keep=keep, inplace=True)
 
@@ -1247,7 +1247,7 @@ class Dataset(object):
             for field in unused_fields:
                 if field not in feat:
                     self.logger.warning(
-                        f'\033[1;33mField [{field}] is not in [{feat_name}_feat], which can not be set in `unused_col`.\033[0m'
+                        f'Field [{field}] is not in [{feat_name}_feat], which can not be set in `unused_col`.'
                     )
                     continue
                 self._del_col(feat, field)
@@ -1615,8 +1615,8 @@ class Dataset(object):
         col_num = np.max(history_len)
         if col_num > max_col_num * 0.2:
             self.logger.warning(
-                f'\033[1;33mMax value of {row}\'s history interaction records has reached \033[0m'
-                f'\033[1;33m{col_num / max_col_num * 100}% of the total.\033[0m'
+                f'Max value of {row}\'s history interaction records has reached '
+                f'{col_num / max_col_num * 100}% of the total.'
             )
 
         history_matrix = np.zeros((row_num, col_num), dtype=np.int64)

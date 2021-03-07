@@ -123,8 +123,8 @@ class SequentialDataset(Dataset):
         if not self.uid_field or not self.iid_field:
             raise ValueError('\033[1;31mdataset does not exist uid/iid, thus can not converted to sparse matrix.\033[0m')
 
-        self.logger.warning('\033[1;33mLoad interaction matrix may lead to label leakage from testing phase, this implementation \033[0m'
-                            '\033[1;33monly provides the interactions corresponding to specific phase\033[0m')
+        self.logger.warning('Load interaction matrix may lead to label leakage from testing phase, this implementation '
+                            'monly provides the interactions corresponding to specific phase')
         local_inter_feat = self.inter_feat[self.uid_list]
         return self._create_sparse_matrix(local_inter_feat, self.uid_field, self.iid_field, form, value_field)
 
