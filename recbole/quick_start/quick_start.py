@@ -34,7 +34,6 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     logger = getLogger()
 
     logger.info(config)
-    logger.debug('hhhh')
 
     # dataset filtering
     dataset = create_dataset(config)
