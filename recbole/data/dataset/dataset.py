@@ -102,7 +102,7 @@ class Dataset(object):
         """Load dataset from scratch.
         Initialize attributes firstly, then load data from atomic files, pre-process the dataset lastly.
         """
-        self.logger.debug(set_color('Loading {self.__class__} from scratch.', 'green'))
+        self.logger.debug(set_color('Loading {} from scratch.', 'green').format(self.__class__))
 
         self._get_preset()
         self._get_field_from_config()
@@ -335,7 +335,7 @@ class Dataset(object):
         if load_col and unload_col:
             raise ValueError(f'load_col [{load_col}] and unload_col [{unload_col}] can not be set the same time.')
 
-        self.logger.debug(set_color('[{source}]: ', 'pink'))
+        self.logger.debug(set_color('[{}]: ', 'pink').format(source))
         self.logger.debug(set_color('\t load_col', 'blue') + ': [{load_col}]')
         self.logger.debug(set_color('\t unload_col', 'blue') + ': [{unload_col}]')
         return load_col, unload_col
@@ -357,7 +357,7 @@ class Dataset(object):
             Their length is limited only after calling :meth:`~_dict_to_interaction` or
             :meth:`~_dataframe_to_interaction`
         """
-        self.logger.debug(set_color('Loading feature from [{filepath}] (source: [{source}]).', 'green'))
+        self.logger.debug(set_color('Loading feature from [{}] (source: [{}]).', 'green').format(filepath, source))
 
         load_col, unload_col = self._get_load_and_unload_col(source)
         if load_col == set():
