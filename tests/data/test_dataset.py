@@ -566,5 +566,53 @@ class TestDataset:
         assert len(test_dataset.inter_feat) == 4
 
 
+class TestSeqDataset:
+    def test_seq_leave_one_out(self):
+        config_dict = {
+            'model': 'GRU4Rec',
+            'dataset': 'seq_dataset',
+            'data_path': current_path,
+            'load_col': None,
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert (train_dataset.uid_list == [1, 1, 1, 1, 1, 2, 2, 3, 4]).all()
+        assert (train_dataset.item_list_index == [slice(0, 1), slice(0, 2), slice(0, 3), slice(0, 4), slice(0, 5),
+                                                  slice(8, 9), slice(8, 10), slice(13, 14), slice(16, 17)]).all()
+        assert (train_dataset.target_index == [1, 2, 3, 4, 5, 9, 10, 14, 17]).all()
+        assert (train_dataset.item_list_length == [1, 2, 3, 4, 5, 1, 2, 1, 1]).all()
+
+        assert (valid_dataset.uid_list == [1, 2]).all()
+        assert (valid_dataset.item_list_index == [slice(0, 6), slice(8, 11)]).all()
+        assert (valid_dataset.target_index == [6, 11]).all()
+        assert (valid_dataset.item_list_length == [6, 3]).all()
+
+        assert (test_dataset.uid_list == [1, 2, 3]).all()
+        assert (test_dataset.item_list_index == [slice(0, 7), slice(8, 12), slice(13, 15)]).all()
+        assert (test_dataset.target_index == [7, 12, 15]).all()
+        assert (test_dataset.item_list_length == [7, 4, 2]).all()
+
+        assert (train_dataset.inter_matrix().toarray() == [
+            [0., 0., 0., 0., 0., 0., 0., 0., 0.],
+            [0., 1., 1., 1., 1., 1., 1., 0., 0.],
+            [0., 0., 0., 0., 1., 1., 1., 0., 0.],
+            [0., 0., 0., 0., 1., 1., 0., 0., 0.],
+            [0., 0., 0., 1., 1., 0., 0., 0., 0.],
+        ]).all()
+        assert (valid_dataset.inter_matrix().toarray() == [
+            [0., 0., 0., 0., 0., 0., 0., 0., 0.],
+            [0., 1., 1., 1., 1., 1., 1., 1., 0.],
+            [0., 0., 0., 0., 1., 1., 1., 1., 0.],
+            [0., 0., 0., 0., 1., 1., 0., 0., 0.],
+            [0., 0., 0., 1., 1., 0., 0., 0., 0.],
+        ]).all()
+        assert (test_dataset.inter_matrix().toarray() == [
+            [0., 0., 0., 0., 0., 0., 0., 0., 0.],
+            [0., 1., 1., 1., 1., 1., 1., 1., 1.],
+            [0., 0., 0., 0., 1., 1., 1., 1., 1.],
+            [0., 0., 0., 0., 1., 1., 1., 0., 0.],
+            [0., 0., 0., 1., 1., 0., 0., 0., 0.],
+        ]).all()
+
+
 if __name__ == "__main__":
     pytest.main()
