@@ -228,8 +228,8 @@ class NNCF(GeneralRecommender):
             ui_inters[pairs[i][0], pairs[i][1]] = 1
 
         # Get similar neighbors using knn algorithm
-        user_knn, _ = ComputeSimilarity(self.interaction_matrix.tocsr(), topk=self.neigh_num).compute_users_similarity()
-        item_knn, _ = ComputeSimilarity(self.interaction_matrix.tocsr(), topk=self.neigh_num).compute_items_similarity()
+        user_knn, _ = ComputeSimilarity(self.interaction_matrix.tocsr(), topk=self.neigh_num).compute_similarity('user')
+        item_knn, _ = ComputeSimilarity(self.interaction_matrix.tocsr(), topk=self.neigh_num).compute_similarity('item')
 
         u_neigh, i_neigh = [], []
 
