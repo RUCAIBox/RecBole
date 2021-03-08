@@ -3,6 +3,11 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 
+# UPDATE
+# @Time   : 2021/3/7
+# @Author : Jiawei Guan
+# @Email  : guanjw@ruc.edu.cn
+
 """
 recbole.utils.logger
 ###############################
