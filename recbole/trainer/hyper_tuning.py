@@ -76,7 +76,7 @@ def _validate_space_exhaustive_search(space):
         if node.name in implicit_stochastic_symbols:
             if node.name not in supported_stochastic_symbols:
                 raise ExhaustiveSearchError(
-                    '\033[1;31mExhaustive search is only possible with the following stochastic symbols: '
+                    '\033[1;31mExhaustive search is only possible with the following stochastic symbols: \033[0m'
                     '\033[1;31m' + ', '.join(supported_stochastic_symbols)
                 )
 
