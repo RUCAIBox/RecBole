@@ -162,7 +162,7 @@ def save_split_dataloaders(config, dataloaders):
 
     Args:
         config (Config): An instance object of Config, used to record parameter information.
-        dataloaders (tuple of AbstractDataLoader): The split train/valid/test datasets.
+        dataloaders (tuple of AbstractDataLoader): The split dataloaders.
     """
     save_path = config['checkpoint_dir']
     saved_dataloaders_file = f'{config["dataset"]}-for-{config["model"]}-dataloader.pth'
@@ -180,14 +180,11 @@ def load_split_dataloaders(saved_dataloaders_file):
         saved_dataloaders_file (str): The path of split dataloaders.
 
     Returns:
-        tuple:
-            - train_data (AbstractDataLoader): The dataloader for training.
-            - valid_data (AbstractDataLoader): The dataloader for validation.
-            - test_data (AbstractDataLoader): The dataloader for testing.
+        dataloaders (tuple of AbstractDataLoader): The split dataloaders.
     """
     with open(saved_dataloaders_file, 'rb') as f:
-        train_data, valid_data, test_data = pickle.load(f)
-    return train_data, valid_data, test_data
+        dataloaders = pickle.load(f)
+    return dataloaders
 
 
 def get_data_loader(name, config, neg_sample_args):
