@@ -15,11 +15,12 @@ recbole.data.utils
 import copy
 import importlib
 import os
+import pickle
 
 from recbole.config import EvalSetting
 from recbole.data.dataloader import *
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
-from recbole.utils import ModelType, ensure_dir
+from recbole.utils import ModelType, ensure_dir, get_local_time
 
 
 def create_dataset(config):
@@ -80,9 +81,6 @@ def data_preparation(config, dataset, save=False):
     logger = getLogger()
     train_neg_sample_args = config['train_neg_sample_args']
     eval_neg_sample_args = es.neg_sample_args
-
-    if save:
-        save_datasets(config['checkpoint_dir'], name=phases, dataset=built_datasets)
 
     # Training
     train_kwargs = {
@@ -153,26 +151,40 @@ def data_preparation(config, dataset, save=False):
     valid_data = dataloader(**valid_kwargs)
     test_data = dataloader(**test_kwargs)
 
+    if save:
+        save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))
+
     return train_data, valid_data, test_data
 
 
-def save_datasets(save_path, name, dataset):
-    """Save split datasets.
+def save_split_dataloaders(config, dataloaders):
+    """Save split dataloaders.
 
     Args:
-        save_path (str): The path of directory for saving.
-        name (str or list of str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
-        dataset (Dataset or list of Dataset): The split datasets.
+        config (Config): An instance object of Config, used to record parameter information.
+        dataloaders (tuple of AbstractDataLoader): The split dataloaders.
     """
-    if (not isinstance(name, list)) and (not isinstance(dataset, list)):
-        name = [name]
-        dataset = [dataset]
-    if len(name) != len(dataset):
-        raise ValueError(f'Length of name {name} should equal to length of dataset {dataset}.')
-    for i, d in enumerate(dataset):
-        cur_path = os.path.join(save_path, name[i])
-        ensure_dir(cur_path)
-        d.save(cur_path)
+    save_path = config['checkpoint_dir']
+    saved_dataloaders_file = f'{config["dataset"]}-for-{config["model"]}-dataloader.pth'
+    file_path = os.path.join(save_path, saved_dataloaders_file)
+    logger = getLogger()
+    logger.info(f'Saved split dataloaders: {file_path}')
+    with open(file_path, 'wb') as f:
+        pickle.dump(dataloaders, f)
+
+
+def load_split_dataloaders(saved_dataloaders_file):
+    """Load split dataloaders.
+
+    Args:
+        saved_dataloaders_file (str): The path of split dataloaders.
+
+    Returns:
+        dataloaders (tuple of AbstractDataLoader): The split dataloaders.
+    """
+    with open(saved_dataloaders_file, 'rb') as f:
+        dataloaders = pickle.load(f)
+    return dataloaders
 
 
 def get_data_loader(name, config, neg_sample_args):
