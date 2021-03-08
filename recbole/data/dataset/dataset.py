@@ -505,7 +505,7 @@ class Dataset(object):
                                 matrix[pid] = prow[:max_len]
                     else:
                         self.logger.warning(
-                            f'Field [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, \033[0m'
+                            f'Field [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, '
                             f'which will not be handled by preload matrix.'
                         )
                         continue
