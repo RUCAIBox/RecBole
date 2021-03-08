@@ -45,8 +45,8 @@ class SocialDataset(Dataset):
         self.target_field = self.config['TARGET_ID_FIELD']
         self._check_field('source_field', 'target_field')
 
-        self.logger.debug(f'\033[0;34msource_id_field\033[0m: {self.source_field}')
-        self.logger.debug(f'\033[0;34mtarget_id_field\033[0m: {self.target_field}')
+        self.logger.debug(set_color('source_id_field', 'blue') + ': {self.source_field}')
+        self.logger.debug(set_color('target_id_field', 'blue') + ': {self.target_field}')
 
     def _load_data(self, token, dataset_path):
         """Load ``.net`` additionally.
@@ -65,10 +65,10 @@ class SocialDataset(Dataset):
         if os.path.isfile(net_file_path):
             net_feat = self._load_feat(net_file_path, FeatureSource.NET)
             if net_feat is None:
-                raise ValueError('\033[1;31m.net file exist, but net_feat is None, please check your load_col\033[0m')
+                raise ValueError('.net file exist, but net_feat is None, please check your load_col')
             return net_feat
         else:
-            raise ValueError(f'\033[1;31mFile {net_file_path} not exist.\033[0m')
+            raise ValueError(f'File {net_file_path} not exist.')
 
     def _get_fields_in_same_space(self):
         """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
@@ -120,7 +120,7 @@ class SocialDataset(Dataset):
         elif form in ['dgl', 'pyg']:
             return self._create_graph(*args)
         else:
-            raise NotImplementedError('\033[1;31mnet graph format [{}] has not been implemented.\033[0m')
+            raise NotImplementedError('net graph format [{}] has not been implemented.')
 
     def __str__(self):
         info = [super().__str__(), f'The number of connections of social network: {len(self.net_feat)}']

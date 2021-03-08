@@ -22,6 +22,7 @@ from scipy.sparse import coo_matrix
 from recbole.data.dataset import Dataset
 from recbole.data.utils import dlapi
 from recbole.utils import FeatureSource, FeatureType
+from recbole.utils.utils import set_color
 
 
 class KnowledgeBasedDataset(Dataset):
@@ -80,8 +81,8 @@ class KnowledgeBasedDataset(Dataset):
         self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
         self.set_field_property(self.entity_field, FeatureType.TOKEN, FeatureSource.KG, 1)
 
-        self.logger.debug(f'\033[0;34mrelation_field\033[0m: {self.relation_field}')
-        self.logger.debug(f'\033[0;34mentity_field\033[0m: {self.entity_field}')
+        self.logger.debug(set_color('relation_field', 'blue') + ': {self.relation_field}')
+        self.logger.debug(set_color('entity_field', 'blue') + ': {self.entity_field}')
 
     def _data_processing(self):
         self._set_field2ent_level()
@@ -138,10 +139,10 @@ class KnowledgeBasedDataset(Dataset):
         raise NotImplementedError()
 
     def _load_kg(self, token, dataset_path):
-        self.logger.debug(f'\033[0;32mLoading kg from [{dataset_path}].\033[0m')
+        self.logger.debug(set_color('Loading kg from [{}].', 'green').format(dataset_path))
         kg_path = os.path.join(dataset_path, f'{token}.kg')
         if not os.path.isfile(kg_path):
-            raise ValueError(f'\033[1;31m[{token}.kg] not found in [{dataset_path}].\033[0m')
+            raise ValueError('[{token}.kg] not found in [{dataset_path}].')
         df = self._load_feat(kg_path, FeatureSource.KG)
         self._check_kg(df)
         return df
@@ -153,10 +154,10 @@ class KnowledgeBasedDataset(Dataset):
         assert self.relation_field in kg, kg_warn_message.format(self.relation_field)
 
     def _load_link(self, token, dataset_path):
-        self.logger.debug(f'\033[0;32mLoading link from [{dataset_path}].\033[0m')
+        self.logger.debug(set_color('Loading link from [{}].', 'green').format(dataset_path))
         link_path = os.path.join(dataset_path, f'{token}.link')
         if not os.path.isfile(link_path):
-            raise ValueError(f'\033[1;31m[{token}.link] not found in [{dataset_path}].\033[0m')
+            raise ValueError(f'[{token}.link] not found in [{dataset_path}].')
         df = self._load_feat(link_path, 'link')
         self._check_link(df)
 
@@ -207,7 +208,7 @@ class KnowledgeBasedDataset(Dataset):
             if self._contain_ent_field(field_set):
                 field_set = self._remove_ent_field(field_set)
                 ent_fields.update(field_set)
-        self.logger.debug(f'\033[0;34ment_fields\033[0m: {fields_in_same_space}')
+        self.logger.debug(set_color('ent_fields', 'blue') + ': {fields_in_same_space}')
         return ent_fields
 
     def _remove_ent_field(self, field_set):
@@ -442,7 +443,7 @@ class KnowledgeBasedDataset(Dataset):
         elif form in ['dgl', 'pyg']:
             return self._create_graph(*args)
         else:
-            raise NotImplementedError('\033[1;31mkg graph format [{}] has not been implemented.\033[0m')
+            raise NotImplementedError('kg graph format [{}] has not been implemented.')
 
     def _create_ckg_sparse_matrix(self, form='coo', show_relation=False):
         user_num = self.user_num
@@ -473,7 +474,7 @@ class KnowledgeBasedDataset(Dataset):
         elif form == 'csr':
             return mat.tocsr()
         else:
-            raise NotImplementedError(f'\033[1;31mSparse matrix format [{form}] has not been implemented.\033[0m')
+            raise NotImplementedError(f'Sparse matrix format [{form}] has not been implemented.')
 
     def _create_ckg_graph(self, form='dgl', show_relation=False):
         user_num = self.user_num
@@ -510,7 +511,7 @@ class KnowledgeBasedDataset(Dataset):
             graph = Data(edge_index=torch.stack([src, tgt]), edge_attr=edge_attr)
             return graph
         else:
-            raise NotImplementedError(f'Graph format [{form}] has not been implemented.\033[0m')
+            raise NotImplementedError(f'Graph format [{form}] has not been implemented.')
 
     @dlapi.set()
     def ckg_graph(self, form='coo', value_field=None):
@@ -542,7 +543,7 @@ class KnowledgeBasedDataset(Dataset):
             https://github.com/rusty1s/pytorch_geometric
         """
         if value_field is not None and value_field != self.relation_field:
-            raise ValueError(f'\033[1;31mValue_field [{value_field}] can only be [{self.relation_field}] in ckg_graph.\033[0m')
+            raise ValueError(f'Value_field [{value_field}] can only be [{self.relation_field}] in ckg_graph.')
         show_relation = value_field is not None
 
         if form in ['coo', 'csr']:
@@ -550,4 +551,4 @@ class KnowledgeBasedDataset(Dataset):
         elif form in ['dgl', 'pyg']:
             return self._create_ckg_graph(form, show_relation)
         else:
-            raise NotImplementedError('\033[1;31mckg graph format [{}] has not been implemented.\033[0m')
+            raise NotImplementedError('ckg graph format [{}] has not been implemented.')

@@ -76,8 +76,8 @@ def _validate_space_exhaustive_search(space):
         if node.name in implicit_stochastic_symbols:
             if node.name not in supported_stochastic_symbols:
                 raise ExhaustiveSearchError(
-                    '\033[1;31mExhaustive search is only possible with the following stochastic symbols: \033[0m'
-                    '\033[1;31m' + ', '.join(supported_stochastic_symbols)
+                    'Exhaustive search is only possible with the following stochastic symbols: '
+                    '' + ', '.join(supported_stochastic_symbols)
                 )
 
 
@@ -163,13 +163,13 @@ class HyperTuning(object):
         elif params_dict:
             self.space = self._build_space_from_dict(params_dict)
         else:
-            raise ValueError('\033[1;31mat least one of `space`, `params_file` and `params_dict` is provided\033[0m')
+            raise ValueError('at least one of `space`, `params_file` and `params_dict` is provided')
         if isinstance(algo, str):
             if algo == 'exhaustive':
                 self.algo = partial(exhaustive_search, nbMaxSucessiveFailures=1000)
                 self.max_evals = _spacesize(self.space)
             else:
-                raise ValueError('\033[1;31mIllegal algo [{}]\033[0m'.format(algo))
+                raise ValueError('Illegal algo [{}]'.format(algo))
         else:
             self.algo = algo
 
@@ -196,7 +196,7 @@ class HyperTuning(object):
                     low, high = para_value.strip().split(',')
                     space[para_name] = hp.loguniform(para_name, float(low), float(high))
                 else:
-                    raise ValueError('\033[1;31mIllegal param type [{}]\033[0m'.format(para_type))
+                    raise ValueError('Illegal param type [{}]'.format(para_type))
         return space
 
     @staticmethod
@@ -228,7 +228,7 @@ class HyperTuning(object):
                     high = para_value[1]
                     space[para_name] = hp.loguniform(para_name, float(low), float(high))
             else:
-                raise ValueError('\033[1;31mIllegal param type [{}]\033[0m'.format(para_type))
+                raise ValueError('Illegal param type [{}]'.format(para_type))
         return space
 
     @staticmethod

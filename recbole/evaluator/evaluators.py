@@ -113,11 +113,11 @@ class TopKEvaluator(GroupedEvaluator):
             for topk in self.topk:
                 if topk <= 0:
                     raise ValueError(
-                        '\033[1;31mtopk must be a positive integer or a list of positive integers, \033[0m'
-                        '\033[1;31mbut get `{}`\033[0m'.format(topk)
+                        'topk must be a positive integer or a list of positive integers, '
+                        'but get `{}`'.format(topk)
                     )
         else:
-            raise TypeError('\033[1;31mThe topk must be a integer, list\033[0m')
+            raise TypeError('The topk must be a integer, list')
 
     def _calculate_metrics(self, pos_len_list, topk_idx, shapes):
         """integrate the results of each batch and evaluate the topk metrics by users

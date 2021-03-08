@@ -12,6 +12,7 @@ from logging import getLogger
 from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
 from recbole.utils import init_logger, get_model, get_trainer, init_seed
+from recbole.utils.utils import set_color
 
 
 def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
@@ -57,8 +58,8 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     # model evaluation
     test_result = trainer.evaluate(test_data, load_best_model=saved, show_progress=config['show_progress'])
 
-    logger.info('\033[1;33mbest valid \033[0m: {}'.format(best_valid_result))
-    logger.info('\033[1;33mtest result\033[0m: {}'.format(test_result))
+    logger.info(set_color('best valid ', 'yellow') + ': {}'.format(best_valid_result))
+    logger.info(set_color('test result', 'yellow') + ': {}'.format(test_result))
 
     return {
         'best_valid_score': best_valid_score,

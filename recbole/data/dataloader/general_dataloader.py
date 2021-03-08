@@ -207,7 +207,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
     ):
         if neg_sample_args['strategy'] != 'full':
-            raise ValueError('\033[1;31mneg_sample strategy in GeneralFullDataLoader() should be `full`\033[0m')
+            raise ValueError('neg_sample strategy in GeneralFullDataLoader() should be `full`')
 
         uid_field = dataset.uid_field
         iid_field = dataset.iid_field
@@ -259,7 +259,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         return len(self.uid_list)
 
     def _shuffle(self):
-        self.logger.warnning('\033[1;31mGeneralFullDataLoader can\'t shuffle\033[0m')
+        self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
         user_df = self.user_df[self.pr:self.pr + self.step]

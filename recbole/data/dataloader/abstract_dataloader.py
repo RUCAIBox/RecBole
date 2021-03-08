@@ -96,12 +96,12 @@ class AbstractDataLoader(object):
     @property
     def pr_end(self):
         """This property marks the end of dataloader.pr which is used in :meth:`__next__()`."""
-        raise NotImplementedError('\033[1;31mMethod [pr_end] should be implemented\033[0m')
+        raise NotImplementedError('Method [pr_end] should be implemented')
 
     def _shuffle(self):
         """Shuffle the order of data, and it will be called by :meth:`__iter__()` if self.shuffle is True.
         """
-        raise NotImplementedError('\033[1;31mMethod [shuffle] should be implemented.\033[0m')
+        raise NotImplementedError('Method [shuffle] should be implemented.')
 
     def _next_batch_data(self):
         """Assemble next batch of data in form of Interaction, and return these data.
@@ -109,7 +109,7 @@ class AbstractDataLoader(object):
         Returns:
             Interaction: The next batch of data.
         """
-        raise NotImplementedError('\033[1;31mMethod [next_batch_data] should be implemented.\033[0m')
+        raise NotImplementedError('Method [next_batch_data] should be implemented.')
 
     def set_batch_size(self, batch_size):
         """Reset the batch_size of the dataloader, but it can't be called when dataloader is being iterated.
@@ -118,7 +118,7 @@ class AbstractDataLoader(object):
             batch_size (int): the new batch_size of dataloader.
         """
         if self.pr != 0:
-            raise PermissionError('\033[1;31mCannot change dataloader\'s batch_size while iteration\033[0m')
+            raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
         if self.batch_size != batch_size:
             self.batch_size = batch_size
             self.logger.warning(f'Batch size is changed to {batch_size}.')

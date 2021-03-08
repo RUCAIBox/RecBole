@@ -22,6 +22,7 @@ from logging import getLogger
 from recbole.evaluator import group_metrics, individual_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
     general_arguments, training_arguments, evaluation_arguments, dataset_arguments
+from recbole.utils.utils import set_color
 
 
 class Config(object):
@@ -154,7 +155,7 @@ class Config(object):
                     continue
                 cmd_arg_name, cmd_arg_value = arg[2:].split("=")
                 if cmd_arg_name in cmd_config_dict and cmd_arg_value != cmd_config_dict[cmd_arg_name]:
-                    raise SyntaxError("\033[1;31mThere are duplicate commend arg '%s' with different value.\033[0m" % arg)
+                    raise SyntaxError("There are duplicate commend arg '%s' with different value." % arg)
                 else:
                     cmd_config_dict[cmd_arg_name] = cmd_arg_value
         if len(unrecognized_args) > 0:
@@ -177,8 +178,8 @@ class Config(object):
                 model = self.external_config_dict['model']
             except KeyError:
                 raise KeyError(
-                    '\033[1;31mmodel need to be specified in at least one of the these ways: \033[0m'
-                    '\033[1;31m[model variable, config file, config dict, command line] \033[0m'
+                    'model need to be specified in at least one of the these ways: '
+                    '[model variable, config file, config dict, command line] '
                 )
         if not isinstance(model, str):
             final_model_class = model
@@ -192,8 +193,8 @@ class Config(object):
                 final_dataset = self.external_config_dict['dataset']
             except KeyError:
                 raise KeyError(
-                    '\033[1;31mdataset need to be specified in at least one of the these ways: \033[0m'
-                    '\033[1;31m[dataset variable, config file, config dict, command line] \033[0m'
+                    'dataset need to be specified in at least one of the these ways: '
+                    '[dataset variable, config file, config dict, command line] '
                 )
         else:
             final_dataset = dataset
@@ -279,18 +280,18 @@ class Config(object):
             elif self.final_config_dict['loss_type'] in ['BPR']:
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.PAIRWISE
         else:
-            raise ValueError('\033[1;31mEither Model has attr \'input_type\',' 'or arg \'loss_type\' should exist in config.\033[0m')
+            raise ValueError('Either Model has attr \'input_type\',' 'or arg \'loss_type\' should exist in config.')
 
         eval_type = None
         for metric in self.final_config_dict['metrics']:
             if metric.lower() in individual_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.RANKING:
-                    raise RuntimeError('\033[1;31mRanking metrics and other metrics can not be used at the same time.\033[0m')
+                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
                     eval_type = EvaluatorType.INDIVIDUAL
             if metric.lower() in group_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.INDIVIDUAL:
-                    raise RuntimeError('\033[1;31mRanking metrics and other metrics can not be used at the same time.\033[0m')
+                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
                     eval_type = EvaluatorType.RANKING
         self.final_config_dict['eval_type'] = eval_type
@@ -322,7 +323,7 @@ class Config(object):
 
     def __setitem__(self, key, value):
         if not isinstance(key, str):
-            raise TypeError("\033[1;31mindex must be a str.\033[0m")
+            raise TypeError("index must be a str.")
         self.final_config_dict[key] = value
 
     def __getitem__(self, item):
@@ -333,22 +334,22 @@ class Config(object):
 
     def __contains__(self, key):
         if not isinstance(key, str):
-            raise TypeError("\033[1;31mindex must be a str.\033[0m")
+            raise TypeError("index must be a str.")
         return key in self.final_config_dict
 
     def __str__(self):
         args_info = '\n'
         for category in self.parameters:
-            args_info += '\033[1;35m' + category + ' Hyper Parameters: \033[0m\n'
+            args_info += set_color(category + ' Hyper Parameters:\n', 'pink')
             args_info += '\n'.join([
-                "\033[0;36m{}\033[0m = \033[33m{}\033[0m".format(arg, value) for arg, value in self.final_config_dict.items()
+                (set_color("{}", 'cyan') + " =" + set_color(" {}", 'yellow')).format(arg, value) for arg, value in self.final_config_dict.items()
                 if arg in self.parameters[category]
             ])
             args_info += '\n\n'
             
-        args_info += '\033[1;35mOther Hyper Parameters: \033[0m\n'
+        args_info += set_color('Other Hyper Parameters: \n', 'pink')
         args_info += '\n'.join([
-                "\033[0;36m{}\033[0m = \033[33m{}\033[0m".format(arg, value) for arg, value in self.final_config_dict.items()
+                (set_color("{}", 'cyan') + " = " + set_color("{}", 'yellow')).format(arg, value) for arg, value in self.final_config_dict.items()
                 if arg not in {_ for args in self.parameters.values() for _ in args}.union({'model', 'dataset', 'config_files'})
             ])
         args_info += '\n\n'

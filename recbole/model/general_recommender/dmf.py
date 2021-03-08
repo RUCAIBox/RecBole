@@ -65,7 +65,7 @@ class DMF(GeneralRecommender):
             self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix(value_field=self.RATING)
             self.interaction_matrix = dataset.inter_matrix(form='csr', value_field=self.RATING).astype(np.float32)
         else:
-            raise ValueError("\033[1;31mThe inter_matrix_type must in ['01', 'rating'] but get {}\033[0m".format(self.inter_matrix_type))
+            raise ValueError("The inter_matrix_type must in ['01', 'rating'] but get {}".format(self.inter_matrix_type))
         self.max_rating = self.history_user_value.max()
         # tensor of shape [n_items, H] where H is max length of history interaction.
         self.history_user_id = self.history_user_id.to(self.device)

@@ -50,14 +50,14 @@ class CDAE(GeneralRecommender):
         elif self.hid_activation == 'tanh':
             self.h_act = nn.Tanh()
         else:
-            raise ValueError('\033[1;31mInvalid hidden layer activation function\033[0m')
+            raise ValueError('Invalid hidden layer activation function')
 
         if self.out_activation == 'sigmoid':
             self.o_act = nn.Sigmoid()
         elif self.out_activation == 'relu':
             self.o_act = nn.ReLU()
         else:
-            raise ValueError('\033[1;31mInvalid output layer activation function\033[0m')
+            raise ValueError('Invalid output layer activation function')
 
         self.dropout = nn.Dropout(p=self.corruption_ratio)
 
@@ -104,7 +104,7 @@ class CDAE(GeneralRecommender):
         elif self.loss_type == 'BCE':
             loss_func = nn.BCELoss(reduction='sum')
         else:
-            raise ValueError('\033[1;31mInvalid loss_type, loss_type must in [MSE, BCE]\033[0m')
+            raise ValueError('Invalid loss_type, loss_type must in [MSE, BCE]')
 
         loss = loss_func(predict, x_items)
         # l1-regularization

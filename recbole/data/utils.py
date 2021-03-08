@@ -20,6 +20,7 @@ from recbole.config import EvalSetting
 from recbole.data.dataloader import *
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
 from recbole.utils import ModelType, ensure_dir
+from recbole.utils.utils import set_color
 
 
 def create_dataset(config):
@@ -91,8 +92,8 @@ def data_preparation(config, dataset, save=False):
     if train_neg_sample_args['strategy'] != 'none':
         if dataset.label_field in dataset.inter_feat:
             raise ValueError(
-                f'\033[1;31m`training_neg_sample_num` should be 0 \033[0m'
-                f'\033[1;31mif inter_feat have label_field [{dataset.label_field}].\033[0m'
+                f'`training_neg_sample_num` should be 0 '
+                f'if inter_feat have label_field [{dataset.label_field}].'
             )
         if model_type != ModelType.SEQUENTIAL:
             sampler = Sampler(phases, built_datasets, train_neg_sample_args['distribution'])
@@ -105,12 +106,16 @@ def data_preparation(config, dataset, save=False):
             train_kwargs['kg_sampler'] = kg_sampler
 
     dataloader = get_data_loader('train', config, train_neg_sample_args)
-    logger.info(f'\033[1;35mBuild\033[0m \033[1;33m[{dataloader.__name__}]\033[0m for \033[1;33m[train]\033[0m with format \033[1;33m[{train_kwargs["dl_format"]}]\033[0m')
+    logger.info((set_color('Build', 'pink') + set_color(' [{}]', 'yellow') 
+                + ' for ' + set_color('[train]', 'yellow') + ' with format ' 
+                + set_color('[{}]', 'yellow')).format(dataloader.__name__, train_kwargs["dl_format"]))
     if train_neg_sample_args['strategy'] != 'none':
-        logger.info(f'\033[1;35m[train]\033[0m \033[1;34mNegative Sampling\033[0m: {train_neg_sample_args}')
+        logger.info(set_color('[train]', 'pink') + set_color(' Negative Sampling', 'blue') + ': {train_neg_sample_args}')
     else:
-        logger.info(f'\033[1;33m[train] No Negative Sampling\033[0m')
-    logger.info(f'\033[1;35m[train]\033[0m \033[1;36mbatch_size\033[0m = \033[0;33m[{train_kwargs["batch_size"]}]\033[0m, \033[1;36mshuffle\033[0m = \033[0;33m[{train_kwargs["shuffle"]}]\033[0m\n')
+        logger.info(set_color('[train]', 'pink') + set_color(' No Negative Sampling', 'yellow'))
+    logger.info(set_color('[train]', 'pink') + set_color(' batch_size', 'cyan') + ' = ' 
+                + set_color('[{train_kwargs["batch_size"]}]', 'yellow') + ', ' 
+                + set_color('shuffle', 'cyan') + ' = ' + set_color('[{train_kwargs["shuffle"]}]\n', 'yellow'))
     train_data = dataloader(**train_kwargs)
 
     # Evaluation
@@ -125,8 +130,8 @@ def data_preparation(config, dataset, save=False):
     if eval_neg_sample_args['strategy'] != 'none':
         if dataset.label_field in dataset.inter_feat:
             raise ValueError(
-                f'\033[1;31mIt can not validate with `{es.es_str[1]}` \033[0m'
-                f'\033[1;31mwhen inter_feat have label_field [{dataset.label_field}].\033[0m'
+                f'It can not validate with `{es.es_str[1]}` '
+                f'when inter_feat have label_field [{dataset.label_field}].'
             )
         if sampler is None:
             if model_type != ModelType.SEQUENTIAL:
@@ -142,9 +147,13 @@ def data_preparation(config, dataset, save=False):
     test_kwargs.update(eval_kwargs)
 
     dataloader = get_data_loader('evaluation', config, eval_neg_sample_args)
-    logger.info(f'\033[1;35mBuild\033[0m \033[1;33m[{dataloader.__name__}]\033[0m for \033[1;33m[evaluation]\033[0m with format \033[1;33m[{eval_kwargs["dl_format"]}]\033[0m')
+    logger.info((set_color('Build', 'pink') + set_color(' [{}]', 'yellow') 
+                + ' for ' + set_color('[evaluation]', 'yellow') + ' with format ' 
+                + set_color('[{}]', 'yellow')).format(dataloader.__name__, eval_kwargs["dl_format"]))
     logger.info(es)
-    logger.info(f'\033[1;35m[evaluation]\033[0m \033[1;36mbatch_size\033[0m = \033[1;33m[{eval_kwargs["batch_size"]}]\033[0m, \033[1;36mshuffle\033[0m = \033[1;33m[{eval_kwargs["shuffle"]}]\033[0m\n')
+    logger.info((set_color('[evaluation]', 'pink') + set_color(' batch_size', 'cyan') + ' = ' 
+                + set_color('[{}]', 'yellow') + ', ' + set_color('shuffle', 'cyan') + ' = ' 
+                + set_color('[{}]\n', 'yellow')).format(eval_kwargs["batch_size"], eval_kwargs["shuffle"]))
 
     valid_data = dataloader(**valid_kwargs)
     test_data = dataloader(**test_kwargs)
@@ -163,7 +172,7 @@ def save_datasets(save_path, name, dataset):
         name = [name]
         dataset = [dataset]
     if len(name) != len(dataset):
-        raise ValueError(f'\033[1;31mLength of name {name} should equal to length of dataset {dataset}.\033[0m')
+        raise ValueError(f'Length of name {name} should equal to length of dataset {dataset}.')
     for i, d in enumerate(dataset):
         cur_path = os.path.join(save_path, name[i])
         ensure_dir(cur_path)
@@ -221,10 +230,10 @@ def get_data_loader(name, config, neg_sample_args):
             return GeneralFullDataLoader
         elif neg_sample_strategy == 'none':
             raise NotImplementedError(
-                '\033[1;31mThe use of external negative sampling for knowledge model has not been implemented\033[0m'
+                'The use of external negative sampling for knowledge model has not been implemented'
             )
     else:
-        raise NotImplementedError(f'\033[1;31mModel_type [{model_type}] has not been implemented.\033[0m')
+        raise NotImplementedError(f'Model_type [{model_type}] has not been implemented.')
 
 
 def _get_DIN_data_loader(name, config, neg_sample_args):

@@ -78,7 +78,7 @@ class NAIS(GeneralRecommender):
         elif self.algorithm == 'prod':
             self.mlp_layers = MLPLayers([self.embedding_size, self.weight_size])
         else:
-            raise ValueError("\033[1;31mNAIS just support attention type in ['concat', 'prod'] but get {}\033[0m".format(self.algorithm))
+            raise ValueError("NAIS just support attention type in ['concat', 'prod'] but get {}".format(self.algorithm))
         self.weight_layer = nn.Parameter(torch.ones(self.weight_size, 1))
         self.bceloss = nn.BCELoss()
 

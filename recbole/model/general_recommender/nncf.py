@@ -80,8 +80,8 @@ class NNCF(GeneralRecommender):
         elif self.neigh_info_method == "louvain":
             self.u_neigh, self.i_neigh = self.get_neigh_louvain()
         else:
-            raise RuntimeError('\033[1;31mYou need to choose the right algorithm of processing neighborhood information. \
-                The parameter neigh_info_method can be set to random, knn or louvain.\033[0m')
+            raise RuntimeError('You need to choose the right algorithm of processing neighborhood information. \
+                The parameter neigh_info_method can be set to random, knn or louvain.')
 
         # parameters initialization
         self.apply(self._init_weights)

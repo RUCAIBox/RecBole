@@ -20,6 +20,7 @@ import torch.nn as nn
 
 from recbole.model.layers import FMEmbedding, FMFirstOrderLinear
 from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
+from recbole.utils.utils import set_color
 
 
 class AbstractRecommender(nn.Module):
@@ -71,7 +72,7 @@ class AbstractRecommender(nn.Module):
         """
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
-        return super().__str__() + '\n\033[1;34mTrainable parameters\033[0m: {}'.format(params)
+        return super().__str__() + set_color('\nTrainable parameters', 'blue') + ': {}'.format(params)
 
 
 class GeneralRecommender(AbstractRecommender):
@@ -326,7 +327,7 @@ class ContextRecommender(AbstractRecommender):
 
         """
         if not self.double_tower:
-            raise RuntimeError('\033[1;31mPlease check your model hyper parameters and set \'double tower\' as True\033[0m')
+            raise RuntimeError('Please check your model hyper parameters and set \'double tower\' as True')
         sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
         if dense_embedding is not None:
             first_dense_embedding, second_dense_embedding = \

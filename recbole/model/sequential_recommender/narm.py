@@ -59,7 +59,7 @@ class NARM(SequentialRecommender):
         elif self.loss_type == 'CE':
             self.loss_fct = nn.CrossEntropyLoss()
         else:
-            raise NotImplementedError("\033[1;31mMake sure 'loss_type' in ['BPR', 'CE']!\033[0m")
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
         self.apply(self._init_weights)

@@ -116,7 +116,7 @@ class NeuMF(GeneralRecommender):
         elif self.mlp_train:
             output = self.sigmoid(self.predict_layer(mlp_output))
         else:
-            raise RuntimeError('\033[1;31mmf_train and mlp_train can not be False at the same time\033[0m')
+            raise RuntimeError('mf_train and mlp_train can not be False at the same time')
         return output.squeeze()
 
     def calculate_loss(self, interaction):

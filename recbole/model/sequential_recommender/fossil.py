@@ -54,7 +54,7 @@ class FOSSIL(SequentialRecommender):
         elif self.loss_type == 'CE':
             self.loss_fct = nn.CrossEntropyLoss()
         else:
-            raise NotImplementedError("\033[1;31mMake sure 'loss_type' in ['BPR', 'CE']!\033[0m")
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # init the parameters of the model
         self.apply(self.init_weights)

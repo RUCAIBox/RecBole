@@ -103,7 +103,7 @@ class S3Rec(SequentialRecommender):
         elif self.loss_type == 'CE' and self.train_stage == 'finetune':
             self.loss_fct = nn.CrossEntropyLoss()
         elif self.train_stage == 'finetune':
-            raise NotImplementedError("\033[1;31mMake sure 'loss_type' in ['BPR', 'CE']!\033[0m")
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
         assert self.train_stage in ['pretrain', 'finetune']

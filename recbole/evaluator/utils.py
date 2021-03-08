@@ -66,7 +66,7 @@ def trunc(scores, method):
     try:
         cut_method = getattr(np, method)
     except NotImplementedError:
-        raise NotImplementedError("\033[1;31mmodule 'numpy' has no function named '{}'\033[0m".format(method))
+        raise NotImplementedError("module 'numpy' has no function named '{}'".format(method))
     scores = cut_method(scores)
     return scores
 
