@@ -13,7 +13,7 @@ recbole.data.dataset
 """
 
 import copy
-import json
+import pickle
 import os
 from collections import Counter
 from logging import getLogger
@@ -26,7 +26,7 @@ from scipy.sparse import coo_matrix
 
 from recbole.data.interaction import Interaction
 from recbole.data.utils import dlapi
-from recbole.utils import FeatureSource, FeatureType
+from recbole.utils import FeatureSource, FeatureType, get_local_time
 
 
 class Dataset(object):
@@ -95,23 +95,18 @@ class Dataset(object):
         self.logger = getLogger()
         self._dataloader_apis = {'field2type', 'field2source', 'field2id_token'}
         self._dataloader_apis.update(dlapi.dataloader_apis)
-
-        if saved_dataset is None:
-            self._from_scratch()
-        else:
-            self._restore_saved_dataset(saved_dataset)
+        self._from_scratch()
 
     def _from_scratch(self):
         """Load dataset from scratch.
         Initialize attributes firstly, then load data from atomic files, pre-process the dataset lastly.
         """
-        self.logger.debug(f'Loading {self.__class__} from scratch')
+        self.logger.debug(f'Loading {self.__class__} from scratch.')
 
         self._get_preset()
         self._get_field_from_config()
         self._load_data(self.dataset_name, self.dataset_path)
         self._data_processing()
-        self._change_feat_format()
 
     def _get_preset(self):
         """Initialization useful inside attributes.
@@ -202,34 +197,6 @@ class Dataset(object):
                 if getattr(self, f'{suf}_feat', None) is not None:
                     feat_name_list.append(f'{suf}_feat')
         return feat_name_list
-
-    def _restore_saved_dataset(self, saved_dataset):
-        """Restore saved dataset from ``saved_dataset``.
-
-        Args:
-            saved_dataset (str): path for the saved dataset.
-        """
-        self.logger.debug(f'Restoring dataset from [{saved_dataset}].')
-
-        if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
-            raise ValueError(f'Filepath [{saved_dataset}] need to be a dir.')
-
-        with open(os.path.join(saved_dataset, 'basic-info.json')) as file:
-            basic_info = json.load(file)
-
-        for k in basic_info:
-            setattr(self, k, basic_info[k])
-
-        feats = ['inter', 'user', 'item']
-        for name in feats:
-            cur_file_name = os.path.join(saved_dataset, f'{name}.csv')
-            if os.path.isfile(cur_file_name):
-                df = pd.read_csv(cur_file_name)
-                setattr(self, f'{name}_feat', df)
-            else:
-                setattr(self, f'{name}_feat', None)
-
-        self._get_field_from_config()
 
     def _load_data(self, token, dataset_path):
         """Load features.
@@ -434,9 +401,9 @@ class Dataset(object):
                 continue
             df[field].fillna(value='', inplace=True)
             if ftype == FeatureType.TOKEN_SEQ:
-                df[field] = [list(filter(None, _.split(seq_separator))) for _ in df[field].values]
+                df[field] = [np.array(list(filter(None, _.split(seq_separator)))) for _ in df[field].values]
             elif ftype == FeatureType.FLOAT_SEQ:
-                df[field] = [list(map(float, filter(None, _.split(seq_separator)))) for _ in df[field].values]
+                df[field] = [np.array(list(map(float, filter(None, _.split(seq_separator))))) for _ in df[field].values]
             self.field2seqlen[field] = max(map(len, df[field].values))
         return df
 
@@ -532,7 +499,8 @@ class Dataset(object):
                 elif ftype == FeatureType.FLOAT:
                     feat[field].fillna(value=feat[field].mean(), inplace=True)
                 else:
-                    feat[field] = feat[field].apply(lambda x: [] if isinstance(x, float) else x)
+                    dtype = np.int64 if ftype == FeatureType.TOKEN_SEQ else np.float
+                    feat[field] = feat[field].apply(lambda x: np.array([], dtype=dtype) if isinstance(x, float) else x)
 
     def _normalize(self):
         """Normalization if ``config['normalize_field']`` or ``config['normalize_all']`` is set.
@@ -1143,7 +1111,10 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of users' interaction records.
         """
-        return np.mean(list(Counter(self.inter_feat[self.uid_field].numpy()).values()))
+        if isinstance(self.inter_feat, pd.DataFrame):
+            return np.mean(self.inter_feat.groupby(self.uid_field).size())
+        else:
+            return np.mean(list(Counter(self.inter_feat[self.uid_field].numpy()).values()))
 
     @property
     def avg_actions_of_items(self):
@@ -1152,7 +1123,10 @@ class Dataset(object):
         Returns:
             numpy.float64: Average number of items' interaction records.
         """
-        return np.mean(list(Counter(self.inter_feat[self.iid_field].numpy()).values()))
+        if isinstance(self.inter_feat, pd.DataFrame):
+            return np.mean(self.inter_feat.groupby(self.iid_field).size())
+        else:
+            return np.mean(list(Counter(self.inter_feat[self.iid_field].numpy()).values()))
 
     @property
     def sparsity(self):
@@ -1379,6 +1353,8 @@ class Dataset(object):
         Returns:
             list: List of built :class:`Dataset`.
         """
+        self._change_feat_format()
+
         if self.benchmark_filename_list is not None:
             cumsum = list(np.cumsum(self.file_size_list))
             datasets = [self.copy(self.inter_feat[start:end]) for start, end in zip([0] + cumsum[:-1], cumsum)]
@@ -1413,22 +1389,10 @@ class Dataset(object):
         if (filepath is None) or (not os.path.isdir(filepath)):
             raise ValueError(f'Filepath [{filepath}] need to be a dir.')
 
-        self.logger.debug(f'Saving into [{filepath}]')
-        basic_info = {
-            'field2type': self.field2type,
-            'field2source': self.field2source,
-            'field2id_token': self.field2id_token,
-            'field2seqlen': self.field2seqlen
-        }
-
-        with open(os.path.join(filepath, 'basic-info.json'), 'w', encoding='utf-8') as file:
-            json.dump(basic_info, file)
-
-        feats = ['inter', 'user', 'item']
-        for name in feats:
-            df = getattr(self, f'{name}_feat')
-            if df is not None:
-                df.to_csv(os.path.join(filepath, f'{name}.csv'))
+        file = os.path.join(filepath, f'{self.config["dataset"]}-dataset.pth')
+        self.logger.debug(f'Saving into [{file}]')
+        with open(file, 'wb') as f:
+            pickle.dump(self, f)
 
     @dlapi.set()
     def get_user_feature(self):
