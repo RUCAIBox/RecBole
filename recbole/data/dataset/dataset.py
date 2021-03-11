@@ -102,7 +102,7 @@ class Dataset(object):
         """Load dataset from scratch.
         Initialize attributes firstly, then load data from atomic files, pre-process the dataset lastly.
         """
-        self.logger.debug(set_color('Loading {} from scratch.', 'green').format(self.__class__))
+        self.logger.debug(set_color(f'Loading {self.__class__} from scratch.', 'green'))
 
         self._get_preset()
         self._get_field_from_config()
@@ -135,8 +135,8 @@ class Dataset(object):
                 'USER_ID_FIELD and ITEM_ID_FIELD need to be set at the same time or not set at the same time.'
             )
 
-        self.logger.debug(set_color('uid_field', 'blue') + ': {self.uid_field}')
-        self.logger.debug(set_color('iid_field', 'blue') + ': {self.iid_field}')
+        self.logger.debug(set_color('uid_field', 'blue') + f': {self.uid_field}')
+        self.logger.debug(set_color('iid_field', 'blue') + f': {self.iid_field}')
 
     def _data_processing(self):
         """Data preprocessing, including:
@@ -335,9 +335,9 @@ class Dataset(object):
         if load_col and unload_col:
             raise ValueError(f'load_col [{load_col}] and unload_col [{unload_col}] can not be set the same time.')
 
-        self.logger.debug(set_color('[{}]: ', 'pink').format(source))
-        self.logger.debug(set_color('\t load_col', 'blue') + ': [{load_col}]')
-        self.logger.debug(set_color('\t unload_col', 'blue') + ': [{unload_col}]')
+        self.logger.debug(set_color(f'[{source}]: ', 'pink'))
+        self.logger.debug(set_color('\t load_col', 'blue') + f': [{load_col}]')
+        self.logger.debug(set_color('\t unload_col', 'blue') + f': [{unload_col}]')
         return load_col, unload_col
 
     def _load_feat(self, filepath, source):
@@ -357,7 +357,7 @@ class Dataset(object):
             Their length is limited only after calling :meth:`~_dict_to_interaction` or
             :meth:`~_dataframe_to_interaction`
         """
-        self.logger.debug(set_color('Loading feature from [{}] (source: [{}]).', 'green').format(filepath, source))
+        self.logger.debug(set_color(f'Loading feature from [{filepath}] (source: [{source}]).', 'green'))
 
         load_col, unload_col = self._get_load_and_unload_col(source)
         if load_col == set():
@@ -529,7 +529,7 @@ class Dataset(object):
         else:
             return
 
-        self.logger.debug(set_color('Normalized fields', 'blue') + ': {fields}')
+        self.logger.debug(set_color('Normalized fields', 'blue') + f': {fields}')
 
         for feat_name in self.feat_name_list:
             feat = getattr(self, feat_name)
@@ -684,7 +684,7 @@ class Dataset(object):
         Returns:
             set: illegal ids, whose inter num out of [min_num, max_num]
         """
-        self.logger.debug(set_color('get_illegal_ids_by_inter_num', 'blue') + ': field=[{field}], max_num=[{max_num}], min_num=[{min_num}]')
+        self.logger.debug(set_color('get_illegal_ids_by_inter_num', 'blue') + f': field=[{field}], max_num=[{max_num}], min_num=[{min_num}]')
 
         max_num = max_num or np.inf
         min_num = min_num or -1
@@ -729,7 +729,7 @@ class Dataset(object):
         if val is None:
             return []
 
-        self.logger.debug(set_color('drop_by_value', 'blue') + ': val={val}')
+        self.logger.debug(set_color('drop_by_value', 'blue') + f': val={val}')
         filter_field = []
         for field in val:
             if field not in self.field2type:
@@ -877,7 +877,7 @@ class Dataset(object):
         """Get ``config['fields_in_same_space']`` firstly, and remap each.
         """
         fields_in_same_space = self._get_fields_in_same_space()
-        self.logger.debug(set_color('fields_in_same_space', 'blue') + ': {fields_in_same_space}')
+        self.logger.debug(set_color('fields_in_same_space', 'blue') + f': {fields_in_same_space}')
         for field_set in fields_in_same_space:
             remap_list = self._get_remap_list(field_set)
             self._remap(remap_list)
@@ -1178,16 +1178,16 @@ class Dataset(object):
         info = [set_color(self.dataset_name, 'pink')]
         if self.uid_field:
             info.extend([
-                set_color('The number of users', 'blue') + ': {self.user_num}', set_color('Average actions of users', 'blue') + ': {self.avg_actions_of_users}'
+                set_color('The number of users', 'blue') + f': {self.user_num}', set_color('Average actions of users', 'blue') + f': {self.avg_actions_of_users}'
             ])
         if self.iid_field:
             info.extend([
-                set_color('The number of items', 'blue') + ': {self.item_num}', set_color('Average actions of items', 'blue') + ': {self.avg_actions_of_items}'
+                set_color('The number of items', 'blue') + f': {self.item_num}', set_color('Average actions of items', 'blue') + f': {self.avg_actions_of_items}'
             ])
-        info.append(set_color('The number of inters', 'blue') + ': {self.inter_num}')
+        info.append(set_color('The number of inters', 'blue') + f': {self.inter_num}')
         if self.uid_field and self.iid_field:
-            info.append(set_color('The sparsity of the dataset', 'blue') + ': {self.sparsity * 100}%')
-        info.append(set_color('Remain Fields', 'blue') + ': {list(self.field2type)}')
+            info.append(set_color('The sparsity of the dataset', 'blue') + f': {self.sparsity * 100}%')
+        info.append(set_color('Remain Fields', 'blue') + f': {list(self.field2type)}')
         return '\n'.join(info)
 
     def copy(self, new_inter_feat):

@@ -145,7 +145,7 @@ class Trainer(AbstractTrainer):
             tqdm(
                 enumerate(train_data),
                 total=len(train_data),
-                desc=set_color("Train {:>5}", 'pink').format(epoch_idx),
+                desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
             ) if show_progress else enumerate(train_data)
         )
         for batch_idx, interaction in iter_data:
@@ -871,7 +871,7 @@ class RecVAETrainer(Trainer):
             tqdm(
                 enumerate(train_data),
                 total=len(train_data),
-                desc=set_color("Train {:>5}", 'pink').format(epoch_idx),
+                desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
             ) if show_progress else enumerate(train_data)
         )
         for epoch in range(n_epochs):

@@ -18,6 +18,7 @@ import os
 import colorlog
 
 from recbole.utils.utils import get_local_time, ensure_dir
+from colorama import init
 
 log_colors_config = {
     'DEBUG': 'cyan',
@@ -40,6 +41,7 @@ def init_logger(config):
         >>> logger.debug(train_state)
         >>> logger.info(train_result)
     """
+    init(autoreset=True)
     LOGROOT = './log/'
     dir_name = os.path.dirname(LOGROOT)
     ensure_dir(dir_name)

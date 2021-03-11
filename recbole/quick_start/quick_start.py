@@ -58,8 +58,8 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     # model evaluation
     test_result = trainer.evaluate(test_data, load_best_model=saved, show_progress=config['show_progress'])
 
-    logger.info(set_color('best valid ', 'yellow') + ': {}'.format(best_valid_result))
-    logger.info(set_color('test result', 'yellow') + ': {}'.format(test_result))
+    logger.info(set_color('best valid ', 'yellow') + f': {best_valid_result}')
+    logger.info(set_color('test result', 'yellow') + f': {test_result}')
 
     return {
         'best_valid_score': best_valid_score,

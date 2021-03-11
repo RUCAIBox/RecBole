@@ -81,8 +81,8 @@ class KnowledgeBasedDataset(Dataset):
         self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
         self.set_field_property(self.entity_field, FeatureType.TOKEN, FeatureSource.KG, 1)
 
-        self.logger.debug(set_color('relation_field', 'blue') + ': {self.relation_field}')
-        self.logger.debug(set_color('entity_field', 'blue') + ': {self.entity_field}')
+        self.logger.debug(set_color('relation_field', 'blue') + f': {self.relation_field}')
+        self.logger.debug(set_color('entity_field', 'blue') + f': {self.entity_field}')
 
     def _data_processing(self):
         self._set_field2ent_level()
@@ -139,7 +139,7 @@ class KnowledgeBasedDataset(Dataset):
         raise NotImplementedError()
 
     def _load_kg(self, token, dataset_path):
-        self.logger.debug(set_color('Loading kg from [{}].', 'green').format(dataset_path))
+        self.logger.debug(set_color(f'Loading kg from [{dataset_path}].', 'green'))
         kg_path = os.path.join(dataset_path, f'{token}.kg')
         if not os.path.isfile(kg_path):
             raise ValueError('[{token}.kg] not found in [{dataset_path}].')
@@ -154,7 +154,7 @@ class KnowledgeBasedDataset(Dataset):
         assert self.relation_field in kg, kg_warn_message.format(self.relation_field)
 
     def _load_link(self, token, dataset_path):
-        self.logger.debug(set_color('Loading link from [{}].', 'green').format(dataset_path))
+        self.logger.debug(set_color(f'Loading link from [{dataset_path}].', 'green'))
         link_path = os.path.join(dataset_path, f'{token}.link')
         if not os.path.isfile(link_path):
             raise ValueError(f'[{token}.link] not found in [{dataset_path}].')
@@ -208,7 +208,7 @@ class KnowledgeBasedDataset(Dataset):
             if self._contain_ent_field(field_set):
                 field_set = self._remove_ent_field(field_set)
                 ent_fields.update(field_set)
-        self.logger.debug(set_color('ent_fields', 'blue') + ': {fields_in_same_space}')
+        self.logger.debug(set_color('ent_fields', 'blue') + f': {fields_in_same_space}')
         return ent_fields
 
     def _remove_ent_field(self, field_set):

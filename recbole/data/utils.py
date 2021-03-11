@@ -104,16 +104,16 @@ def data_preparation(config, dataset, save=False):
             train_kwargs['kg_sampler'] = kg_sampler
 
     dataloader = get_data_loader('train', config, train_neg_sample_args)
-    logger.info((set_color('Build', 'pink') + set_color(' [{}]', 'yellow') 
+    logger.info(set_color('Build', 'pink') + set_color(f' [{dataloader.__name__}]', 'yellow') 
                 + ' for ' + set_color('[train]', 'yellow') + ' with format ' 
-                + set_color('[{}]', 'yellow')).format(dataloader.__name__, train_kwargs["dl_format"]))
+                + set_color(f'[{train_kwargs["dl_format"]}]', 'yellow'))
     if train_neg_sample_args['strategy'] != 'none':
-        logger.info(set_color('[train]', 'pink') + set_color(' Negative Sampling', 'blue') + ': {train_neg_sample_args}')
+        logger.info(set_color('[train]', 'pink') + set_color(' Negative Sampling', 'blue') + f': {train_neg_sample_args}')
     else:
         logger.info(set_color('[train]', 'pink') + set_color(' No Negative Sampling', 'yellow'))
     logger.info(set_color('[train]', 'pink') + set_color(' batch_size', 'cyan') + ' = ' 
-                + set_color('[{train_kwargs["batch_size"]}]', 'yellow') + ', ' 
-                + set_color('shuffle', 'cyan') + ' = ' + set_color('[{train_kwargs["shuffle"]}]\n', 'yellow'))
+                + set_color(f'[{train_kwargs["batch_size"]}]', 'yellow') + ', ' 
+                + set_color('shuffle', 'cyan') + ' = ' + set_color(f'[{train_kwargs["shuffle"]}]\n', 'yellow'))
     train_data = dataloader(**train_kwargs)
 
     # Evaluation
@@ -145,13 +145,13 @@ def data_preparation(config, dataset, save=False):
     test_kwargs.update(eval_kwargs)
 
     dataloader = get_data_loader('evaluation', config, eval_neg_sample_args)
-    logger.info((set_color('Build', 'pink') + set_color(' [{}]', 'yellow') 
+    logger.info(set_color('Build', 'pink') + set_color(f' [{dataloader.__name__}]', 'yellow') 
                 + ' for ' + set_color('[evaluation]', 'yellow') + ' with format ' 
-                + set_color('[{}]', 'yellow')).format(dataloader.__name__, eval_kwargs["dl_format"]))
+                + set_color(f'[{eval_kwargs["dl_format"]}]', 'yellow'))
     logger.info(es)
-    logger.info((set_color('[evaluation]', 'pink') + set_color(' batch_size', 'cyan') + ' = ' 
-                + set_color('[{}]', 'yellow') + ', ' + set_color('shuffle', 'cyan') + ' = ' 
-                + set_color('[{}]\n', 'yellow')).format(eval_kwargs["batch_size"], eval_kwargs["shuffle"]))
+    logger.info(set_color('[evaluation]', 'pink') + set_color(' batch_size', 'cyan') + ' = ' 
+                + set_color(f'[{eval_kwargs["batch_size"]}]', 'yellow') + ', ' + set_color('shuffle', 'cyan') + ' = ' 
+                + set_color(f'[{eval_kwargs["shuffle"]}]\n', 'yellow'))
 
     valid_data = dataloader(**valid_kwargs)
     test_data = dataloader(**test_kwargs)
