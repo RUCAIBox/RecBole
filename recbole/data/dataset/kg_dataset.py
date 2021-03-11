@@ -142,7 +142,7 @@ class KnowledgeBasedDataset(Dataset):
         self.logger.debug(set_color(f'Loading kg from [{dataset_path}].', 'green'))
         kg_path = os.path.join(dataset_path, f'{token}.kg')
         if not os.path.isfile(kg_path):
-            raise ValueError('[{token}.kg] not found in [{dataset_path}].')
+            raise ValueError(f'[{token}.kg] not found in [{dataset_path}].')
         df = self._load_feat(kg_path, FeatureSource.KG)
         self._check_kg(df)
         return df

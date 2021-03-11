@@ -382,7 +382,7 @@ class Trainer(AbstractTrainer):
             tqdm(
                 enumerate(eval_data),
                 total=len(eval_data),
-                desc=set_color("Evaluate   ", 'pink'),
+                desc=set_color(f"Evaluate   ", 'pink'),
             ) if show_progress else enumerate(eval_data)
         )
         for batch_idx, batched_data in iter_data:
