@@ -26,6 +26,7 @@ from recbole.data.interaction import Interaction
 from recbole.evaluator import ProxyEvaluator
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
     DataLoaderType, KGDataLoaderState
+from recbole.utils.utils import set_color
 
 
 class AbstractTrainer(object):
@@ -144,7 +145,7 @@ class Trainer(AbstractTrainer):
             tqdm(
                 enumerate(train_data),
                 total=len(train_data),
-                desc=f"Train {epoch_idx:>5}",
+                desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
             ) if show_progress else enumerate(train_data)
         )
         for batch_idx, interaction in iter_data:
@@ -229,13 +230,13 @@ class Trainer(AbstractTrainer):
 
     def _generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
         des = self.config['loss_decimal_place'] or 4
-        train_loss_output = 'epoch %d training [time: %.2fs, ' % (epoch_idx, e_time - s_time)
+        train_loss_output = (set_color('epoch %d training', 'green') + ' [' + set_color('time', 'blue') + ': %.2fs, ') % (epoch_idx, e_time - s_time)
         if isinstance(losses, tuple):
-            des = 'train_loss%d: %.' + str(des) + 'f'
+            des = (set_color('train_loss%d', 'blue') + ': %.' + str(des) + 'f')
             train_loss_output += ', '.join(des % (idx + 1, loss) for idx, loss in enumerate(losses))
         else:
             des = '%.' + str(des) + 'f'
-            train_loss_output += 'train loss:' + des % losses
+            train_loss_output += set_color('train loss', 'blue') + ': ' + des % losses
         return train_loss_output + ']'
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
@@ -272,7 +273,7 @@ class Trainer(AbstractTrainer):
             if self.eval_step <= 0 or not valid_data:
                 if saved:
                     self._save_checkpoint(epoch_idx)
-                    update_output = 'Saving current: %s' % self.saved_model_file
+                    update_output = set_color('Saving current', 'blue') + ': %s' % self.saved_model_file
                     if verbose:
                         self.logger.info(update_output)
                 continue
@@ -287,16 +288,17 @@ class Trainer(AbstractTrainer):
                     bigger=self.valid_metric_bigger
                 )
                 valid_end_time = time()
-                valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
+                valid_score_output = (set_color("epoch %d evaluating", 'green') + " [" + set_color("time", 'blue') 
+                                    + ": %.2fs, " + set_color("valid_score", 'blue') + ": %f]") % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                valid_result_output = set_color('valid result', 'blue') + ': \n' + dict2str(valid_result)
                 if verbose:
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
                 if update_flag:
                     if saved:
                         self._save_checkpoint(epoch_idx)
-                        update_output = 'Saving current best: %s' % self.saved_model_file
+                        update_output = set_color('Saving current best', 'blue') + ': %s' % self.saved_model_file
                         if verbose:
                             self.logger.info(update_output)
                     self.best_valid_result = valid_result
@@ -380,7 +382,7 @@ class Trainer(AbstractTrainer):
             tqdm(
                 enumerate(eval_data),
                 total=len(eval_data),
-                desc=f"Evaluate   ",
+                desc=set_color(f"Evaluate   ", 'pink'),
             ) if show_progress else enumerate(eval_data)
         )
         for batch_idx, batched_data in iter_data:
@@ -541,7 +543,7 @@ class S3RecTrainer(Trainer):
                     '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1))
                 )
                 self.save_pretrained_model(epoch_idx, saved_model_file)
-                update_output = 'Saving current: %s' % saved_model_file
+                update_output = set_color('Saving current', 'blue') + ': %s' % saved_model_file
                 if verbose:
                     self.logger.info(update_output)
 
@@ -701,9 +703,10 @@ class DecisionTreeTrainer(AbstractTrainer):
                 valid_start_time = time()
                 valid_result, valid_score = self._valid_epoch(valid_data)
                 valid_end_time = time()
-                valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
+                valid_score_output = (set_color("epoch %d evaluating", 'green') + " [" + set_color("time", 'blue') 
+                                    + ": %.2fs, " + set_color("valid_score", 'blue') + ": %f]") % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                valid_result_output = set_color('valid result', 'blue') + ': \n' + dict2str(valid_result)
                 if verbose:
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
@@ -868,7 +871,7 @@ class RecVAETrainer(Trainer):
             tqdm(
                 enumerate(train_data),
                 total=len(train_data),
-                desc=f"Train {epoch_idx:>5}",
+                desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
             ) if show_progress else enumerate(train_data)
         )
         for epoch in range(n_epochs):
@@ -935,16 +938,16 @@ class RecVAETrainer(Trainer):
                     bigger=self.valid_metric_bigger
                 )
                 valid_end_time = time()
-                valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
+                valid_score_output = (set_color("epoch %d evaluating", 'blue') + " [" + set_color("time", 'blue') + ": %.2fs, " + set_color("valid_score", 'blue') + ": %f]") % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                valid_result_output = set_color('valid result', 'blue') + ': \n' + dict2str(valid_result)
                 if verbose:
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
                 if update_flag:
                     if saved:
                         self._save_checkpoint(epoch_idx)
-                        update_output = 'Saving current best: %s' % self.saved_model_file
+                        update_output = set_color('Saving current best', 'blue') + ': %s' % self.saved_model_file
                         if verbose:
                             self.logger.info(update_output)
                     self.best_valid_result = valid_result
