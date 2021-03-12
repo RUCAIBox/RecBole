@@ -22,7 +22,7 @@ from recbole.utils import InputType
 
 
 class RaCT(GeneralRecommender):
-    r"""RaCT is a item-based model collaborative filtering model that simultaneously rank all items for user .
+    r"""RaCT is a collaborative filtering model which uses methods based on actor-critic reinforcement learning for training.
 
     We implement the RaCT model with only user dataloader.
     """
