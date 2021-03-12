@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/19, 2020/9/17, 2020/8/31, 2021/3/1
-# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li, Jiawei Guan
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com, guanjw@ruc.edu.cn
+# @Time   : 2020/10/19, 2020/9/17, 2020/8/31, 2021/2/20, 2021/3/1
+# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li, Haoran Cheng, Jiawei Guan
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com, chenghaoran29@foxmail.com, guanjw@ruc.edu.cn
 
 """
 recbole.data.utils
@@ -208,6 +208,7 @@ def get_data_loader(name, config, neg_sample_args):
         'MacridVAE': _get_AE_data_loader,
         'CDAE': _get_AE_data_loader,
         'ENMF': _get_AE_data_loader,
+        'RaCT': _get_AE_data_loader,
         'RecVAE': _get_AE_data_loader
     }
 
