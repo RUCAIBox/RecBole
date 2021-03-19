@@ -1,3 +1,7 @@
+# Saved models
+/saved*
+*.pth
+
 .vscode/
 .idea/
 *.pyc
@@ -5,3 +9,4 @@
 saved/
 *.lprof
 *.egg-info/
+docs/build/

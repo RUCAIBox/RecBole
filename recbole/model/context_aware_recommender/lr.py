@@ -27,6 +27,7 @@ class LR(ContextRecommender):
 
         Z = \sum_{i} {w_i}{x_i}
     """
+
     def __init__(self, config, dataset):
         super(LR, self).__init__(config, dataset)
 

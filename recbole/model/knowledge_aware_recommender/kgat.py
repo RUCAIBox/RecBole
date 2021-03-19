@@ -13,17 +13,16 @@ Reference code:
     https://github.com/xiangwang1223/knowledge_graph_attention_network
 """
 
-import copy
+import numpy as np
+import scipy.sparse as sp
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-import scipy.sparse as sp
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import KnowledgeRecommender
-from recbole.model.loss import BPRLoss, EmbLoss
 from recbole.model.init import xavier_normal_initialization
+from recbole.model.loss import BPRLoss, EmbLoss
+from recbole.utils import InputType
 
 
 class Aggregator(nn.Module):
@@ -99,7 +98,7 @@ class KGAT(KnowledgeRecommender):
         self.reg_weight = config['reg_weight']
 
         # generate intermediate data
-        self.A_in = self.init_graph()   # init the attention matrix by the structure of ckg
+        self.A_in = self.init_graph()  # init the attention matrix by the structure of ckg
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
@@ -128,7 +127,7 @@ class KGAT(KnowledgeRecommender):
         adj_list = []
         for rel_type in range(1, self.n_relations, 1):
             edge_idxs = self.ckg.filter_edges(lambda edge: edge.data['relation_id'] == rel_type)
-            sub_graph = dgl.edge_subgraph(self.ckg, edge_idxs, preserve_nodes=True).\
+            sub_graph = dgl.edge_subgraph(self.ckg, edge_idxs, preserve_nodes=True). \
                 adjacency_matrix(transpose=False, scipy_fmt='coo').astype('float')
             rowsum = np.array(sub_graph.sum(1))
             d_inv = np.power(rowsum, -1).flatten()
@@ -184,13 +183,13 @@ class KGAT(KnowledgeRecommender):
 
         user_all_embeddings, entity_all_embeddings = self.forward()
         u_embeddings = user_all_embeddings[user]
-        posi_embeddings = entity_all_embeddings[pos_item]
-        negi_embeddings = entity_all_embeddings[neg_item]
+        pos_embeddings = entity_all_embeddings[pos_item]
+        neg_embeddings = entity_all_embeddings[neg_item]
 
-        pos_scores = torch.mul(u_embeddings, posi_embeddings).sum(dim=1)
-        neg_scores = torch.mul(u_embeddings, negi_embeddings).sum(dim=1)
+        pos_scores = torch.mul(u_embeddings, pos_embeddings).sum(dim=1)
+        neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)
-        reg_loss = self.reg_loss(u_embeddings, posi_embeddings, negi_embeddings)
+        reg_loss = self.reg_loss(u_embeddings, pos_embeddings, neg_embeddings)
         loss = mf_loss + self.reg_weight * reg_loss
 
         return loss
@@ -268,7 +267,7 @@ class KGAT(KnowledgeRecommender):
         # Current PyTorch version does not support softmax on SparseCUDA, temporarily move to CPU to calculate softmax
         A_in = torch.sparse.FloatTensor(indices, kg_score, self.matrix_size).cpu()
         A_in = torch.sparse.softmax(A_in, dim=1).to(self.device)
-        self.A_in = copy.copy(A_in)
+        self.A_in = A_in
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]

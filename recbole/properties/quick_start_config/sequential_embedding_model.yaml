@@ -1,0 +1,4 @@
+load_col: 
+    inter: ['user_id', 'item_id', 'rating', 'timestamp']
+    ent: ['ent_id', 'ent_emb']
+additional_feat_suffix: ent

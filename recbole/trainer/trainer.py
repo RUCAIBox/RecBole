@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15
-# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn
+# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16, 2020/10/8, 2020/10/15, 2020/11/20
+# @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan, Hui Wang, Xinyan Fan, Chen Yang
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn, hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com
 
 r"""
 recbole.trainer.trainer
@@ -13,20 +13,19 @@ recbole.trainer.trainer
 """
 
 import os
-import itertools
+from logging import getLogger
+from time import time
+
+import numpy as np
 import torch
 import torch.optim as optim
 from torch.nn.utils.clip_grad import clip_grad_norm_
-import numpy as np
-import matplotlib.pyplot as plt
+from tqdm import tqdm
 
-from time import time
-from logging import getLogger
-
-from recbole.evaluator import TopKEvaluator, LossEvaluator
 from recbole.data.interaction import Interaction
+from recbole.evaluator import ProxyEvaluator
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
-    DataLoaderType, KGDataLoaderState, EvaluatorType
+    DataLoaderType, KGDataLoaderState
 
 
 class AbstractTrainer(object):
@@ -64,7 +63,7 @@ class Trainer(AbstractTrainer):
 
     Initializing the Trainer needs two parameters: `config` and `model`. `config` records the parameters information
     for controlling training and evaluation, such as `learning_rate`, `epochs`, `eval_step` and so on.
-    More information can be found in [placeholder]. `model` is the instantiated object of a Model Class.
+    `model` is the instantiated object of a Model Class.
 
     """
 
@@ -86,6 +85,7 @@ class Trainer(AbstractTrainer):
         ensure_dir(self.checkpoint_dir)
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
+        self.weight_decay = config['weight_decay']
 
         self.start_epoch = 0
         self.cur_step = 0
@@ -94,11 +94,7 @@ class Trainer(AbstractTrainer):
         self.train_loss_dict = dict()
         self.optimizer = self._build_optimizer()
         self.eval_type = config['eval_type']
-        if self.eval_type == EvaluatorType.INDIVIDUAL:
-            self.evaluator = LossEvaluator(config)
-        else:
-            self.evaluator = TopKEvaluator(config)
-
+        self.evaluator = ProxyEvaluator(config)
         self.item_tensor = None
         self.tot_item_num = None
 
@@ -109,19 +105,23 @@ class Trainer(AbstractTrainer):
             torch.optim: the optimizer
         """
         if self.learner.lower() == 'adam':
-            optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'sgd':
-            optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'adagrad':
-            optimizer = optim.Adagrad(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.Adagrad(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'rmsprop':
-            optimizer = optim.RMSprop(self.model.parameters(), lr=self.learning_rate)
+            optimizer = optim.RMSprop(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+        elif self.learner.lower() == 'sparse_adam':
+            optimizer = optim.SparseAdam(self.model.parameters(), lr=self.learning_rate)
+            if self.weight_decay > 0:
+                self.logger.warning('Sparse Adam cannot argument received argument [{weight_decay}]')
         else:
             self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
             optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         return optimizer
 
-    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         r"""Train the model in an epoch
 
         Args:
@@ -129,16 +129,24 @@ class Trainer(AbstractTrainer):
             epoch_idx (int): The current epoch id.
             loss_func (function): The loss function of :attr:`model`. If it is ``None``, the loss function will be
                 :attr:`self.model.calculate_loss`. Defaults to ``None``.
+            show_progress (bool): Show the progress of training epoch. Defaults to ``False``.
 
         Returns:
             float/tuple: The sum of loss returned by all batches in this epoch. If the loss in each batch contains
-            multiple parts and the model return these multiple parts loss instead of the sum of loss, It will return a
+            multiple parts and the model return these multiple parts loss instead of the sum of loss, it will return a
             tuple which includes the sum of loss in each part.
         """
         self.model.train()
         loss_func = loss_func or self.model.calculate_loss
         total_loss = None
-        for batch_idx, interaction in enumerate(train_data):
+        iter_data = (
+            tqdm(
+                enumerate(train_data),
+                total=len(train_data),
+                desc=f"Train {epoch_idx:>5}",
+            ) if show_progress else enumerate(train_data)
+        )
+        for batch_idx, interaction in iter_data:
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             losses = loss_func(interaction)
@@ -156,17 +164,18 @@ class Trainer(AbstractTrainer):
             self.optimizer.step()
         return total_loss
 
-    def _valid_epoch(self, valid_data):
+    def _valid_epoch(self, valid_data, show_progress=False):
         r"""Valid the model with valid data
 
         Args:
-            valid_data (DataLoader): the valid data
+            valid_data (DataLoader): the valid data.
+            show_progress (bool): Show the progress of evaluate epoch. Defaults to ``False``.
 
         Returns:
             float: valid score
             dict: valid result
         """
-        valid_result = self.evaluate(valid_data, load_best_model=False)
+        valid_result = self.evaluate(valid_data, load_best_model=False, show_progress=show_progress)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_score, valid_result
 
@@ -202,8 +211,10 @@ class Trainer(AbstractTrainer):
 
         # load architecture params from checkpoint
         if checkpoint['config']['model'].lower() != self.config['model'].lower():
-            self.logger.warning('Architecture configuration given in config file is different from that of checkpoint. '
-                                'This may yield an exception while state_dict is being loaded.')
+            self.logger.warning(
+                'Architecture configuration given in config file is different from that of checkpoint. '
+                'This may yield an exception while state_dict is being loaded.'
+            )
         self.model.load_state_dict(checkpoint['state_dict'])
 
         # load optimizer state from checkpoint only when optimizer type is not changed
@@ -216,14 +227,17 @@ class Trainer(AbstractTrainer):
             raise ValueError('Training loss is nan')
 
     def _generate_train_loss_output(self, epoch_idx, s_time, e_time, losses):
+        des = self.config['loss_decimal_place'] or 4
         train_loss_output = 'epoch %d training [time: %.2fs, ' % (epoch_idx, e_time - s_time)
         if isinstance(losses, tuple):
-            train_loss_output = ', '.join('train_loss%d: %.4f' % (idx + 1, loss) for idx, loss in enumerate(losses))
+            des = 'train_loss%d: %.' + str(des) + 'f'
+            train_loss_output += ', '.join(des % (idx + 1, loss) for idx, loss in enumerate(losses))
         else:
-            train_loss_output += 'train loss: %.4f' % losses
+            des = '%.' + str(des) + 'f'
+            train_loss_output += 'train loss:' + des % losses
         return train_loss_output + ']'
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         r"""Train the model based on the train data and the valid data.
 
         Args:
@@ -232,6 +246,9 @@ class Trainer(AbstractTrainer):
                                                If it's None, the early_stopping is invalid.
             verbose (bool, optional): whether to write training and evaluation information to logger, default: True
             saved (bool, optional): whether to save the model parameters, default: True
+            show_progress (bool): Show the progress of training epoch and evaluate epoch. Defaults to ``False``.
+            callback_fn (callable): Optional callback function executed at end of epoch.
+                                    Includes (epoch_idx, valid_score) input arguments.
 
         Returns:
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
@@ -242,7 +259,7 @@ class Trainer(AbstractTrainer):
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
-            train_loss = self._train_epoch(train_data, epoch_idx)
+            train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
             self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
             training_end_time = time()
             train_loss_output = \
@@ -260,10 +277,14 @@ class Trainer(AbstractTrainer):
                 continue
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
-                valid_score, valid_result = self._valid_epoch(valid_data)
+                valid_score, valid_result = self._valid_epoch(valid_data, show_progress=show_progress)
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
-                    valid_score, self.best_valid_score, self.cur_step,
-                    max_step=self.stopping_step, bigger=self.valid_metric_bigger)
+                    valid_score,
+                    self.best_valid_score,
+                    self.cur_step,
+                    max_step=self.stopping_step,
+                    bigger=self.valid_metric_bigger
+                )
                 valid_end_time = time()
                 valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
                                      (epoch_idx, valid_end_time - valid_start_time, valid_score)
@@ -279,6 +300,9 @@ class Trainer(AbstractTrainer):
                             self.logger.info(update_output)
                     self.best_valid_result = valid_result
 
+                if callback_fn:
+                    callback_fn(epoch_idx, valid_score)
+
                 if stop_flag:
                     stop_output = 'Finished training, best eval result in epoch %d' % \
                                   (epoch_idx - self.cur_step * self.eval_step)
@@ -288,50 +312,33 @@ class Trainer(AbstractTrainer):
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
-        # Note: interaction without item ids
-        interaction, pos_idx, used_idx, pos_len_list, neg_len_list = batched_data
-
-        batch_size = interaction.length * self.tot_item_num
-        used_idx = torch.cat([used_idx, torch.arange(interaction.length) * self.tot_item_num])  # remove [pad] item
-        neg_len_list = list(np.subtract(neg_len_list, 1))
+        interaction, history_index, swap_row, swap_col_after, swap_col_before = batched_data
         try:
             # Note: interaction without item ids
-            scores = self.model.full_sort_predict(interaction.to(self.device)).flatten()
+            scores = self.model.full_sort_predict(interaction.to(self.device))
         except NotImplementedError:
-            interaction = interaction.to(self.device).repeat_interleave(self.tot_item_num)
-            interaction.update(self.item_tensor[:batch_size])
+            new_inter = interaction.to(self.device).repeat_interleave(self.tot_item_num)
+            batch_size = len(new_inter)
+            new_inter.update(self.item_tensor[:batch_size])
             if batch_size <= self.test_batch_size:
-                scores = self.model.predict(interaction)
+                scores = self.model.predict(new_inter)
             else:
-                scores = self._spilt_predict(interaction, batch_size)
-        pos_idx = pos_idx.to(self.device)
-        used_idx = used_idx.to(self.device)
+                scores = self._spilt_predict(new_inter, batch_size)
 
-        pos_scores = scores.index_select(dim=0, index=pos_idx)
-        pos_scores = torch.split(pos_scores, pos_len_list, dim=0)
+        scores = scores.view(-1, self.tot_item_num)
+        scores[:, 0] = -np.inf
+        if history_index is not None:
+            scores[history_index] = -np.inf
 
-        ones_tensor = torch.ones(batch_size, dtype=torch.bool, device=self.device)
-        used_mask = ones_tensor.index_fill(dim=0, index=used_idx, value=0)
-        neg_scores = scores.masked_select(used_mask)
-        neg_scores = torch.split(neg_scores, neg_len_list, dim=0)
+        swap_row = swap_row.to(self.device)
+        swap_col_after = swap_col_after.to(self.device)
+        swap_col_before = swap_col_before.to(self.device)
+        scores[swap_row, swap_col_after] = scores[swap_row, swap_col_before]
 
-        tmp_len_list = np.add(pos_len_list, neg_len_list).tolist()
-        final_scores_width = max(self.tot_item_num, max(tmp_len_list))
-        extra_len_list = np.subtract(final_scores_width, tmp_len_list).tolist()
-        padding_nums = final_scores_width * len(tmp_len_list) - np.sum(tmp_len_list)
-        padding_tensor = torch.tensor([-np.inf], dtype=scores.dtype, device=self.device).repeat(padding_nums)
-        padding_scores = torch.split(padding_tensor, extra_len_list)
-
-        final_scores = list(itertools.chain.from_iterable(zip(pos_scores, neg_scores, padding_scores)))
-        final_scores = torch.cat(final_scores)
-
-        setattr(interaction, 'pos_len_list', pos_len_list)
-        setattr(interaction, 'user_len_list', len(tmp_len_list) * [final_scores_width])
-
-        return interaction, final_scores
+        return interaction, scores
 
     @torch.no_grad()
-    def evaluate(self, eval_data, load_best_model=True, model_file=None):
+    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
         r"""Evaluate the model based on the eval data.
 
         Args:
@@ -340,10 +347,14 @@ class Trainer(AbstractTrainer):
                                               It should be set True, if users want to test the model after training.
             model_file (str, optional): the saved model file, default: None. If users want to test the previously
                                         trained model file, they can set this parameter.
+            show_progress (bool): Show the progress of evaluate epoch. Defaults to ``False``.
 
         Returns:
-            dict: eval result, key is the eval metric and value in the corresponding metric value
+            dict: eval result, key is the eval metric and value in the corresponding metric value.
         """
+        if not eval_data:
+            return
+
         if load_best_model:
             if model_file:
                 checkpoint_file = model_file
@@ -362,22 +373,25 @@ class Trainer(AbstractTrainer):
             self.tot_item_num = eval_data.dataset.item_num
 
         batch_matrix_list = []
-        for batch_idx, batched_data in enumerate(eval_data):
+        iter_data = (
+            tqdm(
+                enumerate(eval_data),
+                total=len(eval_data),
+                desc=f"Evaluate   ",
+            ) if show_progress else enumerate(eval_data)
+        )
+        for batch_idx, batched_data in iter_data:
             if eval_data.dl_type == DataLoaderType.FULL:
-                if self.eval_type == EvaluatorType.INDIVIDUAL:
-                    raise ValueError('full sort can\'t use LossEvaluator')
                 interaction, scores = self._full_sort_batch_eval(batched_data)
-                batch_matrix = self.evaluator.collect(interaction, scores, full=True)
             else:
                 interaction = batched_data
                 batch_size = interaction.length
-
                 if batch_size <= self.test_batch_size:
                     scores = self.model.predict(interaction.to(self.device))
                 else:
                     scores = self._spilt_predict(interaction, batch_size)
 
-                batch_matrix = self.evaluator.collect(interaction, scores)
+            batch_matrix = self.evaluator.collect(interaction, scores)
             batch_matrix_list.append(batch_matrix)
         result = self.evaluator.evaluate(batch_matrix_list, eval_data)
 
@@ -403,10 +417,11 @@ class Trainer(AbstractTrainer):
         r"""Plot the train loss in each epoch
 
         Args:
-            show (bool, optional): whether to show this figure, default: True
-            save_path (str, optional): the data path to save the figure, default: None.
+            show (bool, optional): Whether to show this figure, default: True
+            save_path (str, optional): The data path to save the figure, default: None.
                                        If it's None, it will not be saved.
         """
+        import matplotlib.pyplot as plt
         epochs = list(self.train_loss_dict.keys())
         epochs.sort()
         values = [float(self.train_loss_dict[epoch]) for epoch in epochs]
@@ -432,7 +447,7 @@ class KGTrainer(Trainer):
         self.train_rec_step = config['train_rec_step']
         self.train_kg_step = config['train_kg_step']
 
-    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         if self.train_rec_step is None or self.train_kg_step is None:
             interaction_state = KGDataLoaderState.RSKG
         elif epoch_idx % (self.train_rec_step + self.train_kg_step) < self.train_rec_step:
@@ -441,9 +456,11 @@ class KGTrainer(Trainer):
             interaction_state = KGDataLoaderState.KG
         train_data.set_mode(interaction_state)
         if interaction_state in [KGDataLoaderState.RSKG, KGDataLoaderState.RS]:
-            return super()._train_epoch(train_data, epoch_idx)
+            return super()._train_epoch(train_data, epoch_idx, show_progress=show_progress)
         elif interaction_state in [KGDataLoaderState.KG]:
-            return super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
+            return super()._train_epoch(
+                train_data, epoch_idx, loss_func=self.model.calculate_kg_loss, show_progress=show_progress
+            )
         return None
 
 
@@ -455,17 +472,21 @@ class KGATTrainer(Trainer):
     def __init__(self, config, model):
         super(KGATTrainer, self).__init__(config, model)
 
-    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         # train rs
         train_data.set_mode(KGDataLoaderState.RS)
-        rs_total_loss = super()._train_epoch(train_data, epoch_idx)
+        rs_total_loss = super()._train_epoch(train_data, epoch_idx, show_progress=show_progress)
 
         # train kg
         train_data.set_mode(KGDataLoaderState.KG)
-        kg_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
+        kg_total_loss = super()._train_epoch(
+            train_data, epoch_idx, loss_func=self.model.calculate_kg_loss, show_progress=show_progress
+        )
 
         # update A
-        self.model.update_attentive_A()
+        self.model.eval()
+        with torch.no_grad():
+            self.model.update_attentive_A()
 
         return rs_total_loss, kg_total_loss
 
@@ -495,12 +516,12 @@ class S3RecTrainer(Trainer):
         }
         torch.save(state, saved_model_file)
 
-    def pretrain(self, train_data, verbose=True):
+    def pretrain(self, train_data, verbose=True, show_progress=False):
 
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
-            train_loss = self._train_epoch(train_data, epoch_idx)
+            train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
             self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
             training_end_time = time()
             train_loss_output = \
@@ -509,9 +530,10 @@ class S3RecTrainer(Trainer):
                 self.logger.info(train_loss_output)
 
             if (epoch_idx + 1) % self.config['save_step'] == 0:
-                saved_model_file = os.path.join(self.checkpoint_dir,
-                                                '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'],
-                                                                      str(epoch_idx + 1)))
+                saved_model_file = os.path.join(
+                    self.checkpoint_dir,
+                    '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1))
+                )
                 self.save_pretrained_model(epoch_idx, saved_model_file)
                 update_output = 'Saving current: %s' % saved_model_file
                 if verbose:
@@ -519,11 +541,11 @@ class S3RecTrainer(Trainer):
 
         return self.best_valid_score, self.best_valid_result
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True):
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         if self.model.train_stage == 'pretrain':
-            return self.pretrain(train_data, verbose)
+            return self.pretrain(train_data, verbose, show_progress)
         elif self.model.train_stage == 'finetune':
-            return super().fit(train_data, valid_data, verbose, saved)
+            return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
             raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
 
@@ -537,19 +559,23 @@ class MKRTrainer(Trainer):
         super(MKRTrainer, self).__init__(config, model)
         self.kge_interval = config['kge_interval']
 
-    def _train_epoch(self, train_data, epoch_idx, loss_func=None):
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         rs_total_loss, kg_total_loss = 0., 0.
 
         # train rs
         self.logger.info('Train RS')
         train_data.set_mode(KGDataLoaderState.RS)
-        rs_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_rs_loss)
+        rs_total_loss = super()._train_epoch(
+            train_data, epoch_idx, loss_func=self.model.calculate_rs_loss, show_progress=show_progress
+        )
 
         # train kg
         if epoch_idx % self.kge_interval == 0:
             self.logger.info('Train KG')
             train_data.set_mode(KGDataLoaderState.KG)
-            kg_total_loss = super()._train_epoch(train_data, epoch_idx, self.model.calculate_kg_loss)
+            kg_total_loss = super()._train_epoch(
+                train_data, epoch_idx, loss_func=self.model.calculate_kg_loss, show_progress=show_progress
+            )
 
         return rs_total_loss, kg_total_loss
 
@@ -562,3 +588,182 @@ class TraditionalTrainer(Trainer):
     def __init__(self, config, model):
         super(TraditionalTrainer, self).__init__(config, model)
         self.epochs = 1  # Set the epoch to 1 when running memory based model
+
+
+class xgboostTrainer(AbstractTrainer):
+    """xgboostTrainer is designed for XGBOOST.
+
+    """
+
+    def __init__(self, config, model):
+        super(xgboostTrainer, self).__init__(config, model)
+
+        self.xgb = __import__('xgboost')
+
+        self.logger = getLogger()
+        self.label_field = config['LABEL_FIELD']
+        self.xgb_model = config['xgb_model']
+        self.convert_token_to_onehot = self.config['convert_token_to_onehot']
+
+        # DMatrix params
+        self.weight = config['xgb_weight']
+        self.base_margin = config['xgb_base_margin']
+        self.missing = config['xgb_missing']
+        self.silent = config['xgb_silent']
+        self.feature_names = config['xgb_feature_names']
+        self.feature_types = config['xgb_feature_types']
+        self.nthread = config['xgb_nthread']
+
+        # train params
+        self.params = config['xgb_params']
+        self.num_boost_round = config['xgb_num_boost_round']
+        self.evals = ()
+        self.obj = config['xgb_obj']
+        self.feval = config['xgb_feval']
+        self.maximize = config['xgb_maximize']
+        self.early_stopping_rounds = config['xgb_early_stopping_rounds']
+        self.evals_result = {}
+        self.verbose_eval = config['xgb_verbose_eval']
+        self.callbacks = None
+
+        # evaluator
+        self.eval_type = config['eval_type']
+        self.epochs = config['epochs']
+        self.eval_step = min(config['eval_step'], self.epochs)
+        self.valid_metric = config['valid_metric'].lower()
+
+        self.evaluator = ProxyEvaluator(config)
+
+        # model saved
+        self.checkpoint_dir = config['checkpoint_dir']
+        ensure_dir(self.checkpoint_dir)
+        saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
+        self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
+
+    def _interaction_to_DMatrix(self, dataloader):
+        r"""Convert data format from interaction to DMatrix
+
+        Args:
+            dataloader (XgboostDataLoader): xgboost dataloader.
+        Returns:
+            DMatrix: Data in the form of 'DMatrix'.
+        """
+        interaction = dataloader.dataset[:]
+        interaction_np = interaction.numpy()
+        cur_data = np.array([])
+        columns = []
+        for key, value in interaction_np.items():
+            value = np.resize(value, (value.shape[0], 1))
+            if key != self.label_field:
+                columns.append(key)
+                if cur_data.shape[0] == 0:
+                    cur_data = value
+                else:
+                    cur_data = np.hstack((cur_data, value))
+
+        if self.convert_token_to_onehot == True:
+            from scipy import sparse
+            from scipy.sparse import dok_matrix
+            convert_col_list = dataloader.dataset.convert_col_list
+            hash_count = dataloader.dataset.hash_count
+
+            new_col = cur_data.shape[1] - len(convert_col_list)
+            for key, values in hash_count.items():
+                new_col = new_col + values
+            onehot_data = dok_matrix((cur_data.shape[0], new_col))
+
+            cur_j = 0
+            new_j = 0
+
+            for key in columns:
+                if key in convert_col_list:
+                    for i in range(cur_data.shape[0]):
+                        onehot_data[i, int(new_j + cur_data[i, cur_j])] = 1
+                    new_j = new_j + hash_count[key] - 1
+                else:
+                    for i in range(cur_data.shape[0]):
+                        onehot_data[i, new_j] = cur_data[i, cur_j]
+                cur_j = cur_j + 1
+                new_j = new_j + 1
+
+            cur_data = sparse.csc_matrix(onehot_data)
+
+        return self.xgb.DMatrix(
+            data=cur_data,
+            label=interaction_np[self.label_field],
+            weight=self.weight,
+            base_margin=self.base_margin,
+            missing=self.missing,
+            silent=self.silent,
+            feature_names=self.feature_names,
+            feature_types=self.feature_types,
+            nthread=self.nthread
+        )
+
+    def _train_at_once(self, train_data, valid_data):
+        r"""
+
+        Args:
+            train_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
+            valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
+        """
+        self.dtrain = self._interaction_to_DMatrix(train_data)
+        self.dvalid = self._interaction_to_DMatrix(valid_data)
+        self.evals = [(self.dtrain, 'train'), (self.dvalid, 'valid')]
+        self.model = self.xgb.train(
+            self.params, self.dtrain, self.num_boost_round, self.evals, self.obj, self.feval, self.maximize,
+            self.early_stopping_rounds, self.evals_result, self.verbose_eval, self.xgb_model, self.callbacks
+        )
+
+        self.model.save_model(self.saved_model_file)
+        self.xgb_model = self.saved_model_file
+
+    def _valid_epoch(self, valid_data):
+        r"""
+
+        Args:
+            valid_data (XgboostDataLoader): XgboostDataLoader, which is the same with GeneralDataLoader.
+        """
+        valid_result = self.evaluate(valid_data)
+        valid_score = calculate_valid_score(valid_result, self.valid_metric)
+        return valid_result, valid_score
+
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
+        # load model
+        if self.xgb_model is not None:
+            self.model.load_model(self.xgb_model)
+
+        self.best_valid_score = 0.
+        self.best_valid_result = 0.
+
+        for epoch_idx in range(self.epochs):
+            self._train_at_once(train_data, valid_data)
+
+            if (epoch_idx + 1) % self.eval_step == 0:
+                # evaluate
+                valid_start_time = time()
+                valid_result, valid_score = self._valid_epoch(valid_data)
+                valid_end_time = time()
+                valid_score_output = "epoch %d evaluating [time: %.2fs, valid_score: %f]" % \
+                                     (epoch_idx, valid_end_time - valid_start_time, valid_score)
+                valid_result_output = 'valid result: \n' + dict2str(valid_result)
+                if verbose:
+                    self.logger.info(valid_score_output)
+                    self.logger.info(valid_result_output)
+
+                self.best_valid_score = valid_score
+                self.best_valid_result = valid_result
+
+        return self.best_valid_score, self.best_valid_result
+
+    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
+        self.eval_pred = torch.Tensor()
+        self.eval_true = torch.Tensor()
+
+        self.deval = self._interaction_to_DMatrix(eval_data)
+        self.eval_true = torch.Tensor(self.deval.get_label())
+        self.eval_pred = torch.Tensor(self.model.predict(self.deval))
+
+        batch_matrix_list = [[torch.stack((self.eval_true, self.eval_pred), 1)]]
+        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
+        return result

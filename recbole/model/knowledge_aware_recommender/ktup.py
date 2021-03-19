@@ -18,10 +18,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from recbole.utils import InputType
 from recbole.model.abstract_recommender import KnowledgeRecommender
-from recbole.model.loss import BPRLoss, EmbMarginLoss
 from recbole.model.init import xavier_uniform_initialization
+from recbole.model.loss import BPRLoss, EmbMarginLoss
+from recbole.utils import InputType
 
 
 class KTUP(KnowledgeRecommender):
@@ -74,7 +74,7 @@ class KTUP(KnowledgeRecommender):
         self.relation_norm_embedding.weight.data = normalize_rel_norm_emb
 
     def _masked_softmax(self, logits):
-        probs = F.softmax(logits, dim=len(logits.shape)-1)
+        probs = F.softmax(logits, dim=len(logits.shape) - 1)
         return probs
 
     def convert_to_one_hot(self, indices, num_classes):
@@ -120,14 +120,14 @@ class KTUP(KnowledgeRecommender):
         y = logits + gumbel_noise
         y = self._masked_softmax(logits=y / temperature)
         y_argmax = y.max(len(y.shape) - 1)[1]
-        y_hard = self.convert_to_one_hot(
-            indices=y_argmax,
-            num_classes=y.size(len(y.shape) - 1)).float()
+        y_hard = self.convert_to_one_hot(indices=y_argmax, num_classes=y.size(len(y.shape) - 1)).float()
         y = (y_hard - y).detach() + y
         return y
 
     def _get_preferences(self, user_e, item_e, use_st_gumbel=False):
-        pref_probs = torch.matmul(user_e + item_e, torch.t(self.pref_embedding.weight + self.relation_embedding.weight)) / 2
+        pref_probs = torch.matmul(
+            user_e + item_e, torch.t(self.pref_embedding.weight + self.relation_embedding.weight)
+        ) / 2
         if use_st_gumbel:
             # todo: different torch versions may cause the st_gumbel_softmax to report errors, wait to be test
             pref_probs = self.st_gumbel_softmax(pref_probs)
@@ -141,9 +141,9 @@ class KTUP(KnowledgeRecommender):
 
     def _get_score(self, h_e, r_e, t_e):
         if self.L1_flag:
-            score = - torch.sum(torch.abs(h_e + r_e - t_e), 1)
+            score = -torch.sum(torch.abs(h_e + r_e - t_e), 1)
         else:
-            score = - torch.sum((h_e + r_e - t_e) ** 2, 1)
+            score = -torch.sum((h_e + r_e - t_e) ** 2, 1)
         return score
 
     def forward(self, user, item):
@@ -209,7 +209,9 @@ class KTUP(KnowledgeRecommender):
         loss = self.kg_weight * (kg_loss + orthogonal_loss + reg_loss)
         entity = torch.cat([h, pos_t, neg_t])
         entity = entity[entity < self.n_items]
-        align_loss = self.align_weight * alignLoss(self.item_embedding(entity), self.entity_embedding(entity), self.L1_flag)
+        align_loss = self.align_weight * alignLoss(
+            self.item_embedding(entity), self.entity_embedding(entity), self.L1_flag
+        )
 
         return loss, align_loss
 
@@ -221,8 +223,10 @@ class KTUP(KnowledgeRecommender):
 
 
 def orthogonalLoss(rel_embeddings, norm_embeddings):
-    return torch.sum(torch.sum(norm_embeddings * rel_embeddings, dim=1, keepdim=True) ** 2 /
-                     torch.sum(rel_embeddings ** 2, dim=1, keepdim=True))
+    return torch.sum(
+        torch.sum(norm_embeddings * rel_embeddings, dim=1, keepdim=True) ** 2 /
+        torch.sum(rel_embeddings ** 2, dim=1, keepdim=True)
+    )
 
 
 def alignLoss(emb1, emb2, L1_flag=False):

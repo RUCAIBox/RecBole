@@ -130,6 +130,22 @@ test_examples = {
         'model': 'ConvNCF',
         'dataset': 'ml-100k',
     },
+    'Test LINE': {
+        'model': 'LINE',
+        'dataset': 'ml-100k',
+    },
+    'Test MultiDAE': {
+        'model': 'MultiDAE',
+        'dataset': 'ml-100k',
+    },
+    'Test MultiVAE': {
+        'model': 'LINE',
+        'dataset': 'ml-100k',
+    },
+    'Test MacridVAE': {
+        'model': 'MacridVAE',
+        'dataset': 'ml-100k',
+    },
 
     # Context-aware Recommendation
     'Test FM': {

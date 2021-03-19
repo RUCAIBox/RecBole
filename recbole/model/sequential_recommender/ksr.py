@@ -3,7 +3,6 @@
 # @Author : Jin Huang and Shanlei Mu
 # @Email  : Betsyj.huang@gmail.com and slmu@ruc.edu.cn
 
-
 r"""
 KSR
 ################################################
@@ -14,14 +13,12 @@ Reference:
 
 """
 
-
 import torch
 from torch import nn
 from torch.nn.init import xavier_uniform_, xavier_normal_
 
-from recbole.utils import InputType
-from recbole.model.loss import BPRLoss
 from recbole.model.abstract_recommender import SequentialRecommender
+from recbole.model.loss import BPRLoss
 
 
 class KSR(SequentialRecommender):
@@ -48,13 +45,13 @@ class KSR(SequentialRecommender):
         self.loss_type = config['loss_type']
         self.num_layers = config['num_layers']
         self.dropout_prob = config['dropout_prob']
-        self.gamma = config['gamma'] # Scaling factor
+        self.gamma = config['gamma']  # Scaling factor
         self.device = config['device']
         self.loss_type = config['loss_type']
         self.freeze_kg = config['freeze_kg']
 
         # define layers and loss
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0) 
+        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.entity_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.entity_embedding.weight.requires_grad = not self.freeze_kg
 
@@ -75,31 +72,35 @@ class KSR(SequentialRecommender):
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
-        
+
         # parameters initialization
         self.apply(self._init_weights)
         self.entity_embedding.weight.data.copy_(torch.from_numpy(self.entity_embedding_matrix[:self.n_items]))
-        self.relation_Matrix = torch.from_numpy(self.relation_embedding_matrix[:self.n_relations]).to(self.device) # [R H]
+        self.relation_Matrix = torch.from_numpy(self.relation_embedding_matrix[:self.n_relations]
+                                                ).to(self.device)  # [R H]
 
     def _init_weights(self, module):
         """ Initialize the weights """
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight)
-        elif isinstance(module,nn.GRU):
-            xavier_uniform_(self.gru_layers.weight_hh_l0)
-            xavier_uniform_(self.gru_layers.weight_ih_l0)
-    
+        elif isinstance(module, nn.GRU):
+            xavier_uniform_(module.weight_hh_l0)
+            xavier_uniform_(module.weight_ih_l0)
+
     def _get_kg_embedding(self, head):
-        """Difference: We generate the embeddings of the tail entities on every relations only for head due to the 1-N problems. """
-        head_e = self.entity_embedding(head) # [B H]
-        relation_Matrix = self.relation_Matrix.repeat(head_e.size()[0], 1, 1) # [B R H]
-        head_Matrix = torch.unsqueeze(head_e, 1).repeat(1, self.n_relations, 1) # [B R H]
+        """Difference:
+        We generate the embeddings of the tail entities on every relations only for head due to the 1-N problems.
+        """
+        head_e = self.entity_embedding(head)  # [B H]
+        relation_Matrix = self.relation_Matrix.repeat(head_e.size()[0], 1, 1)  # [B R H]
+        head_Matrix = torch.unsqueeze(head_e, 1).repeat(1, self.n_relations, 1)  # [B R H]
         tail_Matrix = head_Matrix + relation_Matrix
-        
+
         return head_e, tail_Matrix
-    
+
     def _memory_update_cell(self, user_memory, update_memory):
-        z = torch.sigmoid(torch.mul(user_memory, update_memory).sum(-1).float()).unsqueeze(-1) # [B R 1], the gate vector
+        z = torch.sigmoid(torch.mul(user_memory,
+                                    update_memory).sum(-1).float()).unsqueeze(-1)  # [B R 1], the gate vector
         updated_user_memory = (1.0 - z) * user_memory + z * update_memory
         return updated_user_memory
 
@@ -108,19 +109,20 @@ class KSR(SequentialRecommender):
         step_length = item_seq.size()[1]
         last_item = item_seq_len - 1
         # init user memory with 0s
-        user_memory = torch.zeros(item_seq.size()[0], self.n_relations, self.embedding_size).float().to(self.device) # [B R H]
+        user_memory = torch.zeros(item_seq.size()[0], self.n_relations,
+                                  self.embedding_size).float().to(self.device)  # [B R H]
         last_user_memory = torch.zeros_like(user_memory)
-        for i in range(step_length): # [len]
-            _, update_memory = self._get_kg_embedding(item_seq[:, i]) # [B R H]
-            user_memory = self._memory_update_cell(user_memory, update_memory) # [B R H]
+        for i in range(step_length):  # [len]
+            _, update_memory = self._get_kg_embedding(item_seq[:, i])  # [B R H]
+            user_memory = self._memory_update_cell(user_memory, update_memory)  # [B R H]
             last_user_memory[last_item == i] = user_memory[last_item == i].float()
         return last_user_memory
-    
+
     def memory_read(self, user_memory):
         """ define read operator """
         attrs = self.relation_Matrix
-        attentions = nn.functional.softmax(self.gamma * torch.mul(user_memory, attrs).sum(-1).float(), -1) # [B R]
-        u_m = torch.mul(user_memory, attentions.unsqueeze(-1)).sum(1) # [B H]
+        attentions = nn.functional.softmax(self.gamma * torch.mul(user_memory, attrs).sum(-1).float(), -1)  # [B R]
+        u_m = torch.mul(user_memory, attentions.unsqueeze(-1)).sum(1)  # [B H]
         return u_m
 
     def forward(self, item_seq, item_seq_len):
@@ -141,7 +143,7 @@ class KSR(SequentialRecommender):
         # combine them together
         p_u = self.dense_layer_u(torch.cat((seq_output, u_m), -1))  # [B H]
         return p_u
-    
+
     def _get_item_comb_embedding(self, item):
         h_e, _ = self._get_kg_embedding(item)
         i_e = self.item_embedding(item)
@@ -157,13 +159,15 @@ class KSR(SequentialRecommender):
             neg_items = interaction[self.NEG_ITEM_ID]
             pos_items_emb = self._get_item_comb_embedding(pos_items)
             neg_items_emb = self._get_item_comb_embedding(neg_items)
-            pos_score = torch.sum(seq_output * pos_items_emb, dim=-1) # [B]
-            neg_score = torch.sum(seq_output * neg_items_emb, dim=-1) # [B]
+            pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)  # [B]
+            neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)  # [B]
             loss = self.loss_fct(pos_score, neg_score)
             return loss
-        else: # self.loss_type = 'CE'
-            test_items_emb = self.dense_layer_i(torch.cat((self.item_embedding.weight, self.entity_embedding.weight), -1)) # [n_items H]
-            logits = torch.matmul(seq_output, test_items_emb.transpose(0, 1)) 
+        else:  # self.loss_type = 'CE'
+            test_items_emb = self.dense_layer_i(
+                torch.cat((self.item_embedding.weight, self.entity_embedding.weight), -1)
+            )  # [n_items H]
+            logits = torch.matmul(seq_output, test_items_emb.transpose(0, 1))
             loss = self.loss_fct(logits, pos_items)
             return loss
 
@@ -180,6 +184,8 @@ class KSR(SequentialRecommender):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
-        test_items_emb = self.dense_layer_i(torch.cat((self.item_embedding.weight, self.entity_embedding.weight), -1)) # [n_items H]
+        test_items_emb = self.dense_layer_i(
+            torch.cat((self.item_embedding.weight, self.entity_embedding.weight), -1)
+        )  # [n_items H]
         scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
         return scores
