@@ -7,7 +7,7 @@ r"""
 RecVAE
 ################################################
 Reference:
-    Shenbin, Ilya, et al. "RecVAE: A new variational autoencoder for Top-N recommendations with implicit feedback." Proceedings of the 13th International Conference on Web Search and Data Mining. In WSDM 2020.
+    Shenbin, Ilya, et al. "RecVAE: A new variational autoencoder for Top-N recommendations with implicit feedback." In WSDM 2020.
 
 Reference code:
     https://github.com/ilya-shenbin/RecVAE
