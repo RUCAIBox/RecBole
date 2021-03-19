@@ -314,7 +314,7 @@ class Trainer(AbstractTrainer):
                     break
         if self.draw_loss_pic:
             save_path = '{}-{}-train_loss.pdf'.format(self.config['model'], get_local_time())
-            self.plot_train_loss(save_path= os.path.join(save_path))
+            self.plot_train_loss(save_path=os.path.join(save_path))
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
