@@ -7,7 +7,7 @@ r"""
 CDAE
 ################################################
 Reference:
-    Yao Wu et al., Collaborative denoising auto-encoders for top-n recommender systems. WSDM 2016.
+    Yao Wu et al., Collaborative denoising auto-encoders for top-n recommender systems. In WSDM 2016.
    
 Reference code:
     https://github.com/jasonyaw/CDAE
