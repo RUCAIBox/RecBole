@@ -87,7 +87,7 @@ class Trainer(AbstractTrainer):
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
         self.weight_decay = config['weight_decay']
-        self.draw_pic = config['draw_pic']
+        self.draw_loss_pic = config['draw_loss_pic']
 
         self.start_epoch = 0
         self.cur_step = 0
@@ -312,8 +312,9 @@ class Trainer(AbstractTrainer):
                     if verbose:
                         self.logger.info(stop_output)
                     break
-        if self.draw_pic:
-            self.plot_train_loss(save_path=self.config['model']+'_train_loss_graph.pdf')
+        if self.draw_loss_pic:
+            save_path = '{}-{}-train_loss.pdf'.format(self.config['model'], get_local_time())
+            self.plot_train_loss(save_path= os.path.join(save_path))
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
