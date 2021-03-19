@@ -350,6 +350,12 @@ class TestSequentialRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_dien(self):
+        config_dict = {
+            'model': 'DIEN',
+        }
+        quick_test(config_dict)
+
     def test_fpmc(self):
         config_dict = {
             'model': 'FPMC',
