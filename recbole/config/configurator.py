@@ -22,6 +22,7 @@ from logging import getLogger
 from recbole.evaluator import group_metrics, individual_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
     general_arguments, training_arguments, evaluation_arguments, dataset_arguments
+from recbole.utils.utils import set_color
 
 
 class Config(object):
@@ -337,18 +338,18 @@ class Config(object):
         return key in self.final_config_dict
 
     def __str__(self):
-        args_info = ''
+        args_info = '\n'
         for category in self.parameters:
-            args_info += category + ' Hyper Parameters: \n'
+            args_info += set_color(category + ' Hyper Parameters:\n', 'pink')
             args_info += '\n'.join([
-                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
+                (set_color("{}", 'cyan') + " =" + set_color(" {}", 'yellow')).format(arg, value) for arg, value in self.final_config_dict.items()
                 if arg in self.parameters[category]
             ])
             args_info += '\n\n'
             
-        args_info += 'Other Hyper Parameters: \n'
+        args_info += set_color('Other Hyper Parameters: \n', 'pink')
         args_info += '\n'.join([
-                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
+                (set_color("{}", 'cyan') + " = " + set_color("{}", 'yellow')).format(arg, value) for arg, value in self.final_config_dict.items()
                 if arg not in {_ for args in self.parameters.values() for _ in args}.union({'model', 'dataset', 'config_files'})
             ])
         args_info += '\n\n'
