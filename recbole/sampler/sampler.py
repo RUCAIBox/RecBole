@@ -4,9 +4,9 @@
 # @File   : sampler.py
 
 # UPDATE
-# @Time   : 2020/8/17, 2020/8/31, 2020/10/6, 2020/9/18
-# @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou, Yushuo Chen
-# @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/8/17, 2020/8/31, 2020/10/6, 2020/9/18, 2021/3/19
+# @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou, Yushuo Chen, Zhichao Feng
+# @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, fzcbupt@gmail.com
 
 """
 recbole.sampler
@@ -421,6 +421,13 @@ class RepeatableSampler(AbstractSampler):
 
 
 class SeqSampler(AbstractSampler):
+    """:class:`SeqSampler` is used to sample negative item sequence.
+
+        Args:
+            datasets (Dataset or list of Dataset): All the dataset for each phase.
+            distribution (str, optional): Distribution of the negative items. Defaults to 'uniform'.
+    """
+
     def __init__(self, dataset, distribution='uniform'):
         self.dataset = dataset
 
@@ -431,7 +438,7 @@ class SeqSampler(AbstractSampler):
         super().__init__(distribution=distribution)
 
     def get_used_ids(self):
-        return None
+        pass
 
     def get_random_list(self):
         """
@@ -441,7 +448,14 @@ class SeqSampler(AbstractSampler):
         return np.arange(1, self.n_items)
 
     def sample_neg_sequence(self, pos_sequence):
-        """
+        """For each moment, sampling one item from all the items except the one the user clicked on at that moment.
+
+        Args:
+            pos_sequence (torch.Tensor):  all users' item history sequence, with the shape of `(N, )`.
+
+        Returns:
+            torch.tensor : all users' negative item history sequence.
+
         """
         total_num = len(pos_sequence)
         value_ids = np.zeros(total_num, dtype=np.int64)
@@ -450,9 +464,5 @@ class SeqSampler(AbstractSampler):
             value_ids[check_list] = self.random_num(len(check_list))
             check_index = np.where(value_ids[check_list] == pos_sequence[check_list])
             check_list = check_list[check_index]
-            # check_list = np.array([
-            #     i for i, used, v in zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
-            #     if v in used
-            # ])
 
         return torch.tensor(value_ids)
