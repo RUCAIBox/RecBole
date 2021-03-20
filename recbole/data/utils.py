@@ -173,7 +173,7 @@ def save_split_dataloaders(config, dataloaders):
     saved_dataloaders_file = f'{config["dataset"]}-for-{config["model"]}-dataloader.pth'
     file_path = os.path.join(save_path, saved_dataloaders_file)
     logger = getLogger()
-    logger.info(f'Saved split dataloaders: {file_path}')
+    logger.info(set_color('Saved split dataloaders', 'blue') + f': {file_path}')
     with open(file_path, 'wb') as f:
         pickle.dump(dataloaders, f)
 
