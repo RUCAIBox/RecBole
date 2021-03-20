@@ -164,12 +164,6 @@ class InterestExtractorNetwork(nn.Module):
         self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size, batch_first=True)
         self.auxiliary_net = MLPLayers(layers=mlp_size, activation='Sigmoid')
 
-        self.apply(self._init_weights)
-
-    def _init_weights(self, module):
-        if isinstance(module, nn.Linear):
-            xavier_normal_(module.weight.data)
-
     def forward(self, keys, keys_length, neg_keys=None):
         batch_size, hist_len, embedding_size = keys.shape
         packed_keys = pack_padded_sequence(keys, lengths=keys_length.cpu(), batch_first=True, enforce_sorted=False)
@@ -185,6 +179,7 @@ class InterestExtractorNetwork(nn.Module):
     def auxiliary_loss(self, h_states, click_seq, noclick_seq, keys_length):
         r"""Computes the auxiliary loss
 
+        Formally:
         ..math: L_{a u x}= \frac{1}{N}(\sum_{i=1}^{N} \sum_{t} \log \sigma(\mathbf{h}_{t}^{i}, \mathbf{e}_{b}^{i}[t+1])
                 + \log (1-\sigma(\mathbf{h}_{t}^{i}, \hat{\mathbf{e}}_{b}^{i}[t+1])))
 
@@ -251,12 +246,6 @@ class InterestEvolvingLayer(nn.Module):
             self.attention_layer = SequenceAttLayer(mask_mat, att_hidden_size, activation, softmax_stag, True)
             self.dynamic_rnn = DynamicRNN(input_size=input_size, hidden_size=rnn_hidden_size, gru=gru)
 
-        self.apply(self._init_weights)
-
-    def _init_weights(self, module):
-        if isinstance(module, nn.Linear):
-            xavier_normal_(module.weight.data)
-
     def final_output(self, outputs, keys_length):
         """get the last effective value in the interest evolution sequence
         Args:
@@ -315,7 +304,9 @@ class InterestEvolvingLayer(nn.Module):
 
 class AGRUCell(nn.Module):
     """ Attention based GRU (AGRU). AGRU uses the attention score to replace the update gate of GRU, and changes the
-    hidden state directly.Formally:
+    hidden state directly.
+
+    Formally:
         ..math: {h}_{t}^{\prime}=\left(1-a_{t}\right) * {h}_{t-1}^{\prime}+a_{t} * \tilde{{h}}_{t}^{\prime}
 
         :math:`{h}_{t}^{\prime}`, :math:`h_{t-1}^{\prime}`, :math:`{h}_{t-1}^{\prime}`,
@@ -359,6 +350,7 @@ class AGRUCell(nn.Module):
 class AUGRUCell(nn.Module):
     """ Effect of GRU with attentional update gate (AUGRU). AUGRU combines attention mechanism and GRU seamlessly.
 
+    Formally:
         ..math: \tilde{{u}}_{t}^{\prime}=a_{t} * {u}_{t}^{\prime} \\
                 {h}_{t}^{\prime}=\left(1-\tilde{{u}}_{t}^{\prime}\right) \circ {h}_{t-1}^{\prime}+\tilde{{u}}_{t}^{\prime} \circ \tilde{{h}}_{t}^{\prime}
 
