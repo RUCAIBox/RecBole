@@ -5,3 +5,4 @@ recbole.model.exlib\_recommender
    :maxdepth: 4
 
    recbole.model.exlib_recommender.xgboost
+   recbole.model.exlib_recommender.lightgbm

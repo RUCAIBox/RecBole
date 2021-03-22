@@ -5,7 +5,7 @@
 
 r"""
 recbole.model.exlib_recommender.lightgbm
-#############################
+##########################################
 """
 
 import lightgbm as lgb
