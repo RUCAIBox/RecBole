@@ -27,6 +27,7 @@ jobs:
         pip install community
         pip install networkx
         pip install python-louvain
+        pip install lightgbm
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
     # Use "python -m pytest" instead of "pytest" to fix imports
