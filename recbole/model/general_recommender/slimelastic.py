@@ -8,7 +8,6 @@ Reference code:
     https://github.com/MaurizioFD/RecSys2019_DeepLearning_Evaluation/blob/master/SLIM_ElasticNet/SLIMElasticNetRecommender.py
 """
 
-
 import torch
 import warnings
 import numpy as np
@@ -46,14 +45,17 @@ class SLIMElastic(GeneralRecommender):
         X = X.tolil()
         self.interaction_matrix = X
 
-        model = ElasticNet(alpha=self.alpha, l1_ratio=self.l1_ratio,
-                           positive=self.positive_only,
-                           fit_intercept=False,
-                           copy_X=False,
-                           precompute=True,
-                           selection='random',
-                           max_iter=100,
-                           tol=1e-4)
+        model = ElasticNet(
+            alpha=self.alpha,
+            l1_ratio=self.l1_ratio,
+            positive=self.positive_only,
+            fit_intercept=False,
+            copy_X=False,
+            precompute=True,
+            selection='random',
+            max_iter=100,
+            tol=1e-4
+        )
         item_coeffs = []
 
         # ignore ConvergenceWarnings
@@ -92,8 +94,9 @@ class SLIMElastic(GeneralRecommender):
         user = interaction[self.USER_ID].cpu().numpy()
         item = interaction[self.ITEM_ID].cpu().numpy()
 
-        r = torch.from_numpy((self.interaction_matrix[user, :].multiply(
-            self.item_similarity[:, item].T)).sum(axis=1).getA1())
+        r = torch.from_numpy(
+            (self.interaction_matrix[user, :].multiply(self.item_similarity[:, item].T)).sum(axis=1).getA1()
+        )
 
         return r
 

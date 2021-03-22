@@ -78,10 +78,12 @@ class ENMF(GeneralRecommender):
         pos_score = self.forward(user)
 
         # shape: [embedding_size, embedding_size]
-        item_sum = torch.bmm(self.item_embedding.weight.unsqueeze(2), self.item_embedding.weight.unsqueeze(1)).sum(dim=0)
+        item_sum = torch.bmm(self.item_embedding.weight.unsqueeze(2),
+                             self.item_embedding.weight.unsqueeze(1)).sum(dim=0)
 
         # shape: [embedding_size, embedding_size]
-        user_sum = torch.bmm(self.user_embedding.weight.unsqueeze(2), self.user_embedding.weight.unsqueeze(1)).sum(dim=0)
+        user_sum = torch.bmm(self.user_embedding.weight.unsqueeze(2),
+                             self.user_embedding.weight.unsqueeze(1)).sum(dim=0)
 
         # shape: [embedding_size, embedding_size]
         H_sum = torch.matmul(self.H_i.weight.t(), self.H_i.weight)
@@ -90,7 +92,7 @@ class ENMF(GeneralRecommender):
 
         loss = self.negative_weight * t
 
-        loss = loss + torch.sum((1-self.negative_weight) * torch.square(pos_score) - 2 * pos_score)
+        loss = loss + torch.sum((1 - self.negative_weight) * torch.square(pos_score) - 2 * pos_score)
 
         loss = loss + self.reg_loss()
 
@@ -120,8 +122,3 @@ class ENMF(GeneralRecommender):
         score = self.H_i(score).squeeze(2)  # shape: [B, n_item]
 
         return score.view(-1)
-
-
-
-
-

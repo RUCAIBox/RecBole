@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time   : 2021/2/28
 # @Author : Lanling Xu
-# @Email  : xulanling_sherry@163.com 
+# @Email  : xulanling_sherry@163.com
 
 r"""
 RecVAE
@@ -39,42 +39,44 @@ def log_norm_pdf(x, mu, logvar):
 
 
 class CompositePrior(nn.Module):
+
     def __init__(self, hidden_dim, latent_dim, input_dim, mixture_weights):
         super(CompositePrior, self).__init__()
-        
+
         self.mixture_weights = mixture_weights
-        
+
         self.mu_prior = nn.Parameter(torch.Tensor(1, latent_dim), requires_grad=False)
         self.mu_prior.data.fill_(0)
-        
+
         self.logvar_prior = nn.Parameter(torch.Tensor(1, latent_dim), requires_grad=False)
         self.logvar_prior.data.fill_(0)
-        
+
         self.logvar_uniform_prior = nn.Parameter(torch.Tensor(1, latent_dim), requires_grad=False)
         self.logvar_uniform_prior.data.fill_(10)
-        
+
         self.encoder_old = Encoder(hidden_dim, latent_dim, input_dim)
         self.encoder_old.requires_grad_(False)
-        
+
     def forward(self, x, z):
         post_mu, post_logvar = self.encoder_old(x, 0)
-        
+
         stnd_prior = log_norm_pdf(z, self.mu_prior, self.logvar_prior)
         post_prior = log_norm_pdf(z, post_mu, post_logvar)
         unif_prior = log_norm_pdf(z, self.mu_prior, self.logvar_uniform_prior)
-        
+
         gaussians = [stnd_prior, post_prior, unif_prior]
         gaussians = [g.add(np.log(w)) for g, w in zip(gaussians, self.mixture_weights)]
-        
+
         density_per_gaussian = torch.stack(gaussians, dim=-1)
-                
+
         return torch.logsumexp(density_per_gaussian, dim=-1)
 
-    
+
 class Encoder(nn.Module):
+
     def __init__(self, hidden_dim, latent_dim, input_dim, eps=1e-1):
         super(Encoder, self).__init__()
-        
+
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.ln1 = nn.LayerNorm(hidden_dim, eps=eps)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
@@ -87,11 +89,11 @@ class Encoder(nn.Module):
         self.ln5 = nn.LayerNorm(hidden_dim, eps=eps)
         self.fc_mu = nn.Linear(hidden_dim, latent_dim)
         self.fc_logvar = nn.Linear(hidden_dim, latent_dim)
-        
+
     def forward(self, x, dropout_prob):
         x = F.normalize(x)
         x = F.dropout(x, dropout_prob, training=self.training)
-        
+
         h1 = self.ln1(swish(self.fc1(x)))
         h2 = self.ln2(swish(self.fc2(h1) + h1))
         h3 = self.ln3(swish(self.fc3(h2) + h1 + h2))
@@ -178,7 +180,7 @@ class RecVAE(GeneralRecommender):
         mll = (F.log_softmax(x_pred, dim=-1) * rating_matrix).sum(dim=-1).mean()
         kld = (log_norm_pdf(z, mu, logvar) - self.prior(rating_matrix, z)).sum(dim=-1).mul(kl_weight).mean()
         negative_elbo = -(mll - kld)
-        
+
         return negative_elbo
 
     def predict(self, interaction):
@@ -199,6 +201,6 @@ class RecVAE(GeneralRecommender):
         scores, _, _, _ = self.forward(rating_matrix, self.dropout_prob)
 
         return scores.view(-1)
-      
+
     def update_prior(self):
         self.prior.encoder_old.load_state_dict(deepcopy(self.encoder.state_dict()))

@@ -683,7 +683,10 @@ class Dataset(object):
         Returns:
             set: illegal ids, whose inter num out of [min_num, max_num]
         """
-        self.logger.debug(set_color('get_illegal_ids_by_inter_num', 'blue') + f': field=[{field}], max_num=[{max_num}], min_num=[{min_num}]')
+        self.logger.debug(
+            set_color('get_illegal_ids_by_inter_num', 'blue') +
+            f': field=[{field}], max_num=[{max_num}], min_num=[{min_num}]'
+        )
 
         max_num = max_num or np.inf
         min_num = min_num or -1
@@ -1177,11 +1180,13 @@ class Dataset(object):
         info = [set_color(self.dataset_name, 'pink')]
         if self.uid_field:
             info.extend([
-                set_color('The number of users', 'blue') + f': {self.user_num}', set_color('Average actions of users', 'blue') + f': {self.avg_actions_of_users}'
+                set_color('The number of users', 'blue') + f': {self.user_num}',
+                set_color('Average actions of users', 'blue') + f': {self.avg_actions_of_users}'
             ])
         if self.iid_field:
             info.extend([
-                set_color('The number of items', 'blue') + f': {self.item_num}', set_color('Average actions of items', 'blue') + f': {self.avg_actions_of_items}'
+                set_color('The number of items', 'blue') + f': {self.item_num}',
+                set_color('Average actions of items', 'blue') + f': {self.avg_actions_of_items}'
             ])
         info.append(set_color('The number of inters', 'blue') + f': {self.inter_num}')
         if self.uid_field and self.iid_field:
