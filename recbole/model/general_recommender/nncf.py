@@ -25,6 +25,7 @@ from recbole.model.general_recommender.itemknn import ComputeSimilarity
 
 import numpy as np
 
+
 class NNCF(GeneralRecommender):
     r"""NNCF is an neural network enhanced matrix factorization model which also captures neighborhood information.
     We implement the NNCF model with three ways to process neighborhood information.
@@ -56,17 +57,19 @@ class NNCF(GeneralRecommender):
         self.item_neigh_embedding = nn.Embedding(self.n_users, self.neigh_embedding_size)
         self.user_conv = nn.Sequential(
             nn.Conv1d(self.neigh_embedding_size, self.num_conv_kernel, self.conv_kernel_size),
-            nn.MaxPool1d(self.pool_kernel_size), 
-            nn.ReLU())
+            nn.MaxPool1d(self.pool_kernel_size), nn.ReLU()
+        )
         self.item_conv = nn.Sequential(
             nn.Conv1d(self.neigh_embedding_size, self.num_conv_kernel, self.conv_kernel_size),
-            nn.MaxPool1d(self.pool_kernel_size), 
-            nn.ReLU())
+            nn.MaxPool1d(self.pool_kernel_size), nn.ReLU()
+        )
         conved_size = self.neigh_num - (self.conv_kernel_size - 1)
         pooled_size = (conved_size - (self.pool_kernel_size - 1) - 1) // self.pool_kernel_size + 1
-        self.mlp_layers = MLPLayers([2 * pooled_size * self.num_conv_kernel + self.ui_embedding_size] + self.mlp_hidden_size, config['dropout'])
-        self.out_layer = nn.Sequential(nn.Linear(self.mlp_hidden_size[-1], 1),
-                                       nn.Sigmoid())
+        self.mlp_layers = MLPLayers(
+            [2 * pooled_size * self.num_conv_kernel + self.ui_embedding_size] + self.mlp_hidden_size,
+            config['dropout']
+        )
+        self.out_layer = nn.Sequential(nn.Linear(self.mlp_hidden_size[-1], 1), nn.Sigmoid())
         self.dropout_layer = torch.nn.Dropout(p=config['dropout'])
         self.loss = nn.BCELoss()
 
@@ -78,8 +81,10 @@ class NNCF(GeneralRecommender):
         elif self.neigh_info_method == "louvain":
             self.u_neigh, self.i_neigh = self.get_neigh_louvain()
         else:
-            raise RuntimeError('You need to choose the right algorithm of processing neighborhood information. \
-                The parameter neigh_info_method can be set to random, knn or louvain.')
+            raise RuntimeError(
+                'You need to choose the right algorithm of processing neighborhood information. \
+                The parameter neigh_info_method can be set to random, knn or louvain.'
+            )
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -145,8 +150,8 @@ class NNCF(GeneralRecommender):
             list: The list of nodes' community neighbors.
 
         """
-        item2user_neighbor_lst = [[] for _ in range(self.n_items)]  
-        user2item_neighbor_lst = [[] for _ in range(self.n_users)]  
+        item2user_neighbor_lst = [[] for _ in range(self.n_items)]
+        user2item_neighbor_lst = [[] for _ in range(self.n_users)]
 
         for r in range(len(relation)):
             user, item = relation[r][0], relation[r][1]
@@ -187,7 +192,7 @@ class NNCF(GeneralRecommender):
         tmp_relation = []
         for i in range(len(pairs)):
             tmp_relation.append(['user_' + str(pairs[i][0]), 'item_' + str(pairs[i][1])])
-        
+
         import networkx as nx
         G = nx.Graph()
         G.add_edges_from(tmp_relation)

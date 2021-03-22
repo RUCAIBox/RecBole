@@ -61,7 +61,7 @@ class RaCT(GeneralRecommender):
         self.critic_net = self.construct_critic_layers(self.critic_layer_dims)
 
         self.train_stage = config['train_stage']
-        self.pre_model_path = config['pre_model_path'] 
+        self.pre_model_path = config['pre_model_path']
 
         # parameters initialization
         assert self.train_stage in ['actor_pretrain', 'critic_pretrain', 'finetune']
@@ -125,11 +125,11 @@ class RaCT(GeneralRecommender):
 
         h = F.dropout(t, self.drop_out, training=self.training) * (1 - self.drop_out)
         self.input_matrix = h
-        self.number_of_seen_items = (h != 0).sum(dim=1)             # network input
+        self.number_of_seen_items = (h != 0).sum(dim=1)  # network input
 
         mask = (h > 0) * (t > 0)
         self.true_matrix = t * ~mask
-        self.number_of_unseen_items = (self.true_matrix != 0).sum(dim=1) # remaining input
+        self.number_of_unseen_items = (self.true_matrix != 0).sum(dim=1)  # remaining input
 
         h = self.encoder(h)
 
@@ -184,9 +184,9 @@ class RaCT(GeneralRecommender):
         users_num = predict_matrix.shape[0]
         predict_matrix[input_matrix.nonzero(as_tuple=True)] = -np.inf
         _, idx_sorted = torch.sort(predict_matrix, dim=1, descending=True)
-        
+
         topk_result = true_matrix[np.arange(users_num)[:, np.newaxis], idx_sorted[:, :k]]
-        
+
         number_non_zero = ((true_matrix > 0) * 1).sum(dim=1)
 
         tp = 1. / torch.log2(torch.arange(2, k + 2).type(torch.FloatTensor)).to(topk_result.device)
@@ -210,7 +210,7 @@ class RaCT(GeneralRecommender):
         mse_loss = (y - score) ** 2
         return mse_loss
 
-    def calculate_ac_loss(self, interaction):   
+    def calculate_ac_loss(self, interaction):
         actor_loss = self.calculate_actor_loss(interaction)
         y = self.critic_forward(actor_loss)
         return -1 * y
