@@ -17,6 +17,7 @@ import os
 from recbole.data.dataset import Dataset
 from recbole.data.utils import dlapi
 from recbole.utils import FeatureSource
+from recbole.utils.utils import set_color
 
 
 class SocialDataset(Dataset):
@@ -35,8 +36,8 @@ class SocialDataset(Dataset):
             It's loaded from file ``.net``.
     """
 
-    def __init__(self, config, saved_dataset=None):
-        super().__init__(config, saved_dataset=saved_dataset)
+    def __init__(self, config):
+        super().__init__(config)
 
     def _get_field_from_config(self):
         super()._get_field_from_config()
@@ -45,8 +46,8 @@ class SocialDataset(Dataset):
         self.target_field = self.config['TARGET_ID_FIELD']
         self._check_field('source_field', 'target_field')
 
-        self.logger.debug(f'source_id_field: {self.source_field}')
-        self.logger.debug(f'target_id_field: {self.target_field}')
+        self.logger.debug(set_color('source_id_field', 'blue') + f': {self.source_field}')
+        self.logger.debug(set_color('target_id_field', 'blue') + f': {self.target_field}')
 
     def _load_data(self, token, dataset_path):
         """Load ``.net`` additionally.
