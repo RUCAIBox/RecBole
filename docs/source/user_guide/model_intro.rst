@@ -55,6 +55,7 @@ Context-aware Recommendation
    model/context/dssm
    model/context/widedeep
    model/context/din
+   model/context/dien
    model/context/dcn
    model/context/autoint
    model/context/xgboost

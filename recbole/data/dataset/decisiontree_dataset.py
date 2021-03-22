@@ -19,8 +19,8 @@ class DecisionTreeDataset(Dataset):
 
     """
 
-    def __init__(self, config, saved_dataset=None):
-        super().__init__(config, saved_dataset=saved_dataset)
+    def __init__(self, config):
+        super().__init__(config)
 
     def _judge_token_and_convert(self, feat):
         # get columns whose type is token

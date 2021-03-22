@@ -173,7 +173,7 @@ def save_split_dataloaders(config, dataloaders):
     saved_dataloaders_file = f'{config["dataset"]}-for-{config["model"]}-dataloader.pth'
     file_path = os.path.join(save_path, saved_dataloaders_file)
     logger = getLogger()
-    logger.info(f'Saved split dataloaders: {file_path}')
+    logger.info(set_color('Saved split dataloaders', 'blue') + f': {file_path}')
     with open(file_path, 'wb') as f:
         pickle.dump(dataloaders, f)
 
@@ -203,6 +203,7 @@ def get_data_loader(name, config, neg_sample_args):
     """
     register_table = {
         'DIN': _get_DIN_data_loader,
+        'DIEN': _get_DIEN_data_loader,
         "MultiDAE": _get_AE_data_loader,
         "MultiVAE": _get_AE_data_loader,
         'MacridVAE': _get_AE_data_loader,
@@ -267,6 +268,22 @@ def _get_DIN_data_loader(name, config, neg_sample_args):
     elif neg_sample_strategy == 'full':
         return SequentialFullDataLoader
 
+def _get_DIEN_data_loader(name, config, neg_sample_args):
+    """Customized function for DIEN to get correct dataloader class.
+    Args:
+        name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
+        config (Config): An instance object of Config, used to record parameter information.
+        neg_sample_args : Settings of negative sampling.
+    Returns:
+        type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
+    """
+    neg_sample_strategy = neg_sample_args['strategy']
+    if neg_sample_strategy == 'none':
+        return DIENDataloader
+    elif neg_sample_strategy == 'by':
+        return DIENNegSampleDataLoader
+    elif neg_sample_strategy == 'full':
+        return DIENFullDataLoader
 
 def _get_AE_data_loader(name, config, neg_sample_args):
     """Customized function for Multi-DAE and Multi-VAE to get correct dataloader class.

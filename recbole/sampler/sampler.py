@@ -4,9 +4,9 @@
 # @File   : sampler.py
 
 # UPDATE
-# @Time   : 2020/8/17, 2020/8/31, 2020/10/6, 2020/9/18
-# @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou, Yushuo Chen
-# @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/8/17, 2020/8/31, 2020/10/6, 2020/9/18, 2021/3/19
+# @Author : Xingyu Pan, Kaiyuan Li, Yupeng Hou, Yushuo Chen, Zhichao Feng
+# @email  : panxy@ruc.edu.cn, tsotfsk@outlook.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, fzcbupt@gmail.com
 
 """
 recbole.sampler
@@ -418,3 +418,51 @@ class RepeatableSampler(AbstractSampler):
         new_sampler = copy.copy(self)
         new_sampler.phase = phase
         return new_sampler
+
+
+class SeqSampler(AbstractSampler):
+    """:class:`SeqSampler` is used to sample negative item sequence.
+
+        Args:
+            datasets (Dataset or list of Dataset): All the dataset for each phase.
+            distribution (str, optional): Distribution of the negative items. Defaults to 'uniform'.
+    """
+
+    def __init__(self, dataset, distribution='uniform'):
+        self.dataset = dataset
+
+        self.iid_field = dataset.iid_field
+        self.n_users = dataset.user_num
+        self.n_items = dataset.item_num
+
+        super().__init__(distribution=distribution)
+
+    def get_used_ids(self):
+        pass
+
+    def get_random_list(self):
+        """
+        Returns:
+            numpy.ndarray or list: Random list of item_id.
+        """
+        return np.arange(1, self.n_items)
+
+    def sample_neg_sequence(self, pos_sequence):
+        """For each moment, sampling one item from all the items except the one the user clicked on at that moment.
+
+        Args:
+            pos_sequence (torch.Tensor):  all users' item history sequence, with the shape of `(N, )`.
+
+        Returns:
+            torch.tensor : all users' negative item history sequence.
+
+        """
+        total_num = len(pos_sequence)
+        value_ids = np.zeros(total_num, dtype=np.int64)
+        check_list = np.arange(total_num)
+        while len(check_list) > 0:
+            value_ids[check_list] = self.random_num(len(check_list))
+            check_index = np.where(value_ids[check_list] == pos_sequence[check_list])
+            check_list = check_list[check_index]
+
+        return torch.tensor(value_ids)

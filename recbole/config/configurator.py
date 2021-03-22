@@ -242,7 +242,7 @@ class Config(object):
             if dataset == 'ml-100k':
                 self._update_internal_config_dict(context_aware_on_ml_100k_init)
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
-            if model == 'DIN':
+            if model in ['DIN', 'DIEN']:
                 self._update_internal_config_dict(DIN_init)
                 if dataset == 'ml-100k':
                     self._update_internal_config_dict(DIN_on_ml_100k_init)
