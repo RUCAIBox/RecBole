@@ -41,7 +41,6 @@ class Dataset(object):
 
     Args:
         config (Config): Global configuration object.
-        saved_dataset (str, optional): Restore Dataset object from ``saved_dataset``. Defaults to ``None``.
 
     Attributes:
         dataset_name (str): Name of this dataset.
@@ -90,7 +89,7 @@ class Dataset(object):
         feat_name_list (list): A list contains all the features' name (:class:`str`), including additional features.
     """
 
-    def __init__(self, config, saved_dataset=None):
+    def __init__(self, config):
         self.config = config
         self.dataset_name = config['dataset']
         self.logger = getLogger()
@@ -1391,7 +1390,7 @@ class Dataset(object):
             raise ValueError(f'Filepath [{filepath}] need to be a dir.')
 
         file = os.path.join(filepath, f'{self.config["dataset"]}-dataset.pth')
-        self.logger.debug(f'Saving into [{file}]')
+        self.logger.info(set_color('Saving filtered dataset into ', 'pink') + f'[{file}]')
         with open(file, 'wb') as f:
             pickle.dump(self, f)
 
