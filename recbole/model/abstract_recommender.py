@@ -20,6 +20,7 @@ import torch.nn as nn
 
 from recbole.model.layers import FMEmbedding, FMFirstOrderLinear
 from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
+from recbole.utils.utils import set_color
 
 
 class AbstractRecommender(nn.Module):
@@ -71,7 +72,7 @@ class AbstractRecommender(nn.Module):
         """
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
-        return super().__str__() + '\nTrainable parameters: {}'.format(params)
+        return super().__str__() + set_color('\nTrainable parameters', 'blue') + f': {params}'
 
 
 class GeneralRecommender(AbstractRecommender):

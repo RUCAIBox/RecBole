@@ -52,6 +52,10 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 
 
 ## RecBole 新闻
+**03/22/2021**: 我们发布了 [v0.2.1](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.1).
+
+**01/15/2021**: 我们发布了 [v0.2.0](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.0).
+
 **12/10/2020**: 我们发布了[RecBole小白入门系列中文博客（持续更新中）](https://blog.csdn.net/Turinger_2000/article/details/111182852) 。
 
 **12/06/2020**: 我们发布了 RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).

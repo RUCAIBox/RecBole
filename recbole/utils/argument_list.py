@@ -22,7 +22,8 @@ training_arguments = [
     'checkpoint_dir',
     'clip_grad_norm',
     'loss_decimal_place',
-    'weight_decay'
+    'weight_decay',
+    'draw_loss_pic'
 ]
 
 evaluation_arguments = [

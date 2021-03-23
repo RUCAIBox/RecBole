@@ -3,9 +3,9 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2020/10/9
-# @Author : Shanlei Mu, Yupeng Hou
-# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
+# @Time   : 2020/10/04, 2021/3/2, 2021/2/17
+# @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan
+# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn
 
 """
 recbole.config.configurator
@@ -22,6 +22,7 @@ from logging import getLogger
 from recbole.evaluator import group_metrics, individual_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
     general_arguments, training_arguments, evaluation_arguments, dataset_arguments
+from recbole.utils.utils import set_color
 
 
 class Config(object):
@@ -77,6 +78,7 @@ class Config(object):
         self.final_config_dict = self._get_final_config_dict()
         self._set_default_parameters()
         self._init_device()
+        self._set_train_neg_sample_args()
 
     def _init_parameters_category(self):
         self.parameters = dict()
@@ -235,12 +237,12 @@ class Config(object):
         self.internal_config_dict['MODEL_TYPE'] = model_class.type
         if self.internal_config_dict['MODEL_TYPE'] == ModelType.GENERAL:
             pass
-        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.XGBOOST}:
+        elif self.internal_config_dict['MODEL_TYPE'] in {ModelType.CONTEXT, ModelType.DECISIONTREE}:
             self._update_internal_config_dict(context_aware_init)
             if dataset == 'ml-100k':
                 self._update_internal_config_dict(context_aware_on_ml_100k_init)
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
-            if model == 'DIN':
+            if model in ['DIN', 'DIEN']:
                 self._update_internal_config_dict(DIN_init)
                 if dataset == 'ml-100k':
                     self._update_internal_config_dict(DIN_on_ml_100k_init)
@@ -309,6 +311,16 @@ class Config(object):
             os.environ["CUDA_VISIBLE_DEVICES"] = str(self.final_config_dict['gpu_id'])
         self.final_config_dict['device'] = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
 
+    def _set_train_neg_sample_args(self):
+        if self.final_config_dict['training_neg_sample_num']:
+            self.final_config_dict['train_neg_sample_args'] = {
+                'strategy': 'by',
+                'by': self.final_config_dict['training_neg_sample_num'],
+                'distribution': self.final_config_dict['training_neg_sample_distribution'] or 'uniform'
+            }
+        else:
+            self.final_config_dict['train_neg_sample_args'] = {'strategy': 'none'}
+
     def __setitem__(self, key, value):
         if not isinstance(key, str):
             raise TypeError("index must be a str.")
@@ -326,14 +338,23 @@ class Config(object):
         return key in self.final_config_dict
 
     def __str__(self):
-        args_info = ''
+        args_info = '\n'
         for category in self.parameters:
-            args_info += category + ' Hyper Parameters: \n'
-            args_info += '\n'.join([
-                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
-                if arg in self.parameters[category]
-            ])
+            args_info += set_color(category + ' Hyper Parameters:\n', 'pink')
+            args_info += '\n'.join([(set_color("{}", 'cyan') + " =" + set_color(" {}", 'yellow')).format(arg, value)
+                                    for arg, value in self.final_config_dict.items()
+                                    if arg in self.parameters[category]])
             args_info += '\n\n'
+
+        args_info += set_color('Other Hyper Parameters: \n', 'pink')
+        args_info += '\n'.join([
+            (set_color("{}", 'cyan') + " = " + set_color("{}", 'yellow')).format(arg, value)
+            for arg, value in self.final_config_dict.items()
+            if arg not in {
+                _ for args in self.parameters.values() for _ in args
+            }.union({'model', 'dataset', 'config_files'})
+        ])
+        args_info += '\n\n'
         return args_info
 
     def __repr__(self):

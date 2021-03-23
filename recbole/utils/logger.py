@@ -3,6 +3,11 @@
 # @Author : Zihan Lin
 # @Email  : linzihan.super@foxmail.com
 
+# UPDATE
+# @Time   : 2021/3/7
+# @Author : Jiawei Guan
+# @Email  : guanjw@ruc.edu.cn
+
 """
 recbole.utils.logger
 ###############################
@@ -10,8 +15,17 @@ recbole.utils.logger
 
 import logging
 import os
+import colorlog
 
 from recbole.utils.utils import get_local_time, ensure_dir
+from colorama import init
+
+log_colors_config = {
+    'DEBUG': 'cyan',
+    'WARNING': 'yellow',
+    'ERROR': 'red',
+    'CRITICAL': 'red',
+}
 
 
 def init_logger(config):
@@ -28,6 +42,7 @@ def init_logger(config):
         >>> logger.debug(train_state)
         >>> logger.info(train_result)
     """
+    init(autoreset=True)
     LOGROOT = './log/'
     dir_name = os.path.dirname(LOGROOT)
     ensure_dir(dir_name)
@@ -36,13 +51,13 @@ def init_logger(config):
 
     logfilepath = os.path.join(LOGROOT, logfilename)
 
-    filefmt = "%(asctime)-15s %(levelname)s %(message)s"
+    filefmt = "%(asctime)-15s %(levelname)s  %(message)s"
     filedatefmt = "%a %d %b %Y %H:%M:%S"
     fileformatter = logging.Formatter(filefmt, filedatefmt)
 
-    sfmt = "%(asctime)-15s %(levelname)s %(message)s"
+    sfmt = "%(log_color)s%(asctime)-15s %(levelname)s  %(message)s"
     sdatefmt = "%d %b %H:%M"
-    sformatter = logging.Formatter(sfmt, sdatefmt)
+    sformatter = colorlog.ColoredFormatter(sfmt, sdatefmt, log_colors=log_colors_config)
     if config['state'] is None or config['state'].lower() == 'info':
         level = logging.INFO
     elif config['state'].lower() == 'debug':
