@@ -341,6 +341,19 @@ class TestContextRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_lightgbm(self):
+        config_dict = {
+            'model': 'lightgbm',
+            'threshold': {'rating': 4},
+            'lgb_params': {
+                'boosting': 'gbdt',
+                'objective': 'binary',
+                'metric': ['auc', 'binary_logloss']
+            },
+            'lgb_num_boost_round': 1,
+        }
+        quick_test(config_dict)
+
 
 class TestSequentialRecommender(unittest.TestCase):
 
