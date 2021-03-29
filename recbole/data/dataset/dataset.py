@@ -12,6 +12,7 @@ recbole.data.dataset
 ##########################
 """
 
+import math
 import copy
 import pickle
 import os
@@ -1246,7 +1247,7 @@ class Dataset(object):
         Returns:
             list: Number of each part after splitting.
         """
-        cnt = [int(ratios[i] * tot) for i in range(len(ratios))]
+        cnt = [math.ceil(ratios[i] * tot) for i in range(len(ratios))]
         cnt[0] = tot - sum(cnt[1:])
         split_ids = np.cumsum(cnt)[:-1]
         return list(split_ids)
