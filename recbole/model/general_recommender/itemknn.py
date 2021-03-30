@@ -18,6 +18,7 @@ import torch
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.utils import InputType, ModelType
 
+
 class ComputeSimilarity:
 
     def __init__(self, dataMatrix, topk=100, shrink=0, normalize=True):
@@ -66,7 +67,7 @@ class ComputeSimilarity:
         neigh = []
 
         self.dataMatrix = self.dataMatrix.astype(np.float32)
-        
+
         # Compute sum of squared values to be used in normalization
         if method == 'user':
             sumOfSquared = np.array(self.dataMatrix.power(2).sum(axis=1)).ravel()
@@ -130,7 +131,7 @@ class ComputeSimilarity:
                 relevant_partition_sorting = np.argsort(-this_line_weights[relevant_partition])
                 top_k_idx = relevant_partition[relevant_partition_sorting]
                 neigh.append(top_k_idx)
-                
+
                 # Incrementally build sparse matrix, do not add zeros
                 notZerosMask = this_line_weights[top_k_idx] != 0.0
                 numNotZeros = np.sum(notZerosMask)
@@ -145,12 +146,13 @@ class ComputeSimilarity:
 
             start_block += block_size
 
-        # End while 
+        # End while
         if method == 'user':
             W_sparse = sp.csr_matrix((values, (rows, cols)), shape=(self.n_rows, self.n_rows), dtype=np.float32)
         else:
             W_sparse = sp.csr_matrix((values, (rows, cols)), shape=(self.n_columns, self.n_columns), dtype=np.float32)
         return neigh, W_sparse.tocsc()
+
 
 class ItemKNN(GeneralRecommender):
     r"""ItemKNN is a basic model that compute item similarity with the interaction matrix.
@@ -169,7 +171,8 @@ class ItemKNN(GeneralRecommender):
         self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
         shape = self.interaction_matrix.shape
         assert self.n_users == shape[0] and self.n_items == shape[1]
-        _, self.w = ComputeSimilarity(self.interaction_matrix, topk=self.k, shrink=self.shrink).compute_similarity('item')
+        _, self.w = ComputeSimilarity(self.interaction_matrix, topk=self.k,
+                                      shrink=self.shrink).compute_similarity('item')
         self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
 
         self.fake_loss = torch.nn.Parameter(torch.zeros(1))

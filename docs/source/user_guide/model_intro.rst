@@ -59,6 +59,7 @@ Context-aware Recommendation
    model/context/dcn
    model/context/autoint
    model/context/xgboost
+   model/context/lightgbm
 
 
 Sequential Recommendation

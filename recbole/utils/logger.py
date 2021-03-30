@@ -27,6 +27,7 @@ log_colors_config = {
     'CRITICAL': 'red',
 }
 
+
 def init_logger(config):
     """
     A logger that can show a message on standard output and write it into the
