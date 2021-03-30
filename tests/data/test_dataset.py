@@ -477,9 +477,12 @@ class TestDataset:
             'split_ratio': [0.8, 0.1, 0.1],
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
-        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17))).all()
-        assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(17, 19))).all()
-        assert (test_dataset.inter_feat['item_id'].numpy() == list(range(19, 21))).all()
+        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1] + [1, 2, 3] +
+                list(range(1, 8)) + list(range(1, 9)) + list(range(1, 10))).all()
+        assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(17, 19)) + [] + [] + [2] + [4] +
+                [8] + [9] + [10]).all()
+        assert (test_dataset.inter_feat['item_id'].numpy() == list(range(19, 21)) + [] + [2] + [3] + [5] +
+                [9] + [10] + [11]).all()
 
     def test_TO_RS_820(self):
         config_dict = {
@@ -491,8 +494,10 @@ class TestDataset:
             'split_ratio': [0.8, 0.2, 0.0],
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
-        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17))).all()
-        assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(17, 21))).all()
+        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
+                list(range(1, 9)) + list(range(1, 9)) + list(range(1, 10))).all()
+        assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(17, 21)) + [] + [2] + [3] + [5] +
+                [9] + [9, 10] + [10, 11]).all()
         assert len(test_dataset.inter_feat) == 0
 
     def test_TO_RS_802(self):
@@ -505,9 +510,11 @@ class TestDataset:
             'split_ratio': [0.8, 0.0, 0.2],
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
-        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17))).all()
+        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
+                list(range(1, 9)) + list(range(1, 9)) + list(range(1, 10))).all()
         assert len(valid_dataset.inter_feat) == 0
-        assert (test_dataset.inter_feat['item_id'].numpy() == list(range(17, 21))).all()
+        assert (test_dataset.inter_feat['item_id'].numpy() == list(range(17, 21)) + [] + [2] + [3] + [5] +
+                [9] + [9, 10] + [10, 11]).all()
 
     def test_TO_LS(self):
         config_dict = {
@@ -519,9 +526,12 @@ class TestDataset:
             'leave_one_num': 2,
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
-        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 19))).all()
-        assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(19, 20))).all()
-        assert (test_dataset.inter_feat['item_id'].numpy() == list(range(20, 21))).all()
+        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 19)) + [1] + [1] + [1] + [1, 2, 3] +
+                list(range(1, 8)) + list(range(1, 9)) + list(range(1, 10))).all()
+        assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(19, 20)) + [] + [] + [2] + [4] +
+                [8] + [9] + [10]).all()
+        assert (test_dataset.inter_feat['item_id'].numpy() == list(range(20, 21)) + [] + [2] + [3] + [5] +
+                [9] + [10] + [11]).all()
 
     def test_RO_RS_811(self):
         config_dict = {
@@ -533,9 +543,9 @@ class TestDataset:
             'split_ratio': [0.8, 0.1, 0.1],
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
-        assert len(train_dataset.inter_feat) == 16
-        assert len(valid_dataset.inter_feat) == 2
-        assert len(test_dataset.inter_feat) == 2
+        assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 1 + 3 + 7 + 8 + 9
+        assert len(valid_dataset.inter_feat) == 2 + 0 + 0 + 1 + 1 + 1 + 1 + 1
+        assert len(test_dataset.inter_feat) == 2 + 0 + 1 + 1 + 1 + 1 + 1 + 1
 
     def test_RO_RS_820(self):
         config_dict = {
@@ -547,8 +557,8 @@ class TestDataset:
             'split_ratio': [0.8, 0.2, 0.0],
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
-        assert len(train_dataset.inter_feat) == 16
-        assert len(valid_dataset.inter_feat) == 4
+        assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 2 + 4 + 8 + 8 + 9
+        assert len(valid_dataset.inter_feat) == 4 + 0 + 1 + 1 + 1 + 1 + 2 + 2
         assert len(test_dataset.inter_feat) == 0
 
     def test_RO_RS_802(self):
@@ -561,9 +571,9 @@ class TestDataset:
             'split_ratio': [0.8, 0.0, 0.2],
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
-        assert len(train_dataset.inter_feat) == 16
+        assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 2 + 4 + 8 + 8 + 9
         assert len(valid_dataset.inter_feat) == 0
-        assert len(test_dataset.inter_feat) == 4
+        assert len(test_dataset.inter_feat) == 4 + 0 + 1 + 1 + 1 + 1 + 2 + 2
 
 
 class TestSeqDataset:
