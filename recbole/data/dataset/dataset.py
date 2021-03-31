@@ -1247,7 +1247,7 @@ class Dataset(object):
         Returns:
             list: Number of each part after splitting.
         """
-        cnt = [math.ceil(ratios[i] * tot) for i in range(len(ratios))]
+        cnt = [int(ratios[i] * tot) for i in range(len(ratios))]
         cnt[0] = tot - sum(cnt[1:])
         for i in range(1, len(ratios)):
             if cnt[0] <= 1:
