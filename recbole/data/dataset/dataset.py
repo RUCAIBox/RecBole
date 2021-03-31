@@ -23,7 +23,6 @@ import pandas as pd
 import torch
 import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
-import math
 
 from recbole.data.interaction import Interaction
 from recbole.data.utils import dlapi
