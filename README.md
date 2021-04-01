@@ -22,7 +22,7 @@
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
-Our library includes 65 recommendation algorithms, covering four major categories:
+Our library includes 72 recommendation algorithms, covering four major categories:
 
 + General Recommendation
 + Sequential Recommendation
