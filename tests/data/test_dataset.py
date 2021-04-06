@@ -583,6 +583,7 @@ class TestSeqDataset:
             'dataset': 'seq_dataset',
             'data_path': current_path,
             'load_col': None,
+            'training_neg_sample_num': 0
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.uid_list == [1, 1, 1, 1, 1, 2, 2, 3, 4]).all()
