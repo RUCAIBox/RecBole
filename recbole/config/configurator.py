@@ -276,6 +276,8 @@ class Config(object):
             self.final_config_dict['MODEL_INPUT_TYPE'] = self.model_class.input_type
         elif 'loss_type' in self.final_config_dict:
             if self.final_config_dict['loss_type'] in ['CE']:
+                if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and self.final_config_dict['training_neg_sample_num'] > 0:
+                    raise ValueError("training_neg_sample_num should be 0 when the loss_type is CE")
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.POINTWISE
             elif self.final_config_dict['loss_type'] in ['BPR']:
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.PAIRWISE

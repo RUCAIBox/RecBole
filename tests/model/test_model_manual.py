@@ -30,6 +30,7 @@ class TestSequentialRecommender(unittest.TestCase):
             'model': 'S3Rec',
             'train_stage': 'pretrain',
             'save_step': 1,
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -37,6 +38,7 @@ class TestSequentialRecommender(unittest.TestCase):
             'model': 'S3Rec',
             'train_stage': 'finetune',
             'pre_model_path': './saved/S3Rec-test-1.pth',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
