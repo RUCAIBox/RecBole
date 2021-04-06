@@ -52,7 +52,7 @@ ITEM_ID_FIELD: item_id
 LABEL_FIELD: label
 threshold:
   rating: 4.0
-drop_filter_field : True
+unused_col: [rating]
 load_col:
   inter: [user_id, item_id, rating]
   item: [item_id, release_year, genre]
@@ -114,7 +114,7 @@ normalize_all: True
 min_item_inter_num: 0
 min_user_inter_num: 0
 
-drop_filter_field : True
+unused_col: [index]
 
 
 # training and evaluation
@@ -169,7 +169,7 @@ load_col:
     
 lowest_val:
   timestamp: 14102931
-drop_filter_field : False
+unused_col: [timestamp]
 
 # training and evaluation
 epochs: 500
