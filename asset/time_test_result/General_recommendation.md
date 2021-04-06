@@ -105,7 +105,8 @@ min_item_inter_num: 0
 lowest_val:
   timestamp: 1133366400
   rating: 3
-unused_col: [timestamp, rating]
+unused_col: 
+  inter: [timestamp, rating]
 
 # training and evaluation
 epochs: 500
@@ -154,7 +155,8 @@ min_user_inter_num: 10
 min_item_inter_num: 4
 lowest_val:
   stars: 3
-unused_col: [stars]
+unused_col: 
+  inter: [stars]
 
 # training and evaluation
 epochs: 500
