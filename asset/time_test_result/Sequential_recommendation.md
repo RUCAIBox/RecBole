@@ -218,8 +218,8 @@ Other parameters (including model parameters) are default value.
 
 ```
 load_col:
-    inter: [session_id, item_id, timestamp]
- 	item: [item_id, item_category]
+  inter: [session_id, item_id, timestamp]
+  item: [item_id, item_category]
 ```
 
 
