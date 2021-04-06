@@ -55,7 +55,8 @@ load_col:
     link: [item_id, entity_id]
 lowest_val:
     rating: 3
-unused_col:[rating]
+unused_col:
+    inter: [rating]
 
 # training and evaluation
 epochs: 500
@@ -102,7 +103,8 @@ load_col:
     link: [item_id, entity_id]
 lowest_val:
     rating: 3
-unused_col:[rating]
+unused_col:
+    inter: [rating]
 
 # training and evaluation
 epochs: 500
@@ -152,7 +154,8 @@ lowest_val:
   
 highest_val:
     timestamp: 1362067200
-unused_col: [timestamp]
+unused_col: 
+    inter: [timestamp]
 min_user_inter_num: 2
 min_item_inter_num: 15
 
