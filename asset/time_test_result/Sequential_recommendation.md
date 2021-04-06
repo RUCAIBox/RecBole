@@ -196,7 +196,8 @@ min_user_inter_num: 10
 min_item_inter_num: 4
 lowest_val:
   stars: 3
-unused_col: [stars]
+unused_col: 
+  inter: [stars]
 
 # training and evaluation
 epochs: 500
