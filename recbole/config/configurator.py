@@ -298,7 +298,7 @@ class Config(object):
 
         smaller_metric = ['rmse', 'mae', 'logloss']
         valid_metric = self.final_config_dict['valid_metric'].split('@')[0]
-        self.final_config_dict['valid_metric_bigger'] = False if valid_metric in smaller_metric else True
+        self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metric else True
 
         if 'additional_feat_suffix' in self.final_config_dict:
             ad_suf = self.final_config_dict['additional_feat_suffix']
