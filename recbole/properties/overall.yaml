@@ -31,6 +31,7 @@ real_time_process: False
 metrics: ["Recall", "MRR","NDCG","Hit","Precision"]
 topk: [10]
 valid_metric: MRR@10
+valid_metric_bigger: True
 eval_batch_size: 4096
 loss_decimal_place: 4
 metric_decimal_place: 4
