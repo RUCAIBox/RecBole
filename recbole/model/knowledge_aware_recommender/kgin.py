@@ -20,11 +20,10 @@ import torch.nn.functional as F
 import networkx as nx
 import scipy.sparse as sp
 from tqdm import tqdm
-from torch_scatter import scatter_mean
 from collections import defaultdict
 
 from recbole.model.abstract_recommender import KnowledgeRecommender
-from recbole.model.init import xavier_normal_initialization, xavier_uniform_initialization
+from recbole.model.init import xavier_uniform_initialization
 from recbole.model.loss import BPRLoss, EmbLoss
 from recbole.utils import InputType
 
@@ -34,10 +33,11 @@ class Aggregator(nn.Module):
     Relational Path-aware Convolution Network
     """
 
-    def __init__(self, n_users, n_factors):
+    def __init__(self, n_users, n_factors, device):
         super(Aggregator, self).__init__()
         self.n_users = n_users
         self.n_factors = n_factors
+        self.device = device
 
     def forward(
         self, entity_emb, user_emb, latent_embedding, edge_index, edge_type, interact_mat, weight, disen_weight_att
@@ -50,7 +50,20 @@ class Aggregator(nn.Module):
         head, tail = edge_index
         edge_relation_emb = weight[edge_type - 1]  # exclude interact, remap [1, n_relations) to [0, n_relations-1)
         neigh_relation_emb = entity_emb[tail] * edge_relation_emb  # [-1, channel]
-        entity_agg = scatter_mean(src=neigh_relation_emb, index=head, dim_size=n_entities, dim=0)
+
+        zeros = torch.zeros(max(n_entities, neigh_relation_emb.shape[0]), channel).to(self.device)
+        ones = torch.ones(max(n_entities, neigh_relation_emb.shape[0]), channel).to(self.device)
+        y = torch.LongTensor(channel, len(head)).to(self.device)
+        y.copy_(head)
+        y = y.transpose(0, 1)  # new head [-1, channel]
+        entity_agg = torch.scatter_add(zeros, 0, y, neigh_relation_emb).to(self.device)
+        count = torch.scatter_add(zeros, 0, y, ones).to(self.device)
+        count.clamp_(1)
+        if torch.is_floating_point(entity_agg):
+            entity_agg.true_divide_(count)
+        else:
+            entity_agg.floor_divide_(count)
+        entity_agg = entity_agg[:min(n_entities, neigh_relation_emb.shape[0])]
         """cul user->latent factor attention"""
         score_ = torch.mm(user_emb, latent_embedding.weight.t())
         score = nn.Softmax(dim=1)(score_).unsqueeze(-1)  # [n_users, n_factors, 1]
@@ -77,6 +90,7 @@ class GraphConv(nn.Module):
         interact_mat,
         ind,
         tmp,
+        device,
         node_dropout_rate=0.5,
         mess_dropout_rate=0.1
     ):
@@ -90,8 +104,8 @@ class GraphConv(nn.Module):
         self.node_dropout_rate = node_dropout_rate
         self.mess_dropout_rate = mess_dropout_rate
         self.ind = ind
-
         self.temperature = tmp
+        self.device = device
 
         initializer = nn.init.xavier_uniform_
         weight = initializer(torch.empty(n_relations - 1, channel))  # not include interact
@@ -101,7 +115,7 @@ class GraphConv(nn.Module):
         self.disen_weight_att = nn.Parameter(disen_weight_att)
 
         for i in range(n_hops):
-            self.convs.append(Aggregator(n_users=n_users, n_factors=n_factors))
+            self.convs.append(Aggregator(n_users=n_users, n_factors=n_factors, device=self.device))
 
         self.dropout = nn.Dropout(p=mess_dropout_rate)  # mess dropout
 
@@ -328,6 +342,7 @@ class KGIN(KnowledgeRecommender):
             interact_mat=self.interact_mat,
             ind=self.ind,
             tmp=self.temperature,
+            device=self.device,
             node_dropout_rate=self.node_dropout_rate,
             mess_dropout_rate=self.mess_dropout_rate
         )
