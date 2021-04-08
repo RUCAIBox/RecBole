@@ -63,7 +63,8 @@ class Aggregator(nn.Module):
             entity_agg.true_divide_(count)
         else:
             entity_agg.floor_divide_(count)
-        entity_agg = entity_agg[:min(n_entities, neigh_relation_emb.shape[0])]
+        entity_agg = entity_agg[:n_entities]
+
         """cul user->latent factor attention"""
         score_ = torch.mm(user_emb, latent_embedding.weight.t())
         score = nn.Softmax(dim=1)(score_).unsqueeze(-1)  # [n_users, n_factors, 1]
@@ -115,7 +116,7 @@ class GraphConv(nn.Module):
         self.disen_weight_att = nn.Parameter(disen_weight_att)
 
         for i in range(n_hops):
-            self.convs.append(Aggregator(n_users=n_users, n_factors=n_factors, device=self.device))
+            self.convs.append(Aggregator(n_users=n_users, n_factors=n_factors, device=device))
 
         self.dropout = nn.Dropout(p=mess_dropout_rate)  # mess dropout
 
