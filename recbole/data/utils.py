@@ -123,6 +123,21 @@ def data_preparation(config, dataset, save=False):
         set_color(f'[{train_kwargs["batch_size"]}]', 'yellow') + ', ' + set_color('shuffle', 'cyan') + ' = ' +
         set_color(f'[{train_kwargs["shuffle"]}]\n', 'yellow')
     )
+    register_table = [
+        'DIN',
+        'DIEN',
+        "MultiDAE",
+        "MultiVAE",
+        'MacridVAE',
+        'CDAE',
+        'ENMF',
+        'RaCT',
+        'RecVAE'
+    ]
+    if config['model'] in register_table:
+        del train_kwargs['sampler']
+        del train_kwargs['neg_sample_args']
+
     train_data = dataloader(**train_kwargs)
 
     # Evaluation
