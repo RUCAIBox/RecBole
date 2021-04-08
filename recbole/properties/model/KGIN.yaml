@@ -1,0 +1,13 @@
+embedding_size: 64
+reg_weight: 1e-5
+aggregator_type: 'bi'
+node_dropout: True
+node_dropout_rate: 0.5
+mess_dropout: True
+mess_dropout_rate: 0.1
+l2: 1e-5
+sim_regularity: 1e-4
+context_hops: 3
+n_factors: 4
+ind: 'distance'
+temperature: 0.2
