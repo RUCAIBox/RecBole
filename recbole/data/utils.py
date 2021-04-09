@@ -124,8 +124,6 @@ def data_preparation(config, dataset, save=False):
         set_color(f'[{train_kwargs["shuffle"]}]\n', 'yellow')
     )
     register_table = [
-        'DIN',
-        'DIEN',
         "MultiDAE",
         "MultiVAE",
         'MacridVAE',
