@@ -1,0 +1,6 @@
+embedding_size: 10
+mlp_hidden_size: [256,256,256]
+dropout_prob: 0
+pooling_mode: 'mean'
+gru_type: 'AUGRU'
+alpha: 1

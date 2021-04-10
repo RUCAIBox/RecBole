@@ -16,7 +16,7 @@ class xgboost(xgb.Booster):
     r"""xgboost is inherited from xgb.Booster
 
     """
-    type = ModelType.XGBOOST
+    type = ModelType.DECISIONTREE
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):

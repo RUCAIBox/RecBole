@@ -1,14 +1,8 @@
-# Type of training method
 convert_token_to_onehot: False
 token_num_threshold: 10000
 
 # DMatrix
-xgb_weight: ~
-xgb_base_margin: ~
-xgb_missing: ~
 xgb_silent: ~
-xgb_feature_names: ~
-xgb_feature_types: ~
 xgb_nthread: ~
 
 xgb_model: ~
@@ -26,11 +20,6 @@ xgb_params:
     seed: 2020
     # nthread: -1
 xgb_num_boost_round: 500
-# xgb_evals: ~
-xgb_obj: ~
-xgb_feval: ~
-xgb_maximize: ~
 xgb_early_stopping_rounds: ~
-# xgb_evals_result: ~
 xgb_verbose_eval: 100
 

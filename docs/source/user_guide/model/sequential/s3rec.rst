@@ -56,10 +56,10 @@ Running with RecBole
 - ``mip_weight (float)`` : The weight for Masked Item Prediction loss. Defaults to ``0.2``.
 - ``map_weight (float)`` : The weight for Masked Attribute Prediction loss. Defaults to ``1.0``.
 - ``sp_weight (float)`` : The weight for Segment Prediction loss. Defaults to ``0.5``.
-- ``train_stage (float)`` : The training stage. Defaults to ``'pretrain'``. Range in ``['pretrain', 'finetune']``.
+- ``train_stage (str)`` : The training stage. Defaults to ``'pretrain'``. Range in ``['pretrain', 'finetune']``.
 - ``item_attribute (str)`` : The item features used as attributes for pre-training. Defaults to ``'class'`` for ml-100k dataset.
 - ``save_step (int)`` : Save pre-trained model every ``save_step`` pre-training epochs. Defaults to ``10``.
-- ``pre_model_path (float)`` : The path of pretrained model. Defaults to ``''``.
+- ``pre_model_path (str)`` : The path of pretrained model. Defaults to ``''``.
 - ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``training_neg_sample_num = 1``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 

@@ -1,0 +1,10 @@
+mlp_hidden_size: [600]
+latent_dimension: 256
+dropout_prob: 0.5
+anneal_cap: 0.2
+total_anneal_steps: 200000
+critic_layers: [100,100,10]
+metrics_k: 100
+train_stage: 'actor_pretrain'
+pretrain_epochs: 150
+pre_model_path: ''
