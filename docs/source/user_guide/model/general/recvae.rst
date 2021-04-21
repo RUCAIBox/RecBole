@@ -58,6 +58,7 @@ And then:
 In order to use the RecVAE model, a specific RecVAE Trainer should be imported
 
 .. code:: python
+
 	from logging import getLogger
 	from recbole.config import Config
 	from recbole.data import create_dataset, data_preparation
