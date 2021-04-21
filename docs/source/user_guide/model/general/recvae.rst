@@ -53,6 +53,33 @@ And then:
 
 **Note**: Because this model is a non-sampling model, so you must set ``training_neg_sample=0`` when you run this model. 
 
+**Example with RecVAE Trainer**
+
+In order to use the RecVAE model, a specific RecVAE Trainer should be imported
+
+.. code:: python
+	from logging import getLogger
+	from recbole.config import Config
+	from recbole.data import create_dataset, data_preparation
+	from recbole.model.general_recommender import RecVAE
+	from recbole.trainer import RecVAETrainer
+	from recbole.utils import init_seed, init_logger
+
+	if __name__ == '__main__':
+	    config = Config(model='RecVAE', dataset='x', config_file_list=['x.yaml'])
+	    dataset = create_dataset(config)
+	    init_seed(config['seed'], config['reproducibility'])
+	    init_logger(config)
+	    logger = getLogger()
+	    dataset = create_dataset(config)
+	    train_data, valid_data, test_data = data_preparation(config, dataset)
+	    model = RecVAE(config, train_data).to(config['device'])
+	    logger.info(model)
+
+	    # Specific trainer
+	    trainer = RecVAETrainer(config, model)
+
+
 Tuning Hyper Parameters
 -------------------------
 
