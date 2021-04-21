@@ -47,6 +47,7 @@ And then:
 Note: a custom lightgbmTrainer should be imported in order for the code to work!
 
 .. code:: python
+
    from logging import getLogger
    from recbole.config import Config
    from recbole.data import create_dataset, data_preparation
