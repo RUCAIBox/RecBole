@@ -9,6 +9,7 @@
 [![PyPi Latest Release](https://img.shields.io/pypi/v/recbole)](https://pypi.org/project/recbole/)
 [![Conda Latest Release](https://anaconda.org/aibox/recbole/badges/version.svg)](https://anaconda.org/aibox/recbole)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![arXiv](https://img.shields.io/badge/arXiv-RecBole-%23B21B1B)](https://arxiv.org/abs/2011.01731)
 
 
 [中文主页] | [文档] | [数据集] | [论文] | [博客] | [English Version]
