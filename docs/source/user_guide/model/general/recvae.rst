@@ -40,7 +40,10 @@ Write the following code to a python file, such as `run.py`
 
    from recbole.quick_start import run_recbole
 
-   run_recbole(model='RecVAE', dataset='ml-100k')
+   parameter_dict = {
+      'training_neg_sample_num': 0 
+   }
+   run_recbole(model='RecVAE', dataset='ml-100k', config_dict=parameter_dict)
 
 And then:
 
