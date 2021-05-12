@@ -329,6 +329,7 @@ class KnowledgeBasedDataset(Dataset):
                 item2order[token] = 3
         item_ent_token_list = list(self.field2id_token[self.iid_field])
         item_ent_token_list.sort(key=lambda t: item2order[t])
+        item_ent_token_list = np.array(item_ent_token_list)
         order_list = [item2order[_] for _ in item_ent_token_list]
         order_cnt = Counter(order_list)
         layered_num = []
