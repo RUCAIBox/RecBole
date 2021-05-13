@@ -169,6 +169,28 @@ If you want to change the models, just run the script by setting additional comm
 python run_recbole.py --model=[model_name]
 ```
 
+### Auto-tuning Hyperparameter 
+Open 'RecBole/hyper.test' and set several hyperparameters to auto-searching in parameter list. The following has two ways to search best hyperparameter:
+* **loguniform**: indicates that the parameters obey the uniform distribution, randomly taking values from e^{-8} to e^{0}.
+* **choice**: indicates that the parameter takes discrete values from the setting list.
+```
+learning_rate loguniform -8, 0
+embedding_size choice [64, 96 , 128]
+train_batch_size choice [512, 1024, 2048]
+mlp_hidden_size choice ['[64, 64, 64]','[128, 128]']
+```
+Set training command parameters as you need to run:
+```
+python run_hyper.py --model=[model_name] --dataset=[data_name] --config-files=xxxx.yaml --params_file=hyper.test
+e.g.
+python run_hyper.py --model=BPR --dataset=ml-100k --config_files=recbole/properties/model/BPR.yaml --params_file=hyper.test
+```
+This processing maybe take a long time to output best hyperparameter and result:
+```
+running parameters:                                                                                                                    
+{'embedding_size': 64, 'learning_rate': 0.005947474154838498, 'mlp_hidden_size': '[64,64,64]', 'train_batch_size': 512}                
+  0%|                                                                                           | 0/18 [00:00<?, ?trial/s, best loss=?]
+```
 
 ## Time and Memory Costs
 We constructed preliminary experiments to test the time and memory cost on three different-sized datasets 
