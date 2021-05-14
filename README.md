@@ -196,7 +196,7 @@ running parameters:
   0%|                                                                                           | 0/18 [00:00<?, ?trial/s, best loss=?]
 ```
 
-More information about parameter_tuning can be found in our [docs](https://recbole.io/docs/user_guide/usage/parameter_tuning.html).
+More information about parameter tuning can be found in our [docs](https://recbole.io/docs/user_guide/usage/parameter_tuning.html).
 
 
 ## Time and Memory Costs
