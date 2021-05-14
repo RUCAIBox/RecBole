@@ -164,6 +164,34 @@ python run_recbole.py --model=[model_name]
 ```
 
 
+### 自动调参
+伯乐还支持自动调参功能，打开`RecBole/hyper.test` 然后设置一系列你想要调整的超参数进行自动搜索。下面有两种方式来进行超参搜索：
+* **loguniform**：参数会遵循均匀分布随机选取。
+* **choice**: 参数会从所设置的列表中选择每个离散值进行搜索。
+
+下面是一个`hyper.test`的例子
+```
+learning_rate loguniform -8, 0
+embedding_size choice [64, 96 , 128]
+train_batch_size choice [512, 1024, 2048]
+mlp_hidden_size choice ['[64, 64, 64]','[128, 128]']
+```
+然后在命令行中运行：
+```
+python run_hyper.py --model=[model_name] --dataset=[data_name] --config_files=xxxx.yaml --params_file=hyper.test
+e.g.
+python run_hyper.py --model=BPR --dataset=ml-100k --config_files=test.yaml --params_file=hyper.test
+```
+注意：`--config_files=test.yaml`是可选的，如果你没有任何客制化设置，这个选项可以不添加，会默认使用该模型的默认配置。
+
+这个过程可能会花费一段时间，请耐心等待：
+```
+running parameters:                                                                                                                    
+{'embedding_size': 64, 'learning_rate': 0.005947474154838498, 'mlp_hidden_size': '[64,64,64]', 'train_batch_size': 512}                
+  0%|                                                                                           | 0/18 [00:00<?, ?trial/s, best loss=?]
+```
+你可以在我们的[docs](https://recbole.io/docs/user_guide/usage/parameter_tuning.html)中找到更多关于超参调试的信息。
+
 ## 时间和内存开销
 我们构建了初步的实验来测试三个不同大小的数据集（小、中、大）的时间和内存开销。
 有关详细信息，请单击以下链接。
