@@ -6,7 +6,8 @@ import os
 
 from setuptools import setup, find_packages
 
-install_requires = ['numpy>=1.17.2', 'torch>=1.6.0', 'scipy>=1.3.1', 'pandas>=1.0.5', 'tqdm>=4.48.2',
+install_requires = ['numpy>=1.17.2', 'torch>=1.7.0', 'scipy==1.6.0', 'pandas>=1.0.5', 'tqdm>=4.48.2',
+                    'colorlog==4.7.2','colorama==0.4.4',
                     'scikit_learn>=0.23.2', 'pyyaml>=5.1.0', 'matplotlib>=3.1.3']
 
 setup_requires = []
@@ -20,7 +21,7 @@ classifiers = ["License :: OSI Approved :: MIT License"]
 long_description = 'RecBole is developed based on Python and PyTorch for ' \
                    'reproducing and developing recommendation algorithms in ' \
                    'a unified, comprehensive and efficient framework for ' \
-                   'research purpose. In the first version, Our library ' \
+                   'research purpose. In the first version, our library ' \
                    'includes 53 recommendation algorithms, covering four ' \
                    'major categories: General Recommendation, Sequential ' \
                    'Recommendation, Context-aware Recommendation and ' \
@@ -36,7 +37,7 @@ if on_rtd:
 setup(
     name='recbole',
     version=
-    '0.1.2',  # please remember to edit recbole/__init__.py in response, once updating the version
+    '0.2.1',  # please remember to edit recbole/__init__.py in response, once updating the version
     description='A unified, comprehensive and efficient recommendation library',
     long_description=long_description,
     long_description_content_type="text/markdown",

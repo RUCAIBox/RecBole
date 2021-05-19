@@ -35,8 +35,8 @@ class SequentialDataset(Dataset):
 
     """
 
-    def __init__(self, config, saved_dataset=None):
-        super().__init__(config, saved_dataset=saved_dataset)
+    def __init__(self, config):
+        super().__init__(config)
 
     def prepare_data_augmentation(self):
         """Augmentation processing for sequential dataset.
@@ -84,7 +84,8 @@ class SequentialDataset(Dataset):
         self.uid_list = np.array(uid_list)
         self.item_list_index = np.array(item_list_index)
         self.target_index = np.array(target_index)
-        self.item_list_length = np.array(item_list_length)
+        self.item_list_length = np.array(item_list_length, dtype=np.int64)
+        self.mask = np.ones(len(self.inter_feat), dtype=np.bool)
 
     def leave_one_out(self, group_by, leave_one_num=1):
         self.logger.debug(f'Leave one out, group_by=[{group_by}], leave_one_num=[{leave_one_num}].')
@@ -103,10 +104,39 @@ class SequentialDataset(Dataset):
             ds = copy.copy(self)
             for field in ['uid_list', 'item_list_index', 'target_index', 'item_list_length']:
                 setattr(ds, field, np.array(getattr(ds, field)[index]))
+            setattr(ds, 'mask', np.ones(len(self.inter_feat), dtype=np.bool))
             next_ds.append(ds)
+        next_ds[0].mask[self.target_index[next_index[1] + next_index[2]]] = False
+        next_ds[1].mask[self.target_index[next_index[2]]] = False
         return next_ds
 
+    def inter_matrix(self, form='coo', value_field=None):
+        """Get sparse matrix that describe interactions between user_id and item_id.
+        Sparse matrix has shape (user_num, item_num).
+        For a row of <src, tgt>, ``matrix[src, tgt] = 1`` if ``value_field`` is ``None``,
+        else ``matrix[src, tgt] = self.inter_feat[src, tgt]``.
+
+        Args:
+            form (str, optional): Sparse matrix format. Defaults to ``coo``.
+            value_field (str, optional): Data of sparse matrix, which should exist in ``df_feat``.
+                Defaults to ``None``.
+
+        Returns:
+            scipy.sparse: Sparse matrix in form ``coo`` or ``csr``.
+        """
+        if not self.uid_field or not self.iid_field:
+            raise ValueError('dataset does not exist uid/iid, thus can not converted to sparse matrix.')
+
+        self.logger.warning(
+            'Load interaction matrix may lead to label leakage from testing phase, this implementation '
+            'only provides the interactions corresponding to specific phase'
+        )
+        local_inter_feat = self.inter_feat[self.mask]  # TODO: self.mask will applied to _history_matrix() in future
+        return self._create_sparse_matrix(local_inter_feat, self.uid_field, self.iid_field, form, value_field)
+
     def build(self, eval_setting):
+        self._change_feat_format()
+
         ordering_args = eval_setting.ordering_args
         if ordering_args['strategy'] == 'shuffle':
             raise ValueError('Ordering strategy `shuffle` is not supported in sequential models.')

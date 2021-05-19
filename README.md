@@ -9,6 +9,7 @@
 [![PyPi Latest Release](https://img.shields.io/pypi/v/recbole)](https://pypi.org/project/recbole/)
 [![Conda Latest Release](https://anaconda.org/aibox/recbole/badges/version.svg)](https://anaconda.org/aibox/recbole)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![arXiv](https://img.shields.io/badge/arXiv-RecBole-%23B21B1B)](https://arxiv.org/abs/2011.01731)
 
 
 [HomePage] | [Docs] | [Datasets] | [Paper] | [Blogs] | [中文版]
@@ -22,14 +23,14 @@
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
-Our library includes 53 recommendation algorithms, covering four major categories:
+Our library includes 72 recommendation algorithms, covering four major categories:
 
 + General Recommendation
 + Sequential Recommendation
 + Context-aware Recommendation
 + Knowledge-based Recommendation
 
-We design a unified and flexible data file format, and provide the support for 27 benchmark recommendation datasets.
+We design a unified and flexible data file format, and provide the support for 28 benchmark recommendation datasets.
 A user can apply the provided script to process the original data copy, or simply download the processed datasets
 by our team.
 
@@ -45,8 +46,8 @@ by our team.
 + **General and extensible data structure.** We design general and extensible data structures to unify the formatting and
 usage of various recommendation datasets.
 
-+ **Comprehensive benchmark models and datasets.** We implement 53 commonly used recommendation algorithms, and provide
-the formatted copies of 27 recommendation datasets.
++ **Comprehensive benchmark models and datasets.** We implement 72 commonly used recommendation algorithms, and provide
+the formatted copies of 28 recommendation datasets.
 
 + **Efficient GPU-accelerated execution.** We optimize the efficiency of our library with a number of improved techniques
 oriented to the GPU environment.
@@ -56,6 +57,10 @@ for testing and comparing recommendation algorithms.
 
 
 ## RecBole News
+**03/22/2021**: We release RecBole [v0.2.1](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.1).
+
+**01/15/2021**: We release RecBole [v0.2.0](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.0).
+
 **12/10/2020**: 我们发布了[RecBole小白入门系列中文博客（持续更新中）](https://blog.csdn.net/Turinger_2000/article/details/111182852) 。
 
 **12/06/2020**: We release RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
@@ -164,6 +169,35 @@ If you want to change the models, just run the script by setting additional comm
 python run_recbole.py --model=[model_name]
 ```
 
+### Auto-tuning Hyperparameter 
+Open `RecBole/hyper.test` and set several hyperparameters to auto-searching in parameter list. The following has two ways to search best hyperparameter:
+* **loguniform**: indicates that the parameters obey the uniform distribution, randomly taking values from e^{-8} to e^{0}.
+* **choice**: indicates that the parameter takes discrete values from the setting list.
+
+Here is an example for `hyper.test`: 
+```
+learning_rate loguniform -8, 0
+embedding_size choice [64, 96 , 128]
+train_batch_size choice [512, 1024, 2048]
+mlp_hidden_size choice ['[64, 64, 64]','[128, 128]']
+```
+Set training command parameters as you need to run:
+```
+python run_hyper.py --model=[model_name] --dataset=[data_name] --config_files=xxxx.yaml --params_file=hyper.test
+e.g.
+python run_hyper.py --model=BPR --dataset=ml-100k --config_files=test.yaml --params_file=hyper.test
+```
+Note that `--config_files=test.yaml` is optional, if you don't have any customize config settings, this parameter can be empty.
+
+This processing maybe take a long time to output best hyperparameter and result:
+```
+running parameters:                                                                                                                    
+{'embedding_size': 64, 'learning_rate': 0.005947474154838498, 'mlp_hidden_size': '[64,64,64]', 'train_batch_size': 512}                
+  0%|                                                                                           | 0/18 [00:00<?, ?trial/s, best loss=?]
+```
+
+More information about parameter tuning can be found in our [docs](https://recbole.io/docs/user_guide/usage/parameter_tuning.html).
+
 
 ## Time and Memory Costs
 We constructed preliminary experiments to test the time and memory cost on three different-sized datasets 
@@ -182,6 +216,7 @@ We will keep improving our implementations, and update these test results.
 ## RecBole Major Releases
 | Releases  | Date   | Features |
 |-----------|--------|-------------------------|
+| v0.2.0    | 01/15/2021 |  RecBole |
 | v0.1.1    | 11/03/2020 |  Basic RecBole |
 
 ## Contributing

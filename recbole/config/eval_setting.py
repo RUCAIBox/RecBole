@@ -3,14 +3,16 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/22, 2020/8/31
-# @Author : Yupeng Hou, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/10/22, 2020/8/31, 2021/3/1
+# @Author : Yupeng Hou, Yushuo Chen, Jiawei Guan
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, guanjw@ruc.edu.cn
 
 """
 recbole.config.eval_setting
 ################################
 """
+
+from recbole.utils.utils import set_color
 
 
 class EvalSetting(object):
@@ -78,33 +80,39 @@ class EvalSetting(object):
         self.split_args = None
         self.neg_sample_args = {'strategy': 'none'}
 
+        self.es_str = [_.strip() for _ in config['eval_setting'].split(',')]
+        self.set_ordering_and_splitting(self.es_str[0])
+        if len(self.es_str) > 1:
+            if getattr(self, self.es_str[1], None) == None:
+                raise ValueError('Incorrect setting of negative sampling.')
+            getattr(self, self.es_str[1])()
         presetting_args = ['group_field', 'ordering_args', 'split_args', 'neg_sample_args']
         for args in presetting_args:
             if config[args] is not None:
                 setattr(self, args, config[args])
 
     def __str__(self):
-        info = ['Evaluation Setting:']
+        info = [set_color('Evaluation Setting:', 'pink')]
 
         if self.group_field:
-            info.append('Group by {}'.format(self.group_field))
+            info.append(set_color('Group by', 'blue') + f' {self.group_field}')
         else:
-            info.append('No Grouping')
+            info.append(set_color('No Grouping', 'yellow'))
 
         if self.ordering_args is not None and self.ordering_args['strategy'] != 'none':
-            info.append('Ordering: {}'.format(self.ordering_args))
+            info.append(set_color('Ordering', 'blue') + f': {self.ordering_args}')
         else:
-            info.append('No Ordering')
+            info.append(set_color('No Ordering', 'yellow'))
 
         if self.split_args is not None and self.split_args['strategy'] != 'none':
-            info.append('Splitting: {}'.format(self.split_args))
+            info.append(set_color('Splitting', 'blue') + f': {self.split_args}')
         else:
-            info.append('No Splitting')
+            info.append(set_color('No Splitting', 'yellow'))
 
         if self.neg_sample_args is not None and self.neg_sample_args['strategy'] != 'none':
-            info.append('Negative Sampling: {}'.format(self.neg_sample_args))
+            info.append(set_color('Negative Sampling', 'blue') + f': {self.neg_sample_args}')
         else:
-            info.append('No Negative Sampling')
+            info.append(set_color('No Negative Sampling', 'yellow'))
 
         return '\n\t'.join(info)
 
@@ -203,7 +211,7 @@ class EvalSetting(object):
         legal_strategy = {'none', 'by_ratio', 'by_value', 'loo'}
         if strategy not in legal_strategy:
             raise ValueError('Split Strategy [{}] should in {}'.format(strategy, list(legal_strategy)))
-        if strategy == 'loo' and self.group_by is None:
+        if strategy == 'loo' and self.group_field is None:
             raise ValueError('Leave-One-Out request group firstly')
         self.split_args = {'strategy': strategy}
         self.split_args.update(kwargs)
@@ -251,7 +259,7 @@ class EvalSetting(object):
             distribution (str): distribution of sampler, either 'uniform' or 'popularity'.
 
         Example:
-            >>> es.neg_sample_to(100)
+            >>> es.full()
             >>> es.neg_sample_by(1)
         """
         legal_strategy = {'none', 'full', 'by'}

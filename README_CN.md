@@ -9,6 +9,7 @@
 [![PyPi Latest Release](https://img.shields.io/pypi/v/recbole)](https://pypi.org/project/recbole/)
 [![Conda Latest Release](https://anaconda.org/aibox/recbole/badges/version.svg)](https://anaconda.org/aibox/recbole)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![arXiv](https://img.shields.io/badge/arXiv-RecBole-%23B21B1B)](https://arxiv.org/abs/2011.01731)
 
 
 [中文主页] | [文档] | [数据集] | [论文] | [博客] | [English Version]
@@ -22,7 +23,7 @@
 
 
 RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与复现的，统一、全面、高效的推荐系统代码库。
-我们实现了53个推荐系统模型，包含常见的推荐系统类别，如:
+我们实现了72个推荐系统模型，包含常见的推荐系统类别，如:
 
 + General Recommendation
 + Sequential Recommendation
@@ -30,7 +31,7 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 + Knowledge-based Recommendation
 
 
-我们约定了一个统一、易用的数据文件格式，并已支持 27 个 benchmark dataset。
+我们约定了一个统一、易用的数据文件格式，并已支持 28 个 benchmark dataset。
 用户可以选择使用我们的数据集预处理脚本，或直接下载已被处理好的数据集文件。
 
 
@@ -44,7 +45,7 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 ## 特色
 + **通用和可扩展的数据结构** 我们设计了通用和可扩展的数据结构来支持各种推荐数据集统一化格式和使用。
 
-+ **全面的基准模型和数据集** 我们实现了53个常用的推荐算法，并提供了27个推荐数据集的格式化副本。
++ **全面的基准模型和数据集** 我们实现了72个常用的推荐算法，并提供了28个推荐数据集的格式化副本。
 
 + **高效的 GPU 加速实现** 我们针对GPU环境使用了一系列的优化技术来提升代码库的效率。
 
@@ -52,6 +53,10 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 
 
 ## RecBole 新闻
+**03/22/2021**: 我们发布了 [v0.2.1](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.1).
+
+**01/15/2021**: 我们发布了 [v0.2.0](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.0).
+
 **12/10/2020**: 我们发布了[RecBole小白入门系列中文博客（持续更新中）](https://blog.csdn.net/Turinger_2000/article/details/111182852) 。
 
 **12/06/2020**: 我们发布了 RecBole [v0.1.2](https://github.com/RUCAIBox/RecBole/releases/tag/v0.1.2).
@@ -159,6 +164,34 @@ python run_recbole.py --model=[model_name]
 ```
 
 
+### 自动调参
+伯乐还支持自动调参功能，打开`RecBole/hyper.test` 然后设置一系列你想要调整的超参数进行自动搜索。下面有两种方式来进行超参搜索：
+* **loguniform**：参数会遵循均匀分布随机选取。
+* **choice**: 参数会从所设置的列表中选择每个离散值进行搜索。
+
+下面是一个`hyper.test`的例子
+```
+learning_rate loguniform -8, 0
+embedding_size choice [64, 96 , 128]
+train_batch_size choice [512, 1024, 2048]
+mlp_hidden_size choice ['[64, 64, 64]','[128, 128]']
+```
+然后在命令行中运行：
+```
+python run_hyper.py --model=[model_name] --dataset=[data_name] --config_files=xxxx.yaml --params_file=hyper.test
+e.g.
+python run_hyper.py --model=BPR --dataset=ml-100k --config_files=test.yaml --params_file=hyper.test
+```
+注意：`--config_files=test.yaml`是可选的，如果你没有任何客制化设置，这个选项可以不添加，会默认使用该模型的默认配置。
+
+这个过程可能会花费一段时间，请耐心等待：
+```
+running parameters:                                                                                                                    
+{'embedding_size': 64, 'learning_rate': 0.005947474154838498, 'mlp_hidden_size': '[64,64,64]', 'train_batch_size': 512}                
+  0%|                                                                                           | 0/18 [00:00<?, ?trial/s, best loss=?]
+```
+你可以在我们的[docs](https://recbole.io/docs/user_guide/usage/parameter_tuning.html)中找到更多关于超参调试的信息。
+
 ## 时间和内存开销
 我们构建了初步的实验来测试三个不同大小的数据集（小、中、大）的时间和内存开销。
 有关详细信息，请单击以下链接。
@@ -204,7 +237,7 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 ```
 
 ## 项目团队
-RecBole由 [中国人民大学, 北京邮电大学, 华东师范大学](https://www.recbole.io/about.html) 的同学和老师进行开发和维护。 
+RecBole由 [中国人民大学, 北京邮电大学, 华东师范大学](https://www.recbole.io/cn/about.html) 的同学和老师进行开发和维护。 
 
 ## 免责声明
 RecBole 基于 [MIT License](./LICENSE) 进行开发，本项目的所有数据和代码只能被用于学术目的。
