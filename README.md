@@ -216,5 +216,14 @@ If you find RecBole useful for your research or development, please cite the fol
 ## The Team
 RecBole is developed and maintained by [RUC, BUPT, ECNU](https://www.recbole.io/about.html).
 
+Here is the list of our lead developers in each version, who are the souls of RecBole and have made outstanding contributions to the development.
+
+|         Time          |        Version         |                Lead Developers                 |
+| :-------------------: | :--------------------: | :--------------------------------------------: |
+| June 2020<br> to<br> Nov. 2020 |        v0.1.1         |  Shanlei Mu ([@ShanleiMu](https://github.com/ShanleiMu)), Yupeng Hou ([@hyp1231](https://github.com/@hyp1231)),<br> Zihan Lin ([@linzihan-backforward](https://github.com/linzihan-backforward)), Kaiyuan Li ([@tsotfsk](https://github.com/tsotfsk))|
+|    Nov. 2020<br> to <br> now    |  v0.1.2 - v0.2.1 |      Yushuo Chen ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), Xingyu Pan ([@2017pxy](https://github.com/2017pxy))    |
+
+**Note:** The above list is in alphabetical order.
+
 ## License
 RecBole uses [MIT License](./LICENSE).
