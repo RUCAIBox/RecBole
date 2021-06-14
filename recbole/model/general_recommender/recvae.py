@@ -191,7 +191,7 @@ class RecVAE(GeneralRecommender):
 
         scores, _, _, _ = self.forward(rating_matrix, self.dropout_prob)
 
-        return scores[[user, item]]
+        return scores[[torch.arange(len(item)).to(self.device), item]]
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
