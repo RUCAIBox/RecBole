@@ -62,7 +62,7 @@ If you want to use ``HyperTuning`` to tune hyper parameters of this model, you c
    learning_rate choice [0.0005,0.0001,0.00005]
    neigh_embedding_size choice [64,32]
    mlp_hidden_size choice ['[128,64,32,16]','[64,32,16,8]']
-   num_conv choice [128,64]
+   num_conv_kernel choice [128,64]
    
 
 Note that we just provide these hyper parameter ranges for reference only, and we can not guarantee that they are the optimal range of this model.

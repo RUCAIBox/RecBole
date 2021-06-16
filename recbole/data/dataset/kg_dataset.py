@@ -329,6 +329,7 @@ class KnowledgeBasedDataset(Dataset):
                 item2order[token] = 3
         item_ent_token_list = list(self.field2id_token[self.iid_field])
         item_ent_token_list.sort(key=lambda t: item2order[t])
+        item_ent_token_list = np.array(item_ent_token_list)
         order_list = [item2order[_] for _ in item_ent_token_list]
         order_cnt = Counter(order_list)
         layered_num = []
@@ -336,15 +337,20 @@ class KnowledgeBasedDataset(Dataset):
             layered_num.append(order_cnt[i])
         layered_num = np.cumsum(np.array(layered_num))
         new_id_token = item_ent_token_list[:layered_num[-2]]
+        new_token_id = {t: i for i, t in enumerate(new_id_token)}
         for field in self.rec_level_ent_fields:
             self._reset_ent_remapID(field, new_id_token)
             self.field2id_token[field] = new_id_token
+            self.field2token_id[field] = new_token_id
         new_id_token = item_ent_token_list[:layered_num[-1]]
         new_id_token = [self.item2entity[_] if _ in self.item2entity else _ for _ in new_id_token]
+        new_token_id = {t: i for i, t in enumerate(new_id_token)}
         for field in self.ent_level_ent_fields:
             self._reset_ent_remapID(field, item_ent_token_list[:layered_num[-1]])
             self.field2id_token[field] = new_id_token
-        self.field2id_token[self.entity_field] = item_ent_token_list[:layered_num[-1]]
+            self.field2token_id[field] = new_token_id
+        self.field2id_token[self.entity_field] = new_id_token
+        self.field2token_id[self.entity_field] = new_token_id
 
     def _remap_ID_all(self):
         """Firstly, remap entities and items all together. Then sort entity tokens,
@@ -354,6 +360,7 @@ class KnowledgeBasedDataset(Dataset):
         item_tokens = self._get_rec_item_token()
         super()._remap_ID_all()
         self._sort_remaped_entities(item_tokens)
+        self.field2token_id[self.relation_field]['[UI-Relation]'] = len(self.field2id_token[self.relation_field])
         self.field2id_token[self.relation_field] = np.append(self.field2id_token[self.relation_field], '[UI-Relation]')
 
     @property

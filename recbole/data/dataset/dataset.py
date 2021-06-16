@@ -1051,11 +1051,11 @@ class Dataset(object):
             if tokens in self.field2token_id[field]:
                 return self.field2token_id[field][tokens]
             else:
-                raise ValueError('token [{}] is not existed')
+                raise ValueError(f'token [{token}] is not existed in {field}')
         elif isinstance(tokens, (list, np.ndarray)):
             return np.array([self.token2id(field, token) for token in tokens])
         else:
-            raise TypeError('The type of tokens [{}] is not supported')
+            raise TypeError(f'The type of tokens [{token}] is not supported')
 
     @dlapi.set()
     def id2token(self, field, ids):

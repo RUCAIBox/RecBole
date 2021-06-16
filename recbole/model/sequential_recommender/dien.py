@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2020/2/15
+# @Time   : 2021/2/15
 # @Author : Zhichao Feng
 # @Email  : fzcbupt@gmail.com
 
 # UPDATE
-# @Time   : 2020/3/19
+# @Time   : 2021/5/6
 # @Author : Zhichao Feng
 # @email  : fzcbupt@gmail.com
 
@@ -65,7 +65,7 @@ class DIEN(SequentialRecommender):
 
         # init sizes of used layers
         self.att_list = [4 * num_item_feature * self.embedding_size] + self.mlp_hidden_size
-        self.interest_mlp_list = [2 * item_feat_dim] + self.mlp_hidden_size
+        self.interest_mlp_list = [2 * item_feat_dim] + self.mlp_hidden_size + [1]
         self.dnn_mlp_list = [2 * item_feat_dim + num_user_feature * self.embedding_size] + self.mlp_hidden_size
 
         # init interest extractor layer, interest evolving layer embedding layer, MLP layer and linear layer
