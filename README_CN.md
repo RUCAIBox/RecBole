@@ -239,5 +239,13 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 ## 项目团队
 RecBole由 [中国人民大学, 北京邮电大学, 华东师范大学](https://www.recbole.io/cn/about.html) 的同学和老师进行开发和维护。 
 
+以下是伯乐项目的首席开发人员名单。他们是伯乐项目的灵魂人物，为伯乐项目的开发作出了重大贡献！
+
+|         时间段          |        版本         |               首席开发者                 |
+| :-------------------: | :--------------------: | :--------------------------------------------: |
+| 2020年6月<br> ~<br> 2020年11月 |        v0.1.1         |  牟善磊 ([@ShanleiMu](https://github.com/ShanleiMu)), 侯宇蓬 ([@hyp1231](https://github.com/@hyp1231)),<br> 林子涵 ([@linzihan-backforward](https://github.com/linzihan-backforward)), 李凯元 ([@tsotfsk](https://github.com/tsotfsk))|
+|   2020年11月<br> ~ <br> 现在    |  v0.1.2 ~ v0.2.1 |      陈昱硕 ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), 潘星宇 ([@2017pxy](https://github.com/2017pxy))    |
+
+
 ## 免责声明
 RecBole 基于 [MIT License](./LICENSE) 进行开发，本项目的所有数据和代码只能被用于学术目的。
