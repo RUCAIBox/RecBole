@@ -1,0 +1,6 @@
+embedding_size: 128
+loss_type: 'NLL'
+layer_norm_eps: 1e-12
+prototype_size: 50
+interest_size: 3
+tau_ratio: 0.1
