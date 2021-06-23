@@ -59,7 +59,7 @@ def full_sort_scores(uid_series, model, test_data):
         scores = model.full_sort_predict(input_interaction)
     except NotImplementedError:
         input_interaction = input_interaction.repeat(dataset.item_num)
-        input_interaction.update(test_data.get_item_feature().repeat(len(uid_series)))
+        input_interaction.update(test_data.dataset.get_item_feature().repeat(len(uid_series)))
         scores = model.predict(input_interaction)
 
     scores = scores.view(-1, dataset.item_num)
