@@ -1248,6 +1248,12 @@ class Dataset(object):
         """
         cnt = [int(ratios[i] * tot) for i in range(len(ratios))]
         cnt[0] = tot - sum(cnt[1:])
+        for i in range(1, len(ratios)):
+            if cnt[0] <= 1:
+                break
+            if 0 < ratios[-i] * tot < 1:
+                cnt[-i] += 1
+                cnt[0] -= 1
         split_ids = np.cumsum(cnt)[:-1]
         return list(split_ids)
 

@@ -96,7 +96,7 @@ class Trainer(AbstractTrainer):
 
         self.start_epoch = 0
         self.cur_step = 0
-        self.best_valid_score = -1
+        self.best_valid_score = -np.inf if self.valid_metric_bigger else np.inf
         self.best_valid_result = None
         self.train_loss_dict = dict()
         self.optimizer = self._build_optimizer(self.model.parameters())
