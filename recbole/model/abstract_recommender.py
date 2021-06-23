@@ -178,9 +178,9 @@ class ContextRecommender(AbstractRecommender):
             self.user_field_names = []
             self.item_field_names = []
             for field_name in self.field_names:
-                if dataset.dataset.field2source[field_name] in {FeatureSource.USER, FeatureSource.USER_ID}:
+                if dataset.field2source[field_name] in {FeatureSource.USER, FeatureSource.USER_ID}:
                     self.user_field_names.append(field_name)
-                elif dataset.dataset.field2source[field_name] in {FeatureSource.ITEM, FeatureSource.ITEM_ID}:
+                elif dataset.field2source[field_name] in {FeatureSource.ITEM, FeatureSource.ITEM_ID}:
                     self.item_field_names.append(field_name)
             self.field_names = self.user_field_names + self.item_field_names
             self.user_token_field_num = 0
