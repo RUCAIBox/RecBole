@@ -55,14 +55,6 @@ class AbstractDataLoader(object):
         if self.real_time is None:
             self.real_time = True
 
-        for dataset_attr in self.dataset._dataloader_apis:
-            try:
-                flag = hasattr(self.dataset, dataset_attr)
-                if flag:
-                    setattr(self, dataset_attr, getattr(self.dataset, dataset_attr))
-            except:
-                continue
-
         self.setup()
         if not self.real_time:
             self.data_preprocess()

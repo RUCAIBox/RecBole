@@ -20,7 +20,6 @@ import torch
 from scipy.sparse import coo_matrix
 
 from recbole.data.dataset import Dataset
-from recbole.data.utils import dlapi
 from recbole.utils import FeatureSource, FeatureType
 from recbole.utils.utils import set_color
 
@@ -242,7 +241,6 @@ class KnowledgeBasedDataset(Dataset):
         return ret
 
     @property
-    @dlapi.set()
     def rec_level_ent_fields(self):
         """Get entity fields remapped together with ``item_id``.
 
@@ -252,7 +250,6 @@ class KnowledgeBasedDataset(Dataset):
         return self._fields_by_ent_level('rec')
 
     @property
-    @dlapi.set()
     def ent_level_ent_fields(self):
         """Get entity fields remapped together with ``entity_id``.
 
@@ -364,7 +361,6 @@ class KnowledgeBasedDataset(Dataset):
         self.field2id_token[self.relation_field] = np.append(self.field2id_token[self.relation_field], '[UI-Relation]')
 
     @property
-    @dlapi.set()
     def relation_num(self):
         """Get the number of different tokens of ``self.relation_field``.
 
@@ -374,7 +370,6 @@ class KnowledgeBasedDataset(Dataset):
         return self.num(self.relation_field)
 
     @property
-    @dlapi.set()
     def entity_num(self):
         """Get the number of different tokens of entities, including virtual entities.
 
@@ -384,7 +379,6 @@ class KnowledgeBasedDataset(Dataset):
         return self.num(self.entity_field)
 
     @property
-    @dlapi.set()
     def head_entities(self):
         """
         Returns:
@@ -393,7 +387,6 @@ class KnowledgeBasedDataset(Dataset):
         return self.kg_feat[self.head_entity_field].numpy()
 
     @property
-    @dlapi.set()
     def tail_entities(self):
         """
         Returns:
@@ -402,7 +395,6 @@ class KnowledgeBasedDataset(Dataset):
         return self.kg_feat[self.tail_entity_field].numpy()
 
     @property
-    @dlapi.set()
     def relations(self):
         """
         Returns:
@@ -411,7 +403,6 @@ class KnowledgeBasedDataset(Dataset):
         return self.kg_feat[self.relation_field].numpy()
 
     @property
-    @dlapi.set()
     def entities(self):
         """
         Returns:
@@ -419,7 +410,6 @@ class KnowledgeBasedDataset(Dataset):
         """
         return np.arange(self.entity_num)
 
-    @dlapi.set()
     def kg_graph(self, form='coo', value_field=None):
         """Get graph or sparse matrix that describe relations between entities.
 
@@ -520,7 +510,6 @@ class KnowledgeBasedDataset(Dataset):
         else:
             raise NotImplementedError(f'Graph format [{form}] has not been implemented.')
 
-    @dlapi.set()
     def ckg_graph(self, form='coo', value_field=None):
         """Get graph or sparse matrix that describe relations of CKG,
         which combines interactions and kg triplets into the same graph.
