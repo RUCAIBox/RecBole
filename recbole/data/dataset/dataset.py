@@ -218,8 +218,13 @@ class Dataset(object):
             path = download_url(url, self.dataset_path)
             extract_zip(path, self.dataset_path)
             os.unlink(path)
+
+            basename = os.path.splitext(os.path.basename(path))[0]
+            rename_atomic_files(self.dataset_path, basename, self.dataset_name)
+
+            self.logger.info('Downloading done.')
         else:
-            print('Stop download.')
+            self.logger.info('Stop download.')
             exit(-1)
 
     def _load_data(self, token, dataset_path):

@@ -37,7 +37,8 @@ def makedirs(path):
 
 
 def download_url(url, folder, log=True):
-    r"""Downloads the content of an URL to a specific folder.
+    """Downloads the content of an URL to a specific folder.
+
     Args:
         url (string): The url.
         folder (string): The folder.
@@ -89,7 +90,8 @@ def maybe_log(path, log=True):
 
 
 def extract_zip(path, folder, log=True):
-    r"""Extracts a zip archive to a specific folder.
+    """Extracts a zip archive to a specific folder.
+
     Args:
         path (string): The path to the tar archive.
         folder (string): The folder.
@@ -100,6 +102,21 @@ def extract_zip(path, folder, log=True):
     with zipfile.ZipFile(path, 'r') as f:
         f.extractall(folder)
 
+
+def rename_atomic_files(folder, old_name, new_name):
+    """Rename all atomic files in a given folder.
+
+    Args:
+        folder (string): The folder.
+        old_name (string): Old name for atomic files.
+        new_name (string): New name for atomic files.
+    """
+    files = os.listdir(folder)
+    for f in files:
+        base, suf = os.path.splitext(f)
+        assert base == old_name
+        assert suf in {'.inter', '.user', '.item'}
+        os.rename(os.path.join(folder, f), os.path.join(folder, new_name + suf))
 
 if __name__ == "__main__":
     pass
