@@ -72,10 +72,8 @@ Remove duplicated user-item interactions
 Filter by value
 ''''''''''''''''''
 
-- ``lowest_val (dict)`` : Has the format ``{k (str): v (float)}, ...``. The rows whose ``feat[k] < v`` will be filtered. Defaults to ``None``.
-- ``highest_val (dict)`` : Has the format ``{k (str): v (float)}, ...``. The rows whose ``feat[k] > v`` will be filtered. Defaults to ``None``.
-- ``equal_val (dict)`` : Has the format ``{k (str): v (float)}, ...``. The rows whose ``feat[k] != v`` will be filtered. Defaults to ``None``.
-- ``not_equal_val (dict)`` : Has the format ``{k (str): v (float)}, ...``. The rows whose ``feat[k] == v`` will be filtered. Defaults to ``None``.
+- ``user_inter_num_interval (str)`` : Has the interval format, such as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``,  where ``A`` and ``B`` are the endpoints of the interval and ``A<B``. Users whose number of interactions is in the interval will be retained. Defaults to ``[0,inf)``.
+- ``item_inter_num_interval (str)`` : Has the interval format, such as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``,  where ``A`` and ``B`` are the endpoints of the interval and ``A<B``. Items whose number of interactions is in the interval will be retained. Defaults to ``[0,inf)``.
 
 Remove interation by user or item
 '''''''''''''''''''''''''''''''''''
@@ -85,10 +83,7 @@ Remove interation by user or item
 Filter by number of interactions
 ''''''''''''''''''''''''''''''''''''
 
-- ``max_user_inter_num (int)`` : Users whose number of interactions is more than ``max_user_inter_num`` will be filtered. Defaults to ``None``.
-- ``min_user_inter_num (int)`` : Users whose number of interactions is less than ``min_user_inter_num`` will be filtered. Defaults to ``0``.
-- ``max_item_inter_num (int)`` : Items whose number of interactions is more than ``max_item_inter_num`` will be filtered. Defaults to ``None``.
-- ``min_item_inter_num (int)`` : Items whose number of interactions is less than ``min_item_inter_num`` will be filtered. Defaults to ``0``.
+- ``val_interval (dict)``: Has the format ``{k (str): interval (str), ...}``, where ``interval `` can be set as  ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``. The rows whose ``feat[k]`` is in the interval ``interval`` will be retained. If you want to specify more than one interval, separate them with semicolon(s). For instance, ``{k: [A,B);(C,D]}`` can be adopted and rows whose ``feat[k]`` is in any specified interval will be retained. Defaults to ``None``, which means all rows will be retained.
 
 Preprocessing
 -----------------

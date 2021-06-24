@@ -602,45 +602,35 @@ class Dataset(object):
     def _filter_by_inter_num(self):
         """Filter by number of interaction.
 
-        Upper/Lower bounds can be set, only users/items between upper/lower bounds can be remained.
+        The interval of the number of interactions can be set, and only users/items whose number 
+        of interactions is in the specified interval can be retained.
         See :doc:`../user_guide/data/data_args` for detail arg setting.
 
         Note:
-            Lower bound is also called k-core filtering, which means this method will filter loops
-            until all the users and items has at least k interactions.
+            Lower bound of the interval is also called k-core filtering, which means this method 
+            will filter loops until all the users and items has at least k interactions.
         """
         if self.uid_field is None or self.iid_field is None:
             return
 
-        max_user_inter_num = self.config['max_user_inter_num']
-        min_user_inter_num = self.config['min_user_inter_num']
-        max_item_inter_num = self.config['max_item_inter_num']
-        min_item_inter_num = self.config['min_item_inter_num']
+        user_inter_num_interval = self._analyse_intervals_str(self.config['user_inter_num_interval'])
+        item_inter_num_interval = self._analyse_intervals_str(self.config['item_inter_num_interval'])
 
-        if max_user_inter_num is None and min_user_inter_num is None:
-            user_inter_num = Counter()
-        else:
-            user_inter_num = Counter(self.inter_feat[self.uid_field].values)
-
-        if max_item_inter_num is None and min_item_inter_num is None:
-            item_inter_num = Counter()
-        else:
-            item_inter_num = Counter(self.inter_feat[self.iid_field].values)
+        user_inter_num = Counter(self.inter_feat[self.uid_field].values) if user_inter_num_interval else Counter()
+        item_inter_num = Counter(self.inter_feat[self.iid_field].values) if item_inter_num_interval else Counter()
 
         while True:
             ban_users = self._get_illegal_ids_by_inter_num(
                 field=self.uid_field,
                 feat=self.user_feat,
                 inter_num=user_inter_num,
-                max_num=max_user_inter_num,
-                min_num=min_user_inter_num
+                inter_interval=user_inter_num_interval
             )
             ban_items = self._get_illegal_ids_by_inter_num(
                 field=self.iid_field,
                 feat=self.item_feat,
                 inter_num=item_inter_num,
-                max_num=max_item_inter_num,
-                min_num=min_item_inter_num
+                inter_interval=item_inter_num_interval
             )
 
             if len(ban_users) == 0 and len(ban_items) == 0:
@@ -667,44 +657,107 @@ class Dataset(object):
             self.logger.debug(f'[{len(dropped_index)}] dropped interactions.')
             self.inter_feat.drop(dropped_index, inplace=True)
 
-    def _get_illegal_ids_by_inter_num(self, field, feat, inter_num, max_num=None, min_num=None):
+    def _get_illegal_ids_by_inter_num(self, field, feat, inter_num, inter_interval=None):
         """Given inter feat, return illegal ids, whose inter num out of [min_num, max_num]
 
         Args:
             field (str): field name of user_id or item_id.
             feat (pandas.DataFrame): interaction feature.
             inter_num (Counter): interaction number counter.
-            max_num (int, optional): max number of interaction. Defaults to ``None``.
-            min_num (int, optional): min number of interaction. Defaults to ``None``.
+            inter_interval (list, optional): the allowed interval(s) of the number of interactions. 
+                                              Defaults to ``None``.
 
         Returns:
-            set: illegal ids, whose inter num out of [min_num, max_num]
+            set: illegal ids, whose inter num out of inter_intervals.
         """
         self.logger.debug(
             set_color('get_illegal_ids_by_inter_num', 'blue') +
-            f': field=[{field}], max_num=[{max_num}], min_num=[{min_num}]'
+            f': field=[{field}], inter_interval=[{inter_interval}]'
         )
+        if inter_interval is not None:
+            if len(inter_interval)>1:
+                self.logger.warning( f'More than one interval of interaction number are given!')
 
-        max_num = max_num or np.inf
-        min_num = min_num or -1
-
-        ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
+        ids = {id_ for id_ in inter_num if not self._within_intervals(inter_num[id_], inter_interval)}
 
         if feat is not None:
+            min_num = inter_interval[0][1] if inter_interval else -1
             for id_ in feat[field].values:
                 if inter_num[id_] < min_num:
                     ids.add(id_)
         self.logger.debug(f'[{len(ids)}] illegal_ids_by_inter_num, field=[{field}]')
         return ids
 
+    def _analyse_intervals_str(self, intervals_str):
+        """Given string of intervals, return the list of endpoints tuple, where a tuple corresponds to an interval.
+
+        Args:
+            intervals_str (str): the string of intervals, such as "(0,1];[3,4)".
+
+        Returns:
+            list of endpoint tuple, such as [('(', 0, 1.0 , ']'), ('[', 3.0, 4.0 , ')')].
+        """
+        if intervals_str is None:
+            return None
+
+        endpoints = []
+        print(str(intervals_str))
+        for endpoint_pair_str in str(intervals_str).split(';'):
+            left_bracket, right_bracket = endpoint_pair_str[0], endpoint_pair_str[-1]
+            endpoint_pair = endpoint_pair_str.strip('[]()').split(',')
+            if not (len(endpoint_pair)==2 and left_bracket in ['(','['] and right_bracket in [')',']']):
+                self.logger.warning( f'{endpoint_pair_str} is an illegal interval!')
+                continue
+
+            def str2npnum(num_str):
+                if num_str in ["inf","-inf"]:
+                    return np.inf if num_str == "inf" else -np.inf
+                else:
+                    try:
+                        return float(num_str)
+                    except ValueError:
+                        raise ValueError(f'Str {num_str} in interval can not be converted to numeric.')
+            left_point, right_point = str2npnum(endpoint_pair[0]), str2npnum(endpoint_pair[1])
+            if left_point > right_point:
+                self.logger.warning( f'{endpoint_pair_str} is an illegal interval!')
+
+            endpoints.append((left_bracket, left_point, right_point, right_bracket))
+        return endpoints
+
+    def _within_intervals(self, num, intervals):
+        """ return Ture if the num is in the intervals.
+
+        Note:
+            return true when the intervals is None.
+        """
+        if intervals is None:
+            return True
+
+        result = None
+        for left_bracket, left_point, right_point, right_bracket in intervals:
+            temp_result = num>=left_point if left_bracket=='[' else num>left_point
+            temp_result &= num<=right_point if right_bracket==']' else num<right_point
+            result = result | temp_result if result is not None else temp_result
+        return result
+
     def _filter_by_field_value(self):
         """Filter features according to its values.
         """
-        filter_field = []
-        filter_field += self._drop_by_value(self.config['lowest_val'], lambda x, y: x < y)
-        filter_field += self._drop_by_value(self.config['highest_val'], lambda x, y: x > y)
-        filter_field += self._drop_by_value(self.config['equal_val'], lambda x, y: x != y)
-        filter_field += self._drop_by_value(self.config['not_equal_val'], lambda x, y: x == y)
+
+        val_intervals = [] if self.config['val_interval'] is None else self.config['val_interval']
+        self.logger.debug(set_color('drop_by_value', 'blue') + f': val={val_intervals}')
+
+        for field in val_intervals:
+            if field not in self.field2type:
+                raise ValueError(f'Field [{field}] not defined in dataset.')
+            if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
+                raise ValueError(f'Field [{field}] is not float-like field in dataset, which can\'t be filter.')
+            
+            field_val_interval = self._analyse_intervals_str(val_intervals[field])
+            for feat_name in self.feat_name_list:
+                feat = getattr(self, feat_name)
+                if field in feat:
+                    feat.drop(feat.index[~self._within_intervals(feat[field].values, field_val_interval)], inplace=True)
 
     def _reset_index(self):
         """Reset index for all feats in :attr:`feat_name_list`.
@@ -714,33 +767,6 @@ class Dataset(object):
             if feat.empty:
                 raise ValueError('Some feat is empty, please check the filtering settings.')
             feat.reset_index(drop=True, inplace=True)
-
-    def _drop_by_value(self, val, cmp):
-        """Drop illegal rows by value.
-
-        Args:
-            val (dict): value that compared to.
-            cmp (Callable): return False if a row need to be dropped
-
-        Returns:
-            field names that used to compare with val.
-        """
-        if val is None:
-            return []
-
-        self.logger.debug(set_color('drop_by_value', 'blue') + f': val={val}')
-        filter_field = []
-        for field in val:
-            if field not in self.field2type:
-                raise ValueError(f'Field [{field}] not defined in dataset.')
-            if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
-                raise ValueError(f'Field [{field}] is not float-like field in dataset, which can\'t be filter.')
-            for feat_name in self.feat_name_list:
-                feat = getattr(self, feat_name)
-                if field in feat:
-                    feat.drop(feat.index[cmp(feat[field].values, val[field])], inplace=True)
-            filter_field.append(field)
-        return filter_field
 
     def _del_col(self, feat, field):
         """Delete columns
