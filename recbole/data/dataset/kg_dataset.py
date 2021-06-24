@@ -22,6 +22,7 @@ from scipy.sparse import coo_matrix
 from recbole.data.dataset import Dataset
 from recbole.utils import FeatureSource, FeatureType
 from recbole.utils.utils import set_color
+from recbole.utils.url import decide_download, download_url, extract_zip
 
 
 class KnowledgeBasedDataset(Dataset):
@@ -109,6 +110,31 @@ class KnowledgeBasedDataset(Dataset):
             del self.item2entity[item]
         for ent in illegal_ent:
             del self.entity2item[ent]
+
+    def _download(self):
+        super()._download()
+
+        url = self._get_download_url('kg_url', allow_none=True)
+        if url is None:
+            return
+        self.logger.info(f'Prepare to download linked knowledge graph from [{url}].')
+
+        if decide_download(url):
+            # No need to create dir, as `super()._download()` has created one.
+            path = download_url(url, self.dataset_path)
+            extract_zip(path, self.dataset_path)
+            os.unlink(path)
+            self.logger.info(
+                f'\nLinked KG for [{self.dataset_name}] requires additional conversion '
+                f'to atomic files (.kg and .link).\n'
+                f'Please refer to https://github.com/RUCAIBox/RecSysDatasets/conversion_tools#knowledge-aware-datasets '
+                f'for detailed instructions.\n'
+                f'You can run RecBole after the conversion, see you soon.'
+            )
+            exit(0)
+        else:
+            self.logger.info('Stop download.')
+            exit(-1)
 
     def _load_data(self, token, dataset_path):
         super()._load_data(token, dataset_path)
