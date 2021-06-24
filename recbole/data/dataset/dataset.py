@@ -701,7 +701,6 @@ class Dataset(object):
             return None
 
         endpoints = []
-        print(str(intervals_str))
         for endpoint_pair_str in str(intervals_str).split(';'):
             left_bracket, right_bracket = endpoint_pair_str[0], endpoint_pair_str[-1]
             endpoint_pair = endpoint_pair_str.strip('[]()').split(',')
