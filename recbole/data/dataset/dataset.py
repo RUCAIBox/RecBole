@@ -28,7 +28,7 @@ from scipy.sparse import coo_matrix
 from recbole.data.interaction import Interaction
 from recbole.utils import FeatureSource, FeatureType, get_local_time
 from recbole.utils.utils import set_color
-from recbole.utils.url import decide_download, download_url, extract_zip, makedirs
+from recbole.utils.url import decide_download, download_url, extract_zip, makedirs, rename_atomic_files
 
 
 class Dataset(object):
@@ -197,20 +197,22 @@ class Dataset(object):
                     feat_name_list.append(f'{suf}_feat')
         return feat_name_list
 
-    def _get_download_url(self):
+    def _get_download_url(self, url_file, allow_none=False):
         current_path = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(current_path, '../../properties/dataset/url.yaml')) as f:
+        with open(os.path.join(current_path, f'../../properties/dataset/{url_file}.yaml')) as f:
             dataset2url = yaml.load(f.read(), Loader=self.config.yaml_loader)
 
         if self.dataset_name in dataset2url:
             url = dataset2url[self.dataset_name]
             return url
+        elif allow_none:
+            return None
         else:
             raise ValueError(f'Neither [{self.dataset_path}] exists in the device'
                              f'nor [{self.dataset_name}] a known dataset name.')
 
     def _download(self):
-        url = self._get_download_url()
+        url = self._get_download_url('url')
         self.logger.info(f'Prepare to download dataset [{self.dataset_name}] from [{url}].')
 
         if decide_download(url):
