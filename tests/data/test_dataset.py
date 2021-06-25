@@ -77,8 +77,8 @@ class TestDataset:
             'dataset': 'filter_by_field_value',
             'data_path': current_path,
             'load_col': None,
-            'lowest_val': {
-                'timestamp': 4,
+            'val_interval': {
+                'timestamp': "[4,inf)",
             },
         }
         dataset = new_dataset(config_dict=config_dict)
@@ -90,8 +90,8 @@ class TestDataset:
             'dataset': 'filter_by_field_value',
             'data_path': current_path,
             'load_col': None,
-            'highest_val': {
-                'timestamp': 4,
+            'val_interval': {
+                'timestamp': "(-inf,4]",
             },
         }
         dataset = new_dataset(config_dict=config_dict)
@@ -103,8 +103,8 @@ class TestDataset:
             'dataset': 'filter_by_field_value',
             'data_path': current_path,
             'load_col': None,
-            'equal_val': {
-                'rating': 0,
+            'val_interval': {
+                'rating': "[0,0]",
             },
         }
         dataset = new_dataset(config_dict=config_dict)
@@ -116,8 +116,8 @@ class TestDataset:
             'dataset': 'filter_by_field_value',
             'data_path': current_path,
             'load_col': None,
-            'not_equal_val': {
-                'rating': 4,
+            'val_interval': {
+                'rating': "(-inf,4);(4,inf)",
             },
         }
         dataset = new_dataset(config_dict=config_dict)
@@ -129,11 +129,8 @@ class TestDataset:
             'dataset': 'filter_by_field_value',
             'data_path': current_path,
             'load_col': None,
-            'lowest_val': {
-                'timestamp': 3,
-            },
-            'highest_val': {
-                'timestamp': 8,
+            'val_interval': {
+                'timestamp': "[3,8]",
             },
         }
         dataset = new_dataset(config_dict=config_dict)
@@ -145,14 +142,9 @@ class TestDataset:
             'dataset': 'filter_by_field_value',
             'data_path': current_path,
             'load_col': None,
-            'lowest_val': {
-                'timestamp': 3,
-            },
-            'highest_val': {
-                'timestamp': 8,
-            },
-            'not_equal_val': {
-                'rating': 4,
+            'val_interval': {
+                'timestamp': "[3,8]",
+                'rating': "(-inf,4);(4,inf)",
             }
         }
         dataset = new_dataset(config_dict=config_dict)
@@ -186,7 +178,7 @@ class TestDataset:
             'dataset': 'filter_by_inter_num',
             'data_path': current_path,
             'load_col': None,
-            'min_user_inter_num': 2,
+            'user_inter_num_interval': "[2,inf)",
         }
         dataset = new_dataset(config_dict=config_dict)
         assert dataset.user_num == 6
@@ -198,7 +190,7 @@ class TestDataset:
             'dataset': 'filter_by_inter_num',
             'data_path': current_path,
             'load_col': None,
-            'min_item_inter_num': 2,
+            'item_inter_num_interval': "[2,inf)",
         }
         dataset = new_dataset(config_dict=config_dict)
         assert dataset.user_num == 7
@@ -210,7 +202,7 @@ class TestDataset:
             'dataset': 'filter_by_inter_num',
             'data_path': current_path,
             'load_col': None,
-            'max_user_inter_num': 2,
+            'user_inter_num_interval': "(-inf,2]",
         }
         dataset = new_dataset(config_dict=config_dict)
         assert dataset.user_num == 6
@@ -222,7 +214,7 @@ class TestDataset:
             'dataset': 'filter_by_inter_num',
             'data_path': current_path,
             'load_col': None,
-            'max_item_inter_num': 2,
+            'item_inter_num_interval': "(-inf,2]",
         }
         dataset = new_dataset(config_dict=config_dict)
         assert dataset.user_num == 5
@@ -234,8 +226,8 @@ class TestDataset:
             'dataset': 'filter_by_inter_num',
             'data_path': current_path,
             'load_col': None,
-            'min_user_inter_num': 2,
-            'min_item_inter_num': 2,
+            'user_inter_num_interval': "[2,inf)",
+            'item_inter_num_interval': "[2,inf)",
         }
         dataset = new_dataset(config_dict=config_dict)
         assert dataset.user_num == 5
@@ -247,9 +239,8 @@ class TestDataset:
             'dataset': 'filter_by_inter_num',
             'data_path': current_path,
             'load_col': None,
-            'max_user_inter_num': 3,
-            'min_user_inter_num': 2,
-            'min_item_inter_num': 2,
+            'user_inter_num_interval': "[2,3]",
+            'item_inter_num_interval': "[2,inf)",
         }
         dataset = new_dataset(config_dict=config_dict)
         assert dataset.user_num == 3
@@ -262,8 +253,8 @@ class TestDataset:
             'data_path': current_path,
             'load_col': None,
             'rm_dup_inter': 'first',
-            'highest_val': {
-                'rating': 4,
+            'val_interval': {
+                'rating': "(-inf,4]",
             },
         }
         dataset = new_dataset(config_dict=config_dict)
@@ -276,8 +267,8 @@ class TestDataset:
             'data_path': current_path,
             'load_col': None,
             'rm_dup_inter': 'last',
-            'highest_val': {
-                'rating': 4,
+            'val_interval': {
+                'rating': "(-inf,4]",
             },
         }
         dataset = new_dataset(config_dict=config_dict)
@@ -290,8 +281,8 @@ class TestDataset:
             'data_path': current_path,
             'load_col': None,
             'rm_dup_inter': 'first',
-            'min_user_inter_num': 2,
-            'min_item_inter_num': 2,
+            'user_inter_num_interval': "[2,inf)",
+            'item_inter_num_interval': "[2,inf)",
         }
         dataset = new_dataset(config_dict=config_dict)
         assert len(dataset.inter_feat) == 4
@@ -304,11 +295,9 @@ class TestDataset:
             'dataset': 'filter_value_and_filter_inter_by_ui',
             'data_path': current_path,
             'load_col': None,
-            'highest_val': {
-                'age': 2,
-            },
-            'not_equal_val': {
-                'price': 2,
+            'val_interval': {
+                'age': "(-inf,2]",
+                'price': "(-inf,2);(2,inf)",
             },
             'filter_inter_by_user_or_item': True,
         }
@@ -323,13 +312,13 @@ class TestDataset:
             'dataset': 'filter_value_and_inter_num',
             'data_path': current_path,
             'load_col': None,
-            'highest_val': {
-                'rating': 0,
-                'age': 0,
-                'price': 0,
+            'val_interval': {
+                'rating': "(-inf,0]",
+                'age': "(-inf,0]",
+                'price': "(-inf,0]",
             },
-            'min_user_inter_num': 2,
-            'min_item_inter_num': 2,
+            'user_inter_num_interval': "[2,inf)",
+            'item_inter_num_interval': "[2,inf)",
         }
         dataset = new_dataset(config_dict=config_dict)
         assert len(dataset.inter_feat) == 4
@@ -343,8 +332,8 @@ class TestDataset:
             'data_path': current_path,
             'load_col': None,
             'filter_inter_by_user_or_item': True,
-            'min_user_inter_num': 2,
-            'min_item_inter_num': 2,
+            'user_inter_num_interval': "[2,inf)",
+            'item_inter_num_interval': "[2,inf)",
         }
         dataset = new_dataset(config_dict=config_dict)
         assert len(dataset.inter_feat) == 4
