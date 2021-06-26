@@ -613,8 +613,8 @@ class Dataset(object):
         if self.uid_field is None or self.iid_field is None:
             return
 
-        user_inter_num_interval = self._analyse_intervals_str(self.config['user_inter_num_interval'])
-        item_inter_num_interval = self._analyse_intervals_str(self.config['item_inter_num_interval'])
+        user_inter_num_interval = self._parse_intervals_str(self.config['user_inter_num_interval'])
+        item_inter_num_interval = self._parse_intervals_str(self.config['item_inter_num_interval'])
 
         user_inter_num = Counter(self.inter_feat[self.uid_field].values) if user_inter_num_interval else Counter()
         item_inter_num = Counter(self.inter_feat[self.iid_field].values) if item_inter_num_interval else Counter()
@@ -688,7 +688,7 @@ class Dataset(object):
         self.logger.debug(f'[{len(ids)}] illegal_ids_by_inter_num, field=[{field}]')
         return ids
 
-    def _analyse_intervals_str(self, intervals_str):
+    def _parse_intervals_str(self, intervals_str):
         """Given string of intervals, return the list of endpoints tuple, where a tuple corresponds to an interval.
 
         Args:
@@ -704,12 +704,12 @@ class Dataset(object):
         for endpoint_pair_str in str(intervals_str).split(';'):
             left_bracket, right_bracket = endpoint_pair_str[0], endpoint_pair_str[-1]
             endpoint_pair = endpoint_pair_str.strip('[]()').split(',')
-            if not (len(endpoint_pair)==2 and left_bracket in ['(','['] and right_bracket in [')',']']):
+            if not (len(endpoint_pair) == 2 and left_bracket in ['(', '['] and right_bracket in [')', ']']):
                 self.logger.warning( f'{endpoint_pair_str} is an illegal interval!')
                 continue
 
             def str2npnum(num_str):
-                if num_str in ["inf","-inf"]:
+                if num_str in ["inf", "-inf"]:
                     return np.inf if num_str == "inf" else -np.inf
                 else:
                     try:
@@ -734,8 +734,8 @@ class Dataset(object):
 
         result = None
         for left_bracket, left_point, right_point, right_bracket in intervals:
-            temp_result = num>=left_point if left_bracket=='[' else num>left_point
-            temp_result &= num<=right_point if right_bracket==']' else num<right_point
+            temp_result = num >= left_point if left_bracket == '[' else num > left_point
+            temp_result &= num <= right_point if right_bracket == ']' else num < right_point
             result = result | temp_result if result is not None else temp_result
         return result
 
@@ -752,7 +752,7 @@ class Dataset(object):
             if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
                 raise ValueError(f'Field [{field}] is not float-like field in dataset, which can\'t be filter.')
             
-            field_val_interval = self._analyse_intervals_str(val_intervals[field])
+            field_val_interval = self._parse_intervals_str(val_intervals[field])
             for feat_name in self.feat_name_list:
                 feat = getattr(self, feat_name)
                 if field in feat:
