@@ -1,10 +1,5 @@
 # -*- encoding: utf-8 -*-
-# @Time    :   2020/12/9
-# @Author  :   Zhichao Feng
-# @email   :   fzcbupt@gmail.com
-
-# UPDATE
-# @Time    :   2020/12/9
+# @Time    :   2021/6/25
 # @Author  :   Zhichao Feng
 # @email   :   fzcbupt@gmail.com
 
