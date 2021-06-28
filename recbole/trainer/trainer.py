@@ -28,7 +28,7 @@ from torch.nn.utils.clip_grad import clip_grad_norm_
 from tqdm import tqdm
 
 from recbole.data.interaction import Interaction
-from recbole.evaluator import ProxyEvaluator, Collector
+from recbole.evaluator import Evaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
     DataLoaderType, KGDataLoaderState
 from recbole.utils.utils import set_color
@@ -102,7 +102,7 @@ class Trainer(AbstractTrainer):
         self.optimizer = self._build_optimizer(self.model.parameters())
         self.eval_type = config['eval_type']
         self.eval_collector = Collector(config)
-        self.evaluator = ProxyEvaluator(config)
+        self.evaluator = Evaluator(config)
         self.item_tensor = None
         self.tot_item_num = None
 
@@ -627,7 +627,7 @@ class DecisionTreeTrainer(AbstractTrainer):
         self.eval_step = min(config['eval_step'], self.epochs)
         self.valid_metric = config['valid_metric'].lower()
         self.eval_collector = Collector(config)
-        self.evaluator = ProxyEvaluator(config)
+        self.evaluator = Evaluator(config)
 
         # model saved
         self.checkpoint_dir = config['checkpoint_dir']

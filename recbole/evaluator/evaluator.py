@@ -8,21 +8,9 @@ recbole.evaluator.evaluator
 #####################################
 """
 
-from collections import ChainMap
 from recbole.evaluator.metrics import metrics_dict
 from recbole.evaluator.collector import DataStruct
-
-# These metrics are typical in top-k recommendations
-topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP']}
-# These metrics are typical in loss recommendations
-loss_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOGLOSS']}
-# For GAUC
-rank_metrics = {metric.lower(): metric for metric in ['GAUC']}
-
-# group-based metrics
-group_metrics = ChainMap(topk_metrics, rank_metrics)
-# not group-based metrics
-individual_metrics = ChainMap(loss_metrics)
+from recbole.evaluator.register import loss_metrics
 
 
 class Evaluator(object):
@@ -31,7 +19,6 @@ class Evaluator(object):
 
     def __init__(self, config):
         self.config = config
-        self.valid_metrics = ChainMap(topk_metrics, loss_metrics, rank_metrics)
         self.metrics = [metric.lower() for metric in self.config['metrics']]
         self._check_args()
         self.metric_class = {}
@@ -75,6 +62,6 @@ class Evaluator(object):
         if set(self.metrics) & set(loss_metrics):
             is_full = 'full' in self.config['eval_setting']
             if is_full:
-                raise NotImplementedError('full sort can\'t use IndividualEvaluator')
+                raise NotImplementedError('Full sort evaluation do not match the metrics!')
 
 
