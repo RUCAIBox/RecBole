@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16
+# @Time   : 2021/6/23, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
+# @Email  : zhlin@ruc.edu.cn, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
 
 # UPDATE:
 # @Time   : 2020/10/8, 2020/10/15, 2020/11/20, 2021/2/20, 2021/3/3, 2021/3/5
@@ -28,7 +28,7 @@ from torch.nn.utils.clip_grad import clip_grad_norm_
 from tqdm import tqdm
 
 from recbole.data.interaction import Interaction
-from recbole.evaluator import ProxyEvaluator
+from recbole.evaluator import ProxyEvaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
     DataLoaderType, KGDataLoaderState
 from recbole.utils.utils import set_color
@@ -101,6 +101,7 @@ class Trainer(AbstractTrainer):
         self.train_loss_dict = dict()
         self.optimizer = self._build_optimizer(self.model.parameters())
         self.eval_type = config['eval_type']
+        self.eval_collector = Collector(config)
         self.evaluator = ProxyEvaluator(config)
         self.item_tensor = None
         self.tot_item_num = None
@@ -264,6 +265,8 @@ class Trainer(AbstractTrainer):
         if saved and self.start_epoch >= self.epochs:
             self._save_checkpoint(-1)
 
+        self.eval_collector.data_collect(train_data)
+
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
@@ -403,9 +406,10 @@ class Trainer(AbstractTrainer):
                 else:
                     scores = self._spilt_predict(interaction, batch_size)
 
-            batch_matrix = self.evaluator.collect(interaction, scores)
-            batch_matrix_list.append(batch_matrix)
-        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
+            self.eval_collector.eval_batch_collect(scores, interaction)
+        self.eval_collector.model_collect(self.model)
+        struct = self.eval_collector.get_data_struct()
+        result = self.evaluator.evaluate(struct)
 
         return result
 
@@ -622,7 +626,7 @@ class DecisionTreeTrainer(AbstractTrainer):
         self.epochs = config['epochs']
         self.eval_step = min(config['eval_step'], self.epochs)
         self.valid_metric = config['valid_metric'].lower()
-
+        self.eval_collector = Collector(config)
         self.evaluator = ProxyEvaluator(config)
 
         # model saved
@@ -794,8 +798,8 @@ class xgboostTrainer(DecisionTreeTrainer):
         self.eval_true = torch.Tensor(self.deval.get_label())
         self.eval_pred = torch.Tensor(self.model.predict(self.deval))
 
-        batch_matrix_list = [[torch.stack((self.eval_true, self.eval_pred), 1)]]
-        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
+        self.eval_collector.eval_collect(self.eval_pred, self.eval_pred)
+        result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
 
 
@@ -928,8 +932,8 @@ class lightgbmTrainer(DecisionTreeTrainer):
         self.eval_true = torch.Tensor(self.deval_label)
         self.eval_pred = torch.Tensor(self.model.predict(self.deval_data))
 
-        batch_matrix_list = [[torch.stack((self.eval_true, self.eval_pred), 1)]]
-        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
+        self.eval_collector.eval_collect(self.eval_pred, self.eval_pred)
+        result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
 
 
