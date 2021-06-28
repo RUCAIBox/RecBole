@@ -40,11 +40,13 @@ class Hit(TopkMetric):
 
     def calculate_metric(self, dataobject):
         pos_index, _ = self.used_info(dataobject)
-        result = np.cumsum(pos_index, axis=1)
-        result = (result > 0).astype(int)
-        avg_result = result.mean(axis=0)
-        metric_dict = self.topk_result('hit', avg_result)
+        result = self.metric_info(pos_index)
+        metric_dict = self.topk_result('hit', result)
         return metric_dict
+
+    def metric_info(self, pos_index):
+        result = np.cumsum(pos_index, axis=1)
+        return (result > 0).astype(int)
 
 
 class MRR(TopkMetric):
@@ -62,6 +64,11 @@ class MRR(TopkMetric):
 
     def calculate_metric(self, dataobject):
         pos_index, _ = self.used_info(dataobject)
+        result = self.metric_info(pos_index)
+        metric_dict = self.topk_result('mrr', result)
+        return metric_dict
+
+    def metric_info(self, pos_index):
         idxs = pos_index.argmax(axis=1)
         result = np.zeros_like(pos_index, dtype=np.float)
         for row, idx in enumerate(idxs):
@@ -69,9 +76,7 @@ class MRR(TopkMetric):
                 result[row, idx:] = 1 / (idx + 1)
             else:
                 result[row, idx:] = 0
-        avg_result = result.mean(axis=0)
-        metric_dict = self.topk_result('mrr', avg_result)
-        return metric_dict
+        return result
 
 
 class MAP(TopkMetric):
@@ -93,6 +98,11 @@ class MAP(TopkMetric):
 
     def calculate_metric(self, dataobject):
         pos_index, pos_len = self.used_info(dataobject)
+        result = self.metric_info(pos_index, pos_len)
+        metric_dict = self.topk_result('map', result)
+        return metric_dict
+
+    def metric_info(self, pos_index, pos_len):
         pre = pos_index.cumsum(axis=1) / np.arange(1, pos_index.shape[1] + 1)
         sum_pre = np.cumsum(pre * pos_index.astype(np.float), axis=1)
         len_rank = np.full_like(pos_len, pos_index.shape[1])
@@ -102,9 +112,7 @@ class MAP(TopkMetric):
             ranges = np.arange(1, pos_index.shape[1] + 1)
             ranges[lens:] = ranges[lens - 1]
             result[row] = sum_pre[row] / ranges
-        avg_result = result.mean(axis=0)
-        metric_dict = self.topk_result('map', avg_result)
-        return metric_dict
+        return result
 
 
 class Recall(TopkMetric):
@@ -123,10 +131,12 @@ class Recall(TopkMetric):
 
     def calculate_metric(self, dataobject):
         pos_index, pos_len = self.used_info(dataobject)
-        result = np.cumsum(pos_index, axis=1) / pos_len.reshape(-1, 1)
-        avg_result = result.mean(axis=0)
-        metric_dict = self.topk_result('recall', avg_result)
+        result = self.metric_info(pos_index, pos_len)
+        metric_dict = self.topk_result('recall', result)
         return metric_dict
+
+    def metric_info(self, pos_index, pos_len):
+        return np.cumsum(pos_index, axis=1) / pos_len.reshape(-1, 1)
 
 
 class NDCG(TopkMetric):
@@ -151,7 +161,11 @@ class NDCG(TopkMetric):
 
     def calculate_metric(self, dataobject):
         pos_index, pos_len = self.used_info(dataobject)
+        result = self.metric_info(pos_index, pos_len)
+        metric_dict = self.topk_result('ndcg', result)
+        return metric_dict
 
+    def metric_info(self, pos_index, pos_len):
         len_rank = np.full_like(pos_len, pos_index.shape[1])
         idcg_len = np.where(pos_len > len_rank, len_rank, pos_len)
 
@@ -167,9 +181,7 @@ class NDCG(TopkMetric):
         dcg = np.cumsum(np.where(pos_index, dcg, 0), axis=1)
 
         result = dcg / idcg
-        avg_result = result.mean(axis=0)
-        metric_dict = self.topk_result('ndcg', avg_result)
-        return metric_dict
+        return result
 
 
 class Precision(TopkMetric):
@@ -188,10 +200,12 @@ class Precision(TopkMetric):
 
     def calculate_metric(self, dataobject):
         pos_index, _ = self.used_info(dataobject)
-        result = pos_index.cumsum(axis=1) / np.arange(1, pos_index.shape[1] + 1)
-        avg_result = result.mean(axis=0)
-        metric_dict = self.topk_result('precision', avg_result)
+        result = self.metric_info(pos_index)
+        metric_dict = self.topk_result('precision', result)
         return metric_dict
+
+    def metric_info(self, pos_index):
+        return pos_index.cumsum(axis=1) / np.arange(1, pos_index.shape[1] + 1)
 
 
 # CTR Metrics
@@ -222,6 +236,10 @@ class GAUC(object):
         meanrank = meanrank.numpy()
         pos_rank_sum, user_len_list, pos_len_list = np.split(meanrank, 3, axis=1)
         user_len_list, pos_len_list = user_len_list.squeeze(), pos_len_list.squeeze()
+        result = self.metric_info(pos_rank_sum, user_len_list, pos_len_list)
+        return {'gauc': round(result, self.decimal_place)}
+
+    def metric_info(self, pos_rank_sum, user_len_list, pos_len_list):
         neg_len_list = user_len_list - pos_len_list
         # check positive and negative samples
         any_without_pos = np.any(pos_len_list == 0)
@@ -250,9 +268,9 @@ class GAUC(object):
 
         pair_num = (user_len_list + 1) * pos_len_list - pos_len_list * (pos_len_list + 1) / 2 - np.squeeze(pos_rank_sum)
         user_auc = pair_num / (neg_len_list * pos_len_list)
-        result = (user_auc * pos_len_list).sum() / pos_len_list.sum()
 
-        return {'gauc': round(result, self.decimal_place)}
+        result = (user_auc * pos_len_list).sum() / pos_len_list.sum()
+        return result
 
 
 class AUC(LossMetric):
@@ -275,7 +293,9 @@ class AUC(LossMetric):
         super().__init__(config)
 
     def calculate_metric(self, dataobject):
-        preds, trues = self.used_info(dataobject)
+        return self.output_metric('auc', dataobject)
+
+    def metric_info(self, preds, trues):
         fps, tps = _binary_clf_curve(trues, preds)
         if len(fps) > 2:
             optimal_idxs = np.where(np.r_[True, np.logical_or(np.diff(fps, 2), np.diff(tps, 2)), True])[0]
@@ -300,10 +320,10 @@ class AUC(LossMetric):
             tpr = tps / tps[-1]
 
         result = sk_auc(fpr, tpr)
-        return {'auc': round(result, self.decimal_place)}
-
+        return result
 
 # Loss based Metrics #
+
 
 class MAE(LossMetric):
     r"""`Mean absolute error regression loss`__
@@ -318,9 +338,10 @@ class MAE(LossMetric):
         super().__init__(config)
 
     def calculate_metric(self, dataobject):
-        preds, trues = self.used_info(dataobject)
-        result = mean_absolute_error(trues, preds)
-        return {'mae': round(result, self.decimal_place)}
+        return self.output_metric('mae', dataobject)
+
+    def metric_info(self, preds, trues):
+        return mean_absolute_error(trues, preds)
 
 
 class RMSE(LossMetric):
@@ -336,9 +357,10 @@ class RMSE(LossMetric):
         super().__init__(config)
 
     def calculate_metric(self, dataobject):
-        preds, trues = self.used_info(dataobject)
-        result = np.sqrt(mean_squared_error(trues, preds))
-        return {'rmse': round(result, self.decimal_place)}
+        return self.output_metric('rmse', dataobject)
+    
+    def metric_info(self, preds, trues):
+        return np.sqrt(mean_squared_error(trues, preds))
 
 
 class LogLoss(LossMetric):
@@ -354,14 +376,14 @@ class LogLoss(LossMetric):
         super().__init__(config)
 
     def calculate_metric(self, dataobject):
-        preds, trues = self.used_info(dataobject)
+        return self.output_metric('logloss', dataobject)
+
+    def metric_info(self, preds, trues):
         eps = 1e-15
         preds = np.float64(preds)
         preds = np.clip(preds, eps, 1 - eps)
         loss = np.sum(-trues * np.log(preds) - (1 - trues) * np.log(1 - preds))
-
-        result = loss / len(preds)
-        return {'logloss': round(result, self.decimal_place)}
+        return loss / len(preds)
 
 
 metrics_dict = {
