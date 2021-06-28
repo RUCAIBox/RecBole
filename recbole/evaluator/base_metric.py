@@ -40,9 +40,10 @@ class TopkMetric(object):
     def topk_result(self, metric, value):
         """match the metric value to the `k` and put them in `dictionary` form"""
         metric_dict = {}
+        avg_result = value.mean(axis=0)
         for k in self.topk:
             key = '{}@{}'.format(metric, k)
-            metric_dict[key] = round(value[k - 1], self.decimal_place)
+            metric_dict[key] = round(avg_result[k - 1], self.decimal_place)
         return metric_dict
 
 
@@ -63,3 +64,8 @@ class LossMetric(object):
         trues = dataobject.get('data.label')
 
         return preds.squeeze().numpy(), trues.squeeze().numpy()
+
+    def output_metric(self, metric, dataobject):
+        preds, trues = self.used_info(dataobject)
+        result = self.metric_info(preds, trues)
+        return {metric: round(result, self.decimal_place)}
