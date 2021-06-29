@@ -1106,6 +1106,47 @@ class Dataset(object):
             else:
                 raise ValueError(f'[{ids}] is not a valid ids.')
 
+    def count(self, field):
+        """Given ``field``, if it is a token field in ``inter_feat``,
+        return the counter containing the occurrences times in ``inter_feat`` of different tokens,
+        for other cases, raise ValueError.
+
+        Args:
+            field (str): field name to get token counter.
+
+        Returns:
+            Counter: The counter of different tokens.
+        """
+        if field not in self.inter_feat:
+            raise ValueError(f'Field [{field}] is not defined in ``inter_feat``.')
+        if self.field2type[field] == FeatureType.TOKEN:
+            if isinstance(self.inter_feat, pd.DataFrame):
+                return Counter(self.inter_feat[field].values)
+            else:
+                return Counter(self.inter_feat[field].numpy())
+        else:
+            raise ValueError(f'Field [{field}] is not a token field.')
+
+    @property
+    def user_count(self):
+        """Get the counter containing the occurrences times in ``inter_feat`` of different users.
+
+        Returns:
+            Counter: The counter of different users.
+        """
+        self._check_field('uid_field')
+        return self.count(self.uid_field)
+
+    @property
+    def item_count(self):
+        """Get the counter containing the occurrences times in ``inter_feat`` of different items.
+
+        Returns:
+            Counter: The counter of different items.
+        """
+        self._check_field('iid_field')
+        return self.count(self.iid_field)
+
     @property
     def user_num(self):
         """Get the number of different tokens of ``self.uid_field``.
