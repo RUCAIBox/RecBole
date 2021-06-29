@@ -1106,7 +1106,7 @@ class Dataset(object):
             else:
                 raise ValueError(f'[{ids}] is not a valid ids.')
 
-    def count(self, field):
+    def counter(self, field):
         """Given ``field``, if it is a token field in ``inter_feat``,
         return the counter containing the occurrences times in ``inter_feat`` of different tokens,
         for other cases, raise ValueError.
@@ -1128,24 +1128,24 @@ class Dataset(object):
             raise ValueError(f'Field [{field}] is not a token field.')
 
     @property
-    def user_count(self):
+    def user_counter(self):
         """Get the counter containing the occurrences times in ``inter_feat`` of different users.
 
         Returns:
             Counter: The counter of different users.
         """
         self._check_field('uid_field')
-        return self.count(self.uid_field)
+        return self.counter(self.uid_field)
 
     @property
-    def item_count(self):
+    def item_counter(self):
         """Get the counter containing the occurrences times in ``inter_feat`` of different items.
 
         Returns:
             Counter: The counter of different items.
         """
         self._check_field('iid_field')
-        return self.count(self.iid_field)
+        return self.counter(self.iid_field)
 
     @property
     def user_num(self):
