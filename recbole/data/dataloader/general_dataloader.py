@@ -270,7 +270,7 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
     def _neg_sampling(self, user_df):
         uid_list = list(user_df[self.dataset.uid_field])
         pos_len_list = self.uid2items_num[uid_list]
-        user_len_list = np.full(len(uid_list), self.item_num)
+        user_len_list = np.full(len(uid_list), self.dataset.item_num)
         user_df.set_additional_info(pos_len_list, user_len_list)
 
         history_item = self.uid2history_item[uid_list]
@@ -296,4 +296,4 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         Returns:
             numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
-        return np.full(self.pr_end, self.item_num)
+        return np.full(self.pr_end, self.dataset.item_num)
