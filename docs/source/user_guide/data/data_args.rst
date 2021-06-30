@@ -72,7 +72,7 @@ Remove duplicated user-item interactions
 Filter by value
 ''''''''''''''''''
 
-- ``val_interval (dict)``: Has the format ``{k (str): interval (str), ...}``, where ``interval `` can be set as  ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``. The rows whose ``feat[k]`` is in the interval ``interval`` will be retained. If you want to specify more than one interval, separate them with semicolon(s). For instance, ``{k: [A,B);(C,D]}`` can be adopted and rows whose ``feat[k]`` is in any specified interval will be retained. Defaults to ``None``, which means all rows will be retained.
+- ``val_interval (dict)``: Has the format ``{k (str): interval (str), ...}``, where ``interval `` can be set as  ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``. The rows whose ``feat[k]`` is in the interval ``interval`` will be retained. If you want to specify more than one interval, separate them with semicolon(s). For instance, ``{k: "[A,B);(C,D]"}`` can be adopted and rows whose ``feat[k]`` is in any specified interval will be retained. Defaults to ``None``, which means all rows will be retained.
 
 Remove interation by user or item
 '''''''''''''''''''''''''''''''''''
@@ -82,8 +82,8 @@ Remove interation by user or item
 Filter by number of interactions
 ''''''''''''''''''''''''''''''''''''
 
-- ``user_inter_num_interval (str)`` : Has the interval format, such as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``,  where ``A`` and ``B`` are the endpoints of the interval and ``A<B``. Users whose number of interactions is in the interval will be retained. Defaults to ``[0,inf)``.
-- ``item_inter_num_interval (str)`` : Has the interval format, such as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``,  where ``A`` and ``B`` are the endpoints of the interval and ``A<B``. Items whose number of interactions is in the interval will be retained. Defaults to ``[0,inf)``.
+- ``user_inter_num_interval (str)`` : Has the interval format, such as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``,  where ``A`` and ``B`` are the endpoints of the interval and ``A <= B``. Users whose number of interactions is in the interval will be retained. Defaults to ``[0,inf)``.
+- ``item_inter_num_interval (str)`` : Has the interval format, such as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``,  where ``A`` and ``B`` are the endpoints of the interval and ``A <= B``. Items whose number of interactions is in the interval will be retained. Defaults to ``[0,inf)``.
 
 Preprocessing
 -----------------

@@ -702,14 +702,15 @@ class Dataset(object):
 
         endpoints = []
         for endpoint_pair_str in str(intervals_str).split(';'):
+            endpoint_pair_str = endpoint_pair_str.strip()
             left_bracket, right_bracket = endpoint_pair_str[0], endpoint_pair_str[-1]
-            endpoint_pair = endpoint_pair_str.strip('[]()').split(',')
+            endpoint_pair = endpoint_pair_str[1:-1].split(',')
             if not (len(endpoint_pair) == 2 and left_bracket in ['(', '['] and right_bracket in [')', ']']):
                 self.logger.warning( f'{endpoint_pair_str} is an illegal interval!')
                 continue
 
             def str2npnum(num_str):
-                if num_str in ["inf", "-inf"]:
+                if num_str.lower() in ["inf", "-inf"]:
                     return np.inf if num_str == "inf" else -np.inf
                 else:
                     try:
@@ -729,14 +730,11 @@ class Dataset(object):
         Note:
             return true when the intervals is None.
         """
-        if intervals is None:
-            return True
-
-        result = None
-        for left_bracket, left_point, right_point, right_bracket in intervals:
+        result = True
+        for i, (left_bracket, left_point, right_point, right_bracket) in enumerate(intervals):
             temp_result = num >= left_point if left_bracket == '[' else num > left_point
             temp_result &= num <= right_point if right_bracket == ']' else num < right_point
-            result = result | temp_result if result is not None else temp_result
+            result = temp_result if i == 0 else result | temp_result
         return result
 
     def _filter_by_field_value(self):
