@@ -3,6 +3,11 @@
 # @Author : Yihong Guo
 # @Email  : gyihong@hotmail.com
 
+# UPDATE
+# @Time    : 2021/6/30, 
+# @Author  : Xingyu Pan
+# @email   : xy_pan@foxmail.com
+
 r"""
 MacridVAE
 ################################################
@@ -16,7 +21,6 @@ Reference code:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.distributions.one_hot_categorical import OneHotCategorical
 
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
@@ -106,11 +110,10 @@ class MacridVAE(GeneralRecommender):
         cates_logits = torch.matmul(items, cores.transpose(0, 1)) / self.tau
 
         if self.nogb:
-            cates = torch.softmax(cates_logits, dim=1)
+            cates = torch.softmax(cates_logits, dim=-1)
         else:
-            cates_dist = OneHotCategorical(logits=cates_logits)
-            cates_sample = cates_dist.sample()
-            cates_mode = torch.softmax(cates_logits, dim=1)
+            cates_sample = F.gumbel_softmax(cates_logits, tau=1, hard=False, dim=-1)
+            cates_mode = torch.softmax(cates_logits, dim=-1)
             cates = (self.training * cates_sample + (1 - self.training) * cates_mode)
 
         probs = None
