@@ -620,18 +620,14 @@ class Dataset(object):
         item_inter_num = Counter(self.inter_feat[self.iid_field].values) if item_inter_num_interval else Counter()
 
         while True:
-            ban_users = self._get_illegal_ids_by_inter_num(
-                field=self.uid_field,
-                feat=self.user_feat,
-                inter_num=user_inter_num,
-                inter_interval=user_inter_num_interval
-            )
-            ban_items = self._get_illegal_ids_by_inter_num(
-                field=self.iid_field,
-                feat=self.item_feat,
-                inter_num=item_inter_num,
-                inter_interval=item_inter_num_interval
-            )
+            ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field,
+                                                           feat=self.user_feat,
+                                                           inter_num=user_inter_num,
+                                                           inter_interval=user_inter_num_interval)
+            ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field,
+                                                           feat=self.item_feat,
+                                                           inter_num=item_inter_num,
+                                                           inter_interval=item_inter_num_interval)
 
             if len(ban_users) == 0 and len(ban_items) == 0:
                 break
@@ -671,12 +667,11 @@ class Dataset(object):
             set: illegal ids, whose inter num out of inter_intervals.
         """
         self.logger.debug(
-            set_color('get_illegal_ids_by_inter_num', 'blue') +
-            f': field=[{field}], inter_interval=[{inter_interval}]'
-        )
+            set_color('get_illegal_ids_by_inter_num', 'blue') + f': field=[{field}], inter_interval=[{inter_interval}]')
+        
         if inter_interval is not None:
-            if len(inter_interval)>1:
-                self.logger.warning( f'More than one interval of interaction number are given!')
+            if len(inter_interval) > 1:
+                self.logger.warning(f'More than one interval of interaction number are given!')
 
         ids = {id_ for id_ in inter_num if not self._within_intervals(inter_num[id_], inter_interval)}
 
@@ -706,20 +701,21 @@ class Dataset(object):
             left_bracket, right_bracket = endpoint_pair_str[0], endpoint_pair_str[-1]
             endpoint_pair = endpoint_pair_str[1:-1].split(',')
             if not (len(endpoint_pair) == 2 and left_bracket in ['(', '['] and right_bracket in [')', ']']):
-                self.logger.warning( f'{endpoint_pair_str} is an illegal interval!')
+                self.logger.warning(f'{endpoint_pair_str} is an illegal interval!')
                 continue
 
             def str2npnum(num_str):
                 if num_str.lower() in ["inf", "-inf"]:
-                    return np.inf if num_str == "inf" else -np.inf
+                    return np.inf if num_str.lower() == "inf" else -np.inf
                 else:
                     try:
                         return float(num_str)
                     except ValueError:
                         raise ValueError(f'Str {num_str} in interval can not be converted to numeric.')
+
             left_point, right_point = str2npnum(endpoint_pair[0]), str2npnum(endpoint_pair[1])
             if left_point > right_point:
-                self.logger.warning( f'{endpoint_pair_str} is an illegal interval!')
+                self.logger.warning(f'{endpoint_pair_str} is an illegal interval!')
 
             endpoints.append((left_bracket, left_point, right_point, right_bracket))
         return endpoints
