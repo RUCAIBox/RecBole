@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/28 2020/10/13, 2020/11/10
+# @Time   : 2020/10/28 2021/7/1, 2020/11/10
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn
 
 """
 recbole.data.dataset
@@ -1380,7 +1380,7 @@ class Dataset(object):
         """
         self.inter_feat.sort(by=by, ascending=ascending)
 
-    def build(self, eval_setting):
+    def build(self):
         """Processing dataset according to evaluation setting, including Group, Order and Split.
         See :class:`~recbole.config.eval_setting.EvalSetting` for details.
 
@@ -1398,24 +1398,40 @@ class Dataset(object):
             datasets = [self.copy(self.inter_feat[start:end]) for start, end in zip([0] + cumsum[:-1], cumsum)]
             return datasets
 
-        ordering_args = eval_setting.ordering_args
-        if ordering_args['strategy'] == 'shuffle':
+        # ordering
+        ordering_args = self.config['eval_args']['order']
+        if ordering_args == 'RO':
             self.shuffle()
-        elif ordering_args['strategy'] == 'by':
-            self.sort(by=ordering_args['field'], ascending=ordering_args['ascending'])
-
-        group_field = eval_setting.group_field
-
-        split_args = eval_setting.split_args
-        if split_args['strategy'] == 'by_ratio':
-            datasets = self.split_by_ratio(split_args['ratios'], group_by=group_field)
-        elif split_args['strategy'] == 'by_value':
-            raise NotImplementedError()
-        elif split_args['strategy'] == 'loo':
-            datasets = self.leave_one_out(group_by=group_field, leave_one_num=split_args['leave_one_num'])
+        elif ordering_args == 'TO':
+            self.sort(by=self.config['TIME_FIELD'])
         else:
-            datasets = self
+            raise NotImplementedError(f'The ordering_method [{ordering_args}] has not been implemented.')
 
+        # splitting & groupping
+        split_args = self.config['eval_args']['split']
+        if split_args is None:
+            raise ValueError('The split_args in eval_args should not be None.')
+        if isinstance(split_args, dict) != True:
+            raise ValueError(f'The split_args [{split_args}] should be a dict.')
+
+        split_mode = list(split_args.keys())[0] 
+        group_by = self.config['eval_args']['group_by']
+        if split_mode == 'RS':
+            if isinstance(split_args['RS'], list) != True:
+                raise ValueError(f'The value of "RS" [{split_args}] should be a list.')
+            if group_by == 'none':
+                datasets = self.split_by_ratio(split_args['RS'], group_by=None)
+            elif group_by == 'user':
+                datasets = self.split_by_ratio(split_args['RS'], group_by=self.config['USER_ID_FIELD'])
+            else:
+                raise NotImplementedError(f'The grouping method [{group_by}] has not been implemented.')
+        elif split_mode == 'LS':
+            if isinstance(split_args['LS'], int) != True:
+                raise ValueError(f'The value of "LS" [{split_args}] should be a int.')
+            datasets = self.leave_one_out(group_by=self.config['USER_ID_FIELD'], leave_one_num=split_args['LS'])
+        else:
+            raise NotImplementedError(f'The spliting_method [{split_mode}] has not been implemented.')
+            
         return datasets
 
     def save(self, filepath):
