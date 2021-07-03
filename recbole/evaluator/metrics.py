@@ -4,9 +4,9 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/12, 2021/6/25, 2020/9/16
-# @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan
-# @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, panxy@ruc.edu.cn
+# @Time    :   2020/08/12, 2021/6/25, 2020/9/16, 2021/7/2
+# @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan, Zihan Lin
+# @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, panxy@ruc.edu.cn, zhlin@ruc.edu.cn
 
 """
 recbole.evaluator.metrics
