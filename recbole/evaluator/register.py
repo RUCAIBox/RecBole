@@ -30,7 +30,8 @@ metric_information = {
     'mae': ['rec.score', 'data.label'],
     'logloss': ['rec.score', 'data.label']}
 # These metrics are typical in top-k recommendations
-topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP']}
+topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP',
+                                                      'AveragePopularity', 'ShannonEntropy']}
 # These metrics are typical in loss recommendations
 loss_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOGLOSS']}
 # For GAUC
