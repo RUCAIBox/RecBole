@@ -416,7 +416,7 @@ class AveragePopularity:
     def calculate_metric(self, dataobject):
         item_matrix, item_count = self.used_info(dataobject)
         result = self.metric_info(self.get_pop(item_matrix, item_count))
-        metric_dict = self.topk_result('AveragePopularity', result)
+        metric_dict = self.topk_result('averagepopularity', result)
         return metric_dict
 
     def get_pop(self, item_matrix, item_count):
@@ -469,7 +469,7 @@ class ShannonEntropy:
         item_matrix = self.used_info(dataobject)
         metric_dict = {}
         for k in self.topk:
-            key = '{}@{}'.format('ShannonEntropy', k)
+            key = '{}@{}'.format('shannonentropy', k)
             metric_dict[key] = round(self.get_entropy(item_matrix[:, :k]), self.decimal_place)
         return metric_dict
 
