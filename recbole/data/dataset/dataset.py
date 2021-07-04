@@ -15,6 +15,7 @@ recbole.data.dataset
 import copy
 import pickle
 import os
+import yaml
 from collections import Counter
 from logging import getLogger
 
@@ -25,9 +26,9 @@ import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 
 from recbole.data.interaction import Interaction
-from recbole.data.utils import dlapi
 from recbole.utils import FeatureSource, FeatureType, get_local_time
 from recbole.utils.utils import set_color
+from recbole.utils.url import decide_download, download_url, extract_zip, makedirs, rename_atomic_files
 
 
 class Dataset(object):
@@ -93,8 +94,6 @@ class Dataset(object):
         self.config = config
         self.dataset_name = config['dataset']
         self.logger = getLogger()
-        self._dataloader_apis = {'field2type', 'field2source', 'field2id_token'}
-        self._dataloader_apis.update(dlapi.dataloader_apis)
         self._from_scratch()
 
     def _from_scratch(self):
@@ -198,6 +197,38 @@ class Dataset(object):
                     feat_name_list.append(f'{suf}_feat')
         return feat_name_list
 
+    def _get_download_url(self, url_file, allow_none=False):
+        current_path = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(current_path, f'../../properties/dataset/{url_file}.yaml')) as f:
+            dataset2url = yaml.load(f.read(), Loader=self.config.yaml_loader)
+
+        if self.dataset_name in dataset2url:
+            url = dataset2url[self.dataset_name]
+            return url
+        elif allow_none:
+            return None
+        else:
+            raise ValueError(f'Neither [{self.dataset_path}] exists in the device'
+                             f'nor [{self.dataset_name}] a known dataset name.')
+
+    def _download(self):
+        url = self._get_download_url('url')
+        self.logger.info(f'Prepare to download dataset [{self.dataset_name}] from [{url}].')
+
+        if decide_download(url):
+            makedirs(self.dataset_path)
+            path = download_url(url, self.dataset_path)
+            extract_zip(path, self.dataset_path)
+            os.unlink(path)
+
+            basename = os.path.splitext(os.path.basename(path))[0]
+            rename_atomic_files(self.dataset_path, basename, self.dataset_name)
+
+            self.logger.info('Downloading done.')
+        else:
+            self.logger.info('Stop download.')
+            exit(-1)
+
     def _load_data(self, token, dataset_path):
         """Load features.
 
@@ -227,6 +258,9 @@ class Dataset(object):
             dataset_path (str): path of dataset dir.
         """
         if self.benchmark_filename_list is None:
+            if not os.path.exists(dataset_path):
+                self._download()
+
             inter_feat_path = os.path.join(dataset_path, f'{token}.inter')
             if not os.path.isfile(inter_feat_path):
                 raise ValueError(f'File {inter_feat_path} not exist.')
@@ -934,7 +968,6 @@ class Dataset(object):
             feat = getattr(self, feat_name)
             setattr(self, feat_name, self._dataframe_to_interaction(feat))
 
-    @dlapi.set()
     def num(self, field):
         """Given ``field``, for token-like fields, return the number of different tokens after remapping,
         for float-like fields, return ``1``.
@@ -952,7 +985,6 @@ class Dataset(object):
         else:
             return len(self.field2id_token[field])
 
-    @dlapi.set()
     def fields(self, ftype=None):
         """Given type of features, return all the field name of this type.
         if ``ftype = None``, return all the fields.
@@ -1036,7 +1068,6 @@ class Dataset(object):
         self.field2source[dest_field] = self.field2source[source_field]
         self.field2seqlen[dest_field] = self.field2seqlen[source_field]
 
-    @dlapi.set()
     def token2id(self, field, tokens):
         """Map external tokens to internal ids.
 
@@ -1051,13 +1082,12 @@ class Dataset(object):
             if tokens in self.field2token_id[field]:
                 return self.field2token_id[field][tokens]
             else:
-                raise ValueError(f'token [{token}] is not existed in {field}')
+                raise ValueError(f'token [{tokens}] is not existed in {field}')
         elif isinstance(tokens, (list, np.ndarray)):
             return np.array([self.token2id(field, token) for token in tokens])
         else:
-            raise TypeError(f'The type of tokens [{token}] is not supported')
+            raise TypeError(f'The type of tokens [{tokens}] is not supported')
 
-    @dlapi.set()
     def id2token(self, field, ids):
         """Map internal ids to external tokens.
 
@@ -1076,8 +1106,48 @@ class Dataset(object):
             else:
                 raise ValueError(f'[{ids}] is not a valid ids.')
 
+    def counter(self, field):
+        """Given ``field``, if it is a token field in ``inter_feat``,
+        return the counter containing the occurrences times in ``inter_feat`` of different tokens,
+        for other cases, raise ValueError.
+
+        Args:
+            field (str): field name to get token counter.
+
+        Returns:
+            Counter: The counter of different tokens.
+        """
+        if field not in self.inter_feat:
+            raise ValueError(f'Field [{field}] is not defined in ``inter_feat``.')
+        if self.field2type[field] == FeatureType.TOKEN:
+            if isinstance(self.inter_feat, pd.DataFrame):
+                return Counter(self.inter_feat[field].values)
+            else:
+                return Counter(self.inter_feat[field].numpy())
+        else:
+            raise ValueError(f'Field [{field}] is not a token field.')
+
     @property
-    @dlapi.set()
+    def user_counter(self):
+        """Get the counter containing the occurrences times in ``inter_feat`` of different users.
+
+        Returns:
+            Counter: The counter of different users.
+        """
+        self._check_field('uid_field')
+        return self.counter(self.uid_field)
+
+    @property
+    def item_counter(self):
+        """Get the counter containing the occurrences times in ``inter_feat`` of different items.
+
+        Returns:
+            Counter: The counter of different items.
+        """
+        self._check_field('iid_field')
+        return self.counter(self.iid_field)
+
+    @property
     def user_num(self):
         """Get the number of different tokens of ``self.uid_field``.
 
@@ -1088,7 +1158,6 @@ class Dataset(object):
         return self.num(self.uid_field)
 
     @property
-    @dlapi.set()
     def item_num(self):
         """Get the number of different tokens of ``self.iid_field``.
 
@@ -1150,7 +1219,6 @@ class Dataset(object):
             if getattr(self, field_name, None) is None:
                 raise ValueError(f'{field_name} isn\'t set.')
 
-    @dlapi.set()
     def join(self, df):
         """Given interaction feature, join user/item feature into it.
 
@@ -1405,7 +1473,6 @@ class Dataset(object):
         with open(file, 'wb') as f:
             pickle.dump(self, f)
 
-    @dlapi.set()
     def get_user_feature(self):
         """
         Returns:
@@ -1417,7 +1484,6 @@ class Dataset(object):
         else:
             return self.user_feat
 
-    @dlapi.set()
     def get_item_feature(self):
         """
         Returns:
@@ -1514,7 +1580,6 @@ class Dataset(object):
         else:
             raise NotImplementedError(f'Graph format [{form}] has not been implemented.')
 
-    @dlapi.set()
     def inter_matrix(self, form='coo', value_field=None):
         """Get sparse matrix that describe interactions between user_id and item_id.
 
@@ -1596,7 +1661,6 @@ class Dataset(object):
 
         return torch.LongTensor(history_matrix), torch.FloatTensor(history_value), torch.LongTensor(history_len)
 
-    @dlapi.set()
     def history_item_matrix(self, value_field=None):
         """Get dense matrix describe user's history interaction records.
 
@@ -1621,7 +1685,6 @@ class Dataset(object):
         """
         return self._history_matrix(row='user', value_field=value_field)
 
-    @dlapi.set()
     def history_user_matrix(self, value_field=None):
         """Get dense matrix describe item's history interaction records.
 
@@ -1646,7 +1709,6 @@ class Dataset(object):
         """
         return self._history_matrix(row='item', value_field=value_field)
 
-    @dlapi.set()
     def get_preload_weight(self, field):
         """Get preloaded weight matrix, whose rows are sorted by token ids.
 

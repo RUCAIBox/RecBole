@@ -75,10 +75,16 @@ class Collector(object):
                 train_data (AbstractDataLoader): the training dataloader which contains the training data.
 
         """
-        if self.register.need('data.num_item'):
-            self.data_struct.set('data.num_item', train_data.num_item)
-        if self.register.need('data.num_user'):
-            self.data_struct.set('data.num_user', train_data.num_user)
+        if self.register.need('data.num_items'):
+            item_id = self.config['ITEM_ID_FIELD']
+            self.data_struct.set('data.num_items', train_data.dataset.num(item_id))
+        if self.register.need('data.num_users'):
+            user_id = self.config['USER_ID_FIELD']
+            self.data_struct.set('data.num_users', train_data.dataset.num(user_id))
+        if self.register.need('data.count_items'):
+            self.data_struct.set('data.count_items', train_data.dataset.item_counter)
+        if self.register.need('data.count_users'):
+            self.data_struct.set('data.count_items', train_data.dataset.user_counter)
 
     def _get_score_matrix(self, scores_tensor, user_len_list):
         """get score matrix.

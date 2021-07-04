@@ -4,9 +4,9 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/12, 2021/6/25, 2020/9/16
-# @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan
-# @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, panxy@ruc.edu.cn
+# @Time    :   2020/08/12, 2021/6/25, 2020/9/16, 2021/7/2
+# @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan, Zihan Lin
+# @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, panxy@ruc.edu.cn, zhlin@ruc.edu.cn
 
 """
 recbole.evaluator.metrics
@@ -16,6 +16,7 @@ recbole.evaluator.metrics
 from logging import getLogger
 
 import numpy as np
+from collections import Counter
 from sklearn.metrics import auc as sk_auc
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
@@ -386,6 +387,104 @@ class LogLoss(LossMetric):
         return loss / len(preds)
 
 
+class AveragePopularity:
+    r"""It computes the average popularity of recommended items.
+
+    For further details, please refer to the `paper <https://arxiv.org/abs/1205.6700>` and
+                                            `paper <https://link.springer.com/article/10.1007/s13042-017-0762-9>`_
+
+    .. math::
+        \mathrm{AveragePopularity}=\frac{1}{|U|} \sum_{u \in U_} \frac{\sum_{i \in R_{u}} \phi(i)}{|R_{u}|}
+
+    :math:`U` is total user set.
+
+    :math:`R_{u}` is the recommended list of items for user u.
+
+    :math:`\phi(i)` is the number of interaction of item i in training data.
+    """
+
+    def __init__(self, config):
+        self.topk = config['topk']
+        self.decimal_place = config['metric_decimal_place']
+
+    def used_info(self, dataobject):
+        """get the matrix of recommendation items and the popularity of items in training data"""
+        item_counter = dataobject.get('data.count_items')
+        item_matrix = dataobject.get('rec.items')
+        return item_matrix.numpy(), dict(item_counter)
+
+    def calculate_metric(self, dataobject):
+        item_matrix, item_count = self.used_info(dataobject)
+        result = self.metric_info(self.get_pop(item_matrix, item_count))
+        metric_dict = self.topk_result('averagepopularity', result)
+        return metric_dict
+
+    def get_pop(self, item_matrix, item_count):
+        """convert the matrix of item id to the matrix of item popularity using a dict:{id,count}.
+        """
+        value = np.zeros_like(item_matrix)
+        for i in range(item_matrix.shape[0]):
+            row = item_matrix[i, :]
+            for j in range(row.shape[0]):
+                value[i][j] = item_count.get(row[j], 0)
+        return value
+
+    def metric_info(self, values):
+        return values.cumsum(axis=1) / np.arange(1, values.shape[1] + 1)
+
+    def topk_result(self, metric, value):
+        """match the metric value to the `k` and put them in `dictionary` form"""
+        metric_dict = {}
+        avg_result = value.mean(axis=0)
+        for k in self.topk:
+            key = '{}@{}'.format(metric, k)
+            metric_dict[key] = round(avg_result[k-1], self.decimal_place)
+        return metric_dict
+
+
+class ShannonEntropy:
+    r"""This metric present the diversity of the recommendation items.
+    It is the entropy over items' distribution.
+
+    For further details, please refer to the `paper <https://arxiv.org/abs/1205.6700>` and
+                                             `paper <https://link.springer.com/article/10.1007/s13042-017-0762-9>`_
+
+    .. math::
+        \mathrm {ShannonEntropy}=-\sum_{i=1}^{n} p(i) \log p(i)
+
+    :math:`p(i)` is the probability of recommending item i
+    which is the number of item i in recommended list over all items.
+    """
+
+    def __init__(self, config):
+        self.topk = config['topk']
+        self.decimal_place = config['metric_decimal_place']
+
+    def used_info(self, dataobject):
+        """get the matrix of recommendation items."""
+        item_matrix = dataobject.get('rec.items')
+        return item_matrix.numpy()
+
+    def calculate_metric(self, dataobject):
+        item_matrix = self.used_info(dataobject)
+        metric_dict = {}
+        for k in self.topk:
+            key = '{}@{}'.format('shannonentropy', k)
+            metric_dict[key] = round(self.get_entropy(item_matrix[:, :k]), self.decimal_place)
+        return metric_dict
+
+    def get_entropy(self, item_matrix):
+        """convert the matrix of item id to the matrix of item popularity using a dict:{id,count}.
+        """
+        item_count = dict(Counter(item_matrix.flatten()))
+        total_num = item_matrix.shape[0]*item_matrix.shape[1]
+        result = 0.0
+        for cnt in item_count.values():
+            p = cnt/total_num
+            result += -p*np.log(p)
+        return result/len(item_count)
+
+
 metrics_dict = {
     'ndcg': NDCG,
     'hit': Hit,
@@ -397,5 +496,7 @@ metrics_dict = {
     'mae': MAE,
     'logloss': LogLoss,
     'auc': AUC,
-    'gauc': GAUC
+    'gauc': GAUC,
+    'averagepopularity': AveragePopularity,
+    'shannonentropy': ShannonEntropy
 }

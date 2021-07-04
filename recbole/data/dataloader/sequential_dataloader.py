@@ -270,7 +270,7 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
         interaction = super()._next_batch_data()
         inter_num = len(interaction)
         pos_len_list = np.ones(inter_num, dtype=np.int64)
-        user_len_list = np.full(inter_num, self.item_num)
+        user_len_list = np.full(inter_num, self.dataset.item_num)
         interaction.set_additional_info(pos_len_list, user_len_list)
         scores_row = torch.arange(inter_num).repeat(2)
         padding_idx = torch.zeros(inter_num, dtype=torch.int64)
@@ -291,4 +291,4 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
         Returns:
             numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
         """
-        return np.full(self.pr_end, self.item_num)
+        return np.full(self.pr_end, self.dataset.item_num)

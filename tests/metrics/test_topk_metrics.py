@@ -3,6 +3,10 @@
 # @Author  :   Kaiyuan Li
 # @email   :   tsotfsk@outlook.com
 
+# UPDATE
+# @Time    :    2021/7/2
+# @Author  :    Zihan Lin
+# @email   :    zhlin@ruc.edu.cn
 
 import os
 import sys
@@ -26,6 +30,21 @@ pos_idx = np.array([
     [0, 0, 1],
 ])
 pos_len = np.array([1, 3, 4, 2])
+
+item_matrix = np.array([
+    [5, 7, 3],
+    [4, 5, 2],
+    [2, 3, 5],
+    [1, 4, 6],
+    [5, 3, 7]
+])
+
+item_count = {1: 0,
+              2: 1,
+              3: 2,
+              4: 3,
+              5: 4,
+              6: 5}
 
 
 class TestTopKMetrics(unittest.TestCase):
@@ -85,6 +104,22 @@ class TestTopKMetrics(unittest.TestCase):
             Metric.metric_info(pos_idx).tolist(),
             np.array([[0, 0, 0], [1 / 1, 2 / 2, 3 / 3], [1 / 1, 1 / 2, 2 / 3],
                       [0, 0, 1 / 3]]).tolist())
+
+    def test_averagepopularity(self):
+        name = 'averagepopularity'
+        Metric = metrics_dict[name](config)
+        self.assertEqual(
+            Metric.metric_info(Metric.get_pop(item_matrix, item_count)).tolist(),
+            np.array([[4/1, 4/2, 6/3], [3/1, 7/2, 8/3], [1/1, 3/2, 7/3], [0/1, 3/2, 8/3],
+                      [4/1, 6/2, 6/3]]).tolist())
+
+    def test_ShannonEntropy(self):
+        name = 'shannonentropy'
+        Metric = metrics_dict[name](config)
+        self.assertEqual(
+            Metric.get_entropy(item_matrix),
+            -np.mean([1/15*np.log(1/15), 2/15*np.log(2/15), 3/15*np.log(3/15), 2/15*np.log(2/15),
+                    4/15*np.log(4/15), 1/15*np.log(1/15), 2/15*np.log(2/15)]))
 
 
 if __name__ == "__main__":
