@@ -1414,7 +1414,8 @@ class Dataset(object):
         if isinstance(split_args, dict) != True:
             raise ValueError(f'The split_args [{split_args}] should be a dict.')
 
-        split_mode = list(split_args.keys())[0] 
+        split_mode = list(split_args.keys())[0]
+        assert len(split_args.keys()) == 1
         group_by = self.config['eval_args']['group_by']
         if split_mode == 'RS':
             if isinstance(split_args['RS'], list) != True:
