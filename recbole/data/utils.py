@@ -168,7 +168,6 @@ def data_preparation(config, dataset, save=False):
         set_color('Build', 'pink') + set_color(f' [{dataloader.__name__}]', 'yellow') + ' for ' +
         set_color('[evaluation]', 'yellow') + ' with format ' + set_color(f'[{eval_kwargs["dl_format"]}]', 'yellow')
     )
-    #logger.info(es)
     logger.info(
         set_color('[evaluation]', 'pink') + set_color(' batch_size', 'cyan') + ' = ' +
         set_color(f'[{eval_kwargs["batch_size"]}]', 'yellow') + ', ' + set_color('shuffle', 'cyan') + ' = ' +
