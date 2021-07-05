@@ -308,14 +308,15 @@ class Config(object):
                 self.final_config_dict['additional_feat_suffix'] = [ad_suf]
 
         # eval_args checking
-        if 'split' not in self.final_config_dict['eval_args']:
-            self.final_config_dict['eval_args']['split'] = {'RS': [0.8,0.1,0.1]}
-        if 'order' not in self.final_config_dict['eval_args']:
-            self.final_config_dict['eval_args']['order'] = 'RO'
-        if 'group_by' not in self.final_config_dict['eval_args']:
-            self.final_config_dict['eval_args']['group_by'] = 'user'
-        if 'mode' not in self.final_config_dict['eval_args']:
-            self.final_config_dict['eval_args']['mode'] = 'full' 
+        default_eval_args = {
+            'split': {'RS': [0.8, 0.1, 0.1]},
+            'order': 'RO',
+            'group_by': 'user',
+            'mode': 'full'
+        }
+        for op_args in default_eval_args:
+            if op_args not in self.final_config_dict['eval_args']:
+                self.final_config_dict['eval_args'][op_args] = default_eval_args[op_args]
 
     def _init_device(self):
         use_gpu = self.final_config_dict['use_gpu']
