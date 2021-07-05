@@ -17,7 +17,6 @@ import importlib
 import os
 import pickle
 
-from recbole.config import EvalSetting
 from recbole.data.dataloader import *
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
 from recbole.utils import ModelType, ensure_dir, get_local_time
@@ -72,16 +71,27 @@ def data_preparation(config, dataset, save=False):
             - test_data (AbstractDataLoader): The dataloader for testing.
     """
     model_type = config['MODEL_TYPE']
-
-    es = EvalSetting(config)
-
-    built_datasets = dataset.build(es)
+    built_datasets = dataset.build()
+    
     train_dataset, valid_dataset, test_dataset = built_datasets
     phases = ['train', 'valid', 'test']
     sampler = None
     logger = getLogger()
     train_neg_sample_args = config['train_neg_sample_args']
-    eval_neg_sample_args = es.neg_sample_args
+    
+    eval_mode = config['eval_args']['mode']
+    if eval_mode == 'none':
+        eval_neg_sample_args = {'strategy': 'none', 'distribution': 'none'}
+    elif eval_mode == 'full':
+        eval_neg_sample_args = {'strategy': 'full', 'distribution': 'uniform'}
+    elif eval_mode[0:3] == 'uni':
+        sample_by = int(eval_mode[3:])
+        eval_neg_sample_args = {'strategy': 'by', 'by': sample_by, 'distribution': 'uniform'}
+    elif eval_mode[0:3] == 'pop':
+        sample_by = int(eval_mode[3:])
+        eval_neg_sample_args = {'strategy': 'by', 'by': sample_by, 'distribution': 'popularity'}
+    else:
+        raise ValueError(f'the mode [{eval_mode}] in eval_args is not supported.')
 
     # Training
     train_kwargs = {
@@ -137,7 +147,7 @@ def data_preparation(config, dataset, save=False):
     if eval_neg_sample_args['strategy'] != 'none':
         if dataset.label_field in dataset.inter_feat:
             raise ValueError(
-                f'It can not validate with `{es.es_str[1]}` '
+                f'It can not validate with `{config["eval_args"]["mode"]}` '
                 f'when inter_feat have label_field [{dataset.label_field}].'
             )
         if sampler is None:
@@ -158,7 +168,6 @@ def data_preparation(config, dataset, save=False):
         set_color('Build', 'pink') + set_color(f' [{dataloader.__name__}]', 'yellow') + ' for ' +
         set_color('[evaluation]', 'yellow') + ' with format ' + set_color(f'[{eval_kwargs["dl_format"]}]', 'yellow')
     )
-    logger.info(es)
     logger.info(
         set_color('[evaluation]', 'pink') + set_color(' batch_size', 'cyan') + ' = ' +
         set_color(f'[{eval_kwargs["batch_size"]}]', 'yellow') + ', ' + set_color('shuffle', 'cyan') + ' = ' +

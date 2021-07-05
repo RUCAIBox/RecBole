@@ -3,9 +3,9 @@
 # @Email  : chenyushuo@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/16
-# @Author : Yushuo Chen
-# @Email  : chenyushuo@ruc.edu.cn
+# @Time   : 2020/9/16, 2021/7/1
+# @Author : Yushuo Chen, Xingyu Pan
+# @Email  : chenyushuo@ruc.edu.cn, xy_pan@foxmail.com
 
 """
 recbole.data.sequential_dataset
@@ -134,22 +134,27 @@ class SequentialDataset(Dataset):
         local_inter_feat = self.inter_feat[self.mask]  # TODO: self.mask will applied to _history_matrix() in future
         return self._create_sparse_matrix(local_inter_feat, self.uid_field, self.iid_field, form, value_field)
 
-    def build(self, eval_setting):
+    def build(self):
+
         self._change_feat_format()
 
-        ordering_args = eval_setting.ordering_args
-        if ordering_args['strategy'] == 'shuffle':
+        
+        ordering_args = self.config['eval_args']['order']
+        if ordering_args == 'RO':
             raise ValueError('Ordering strategy `shuffle` is not supported in sequential models.')
-        elif ordering_args['strategy'] == 'by':
-            if ordering_args['field'] != self.time_field:
-                raise ValueError('Sequential models require `TO` (time ordering) strategy.')
-            if ordering_args['ascending'] is not True:
-                raise ValueError('Sequential models require `time_field` to sort in ascending order.')
 
-        group_field = eval_setting.group_field
+        group_by = self.config['eval_args']['group_by']
+        if group_by != 'user':
+            raise ValueError('The data splitting for Sequential models must be grouped by user.')
+            
+        split_args = self.config['eval_args']['split']
+        if split_args is None:
+            raise ValueError('The split_args in eval_args should not be None.')
+        if isinstance(split_args, dict) != True:
+            raise ValueError(f'The split_args [{split_args}] should be a dict.')
 
-        split_args = eval_setting.split_args
-        if split_args['strategy'] == 'loo':
-            return self.leave_one_out(group_by=group_field, leave_one_num=split_args['leave_one_num'])
+        split_mode = list(split_args.keys())[0] 
+        if split_mode == 'LS':
+            return self.leave_one_out(group_by=self.config['USER_ID_FIELD'], leave_one_num=split_args['LS'])
         else:
-            ValueError('Sequential models require `loo` (leave one out) split strategy.')
+            ValueError('Sequential models require `LS` (leave one out) split strategy.')

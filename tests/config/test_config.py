@@ -2,6 +2,10 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+# UPDATE:
+# @Time   : 2021/7/1
+# @Author : Xingyu Pan
+# @Email  : xy_pan@foxmail.com
 
 import os
 import unittest
@@ -43,10 +47,7 @@ class TestConfigClass(unittest.TestCase):
         self.assertIsInstance(config['stopping_step'], int)
         self.assertIsInstance(config['checkpoint_dir'], str)
 
-        self.assertIsInstance(config['eval_setting'], str)
-        self.assertIsInstance(config['group_by_user'], bool)
-        self.assertIsInstance(config['split_ratio'], list)
-        self.assertIsInstance(config['leave_one_num'], int)
+        self.assertIsInstance(config['eval_args'], dict)
         self.assertIsInstance(config['real_time_process'], bool)
         self.assertIsInstance(config['metrics'], list)
         self.assertIsInstance(config['topk'], list)
@@ -56,8 +57,11 @@ class TestConfigClass(unittest.TestCase):
     def test_default_context_settings(self):
         config = Config(model='FM', dataset='ml-100k')
 
-        self.assertEqual(config['eval_setting'], 'RO_RS')
-        self.assertEqual(config['group_by_user'], False)
+        self.assertEqual(config['eval_args']['split'], {'RS': [0.8,0.1,0.1]})
+        self.assertEqual(config['eval_args']['order'], 'RO')
+        self.assertEqual(config['eval_args']['mode'],'none')
+        self.assertEqual(config['eval_args']['group_by'], 'none')
+
         self.assertEqual(config['metrics'], ['AUC', 'LogLoss'])
         self.assertEqual(config['valid_metric'], 'AUC')
         self.assertEqual(config['training_neg_sample_num'], 0)
@@ -67,15 +71,21 @@ class TestConfigClass(unittest.TestCase):
             'training_neg_sample_num': 0
         }
         config = Config(model='SASRec', dataset='ml-100k', config_dict=para_dict)
-        self.assertEqual(config['eval_setting'], 'TO_LS,full')
-
+        self.assertEqual(config['eval_args']['split'], {'LS': 2})
+        self.assertEqual(config['eval_args']['order'], 'TO')
+        self.assertEqual(config['eval_args']['mode'],'full')
+        self.assertEqual(config['eval_args']['group_by'], 'user')
+        
     def test_config_file_list(self):
         config = Config(model='BPR', dataset='ml-100k', config_file_list=config_file_list)
 
         self.assertEqual(config['model'], 'BPR')
         self.assertEqual(config['learning_rate'], 0.1)
         self.assertEqual(config['topk'], [5, 20])
-        self.assertEqual(config['eval_setting'], 'TO_LS,full')
+        self.assertEqual(config['eval_args']['split'], {'LS': 2})
+        self.assertEqual(config['eval_args']['order'], 'TO')
+        self.assertEqual(config['eval_args']['mode'],'full')
+        self.assertEqual(config['eval_args']['group_by'], 'user')
 
     def test_config_dict(self):
         config = Config(model='BPR', dataset='ml-100k', config_dict=parameters_dict)
@@ -83,7 +93,10 @@ class TestConfigClass(unittest.TestCase):
         self.assertEqual(config['model'], 'BPR')
         self.assertEqual(config['learning_rate'], 0.2)
         self.assertEqual(config['topk'], [50, 100])
-        self.assertEqual(config['eval_setting'], 'RO_RS,full')
+        self.assertEqual(config['eval_args']['split'], {'RS': [0.8, 0.1, 0.1]})
+        self.assertEqual(config['eval_args']['order'], 'RO')
+        self.assertEqual(config['eval_args']['mode'],'full')
+        self.assertEqual(config['eval_args']['group_by'], 'user')
 
     # todo: add command line test examples
     def test_priority(self):
@@ -92,7 +105,10 @@ class TestConfigClass(unittest.TestCase):
 
         self.assertEqual(config['learning_rate'], 0.2)  # default, file, dict
         self.assertEqual(config['topk'], [50, 100])     # default, file, dict
-        self.assertEqual(config['eval_setting'], 'TO_LS,full')  # default, file
+        self.assertEqual(config['eval_args']['split'], {'LS': 2})
+        self.assertEqual(config['eval_args']['order'], 'TO')
+        self.assertEqual(config['eval_args']['mode'],'full')
+        self.assertEqual(config['eval_args']['group_by'], 'user')
         self.assertEqual(config['epochs'], 100)                 # default, dict
 
 

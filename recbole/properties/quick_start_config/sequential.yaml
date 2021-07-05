@@ -1,1 +1,5 @@
-eval_setting: TO_LS,full
+eval_args:
+  split: {'LS': 2}
+  order: TO
+  mode: full
+

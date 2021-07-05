@@ -3,9 +3,9 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2021/3/2, 2021/2/17
-# @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan
-# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn
+# @Time   : 2020/10/04, 2021/3/2, 2021/2/17, 2021/6/30
+# @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan, Xingyu Pan
+# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn, xy_pan@foxmail.com
 
 """
 recbole.config.configurator
@@ -306,6 +306,17 @@ class Config(object):
             ad_suf = self.final_config_dict['additional_feat_suffix']
             if isinstance(ad_suf, str):
                 self.final_config_dict['additional_feat_suffix'] = [ad_suf]
+
+        # eval_args checking
+        default_eval_args = {
+            'split': {'RS': [0.8, 0.1, 0.1]},
+            'order': 'RO',
+            'group_by': 'user',
+            'mode': 'full'
+        }
+        for op_args in default_eval_args:
+            if op_args not in self.final_config_dict['eval_args']:
+                self.final_config_dict['eval_args'][op_args] = default_eval_args[op_args]
 
     def _init_device(self):
         use_gpu = self.final_config_dict['use_gpu']

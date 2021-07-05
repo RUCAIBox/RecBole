@@ -23,10 +23,11 @@ weight_decay: 0.0
 draw_loss_pic: False
 
 # evaluation settings
-eval_setting: RO_RS,full
-group_by_user: True
-split_ratio: [0.8,0.1,0.1]
-leave_one_num: 2
+eval_args: 
+  split: {'RS':[0.8,0.1,0.1]}
+  group_by: user
+  order: RO
+  mode: full
 real_time_process: False
 metrics: ["Recall","MRR","NDCG","Hit","Precision"]
 topk: [10]
