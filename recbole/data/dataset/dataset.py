@@ -443,26 +443,35 @@ class Dataset(object):
         return df
 
     def _get_alias(self):
+        """Set :attr:`alias_of_user_id` and :attr:`alias_of_item_id`.
+        """
         self.alias_of_user_id = self.config['alias_of_user_id'] or []
-        self.alias_of_user_id.append(self.uid_field)
-        self.alias_of_user_id = set(self.alias_of_user_id)
+        self.alias_of_user_id = np.array([self.uid_field] + self.alias_of_user_id)
+        _, idx = np.unique(self.alias_of_user_id, return_index=True)
+        self.alias_of_user_id = self.alias_of_user_id[np.sort(idx)]
+
         self.alias_of_item_id = self.config['alias_of_item_id'] or []
-        self.alias_of_item_id.append(self.iid_field)
-        self.alias_of_item_id = set(self.alias_of_item_id)
+        self.alias_of_item_id = np.array([self.iid_field] + self.alias_of_item_id)
+        _, idx = np.unique(self.alias_of_item_id, return_index=True)
+        self.alias_of_item_id = self.alias_of_item_id[np.sort(idx)]
 
-        if self.alias_of_user_id & self.alias_of_item_id:
+        intersect = np.intersect1d(self.alias_of_user_id, self.alias_of_item_id, assume_unique=True)
+        if len(intersect) > 0:
             raise ValueError(f'`alias_of_user_id` and `alias_of_item_id` '
-                             f'should not have the same field {list(self.alias_of_user_id & self.alias_of_item_id)}.')
+                             f'should not have the same field {list(intersect)}.')
 
-        token_like_fields = set(self.token_like_fields)
-        if self.alias_of_user_id - token_like_fields:
+        token_like_fields = self.token_like_fields
+        user_isin = np.isin(self.alias_of_user_id, token_like_fields, assume_unique=True)
+        if user_isin.all() is False:
             raise ValueError(f'`alias_of_user_id` should not contain '
-                             f'non-token-like field {list(self.alias_of_user_id - token_like_fields)}.')
-        if self.alias_of_item_id - token_like_fields:
+                             f'non-token-like field {list(self.alias_of_user_id[~user_isin])}.')
+        item_isin = np.isin(self.alias_of_item_id, token_like_fields, assume_unique=True)
+        if item_isin.all() is False:
             raise ValueError(f'`alias_of_item_id` should not contain '
-                             f'non-token-like field {list(self.alias_of_item_id - token_like_fields)}.')
+                             f'non-token-like field {list(self.alias_of_item_id[~item_isin])}.')
 
-        self._rest_fields = token_like_fields - self.alias_of_user_id - self.alias_of_item_id
+        self._rest_fields = np.setdiff1d(token_like_fields, self.alias_of_user_id, assume_unique=True)
+        self._rest_fields = np.setdiff1d(self._rest_fields, self.alias_of_item_id, assume_unique=True)
 
     def _user_item_feat_preparation(self):
         """Sort :attr:`user_feat` and :attr:`item_feat` by ``user_id`` or ``item_id``.
@@ -883,7 +892,7 @@ class Dataset(object):
                 raise ValueError(f'Field [{field}] not in inter_feat.')
             self._del_col(self.inter_feat, field)
 
-    def _get_remap_list(self, field_set):
+    def _get_remap_list(self, field_list):
         """Transfer set of fields in the same remapping space into remap list.
 
         If ``uid_field`` or ``iid_field`` in ``field_set``,
@@ -891,7 +900,7 @@ class Dataset(object):
         then field in :attr:`user_feat` or :attr:`item_feat` will be remapped next, finally others.
 
         Args:
-            field_set (set): Set of fields in the same remapping space
+            field_list (numpy.ndarray): List of fields in the same remapping space.
 
         Returns:
             list:
@@ -903,7 +912,6 @@ class Dataset(object):
         """
 
         remap_list = []
-        field_list = sorted(field_set, key=lambda f: f != self.uid_field and f != self.iid_field)
         for field in field_list:
             ftype = self.field2type[field]
             for feat in self.field2feats(field):
@@ -911,23 +919,25 @@ class Dataset(object):
         return remap_list
 
     def _remap_ID_all(self):
+        """Remap all token-like fields.
         """
-        """
-        self._remap_user()
-        self._remap_item()
+        self._remap_alias()
         self._remap_rest()
 
-    def _remap_user(self):
+    def _remap_alias(self):
+        """Remap :attr:`alias_of_user_id` and :attr:`alias_of_item_id`.
+        """
         user_remap_list = self._get_remap_list(self.alias_of_user_id)
         self._remap(user_remap_list)
 
-    def _remap_item(self):
         item_remap_list = self._get_remap_list(self.alias_of_item_id)
         self._remap(item_remap_list)
 
     def _remap_rest(self):
+        """Remap other token-like fields.
+        """
         for field in self._rest_fields:
-            remap_list = self._get_remap_list({field})
+            remap_list = self._get_remap_list(np.array([field]))
             self._remap(remap_list)
 
     def _concat_remaped_tokens(self, remap_list):

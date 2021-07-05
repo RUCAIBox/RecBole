@@ -611,5 +611,25 @@ class TestSeqDataset:
         ]).all()
 
 
+class TestKGDataset:
+    def test_kg_remap_id(self):
+        config_dict = {
+            'model': 'KGAT',
+            'dataset': 'kg_remap_id',
+            'data_path': current_path,
+            'load_col': None,
+        }
+        dataset = new_dataset(config_dict=config_dict)
+        print(dataset.field2id_token['entity_id'])
+        item_list = dataset.token2id('item_id', ['ia', 'ib', 'ic', 'id'])
+        entity_list = dataset.token2id('entity_id', ['eb', 'ec', 'ed', 'ee', 'ea'])
+        assert (item_list == [1, 2, 3, 4]).all()
+        assert (entity_list == [2, 3, 4, 5, 6]).all()
+        assert (dataset.inter_feat['user_id'] == [1, 2, 3, 4]).all()
+        assert (dataset.inter_feat['item_id'] == [1, 2, 3, 4]).all()
+        assert (dataset.kg_feat['head_id'] == [2, 3, 4, 5]).all()
+        assert (dataset.kg_feat['tail_id'] == [6, 2, 3, 4]).all()
+
+
 if __name__ == "__main__":
     pytest.main()
