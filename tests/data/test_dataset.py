@@ -346,7 +346,6 @@ class TestDataset:
             'dataset': 'remap_id',
             'data_path': current_path,
             'load_col': None,
-            'fields_in_same_space': None,
         }
         dataset = new_dataset(config_dict=config_dict)
         user_list = dataset.token2id('user_id', ['ua', 'ub', 'uc', 'ud'])
@@ -362,16 +361,14 @@ class TestDataset:
         assert (dataset.inter_feat['user_list'][2] == [3, 4, 1]).all()
         assert (dataset.inter_feat['user_list'][3] == [5]).all()
 
-    def test_remap_id_with_fields_in_same_space(self):
+    def test_remap_id_with_alias(self):
         config_dict = {
             'model': 'BPR',
             'dataset': 'remap_id',
             'data_path': current_path,
             'load_col': None,
-            'fields_in_same_space': [
-                ['user_id', 'add_user', 'user_list'],
-                ['item_id', 'add_item'],
-            ],
+            'alias_of_user_id': ['add_user', 'user_list'],
+            'alias_of_item_id': ['add_item'],
         }
         dataset = new_dataset(config_dict=config_dict)
         user_list = dataset.token2id('user_id', ['ua', 'ub', 'uc', 'ud', 'ue', 'uf'])

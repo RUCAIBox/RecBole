@@ -105,6 +105,7 @@ class Dataset(object):
         self._get_preset()
         self._get_field_from_config()
         self._load_data(self.dataset_name, self.dataset_path)
+        self._get_alias()
         self._data_processing()
 
     def _get_preset(self):
@@ -440,6 +441,28 @@ class Dataset(object):
                 df[field] = [np.array(list(map(float, filter(None, _.split(seq_separator))))) for _ in df[field].values]
             self.field2seqlen[field] = max(map(len, df[field].values))
         return df
+
+    def _get_alias(self):
+        self.alias_of_user_id = self.config['alias_of_user_id'] or []
+        self.alias_of_user_id.append(self.uid_field)
+        self.alias_of_user_id = set(self.alias_of_user_id)
+        self.alias_of_item_id = self.config['alias_of_item_id'] or []
+        self.alias_of_item_id.append(self.iid_field)
+        self.alias_of_item_id = set(self.alias_of_item_id)
+
+        if self.alias_of_user_id & self.alias_of_item_id:
+            raise ValueError(f'`alias_of_user_id` and `alias_of_item_id` '
+                             f'should not have the same field {list(self.alias_of_user_id & self.alias_of_item_id)}.')
+
+        token_like_fields = set(self.token_like_fields)
+        if self.alias_of_user_id - token_like_fields:
+            raise ValueError(f'`alias_of_user_id` should not contain '
+                             f'non-token-like field {list(self.alias_of_user_id - token_like_fields)}.')
+        if self.alias_of_item_id - token_like_fields:
+            raise ValueError(f'`alias_of_item_id` should not contain '
+                             f'non-token-like field {list(self.alias_of_item_id - token_like_fields)}.')
+
+        self._rest_fields = token_like_fields - self.alias_of_user_id - self.alias_of_item_id
 
     def _user_item_feat_preparation(self):
         """Sort :attr:`user_feat` and :attr:`item_feat` by ``user_id`` or ``item_id``.
@@ -860,40 +883,6 @@ class Dataset(object):
                 raise ValueError(f'Field [{field}] not in inter_feat.')
             self._del_col(self.inter_feat, field)
 
-    def _get_fields_in_same_space(self):
-        """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
-
-        Note:
-            - Each field can only exist ONCE in ``config['fields_in_same_space']``.
-            - user_id and item_id can not exist in ``config['fields_in_same_space']``.
-            - only token-like fields can exist in ``config['fields_in_same_space']``.
-        """
-        fields_in_same_space = self.config['fields_in_same_space'] or []
-        fields_in_same_space = [set(_) for _ in fields_in_same_space]
-        additional = []
-        token_like_fields = self.token_like_fields
-        for field in token_like_fields:
-            count = 0
-            for field_set in fields_in_same_space:
-                if field in field_set:
-                    count += 1
-            if count == 0:
-                additional.append({field})
-            elif count == 1:
-                continue
-            else:
-                raise ValueError(f'Field [{field}] occurred in `fields_in_same_space` more than one time.')
-
-        for field_set in fields_in_same_space:
-            if self.uid_field in field_set and self.iid_field in field_set:
-                raise ValueError('uid_field and iid_field can\'t in the same ID space')
-            for field in field_set:
-                if field not in token_like_fields:
-                    raise ValueError(f'Field [{field}] is not a token-like field.')
-
-        fields_in_same_space.extend(additional)
-        return fields_in_same_space
-
     def _get_remap_list(self, field_set):
         """Transfer set of fields in the same remapping space into remap list.
 
@@ -912,29 +901,33 @@ class Dataset(object):
 
             They will be concatenated in order, and remapped together.
         """
+
         remap_list = []
-        for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
-            if field in field_set:
-                field_set.remove(field)
-                remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
-                if feat is not None:
-                    remap_list.append((feat, field, FeatureType.TOKEN))
-        for field in field_set:
-            source = self.field2source[field]
-            if isinstance(source, FeatureSource):
-                source = source.value
-            feat = getattr(self, f'{source}_feat')
+        field_list = sorted(field_set, key=lambda f: f != self.uid_field and f != self.iid_field)
+        for field in field_list:
             ftype = self.field2type[field]
-            remap_list.append((feat, field, ftype))
+            for feat in self.field2feats(field):
+                remap_list.append((feat, field, ftype))
         return remap_list
 
     def _remap_ID_all(self):
-        """Get ``config['fields_in_same_space']`` firstly, and remap each.
         """
-        fields_in_same_space = self._get_fields_in_same_space()
-        self.logger.debug(set_color('fields_in_same_space', 'blue') + f': {fields_in_same_space}')
-        for field_set in fields_in_same_space:
-            remap_list = self._get_remap_list(field_set)
+        """
+        self._remap_user()
+        self._remap_item()
+        self._remap_rest()
+
+    def _remap_user(self):
+        user_remap_list = self._get_remap_list(self.alias_of_user_id)
+        self._remap(user_remap_list)
+
+    def _remap_item(self):
+        item_remap_list = self._get_remap_list(self.alias_of_item_id)
+        self._remap(item_remap_list)
+
+    def _remap_rest(self):
+        for field in self._rest_fields:
+            remap_list = self._get_remap_list({field})
             self._remap(remap_list)
 
     def _concat_remaped_tokens(self, remap_list):
@@ -1086,6 +1079,24 @@ class Dataset(object):
         self.field2type[dest_field] = self.field2type[source_field]
         self.field2source[dest_field] = self.field2source[source_field]
         self.field2seqlen[dest_field] = self.field2seqlen[source_field]
+
+    def field2feats(self, field):
+        if field not in self.field2source:
+            raise ValueError(f'Field [{field}] not defined in dataset.')
+        if field == self.uid_field:
+            feats = [self.inter_feat]
+            if self.user_feat is not None:
+                feats.append(self.user_feat)
+        elif field == self.iid_field:
+            feats = [self.inter_feat]
+            if self.item_feat is not None:
+                feats.append(self.item_feat)
+        else:
+            source = self.field2source[field]
+            if not isinstance(source, str):
+                source = source.value
+            feats = [getattr(self, f'{source}_feat')]
+        return feats
 
     def token2id(self, field, tokens):
         """Map external tokens to internal ids.

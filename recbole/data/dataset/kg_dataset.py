@@ -59,17 +59,13 @@ class KnowledgeBasedDataset(Dataset):
 
     Note:
         :attr:`entity_field` doesn't exist exactly. It's only a symbol,
-        representing entity features. E.g. it can be written into ``config['fields_in_same_space']``.
+        representing entity features.
 
         ``[UI-Relation]`` is a special relation token.
     """
 
     def __init__(self, config):
         super().__init__(config)
-
-    def _get_preset(self):
-        super()._get_preset()
-        self.field2ent_level = {}
 
     def _get_field_from_config(self):
         super()._get_field_from_config()
@@ -83,10 +79,6 @@ class KnowledgeBasedDataset(Dataset):
 
         self.logger.debug(set_color('relation_field', 'blue') + f': {self.relation_field}')
         self.logger.debug(set_color('entity_field', 'blue') + f': {self.entity_field}')
-
-    def _data_processing(self):
-        self._set_field2ent_level()
-        super()._data_processing()
 
     def _data_filtering(self):
         super()._data_filtering()
@@ -157,9 +149,6 @@ class KnowledgeBasedDataset(Dataset):
             feat_name_list.append('kg_feat')
         return feat_name_list
 
-    def _restore_saved_dataset(self, saved_dataset):
-        raise NotImplementedError()
-
     def save(self, filepath):
         raise NotImplementedError()
 
@@ -197,194 +186,129 @@ class KnowledgeBasedDataset(Dataset):
         assert self.entity_field in link, link_warn_message.format(self.entity_field)
         assert self.iid_field in link, link_warn_message.format(self.iid_field)
 
-    def _get_fields_in_same_space(self):
-        """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
-
-        Note:
-            - Each field can only exist ONCE in ``config['fields_in_same_space']``.
-            - user_id and item_id can not exist in ``config['fields_in_same_space']``.
-            - only token-like fields can exist in ``config['fields_in_same_space']``.
-            - ``head_entity_id`` and ``target_entity_id`` should be remapped with ``item_id``.
+    def _get_alias(self):
+        """Add :attr:`alias_of_entity_id` and update :attr:`_rest_fields`
         """
-        fields_in_same_space = super()._get_fields_in_same_space()
-        fields_in_same_space = [_ for _ in fields_in_same_space if not self._contain_ent_field(_)]
-        ent_fields = self._get_ent_fields_in_same_space()
-        for field_set in fields_in_same_space:
-            if self.iid_field in field_set:
-                field_set.update(ent_fields)
-        return fields_in_same_space
+        super()._get_alias()
+        self.alias_of_entity_id = self.config['alias_of_entity_id'] or []
+        self.alias_of_entity_id.extend([self.head_entity_field, self.tail_entity_field])
+        self.alias_of_entity_id = set(self.alias_of_entity_id)
 
-    def _contain_ent_field(self, field_set):
-        """Return True if ``field_set`` contains entity fields.
-        """
-        flag = False
-        flag |= self.head_entity_field in field_set
-        flag |= self.tail_entity_field in field_set
-        flag |= self.entity_field in field_set
-        return flag
+        if self.alias_of_entity_id & self.alias_of_user_id:
+            raise ValueError(f'`alias_of_entity_id` and `alias_of_user_id` '
+                             f'should not have the same field {list(self.alias_of_entity_id & self.alias_of_user_id)}.')
+        if self.alias_of_entity_id & self.alias_of_item_id:
+            raise ValueError(f'`alias_of_entity_id` and `alias_of_item_id` '
+                             f'should not have the same field {list(self.alias_of_entity_id & self.alias_of_item_id)}.')
 
-    def _get_ent_fields_in_same_space(self):
-        """Return ``field_set`` that should be remapped together with entities.
-        """
-        fields_in_same_space = super()._get_fields_in_same_space()
+        token_like_fields = set(self.token_like_fields)
+        if self.alias_of_entity_id - token_like_fields:
+            raise ValueError(f'`alias_of_entity_id` should not contain '
+                             f'non-token-like field {list(self.alias_of_entity_id - token_like_fields)}.')
 
-        ent_fields = {self.head_entity_field, self.tail_entity_field}
-        for field_set in fields_in_same_space:
-            if self._contain_ent_field(field_set):
-                field_set = self._remove_ent_field(field_set)
-                ent_fields.update(field_set)
-        self.logger.debug(set_color('ent_fields', 'blue') + f': {fields_in_same_space}')
-        return ent_fields
-
-    def _remove_ent_field(self, field_set):
-        """Delete entity fields from ``field_set``.
-        """
-        for field in [self.head_entity_field, self.tail_entity_field, self.entity_field]:
-            if field in field_set:
-                field_set.remove(field)
-        return field_set
-
-    def _set_field2ent_level(self):
-        """For fields that remapped together with ``item_id``,
-        set their levels as ``rec``, otherwise as ``ent``.
-        """
-        fields_in_same_space = self._get_fields_in_same_space()
-        for field_set in fields_in_same_space:
-            if self.iid_field in field_set:
-                for field in field_set:
-                    self.field2ent_level[field] = 'rec'
-        ent_fields = self._get_ent_fields_in_same_space()
-        for field in ent_fields:
-            self.field2ent_level[field] = 'ent'
-
-    def _fields_by_ent_level(self, ent_level):
-        """Given ``ent_level``, return all the field name of this level.
-        """
-        ret = []
-        for field in self.field2ent_level:
-            if self.field2ent_level[field] == ent_level:
-                ret.append(field)
-        return ret
-
-    @property
-    def rec_level_ent_fields(self):
-        """Get entity fields remapped together with ``item_id``.
-
-        Returns:
-            list: List of field names.
-        """
-        return self._fields_by_ent_level('rec')
-
-    @property
-    def ent_level_ent_fields(self):
-        """Get entity fields remapped together with ``entity_id``.
-
-        Returns:
-            list: List of field names.
-        """
-        return self._fields_by_ent_level('ent')
-
-    def _remap_entities_by_link(self):
-        """Map entity tokens from fields in ``ent`` level
-        to item tokens according to ``.link``.
-        """
-        for ent_field in self.ent_level_ent_fields:
-            source = self.field2source[ent_field]
-            if not isinstance(source, str):
-                source = source.value
-            feat = getattr(self, f'{source}_feat')
-            entity_list = feat[ent_field].values
-            for i, entity_id in enumerate(entity_list):
-                if entity_id in self.entity2item:
-                    entity_list[i] = self.entity2item[entity_id]
-            feat[ent_field] = entity_list
+        self._rest_fields = self._rest_fields - self.alias_of_entity_id - {self.entity_field}
 
     def _get_rec_item_token(self):
         """Get set of entity tokens from fields in ``rec`` level.
         """
-        field_set = set(self.rec_level_ent_fields)
-        remap_list = self._get_remap_list(field_set)
+        remap_list = self._get_remap_list(self.alias_of_item_id)
         tokens, _ = self._concat_remaped_tokens(remap_list)
         return set(tokens)
 
     def _get_entity_token(self):
         """Get set of entity tokens from fields in ``ent`` level.
         """
-        field_set = set(self.ent_level_ent_fields)
-        remap_list = self._get_remap_list(field_set)
+        remap_list = self._get_remap_list(self.alias_of_entity_id)
         tokens, _ = self._concat_remaped_tokens(remap_list)
         return set(tokens)
 
-    def _reset_ent_remapID(self, field, new_id_token):
-        token2id = {}
-        for i, token in enumerate(new_id_token):
-            token2id[token] = i
-        idmap = {}
-        for i, token in enumerate(self.field2id_token[field]):
-            if token not in token2id:
-                continue
-            new_idx = token2id[token]
-            idmap[i] = new_idx
-        source = self.field2source[field]
-        if not isinstance(source, str):
-            source = source.value
-        if source == 'item_id':
-            feats = [self.inter_feat]
-            if self.item_feat is not None:
-                feats.append(self.item_feat)
-        else:
-            feats = [getattr(self, f'{source}_feat')]
-        for feat in feats:
-            old_idx = feat[field].values
-            new_idx = np.array([idmap[_] for _ in old_idx])
-            feat[field] = new_idx
+    def _remap_entities_by_link(self):
+        """Map entity tokens from fields in ``ent`` level
+        to item tokens according to ``.link``.
+        """
+        for ent_field in self.alias_of_entity_id:
+            feat = self.field2feats(ent_field)[0]
+            ftype = self.field2type[ent_field]
+            if ftype == FeatureType.TOKEN:
+                entity_list = feat[ent_field].values
+            else:
+                entity_list = feat[ent_field].agg(np.concatenate)
+
+            for i, entity_id in enumerate(entity_list):
+                if entity_id in self.entity2item:
+                    entity_list[i] = self.entity2item[entity_id]
+
+            if ftype == FeatureType.TOKEN:
+                feat[ent_field] = entity_list
+            else:
+                split_point = np.cumsum(feat[ent_field].agg(len))[:-1]
+                feat[ent_field] = np.split(entity_list, split_point)
+
+    def _reset_ent_remapID(self, field, idmap):
+        for feat in self.field2feats(field):
+            ftype = self.field2type[field]
+            if ftype == FeatureType.TOKEN:
+                old_idx = feat[field].values
+            else:
+                old_idx = feat[field].agg(np.concatenate)
+
+            new_idx = idmap[old_idx]
+
+            if ftype == FeatureType.TOKEN:
+                feat[field] = new_idx
+            else:
+                split_point = np.cumsum(feat[field].agg(len))[:-1]
+                feat[field] = np.split(new_idx, split_point)
 
     def _sort_remaped_entities(self, item_tokens):
-        item2order = {}
+        level_list = []
         for token in self.field2id_token[self.iid_field]:
             if token == '[PAD]':
-                item2order[token] = 0
+                level_list.append(0)
             elif token in item_tokens and token not in self.item2entity:
-                item2order[token] = 1
+                level_list.append(1)
             elif token in self.item2entity or token in self.entity2item:
-                item2order[token] = 2
+                level_list.append(2)
             else:
-                item2order[token] = 3
-        item_ent_token_list = list(self.field2id_token[self.iid_field])
-        item_ent_token_list.sort(key=lambda t: item2order[t])
-        item_ent_token_list = np.array(item_ent_token_list)
-        order_list = [item2order[_] for _ in item_ent_token_list]
-        order_cnt = Counter(order_list)
-        layered_num = []
-        for i in range(4):
-            layered_num.append(order_cnt[i])
-        layered_num = np.cumsum(np.array(layered_num))
-        new_id_token = item_ent_token_list[:layered_num[-2]]
+                level_list.append(3)
+        level_list = np.array(level_list)
+        order_list = np.argsort(level_list)
+        token_list = self.field2id_token[self.iid_field][order_list]
+        idmap = np.zeros_like(order_list)
+        idmap[order_list] = np.arange(len(order_list))
+        item_num = np.sum(level_list < 3)
+
+        new_id_token = token_list[:item_num]
         new_token_id = {t: i for i, t in enumerate(new_id_token)}
-        for field in self.rec_level_ent_fields:
-            self._reset_ent_remapID(field, new_id_token)
+        for field in self.alias_of_item_id:
+            self._reset_ent_remapID(field, idmap)
             self.field2id_token[field] = new_id_token
             self.field2token_id[field] = new_token_id
-        new_id_token = item_ent_token_list[:layered_num[-1]]
-        new_id_token = [self.item2entity[_] if _ in self.item2entity else _ for _ in new_id_token]
+
+        new_id_token = np.array([self.item2entity[_] if _ in self.item2entity else _ for _ in token_list])
         new_token_id = {t: i for i, t in enumerate(new_id_token)}
-        for field in self.ent_level_ent_fields:
-            self._reset_ent_remapID(field, item_ent_token_list[:layered_num[-1]])
+        for field in self.alias_of_entity_id:
+            self._reset_ent_remapID(field, idmap)
             self.field2id_token[field] = new_id_token
             self.field2token_id[field] = new_token_id
         self.field2id_token[self.entity_field] = new_id_token
         self.field2token_id[self.entity_field] = new_token_id
 
     def _remap_ID_all(self):
-        """Firstly, remap entities and items all together. Then sort entity tokens,
-        then three kinds of entities can be apart away from each other.
+        super()._remap_ID_all()
+        self.field2token_id[self.relation_field]['[UI-Relation]'] = len(self.field2id_token[self.relation_field])
+        self.field2id_token[self.relation_field] = np.append(self.field2id_token[self.relation_field], '[UI-Relation]')
+
+    def _remap_item(self):
+        """
         """
         self._remap_entities_by_link()
         item_tokens = self._get_rec_item_token()
-        super()._remap_ID_all()
+
+        item_remap_list = self._get_remap_list(self.alias_of_item_id | self.alias_of_entity_id)
+        self._remap(item_remap_list)
+
         self._sort_remaped_entities(item_tokens)
-        self.field2token_id[self.relation_field]['[UI-Relation]'] = len(self.field2id_token[self.relation_field])
-        self.field2id_token[self.relation_field] = np.append(self.field2id_token[self.relation_field], '[UI-Relation]')
 
     @property
     def relation_num(self):
