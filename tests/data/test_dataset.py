@@ -4,16 +4,16 @@
 # @Email  : chenyushuo@ruc.edu.cn
 
 # UPDATE
-# @Time    :   2020/1/3
-# @Author  :   Yushuo Chen
-# @email   :   chenyushuo@ruc.edu.cn
+# @Time    :   2020/1/3, 2021/7/1
+# @Author  :   Yushuo Chen, Xingyu Pan
+# @email   :   chenyushuo@ruc.edu.cn, xy_pan@foxmail.com
 
 import logging
 import os
 
 import pytest
 
-from recbole.config import Config, EvalSetting
+from recbole.config import Config
 from recbole.data import create_dataset
 from recbole.utils import init_seed
 
@@ -29,11 +29,7 @@ def new_dataset(config_dict=None, config_file_list=None):
 
 def split_dataset(config_dict=None, config_file_list=None):
     dataset = new_dataset(config_dict=config_dict, config_file_list=config_file_list)
-    config = dataset.config
-    es_str = [_.strip() for _ in config['eval_setting'].split(',')]
-    es = EvalSetting(config)
-    es.set_ordering_and_splitting(es_str[0])
-    return dataset.build(es)
+    return dataset.build()
 
 
 class TestDataset:
@@ -462,8 +458,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS',
-            'split_ratio': [0.8, 0.1, 0.1],
+            'eval_args':{'split': {'RS':[0.8, 0.1, 0.1]}, 'order':'TO','mode':'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1] + [1, 2, 3] +
@@ -479,8 +474,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS',
-            'split_ratio': [0.8, 0.2, 0.0],
+            'eval_args':{'split': {'RS':[0.8, 0.2, 0.0]}, 'order':'TO', 'mode':'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
@@ -495,8 +489,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS',
-            'split_ratio': [0.8, 0.0, 0.2],
+            'eval_args':{'split': {'RS':[0.8, 0.0, 0.2]}, 'order':'TO', 'mode':'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
@@ -511,8 +504,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_LS',
-            'leave_one_num': 2,
+            'eval_args':{'split': {'LS': 2}, 'order':'TO', 'mode':'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 19)) + [1] + [1] + [1] + [1, 2, 3] +
@@ -528,8 +520,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'RO_RS',
-            'split_ratio': [0.8, 0.1, 0.1],
+            'eval_args':{'split': {'RS':[0.8, 0.1, 0.1]}, 'order':'RO', 'mode':'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 1 + 3 + 7 + 8 + 9
@@ -542,8 +533,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'RO_RS',
-            'split_ratio': [0.8, 0.2, 0.0],
+            'eval_args':{'split': {'RS':[0.8, 0.2, 0.0]}, 'order':'RO', 'mode':'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 2 + 4 + 8 + 8 + 9
@@ -556,8 +546,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'RO_RS',
-            'split_ratio': [0.8, 0.0, 0.2],
+            'eval_args':{'split': {'RS':[0.8, 0.0, 0.2]}, 'order':'RO', 'mode':'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 2 + 4 + 8 + 8 + 9
