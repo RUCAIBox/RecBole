@@ -342,7 +342,6 @@ class TestDataset:
             'dataset': 'remap_id',
             'data_path': current_path,
             'load_col': None,
-            'fields_in_same_space': None,
         }
         dataset = new_dataset(config_dict=config_dict)
         user_list = dataset.token2id('user_id', ['ua', 'ub', 'uc', 'ud'])
@@ -358,16 +357,14 @@ class TestDataset:
         assert (dataset.inter_feat['user_list'][2] == [3, 4, 1]).all()
         assert (dataset.inter_feat['user_list'][3] == [5]).all()
 
-    def test_remap_id_with_fields_in_same_space(self):
+    def test_remap_id_with_alias(self):
         config_dict = {
             'model': 'BPR',
             'dataset': 'remap_id',
             'data_path': current_path,
             'load_col': None,
-            'fields_in_same_space': [
-                ['user_id', 'add_user', 'user_list'],
-                ['item_id', 'add_item'],
-            ],
+            'alias_of_user_id': ['add_user', 'user_list'],
+            'alias_of_item_id': ['add_item'],
         }
         dataset = new_dataset(config_dict=config_dict)
         user_list = dataset.token2id('user_id', ['ua', 'ub', 'uc', 'ud', 'ue', 'uf'])
@@ -601,6 +598,26 @@ class TestSeqDataset:
             [0., 0., 0., 0., 1., 1., 1., 0., 0.],
             [0., 0., 0., 1., 1., 0., 0., 0., 0.],
         ]).all()
+
+
+class TestKGDataset:
+    def test_kg_remap_id(self):
+        config_dict = {
+            'model': 'KGAT',
+            'dataset': 'kg_remap_id',
+            'data_path': current_path,
+            'load_col': None,
+        }
+        dataset = new_dataset(config_dict=config_dict)
+        print(dataset.field2id_token['entity_id'])
+        item_list = dataset.token2id('item_id', ['ia', 'ib', 'ic', 'id'])
+        entity_list = dataset.token2id('entity_id', ['eb', 'ec', 'ed', 'ee', 'ea'])
+        assert (item_list == [1, 2, 3, 4]).all()
+        assert (entity_list == [2, 3, 4, 5, 6]).all()
+        assert (dataset.inter_feat['user_id'] == [1, 2, 3, 4]).all()
+        assert (dataset.inter_feat['item_id'] == [1, 2, 3, 4]).all()
+        assert (dataset.kg_feat['head_id'] == [2, 3, 4, 5]).all()
+        assert (dataset.kg_feat['tail_id'] == [6, 2, 3, 4]).all()
 
 
 if __name__ == "__main__":
