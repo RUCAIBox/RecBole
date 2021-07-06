@@ -4,9 +4,9 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :    2021/7/2
-# @Author  :    Zihan Lin
-# @email   :    zhlin@ruc.edu.cn
+# @Time    :    2021/7/2, 2021/7/5
+# @Author  :    Zihan Lin, Zhichao Feng
+# @email   :    zhlin@ruc.edu.cn, fzcbupt@gmail.com
 
 import os
 import sys
@@ -38,6 +38,8 @@ item_matrix = np.array([
     [1, 4, 6],
     [5, 3, 7]
 ])
+
+num_items = 8
 
 item_count = {1: 0,
               2: 1,
@@ -105,6 +107,13 @@ class TestTopKMetrics(unittest.TestCase):
             np.array([[0, 0, 0], [1 / 1, 2 / 2, 3 / 3], [1 / 1, 1 / 2, 2 / 3],
                       [0, 0, 1 / 3]]).tolist())
 
+    def test_itemcoverage(self):
+        name = 'itemcoverage'
+        Metric = metrics_dict[name](config)
+        self.assertEqual(
+            Metric.get_coverage(item_matrix, num_items),
+            7 / 8)
+
     def test_averagepopularity(self):
         name = 'averagepopularity'
         Metric = metrics_dict[name](config)
@@ -113,13 +122,21 @@ class TestTopKMetrics(unittest.TestCase):
             np.array([[4/1, 4/2, 6/3], [3/1, 7/2, 8/3], [1/1, 3/2, 7/3], [0/1, 3/2, 8/3],
                       [4/1, 6/2, 6/3]]).tolist())
 
-    def test_ShannonEntropy(self):
+    def test_giniindex(self):
+        name = 'giniindex'
+        Metric = metrics_dict[name](config)
+        self.assertEqual(
+            Metric.get_gini(item_matrix, num_items),
+            ((-7) * 0 + (-5) * 1 + (-3) * 1 + (-1) * 2 + 1 * 2 + 3 * 2 + 5 * 3 + 7 * 4)
+            / (8 * (3 * 5)))
+
+    def test_shannonentropy(self):
         name = 'shannonentropy'
         Metric = metrics_dict[name](config)
         self.assertEqual(
             Metric.get_entropy(item_matrix),
             -np.mean([1/15*np.log(1/15), 2/15*np.log(2/15), 3/15*np.log(3/15), 2/15*np.log(2/15),
-                    4/15*np.log(4/15), 1/15*np.log(1/15), 2/15*np.log(2/15)]))
+                     4/15*np.log(4/15), 1/15*np.log(1/15), 2/15*np.log(2/15)]))
 
 
 if __name__ == "__main__":
