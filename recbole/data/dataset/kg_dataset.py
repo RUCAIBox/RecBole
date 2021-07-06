@@ -186,44 +186,27 @@ class KnowledgeBasedDataset(Dataset):
         assert self.entity_field in link, link_warn_message.format(self.entity_field)
         assert self.iid_field in link, link_warn_message.format(self.iid_field)
 
-    def _get_alias(self):
-        """Add :attr:`alias_of_entity_id` and update :attr:`_rest_fields`
+    def _init_alias(self):
+        """Add :attr:`alias_of_entity_id`, :attr:`alias_of_relation_id` and update :attr:`_rest_fields`.
         """
-        super()._get_alias()
-        self.alias_of_entity_id = self.config['alias_of_entity_id'] or []
-        self.alias_of_entity_id = np.array([self.head_entity_field, self.tail_entity_field] + self.alias_of_entity_id)
-        _, idx = np.unique(self.alias_of_entity_id, return_index=True)
-        self.alias_of_entity_id = self.alias_of_entity_id[np.sort(idx)]
+        self._set_alias('entity_id', [self.head_entity_field, self.tail_entity_field])
+        self._set_alias('relation_id', [self.relation_field])
 
-        intersect = np.intersect1d(self.alias_of_entity_id, self.alias_of_user_id, assume_unique=True)
-        if len(intersect) > 0:
-            raise ValueError(f'`alias_of_entity_id` and `alias_of_user_id` '
-                             f'should not have the same field {list(intersect)}.')
-        intersect = np.intersect1d(self.alias_of_entity_id, self.alias_of_item_id, assume_unique=True)
-        if len(intersect) > 0:
-            raise ValueError(f'`alias_of_entity_id` and `alias_of_item_id` '
-                             f'should not have the same field {list(intersect)}.')
+        super()._init_alias()
 
-        token_like_fields = self.token_like_fields
-        entity_isin = np.isin(self.alias_of_entity_id, token_like_fields, assume_unique=True)
-        if entity_isin.all() is False:
-            raise ValueError(f'`alias_of_entity_id` should not contain '
-                             f'non-token-like field {list(self.alias_of_entity_id[~entity_isin])}.')
-
-        self._rest_fields = np.setdiff1d(self._rest_fields, self.alias_of_entity_id, assume_unique=True)
         self._rest_fields = np.setdiff1d(self._rest_fields, [self.entity_field], assume_unique=True)
 
     def _get_rec_item_token(self):
         """Get set of entity tokens from fields in ``rec`` level.
         """
-        remap_list = self._get_remap_list(self.alias_of_item_id)
+        remap_list = self._get_remap_list(self.alias['item_id'])
         tokens, _ = self._concat_remaped_tokens(remap_list)
         return set(tokens)
 
     def _get_entity_token(self):
         """Get set of entity tokens from fields in ``ent`` level.
         """
-        remap_list = self._get_remap_list(self.alias_of_entity_id)
+        remap_list = self._get_remap_list(self.alias['entity_id'])
         tokens, _ = self._concat_remaped_tokens(remap_list)
         return set(tokens)
 
@@ -261,7 +244,7 @@ class KnowledgeBasedDataset(Dataset):
         item_id_map[item_order] = np.arange(item_num)
         new_item_id2token = item_token[item_order]
         new_item_token2id = {t: i for i, t in enumerate(new_item_id2token)}
-        for field in self.alias_of_item_id:
+        for field in self.alias['item_id']:
             self._reset_ent_remapID(field, item_id_map, new_item_id2token, new_item_token2id)
 
         # reset entity id
@@ -275,24 +258,16 @@ class KnowledgeBasedDataset(Dataset):
         for i in range(item_num - link_num, item_num):
             new_entity_id2token[i] = self.item2entity[new_entity_id2token[i]]
         new_entity_token2id = {t: i for i, t in enumerate(new_entity_id2token)}
-        for field in self.alias_of_entity_id:
+        for field in self.alias['entity_id']:
             self._reset_ent_remapID(field, entity_id_map, new_entity_id2token, new_entity_token2id)
         self.field2id_token[self.entity_field] = new_entity_id2token
         self.field2token_id[self.entity_field] = new_entity_token2id
 
     def _remap_ID_all(self):
         super()._remap_ID_all()
+        self._merge_item_and_entity()
         self.field2token_id[self.relation_field]['[UI-Relation]'] = len(self.field2id_token[self.relation_field])
         self.field2id_token[self.relation_field] = np.append(self.field2id_token[self.relation_field], '[UI-Relation]')
-
-    def _remap_alias(self):
-        """Remap :attr:`alias_of_entity_id` additionally.
-        """
-        super()._remap_alias()
-        entity_remap_list = self._get_remap_list(self.alias_of_entity_id)
-        self._remap(entity_remap_list)
-
-        self._merge_item_and_entity()
 
     @property
     def relation_num(self):

@@ -105,7 +105,7 @@ class Dataset(object):
         self._get_preset()
         self._get_field_from_config()
         self._load_data(self.dataset_name, self.dataset_path)
-        self._get_alias()
+        self._init_alias()
         self._data_processing()
 
     def _get_preset(self):
@@ -118,6 +118,7 @@ class Dataset(object):
         self.field2id_token = {}
         self.field2token_id = {}
         self.field2seqlen = self.config['seq_len'] or {}
+        self.alias = {}
         self._preloaded_weight = {}
         self.benchmark_filename_list = self.config['benchmark_filename']
 
@@ -442,36 +443,33 @@ class Dataset(object):
             self.field2seqlen[field] = max(map(len, df[field].values))
         return df
 
-    def _get_alias(self):
-        """Set :attr:`alias_of_user_id` and :attr:`alias_of_item_id`.
+    def _set_alias(self, alias_name, default_value):
+        alias = self.config[f'alias_of_{alias_name}'] or []
+        alias = np.array(default_value + alias)
+        _, idx = np.unique(alias, return_index=True)
+        self.alias[alias_name] = alias[np.sort(idx)]
+
+    def _init_alias(self):
+        """Set :attr:`alias_of_user_id` and :attr:`alias_of_item_id`. And set :attr:`_rest_fields`.
         """
-        self.alias_of_user_id = self.config['alias_of_user_id'] or []
-        self.alias_of_user_id = np.array([self.uid_field] + self.alias_of_user_id)
-        _, idx = np.unique(self.alias_of_user_id, return_index=True)
-        self.alias_of_user_id = self.alias_of_user_id[np.sort(idx)]
+        self._set_alias('user_id', [self.uid_field])
+        self._set_alias('item_id', [self.iid_field])
 
-        self.alias_of_item_id = self.config['alias_of_item_id'] or []
-        self.alias_of_item_id = np.array([self.iid_field] + self.alias_of_item_id)
-        _, idx = np.unique(self.alias_of_item_id, return_index=True)
-        self.alias_of_item_id = self.alias_of_item_id[np.sort(idx)]
+        for alias_name_1, alias_1 in self.alias.items():
+            for alias_name_2, alias_2 in self.alias.items():
+                if alias_name_1 != alias_name_2:
+                    intersect = np.intersect1d(alias_1, alias_2, assume_unique=True)
+                    if len(intersect) > 0:
+                        raise ValueError(f'`alias_of_{alias_name_1}` and `alias_of_{alias_name_2}` '
+                                         f'should not have the same field {list(intersect)}.')
 
-        intersect = np.intersect1d(self.alias_of_user_id, self.alias_of_item_id, assume_unique=True)
-        if len(intersect) > 0:
-            raise ValueError(f'`alias_of_user_id` and `alias_of_item_id` '
-                             f'should not have the same field {list(intersect)}.')
-
-        token_like_fields = self.token_like_fields
-        user_isin = np.isin(self.alias_of_user_id, token_like_fields, assume_unique=True)
-        if user_isin.all() is False:
-            raise ValueError(f'`alias_of_user_id` should not contain '
-                             f'non-token-like field {list(self.alias_of_user_id[~user_isin])}.')
-        item_isin = np.isin(self.alias_of_item_id, token_like_fields, assume_unique=True)
-        if item_isin.all() is False:
-            raise ValueError(f'`alias_of_item_id` should not contain '
-                             f'non-token-like field {list(self.alias_of_item_id[~item_isin])}.')
-
-        self._rest_fields = np.setdiff1d(token_like_fields, self.alias_of_user_id, assume_unique=True)
-        self._rest_fields = np.setdiff1d(self._rest_fields, self.alias_of_item_id, assume_unique=True)
+        self._rest_fields = self.token_like_fields
+        for alias_name, alias in self.alias.items():
+            isin = np.isin(alias, self._rest_fields, assume_unique=True)
+            if isin.all() is False:
+                raise ValueError(f'`alias_of_{alias_name}` should not contain '
+                                 f'non-token-like field {list(alias[~isin])}.')
+            self._rest_fields = np.setdiff1d(self._rest_fields, alias, assume_unique=True)
 
     def _user_item_feat_preparation(self):
         """Sort :attr:`user_feat` and :attr:`item_feat` by ``user_id`` or ``item_id``.
@@ -921,21 +919,10 @@ class Dataset(object):
     def _remap_ID_all(self):
         """Remap all token-like fields.
         """
-        self._remap_alias()
-        self._remap_rest()
+        for alias in self.alias.values():
+            remap_list = self._get_remap_list(alias)
+            self._remap(remap_list)
 
-    def _remap_alias(self):
-        """Remap :attr:`alias_of_user_id` and :attr:`alias_of_item_id`.
-        """
-        user_remap_list = self._get_remap_list(self.alias_of_user_id)
-        self._remap(user_remap_list)
-
-        item_remap_list = self._get_remap_list(self.alias_of_item_id)
-        self._remap(item_remap_list)
-
-    def _remap_rest(self):
-        """Remap other token-like fields.
-        """
         for field in self._rest_fields:
             remap_list = self._get_remap_list(np.array([field]))
             self._remap(remap_list)

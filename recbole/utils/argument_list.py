@@ -47,7 +47,7 @@ dataset_arguments = [
     'load_col', 'unload_col', 'unused_col', 'additional_feat_suffix',
     'max_user_inter_num', 'min_user_inter_num', 'max_item_inter_num', 'min_item_inter_num',
     'lowest_val', 'highest_val', 'equal_val', 'not_equal_val',
-    'alias_of_user_id', 'alias_of_item_id', 'alias_of_entity_id',
+    'alias_of_user_id', 'alias_of_item_id', 'alias_of_entity_id', 'alias_of_relation_id',
     'preload_weight',
     'normalize_field', 'normalize_all'
 ]
