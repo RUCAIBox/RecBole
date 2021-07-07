@@ -19,8 +19,7 @@ import pickle
 
 from recbole.data.dataloader import *
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
-from recbole.utils import ModelType, ensure_dir, get_local_time
-from recbole.utils.utils import set_color
+from recbole.utils import ModelType, ensure_dir, get_local_time, set_color
 
 
 def create_dataset(config):

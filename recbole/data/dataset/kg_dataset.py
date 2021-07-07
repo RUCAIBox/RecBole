@@ -20,8 +20,7 @@ import torch
 from scipy.sparse import coo_matrix
 
 from recbole.data.dataset import Dataset
-from recbole.utils import FeatureSource, FeatureType
-from recbole.utils.utils import set_color
+from recbole.utils import FeatureSource, FeatureType, set_color
 from recbole.utils.url import decide_download, download_url, extract_zip
 
 

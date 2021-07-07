@@ -30,8 +30,7 @@ from tqdm import tqdm
 from recbole.data.interaction import Interaction
 from recbole.evaluator import ProxyEvaluator
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
-    DataLoaderType, KGDataLoaderState, get_tensorboard
-from recbole.utils.utils import set_color
+    DataLoaderType, KGDataLoaderState, get_tensorboard, set_color
 
 
 class AbstractTrainer(object):
