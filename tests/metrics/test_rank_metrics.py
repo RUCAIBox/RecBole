@@ -3,6 +3,10 @@
 # @Author  :   Zhichao Feng
 # @email   :   fzcbupt@gmail.com
 
+# UPDATE:
+# @Time   : 2021/7/1
+# @Author : Xingyu Pan
+# @Email  : xy_pan@foxmail.com
 
 import os
 import sys
@@ -18,7 +22,7 @@ from recbole.evaluator.evaluators import RankEvaluator
 
 parameters_dict = {
     'model': 'BPR',
-    'eval_setting': 'RO_RS,uni100',
+    'eval_args': {'split':{'RS':[0.8,0.1,0.1]}, 'order': 'RO', 'mode': 'uni100'}
 }
 
 
