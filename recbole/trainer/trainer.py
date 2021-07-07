@@ -30,7 +30,7 @@ from tqdm import tqdm
 from recbole.data.interaction import Interaction
 from recbole.evaluator import ProxyEvaluator
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
-    DataLoaderType, KGDataLoaderState
+    DataLoaderType, KGDataLoaderState, get_tensorboard
 from recbole.utils.utils import set_color
 
 
@@ -77,6 +77,7 @@ class Trainer(AbstractTrainer):
         super(Trainer, self).__init__(config, model)
 
         self.logger = getLogger()
+        self.tensorboard = get_tensorboard(self.logger)
         self.learner = config['learner']
         self.learning_rate = config['learning_rate']
         self.epochs = config['epochs']
@@ -245,6 +246,13 @@ class Trainer(AbstractTrainer):
             train_loss_output += set_color('train loss', 'blue') + ': ' + des % losses
         return train_loss_output + ']'
 
+    def _add_train_loss_to_tensorboard(self, epoch_idx, losses, tag='Loss/Train'):
+        if isinstance(losses, tuple):
+            for idx, loss in enumerate(losses):
+                self.tensorboard.add_scalar(tag + str(idx), loss, epoch_idx)
+        else:
+            self.tensorboard.add_scalar(tag, losses, epoch_idx)
+
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         r"""Train the model based on the train data and the valid data.
 
@@ -274,6 +282,7 @@ class Trainer(AbstractTrainer):
                 self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
             if verbose:
                 self.logger.info(train_loss_output)
+            self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
 
             # eval
             if self.eval_step <= 0 or not valid_data:
@@ -301,6 +310,8 @@ class Trainer(AbstractTrainer):
                 if verbose:
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
+                self.tensorboard.add_scalar('Vaild_score', valid_score, epoch_idx)
+
                 if update_flag:
                     if saved:
                         self._save_checkpoint(epoch_idx)
@@ -543,6 +554,7 @@ class S3RecTrainer(Trainer):
                 self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
             if verbose:
                 self.logger.info(train_loss_output)
+            self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
 
             if (epoch_idx + 1) % self.config['save_step'] == 0:
                 saved_model_file = os.path.join(
@@ -614,6 +626,7 @@ class DecisionTreeTrainer(AbstractTrainer):
         super(DecisionTreeTrainer, self).__init__(config, model)
 
         self.logger = getLogger()
+        self.tensorboard = get_tensorboard(self.logger)
         self.label_field = config['LABEL_FIELD']
         self.convert_token_to_onehot = self.config['convert_token_to_onehot']
 
@@ -718,6 +731,7 @@ class DecisionTreeTrainer(AbstractTrainer):
                 if verbose:
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
+                self.tensorboard.add_scalar('Vaild_score', valid_score, epoch_idx)
 
                 self.best_valid_score = valid_score
                 self.best_valid_result = valid_result
@@ -837,6 +851,7 @@ class RaCTTrainer(Trainer):
                 self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
             if verbose:
                 self.logger.info(train_loss_output)
+            self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
 
             if (epoch_idx + 1) % self.pretrain_epochs == 0:
                 saved_model_file = os.path.join(
@@ -1012,6 +1027,7 @@ class RecVAETrainer(Trainer):
                 self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
             if verbose:
                 self.logger.info(train_loss_output)
+            self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
 
             # eval
             if self.eval_step <= 0 or not valid_data:
@@ -1039,6 +1055,7 @@ class RecVAETrainer(Trainer):
                 if verbose:
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
+                self.tensorboard.add_scalar('Vaild_score', valid_score, epoch_idx)
                 if update_flag:
                     if saved:
                         self._save_checkpoint(epoch_idx)
