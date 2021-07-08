@@ -570,6 +570,70 @@ class GiniIndex(object):
         return gini_index
 
 
+class TailPercentage:
+    r"""It computes the percentage of long-tail items in recommendation items.
+
+        For further details, please refer to the `paper <https://arxiv.org/pdf/2007.12329.pdf>`
+
+    .. math::
+        \mathrm {TailPercentage}=\frac{1}{|U|} \sum_{u \in U_} \frac{\sum_{i \in R_{u}} {1| i \in T}}}{|R_{u}|}
+
+    :math:`n` is the number of all items.
+    :math:`T` is the set of long-tail items,
+    which is a portion of items that appear in training data seldomly.
+
+    Note:
+        If you want to use this metric, please set the parameter ''tail_ratio' in the config
+        which can be a integer or a float in (0,1]. Otherwise it will default to 0.1.
+    """
+
+    def __init__(self, config):
+        self.topk = config['topk']
+        self.decimal_place = config['metric_decimal_place']
+        self.tail = config['tail_ratio']
+        if self.tail is None or self.tail <= 0:
+            self.tail = 0.1
+
+    def used_info(self, dataobject):
+        """get the matrix of recommendation items and number of items in total item set"""
+        item_matrix = dataobject.get('rec.items')
+        count_items = dataobject.get('data.count_items')
+        return item_matrix.numpy(), dict(count_items)
+
+    def get_tail(self, item_matrix, count_items):
+        if self.tail > 1:
+            tail_items = [item for item, cnt in count_items.items() if cnt <= self.tail]
+        else:
+            count_items = sorted(count_items.items(), key=lambda kv: (kv[1], kv[0]))
+            cut = max(int(len(count_items) * self.tail), 1)
+            count_items = count_items[:cut]
+            tail_items = [item for item, cnt in count_items]
+        value = np.zeros_like(item_matrix)
+        for i in range(item_matrix.shape[0]):
+            row = item_matrix[i, :]
+            for j in range(row.shape[0]):
+                value[i][j] = 1 if row[j] in tail_items else 0
+        return value
+
+    def calculate_metric(self, dataobject):
+        item_matrix, count_items = self.used_info(dataobject)
+        result = self.metric_info(self.get_tail(item_matrix, count_items))
+        metric_dict = self.topk_result('tailpercentage', result)
+        return metric_dict
+
+    def metric_info(self, values):
+        return values.cumsum(axis=1) / np.arange(1, values.shape[1] + 1)
+
+    def topk_result(self, metric, value):
+        """match the metric value to the `k` and put them in `dictionary` form"""
+        metric_dict = {}
+        avg_result = value.mean(axis=0)
+        for k in self.topk:
+            key = '{}@{}'.format(metric, k)
+            metric_dict[key] = round(avg_result[k-1], self.decimal_place)
+        return metric_dict
+
+
 metrics_dict = {
     'ndcg': NDCG,
     'hit': Hit,
@@ -585,5 +649,6 @@ metrics_dict = {
     'itemcoverage': ItemCoverage,
     'averagepopularity': AveragePopularity,
     'giniindex': GiniIndex,
-    'shannonentropy': ShannonEntropy
+    'shannonentropy': ShannonEntropy,
+    'tailpercentage': TailPercentage
 }
