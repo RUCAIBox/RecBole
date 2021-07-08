@@ -3,7 +3,7 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2021/3/2, 2021/2/17, 2021/6/30
+# @Time   : 2020/10/04, 2021/7/8, 2021/2/17, 2021/6/30
 # @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan, Xingyu Pan
 # @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn, xy_pan@foxmail.com
 
@@ -283,6 +283,15 @@ class Config(object):
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.PAIRWISE
         else:
             raise ValueError('Either Model has attr \'input_type\',' 'or arg \'loss_type\' should exist in config.')
+
+        if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and \
+           self.final_config_dict['benchmark_filename'] is not None and \
+           self.final_config_dict['augmentation']:
+            raise ValueError(
+                f'Benchmark datasets for sequential model {self.model} '
+                f'should be augmented in advance, which should not be augmented again and '
+                f'config \'augmentation\' should be False.'
+            )
 
         eval_type = None
         for metric in self.final_config_dict['metrics']:

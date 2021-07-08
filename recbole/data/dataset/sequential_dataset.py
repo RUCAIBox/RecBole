@@ -3,9 +3,9 @@
 # @Email  : chenyushuo@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/16, 2021/7/1
-# @Author : Yushuo Chen, Xingyu Pan
-# @Email  : chenyushuo@ruc.edu.cn, xy_pan@foxmail.com
+# @Time   : 2020/9/16, 2021/7/1, 2021/7/8
+# @Author : Yushuo Chen, Xingyu Pan, Yupeng Hou
+# @Email  : chenyushuo@ruc.edu.cn, xy_pan@foxmail.com, houyupeng@ruc.edu.cn
 
 """
 recbole.data.sequential_dataset
@@ -25,6 +25,8 @@ class SequentialDataset(Dataset):
     which can accelerate the data loader.
 
     Attributes:
+        augmentation (bool): Whether the interactions should be augmented in RecBole.
+
         uid_list (numpy.ndarray): List of user id after augmentation.
 
         item_list_index (numpy.ndarray): List of indexes of item sequence after augmentation.
@@ -36,6 +38,7 @@ class SequentialDataset(Dataset):
     """
 
     def __init__(self, config):
+        self.augmentation = config['augmentation']
         super().__init__(config)
 
     def prepare_data_augmentation(self):

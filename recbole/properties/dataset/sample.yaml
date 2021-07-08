@@ -43,6 +43,7 @@ normalize_field: ~
 normalize_all: ~
 
 # Sequential Model Needed
+augmentation: False
 ITEM_LIST_LENGTH_FIELD: item_length
 LIST_SUFFIX: _list
 MAX_ITEM_LIST_LENGTH: 50
