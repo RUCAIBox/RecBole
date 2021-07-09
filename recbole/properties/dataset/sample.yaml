@@ -26,15 +26,10 @@ additional_feat_suffix: ~
 
 # Filtering
 rm_dup_inter: ~
-lowest_val: ~
-highest_val: ~
-equal_val: ~
-not_equal_val: ~
+val_interval: ~
 filter_inter_by_user_or_item: True
-max_user_inter_num: ~
-min_user_inter_num: 0
-max_item_inter_num: ~
-min_item_inter_num: 0
+item_inter_num_interval: "[0,inf)"
+user_inter_num_interval: "[0,inf)"
 
 # Preprocessing
 alias_of_user_id: ~
