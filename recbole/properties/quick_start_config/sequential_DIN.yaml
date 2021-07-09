@@ -4,4 +4,3 @@ eval_args:
   mode: uni100
 metrics: ['AUC', 'LogLoss']
 valid_metric: AUC
-augmentation: True

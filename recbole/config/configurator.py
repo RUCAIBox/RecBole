@@ -284,15 +284,6 @@ class Config(object):
         else:
             raise ValueError('Either Model has attr \'input_type\',' 'or arg \'loss_type\' should exist in config.')
 
-        if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and \
-           self.final_config_dict['benchmark_filename'] is not None and \
-           self.final_config_dict['augmentation']:
-            raise ValueError(
-                f'Benchmark datasets for sequential model {self.model} '
-                f'should be augmented in advance, which should not be augmented again and '
-                f'config \'augmentation\' should be False.'
-            )
-
         eval_type = None
         for metric in self.final_config_dict['metrics']:
             if metric.lower() in individual_metrics:

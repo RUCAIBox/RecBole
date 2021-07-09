@@ -26,13 +26,11 @@ class SequentialDataset(Dataset):
     which can accelerate the data loader.
 
     Attributes:
-        augmentation (bool): Whether the interactions should be augmented in RecBole.
         max_item_list_len (int): Max length of historical item list.
         item_list_length_field (str): Field name for item lists' length.
     """
 
     def __init__(self, config):
-        self.augmentation = config['augmentation']
         self.max_item_list_len = config['MAX_ITEM_LIST_LENGTH']
         self.item_list_length_field = config['ITEM_LIST_LENGTH_FIELD']
         super().__init__(config)
@@ -42,8 +40,8 @@ class SequentialDataset(Dataset):
            then perform data augmentation.
         """
         super()._change_feat_format()
-        
-        if not self.augmentation:
+
+        if self.config['benchmark_filename'] is not None:
             return
         self.logger.debug('Augmentation for sequential recommendation.')
         self.data_augmentation()
