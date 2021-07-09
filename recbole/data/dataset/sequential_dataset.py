@@ -152,9 +152,19 @@ class SequentialDataset(Dataset):
         """
         if not self.uid_field or not self.iid_field:
             raise ValueError('dataset does not exist uid/iid, thus can not converted to sparse matrix.')
-        local_inter_feat = self.inter_feat
-        # TODO add items in the session of length 1
-        raise NotImplementedError()
+
+        l1_idx = (self.inter_feat[self.item_list_length_field] == 1)
+        l1_inter_dict = self.inter_feat[l1_idx].interaction
+        new_dict = {}
+        list_suffix = self.config['LIST_SUFFIX']
+        candidate_field_set = set()
+        for field in l1_inter_dict:
+            if field != self.uid_field and field + list_suffix in l1_inter_dict:
+                candidate_field_set.add(field)
+                new_dict[field] = torch.cat([self.inter_feat[field], l1_inter_dict[field + list_suffix][:,0]])
+            elif (not field.endswith(list_suffix)) and (field != self.item_list_length_field):
+                new_dict[field] = torch.cat([self.inter_feat[field], l1_inter_dict[field]])
+        local_inter_feat = Interaction(new_dict)
         return self._create_sparse_matrix(local_inter_feat, self.uid_field, self.iid_field, form, value_field)
 
     def build(self):
