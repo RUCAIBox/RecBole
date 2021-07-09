@@ -3,7 +3,7 @@
 # @Email  : chenyushuo@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/16, 2021/7/1, 2021/7/8
+# @Time   : 2020/9/16, 2021/7/1, 2021/7/9
 # @Author : Yushuo Chen, Xingyu Pan, Yupeng Hou
 # @Email  : chenyushuo@ruc.edu.cn, xy_pan@foxmail.com, houyupeng@ruc.edu.cn
 
@@ -27,15 +27,8 @@ class SequentialDataset(Dataset):
 
     Attributes:
         augmentation (bool): Whether the interactions should be augmented in RecBole.
-
-        uid_list (numpy.ndarray): List of user id after augmentation.
-
-        item_list_index (numpy.ndarray): List of indexes of item sequence after augmentation.
-
-        target_index (numpy.ndarray): List of indexes of target item id after augmentation.
-
-        item_list_length (numpy.ndarray): List of item sequences' length after augmentation.
-
+        max_item_list_len (int): Max length of historical item list.
+        item_list_length_field (str): Field name for item lists' length.
     """
 
     def __init__(self, config):
