@@ -20,6 +20,7 @@ requirements:
     - pytorch
     - colorlog==4.7.2
     - colorama==0.4.4
+    - tensorboard >=2.5.0
   run:
     - python
     - numpy >=1.17.2
@@ -32,6 +33,7 @@ requirements:
     - pytorch
     - colorlog==4.7.2
     - colorama==0.4.4
+    - tensorboard >=2.5.0
 test:
   imports:
     - recbole
