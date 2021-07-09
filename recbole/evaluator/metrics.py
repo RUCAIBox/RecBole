@@ -576,7 +576,7 @@ class TailPercentage:
         For further details, please refer to the `paper <https://arxiv.org/pdf/2007.12329.pdf>`
 
     .. math::
-        \mathrm {TailPercentage}=\frac{1}{|U|} \sum_{u \in U_} \frac{\sum_{i \in R_{u}} {1| i \in T}}}{|R_{u}|}
+        \mathrm {TailPercentage}=\frac{1}{|U|} \sum_{u \in U} \frac{\sum_{i \in R_{u}} {1| i \in T}}{|R_{u}|}
 
     :math:`n` is the number of all items.
     :math:`T` is the set of long-tail items,
