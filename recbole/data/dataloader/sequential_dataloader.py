@@ -65,7 +65,9 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
     def __init__(
         self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
     ):
+        self.uid_field = dataset.uid_field
         self.iid_field = dataset.iid_field
+        self.label_field = dataset.label_field
         super().__init__(
             config, dataset, sampler, neg_sample_args, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle
         )
@@ -77,7 +79,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
         self.upgrade_batch_size(new_batch_size)
 
     def _next_batch_data(self):
-        cur_data = self._get_processed_data(slice(self.pr, self.pr + self.step))
+        cur_data = self.dataset[self.pr:self.pr + self.step]
         cur_data = self._neg_sampling(cur_data)
         self.pr += self.step
 
