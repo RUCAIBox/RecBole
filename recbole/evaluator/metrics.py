@@ -583,8 +583,8 @@ class TailPercentage:
     which is a portion of items that appear in training data seldomly.
 
     Note:
-        If you want to use this metric, please set the parameter ''tail_ratio' in the config
-        which can be a integer or a float in (0,1]. Otherwise it will default to 0.1.
+        If you want to use this metric, please set the parameter 'tail_ratio' in the config
+        which can be an integer or a float in (0,1]. Otherwise it will default to 0.1.
     """
 
     def __init__(self, config):
