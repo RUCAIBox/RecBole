@@ -138,6 +138,14 @@ class TestTopKMetrics(unittest.TestCase):
             -np.mean([1/15*np.log(1/15), 2/15*np.log(2/15), 3/15*np.log(3/15), 2/15*np.log(2/15),
                      4/15*np.log(4/15), 1/15*np.log(1/15), 2/15*np.log(2/15)]))
 
+    def test_tailpercentage(self):
+        name = 'tailpercentage'
+        Metric = metrics_dict[name](config)
+        self.assertEqual(
+            Metric.metric_info(Metric.get_tail(item_matrix, item_count)).tolist(),
+            np.array([[0 / 1, 0 / 2, 0 / 3], [0 / 1, 0 / 2, 0 / 3], [0 / 1, 0 / 2, 0 / 3], [1 / 1, 1 / 2, 1 / 3],
+                      [0 / 1, 0 / 2, 0 / 3]]).tolist())
+
 
 if __name__ == "__main__":
     unittest.main()

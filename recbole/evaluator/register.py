@@ -25,7 +25,7 @@ metric_information = {
     'averagepopularity': ['rec.topk', 'rec.items', 'data.count_items'],
     'giniindex': ['rec.topk', 'rec.items', 'data.num_items'],
     'shannonentropy': ['rec.topk', 'rec.items'],
-
+    'tailpercentage': ['rec.topk', 'rec.items', 'data.count_items'],
 
     'gauc': ['rec.meanrank'],  # Sign in for full ranking metrics
 
