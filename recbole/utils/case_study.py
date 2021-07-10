@@ -15,9 +15,6 @@ recbole.utils.case_study
 import numpy as np
 import torch
 
-from recbole.data.dataloader.general_dataloader import GeneralFullDataLoader
-from recbole.data.dataloader.sequential_dataloader import SequentialFullDataLoader
-
 
 @torch.no_grad()
 def full_sort_scores(uid_series, model, test_data):
@@ -38,21 +35,19 @@ def full_sort_scores(uid_series, model, test_data):
     dataset = test_data.dataset
     model.eval()
 
-    if isinstance(test_data, GeneralFullDataLoader):
+    if not test_data.is_sequential:
         index = np.isin(test_data.user_df[uid_field].numpy(), uid_series)
         input_interaction = test_data.user_df[index]
         history_item = test_data.uid2history_item[input_interaction[uid_field].numpy()]
         history_row = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
         history_col = torch.cat(list(history_item))
         history_index = history_row, history_col
-    elif isinstance(test_data, SequentialFullDataLoader):
+    else:
         index = np.isin(test_data.uid_list, uid_series)
         input_interaction = test_data.augmentation(
             test_data.item_list_index[index], test_data.target_index[index], test_data.item_list_length[index]
         )
         history_index = None
-    else:
-        raise NotImplementedError
 
     # Get scores of all items
     try:
