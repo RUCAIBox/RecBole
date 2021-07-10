@@ -15,10 +15,11 @@ recbole.data.dataloader.general_dataloader
 import numpy as np
 import torch
 
-from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
+from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader, NewAbstractDataLoader, \
+    NewNegSampleDataLoader
 from recbole.data.dataloader.neg_sample_mixin import NegSampleMixin, NegSampleByMixin
 from recbole.data.interaction import Interaction, cat_interactions
-from recbole.utils import DataLoaderType, InputType
+from recbole.utils import DataLoaderType, InputType, FeatureType, FeatureSource
 
 
 class GeneralDataLoader(AbstractDataLoader):
@@ -282,6 +283,199 @@ class GeneralFullDataLoader(NegSampleMixin, AbstractDataLoader):
         swap_row = torch.cat([torch.full_like(swap, i) for i, swap in enumerate(swap_idx)])
         swap_col_after = torch.cat(list(swap_idx))
         swap_col_before = torch.cat(list(rev_swap_idx))
+        return user_df, (history_row, history_col), swap_row, swap_col_after, swap_col_before
+
+    def get_pos_len_list(self):
+        """
+        Returns:
+            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
+        """
+        return self.uid2items_num[self.uid_list]
+
+    def get_user_len_list(self):
+        """
+        Returns:
+            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        return np.full(self.pr_end, self.dataset.item_num)
+
+
+class NewGeneralTrainDataLoader(NewNegSampleDataLoader):
+    def __init__(self, config, dataset, sampler, shuffle=True):
+        self._set_neg_sample_args(config, dataset, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
+        super().__init__(config, dataset, sampler, shuffle=shuffle)
+
+    def _init_batch_size_and_step(self):
+        batch_size = self.config['train_batch_size']
+        if self.neg_sample_args['strategy'] == 'by':
+            batch_num = max(batch_size // self.times, 1)
+            new_batch_size = batch_num * self.times
+            self.step = batch_num
+            self.set_batch_size(new_batch_size)
+        else:
+            self.step = batch_size
+            self.set_batch_size(batch_size)
+
+    @property
+    def pr_end(self):
+        return len(self.dataset)
+
+    def _shuffle(self):
+        self.dataset.shuffle()
+
+    def _next_batch_data(self):
+        cur_data = self._neg_sampling(self.dataset[self.pr:self.pr + self.step])
+        self.pr += self.step
+        return cur_data
+
+
+class NewGeneralNegSampleEvalDataLoader(NewNegSampleDataLoader):
+    def __init__(self, config, dataset, sampler, shuffle=True):
+        user_num = dataset.user_num
+        dataset.sort(by=dataset.uid_field, ascending=True)
+        self.uid_list = []
+        start, end = dict(), dict()
+        for i, uid in enumerate(dataset.inter_feat[dataset.uid_field].numpy()):
+            if uid not in start:
+                self.uid_list.append(uid)
+                start[uid] = i
+            end[uid] = i
+        self.uid2index = np.array([None] * user_num)
+        self.uid2items_num = np.zeros(user_num, dtype=np.int64)
+        for uid in self.uid_list:
+            self.uid2index[uid] = slice(start[uid], end[uid] + 1)
+            self.uid2items_num[uid] = end[uid] - start[uid] + 1
+        self.uid_list = np.array(self.uid_list)
+
+        self._set_neg_sample_args(config, dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
+        super().__init__(config, dataset, sampler, shuffle=shuffle)
+
+    def _init_batch_size_and_step(self):
+        batch_size = self.config['eval_batch_size']
+        if self.neg_sample_args['strategy'] == 'by':
+            inters_num = sorted(self.uid2items_num * self.times, reverse=True)
+            batch_num = 1
+            new_batch_size = inters_num[0]
+            for i in range(1, len(inters_num)):
+                if new_batch_size + inters_num[i] > batch_size:
+                    break
+                batch_num = i + 1
+                new_batch_size += inters_num[i]
+            self.step = batch_num
+            self.set_batch_size(new_batch_size)
+        else:
+            self.step = batch_size
+            self.set_batch_size(batch_size)
+
+    @property
+    def pr_end(self):
+        return len(self.uid_list)
+
+    def _shuffle(self):
+        self.logger.warnning('GeneralNegSampleEvalDataLoader can\'t shuffle')
+
+    def _next_batch_data(self):
+        uid_list = self.uid_list[self.pr:self.pr + self.step]
+        data_list = []
+        for uid in uid_list:
+            index = self.uid2index[uid]
+            data_list.append(self._neg_sampling(self.dataset[index]))
+        cur_data = cat_interactions(data_list)
+        if self.neg_sample_args['strategy'] == 'by':
+            pos_len_list = self.uid2items_num[uid_list]
+            user_len_list = pos_len_list * self.times
+            cur_data.set_additional_info(list(pos_len_list), list(user_len_list))
+        self.pr += self.step
+        return cur_data
+
+    def get_pos_len_list(self):
+        """
+        Returns:
+            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
+        """
+        return self.uid2items_num[self.uid_list]
+
+    def get_user_len_list(self):
+        """
+        Returns:
+            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
+        """
+        return self.uid2items_num[self.uid_list] * self.times
+
+
+class NewGeneralFullEvalDataLoader(NewAbstractDataLoader):
+    dl_type = DataLoaderType.FULL
+
+    def __init__(self, config, dataset, sampler, shuffle=False):
+        self.uid_field = dataset.uid_field
+        self.iid_field = dataset.iid_field
+        user_num = dataset.user_num
+        self.uid_list = []
+        self.uid2items_num = np.zeros(user_num, dtype=np.int64)
+        self.uid2swap_idx = np.array([None] * user_num)
+        self.uid2rev_swap_idx = np.array([None] * user_num)
+        self.uid2history_item = np.array([None] * user_num)
+
+        dataset.sort(by=self.uid_field, ascending=True)
+        last_uid = None
+        positive_item = set()
+        uid2used_item = sampler.used_ids
+        for uid, iid in zip(dataset.inter_feat[self.uid_field].numpy(), dataset.inter_feat[self.iid_field].numpy()):
+            if uid != last_uid:
+                self._set_user_property(last_uid, uid2used_item[last_uid], positive_item)
+                last_uid = uid
+                self.uid_list.append(uid)
+                positive_item = set()
+            positive_item.add(iid)
+        self._set_user_property(last_uid, uid2used_item[last_uid], positive_item)
+        self.uid_list = torch.tensor(self.uid_list, dtype=torch.int64)
+        self.user_df = dataset.join(Interaction({self.uid_field: self.uid_list}))
+
+        super().__init__(config, dataset, sampler, shuffle=shuffle)
+
+    def _set_user_property(self, uid, used_item, positive_item):
+        if uid is None:
+            return
+        history_item = used_item - positive_item
+        positive_item_num = len(positive_item)
+        self.uid2items_num[uid] = positive_item_num
+        swap_idx = torch.tensor(sorted(set(range(positive_item_num)) ^ positive_item))
+        self.uid2swap_idx[uid] = swap_idx
+        self.uid2rev_swap_idx[uid] = swap_idx.flip(0)
+        self.uid2history_item[uid] = torch.tensor(list(history_item), dtype=torch.int64)
+
+    def _init_batch_size_and_step(self):
+        batch_size = self.config['eval_batch_size']
+        batch_num = max(batch_size // self.dataset.item_num, 1)
+        new_batch_size = batch_num * self.dataset.item_num
+        self.step = batch_num
+        self.set_batch_size(new_batch_size)
+
+    @property
+    def pr_end(self):
+        return len(self.uid_list)
+
+    def _shuffle(self):
+        self.logger.warnning('GeneralFullDataLoader can\'t shuffle')
+
+    def _next_batch_data(self):
+        user_df = self.user_df[self.pr:self.pr + self.step]
+        uid_list = list(user_df[self.dataset.uid_field])
+        pos_len_list = self.uid2items_num[uid_list]
+        user_len_list = np.full(len(uid_list), self.dataset.item_num)
+        user_df.set_additional_info(pos_len_list, user_len_list)
+
+        history_item = self.uid2history_item[uid_list]
+        history_row = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
+        history_col = torch.cat(list(history_item))
+
+        swap_idx = self.uid2swap_idx[uid_list]
+        rev_swap_idx = self.uid2rev_swap_idx[uid_list]
+        swap_row = torch.cat([torch.full_like(swap, i) for i, swap in enumerate(swap_idx)])
+        swap_col_after = torch.cat(list(swap_idx))
+        swap_col_before = torch.cat(list(rev_swap_idx))
+
+        self.pr += self.step
         return user_df, (history_row, history_col), swap_row, swap_col_after, swap_col_before
 
     def get_pos_len_list(self):

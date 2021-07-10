@@ -79,6 +79,7 @@ class Config(object):
         self._set_default_parameters()
         self._init_device()
         self._set_train_neg_sample_args()
+        self._set_eval_neg_sample_args()
 
     def _init_parameters_category(self):
         self.parameters = dict()
@@ -333,6 +334,22 @@ class Config(object):
             }
         else:
             self.final_config_dict['train_neg_sample_args'] = {'strategy': 'none'}
+
+    def _set_eval_neg_sample_args(self):
+        eval_mode = self.final_config_dict['eval_args']['mode']
+        if eval_mode == 'none':
+            eval_neg_sample_args = {'strategy': 'none', 'distribution': 'none'}
+        elif eval_mode == 'full':
+            eval_neg_sample_args = {'strategy': 'full', 'distribution': 'uniform'}
+        elif eval_mode[0:3] == 'uni':
+            sample_by = int(eval_mode[3:])
+            eval_neg_sample_args = {'strategy': 'by', 'by': sample_by, 'distribution': 'uniform'}
+        elif eval_mode[0:3] == 'pop':
+            sample_by = int(eval_mode[3:])
+            eval_neg_sample_args = {'strategy': 'by', 'by': sample_by, 'distribution': 'popularity'}
+        else:
+            raise ValueError(f'the mode [{eval_mode}] in eval_args is not supported.')
+        self.final_config_dict['eval_neg_sample_args'] = eval_neg_sample_args
 
     def __setitem__(self, key, value):
         if not isinstance(key, str):

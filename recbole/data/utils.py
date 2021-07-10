@@ -71,6 +71,9 @@ def data_preparation(config, dataset, save=False):
             - test_data (AbstractDataLoader): The dataloader for testing.
     """
     model_type = config['MODEL_TYPE']
+    if model_type != ModelType.SEQUENTIAL and model_type != ModelType.KNOWLEDGE:
+        return general_data_preparation(config, dataset, save)
+
     built_datasets = dataset.build()
     
     train_dataset, valid_dataset, test_dataset = built_datasets
@@ -78,20 +81,7 @@ def data_preparation(config, dataset, save=False):
     sampler = None
     logger = getLogger()
     train_neg_sample_args = config['train_neg_sample_args']
-    
-    eval_mode = config['eval_args']['mode']
-    if eval_mode == 'none':
-        eval_neg_sample_args = {'strategy': 'none', 'distribution': 'none'}
-    elif eval_mode == 'full':
-        eval_neg_sample_args = {'strategy': 'full', 'distribution': 'uniform'}
-    elif eval_mode[0:3] == 'uni':
-        sample_by = int(eval_mode[3:])
-        eval_neg_sample_args = {'strategy': 'by', 'by': sample_by, 'distribution': 'uniform'}
-    elif eval_mode[0:3] == 'pop':
-        sample_by = int(eval_mode[3:])
-        eval_neg_sample_args = {'strategy': 'by', 'by': sample_by, 'distribution': 'popularity'}
-    else:
-        raise ValueError(f'the mode [{eval_mode}] in eval_args is not supported.')
+    eval_neg_sample_args = config['eval_neg_sample_args']
 
     # Training
     train_kwargs = {
@@ -335,3 +325,60 @@ def _get_AE_data_loader(name, config, neg_sample_args):
             return GeneralNegSampleDataLoader
         elif neg_sample_strategy == 'full':
             return GeneralFullDataLoader
+
+
+def general_data_preparation(config, dataset, save=False):
+    built_datasets = dataset.build()
+
+    train_dataset, valid_dataset, test_dataset = built_datasets
+    train_sampler, valid_sampler, test_sampler = create_samplers(config, dataset, built_datasets)
+
+    train_data = get_dataloader(config, 'train')(config, train_dataset, train_sampler, shuffle=True)
+    valid_data = get_dataloader(config, 'valid')(config, valid_dataset, valid_sampler, shuffle=False)
+    test_data = get_dataloader(config, 'test')(config, test_dataset, test_sampler, shuffle=False)
+
+    if save:
+        save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))
+
+    return train_data, valid_data, test_data
+
+
+def get_dataloader(config, phase):
+    model_type = config['MODEL_TYPE']
+    eval_strategy = config['eval_neg_sample_args']['strategy']
+    if model_type != ModelType.KNOWLEDGE:
+        if phase == 'train':
+            return NewGeneralTrainDataLoader
+        elif eval_strategy in {'none', 'by'}:
+            return NewGeneralNegSampleEvalDataLoader
+        elif eval_strategy == 'full':
+            return NewGeneralFullEvalDataLoader
+
+
+def create_samplers(config, dataset, built_datasets):
+    model_type = config['MODEL_TYPE']
+    phases = ['train', 'valid', 'test']
+    train_neg_sample_args = config['train_neg_sample_args']
+    eval_neg_sample_args = config['eval_neg_sample_args']
+    sampler = None
+    train_sampler, valid_sampler, test_sampler = None, None, None
+
+    if train_neg_sample_args['strategy'] != 'none':
+        if model_type != ModelType.SEQUENTIAL:
+            sampler = Sampler(phases, built_datasets, train_neg_sample_args['distribution'])
+        else:
+            sampler = RepeatableSampler(phases, dataset, train_neg_sample_args['distribution'])
+        train_sampler = sampler.set_phase('train')
+
+    if eval_neg_sample_args['strategy'] != 'none':
+        if sampler is None:
+            if model_type != ModelType.SEQUENTIAL:
+                sampler = Sampler(phases, built_datasets, eval_neg_sample_args['distribution'])
+            else:
+                sampler = RepeatableSampler(phases, dataset, eval_neg_sample_args['distribution'])
+        else:
+            sampler.set_distribution(eval_neg_sample_args['distribution'])
+        valid_sampler = sampler.set_phase('valid')
+        test_sampler = sampler.set_phase('test')
+
+    return train_sampler, valid_sampler, test_sampler
