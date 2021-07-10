@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/19, 2020/9/17, 2020/8/31, 2021/2/20, 2021/3/1
+# @Time   : 2021/7/9, 2020/9/17, 2020/8/31, 2021/2/20, 2021/3/1
 # @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li, Haoran Cheng, Jiawei Guan
 # @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com, chenghaoran29@foxmail.com, guanjw@ruc.edu.cn
 
@@ -215,8 +215,6 @@ def get_data_loader(name, config, neg_sample_args):
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
     """
     register_table = {
-        'DIN': _get_DIN_data_loader,
-        'DIEN': _get_DIEN_data_loader,
         "MultiDAE": _get_AE_data_loader,
         "MultiVAE": _get_AE_data_loader,
         'MacridVAE': _get_AE_data_loader,
@@ -262,46 +260,6 @@ def get_data_loader(name, config, neg_sample_args):
             )
     else:
         raise NotImplementedError(f'Model_type [{model_type}] has not been implemented.')
-
-
-def _get_DIN_data_loader(name, config, neg_sample_args):
-    """Customized function for DIN to get correct dataloader class.
-
-    Args:
-        name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
-        config (Config): An instance object of Config, used to record parameter information.
-        neg_sample_args : Settings of negative sampling.
-
-    Returns:
-        type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
-    """
-    neg_sample_strategy = neg_sample_args['strategy']
-    if neg_sample_strategy == 'none':
-        return SequentialDataLoader
-    elif neg_sample_strategy == 'by':
-        return SequentialNegSampleDataLoader
-    elif neg_sample_strategy == 'full':
-        return SequentialFullDataLoader
-
-
-def _get_DIEN_data_loader(name, config, neg_sample_args):
-    """Customized function for DIEN to get correct dataloader class.
-
-    Args:
-        name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
-        config (Config): An instance object of Config, used to record parameter information.
-        neg_sample_args : Settings of negative sampling.
-
-    Returns:
-        type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
-    """
-    neg_sample_strategy = neg_sample_args['strategy']
-    if neg_sample_strategy == 'none':
-        return DIENDataLoader
-    elif neg_sample_strategy == 'by':
-        return DIENNegSampleDataLoader
-    elif neg_sample_strategy == 'full':
-        return DIENFullDataLoader
 
 
 def _get_AE_data_loader(name, config, neg_sample_args):

@@ -4,9 +4,9 @@
 # @Email  : chenyushuo@ruc.edu.cn
 
 # UPDATE
-# @Time    :   2020/1/3, 2021/7/1
-# @Author  :   Yushuo Chen, Xingyu Pan
-# @email   :   chenyushuo@ruc.edu.cn, xy_pan@foxmail.com
+# @Time    :   2020/1/3, 2021/7/1, 2021/7/9
+# @Author  :   Yushuo Chen, Xingyu Pan, Yupeng Hou
+# @email   :   chenyushuo@ruc.edu.cn, xy_pan@foxmail.com, houyupeng@ruc.edu.cn
 
 import logging
 import os
@@ -561,21 +561,34 @@ class TestSeqDataset:
             'training_neg_sample_num': 0
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
-        assert (train_dataset.uid_list == [1, 1, 1, 1, 1, 2, 2, 3, 4]).all()
-        assert (train_dataset.item_list_index == [slice(0, 1), slice(0, 2), slice(0, 3), slice(0, 4), slice(0, 5),
-                                                  slice(8, 9), slice(8, 10), slice(13, 14), slice(16, 17)]).all()
-        assert (train_dataset.target_index == [1, 2, 3, 4, 5, 9, 10, 14, 17]).all()
-        assert (train_dataset.item_list_length == [1, 2, 3, 4, 5, 1, 2, 1, 1]).all()
+        assert (train_dataset.inter_feat[train_dataset.uid_field].numpy() == [1, 1, 1, 1, 1, 4, 2, 2, 3]).all()
+        assert (train_dataset.inter_feat[train_dataset.item_id_list_field][:,:5].numpy() == [
+            [1, 0, 0, 0, 0],
+            [1, 2, 0, 0, 0],
+            [1, 2, 3, 0, 0],
+            [1, 2, 3, 4, 0],
+            [1, 2, 3, 4, 5],
+            [3, 0, 0, 0, 0],
+            [4, 0, 0, 0, 0],
+            [4, 5, 0, 0, 0],
+            [4, 0, 0, 0, 0]]).all()
+        assert (train_dataset.inter_feat[train_dataset.iid_field].numpy() == [2, 3, 4, 5, 6, 4, 5, 6, 5]).all()
+        assert (train_dataset.inter_feat[train_dataset.item_list_length_field].numpy() == [1, 2, 3, 4, 5, 1, 1, 2, 1]).all()
 
-        assert (valid_dataset.uid_list == [1, 2]).all()
-        assert (valid_dataset.item_list_index == [slice(0, 6), slice(8, 11)]).all()
-        assert (valid_dataset.target_index == [6, 11]).all()
-        assert (valid_dataset.item_list_length == [6, 3]).all()
+        assert (valid_dataset.inter_feat[valid_dataset.uid_field].numpy() == [1, 2]).all()
+        assert (valid_dataset.inter_feat[valid_dataset.item_id_list_field][:,:6].numpy() == [
+            [1, 2, 3, 4, 5, 6],
+            [4, 5, 6, 0, 0, 0]]).all()
+        assert (valid_dataset.inter_feat[valid_dataset.iid_field].numpy() == [7, 7]).all()
+        assert (valid_dataset.inter_feat[valid_dataset.item_list_length_field].numpy() == [6, 3]).all()
 
-        assert (test_dataset.uid_list == [1, 2, 3]).all()
-        assert (test_dataset.item_list_index == [slice(0, 7), slice(8, 12), slice(13, 15)]).all()
-        assert (test_dataset.target_index == [7, 12, 15]).all()
-        assert (test_dataset.item_list_length == [7, 4, 2]).all()
+        assert (test_dataset.inter_feat[test_dataset.uid_field].numpy() == [1, 2, 3]).all()
+        assert (test_dataset.inter_feat[test_dataset.item_id_list_field][:,:7].numpy() == [
+            [1, 2, 3, 4, 5, 6, 7],
+            [4, 5, 6, 7, 0, 0, 0],
+            [4, 5, 0, 0, 0, 0, 0]]).all()
+        assert (test_dataset.inter_feat[test_dataset.iid_field].numpy() == [8, 8, 6]).all()
+        assert (test_dataset.inter_feat[test_dataset.item_list_length_field].numpy() == [7, 4, 2]).all()
 
         assert (train_dataset.inter_matrix().toarray() == [
             [0., 0., 0., 0., 0., 0., 0., 0., 0.],
@@ -586,17 +599,17 @@ class TestSeqDataset:
         ]).all()
         assert (valid_dataset.inter_matrix().toarray() == [
             [0., 0., 0., 0., 0., 0., 0., 0., 0.],
-            [0., 1., 1., 1., 1., 1., 1., 1., 0.],
-            [0., 0., 0., 0., 1., 1., 1., 1., 0.],
-            [0., 0., 0., 0., 1., 1., 0., 0., 0.],
-            [0., 0., 0., 1., 1., 0., 0., 0., 0.],
+            [0., 0., 0., 0., 0., 0., 0., 1., 0.],
+            [0., 0., 0., 0., 0., 0., 0., 1., 0.],
+            [0., 0., 0., 0., 0., 0., 0., 0., 0.],
+            [0., 0., 0., 0., 0., 0., 0., 0., 0.]
         ]).all()
         assert (test_dataset.inter_matrix().toarray() == [
             [0., 0., 0., 0., 0., 0., 0., 0., 0.],
-            [0., 1., 1., 1., 1., 1., 1., 1., 1.],
-            [0., 0., 0., 0., 1., 1., 1., 1., 1.],
-            [0., 0., 0., 0., 1., 1., 1., 0., 0.],
-            [0., 0., 0., 1., 1., 0., 0., 0., 0.],
+            [0., 0., 0., 0., 0., 0., 0., 0., 1.],
+            [0., 0., 0., 0., 0., 0., 0., 0., 1.],
+            [0., 0., 0., 0., 0., 0., 1., 0., 0.],
+            [0., 0., 0., 0., 0., 0., 0., 0., 0.]
         ]).all()
 
 
