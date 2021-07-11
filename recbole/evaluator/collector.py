@@ -65,7 +65,7 @@ class Collector(object):
         self.config = config
         self.data_struct = DataStruct()
         self.register = Register(config)
-        self.full = ('full' in config['eval_setting'])
+        self.full = ('full' in config['eval_args']['mode'])
         self.topk = self.config['topk']
         self.topk_idx = None
 
