@@ -654,6 +654,46 @@ class TestSeqDataset:
         assert (test_dataset.inter_feat[test_dataset.iid_field].numpy() == [7, 8, 8, 6]).all()
         assert (test_dataset.inter_feat[test_dataset.item_list_length_field].numpy() == [6, 7, 4, 2]).all()
 
+    def test_seq_benchmark(self):
+        config_dict = {
+            'model': 'GRU4Rec',
+            'dataset': 'seq_benchmark',
+            'data_path': current_path,
+            'load_col': None,
+            'training_neg_sample_num': 0,
+            'benchmark_filename': ['train', 'valid', 'test'],
+            'alias_of_item_id': ['item_id_list']
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert (train_dataset.inter_feat[train_dataset.uid_field].numpy() == [1, 1, 1, 2, 3, 3, 4]).all()
+        assert (train_dataset.inter_feat[train_dataset.item_id_list_field][:,:3].numpy() == [
+            [8, 0, 0],
+            [8, 1, 0],
+            [8, 1, 2],
+            [2, 0, 0],
+            [3, 0, 0],
+            [3, 4, 0],
+            [3, 0, 0]]).all()
+        assert (train_dataset.inter_feat[train_dataset.iid_field].numpy() == [1, 2, 3, 3, 4, 5, 4]).all()
+        assert (train_dataset.inter_feat[train_dataset.item_list_length_field].numpy() == [1, 2, 3, 1, 1, 2, 1]).all()
+
+        assert (valid_dataset.inter_feat[valid_dataset.uid_field].numpy() == [1, 1, 3]).all()
+        assert (valid_dataset.inter_feat[valid_dataset.item_id_list_field][:,:5].numpy() == [
+            [8, 1, 2, 3, 0],
+            [8, 1, 2, 3, 4],
+            [3, 4, 5, 0, 0]]).all()
+        assert (valid_dataset.inter_feat[valid_dataset.iid_field].numpy() == [4, 5, 6]).all()
+        assert (valid_dataset.inter_feat[valid_dataset.item_list_length_field].numpy() == [4, 5, 3]).all()
+
+        assert (test_dataset.inter_feat[test_dataset.uid_field].numpy() == [1, 1, 3, 4]).all()
+        assert (test_dataset.inter_feat[test_dataset.item_id_list_field][:,:7].numpy() == [
+            [8, 1, 2, 3, 4, 5, 0],
+            [8, 1, 2, 3, 4, 5, 6],
+            [3, 4, 5, 6, 0, 0, 0],
+            [3, 4, 0, 0, 0, 0, 0]]).all()
+        assert (test_dataset.inter_feat[test_dataset.iid_field].numpy() == [6, 7, 7, 5]).all()
+        assert (test_dataset.inter_feat[test_dataset.item_list_length_field].numpy() == [6, 7, 4, 2]).all()
+
 
 class TestKGDataset:
     def test_kg_remap_id(self):
