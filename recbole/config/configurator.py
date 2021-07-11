@@ -302,6 +302,14 @@ class Config(object):
         valid_metric = self.final_config_dict['valid_metric'].split('@')[0]
         self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metric else True
 
+        topk = self.final_config_dict['topk']
+        if isinstance(topk,int):
+            self.final_config_dict['topk'] = [topk]
+        
+        metrics = self.final_config_dict['metrics']
+        if isinstance(metrics, str):
+            self.final_config_dict['metrics'] = [metrics] 
+
         if 'additional_feat_suffix' in self.final_config_dict:
             ad_suf = self.final_config_dict['additional_feat_suffix']
             if isinstance(ad_suf, str):

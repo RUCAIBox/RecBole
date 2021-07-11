@@ -60,7 +60,7 @@ class Evaluator(object):
 
         # Check Loss
         if set(self.metrics) & set(loss_metrics):
-            is_full = 'full' in self.config['eval_setting']
+            is_full = 'full' in self.config['eval_args']['mode']
             if is_full:
                 raise NotImplementedError('Full sort evaluation do not match the metrics!')
 
