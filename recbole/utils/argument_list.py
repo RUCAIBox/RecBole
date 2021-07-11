@@ -45,8 +45,8 @@ dataset_arguments = [
     'ITEM_LIST_LENGTH_FIELD', 'LIST_SUFFIX', 'MAX_ITEM_LIST_LENGTH', 'POSITION_FIELD',
     'HEAD_ENTITY_ID_FIELD', 'TAIL_ENTITY_ID_FIELD', 'RELATION_ID_FIELD', 'ENTITY_ID_FIELD',
     'load_col', 'unload_col', 'unused_col', 'additional_feat_suffix',
-    'max_user_inter_num', 'min_user_inter_num', 'max_item_inter_num', 'min_item_inter_num',
-    'lowest_val', 'highest_val', 'equal_val', 'not_equal_val',
+    'user_inter_num_interval', 'item_inter_num_interval ',
+    'val_interval',
     'alias_of_user_id', 'alias_of_item_id', 'alias_of_entity_id', 'alias_of_relation_id',
     'preload_weight',
     'normalize_field', 'normalize_all'

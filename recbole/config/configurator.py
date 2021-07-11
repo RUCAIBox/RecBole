@@ -21,8 +21,7 @@ from logging import getLogger
 
 from recbole.evaluator import group_metrics, individual_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
-    general_arguments, training_arguments, evaluation_arguments, dataset_arguments
-from recbole.utils.utils import set_color
+    general_arguments, training_arguments, evaluation_arguments, dataset_arguments, set_color
 
 
 class Config(object):
