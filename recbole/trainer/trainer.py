@@ -92,7 +92,6 @@ class Trainer(AbstractTrainer):
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
         self.weight_decay = config['weight_decay']
-        self.draw_loss_pic = config['draw_loss_pic']
 
         self.start_epoch = 0
         self.cur_step = 0
@@ -328,9 +327,6 @@ class Trainer(AbstractTrainer):
                     if verbose:
                         self.logger.info(stop_output)
                     break
-        if self.draw_loss_pic:
-            save_path = '{}-{}-train_loss.pdf'.format(self.config['model'], get_local_time())
-            self.plot_train_loss(save_path=os.path.join(save_path))
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
@@ -434,30 +430,6 @@ class Trainer(AbstractTrainer):
                 result = result.unsqueeze(0)
             result_list.append(result)
         return torch.cat(result_list, dim=0)
-
-    def plot_train_loss(self, show=True, save_path=None):
-        r"""Plot the train loss in each epoch
-
-        Args:
-            show (bool, optional): Whether to show this figure, default: True
-            save_path (str, optional): The data path to save the figure, default: None.
-                                       If it's None, it will not be saved.
-        """
-        import matplotlib.pyplot as plt
-        import time
-        epochs = list(self.train_loss_dict.keys())
-        epochs.sort()
-        values = [float(self.train_loss_dict[epoch]) for epoch in epochs]
-        plt.plot(epochs, values)
-        my_x_ticks = np.arange(0, len(epochs), int(len(epochs) / 10))
-        plt.xticks(my_x_ticks)
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.title(self.config['model'] + ' ' + time.strftime("%Y-%m-%d %H:%M", time.localtime(time.time())))
-        if show:
-            plt.show()
-        if save_path:
-            plt.savefig(save_path)
 
 
 class KGTrainer(Trainer):
