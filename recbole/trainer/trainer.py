@@ -111,6 +111,12 @@ class Trainer(AbstractTrainer):
         Returns:
             torch.optim: the optimizer
         """
+        if self.config['reg_weight'] and self.weight_decay and self.weight_decay * self.config['reg_weight'] > 0:
+            self.logger.warning(
+                'The parameters [weight_decay] and [reg_weight] are specified simultaneously, '
+                'which may lead to double regularization.'
+            )
+
         if self.learner.lower() == 'adam':
             optimizer = optim.Adam(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'sgd':
