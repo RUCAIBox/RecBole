@@ -38,16 +38,6 @@ load_col:
 
 unload_col: ~
 
-# Filtering
-max_user_inter_num: ~
-min_user_inter_num: ~
-max_item_inter_num: ~
-min_item_inter_num: ~
-lowest_val: ~
-highest_val: ~
-equal_val: ~
-not_equal_val: ~
-
 # Preprocessing
 alias_of_user_id: ~
 alias_of_item_id: ~
