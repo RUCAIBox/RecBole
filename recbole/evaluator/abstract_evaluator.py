@@ -4,9 +4,9 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/10/21, 2020/12/18
-# @Author  :   Kaiyuan Li, Zhichao Feng
-# @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com
+# @Time    :   2020/10/21, 2020/12/18, 2021/7/1
+# @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan
+# @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, xy_oan@foxmail.com
 
 """
 recbole.evaluator.abstract_evaluator
@@ -33,7 +33,7 @@ class BaseEvaluator(object):
 
     def __init__(self, config, metrics):
         self.metrics = metrics
-        self.full = ('full' in config['eval_setting'])
+        self.full = ('full' in config['eval_args']['mode'])
         self.precision = config['metric_decimal_place']
 
     def collect(self, *args):

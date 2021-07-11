@@ -4,9 +4,9 @@
 # @Email  : chenyushuo@ruc.edu.cn
 
 # UPDATE
-# @Time    :   2020/1/5
-# @Author  :   Yushuo Chen
-# @email   :   chenyushuo@ruc.edu.cn
+# @Time    :   2020/1/5, 2021/7/1
+# @Author  :   Yushuo Chen, Xingyu Pan
+# @email   :   chenyushuo@ruc.edu.cn, xy_pan@foxmail.com
 
 import logging
 import os
@@ -37,9 +37,8 @@ class TestGeneralDataloader:
             'dataset': 'general_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS',
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'none'},
             'training_neg_sample_num': 0,
-            'split_ratio': [0.8, 0.1, 0.1],
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
@@ -54,8 +53,8 @@ class TestGeneralDataloader:
                 pr += batch_size
 
         check_dataloader(train_data, list(range(1, 41)), train_batch_size)
-        check_dataloader(valid_data, list(range(41, 46)), eval_batch_size)
-        check_dataloader(test_data, list(range(46, 51)), eval_batch_size)
+        check_dataloader(valid_data, list(range(41, 46)), max(eval_batch_size, 5))
+        check_dataloader(test_data, list(range(46, 51)), max(eval_batch_size, 5))
 
     def test_general_neg_sample_dataloader_in_pair_wise(self):
         train_batch_size = 6
@@ -65,9 +64,8 @@ class TestGeneralDataloader:
             'dataset': 'general_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS,full',
             'training_neg_sample_num': 1,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'full'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
@@ -93,9 +91,8 @@ class TestGeneralDataloader:
             'dataset': 'general_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS,full',
             'training_neg_sample_num': 1,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'full'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
@@ -121,9 +118,8 @@ class TestGeneralDataloader:
             'dataset': 'general_full_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS,full',
             'training_neg_sample_num': 1,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'full'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
@@ -240,9 +236,8 @@ class TestGeneralDataloader:
             'dataset': 'general_uni100_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS,uni100',
             'training_neg_sample_num': 1,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'uni100'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
@@ -312,9 +307,8 @@ class TestGeneralDataloader:
             'dataset': 'general_uni100_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS,uni100',
             'training_neg_sample_num': 1,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'uni100'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }

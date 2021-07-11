@@ -55,8 +55,8 @@ model training and evaluation.
 - ``clip_grad_norm (dict)`` : The args of `clip_grad_norm_ <https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html>`_
   which will clips gradient norm of model. Defaults to ``None``.
 - ``loss_decimal_place(int)``: The decimal place of training loss. Defaults to ``4``.
-- ``weight_decay (float)`` : The weight decay (L2 penalty) of `optimizer <https://pytorch.org/docs/stable/optim.html?highlight=weight_decay>`_, which acts on all trainable parameters. Default to ``0.0``.
-- ``draw_loss_pic (bool)``: Draw the training loss line graph of model if it's ``True``, the pic is a PDF file and will be saved in your run directory after model training. Default to ``False``.
+- ``weight_decay (float)`` : Weight decay (L2 penalty), used for `optimizer <https://pytorch.org/docs/stable/optim.html?highlight=weight_decay>`_. Default to ``0.0``.
+
 
 
 **Evaluation Setting**

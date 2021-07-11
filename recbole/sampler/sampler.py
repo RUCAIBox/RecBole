@@ -243,11 +243,12 @@ class Sampler(AbstractSampler):
         new_sampler.used_ids = new_sampler.used_ids[phase]
         return new_sampler
 
-    def sample_by_user_ids(self, user_ids, num):
+    def sample_by_user_ids(self, user_ids, item_ids, num):
         """Sampling by user_ids.
 
         Args:
             user_ids (numpy.ndarray or list): Input user_ids.
+            item_ids (numpy.ndarray or list): Input item_ids.
             num (int): Number of sampled item_ids for each user_id.
 
         Returns:
@@ -383,11 +384,12 @@ class RepeatableSampler(AbstractSampler):
         """
         return np.array([set() for _ in range(self.n_users)])
 
-    def sample_by_user_ids(self, user_ids, num):
+    def sample_by_user_ids(self, user_ids, item_ids, num):
         """Sampling by user_ids.
 
         Args:
             user_ids (numpy.ndarray or list): Input user_ids.
+            item_ids (numpy.ndarray or list): Input item_ids.
             num (int): Number of sampled item_ids for each user_id.
 
         Returns:
@@ -398,7 +400,8 @@ class RepeatableSampler(AbstractSampler):
             item_id[len(user_ids) * (num - 1) + 1] is sampled for user_ids[1]; ...; and so on.
         """
         try:
-            return self.sample_by_key_ids(user_ids, num)
+            self.used_ids = np.array([{i} for i in item_ids])
+            return self.sample_by_key_ids(np.arange(len(user_ids)), num)
         except IndexError:
             for user_id in user_ids:
                 if user_id < 0 or user_id >= self.n_users:
