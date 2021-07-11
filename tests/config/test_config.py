@@ -48,7 +48,6 @@ class TestConfigClass(unittest.TestCase):
         self.assertIsInstance(config['checkpoint_dir'], str)
 
         self.assertIsInstance(config['eval_args'], dict)
-        self.assertIsInstance(config['real_time_process'], bool)
         self.assertIsInstance(config['metrics'], list)
         self.assertIsInstance(config['topk'], list)
         self.assertIsInstance(config['valid_metric'], str)
