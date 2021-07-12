@@ -92,9 +92,6 @@ class TestOverallConfig(unittest.TestCase):
     def test_eval_batch_size(self):
         self.assertTrue(run_parms({'eval_batch_size': [1, 100]}))
 
-    def test_real_time_process(self):
-        self.assertTrue(run_parms({'real_time_process':[False, True]}))
-
     def test_topk(self):
         settings = {
             'metrics': ["Recall", "MRR", "NDCG", "Hit", "Precision"],
