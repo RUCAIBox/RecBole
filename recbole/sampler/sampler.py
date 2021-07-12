@@ -222,7 +222,7 @@ class Sampler(AbstractSampler):
                 raise ValueError(
                     'Some users have interacted with all items, '
                     'which we can not sample negative items for them. '
-                    'Please set `max_user_inter_num` to filter those users.'
+                    'Please set `user_inter_num_interval` to filter those users.'
                 )
         return used_item_id
 
