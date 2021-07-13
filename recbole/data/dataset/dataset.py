@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2021/7/11 2021/7/1, 2020/11/10
+# @Time   : 2021/7/13 2021/7/1, 2020/11/10
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn
 
@@ -16,7 +16,7 @@ import copy
 import pickle
 import os
 import yaml
-from collections import Counter
+from collections import Counter, defaultdict
 from logging import getLogger
 
 import numpy as np
@@ -272,16 +272,21 @@ class Dataset(object):
         else:
             sub_inter_lens = []
             sub_inter_feats = []
+            overall_field2seqlen = defaultdict(int)
             for filename in self.benchmark_filename_list:
                 file_path = os.path.join(dataset_path, f'{token}.{filename}.inter')
                 if os.path.isfile(file_path):
                     temp = self._load_feat(file_path, FeatureSource.INTERACTION)
                     sub_inter_feats.append(temp)
                     sub_inter_lens.append(len(temp))
+                    for field in self.field2seqlen:
+                        overall_field2seqlen[field] = max(
+                            overall_field2seqlen[field], self.field2seqlen[field])
                 else:
                     raise ValueError(f'File {file_path} not exist.')
             inter_feat = pd.concat(sub_inter_feats)
             self.inter_feat, self.file_size_list = inter_feat, sub_inter_lens
+            self.field2seqlen = overall_field2seqlen
 
     def _load_user_or_item_feat(self, token, dataset_path, source, field_name):
         """Load user/item features.
