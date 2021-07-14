@@ -251,6 +251,28 @@ class Trainer(AbstractTrainer):
         else:
             self.tensorboard.add_scalar(tag, losses, epoch_idx)
 
+    def _add_hparam_to_tensorboard(self, best_valid_result):
+        # base hparam
+        hparam_dict = {
+            'learner': self.config['learner'],
+            'learning_rate': self.config['learning_rate'],
+            'train_batch_size': self.config['train_batch_size']
+        }
+        # other model-specific hparam
+        hparam_dict.update({
+            para: val
+            for para, val in self.config.final_config_dict.items()
+            if para not in {parameter
+                            for parameters in self.config.parameters.values()
+                            for parameter in parameters}.union({'model', 'dataset', 'config_files', 'device'})
+        })
+        for k in hparam_dict:
+            if not (isinstance(hparam_dict[k], int) or isinstance(hparam_dict[k], int) or isinstance(hparam_dict[k], int)
+                    or isinstance(hparam_dict[k], int)):
+                hparam_dict[k] = str(hparam_dict[k])
+
+        self.tensorboard.add_hparams(hparam_dict, {'hparam/best_valid_result': best_valid_result})
+
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         r"""Train the model based on the train data and the valid data.
 
@@ -327,6 +349,7 @@ class Trainer(AbstractTrainer):
                     if verbose:
                         self.logger.info(stop_output)
                     break
+        self._add_hparam_to_tensorboard(self.best_valid_score)
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
