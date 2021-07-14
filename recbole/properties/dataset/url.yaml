@@ -82,3 +82,8 @@ yoochoose-buys-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedData
 yoochoose-clicks-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/YOOCHOOSE/merged/yoochoose-clicks.zip
 yoochoose-buys-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/YOOCHOOSE/not_merged/yoochoose-buys.zip
 yoochoose-clicks-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/YOOCHOOSE/not_merged/yoochoose-clicks.zip
+
+# session-based recommendation benchmarks
+diginetica-session: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/DIGINETICA/session/diginetica_session.zip
+tmall-session: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Tmall/session/tmall_session.zip
+nowplaying-session: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Nowplaying/session/nowplaying_session.zip
