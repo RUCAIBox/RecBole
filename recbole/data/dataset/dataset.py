@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2021/7/13 2021/7/1, 2020/11/10
+# @Time   : 2021/7/14 2021/7/1, 2020/11/10
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn
 
@@ -240,6 +240,8 @@ class Dataset(object):
             token (str): dataset name.
             dataset_path (str): path of dataset dir.
         """
+        if not os.path.exists(dataset_path):
+            self._download()
         self._load_inter_feat(token, dataset_path)
         self.user_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.USER, 'uid_field')
         self.item_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.ITEM, 'iid_field')
@@ -259,9 +261,6 @@ class Dataset(object):
             dataset_path (str): path of dataset dir.
         """
         if self.benchmark_filename_list is None:
-            if not os.path.exists(dataset_path):
-                self._download()
-
             inter_feat_path = os.path.join(dataset_path, f'{token}.inter')
             if not os.path.isfile(inter_feat_path):
                 raise ValueError(f'File {inter_feat_path} not exist.')

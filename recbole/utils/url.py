@@ -106,10 +106,12 @@ def rename_atomic_files(folder, old_name, new_name):
     files = os.listdir(folder)
     for f in files:
         base, suf = os.path.splitext(f)
-        if base != old_name:
+        if not old_name in base:
             continue
         assert suf in {'.inter', '.user', '.item'}
-        os.rename(os.path.join(folder, f), os.path.join(folder, new_name + suf))
+        os.rename(
+            os.path.join(folder, f),
+            os.path.join(folder, base.replace(old_name, new_name) + suf))
 
 if __name__ == '__main__':
     pass
