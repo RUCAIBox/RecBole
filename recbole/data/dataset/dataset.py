@@ -3,7 +3,7 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/28 2021/7/1, 2020/11/10
+# @Time   : 2021/7/11 2021/7/1, 2020/11/10
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
 # @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn
 
@@ -942,7 +942,7 @@ class Dataset(object):
             if ftype == FeatureType.TOKEN:
                 tokens.append(feat[field].values)
             elif ftype == FeatureType.TOKEN_SEQ:
-                tokens.append(feat[field].agg(np.concatenate))
+                tokens.append(feat[field].reset_index(drop=True).agg(np.concatenate))
         split_point = np.cumsum(list(map(len, tokens)))[:-1]
         tokens = np.concatenate(tokens)
         return tokens, split_point

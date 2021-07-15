@@ -28,7 +28,6 @@ eval_args:
   group_by: user
   order: RO
   mode: full
-real_time_process: False
 metrics: ["Recall","MRR","NDCG","Hit","Precision"]
 topk: [10]
 valid_metric: MRR@10

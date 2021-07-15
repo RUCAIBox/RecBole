@@ -302,7 +302,6 @@ class Config(object):
         valid_metric = self.final_config_dict['valid_metric'].split('@')[0]
         self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metric else True
 
-
         topk = self.final_config_dict['topk']
         if isinstance(topk,int):
             self.final_config_dict['topk'] = [topk]
@@ -326,7 +325,6 @@ class Config(object):
         for op_args in default_eval_args:
             if op_args not in self.final_config_dict['eval_args']:
                 self.final_config_dict['eval_args'][op_args] = default_eval_args[op_args]
-
 
     def _init_device(self):
         use_gpu = self.final_config_dict['use_gpu']
