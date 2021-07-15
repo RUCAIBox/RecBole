@@ -175,7 +175,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             user_num = dataset.user_num
             self.uid_list = []
             self.uid2items_num = np.zeros(user_num, dtype=np.int64)
-            self.uid2positive_item = {}
+            self.uid2positive_item = np.array([None] * user_num)
             self.uid2history_item = np.array([None] * user_num)
 
             dataset.sort(by=self.uid_field, ascending=True)
@@ -199,7 +199,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         if uid is None:
             return
         history_item = used_item - positive_item
-        self.uid2positive_item[uid] = positive_item 
+        self.uid2positive_item[uid] = torch.tensor(list(positive_item), dtype=torch.int64) 
         self.uid2items_num[uid] = len(positive_item)
         self.uid2history_item[uid] = torch.tensor(list(history_item), dtype=torch.int64)
 
@@ -230,20 +230,17 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             uid_list = list(user_df[self.uid_field])
    
             history_item = self.uid2history_item[uid_list]
-            history_row = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
-            history_col = torch.cat(list(history_item))
+            positive_item = self.uid2positive_item[uid_list]
 
-            positive_u = []
-            positive_i = []
-            for idx, uid in enumerate(uid_list):
-                uid = uid.item()
-                positive_u += [idx for i in range(self.uid2items_num[uid])]
-                positive_i += list(self.uid2positive_item[uid])
-               
-            positive_u = torch.from_numpy(np.array(positive_u))
-            positive_i = torch.from_numpy(np.array(positive_i))
+            history_u = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
+            history_i = torch.cat(list(history_item))
+
+            positive_u = torch.cat([torch.full_like(pos_iid, i) for i, pos_iid in enumerate(positive_item)])
+            positive_i = torch.cat(list(positive_item))
+           
+
             self.pr += self.step
-            return user_df, (history_row, history_col), positive_u, positive_i
+            return user_df, (history_u, history_i), positive_u, positive_i
         else:
             interaction = self.dataset[self.pr:self.pr + self.step]
             inter_num = len(interaction)
