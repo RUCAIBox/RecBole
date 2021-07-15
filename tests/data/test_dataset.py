@@ -455,7 +455,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args':{'split': {'RS':[0.8, 0.1, 0.1]}, 'order':'TO','mode':'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1] + [1, 2, 3] +
@@ -471,7 +471,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args':{'split': {'RS':[0.8, 0.2, 0.0]}, 'order':'TO', 'mode':'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.2, 0.0]}, 'order': 'TO', 'mode': 'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
@@ -486,7 +486,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args':{'split': {'RS':[0.8, 0.0, 0.2]}, 'order':'TO', 'mode':'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.0, 0.2]}, 'order': 'TO', 'mode': 'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
@@ -501,7 +501,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args':{'split': {'LS': 2}, 'order':'TO', 'mode':'none'}
+            'eval_args': {'split': {'LS': 2}, 'order': 'TO', 'mode': 'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 19)) + [1] + [1] + [1] + [1, 2, 3] +
@@ -517,7 +517,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args':{'split': {'RS':[0.8, 0.1, 0.1]}, 'order':'RO', 'mode':'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'RO', 'mode': 'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 1 + 3 + 7 + 8 + 9
@@ -530,7 +530,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args':{'split': {'RS':[0.8, 0.2, 0.0]}, 'order':'RO', 'mode':'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.2, 0.0]}, 'order': 'RO', 'mode': 'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 2 + 4 + 8 + 8 + 9
@@ -543,7 +543,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args':{'split': {'RS':[0.8, 0.0, 0.2]}, 'order':'RO', 'mode':'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.0, 0.2]}, 'order': 'RO', 'mode': 'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 2 + 4 + 8 + 8 + 9
@@ -562,7 +562,7 @@ class TestSeqDataset:
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat[train_dataset.uid_field].numpy() == [1, 1, 1, 1, 1, 4, 2, 2, 3]).all()
-        assert (train_dataset.inter_feat[train_dataset.item_id_list_field][:,:5].numpy() == [
+        assert (train_dataset.inter_feat[train_dataset.item_id_list_field][:, :5].numpy() == [
             [1, 0, 0, 0, 0],
             [1, 2, 0, 0, 0],
             [1, 2, 3, 0, 0],
@@ -573,17 +573,18 @@ class TestSeqDataset:
             [4, 5, 0, 0, 0],
             [4, 0, 0, 0, 0]]).all()
         assert (train_dataset.inter_feat[train_dataset.iid_field].numpy() == [2, 3, 4, 5, 6, 4, 5, 6, 5]).all()
-        assert (train_dataset.inter_feat[train_dataset.item_list_length_field].numpy() == [1, 2, 3, 4, 5, 1, 1, 2, 1]).all()
+        assert (train_dataset.inter_feat[train_dataset.item_list_length_field].numpy() == [1, 2, 3, 4, 5, 1, 1, 2,
+                                                                                           1]).all()
 
         assert (valid_dataset.inter_feat[valid_dataset.uid_field].numpy() == [1, 2]).all()
-        assert (valid_dataset.inter_feat[valid_dataset.item_id_list_field][:,:6].numpy() == [
+        assert (valid_dataset.inter_feat[valid_dataset.item_id_list_field][:, :6].numpy() == [
             [1, 2, 3, 4, 5, 6],
             [4, 5, 6, 0, 0, 0]]).all()
         assert (valid_dataset.inter_feat[valid_dataset.iid_field].numpy() == [7, 7]).all()
         assert (valid_dataset.inter_feat[valid_dataset.item_list_length_field].numpy() == [6, 3]).all()
 
         assert (test_dataset.inter_feat[test_dataset.uid_field].numpy() == [1, 2, 3]).all()
-        assert (test_dataset.inter_feat[test_dataset.item_id_list_field][:,:7].numpy() == [
+        assert (test_dataset.inter_feat[test_dataset.item_id_list_field][:, :7].numpy() == [
             [1, 2, 3, 4, 5, 6, 7],
             [4, 5, 6, 7, 0, 0, 0],
             [4, 5, 0, 0, 0, 0, 0]]).all()
@@ -626,7 +627,7 @@ class TestSeqDataset:
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat[train_dataset.uid_field].numpy() == [1, 1, 1, 4, 2, 2, 3]).all()
-        assert (train_dataset.inter_feat[train_dataset.item_id_list_field][:,:3].numpy() == [
+        assert (train_dataset.inter_feat[train_dataset.item_id_list_field][:, :3].numpy() == [
             [1, 0, 0],
             [1, 2, 0],
             [1, 2, 3],
@@ -638,7 +639,7 @@ class TestSeqDataset:
         assert (train_dataset.inter_feat[train_dataset.item_list_length_field].numpy() == [1, 2, 3, 1, 1, 2, 1]).all()
 
         assert (valid_dataset.inter_feat[valid_dataset.uid_field].numpy() == [1, 1, 2]).all()
-        assert (valid_dataset.inter_feat[valid_dataset.item_id_list_field][:,:5].numpy() == [
+        assert (valid_dataset.inter_feat[valid_dataset.item_id_list_field][:, :5].numpy() == [
             [1, 2, 3, 4, 0],
             [1, 2, 3, 4, 5],
             [4, 5, 6, 0, 0]]).all()
@@ -646,7 +647,7 @@ class TestSeqDataset:
         assert (valid_dataset.inter_feat[valid_dataset.item_list_length_field].numpy() == [4, 5, 3]).all()
 
         assert (test_dataset.inter_feat[test_dataset.uid_field].numpy() == [1, 1, 2, 3]).all()
-        assert (test_dataset.inter_feat[test_dataset.item_id_list_field][:,:7].numpy() == [
+        assert (test_dataset.inter_feat[test_dataset.item_id_list_field][:, :7].numpy() == [
             [1, 2, 3, 4, 5, 6, 0],
             [1, 2, 3, 4, 5, 6, 7],
             [4, 5, 6, 7, 0, 0, 0],
@@ -666,7 +667,7 @@ class TestSeqDataset:
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat[train_dataset.uid_field].numpy() == [1, 1, 1, 2, 3, 3, 4]).all()
-        assert (train_dataset.inter_feat[train_dataset.item_id_list_field][:,:3].numpy() == [
+        assert (train_dataset.inter_feat[train_dataset.item_id_list_field][:, :3].numpy() == [
             [8, 0, 0],
             [8, 1, 0],
             [8, 1, 2],
@@ -678,7 +679,7 @@ class TestSeqDataset:
         assert (train_dataset.inter_feat[train_dataset.item_list_length_field].numpy() == [1, 2, 3, 1, 1, 2, 1]).all()
 
         assert (valid_dataset.inter_feat[valid_dataset.uid_field].numpy() == [1, 1, 3]).all()
-        assert (valid_dataset.inter_feat[valid_dataset.item_id_list_field][:,:5].numpy() == [
+        assert (valid_dataset.inter_feat[valid_dataset.item_id_list_field][:, :5].numpy() == [
             [8, 1, 2, 3, 0],
             [8, 1, 2, 3, 4],
             [3, 4, 5, 0, 0]]).all()
@@ -686,7 +687,7 @@ class TestSeqDataset:
         assert (valid_dataset.inter_feat[valid_dataset.item_list_length_field].numpy() == [4, 5, 3]).all()
 
         assert (test_dataset.inter_feat[test_dataset.uid_field].numpy() == [1, 1, 3, 4]).all()
-        assert (test_dataset.inter_feat[test_dataset.item_id_list_field][:,:7].numpy() == [
+        assert (test_dataset.inter_feat[test_dataset.item_id_list_field][:, :7].numpy() == [
             [8, 1, 2, 3, 4, 5, 0],
             [8, 1, 2, 3, 4, 5, 6],
             [3, 4, 5, 6, 0, 0, 0],
