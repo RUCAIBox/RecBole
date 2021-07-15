@@ -495,19 +495,49 @@ class TestDataset:
         assert (test_dataset.inter_feat['item_id'].numpy() == list(range(17, 21)) + [] + [2] + [3] + [5] +
                 [9] + [9, 10] + [10, 11]).all()
 
-    def test_TO_LS(self):
+    def test_TO_LS_valid_and_test(self):
         config_dict = {
             'model': 'BPR',
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args': {'split': {'LS': 2}, 'order': 'TO', 'mode': 'none'}
+            'eval_args': {'split': {'LS': 'valid_and_test'}, 'order': 'TO', 'mode': 'none'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 19)) + [1] + [1] + [1] + [1, 2, 3] +
                 list(range(1, 8)) + list(range(1, 9)) + list(range(1, 10))).all()
         assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(19, 20)) + [] + [] + [2] + [4] +
                 [8] + [9] + [10]).all()
+        assert (test_dataset.inter_feat['item_id'].numpy() == list(range(20, 21)) + [] + [2] + [3] + [5] +
+                [9] + [10] + [11]).all()
+
+    def test_TO_LS_valid_only(self):
+        config_dict = {
+            'model': 'BPR',
+            'dataset': 'build_dataset',
+            'data_path': current_path,
+            'load_col': None,
+            'eval_args': {'split': {'LS': 'valid_only'}, 'order': 'TO', 'mode': 'none'}
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 20)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
+                list(range(1, 9)) + list(range(1, 10)) + list(range(1, 11))).all()
+        assert (valid_dataset.inter_feat['item_id'].numpy() == list(range(20, 21)) + [] + [2] + [3] + [5] +
+                [9] + [10] + [11]).all()
+        assert len(test_dataset.inter_feat) == 0
+
+    def test_TO_LS_test_only(self):
+        config_dict = {
+            'model': 'BPR',
+            'dataset': 'build_dataset',
+            'data_path': current_path,
+            'load_col': None,
+            'eval_args': {'split': {'LS': 'test_only'}, 'order': 'TO', 'mode': 'none'}
+        }
+        train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
+        assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 20)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
+                list(range(1, 9)) + list(range(1, 10)) + list(range(1, 11))).all()
+        assert len(valid_dataset.inter_feat) == 0
         assert (test_dataset.inter_feat['item_id'].numpy() == list(range(20, 21)) + [] + [2] + [3] + [5] +
                 [9] + [10] + [11]).all()
 

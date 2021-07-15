@@ -1413,23 +1413,32 @@ class Dataset(object):
                 pr += 1
         return next_index
 
-    def leave_one_out(self, group_by, leave_one_num=1):
+    def leave_one_out(self, group_by, leave_one_mode):
         """Split interaction records by leave one out strategy.
 
         Args:
             group_by (str): Field name that interaction records should grouped by before splitting.
-            leave_one_num (int, optional): Number of parts whose length is expected to be ``1``.
-                Defaults to ``1``.
+            leave_one_mode (str): The way to leave one out. It can only take three values:
+                'valid_and_test', 'valid_only' and 'test_only'.
 
         Returns:
             list: List of :class:`~Dataset`, whose interaction features has been split.
         """
-        self.logger.debug(f'leave one out, group_by=[{group_by}], leave_one_num=[{leave_one_num}]')
+        self.logger.debug(f'leave one out, group_by=[{group_by}], leave_one_mode=[{leave_one_mode}]')
         if group_by is None:
             raise ValueError('leave one out strategy require a group field')
 
         grouped_inter_feat_index = self._grouped_index(self.inter_feat[group_by].numpy())
-        next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num)
+        if leave_one_mode == 'valid_and_test':
+            next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num=2)
+        elif leave_one_mode == 'valid_only':
+            next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num=1)
+            next_index.append([])
+        elif leave_one_mode == 'test_only':
+            next_index = self._split_index_by_leave_one_out(grouped_inter_feat_index, leave_one_num=1)
+            next_index = [next_index[0], [], next_index[1]]
+        else:
+            raise NotImplementedError(f'The leave_one_mode [{leave_one_mode}] has not been implemented.')
 
         self._drop_unused_col()
         next_df = [self.inter_feat[index] for index in next_index]
@@ -1494,9 +1503,7 @@ class Dataset(object):
             else:
                 raise NotImplementedError(f'The grouping method [{group_by}] has not been implemented.')
         elif split_mode == 'LS':
-            if not isinstance(split_args['LS'], int):
-                raise ValueError(f'The value of "LS" [{split_args}] should be a int.')
-            datasets = self.leave_one_out(group_by=self.uid_field, leave_one_num=split_args['LS'])
+            datasets = self.leave_one_out(group_by=self.uid_field, leave_one_mode=split_args['LS'])
         else:
             raise NotImplementedError(f'The splitting_method [{split_mode}] has not been implemented.')
 
