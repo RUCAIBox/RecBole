@@ -237,7 +237,6 @@ class FullSortEvalDataLoader(AbstractDataLoader):
 
             positive_u = torch.cat([torch.full_like(pos_iid, i) for i, pos_iid in enumerate(positive_item)])
             positive_i = torch.cat(list(positive_item))
-           
 
             self.pr += self.step
             return user_df, (history_u, history_i), positive_u, positive_i
