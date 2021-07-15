@@ -176,8 +176,6 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             self.uid_list = []
             self.uid2items_num = np.zeros(user_num, dtype=np.int64)
             self.uid2positive_item = {}
-            # self.uid2swap_idx = np.array([None] * user_num)
-            # self.uid2rev_swap_idx = np.array([None] * user_num)
             self.uid2history_item = np.array([None] * user_num)
 
             dataset.sort(by=self.uid_field, ascending=True)
