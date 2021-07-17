@@ -3,9 +3,9 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2021/3/2, 2021/2/17
-# @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan
-# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn
+# @Time   : 2020/10/04, 2021/3/2, 2021/2/17, 2021/6/30
+# @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan, Xingyu Pan
+# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn, xy_pan@foxmail.com
 
 """
 recbole.config.configurator
@@ -21,8 +21,7 @@ from logging import getLogger
 
 from recbole.evaluator import group_metrics, individual_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
-    general_arguments, training_arguments, evaluation_arguments, dataset_arguments
-from recbole.utils.utils import set_color
+    general_arguments, training_arguments, evaluation_arguments, dataset_arguments, set_color
 
 
 class Config(object):
@@ -79,6 +78,7 @@ class Config(object):
         self._set_default_parameters()
         self._init_device()
         self._set_train_neg_sample_args()
+        self._set_eval_neg_sample_args()
 
     def _init_parameters_category(self):
         self.parameters = dict()
@@ -302,10 +302,29 @@ class Config(object):
         valid_metric = self.final_config_dict['valid_metric'].split('@')[0]
         self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metric else True
 
+        topk = self.final_config_dict['topk']
+        if isinstance(topk,int):
+            self.final_config_dict['topk'] = [topk]
+        
+        metrics = self.final_config_dict['metrics']
+        if isinstance(metrics, str):
+            self.final_config_dict['metrics'] = [metrics] 
+
         if 'additional_feat_suffix' in self.final_config_dict:
             ad_suf = self.final_config_dict['additional_feat_suffix']
             if isinstance(ad_suf, str):
                 self.final_config_dict['additional_feat_suffix'] = [ad_suf]
+
+        # eval_args checking
+        default_eval_args = {
+            'split': {'RS': [0.8, 0.1, 0.1]},
+            'order': 'RO',
+            'group_by': 'user',
+            'mode': 'full'
+        }
+        for op_args in default_eval_args:
+            if op_args not in self.final_config_dict['eval_args']:
+                self.final_config_dict['eval_args'][op_args] = default_eval_args[op_args]
 
     def _init_device(self):
         use_gpu = self.final_config_dict['use_gpu']
@@ -322,6 +341,22 @@ class Config(object):
             }
         else:
             self.final_config_dict['train_neg_sample_args'] = {'strategy': 'none'}
+
+    def _set_eval_neg_sample_args(self):
+        eval_mode = self.final_config_dict['eval_args']['mode']
+        if eval_mode == 'none':
+            eval_neg_sample_args = {'strategy': 'none', 'distribution': 'none'}
+        elif eval_mode == 'full':
+            eval_neg_sample_args = {'strategy': 'full', 'distribution': 'uniform'}
+        elif eval_mode[0:3] == 'uni':
+            sample_by = int(eval_mode[3:])
+            eval_neg_sample_args = {'strategy': 'by', 'by': sample_by, 'distribution': 'uniform'}
+        elif eval_mode[0:3] == 'pop':
+            sample_by = int(eval_mode[3:])
+            eval_neg_sample_args = {'strategy': 'by', 'by': sample_by, 'distribution': 'popularity'}
+        else:
+            raise ValueError(f'the mode [{eval_mode}] in eval_args is not supported.')
+        self.final_config_dict['eval_neg_sample_args'] = eval_neg_sample_args
 
     def __setitem__(self, key, value):
         if not isinstance(key, str):

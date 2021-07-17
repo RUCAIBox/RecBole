@@ -7,7 +7,7 @@ echo "metrics tests finished"
 python -m pytest -v tests/config/test_config.py
 python -m pytest -v tests/config/test_overall.py
 export PYTHONPATH=.
-python tests/config/test_command_line.py --use_gpu=False --valid_metric=Recall@10 --split_ratio=[0.7,0.2,0.1] --metrics=['Recall@10'] --epochs=200 --eval_setting='LO_RS' --learning_rate=0.3
+python tests/config/test_command_line.py --use_gpu=False --valid_metric=Recall@10  --metrics=['Recall@10'] --epochs=200  --learning_rate=0.3
 echo "config tests finished"
 
 python -m pytest -v tests/evaluation_setting

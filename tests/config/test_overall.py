@@ -4,9 +4,10 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE:
-# @Time   : 2020/11/17
+# @Time   : 2021/7/1
 # @Author : Xingyu Pan
-# @Email  : panxy@ruc.edu.cn
+# @Email  : xy_pan@foxmail.com
+
 import os
 import sys
 import unittest
@@ -22,7 +23,7 @@ from recbole.quick_start import run_recbole
 def run_parms(parm_dict, extra_dict=None):
     config_dict = {
         'epochs': 1,
-        'state': 'CRITICAL'
+        'state': 'INFO'
     }
     for name, parms in parm_dict.items():
         for parm in parms:
@@ -91,9 +92,6 @@ class TestOverallConfig(unittest.TestCase):
     def test_eval_batch_size(self):
         self.assertTrue(run_parms({'eval_batch_size': [1, 100]}))
 
-    def test_real_time_process(self):
-        self.assertTrue(run_parms({'real_time_process':[False, True]}))
-
     def test_topk(self):
         settings = {
             'metrics': ["Recall", "MRR", "NDCG", "Hit", "Precision"],
@@ -105,7 +103,7 @@ class TestOverallConfig(unittest.TestCase):
         settings = {
             'metrics':["MAE", "RMSE", "LOGLOSS", "AUC"],
             'valid_metric': 'auc',
-            'eval_setting': 'RO_RS, uni100'
+            'eval_args': {'split': {'RS': [0.8,0.1,0.1]}, 'order': 'RO', 'mode': 'uni100'}
         }
         self.assertTrue(run_parms({'topk':{None, 1}}, extra_dict=settings))
 
@@ -117,22 +115,17 @@ class TestOverallConfig(unittest.TestCase):
         self.assertTrue(run_parms({'metrics':["Recall", ["Recall", "MRR", "NDCG", "Hit", "Precision"]]}, extra_dict=settings))
 
     def test_split_ratio(self):
-        settings = {
-            'leave_one_num':None
-        }
+        self.assertTrue(run_parms({'eval_args': [{'split': {'RS':[0.8,0.1,0.1]}}, {'split': {'RS':[16,2,2]}}]}))
 
-        self.assertTrue(run_parms({'split_ratio':[  # [0.8, 0.2], 
-        [0.8, 0.1, 0.1],  [16, 2, 2]]}))
+    # def test_leave_one_num(self):
+    #     settings = {
+    #         'split_ratio':None
+    #     }
 
-    def test_leave_one_num(self):
-        settings = {
-            'split_ratio':None
-        }
-
-        self.assertTrue(run_parms({'leave_one_num':[1, 2, 3]}))
+    #     self.assertTrue(run_parms({'leave_one_num':[1, 2, 3]}))
         
     def test_group_by_user(self):
-        self.assertTrue(run_parms({'group_by_user':[True, False]}))
+        self.assertTrue(run_parms({'eval_args': [{'group_by': 'user'}, {'group_by': 'none'}]}))
 
 
 

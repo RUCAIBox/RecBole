@@ -50,10 +50,10 @@ def download_url(url, folder):
     logger = getLogger()
 
     if osp.exists(path) and osp.getsize(path) > 0:  # pragma: no cover
-        logger.info('Using exist file', filename)
+        logger.info(f'Using exist file {filename}')
         return path
 
-    logger.info('Downloading', url)
+    logger.info(f'Downloading {url}')
 
     makedirs(folder)
     data = ur.urlopen(url)
@@ -90,7 +90,7 @@ def extract_zip(path, folder):
         folder (string): The folder.
     '''
     logger = getLogger()
-    logger.info('Extracting', path)
+    logger.info(f'Extracting {path}')
     with zipfile.ZipFile(path, 'r') as f:
         f.extractall(folder)
 
@@ -106,7 +106,8 @@ def rename_atomic_files(folder, old_name, new_name):
     files = os.listdir(folder)
     for f in files:
         base, suf = os.path.splitext(f)
-        assert base == old_name
+        if base != old_name:
+            continue
         assert suf in {'.inter', '.user', '.item'}
         os.rename(os.path.join(folder, f), os.path.join(folder, new_name + suf))
 

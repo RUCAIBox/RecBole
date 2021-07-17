@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/28 2020/10/13, 2020/11/10
+# @Time   : 2021/7/11 2021/7/1, 2020/11/10
 # @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn
 
 """
 recbole.data.dataset
@@ -26,8 +26,7 @@ import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 
 from recbole.data.interaction import Interaction
-from recbole.utils import FeatureSource, FeatureType, get_local_time
-from recbole.utils.utils import set_color
+from recbole.utils import FeatureSource, FeatureType, get_local_time, set_color
 from recbole.utils.url import decide_download, download_url, extract_zip, makedirs, rename_atomic_files
 
 
@@ -105,6 +104,7 @@ class Dataset(object):
         self._get_preset()
         self._get_field_from_config()
         self._load_data(self.dataset_name, self.dataset_path)
+        self._init_alias()
         self._data_processing()
 
     def _get_preset(self):
@@ -117,6 +117,7 @@ class Dataset(object):
         self.field2id_token = {}
         self.field2token_id = {}
         self.field2seqlen = self.config['seq_len'] or {}
+        self.alias = {}
         self._preloaded_weight = {}
         self.benchmark_filename_list = self.config['benchmark_filename']
 
@@ -441,6 +442,34 @@ class Dataset(object):
             self.field2seqlen[field] = max(map(len, df[field].values))
         return df
 
+    def _set_alias(self, alias_name, default_value):
+        alias = self.config[f'alias_of_{alias_name}'] or []
+        alias = np.array(default_value + alias)
+        _, idx = np.unique(alias, return_index=True)
+        self.alias[alias_name] = alias[np.sort(idx)]
+
+    def _init_alias(self):
+        """Set :attr:`alias_of_user_id` and :attr:`alias_of_item_id`. And set :attr:`_rest_fields`.
+        """
+        self._set_alias('user_id', [self.uid_field])
+        self._set_alias('item_id', [self.iid_field])
+
+        for alias_name_1, alias_1 in self.alias.items():
+            for alias_name_2, alias_2 in self.alias.items():
+                if alias_name_1 != alias_name_2:
+                    intersect = np.intersect1d(alias_1, alias_2, assume_unique=True)
+                    if len(intersect) > 0:
+                        raise ValueError(f'`alias_of_{alias_name_1}` and `alias_of_{alias_name_2}` '
+                                         f'should not have the same field {list(intersect)}.')
+
+        self._rest_fields = self.token_like_fields
+        for alias_name, alias in self.alias.items():
+            isin = np.isin(alias, self._rest_fields, assume_unique=True)
+            if isin.all() is False:
+                raise ValueError(f'`alias_of_{alias_name}` should not contain '
+                                 f'non-token-like field {list(alias[~isin])}.')
+            self._rest_fields = np.setdiff1d(self._rest_fields, alias, assume_unique=True)
+
     def _user_item_feat_preparation(self):
         """Sort :attr:`user_feat` and :attr:`item_feat` by ``user_id`` or ``item_id``.
         Missing values will be filled later.
@@ -639,46 +668,32 @@ class Dataset(object):
     def _filter_by_inter_num(self):
         """Filter by number of interaction.
 
-        Upper/Lower bounds can be set, only users/items between upper/lower bounds can be remained.
+        The interval of the number of interactions can be set, and only users/items whose number 
+        of interactions is in the specified interval can be retained.
         See :doc:`../user_guide/data/data_args` for detail arg setting.
 
         Note:
-            Lower bound is also called k-core filtering, which means this method will filter loops
-            until all the users and items has at least k interactions.
+            Lower bound of the interval is also called k-core filtering, which means this method 
+            will filter loops until all the users and items has at least k interactions.
         """
         if self.uid_field is None or self.iid_field is None:
             return
 
-        max_user_inter_num = self.config['max_user_inter_num']
-        min_user_inter_num = self.config['min_user_inter_num']
-        max_item_inter_num = self.config['max_item_inter_num']
-        min_item_inter_num = self.config['min_item_inter_num']
+        user_inter_num_interval = self._parse_intervals_str(self.config['user_inter_num_interval'])
+        item_inter_num_interval = self._parse_intervals_str(self.config['item_inter_num_interval'])
 
-        if max_user_inter_num is None and min_user_inter_num is None:
-            user_inter_num = Counter()
-        else:
-            user_inter_num = Counter(self.inter_feat[self.uid_field].values)
-
-        if max_item_inter_num is None and min_item_inter_num is None:
-            item_inter_num = Counter()
-        else:
-            item_inter_num = Counter(self.inter_feat[self.iid_field].values)
+        user_inter_num = Counter(self.inter_feat[self.uid_field].values) if user_inter_num_interval else Counter()
+        item_inter_num = Counter(self.inter_feat[self.iid_field].values) if item_inter_num_interval else Counter()
 
         while True:
-            ban_users = self._get_illegal_ids_by_inter_num(
-                field=self.uid_field,
-                feat=self.user_feat,
-                inter_num=user_inter_num,
-                max_num=max_user_inter_num,
-                min_num=min_user_inter_num
-            )
-            ban_items = self._get_illegal_ids_by_inter_num(
-                field=self.iid_field,
-                feat=self.item_feat,
-                inter_num=item_inter_num,
-                max_num=max_item_inter_num,
-                min_num=min_item_inter_num
-            )
+            ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field,
+                                                           feat=self.user_feat,
+                                                           inter_num=user_inter_num,
+                                                           inter_interval=user_inter_num_interval)
+            ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field,
+                                                           feat=self.item_feat,
+                                                           inter_num=item_inter_num,
+                                                           inter_interval=item_inter_num_interval)
 
             if len(ban_users) == 0 and len(ban_items) == 0:
                 break
@@ -704,44 +719,104 @@ class Dataset(object):
             self.logger.debug(f'[{len(dropped_index)}] dropped interactions.')
             self.inter_feat.drop(dropped_index, inplace=True)
 
-    def _get_illegal_ids_by_inter_num(self, field, feat, inter_num, max_num=None, min_num=None):
+    def _get_illegal_ids_by_inter_num(self, field, feat, inter_num, inter_interval=None):
         """Given inter feat, return illegal ids, whose inter num out of [min_num, max_num]
 
         Args:
             field (str): field name of user_id or item_id.
             feat (pandas.DataFrame): interaction feature.
             inter_num (Counter): interaction number counter.
-            max_num (int, optional): max number of interaction. Defaults to ``None``.
-            min_num (int, optional): min number of interaction. Defaults to ``None``.
+            inter_interval (list, optional): the allowed interval(s) of the number of interactions. 
+                                              Defaults to ``None``.
 
         Returns:
-            set: illegal ids, whose inter num out of [min_num, max_num]
+            set: illegal ids, whose inter num out of inter_intervals.
         """
         self.logger.debug(
-            set_color('get_illegal_ids_by_inter_num', 'blue') +
-            f': field=[{field}], max_num=[{max_num}], min_num=[{min_num}]'
-        )
+            set_color('get_illegal_ids_by_inter_num', 'blue') + f': field=[{field}], inter_interval=[{inter_interval}]')
+        
+        if inter_interval is not None:
+            if len(inter_interval) > 1:
+                self.logger.warning(f'More than one interval of interaction number are given!')
 
-        max_num = max_num or np.inf
-        min_num = min_num or -1
-
-        ids = {id_ for id_ in inter_num if inter_num[id_] < min_num or inter_num[id_] > max_num}
+        ids = {id_ for id_ in inter_num if not self._within_intervals(inter_num[id_], inter_interval)}
 
         if feat is not None:
+            min_num = inter_interval[0][1] if inter_interval else -1
             for id_ in feat[field].values:
                 if inter_num[id_] < min_num:
                     ids.add(id_)
         self.logger.debug(f'[{len(ids)}] illegal_ids_by_inter_num, field=[{field}]')
         return ids
 
+    def _parse_intervals_str(self, intervals_str):
+        """Given string of intervals, return the list of endpoints tuple, where a tuple corresponds to an interval.
+
+        Args:
+            intervals_str (str): the string of intervals, such as "(0,1];[3,4)".
+
+        Returns:
+            list of endpoint tuple, such as [('(', 0, 1.0 , ']'), ('[', 3.0, 4.0 , ')')].
+        """
+        if intervals_str is None:
+            return None
+
+        endpoints = []
+        for endpoint_pair_str in str(intervals_str).split(';'):
+            endpoint_pair_str = endpoint_pair_str.strip()
+            left_bracket, right_bracket = endpoint_pair_str[0], endpoint_pair_str[-1]
+            endpoint_pair = endpoint_pair_str[1:-1].split(',')
+            if not (len(endpoint_pair) == 2 and left_bracket in ['(', '['] and right_bracket in [')', ']']):
+                self.logger.warning(f'{endpoint_pair_str} is an illegal interval!')
+                continue
+
+            def str2npnum(num_str):
+                if num_str.lower() in ["inf", "-inf"]:
+                    return np.inf if num_str.lower() == "inf" else -np.inf
+                else:
+                    try:
+                        return float(num_str)
+                    except ValueError:
+                        raise ValueError(f'Str {num_str} in interval can not be converted to numeric.')
+
+            left_point, right_point = str2npnum(endpoint_pair[0]), str2npnum(endpoint_pair[1])
+            if left_point > right_point:
+                self.logger.warning(f'{endpoint_pair_str} is an illegal interval!')
+
+            endpoints.append((left_bracket, left_point, right_point, right_bracket))
+        return endpoints
+
+    def _within_intervals(self, num, intervals):
+        """ return Ture if the num is in the intervals.
+
+        Note:
+            return true when the intervals is None.
+        """
+        result = True
+        for i, (left_bracket, left_point, right_point, right_bracket) in enumerate(intervals):
+            temp_result = num >= left_point if left_bracket == '[' else num > left_point
+            temp_result &= num <= right_point if right_bracket == ']' else num < right_point
+            result = temp_result if i == 0 else result | temp_result
+        return result
+
     def _filter_by_field_value(self):
         """Filter features according to its values.
         """
-        filter_field = []
-        filter_field += self._drop_by_value(self.config['lowest_val'], lambda x, y: x < y)
-        filter_field += self._drop_by_value(self.config['highest_val'], lambda x, y: x > y)
-        filter_field += self._drop_by_value(self.config['equal_val'], lambda x, y: x != y)
-        filter_field += self._drop_by_value(self.config['not_equal_val'], lambda x, y: x == y)
+
+        val_intervals = [] if self.config['val_interval'] is None else self.config['val_interval']
+        self.logger.debug(set_color('drop_by_value', 'blue') + f': val={val_intervals}')
+
+        for field in val_intervals:
+            if field not in self.field2type:
+                raise ValueError(f'Field [{field}] not defined in dataset.')
+            if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
+                raise ValueError(f'Field [{field}] is not float-like field in dataset, which can\'t be filter.')
+            
+            field_val_interval = self._parse_intervals_str(val_intervals[field])
+            for feat_name in self.feat_name_list:
+                feat = getattr(self, feat_name)
+                if field in feat:
+                    feat.drop(feat.index[~self._within_intervals(feat[field].values, field_val_interval)], inplace=True)
 
     def _reset_index(self):
         """Reset index for all feats in :attr:`feat_name_list`.
@@ -751,33 +826,6 @@ class Dataset(object):
             if feat.empty:
                 raise ValueError('Some feat is empty, please check the filtering settings.')
             feat.reset_index(drop=True, inplace=True)
-
-    def _drop_by_value(self, val, cmp):
-        """Drop illegal rows by value.
-
-        Args:
-            val (dict): value that compared to.
-            cmp (Callable): return False if a row need to be dropped
-
-        Returns:
-            field names that used to compare with val.
-        """
-        if val is None:
-            return []
-
-        self.logger.debug(set_color('drop_by_value', 'blue') + f': val={val}')
-        filter_field = []
-        for field in val:
-            if field not in self.field2type:
-                raise ValueError(f'Field [{field}] not defined in dataset.')
-            if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
-                raise ValueError(f'Field [{field}] is not float-like field in dataset, which can\'t be filter.')
-            for feat_name in self.feat_name_list:
-                feat = getattr(self, feat_name)
-                if field in feat:
-                    feat.drop(feat.index[cmp(feat[field].values, val[field])], inplace=True)
-            filter_field.append(field)
-        return filter_field
 
     def _del_col(self, feat, field):
         """Delete columns
@@ -841,41 +889,7 @@ class Dataset(object):
                 raise ValueError(f'Field [{field}] not in inter_feat.')
             self._del_col(self.inter_feat, field)
 
-    def _get_fields_in_same_space(self):
-        """Parsing ``config['fields_in_same_space']``. See :doc:`../user_guide/data/data_args` for detail arg setting.
-
-        Note:
-            - Each field can only exist ONCE in ``config['fields_in_same_space']``.
-            - user_id and item_id can not exist in ``config['fields_in_same_space']``.
-            - only token-like fields can exist in ``config['fields_in_same_space']``.
-        """
-        fields_in_same_space = self.config['fields_in_same_space'] or []
-        fields_in_same_space = [set(_) for _ in fields_in_same_space]
-        additional = []
-        token_like_fields = self.token_like_fields
-        for field in token_like_fields:
-            count = 0
-            for field_set in fields_in_same_space:
-                if field in field_set:
-                    count += 1
-            if count == 0:
-                additional.append({field})
-            elif count == 1:
-                continue
-            else:
-                raise ValueError(f'Field [{field}] occurred in `fields_in_same_space` more than one time.')
-
-        for field_set in fields_in_same_space:
-            if self.uid_field in field_set and self.iid_field in field_set:
-                raise ValueError('uid_field and iid_field can\'t in the same ID space')
-            for field in field_set:
-                if field not in token_like_fields:
-                    raise ValueError(f'Field [{field}] is not a token-like field.')
-
-        fields_in_same_space.extend(additional)
-        return fields_in_same_space
-
-    def _get_remap_list(self, field_set):
+    def _get_remap_list(self, field_list):
         """Transfer set of fields in the same remapping space into remap list.
 
         If ``uid_field`` or ``iid_field`` in ``field_set``,
@@ -883,7 +897,7 @@ class Dataset(object):
         then field in :attr:`user_feat` or :attr:`item_feat` will be remapped next, finally others.
 
         Args:
-            field_set (set): Set of fields in the same remapping space
+            field_list (numpy.ndarray): List of fields in the same remapping space.
 
         Returns:
             list:
@@ -893,29 +907,23 @@ class Dataset(object):
 
             They will be concatenated in order, and remapped together.
         """
+
         remap_list = []
-        for field, feat in zip([self.uid_field, self.iid_field], [self.user_feat, self.item_feat]):
-            if field in field_set:
-                field_set.remove(field)
-                remap_list.append((self.inter_feat, field, FeatureType.TOKEN))
-                if feat is not None:
-                    remap_list.append((feat, field, FeatureType.TOKEN))
-        for field in field_set:
-            source = self.field2source[field]
-            if isinstance(source, FeatureSource):
-                source = source.value
-            feat = getattr(self, f'{source}_feat')
+        for field in field_list:
             ftype = self.field2type[field]
-            remap_list.append((feat, field, ftype))
+            for feat in self.field2feats(field):
+                remap_list.append((feat, field, ftype))
         return remap_list
 
     def _remap_ID_all(self):
-        """Get ``config['fields_in_same_space']`` firstly, and remap each.
+        """Remap all token-like fields.
         """
-        fields_in_same_space = self._get_fields_in_same_space()
-        self.logger.debug(set_color('fields_in_same_space', 'blue') + f': {fields_in_same_space}')
-        for field_set in fields_in_same_space:
-            remap_list = self._get_remap_list(field_set)
+        for alias in self.alias.values():
+            remap_list = self._get_remap_list(alias)
+            self._remap(remap_list)
+
+        for field in self._rest_fields:
+            remap_list = self._get_remap_list(np.array([field]))
             self._remap(remap_list)
 
     def _concat_remaped_tokens(self, remap_list):
@@ -934,7 +942,7 @@ class Dataset(object):
             if ftype == FeatureType.TOKEN:
                 tokens.append(feat[field].values)
             elif ftype == FeatureType.TOKEN_SEQ:
-                tokens.append(feat[field].agg(np.concatenate))
+                tokens.append(feat[field].reset_index(drop=True).agg(np.concatenate))
         split_point = np.cumsum(list(map(len, tokens)))[:-1]
         tokens = np.concatenate(tokens)
         return tokens, split_point
@@ -1067,6 +1075,24 @@ class Dataset(object):
         self.field2type[dest_field] = self.field2type[source_field]
         self.field2source[dest_field] = self.field2source[source_field]
         self.field2seqlen[dest_field] = self.field2seqlen[source_field]
+
+    def field2feats(self, field):
+        if field not in self.field2source:
+            raise ValueError(f'Field [{field}] not defined in dataset.')
+        if field == self.uid_field:
+            feats = [self.inter_feat]
+            if self.user_feat is not None:
+                feats.append(self.user_feat)
+        elif field == self.iid_field:
+            feats = [self.inter_feat]
+            if self.item_feat is not None:
+                feats.append(self.item_feat)
+        else:
+            source = self.field2source[field]
+            if not isinstance(source, str):
+                source = source.value
+            feats = [getattr(self, f'{source}_feat')]
+        return feats
 
     def token2id(self, field, tokens):
         """Map external tokens to internal ids.
@@ -1421,7 +1447,7 @@ class Dataset(object):
         """
         self.inter_feat.sort(by=by, ascending=ascending)
 
-    def build(self, eval_setting):
+    def build(self):
         """Processing dataset according to evaluation setting, including Group, Order and Split.
         See :class:`~recbole.config.eval_setting.EvalSetting` for details.
 
@@ -1439,24 +1465,41 @@ class Dataset(object):
             datasets = [self.copy(self.inter_feat[start:end]) for start, end in zip([0] + cumsum[:-1], cumsum)]
             return datasets
 
-        ordering_args = eval_setting.ordering_args
-        if ordering_args['strategy'] == 'shuffle':
+        # ordering
+        ordering_args = self.config['eval_args']['order']
+        if ordering_args == 'RO':
             self.shuffle()
-        elif ordering_args['strategy'] == 'by':
-            self.sort(by=ordering_args['field'], ascending=ordering_args['ascending'])
-
-        group_field = eval_setting.group_field
-
-        split_args = eval_setting.split_args
-        if split_args['strategy'] == 'by_ratio':
-            datasets = self.split_by_ratio(split_args['ratios'], group_by=group_field)
-        elif split_args['strategy'] == 'by_value':
-            raise NotImplementedError()
-        elif split_args['strategy'] == 'loo':
-            datasets = self.leave_one_out(group_by=group_field, leave_one_num=split_args['leave_one_num'])
+        elif ordering_args == 'TO':
+            self.sort(by=self.config['TIME_FIELD'])
         else:
-            datasets = self
+            raise NotImplementedError(f'The ordering_method [{ordering_args}] has not been implemented.')
 
+        # splitting & groupping
+        split_args = self.config['eval_args']['split']
+        if split_args is None:
+            raise ValueError('The split_args in eval_args should not be None.')
+        if isinstance(split_args, dict) != True:
+            raise ValueError(f'The split_args [{split_args}] should be a dict.')
+
+        split_mode = list(split_args.keys())[0]
+        assert len(split_args.keys()) == 1
+        group_by = self.config['eval_args']['group_by']
+        if split_mode == 'RS':
+            if isinstance(split_args['RS'], list) != True:
+                raise ValueError(f'The value of "RS" [{split_args}] should be a list.')
+            if group_by == 'none':
+                datasets = self.split_by_ratio(split_args['RS'], group_by=None)
+            elif group_by == 'user':
+                datasets = self.split_by_ratio(split_args['RS'], group_by=self.config['USER_ID_FIELD'])
+            else:
+                raise NotImplementedError(f'The grouping method [{group_by}] has not been implemented.')
+        elif split_mode == 'LS':
+            if isinstance(split_args['LS'], int) != True:
+                raise ValueError(f'The value of "LS" [{split_args}] should be a int.')
+            datasets = self.leave_one_out(group_by=self.config['USER_ID_FIELD'], leave_one_num=split_args['LS'])
+        else:
+            raise NotImplementedError(f'The spliting_method [{split_mode}] has not been implemented.')
+            
         return datasets
 
     def save(self, filepath):

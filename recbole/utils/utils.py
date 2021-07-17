@@ -20,6 +20,7 @@ import random
 
 import numpy as np
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from recbole.utils.enum_type import ModelType
 
@@ -192,16 +193,28 @@ def init_seed(seed, reproducibility):
         torch.backends.cudnn.deterministic = False
 
 
-def set_color(log, color, highlight=True):
-    color_set = ['black', 'red', 'green', 'yellow', 'blue', 'pink', 'cyan', 'white']
-    try:
-        index = color_set.index(color)
-    except:
-        index = len(color_set) - 1
-    prev_log = '\033['
-    if highlight:
-        prev_log += '1;3'
-    else:
-        prev_log += '0;3'
-    prev_log += str(index) + 'm'
-    return prev_log + log + '\033[0m'
+def get_tensorboard(logger):
+    r""" Creates a SummaryWriter of Tensorboard that can log PyTorch models and metrics into a directory for 
+    visualization within the TensorBoard UI.
+    For the convenience of the user, the naming rule of the SummaryWriter's log_dir is the same as the logger.
+
+    Args:
+        logger: its output filename is used to name the SummaryWriter's log_dir.
+                If the filename is not available, we will name the log_dir according to the current time.
+
+    Returns:
+        SummaryWriter: it will write out events and summaries to the event file.
+    """
+    base_path = 'log_tensorboard'
+
+    dir_name = None
+    for handler in logger.handlers:
+        if hasattr(handler, "baseFilename"):
+            dir_name = os.path.basename(getattr(handler, 'baseFilename')).split('.')[0]
+            break
+    if dir_name is None:
+        dir_name = '{}-{}'.format('model', get_local_time())
+
+    dir_path = os.path.join(base_path, dir_name)
+    writer = SummaryWriter(dir_path)
+    return writer
