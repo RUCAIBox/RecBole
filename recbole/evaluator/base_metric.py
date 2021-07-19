@@ -1,12 +1,11 @@
-# -*- encoding: utf-8 -*-
-# @Time    :   2020/10/21
-# @Author  :   Kaiyuan Li
-# @email   :   tsotfsk@outlook.com
+# @Time   : 2020/10/21
+# @Author : Kaiyuan Li
+# @email  : tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/10/21, 2021/6/25
-# @Author  :   Kaiyuan Li, Zhichao Feng
-# @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com
+# @Time   : 2020/10/21, 2021/7/18
+# @Author : Kaiyuan Li, Zhichao Feng
+# @email  : tsotfsk@outlook.com, fzcbupt@gmail.com
 
 """
 recbole.evaluator.abstract_metric
@@ -26,16 +25,13 @@ class TopkMetric(object):
     """
     def __init__(self, config):
         self.topk = config['topk']
-        self.indice = [max(self.topk), 1, 1]
         self.decimal_place = config['metric_decimal_place']
 
     def used_info(self, dataobject):
         """get the bool matrix indicating whether the corresponding item is positive"""
         rec_mat = dataobject.get('rec.topk')
-        topk_idx, shapes, pos_len_list = torch.split(rec_mat, self.indice, dim=1)
-        pos_idx_matrix = (topk_idx >= (shapes - pos_len_list).reshape(-1, 1))
-
-        return pos_idx_matrix.numpy(), pos_len_list.squeeze().numpy()
+        topk_idx, pos_len_list = torch.split(rec_mat, [max(self.topk), 1], dim=1)
+        return rec_mat.to(torch.bool).numpy(), pos_len_list.squeeze().numpy()
 
     def topk_result(self, metric, value):
         """match the metric value to the `k` and put them in `dictionary` form"""

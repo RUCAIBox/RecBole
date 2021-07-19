@@ -2,6 +2,11 @@
 # @Author : Zihan Lin
 # @Email  : zhlin@ruc.edu.cn
 
+# UPDATE
+# @Time   : 2021/7/18
+# @Author : Zhichao Feng
+# @email  : fzcbupt@gmail.com
+
 """
 recbole.evaluator.collector
 ################################################
@@ -9,8 +14,6 @@ recbole.evaluator.collector
 
 from recbole.evaluator.register import Register
 import torch
-from torch.nn.utils.rnn import pad_sequence
-import numpy as np
 import copy
 
 class DataStruct(object):
@@ -67,7 +70,7 @@ class Collector(object):
         self.register = Register(config)
         self.full = ('full' in config['eval_args']['mode'])
         self.topk = self.config['topk']
-        self.topk_idx = None
+        self.device = self.config['device']
 
     def data_collect(self, train_data):
         """ Collect the evaluation resource from training data.
@@ -85,24 +88,6 @@ class Collector(object):
             self.data_struct.set('data.count_items', train_data.dataset.item_counter)
         if self.register.need('data.count_users'):
             self.data_struct.set('data.count_items', train_data.dataset.user_counter)
-
-    def _get_score_matrix(self, scores_tensor, user_len_list):
-        """get score matrix.
-
-            Args:
-                scores_tensor (tensor): the tensor of model output with size of `(N, )`
-                user_len_list(list): number of all items
-
-        """
-        if self.full:
-            scores_matrix = scores_tensor.reshape(len(user_len_list), -1)
-        else:
-            scores_list = torch.split(scores_tensor, user_len_list, dim=0)
-            if scores_tensor.dtype is torch.FloatTensor:
-                scores_matrix = pad_sequence(scores_list, batch_first=True, padding_value=-np.inf)  # n_users x items
-            else:  # padding the id tensor
-                scores_matrix = pad_sequence(scores_list, batch_first=True, padding_value=-1)  # n_users x items
-        return scores_matrix
 
     def _average_rank(self, scores):
         """Get the ranking of an ordered tensor, and take the average of the ranking for positions with equal values.
@@ -123,12 +108,11 @@ class Collector(object):
 
         """
         length, width = scores.shape
-        device = scores.device
-        true_tensor = torch.full((length, 1), True, dtype=torch.bool, device=device)
+        true_tensor = torch.full((length, 1), True, dtype=torch.bool, device=self.device)
 
         obs = torch.cat([true_tensor, scores[:, 1:] != scores[:, :-1]], dim=1)
         # bias added to dense
-        bias = torch.arange(0, length, device=device).repeat(width).reshape(width, -1). \
+        bias = torch.arange(0, length, device=self.device).repeat(width).reshape(width, -1). \
             transpose(1, 0).reshape(-1)
         dense = obs.view(-1).cumsum(0) + bias
 
@@ -139,50 +123,45 @@ class Collector(object):
 
         return avg_rank
 
-    def eval_batch_collect(self, scores_tensor: torch.Tensor, interaction):
+    def eval_batch_collect(self, scores_tensor: torch.Tensor, interaction, positive_u: torch.Tensor, positive_i: torch.Tensor):
         """ Collect the evaluation resource from batched eval data and batched model output.
             Args:
                 scores_tensor (Torch.Tensor): the output tensor of model with the shape of `(N, )`
                 interaction(Interaction): batched eval data.
+                positive_u(Torch.Tensor): the row index of positive items for each user.
+                positive_i(Torch.Tensor): the positive item id for each user.
         """
-        if self.register.need('rec.topk'):
-
-            user_len_list = interaction.user_len_list
-            pos_len_list = interaction.pos_len_list
-
-            scores_matrix = self._get_score_matrix(scores_tensor, user_len_list)
-            scores_matrix = torch.flip(scores_matrix, dims=[-1])
-            shape_matrix = torch.full((len(user_len_list), 1), scores_matrix.shape[1], device=scores_matrix.device)
-
-            pos_len_matrix = torch.from_numpy(np.array(pos_len_list)).view(-1, 1).to(scores_matrix.device)
-
-            assert pos_len_matrix.shape[0] == shape_matrix.shape[0]
+        if self.register.need('rec.items'):
 
             # get topk
-            _, topk_idx = torch.topk(scores_matrix, max(self.topk), dim=-1)  # n_users x k
-            self.topk_idx = topk_idx
-            # pack top_idx and shape_matrix
-            result = torch.cat((topk_idx, shape_matrix, pos_len_matrix), dim=1)
+            _, topk_idx = torch.topk(scores_tensor, max(self.topk), dim=-1)  # n_users x k
+            self.data_struct.update_tensor('rec.items', topk_idx)
+
+        if self.register.need('rec.topk'):
+
+            _, topk_idx = torch.topk(scores_tensor, max(self.topk), dim=-1)  # n_users x k
+            pos_matrix = torch.zeros_like(scores_tensor, dtype=torch.int)
+            pos_matrix[positive_u, positive_i] = 1
+            pos_len_list = pos_matrix.sum(dim=1, keepdim=True)
+            pos_idx = torch.gather(pos_matrix, dim=1, index=topk_idx)
+            result = torch.cat((pos_idx, pos_len_list), dim=1)
             self.data_struct.update_tensor('rec.topk', result)
 
         if self.register.need('rec.meanrank'):
 
-            user_len_list = interaction.user_len_list
-            pos_len_list = interaction.pos_len_list
-            pos_len_tensor = torch.Tensor(pos_len_list).to(scores_tensor.device)
-            scores_matrix = self._get_score_matrix(scores_tensor, user_len_list)
-            desc_scores, desc_index = torch.sort(scores_matrix, dim=-1, descending=True)
+            desc_scores, desc_index = torch.sort(scores_tensor, dim=-1, descending=True)
 
             # get the index of positive items in the ranking list
-            pos_index = (desc_index < pos_len_tensor.reshape(-1, 1))
+            pos_matrix = torch.zeros_like(scores_tensor)
+            pos_matrix[positive_u, positive_i] = 1
+            pos_index = torch.gather(pos_matrix, dim=1, index=desc_index)
 
             avg_rank = self._average_rank(desc_scores)
-            pos_rank_sum = torch.where(pos_index, avg_rank, torch.zeros_like(avg_rank)).sum(axis=-1).reshape(-1, 1)
+            pos_rank_sum = torch.where(pos_index == 1, avg_rank, torch.zeros_like(avg_rank)).sum(dim=-1, keepdim=True)
 
-            pos_len_matrix = torch.from_numpy(np.array(pos_len_list)).view(-1, 1).to(scores_matrix.device)
-            user_len_matrix = torch.from_numpy(np.array(user_len_list)).view(-1, 1).to(scores_matrix.device)
-
-            result = torch.cat((pos_rank_sum, user_len_matrix, pos_len_matrix), dim=1)
+            pos_len_list = pos_matrix.sum(dim=1, keepdim=True)
+            user_len_list = desc_scores.argmin(dim=1, keepdim=True)
+            result = torch.cat((pos_rank_sum, user_len_list, pos_len_list), dim=1)
             self.data_struct.update_tensor('rec.meanrank', result)
 
         if self.register.need('rec.score'):
@@ -191,21 +170,7 @@ class Collector(object):
 
         if self.register.need('data.label'):
             self.label_field = self.config['LABEL_FIELD']
-            self.data_struct.update_tensor('data.label', interaction[self.label_field].to(scores_tensor.device))
-
-        if self.register.need('rec.items'):
-            if not self.register.need('rec.topk'):
-                raise ValueError("Recommended items is only prepared for top-k metrics!")
-            if self.full:
-                self.data_struct.update_tensor('rec.items', self.topk_idx)
-            else:
-                self.item_field = self.config['ITEM_ID_FIELD']
-                user_len_list = interaction.user_len_list
-                item_tensor = interaction[self.item_field].to(scores_tensor.device)
-                item_matrix = self._get_score_matrix(item_tensor, user_len_list)  # n_user * n_items
-                topk_item = torch.gather(item_matrix, dim=1, index=self.topk_idx)  # n_user * k
-
-                self.data_struct.update_tensor('rec.items', topk_item)
+            self.data_struct.update_tensor('data.label', interaction[self.label_field].to(self.device))
 
     def model_collect(self, model: torch.nn.Module):
 
@@ -228,7 +193,7 @@ class Collector(object):
 
         if self.register.need('data.label'):
             self.label_field = self.config['LABEL_FIELD']
-            self.data_struct.update_tensor('data.label', data_label.to(eval_pred.device))
+            self.data_struct.update_tensor('data.label', data_label.to(self.device))
 
     def get_data_struct(self):
         """ Get all the evaluation resource that been collected.

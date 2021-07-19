@@ -3,7 +3,7 @@
 # @Email  : zhlin@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2021/7/5
+# @Time   : 2021/7/18
 # @Author : Zhichao Feng
 # @email  : fzcbupt@gmail.com
 
@@ -21,11 +21,11 @@ metric_information = {
     'precision': ['rec.topk'],
     'map': ['rec.topk'],
 
-    'itemcoverage': ['rec.topk', 'rec.items', 'data.num_items'],  # Sign in for topk non-accuracy metrics
-    'averagepopularity': ['rec.topk', 'rec.items', 'data.count_items'],
-    'giniindex': ['rec.topk', 'rec.items', 'data.num_items'],
-    'shannonentropy': ['rec.topk', 'rec.items'],
-    'tailpercentage': ['rec.topk', 'rec.items', 'data.count_items'],
+    'itemcoverage': ['rec.items', 'data.num_items'],  # Sign in for topk non-accuracy metrics
+    'averagepopularity': ['rec.items', 'data.count_items'],
+    'giniindex': ['rec.items', 'data.num_items'],
+    'shannonentropy': ['rec.items'],
+    'tailpercentage': ['rec.items', 'data.count_items'],
 
     'gauc': ['rec.meanrank'],  # Sign in for full ranking metrics
 
