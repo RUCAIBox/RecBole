@@ -139,20 +139,6 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
         
         return cur_data, idx_list, positive_u, positive_i
 
-    def get_pos_len_list(self):
-        """
-        Returns:
-            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
-        """
-        return self.uid2items_num[self.uid_list]
-
-    def get_user_len_list(self):
-        """
-        Returns:
-            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
-        """
-        return self.uid2items_num[self.uid_list] * self.times
-
 
 class FullSortEvalDataLoader(AbstractDataLoader):
     """:class:`FullSortEvalDataLoader` is a dataloader for full-sort evaluation. In order to speed up calculation,
@@ -248,20 +234,3 @@ class FullSortEvalDataLoader(AbstractDataLoader):
 
             self.pr += self.step
             return interaction, None, positive_u, positive_i  
-
-    def get_pos_len_list(self):
-        """
-        Returns:
-            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
-        """
-        if not self.is_sequential:
-            return self.uid2items_num[self.uid_list]
-        else:
-            return np.ones(self.pr_end, dtype=np.int64)
-
-    def get_user_len_list(self):
-        """
-        Returns:
-            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
-        """
-        return np.full(self.pr_end, self.dataset.item_num)
