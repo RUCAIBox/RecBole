@@ -117,6 +117,7 @@ class NegSampleDataLoader(AbstractDataLoader):
         self.iid_field = dataset.iid_field
         self.dl_format = dl_format
         self.neg_sample_args = neg_sample_args
+        self.times = 1
         if self.neg_sample_args['strategy'] == 'by':
             self.neg_sample_num = self.neg_sample_args['by']
 
