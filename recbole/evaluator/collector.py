@@ -2,6 +2,11 @@
 # @Author : Zihan Lin
 # @Email  : zhlin@ruc.edu.cn
 
+# UPDATE
+# @Time   : 2021/7/18
+# @Author : Zhichao Feng
+# @email  : fzcbupt@gmail.com
+
 """
 recbole.evaluator.collector
 ################################################
