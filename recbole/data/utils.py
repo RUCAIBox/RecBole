@@ -42,9 +42,6 @@ def create_dataset(config):
         elif model_type == ModelType.KNOWLEDGE:
             from .dataset import KnowledgeBasedDataset
             return KnowledgeBasedDataset(config)
-        elif model_type == ModelType.SOCIAL:
-            from .dataset import SocialDataset
-            return SocialDataset(config)
         elif model_type == ModelType.DECISIONTREE:
             from .dataset import DecisionTreeDataset
             return DecisionTreeDataset(config)
@@ -110,8 +107,8 @@ def data_preparation(config, dataset, save=False):
         kg_sampler = KGSampler(dataset, config['train_neg_sample_args']['distribution'])
         train_data = get_dataloader(config, 'train')(config, train_dataset, train_sampler, kg_sampler, shuffle=True)
 
-    valid_data = get_dataloader(config, 'valid')(config, valid_dataset, valid_sampler, shuffle=False)
-    test_data = get_dataloader(config, 'test')(config, test_dataset, test_sampler, shuffle=False)
+    valid_data = get_dataloader(config, 'evaluation')(config, valid_dataset, valid_sampler, shuffle=False)
+    test_data = get_dataloader(config, 'evaluation')(config, test_dataset, test_sampler, shuffle=False)
 
     if save:
         save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))

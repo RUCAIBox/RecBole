@@ -29,6 +29,7 @@ class AbstractDataLoader:
     Args:
         config (Config): The config of dataloader.
         dataset (Dataset): The dataset of dataloader.
+        sampler (Sampler): The sampler of dataloader.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
 
     Attributes:
