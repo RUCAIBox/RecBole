@@ -120,30 +120,24 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
     def _next_batch_data(self):
         uid_list = self.uid_list[self.pr:self.pr + self.step]
         data_list = []
-        for uid in uid_list:
+        idx_list = []
+        positive_u = []
+        positive_i = torch.tensor([], dtype=torch.int64)
+
+        for idx, uid in enumerate(uid_list):
             index = self.uid2index[uid]
             data_list.append(self._neg_sampling(self.dataset[index]))
+            idx_list += [idx for i in range(self.uid2items_num[uid] * self.times)]
+            positive_u += [idx for i in range(self.uid2items_num[uid])]
+            positive_i = torch.cat((positive_i, self.dataset[index][self.iid_field]), 0)
+
         cur_data = cat_interactions(data_list)
-        if self.neg_sample_args['strategy'] == 'by':
-            pos_len_list = self.uid2items_num[uid_list]
-            user_len_list = pos_len_list * self.times
-            cur_data.set_additional_info(list(pos_len_list), list(user_len_list))
+        idx_list = torch.from_numpy(np.array(idx_list))
+        positive_u = torch.from_numpy(np.array(positive_u))
+
         self.pr += self.step
-        return cur_data
-
-    def get_pos_len_list(self):
-        """
-        Returns:
-            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
-        """
-        return self.uid2items_num[self.uid_list]
-
-    def get_user_len_list(self):
-        """
-        Returns:
-            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
-        """
-        return self.uid2items_num[self.uid_list] * self.times
+        
+        return cur_data, idx_list, positive_u, positive_i
 
 
 class FullSortEvalDataLoader(AbstractDataLoader):
@@ -167,8 +161,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             user_num = dataset.user_num
             self.uid_list = []
             self.uid2items_num = np.zeros(user_num, dtype=np.int64)
-            self.uid2swap_idx = np.array([None] * user_num)
-            self.uid2rev_swap_idx = np.array([None] * user_num)
+            self.uid2positive_item = np.array([None] * user_num)
             self.uid2history_item = np.array([None] * user_num)
 
             dataset.sort(by=self.uid_field, ascending=True)
@@ -192,11 +185,8 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         if uid is None:
             return
         history_item = used_item - positive_item
-        positive_item_num = len(positive_item)
-        self.uid2items_num[uid] = positive_item_num
-        swap_idx = torch.tensor(sorted(set(range(positive_item_num)) ^ positive_item))
-        self.uid2swap_idx[uid] = swap_idx
-        self.uid2rev_swap_idx[uid] = swap_idx.flip(0)
+        self.uid2positive_item[uid] = torch.tensor(list(positive_item), dtype=torch.int64) 
+        self.uid2items_num[uid] = len(positive_item)
         self.uid2history_item[uid] = torch.tensor(list(history_item), dtype=torch.int64)
 
     def _init_batch_size_and_step(self):
@@ -223,51 +213,24 @@ class FullSortEvalDataLoader(AbstractDataLoader):
     def _next_batch_data(self):
         if not self.is_sequential:
             user_df = self.user_df[self.pr:self.pr + self.step]
-            uid_list = list(user_df[self.dataset.uid_field])
-            pos_len_list = self.uid2items_num[uid_list]
-            user_len_list = np.full(len(uid_list), self.dataset.item_num)
-            user_df.set_additional_info(pos_len_list, user_len_list)
-
+            uid_list = list(user_df[self.uid_field])
+   
             history_item = self.uid2history_item[uid_list]
-            history_row = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
-            history_col = torch.cat(list(history_item))
+            positive_item = self.uid2positive_item[uid_list]
 
-            swap_idx = self.uid2swap_idx[uid_list]
-            rev_swap_idx = self.uid2rev_swap_idx[uid_list]
-            swap_row = torch.cat([torch.full_like(swap, i) for i, swap in enumerate(swap_idx)])
-            swap_col_after = torch.cat(list(swap_idx))
-            swap_col_before = torch.cat(list(rev_swap_idx))
+            history_u = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
+            history_i = torch.cat(list(history_item))
+
+            positive_u = torch.cat([torch.full_like(pos_iid, i) for i, pos_iid in enumerate(positive_item)])
+            positive_i = torch.cat(list(positive_item))
 
             self.pr += self.step
-            return user_df, (history_row, history_col), swap_row, swap_col_after, swap_col_before
+            return user_df, (history_u, history_i), positive_u, positive_i
         else:
             interaction = self.dataset[self.pr:self.pr + self.step]
             inter_num = len(interaction)
-            pos_len_list = np.ones(inter_num, dtype=np.int64)
-            user_len_list = np.full(inter_num, self.dataset.item_num)
-            interaction.set_additional_info(pos_len_list, user_len_list)
-            scores_row = torch.arange(inter_num).repeat(2)
-            padding_idx = torch.zeros(inter_num, dtype=torch.int64)
-            positive_idx = interaction[self.iid_field]
-            scores_col_after = torch.cat((padding_idx, positive_idx))
-            scores_col_before = torch.cat((positive_idx, padding_idx))
+            positive_u = torch.arange(inter_num)
+            positive_i = interaction[self.iid_field]
 
             self.pr += self.step
-            return interaction, None, scores_row, scores_col_after, scores_col_before
-
-    def get_pos_len_list(self):
-        """
-        Returns:
-            numpy.ndarray: Number of positive item for each user in a training/evaluating epoch.
-        """
-        if not self.is_sequential:
-            return self.uid2items_num[self.uid_list]
-        else:
-            return np.ones(self.pr_end, dtype=np.int64)
-
-    def get_user_len_list(self):
-        """
-        Returns:
-            numpy.ndarray: Number of all item for each user in a training/evaluating epoch.
-        """
-        return np.full(self.pr_end, self.dataset.item_num)
+            return interaction, None, positive_u, positive_i  
