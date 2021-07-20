@@ -279,8 +279,7 @@ class Dataset(object):
                     sub_inter_feats.append(temp)
                     sub_inter_lens.append(len(temp))
                     for field in self.field2seqlen:
-                        overall_field2seqlen[field] = max(
-                            overall_field2seqlen[field], self.field2seqlen[field])
+                        overall_field2seqlen[field] = max(overall_field2seqlen[field], self.field2seqlen[field])
                 else:
                     raise ValueError(f'File {file_path} not exist.')
             inter_feat = pd.concat(sub_inter_feats)
@@ -497,8 +496,7 @@ class Dataset(object):
 
         self.logger.debug(f'Preload weight matrix for {preload_fields}.')
 
-        for preload_id_field in preload_fields:
-            preload_value_field = preload_fields[preload_id_field]
+        for preload_id_field, preload_value_field in preload_fields.items():
             if preload_id_field not in self.field2source:
                 raise ValueError(f'Preload id field [{preload_id_field}] not exist.')
             if preload_value_field not in self.field2source:
@@ -511,40 +509,35 @@ class Dataset(object):
                     f'while preload value field [{preload_value_field}] is from source [{pv_source}], '
                     f'which should be the same.'
                 )
-            for feat_name in self.feat_name_list:
-                feat = getattr(self, feat_name)
-                if preload_id_field in feat:
-                    id_ftype = self.field2type[preload_id_field]
-                    if id_ftype != FeatureType.TOKEN:
-                        raise ValueError(
-                            f'Preload id field [{preload_id_field}] should be type token, but is [{id_ftype}].'
-                        )
-                    value_ftype = self.field2type[preload_value_field]
-                    token_num = self.num(preload_id_field)
-                    if value_ftype == FeatureType.FLOAT:
-                        matrix = np.zeros(token_num)
-                        preload_ids = feat[preload_id_field].values
-                        preload_values = feat[preload_value_field].values
-                        for pid, pv in zip(preload_ids, preload_values):
-                            matrix[pid] = pv
-                    elif value_ftype == FeatureType.FLOAT_SEQ:
-                        max_len = self.field2seqlen[preload_value_field]
-                        matrix = np.zeros((token_num, max_len))
-                        preload_ids = feat[preload_id_field].values
-                        preload_values = feat[preload_value_field].to_list()
-                        for pid, prow in zip(preload_ids, preload_values):
-                            length = len(prow)
-                            if length <= max_len:
-                                matrix[pid, :length] = prow
-                            else:
-                                matrix[pid] = prow[:max_len]
+
+            id_ftype = self.field2type[preload_id_field]
+            value_ftype = self.field2type[preload_value_field]
+            if id_ftype != FeatureType.TOKEN:
+                raise ValueError(f'Preload id field [{preload_id_field}] should be type token, but is [{id_ftype}].')
+            if value_ftype not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
+                self.logger.warning(
+                    f'Field [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, '
+                    f'which will not be handled by preload matrix.'
+                )
+                continue
+
+            token_num = self.num(preload_id_field)
+            feat = self.field2feats(preload_id_field)[0]
+            if value_ftype == FeatureType.FLOAT:
+                matrix = np.zeros(token_num)
+                matrix[feat[preload_id_field]] = feat[preload_value_field]
+            else:
+                max_len = self.field2seqlen[preload_value_field]
+                matrix = np.zeros((token_num, max_len))
+                preload_ids = feat[preload_id_field].values
+                preload_values = feat[preload_value_field].to_list()
+                for pid, prow in zip(preload_ids, preload_values):
+                    length = len(prow)
+                    if length <= max_len:
+                        matrix[pid, :length] = prow
                     else:
-                        self.logger.warning(
-                            f'Field [{preload_value_field}] with type [{value_ftype}] is not `float` or `float_seq`, '
-                            f'which will not be handled by preload matrix.'
-                        )
-                        continue
-                    self._preloaded_weight[preload_id_field] = matrix
+                        matrix[pid] = prow[:max_len]
+            self._preloaded_weight[preload_id_field] = matrix
 
     def _fill_nan(self):
         """Missing value imputation.
@@ -585,10 +578,10 @@ class Dataset(object):
         if self.config['normalize_field']:
             fields = self.config['normalize_field']
             for field in fields:
-                ftype = self.field2type[field]
                 if field not in self.field2type:
                     raise ValueError(f'Field [{field}] does not exist.')
-                elif ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
+                ftype = self.field2type[field]
+                if ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
                     self.logger.warning(f'{field} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.')
         elif self.config['normalize_all']:
             fields = self.float_like_fields
@@ -597,31 +590,23 @@ class Dataset(object):
 
         self.logger.debug(set_color('Normalized fields', 'blue') + f': {fields}')
 
-        for feat_name in self.feat_name_list:
-            feat = getattr(self, feat_name)
-            for field in feat:
-                if field not in fields:
-                    continue
+        for field in fields:
+            for feat in self.field2feats(field):
+                def norm(arr):
+                    mx, mn = max(arr), min(arr)
+                    if mx == mn:
+                        self.logger.warning(f'All the same value in [{field}] from [{feat}_feat].')
+                        arr = 1.0
+                    else:
+                        arr = (arr - mn) / (mx - mn)
+                    return arr
+
                 ftype = self.field2type[field]
                 if ftype == FeatureType.FLOAT:
-                    lst = feat[field].values
-                    mx, mn = max(lst), min(lst)
-                    if mx == mn:
-                        self.logger.warning(f'All the same value in [{field}] from [{feat}_feat].')
-                        feat[field] = 1.0
-                    else:
-                        feat[field] = (lst - mn) / (mx - mn)
+                    feat[field] = norm(feat[field].values)
                 elif ftype == FeatureType.FLOAT_SEQ:
                     split_point = np.cumsum(feat[field].agg(len))[:-1]
-                    lst = feat[field].agg(np.concatenate)
-                    mx, mn = max(lst), min(lst)
-                    if mx == mn:
-                        self.logger.warning(f'All the same value in [{field}] from [{feat}_feat].')
-                        lst = 1.0
-                    else:
-                        lst = (lst - mn) / (mx - mn)
-                    lst = np.split(lst, split_point)
-                    feat[field] = lst
+                    feat[field] = np.split(norm(feat[field].agg(np.concatenate)), split_point)
 
     def _filter_nan_user_or_item(self):
         """Filter NaN user_id and item_id
@@ -774,16 +759,7 @@ class Dataset(object):
                 self.logger.warning(f'{endpoint_pair_str} is an illegal interval!')
                 continue
 
-            def str2npnum(num_str):
-                if num_str.lower() in ["inf", "-inf"]:
-                    return np.inf if num_str.lower() == "inf" else -np.inf
-                else:
-                    try:
-                        return float(num_str)
-                    except ValueError:
-                        raise ValueError(f'Str {num_str} in interval can not be converted to numeric.')
-
-            left_point, right_point = str2npnum(endpoint_pair[0]), str2npnum(endpoint_pair[1])
+            left_point, right_point = float(endpoint_pair[0]), float(endpoint_pair[1])
             if left_point > right_point:
                 self.logger.warning(f'{endpoint_pair_str} is an illegal interval!')
 
@@ -817,10 +793,8 @@ class Dataset(object):
                 raise ValueError(f'Field [{field}] is not float-like field in dataset, which can\'t be filter.')
 
             field_val_interval = self._parse_intervals_str(val_intervals[field])
-            for feat_name in self.feat_name_list:
-                feat = getattr(self, feat_name)
-                if field in feat:
-                    feat.drop(feat.index[~self._within_intervals(feat[field].values, field_val_interval)], inplace=True)
+            for feat in self.field2feats(field):
+                feat.drop(feat.index[~self._within_intervals(feat[field].values, field_val_interval)], inplace=True)
 
     def _reset_index(self):
         """Reset index for all feats in :attr:`feat_name_list`.
