@@ -68,6 +68,7 @@ def load_example():
     model = get_model(config['model'])(config, train_data).to(config['device'])
     checkpoint = torch.load('../saved/BPR-Mar-20-2021_17-11-05.pth')  # Here you can replace it by your model path.
     model.load_state_dict(checkpoint['state_dict'])
+    model.load_other_parameter(checkpoint.get('other_parameter'))
     logger.info(model)
     logger.info(train_data.dataset)
     logger.info(valid_data.dataset)

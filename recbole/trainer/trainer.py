@@ -205,6 +205,7 @@ class Trainer(AbstractTrainer):
             'cur_step': self.cur_step,
             'best_valid_score': self.best_valid_score,
             'state_dict': self.model.state_dict(),
+            'other_parameter': self.model.other_parameter(),
             'optimizer': self.optimizer.state_dict(),
         }
         torch.save(state, self.saved_model_file)
@@ -229,6 +230,7 @@ class Trainer(AbstractTrainer):
                 'This may yield an exception while state_dict is being loaded.'
             )
         self.model.load_state_dict(checkpoint['state_dict'])
+        self.model.load_other_parameter(checkpoint.get('other_parameter'))
 
         # load optimizer state from checkpoint only when optimizer type is not changed
         self.optimizer.load_state_dict(checkpoint['optimizer'])
@@ -424,6 +426,7 @@ class Trainer(AbstractTrainer):
                 checkpoint_file = self.saved_model_file
             checkpoint = torch.load(checkpoint_file)
             self.model.load_state_dict(checkpoint['state_dict'])
+            self.model.load_other_parameter(checkpoint.get('other_parameter'))
             message_output = 'Loading model structure and parameters from {}'.format(checkpoint_file)
             self.logger.info(message_output)
 
