@@ -67,6 +67,7 @@ class LightGCN(GeneralRecommender):
 
         # parameters initialization
         self.apply(xavier_uniform_initialization)
+        self.other_parameter_name = ['restore_user_e', 'restore_item_e']
 
     def get_norm_adj_mat(self):
         r"""Get the normalized interaction matrix of users and items.

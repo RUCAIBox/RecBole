@@ -65,6 +65,17 @@ class AbstractRecommender(nn.Module):
         """
         raise NotImplementedError
 
+    def other_parameter(self):
+        if hasattr(self, 'other_parameter_name'):
+            return {key: getattr(self, key) for key in self.other_parameter_name}
+        return dict()
+
+    def load_other_parameter(self, para):
+        if para is None:
+            return
+        for key, value in para.items():
+            setattr(self, key, value)
+
     def __str__(self):
         """
         Model prints with number of trainable parameters
