@@ -22,9 +22,9 @@ Secondly, update the args as (suppose that ``USER_ID_FIELD: user_id``):
     load_col:
         # inter/user/item/...: As usual
         useremb: [uid, user_emb]
-    fields_in_same_space: [[uid, user_id]]
+    alias_of_user_id: [uid]
     preload_weight: 
-    	uid: user_emb
+        uid: user_emb
 
 Then, this additional embedding feature file will be loaded into the :class:`Dataset` object. These new features can be accessed as following:
 
@@ -39,6 +39,6 @@ In your model, user embedding matrix can be initialized by your pre-trained embe
 
     class YourModel(GeneralRecommender):
         def __init__(self, config, dataset):
-        	pretrained_user_emb = dataset.get_preload_weight('uid')
-        	self.user_embedding = nn.Embedding.from_pretrained(torch.from_numpy(pretrained_user_emb))
+            pretrained_user_emb = dataset.get_preload_weight('uid')
+            self.user_embedding = nn.Embedding.from_pretrained(torch.from_numpy(pretrained_user_emb))
 

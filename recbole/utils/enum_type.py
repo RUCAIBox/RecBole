@@ -24,9 +24,8 @@ class ModelType(Enum):
     SEQUENTIAL = 2
     CONTEXT = 3
     KNOWLEDGE = 4
-    SOCIAL = 5
-    TRADITIONAL = 6
-    DECISIONTREE = 7
+    TRADITIONAL = 5
+    DECISIONTREE = 6
 
 
 class DataLoaderType(Enum):

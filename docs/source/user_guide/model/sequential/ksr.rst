@@ -58,10 +58,8 @@ And then:
             link: [item_id, entity_id]
             ent_feature: [ent_id, ent_vec]
             rel_feature: [rel_id, rel_vec]
-        fields_in_same_space: [
-            [ent_id, entity_id]
-            [rel_id, relation_id]
-        ]
+        alias_of_entity_id: [ent_id]
+        alias_of_relation_id: [rel_id]
         preload_weight:
             ent_id: ent_vec
             rel_id: rel_vec
