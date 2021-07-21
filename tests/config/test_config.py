@@ -70,7 +70,7 @@ class TestConfigClass(unittest.TestCase):
             'training_neg_sample_num': 0
         }
         config = Config(model='SASRec', dataset='ml-100k', config_dict=para_dict)
-        self.assertEqual(config['eval_args']['split'], {'LS': 2})
+        self.assertEqual(config['eval_args']['split'], {'LS': 'valid_and_test'})
         self.assertEqual(config['eval_args']['order'], 'TO')
         self.assertEqual(config['eval_args']['mode'],'full')
         self.assertEqual(config['eval_args']['group_by'], 'user')
@@ -81,7 +81,7 @@ class TestConfigClass(unittest.TestCase):
         self.assertEqual(config['model'], 'BPR')
         self.assertEqual(config['learning_rate'], 0.1)
         self.assertEqual(config['topk'], [5, 20])
-        self.assertEqual(config['eval_args']['split'], {'LS': 2})
+        self.assertEqual(config['eval_args']['split'], {'LS': 'valid_and_test'})
         self.assertEqual(config['eval_args']['order'], 'TO')
         self.assertEqual(config['eval_args']['mode'],'full')
         self.assertEqual(config['eval_args']['group_by'], 'user')
@@ -104,7 +104,7 @@ class TestConfigClass(unittest.TestCase):
 
         self.assertEqual(config['learning_rate'], 0.2)  # default, file, dict
         self.assertEqual(config['topk'], [50, 100])     # default, file, dict
-        self.assertEqual(config['eval_args']['split'], {'LS': 2})
+        self.assertEqual(config['eval_args']['split'], {'LS': 'valid_and_test'})
         self.assertEqual(config['eval_args']['order'], 'TO')
         self.assertEqual(config['eval_args']['mode'],'full')
         self.assertEqual(config['eval_args']['group_by'], 'user')

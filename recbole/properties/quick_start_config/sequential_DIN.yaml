@@ -1,5 +1,5 @@
 eval_args:
-  split: {'LS': 2}
+  split: {'LS': 'valid_and_test'}
   order: TO
   mode: uni100
 metrics: ['AUC', 'LogLoss']

@@ -29,6 +29,7 @@ class AbstractDataLoader:
     Args:
         config (Config): The config of dataloader.
         dataset (Dataset): The dataset of dataloader.
+        sampler (Sampler): The sampler of dataloader.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
 
     Attributes:
@@ -117,17 +118,18 @@ class NegSampleDataLoader(AbstractDataLoader):
         self.iid_field = dataset.iid_field
         self.dl_format = dl_format
         self.neg_sample_args = neg_sample_args
+        self.times = 1
         if self.neg_sample_args['strategy'] == 'by':
-            self.neg_sample_by = self.neg_sample_args['by']
+            self.neg_sample_num = self.neg_sample_args['by']
 
             if self.dl_format == InputType.POINTWISE:
-                self.times = 1 + self.neg_sample_by
+                self.times = 1 + self.neg_sample_num
                 self.sampling_func = self._neg_sample_by_point_wise_sampling
 
                 self.label_field = config['LABEL_FIELD']
                 dataset.set_field_property(self.label_field, FeatureType.FLOAT, FeatureSource.INTERACTION, 1)
             elif self.dl_format == InputType.PAIRWISE:
-                self.times = self.neg_sample_by
+                self.times = self.neg_sample_num
                 self.sampling_func = self._neg_sample_by_pair_wise_sampling
 
                 self.neg_prefix = config['NEG_PREFIX']
@@ -147,7 +149,7 @@ class NegSampleDataLoader(AbstractDataLoader):
         if self.neg_sample_args['strategy'] == 'by':
             user_ids = inter_feat[self.uid_field]
             item_ids = inter_feat[self.iid_field]
-            neg_item_ids = self.sampler.sample_by_user_ids(user_ids, item_ids, self.neg_sample_by)
+            neg_item_ids = self.sampler.sample_by_user_ids(user_ids, item_ids, self.neg_sample_num)
             return self.sampling_func(inter_feat, neg_item_ids)
         else:
             return inter_feat

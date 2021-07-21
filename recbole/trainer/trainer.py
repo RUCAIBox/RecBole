@@ -3,14 +3,14 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/7, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16
+# @Time   : 2021/6/23, 2020/9/26, 2020/9/26, 2020/10/01, 2020/9/16
 # @Author : Zihan Lin, Yupeng Hou, Yushuo Chen, Shanlei Mu, Xingyu Pan
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
+# @Email  : zhlin@ruc.edu.cn, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/8, 2020/10/15, 2020/11/20, 2021/2/20, 2021/3/3, 2021/3/5
-# @Author : Hui Wang, Xinyan Fan, Chen Yang, Yibo Li, Lanling Xu, Haoran Cheng
-# @Email  : hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com, 2018202152@ruc.edu.cn, xulanling_sherry@163.com, chenghaoran29@foxmail.com
+# @Time   : 2020/10/8, 2020/10/15, 2020/11/20, 2021/2/20, 2021/3/3, 2021/3/5, 2021/7/18
+# @Author : Hui Wang, Xinyan Fan, Chen Yang, Yibo Li, Lanling Xu, Haoran Cheng, Zhichao Feng
+# @Email  : hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com, 2018202152@ruc.edu.cn, xulanling_sherry@163.com, chenghaoran29@foxmail.com, fzcbupt@gmail.com
 
 r"""
 recbole.trainer.trainer
@@ -28,9 +28,9 @@ from torch.nn.utils.clip_grad import clip_grad_norm_
 from tqdm import tqdm
 
 from recbole.data.interaction import Interaction
-from recbole.evaluator import ProxyEvaluator
+from recbole.evaluator import Evaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
-    DataLoaderType, KGDataLoaderState, get_tensorboard, set_color
+    DataLoaderType, EvaluatorType, KGDataLoaderState, get_tensorboard, set_color
 
 
 class AbstractTrainer(object):
@@ -100,7 +100,8 @@ class Trainer(AbstractTrainer):
         self.train_loss_dict = dict()
         self.optimizer = self._build_optimizer(self.model.parameters())
         self.eval_type = config['eval_type']
-        self.evaluator = ProxyEvaluator(config)
+        self.eval_collector = Collector(config)
+        self.evaluator = Evaluator(config)
         self.item_tensor = None
         self.tot_item_num = None
 
@@ -110,6 +111,12 @@ class Trainer(AbstractTrainer):
         Returns:
             torch.optim: the optimizer
         """
+        if self.config['reg_weight'] and self.weight_decay and self.weight_decay * self.config['reg_weight'] > 0:
+            self.logger.warning(
+                'The parameters [weight_decay] and [reg_weight] are specified simultaneously, '
+                'which may lead to double regularization.'
+            )
+
         if self.learner.lower() == 'adam':
             optimizer = optim.Adam(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'sgd':
@@ -251,6 +258,28 @@ class Trainer(AbstractTrainer):
         else:
             self.tensorboard.add_scalar(tag, losses, epoch_idx)
 
+    def _add_hparam_to_tensorboard(self, best_valid_result):
+        # base hparam
+        hparam_dict = {
+            'learner': self.config['learner'],
+            'learning_rate': self.config['learning_rate'],
+            'train_batch_size': self.config['train_batch_size']
+        }
+        # other model-specific hparam
+        hparam_dict.update({
+            para: val
+            for para, val in self.config.final_config_dict.items()
+            if para not in {parameter
+                            for parameters in self.config.parameters.values()
+                            for parameter in parameters}.union({'model', 'dataset', 'config_files', 'device'})
+        })
+        for k in hparam_dict:
+            if not (isinstance(hparam_dict[k], int) or isinstance(hparam_dict[k], int) or isinstance(hparam_dict[k], int)
+                    or isinstance(hparam_dict[k], int)):
+                hparam_dict[k] = str(hparam_dict[k])
+
+        self.tensorboard.add_hparams(hparam_dict, {'hparam/best_valid_result': best_valid_result})
+
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         r"""Train the model based on the train data and the valid data.
 
@@ -269,6 +298,8 @@ class Trainer(AbstractTrainer):
         """
         if saved and self.start_epoch >= self.epochs:
             self._save_checkpoint(-1)
+
+        self.eval_collector.data_collect(train_data)
 
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
@@ -327,10 +358,11 @@ class Trainer(AbstractTrainer):
                     if verbose:
                         self.logger.info(stop_output)
                     break
+        self._add_hparam_to_tensorboard(self.best_valid_score)
         return self.best_valid_score, self.best_valid_result
 
     def _full_sort_batch_eval(self, batched_data):
-        interaction, history_index, swap_row, swap_col_after, swap_col_before = batched_data
+        interaction, history_index, positive_u, positive_i = batched_data
         try:
             # Note: interaction without item ids
             scores = self.model.full_sort_predict(interaction.to(self.device))
@@ -348,12 +380,24 @@ class Trainer(AbstractTrainer):
         if history_index is not None:
             scores[history_index] = -np.inf
 
-        swap_row = swap_row.to(self.device)
-        swap_col_after = swap_col_after.to(self.device)
-        swap_col_before = swap_col_before.to(self.device)
-        scores[swap_row, swap_col_after] = scores[swap_row, swap_col_before]
+        return interaction, scores, positive_u, positive_i
 
-        return interaction, scores
+    def _neg_sample_batch_eval(self, batched_data):
+        interaction, row_idx, positive_u, positive_i = batched_data
+        batch_size = interaction.length
+        if batch_size <= self.test_batch_size:
+            origin_scores = self.model.predict(interaction.to(self.device))
+        else:
+            origin_scores = self._spilt_predict(interaction, batch_size)
+
+        if self.config['eval_type'] == EvaluatorType.INDIVIDUAL:
+            return interaction, origin_scores, positive_u, positive_i
+        elif self.config['eval_type'] == EvaluatorType.RANKING:
+            col_idx = interaction[self.config['ITEM_ID_FIELD']]
+            batch_user_num = positive_u[-1] + 1
+            scores = torch.full((batch_user_num, self.tot_item_num), -np.inf, device=self.device)
+            scores[row_idx, col_idx] = origin_scores
+            return interaction, scores, positive_u, positive_i
 
     @torch.no_grad()
     def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
@@ -388,7 +432,7 @@ class Trainer(AbstractTrainer):
         if eval_data.dl_type == DataLoaderType.FULL:
             if self.item_tensor is None:
                 self.item_tensor = eval_data.dataset.get_item_feature().to(self.device).repeat(eval_data.step)
-            self.tot_item_num = eval_data.dataset.item_num
+        self.tot_item_num = eval_data.dataset.item_num
 
         batch_matrix_list = []
         iter_data = (
@@ -400,18 +444,13 @@ class Trainer(AbstractTrainer):
         )
         for batch_idx, batched_data in iter_data:
             if eval_data.dl_type == DataLoaderType.FULL:
-                interaction, scores = self._full_sort_batch_eval(batched_data)
+                interaction, scores, positive_u, positive_i = self._full_sort_batch_eval(batched_data)
             else:
-                interaction = batched_data
-                batch_size = interaction.length
-                if batch_size <= self.test_batch_size:
-                    scores = self.model.predict(interaction.to(self.device))
-                else:
-                    scores = self._spilt_predict(interaction, batch_size)
-
-            batch_matrix = self.evaluator.collect(interaction, scores)
-            batch_matrix_list.append(batch_matrix)
-        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
+                interaction, scores, positive_u, positive_i = self._neg_sample_batch_eval(batched_data)
+            self.eval_collector.eval_batch_collect(scores, interaction, positive_u, positive_i)
+        self.eval_collector.model_collect(self.model)
+        struct = self.eval_collector.get_data_struct()
+        result = self.evaluator.evaluate(struct)
 
         return result
 
@@ -606,8 +645,8 @@ class DecisionTreeTrainer(AbstractTrainer):
         self.epochs = config['epochs']
         self.eval_step = min(config['eval_step'], self.epochs)
         self.valid_metric = config['valid_metric'].lower()
-
-        self.evaluator = ProxyEvaluator(config)
+        self.eval_collector = Collector(config)
+        self.evaluator = Evaluator(config)
 
         # model saved
         self.checkpoint_dir = config['checkpoint_dir']
@@ -779,8 +818,8 @@ class xgboostTrainer(DecisionTreeTrainer):
         self.eval_true = torch.Tensor(self.deval.get_label())
         self.eval_pred = torch.Tensor(self.model.predict(self.deval))
 
-        batch_matrix_list = [[torch.stack((self.eval_true, self.eval_pred), 1)]]
-        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
+        self.eval_collector.eval_collect(self.eval_pred, self.eval_pred)
+        result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
 
 
@@ -914,8 +953,8 @@ class lightgbmTrainer(DecisionTreeTrainer):
         self.eval_true = torch.Tensor(self.deval_label)
         self.eval_pred = torch.Tensor(self.model.predict(self.deval_data))
 
-        batch_matrix_list = [[torch.stack((self.eval_true, self.eval_pred), 1)]]
-        result = self.evaluator.evaluate(batch_matrix_list, eval_data)
+        self.eval_collector.eval_collect(self.eval_pred, self.eval_pred)
+        result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
 
 
