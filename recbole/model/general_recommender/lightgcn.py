@@ -63,8 +63,7 @@ class LightGCN(GeneralRecommender):
         self.restore_item_e = None
 
         # generate intermediate data
-        norm_adj_matrix = self.get_norm_adj_mat().to(self.device)
-        self.register_buffer('norm_adj_matrix', norm_adj_matrix)
+        self.norm_adj_matrix = self.get_norm_adj_mat().to(self.device)
 
         # parameters initialization
         self.apply(xavier_uniform_initialization)
