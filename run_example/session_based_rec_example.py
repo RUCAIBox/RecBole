@@ -2,6 +2,11 @@
 # @Author : Yupeng Hou
 # @Email  : houyupeng@ruc.edu.cn
 
+# UPDATE
+# @Time   : 2021/7/21
+# @Author : Yupeng Hou
+# @Email  : houyupeng@ruc.edu.cn
+
 """
 session-based recommendation example
 ========================
@@ -25,7 +30,7 @@ def get_args():
     parser.add_argument('--dataset', '-d', type=str, default='diginetica-session', help='Benchmarks for session-based rec.')
     parser.add_argument('--validation', action='store_true', help='Whether evaluating on validation set (split from train set), otherwise on test set.')
     parser.add_argument('--valid_portion', type=float, default=0.1, help='ratio of validation set.')
-    return parser.parse_args()
+    return parser.parse_known_args()[0]
 
 
 if __name__ == '__main__':
