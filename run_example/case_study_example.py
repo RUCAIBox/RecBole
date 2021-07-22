@@ -32,6 +32,7 @@ if __name__ == '__main__':
     model = get_model(config['model'])(config, train_data)
     checkpoint = torch.load('RecBole/saved/BPR-Dec-08-2020_15-37-37.pth')  # Here you can replace it by your model path.
     model.load_state_dict(checkpoint['state_dict'])
+    model.load_other_parameter(checkpoint.get('other_parameter'))
     model.eval()
 
     # uid_series = np.array([1, 2])  # internal user id series
