@@ -61,6 +61,7 @@ class EASE(GeneralRecommender):
         # so will do everything with np/scipy
         self.item_similarity = B
         self.interaction_matrix = X
+        self.other_parameter_name = ['interaction_matrix', 'item_similarity']
 
     def forward(self):
         pass

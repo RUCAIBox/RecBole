@@ -80,6 +80,7 @@ class SpectralCF(GeneralRecommender):
         self.restore_user_e = None
         self.restore_item_e = None
 
+        self.other_parameter_name = ['restore_user_e', 'restore_item_e']
         # parameters initialization
         self.apply(xavier_uniform_initialization)
 
