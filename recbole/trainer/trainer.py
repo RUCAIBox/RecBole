@@ -111,6 +111,12 @@ class Trainer(AbstractTrainer):
         Returns:
             torch.optim: the optimizer
         """
+        if self.config['reg_weight'] and self.weight_decay and self.weight_decay * self.config['reg_weight'] > 0:
+            self.logger.warning(
+                'The parameters [weight_decay] and [reg_weight] are specified simultaneously, '
+                'which may lead to double regularization.'
+            )
+
         if self.learner.lower() == 'adam':
             optimizer = optim.Adam(params, lr=self.learning_rate, weight_decay=self.weight_decay)
         elif self.learner.lower() == 'sgd':
@@ -144,7 +150,7 @@ class Trainer(AbstractTrainer):
             tuple which includes the sum of loss in each part.
         """
         self.model.train()
-        loss_func = loss_func or self.model.calculate_loss
+        loss_func = loss_func or self.model.module.calculate_loss
         total_loss = None
         iter_data = (
             tqdm(
@@ -327,7 +333,7 @@ class Trainer(AbstractTrainer):
         interaction, history_index, swap_row, swap_col_after, swap_col_before = batched_data
         try:
             # Note: interaction without item ids
-            scores = self.model.full_sort_predict(interaction.to(self.device))
+            scores = self.model.module.full_sort_predict(interaction.to(self.device))
         except NotImplementedError:
             new_inter = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             batch_size = len(new_inter)

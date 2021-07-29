@@ -12,8 +12,11 @@ recbole.data.dataloader.sequential_dataloader
 ################################################
 """
 
+import math
+
 import numpy as np
 import torch
+import torch.distributed as dist
 
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.dataloader.neg_sample_mixin import NegSampleByMixin, NegSampleMixin
@@ -77,16 +80,57 @@ class SequentialDataLoader(AbstractDataLoader):
         self.item_list_length = dataset.item_list_length
         self.pre_processed_data = None
 
+        # multi gpu
+        num_replicas, rank = None, None
+        if num_replicas is None:
+            if not dist.is_available():
+                raise RuntimeError("Requires distributed package to be available")
+            num_replicas = dist.get_world_size()
+        if rank is None:
+            if not dist.is_available():
+                raise RuntimeError("Requires distributed package to be available")
+            rank = dist.get_rank()
+
+        if rank >= num_replicas or rank < 0:
+            raise ValueError(
+                "Invalid rank {}, rank should be in the interval"
+                " [0, {}]".format(rank, num_replicas - 1))
+
+        self.num_replicas = num_replicas
+        self.rank = rank
+        self.epoch = 0
+        self.drop_last = True
+        self.shuffle = shuffle
+        self.seed = 0
+        self.total_size = 0
+        self.num_samples = 0
+        # multi gpu end
+
         super().__init__(config, dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
 
     def data_preprocess(self):
         """Do data augmentation before training/evaluation.
         """
         self.pre_processed_data = self.augmentation(self.item_list_index, self.target_index, self.item_list_length)
+        # If the dataset length is evenly divisible by # of replicas, then there
+        # is no need to drop any data, since the dataset will be split equally.
+        if self.drop_last and len(self.dataset) % self.num_replicas != 0:  # type: ignore[arg-type]
+            # Split to nearest available length that is evenly divisible.
+            # This is to ensure each rank receives the same amount of data when
+            # using this Sampler.
+            self.num_samples = math.ceil(
+                # `type:ignore` is required because Dataset cannot provide a default __len__
+                # see NOTE in pytorch/torch/utils/data/sampler.py
+                (len(self.pre_processed_data) - self.num_replicas) / self.num_replicas  # type: ignore[arg-type]
+            )
+        else:
+            self.num_samples = math.ceil(len(self.pre_processed_data) / self.num_replicas)  # type: ignore[arg-type]
+        self.total_size = self.num_samples * self.num_replicas
+        self.pre_processed_data = self.pre_processed_data[self.rank:self.total_size:self.num_replicas]
 
     @property
     def pr_end(self):
-        return len(self.uid_list)
+        return self.num_samples
 
     def _shuffle(self):
         if self.real_time:
@@ -97,6 +141,16 @@ class SequentialDataLoader(AbstractDataLoader):
             self.item_list_length = self.item_list_length[new_index]
         else:
             self.pre_processed_data.shuffle()
+            g = torch.Generator()
+            g.manual_seed(self.seed + self.epoch)
+            index = torch.randperm(len(self.pre_processed_data), generator=g)
+
+            for k in self.pre_processed_data.interaction:
+                self.pre_processed_data.interaction[k] = self.pre_processed_data.interaction[k][index]
+            if self.pre_processed_data.pos_len_list is not None:
+                self.pre_processed_data.pos_len_list = self.pre_processed_data.pos_len_list[index]
+            if self.pre_processed_data.user_len_list is not None:
+                self.pre_processed_data.user_len_list = self.pre_processed_data.user_len_list[index]
 
     def _next_batch_data(self):
         cur_data = self._get_processed_data(slice(self.pr, self.pr + self.step))
@@ -165,7 +219,7 @@ class SequentialNegSampleDataLoader(NegSampleByMixin, SequentialDataLoader):
     """
 
     def __init__(
-        self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
+            self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
     ):
         super().__init__(
             config, dataset, sampler, neg_sample_args, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle
@@ -251,7 +305,7 @@ class SequentialFullDataLoader(NegSampleMixin, SequentialDataLoader):
     dl_type = DataLoaderType.FULL
 
     def __init__(
-        self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
+            self, config, dataset, sampler, neg_sample_args, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False
     ):
         super().__init__(
             config, dataset, sampler, neg_sample_args, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle
