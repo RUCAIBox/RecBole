@@ -7,12 +7,57 @@ recbole.quick_start
 ########################
 """
 import logging
+import os
 from logging import getLogger
+
+import torch
+import torch.distributed as dist
+import torch.multiprocessing as mp
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
 from recbole.utils import init_logger, get_model, get_trainer, init_seed
 from recbole.utils.utils import set_color
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = '0,1,2,3'
+
+
+def run(rank, world_size, config, logger, saved):
+    print('my rank is ', rank, torch.cuda.is_available(), torch.cuda.device_count())
+    # create default process group
+    dist.init_process_group("gloo", rank=rank, world_size=world_size)
+
+    config['device'] = rank
+    # dataset filtering
+    dataset = create_dataset(config)
+    logger.info(dataset)
+
+    # dataset splitting
+    train_data, valid_data, test_data = data_preparation(config, dataset)
+
+    # model loading and initialization
+    model = get_model(config['model'])(config, train_data).to(config['device'])
+    logger.info(rank, model)
+
+    # construct DDP model
+    model = DDP(model, device_ids=[rank])
+
+    # trainer loading and initialization
+    trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
+
+    # model training
+    best_valid_score, best_valid_result = trainer.fit(
+        train_data, valid_data, saved=saved, show_progress=config['show_progress']
+    )
+
+    # model evaluation
+    test_result = trainer.evaluate(test_data, load_best_model=saved, show_progress=config['show_progress'])
+    logger.info(set_color('best valid ', 'yellow') + f': {best_valid_result}')
+    logger.info(set_color('test result', 'yellow') + f': {test_result}')
+
+    return best_valid_score, best_valid_result, test_result
 
 
 def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
@@ -36,37 +81,20 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
 
     logger.info(config)
 
-    # dataset filtering
-    dataset = create_dataset(config)
-    logger.info(dataset)
+    world_size = 4
+    mp.spawn(run,
+             args=(world_size, config, logger, saved),
+             nprocs=world_size,
+             join=True)
 
-    # dataset splitting
-    train_data, valid_data, test_data = data_preparation(config, dataset)
+    # best_valid_score, best_valid_result, test_result = example(0, 1, config, logger, saved)
 
-    # model loading and initialization
-    model = get_model(config['model'])(config, train_data).to(config['device'])
-    logger.info(model)
-
-    # trainer loading and initialization
-    trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
-
-    # model training
-    best_valid_score, best_valid_result = trainer.fit(
-        train_data, valid_data, saved=saved, show_progress=config['show_progress']
-    )
-
-    # model evaluation
-    test_result = trainer.evaluate(test_data, load_best_model=saved, show_progress=config['show_progress'])
-
-    logger.info(set_color('best valid ', 'yellow') + f': {best_valid_result}')
-    logger.info(set_color('test result', 'yellow') + f': {test_result}')
-
-    return {
-        'best_valid_score': best_valid_score,
-        'valid_score_bigger': config['valid_metric_bigger'],
-        'best_valid_result': best_valid_result,
-        'test_result': test_result
-    }
+    # return {
+    #     'best_valid_score': best_valid_score,
+    #     'valid_score_bigger': config['valid_metric_bigger'],
+    #     'best_valid_result': best_valid_result,
+    #     'test_result': test_result
+    # }
 
 
 def objective_function(config_dict=None, config_file_list=None, saved=True):
