@@ -46,7 +46,6 @@ class LINE(GeneralRecommender):
         self.embedding_size = config['embedding_size']
         self.order = config['order']
         self.second_order_loss_weight = config['second_order_loss_weight']
-        self.training_neg_sample_num = config['training_neg_sample_num']
 
         self.interaction_feat = dataset.inter_feat
 

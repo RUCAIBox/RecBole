@@ -80,7 +80,7 @@ class TestContextRecommender(unittest.TestCase):
 
     def test_tors(self):
         config_dict = {
-            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'none'},
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'labeled'},
             'threshold': {'rating': 4},
             'model': 'FM',
         }

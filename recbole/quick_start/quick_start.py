@@ -28,7 +28,7 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     # configurations initialization
     config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
     init_seed(config['seed'], config['reproducibility'])
-
+    
     # logger initialization
     init_logger(config)
     logger = getLogger()

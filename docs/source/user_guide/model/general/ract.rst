@@ -45,7 +45,7 @@ Running with RecBole
    config_dict = {
        'train_stage': 'actor_pretrain',
        'pretrain_epochs': 150,
-       'training_neg_sample_num': 0,
+       'neg_sampling': None,
    }
    run_recbole(model='RaCT', dataset='ml-100k',
         config_dict=config_dict, saved=False)
@@ -66,7 +66,7 @@ And then:
        'train_stage': 'critic_pretrain',
        'pretrain_epochs': 50,
        'pre_model_path': './saved/RaCT-ml-100k-150.pth',
-       'training_neg_sample_num': 0,
+       'neg_sampling': None,
    }
    run_recbole(model='RaCT', dataset='ml-100k',
         config_dict=config_dict, saved=False)
@@ -86,7 +86,7 @@ And then:
    config_dict = {
        'train_stage': 'finetune',
        'pre_model_path': './saved/RaCT-ml-100k-50.pth',
-       'training_neg_sample_num': 0,
+       'neg_sampling': None,
    }
    run_recbole(model='RaCT', dataset='ml-100k',
         config_dict=config_dict)

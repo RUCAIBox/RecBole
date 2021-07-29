@@ -22,7 +22,7 @@ from recbole.model.abstract_recommender import GeneralRecommender
 
 class ENMF(GeneralRecommender):
     r"""ENMF is an efficient non-sampling model for general recommendation.
-    In order to run non-sampling model, please set the training_neg_sample_num parameter as 0 .
+    In order to run non-sampling model, please set the neg_sampling parameter as None .
 
     """
 
