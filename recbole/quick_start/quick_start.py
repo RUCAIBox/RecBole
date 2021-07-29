@@ -11,7 +11,7 @@ from logging import getLogger
 
 from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
-from recbole.utils import init_logger, get_model, get_trainer, init_seed
+from recbole.utils import init_logger, get_model, get_trainer, init_seed, set_color
 
 
 def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
@@ -43,7 +43,7 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     train_data, valid_data, test_data = data_preparation(config, dataset)
 
     # model loading and initialization
-    model = get_model(config['model'])(config, train_data).to(config['device'])
+    model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
     logger.info(model)
 
     # trainer loading and initialization
@@ -57,8 +57,8 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     # model evaluation
     test_result = trainer.evaluate(test_data, load_best_model=saved, show_progress=config['show_progress'])
 
-    logger.info('best valid result: {}'.format(best_valid_result))
-    logger.info('test result: {}'.format(test_result))
+    logger.info(set_color('best valid ', 'yellow') + f': {best_valid_result}')
+    logger.info(set_color('test result', 'yellow') + f': {test_result}')
 
     return {
         'best_valid_score': best_valid_score,
@@ -82,7 +82,7 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     logging.basicConfig(level=logging.ERROR)
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)
-    model = get_model(config['model'])(config, train_data).to(config['device'])
+    model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
     trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False, saved=saved)
     test_result = trainer.evaluate(test_data, load_best_model=saved)

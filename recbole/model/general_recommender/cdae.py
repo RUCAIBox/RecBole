@@ -7,7 +7,7 @@ r"""
 CDAE
 ################################################
 Reference:
-    Yao Wu et al., Collaborative denoising auto-encoders for top-n recommender systems. WSDM 2016.
+    Yao Wu et al., Collaborative denoising auto-encoders for top-n recommender systems. In WSDM 2016.
    
 Reference code:
     https://github.com/jasonyaw/CDAE
@@ -121,7 +121,7 @@ class CDAE(GeneralRecommender):
         items = self.get_rating_matrix(users)
         scores = self.forward(items, users)
 
-        return scores[[users, predict_items]]
+        return scores[[torch.arange(len(predict_items)).to(self.device), predict_items]]
 
     def full_sort_predict(self, interaction):
         users = interaction[self.USER_ID]

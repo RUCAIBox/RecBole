@@ -46,9 +46,7 @@ And then:
             kg: [head_id, relation_id, tail_id]
             link: [item_id, entity_id]
             ent_feature: [ent_id, ent_vec]
-        fields_in_same_space: [
-            [ent_id, entity_id]
-        ]
+        alias_of_entity_id: [ent_id]
         preload_weight:
             ent_id: ent_vec
         additional_feat_suffix: [ent_feature]

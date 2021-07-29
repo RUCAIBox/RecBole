@@ -58,6 +58,7 @@ model training and evaluation.
 - ``weight_decay (float)`` : Weight decay (L2 penalty), used for `optimizer <https://pytorch.org/docs/stable/optim.html?highlight=weight_decay>`_. Default to ``0.0``.
 
 
+
 **Evaluation Setting**
 
 - ``eval_setting (str)``: The evaluation settings. Defaults to ``'RO_RS,full'``.
@@ -67,7 +68,7 @@ model training and evaluation.
 - ``group_by_user (bool)``: Whether or not to group the users.
   It must be ``True`` when ``eval_setting`` is in ``['RO_LS', 'TO_LS']``.
   Defaults to ``True``.
-- ``spilt_ratio (list)``: The split ratio between train data, valid data and
+- ``split_ratio (list)``: The split ratio between train data, valid data and
   test data. It only take effects when the first part of ``eval_setting``
   is in ``['RO_RS', 'TO_RS']``. Defaults to ``[0.8, 0.1, 0.1]``.
 - ``leave_one_num (int)``: It only take effects when the first part of

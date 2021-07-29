@@ -1,0 +1,5 @@
+user_id:token	item_id:token	timestamp:float	item_id_list:token_seq	timestamp_list:float_seq
+1	7	7	1 2 3 4 5 6	1 2 3 4 5 6
+1	8	8	1 2 3 4 5 6 7	1 2 3 4 5 6 7
+2	8	8	4 5 6 7	4 5 6 7
+3	6	6	4 5	4 5

@@ -3,6 +3,11 @@
 # @Author : Shanlei Mu
 # @Email  : slmu@ruc.edu.cn
 
+# UPDATE
+# @Time   : 2021/3/8
+# @Author : Jiawei Guan
+# @Email  : guanjw@ruc.edu.cn
+
 """
 recbole.utils.utils
 ################################
@@ -15,6 +20,7 @@ import random
 
 import numpy as np
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from recbole.utils.enum_type import ModelType
 
@@ -185,3 +191,30 @@ def init_seed(seed, reproducibility):
     else:
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
+
+
+def get_tensorboard(logger):
+    r""" Creates a SummaryWriter of Tensorboard that can log PyTorch models and metrics into a directory for 
+    visualization within the TensorBoard UI.
+    For the convenience of the user, the naming rule of the SummaryWriter's log_dir is the same as the logger.
+
+    Args:
+        logger: its output filename is used to name the SummaryWriter's log_dir.
+                If the filename is not available, we will name the log_dir according to the current time.
+
+    Returns:
+        SummaryWriter: it will write out events and summaries to the event file.
+    """
+    base_path = 'log_tensorboard'
+
+    dir_name = None
+    for handler in logger.handlers:
+        if hasattr(handler, "baseFilename"):
+            dir_name = os.path.basename(getattr(handler, 'baseFilename')).split('.')[0]
+            break
+    if dir_name is None:
+        dir_name = '{}-{}'.format('model', get_local_time())
+
+    dir_path = os.path.join(base_path, dir_name)
+    writer = SummaryWriter(dir_path)
+    return writer

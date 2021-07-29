@@ -48,7 +48,7 @@ class LINE(GeneralRecommender):
         self.second_order_loss_weight = config['second_order_loss_weight']
         self.training_neg_sample_num = config['training_neg_sample_num']
 
-        self.interaction_feat = dataset.dataset.inter_feat
+        self.interaction_feat = dataset.inter_feat
 
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
@@ -69,7 +69,7 @@ class LINE(GeneralRecommender):
 
     def get_used_ids(self):
         cur = np.array([set() for _ in range(self.n_items)])
-        for iid, uid in zip(self.interaction_feat[self.USER_ID].numpy(), self.interaction_feat[self.ITEM_ID].numpy()):
+        for uid, iid in zip(self.interaction_feat[self.USER_ID].numpy(), self.interaction_feat[self.ITEM_ID].numpy()):
             cur[iid].add(uid)
         return cur
 

@@ -61,6 +61,7 @@ class EASE(GeneralRecommender):
         # so will do everything with np/scipy
         self.item_similarity = B
         self.interaction_matrix = X
+        self.other_parameter_name = ['interaction_matrix', 'item_similarity']
 
     def forward(self):
         pass
@@ -72,8 +73,9 @@ class EASE(GeneralRecommender):
         user = interaction[self.USER_ID].cpu().numpy()
         item = interaction[self.ITEM_ID].cpu().numpy()
 
-        return torch.from_numpy((self.interaction_matrix[user, :].multiply(
-            self.item_similarity[:, item].T)).sum(axis=1).getA1())
+        return torch.from_numpy(
+            (self.interaction_matrix[user, :].multiply(self.item_similarity[:, item].T)).sum(axis=1).getA1()
+        )
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID].cpu().numpy()

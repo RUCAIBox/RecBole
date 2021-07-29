@@ -21,9 +21,9 @@ from torch.nn.init import normal_
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.layers import MLPLayers
 from recbole.utils import InputType
+from recbole.model.general_recommender.itemknn import ComputeSimilarity
 
 import numpy as np
-from sklearn.metrics import jaccard_score
 
 
 class NNCF(GeneralRecommender):
@@ -37,8 +37,7 @@ class NNCF(GeneralRecommender):
 
         # load dataset info
         self.LABEL = config['LABEL_FIELD']
-        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(
-            np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
 
         # load parameters info
         self.ui_embedding_size = config['ui_embedding_size']
@@ -58,17 +57,19 @@ class NNCF(GeneralRecommender):
         self.item_neigh_embedding = nn.Embedding(self.n_users, self.neigh_embedding_size)
         self.user_conv = nn.Sequential(
             nn.Conv1d(self.neigh_embedding_size, self.num_conv_kernel, self.conv_kernel_size),
-            nn.MaxPool1d(self.pool_kernel_size), 
-            nn.ReLU())
+            nn.MaxPool1d(self.pool_kernel_size), nn.ReLU()
+        )
         self.item_conv = nn.Sequential(
             nn.Conv1d(self.neigh_embedding_size, self.num_conv_kernel, self.conv_kernel_size),
-            nn.MaxPool1d(self.pool_kernel_size), 
-            nn.ReLU())
+            nn.MaxPool1d(self.pool_kernel_size), nn.ReLU()
+        )
         conved_size = self.neigh_num - (self.conv_kernel_size - 1)
         pooled_size = (conved_size - (self.pool_kernel_size - 1) - 1) // self.pool_kernel_size + 1
-        self.mlp_layers = MLPLayers([2 * pooled_size * self.num_conv_kernel + self.ui_embedding_size] + self.mlp_hidden_size, config['dropout'])
-        self.out_layer = nn.Sequential(nn.Linear(self.mlp_hidden_size[-1], 1),
-                                       nn.Sigmoid())
+        self.mlp_layers = MLPLayers(
+            [2 * pooled_size * self.num_conv_kernel + self.ui_embedding_size] + self.mlp_hidden_size,
+            config['dropout']
+        )
+        self.out_layer = nn.Sequential(nn.Linear(self.mlp_hidden_size[-1], 1), nn.Sigmoid())
         self.dropout_layer = torch.nn.Dropout(p=config['dropout'])
         self.loss = nn.BCELoss()
 
@@ -80,8 +81,10 @@ class NNCF(GeneralRecommender):
         elif self.neigh_info_method == "louvain":
             self.u_neigh, self.i_neigh = self.get_neigh_louvain()
         else:
-            raise RuntimeError('You need to choose the right algorithm of processing neighborhood information. \
-                The parameter neigh_info_method can be set to random, knn or louvain.')
+            raise RuntimeError(
+                'You need to choose the right algorithm of processing neighborhood information. \
+                The parameter neigh_info_method can be set to random, knn or louvain.'
+            )
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -147,8 +150,8 @@ class NNCF(GeneralRecommender):
             list: The list of nodes' community neighbors.
 
         """
-        item2user_neighbor_lst = [[] for _ in range(self.n_items)]  
-        user2item_neighbor_lst = [[] for _ in range(self.n_users)]  
+        item2user_neighbor_lst = [[] for _ in range(self.n_items)]
+        user2item_neighbor_lst = [[] for _ in range(self.n_users)]
 
         for r in range(len(relation)):
             user, item = relation[r][0], relation[r][1]
@@ -189,7 +192,7 @@ class NNCF(GeneralRecommender):
         tmp_relation = []
         for i in range(len(pairs)):
             tmp_relation.append(['user_' + str(pairs[i][0]), 'item_' + str(pairs[i][1])])
-        
+
         import networkx as nx
         G = nx.Graph()
         G.add_edges_from(tmp_relation)
@@ -212,46 +215,11 @@ class NNCF(GeneralRecommender):
         i_neigh = torch.tensor(i_neigh, device=self.device)
         return u_neigh, i_neigh
 
-    # Count the similarity of node and direct neighbors using jaccard method
-    def count_jaccard(self, inters, node, neigh_list, kind):
-        r""" Count the similarity of the node and its direct neighbors using jaccard similarity.
-
-        Args:
-            inters (list): The input list that contains the relationships of users and items.
-            node (int): The id of the input node.
-            neigh_list (list): The input list that contains the neighbors of the input node.
-            kind (char): The type of the input node.
-
-        Returns:
-            list: The list of jaccard similarity score between the node and its neighbors.
-
-        """
-        if kind == 'u':
-            if node in neigh_list:
-                return 0
-            vec_node = inters[:, node]
-            score = 0
-            for neigh in neigh_list:
-                vec_neigh = inters[:, neigh]
-                tmp = jaccard_score(vec_node, vec_neigh)
-                score += tmp
-            return score
-        else:
-            if node in neigh_list:
-                return 0
-            vec_node = inters[node]
-            score = 0
-            for neigh in neigh_list:
-                vec_neigh = inters[neigh]
-                tmp = jaccard_score(vec_node, vec_neigh)
-                score += tmp
-            return score
-
     # Get neighborhood embeddings using knn method
     def get_neigh_knn(self):
         r"""Get neighborhood information using knn algorithm.
         Find direct neighbors of each node, if the number of direct neighbors is less than neigh_num, 
-        add other similar neighbors using jaccard similarity.
+        add other similar neighbors using knn algorithm.
         Otherwise, select random top k direct neighbors, k equals to the number of neighbors. 
 
         Returns:
@@ -264,6 +232,10 @@ class NNCF(GeneralRecommender):
         for i in range(len(pairs)):
             ui_inters[pairs[i][0], pairs[i][1]] = 1
 
+        # Get similar neighbors using knn algorithm
+        user_knn, _ = ComputeSimilarity(self.interaction_matrix.tocsr(), topk=self.neigh_num).compute_similarity('user')
+        item_knn, _ = ComputeSimilarity(self.interaction_matrix.tocsr(), topk=self.neigh_num).compute_similarity('item')
+
         u_neigh, i_neigh = [], []
 
         for u in range(self.n_users):
@@ -272,13 +244,9 @@ class NNCF(GeneralRecommender):
             if len(neigh_list) == 0:
                 u_neigh.append(self.neigh_num * [0])
             elif direct_neigh_num < self.neigh_num:
-                knn_neigh_dict = {}
-                for i in range(self.n_items):
-                    score = self.count_jaccard(ui_inters, i, neigh_list, 'u')
-                    knn_neigh_dict[i] = score
-                knn_neigh_dict_sorted = dict(sorted(knn_neigh_dict.items(), key=lambda item:item[1], reverse=True))
-                knn_neigh_list = knn_neigh_dict_sorted.keys()
-                neigh_list = list(neigh_list) + list(knn_neigh_list)
+                tmp_k = self.neigh_num - direct_neigh_num
+                mask = np.random.randint(0, len(neigh_list), size=1)
+                neigh_list = list(neigh_list) + list(item_knn[neigh_list[mask[0]]])
                 u_neigh.append(neigh_list[:self.neigh_num])
             else:
                 mask = np.random.randint(0, len(neigh_list), size=self.neigh_num)
@@ -290,13 +258,9 @@ class NNCF(GeneralRecommender):
             if len(neigh_list) == 0:
                 i_neigh.append(self.neigh_num * [0])
             elif direct_neigh_num < self.neigh_num:
-                knn_neigh_dict = {}
-                for i in range(self.n_users):
-                    score = self.count_jaccard(ui_inters, i, neigh_list, 'i')
-                    knn_neigh_dict[i] = score
-                knn_neigh_dict_sorted = dict(sorted(knn_neigh_dict.items(), key=lambda item:item[1], reverse=True))
-                knn_neigh_list = knn_neigh_dict_sorted.keys()
-                neigh_list = list(neigh_list) + list(knn_neigh_list)
+                tmp_k = self.neigh_num - direct_neigh_num
+                mask = np.random.randint(0, len(neigh_list), size=1)
+                neigh_list = list(neigh_list) + list(user_knn[neigh_list[mask[0]]])
                 i_neigh.append(neigh_list[:self.neigh_num])
             else:
                 mask = np.random.randint(0, len(neigh_list), size=self.neigh_num)
