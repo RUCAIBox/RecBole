@@ -282,7 +282,7 @@ class Dataset(object):
                         overall_field2seqlen[field] = max(overall_field2seqlen[field], self.field2seqlen[field])
                 else:
                     raise ValueError(f'File {file_path} not exist.')
-            inter_feat = pd.concat(sub_inter_feats)
+            inter_feat = pd.concat(sub_inter_feats, ignore_index=True)
             self.inter_feat, self.file_size_list = inter_feat, sub_inter_lens
             self.field2seqlen = overall_field2seqlen
 
@@ -920,7 +920,7 @@ class Dataset(object):
             if ftype == FeatureType.TOKEN:
                 tokens.append(feat[field].values)
             elif ftype == FeatureType.TOKEN_SEQ:
-                tokens.append(feat[field].reset_index(drop=True).agg(np.concatenate))
+                tokens.append(feat[field].agg(np.concatenate))
         split_point = np.cumsum(list(map(len, tokens)))[:-1]
         tokens = np.concatenate(tokens)
         return tokens, split_point
