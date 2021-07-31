@@ -455,7 +455,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'labeled'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1] + [1, 2, 3] +
@@ -471,7 +471,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args': {'split': {'RS': [0.8, 0.2, 0.0]}, 'order': 'TO', 'mode': 'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.2, 0.0]}, 'order': 'TO', 'mode': 'labeled'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
@@ -486,7 +486,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args': {'split': {'RS': [0.8, 0.0, 0.2]}, 'order': 'TO', 'mode': 'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.0, 0.2]}, 'order': 'TO', 'mode': 'labeled'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 17)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
@@ -501,7 +501,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args': {'split': {'LS': 'valid_and_test'}, 'order': 'TO', 'mode': 'none'}
+            'eval_args': {'split': {'LS': 'valid_and_test'}, 'order': 'TO', 'mode': 'labeled'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 19)) + [1] + [1] + [1] + [1, 2, 3] +
@@ -517,7 +517,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args': {'split': {'LS': 'valid_only'}, 'order': 'TO', 'mode': 'none'}
+            'eval_args': {'split': {'LS': 'valid_only'}, 'order': 'TO', 'mode': 'labeled'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 20)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
@@ -532,7 +532,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args': {'split': {'LS': 'test_only'}, 'order': 'TO', 'mode': 'none'}
+            'eval_args': {'split': {'LS': 'test_only'}, 'order': 'TO', 'mode': 'labeled'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat['item_id'].numpy() == list(range(1, 20)) + [1] + [1] + [1, 2] + [1, 2, 3, 4] +
@@ -547,7 +547,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'RO', 'mode': 'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'RO', 'mode': 'labeled'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 1 + 3 + 7 + 8 + 9
@@ -560,7 +560,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args': {'split': {'RS': [0.8, 0.2, 0.0]}, 'order': 'RO', 'mode': 'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.2, 0.0]}, 'order': 'RO', 'mode': 'labeled'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 2 + 4 + 8 + 8 + 9
@@ -573,7 +573,7 @@ class TestDataset:
             'dataset': 'build_dataset',
             'data_path': current_path,
             'load_col': None,
-            'eval_args': {'split': {'RS': [0.8, 0.0, 0.2]}, 'order': 'RO', 'mode': 'none'}
+            'eval_args': {'split': {'RS': [0.8, 0.0, 0.2]}, 'order': 'RO', 'mode': 'labeled'}
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert len(train_dataset.inter_feat) == 16 + 1 + 1 + 2 + 4 + 8 + 8 + 9
@@ -588,7 +588,7 @@ class TestSeqDataset:
             'dataset': 'seq_dataset',
             'data_path': current_path,
             'load_col': None,
-            'training_neg_sample_num': 0
+            'neg_sampling': None
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat[train_dataset.uid_field].numpy() == [1, 1, 1, 1, 1, 4, 2, 2, 3]).all()
@@ -649,7 +649,7 @@ class TestSeqDataset:
             'dataset': 'seq_dataset',
             'data_path': current_path,
             'load_col': None,
-            'training_neg_sample_num': 0,
+            'neg_sampling': None,
             'eval_args': {
                 'split': {'RS': [0.3, 0.3, 0.4]},
                 'order': 'TO'
@@ -691,7 +691,7 @@ class TestSeqDataset:
             'dataset': 'seq_benchmark',
             'data_path': current_path,
             'load_col': None,
-            'training_neg_sample_num': 0,
+            'neg_sampling': None,
             'benchmark_filename': ['train', 'valid', 'test'],
             'alias_of_item_id': ['item_id_list']
         }

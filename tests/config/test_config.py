@@ -42,7 +42,7 @@ class TestConfigClass(unittest.TestCase):
         self.assertIsInstance(config['train_batch_size'], int)
         self.assertIsInstance(config['learner'], str)
         self.assertIsInstance(config['learning_rate'], float)
-        self.assertIsInstance(config['training_neg_sample_num'], int)
+        self.assertIsInstance(config['neg_sampling'], dict)
         self.assertIsInstance(config['eval_step'], int)
         self.assertIsInstance(config['stopping_step'], int)
         self.assertIsInstance(config['checkpoint_dir'], str)
@@ -58,16 +58,16 @@ class TestConfigClass(unittest.TestCase):
 
         self.assertEqual(config['eval_args']['split'], {'RS': [0.8,0.1,0.1]})
         self.assertEqual(config['eval_args']['order'], 'RO')
-        self.assertEqual(config['eval_args']['mode'],'none')
-        self.assertEqual(config['eval_args']['group_by'], 'none')
+        self.assertEqual(config['eval_args']['mode'],'labeled')
+        self.assertEqual(config['eval_args']['group_by'], None)
 
         self.assertEqual(config['metrics'], ['AUC', 'LogLoss'])
         self.assertEqual(config['valid_metric'], 'AUC')
-        self.assertEqual(config['training_neg_sample_num'], 0)
+        self.assertEqual(config['neg_sampling'], None)
 
     def test_default_sequential_settings(self):
         para_dict = {
-            'training_neg_sample_num': 0
+            'neg_sampling': None
         }
         config = Config(model='SASRec', dataset='ml-100k', config_dict=para_dict)
         self.assertEqual(config['eval_args']['split'], {'LS': 'valid_and_test'})
