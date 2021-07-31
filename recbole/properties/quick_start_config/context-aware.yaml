@@ -1,8 +1,8 @@
 eval_args:
   split: {'RS':[0.8,0.1,0.1]}
   order: RO
-  group_by: none
-  mode: none
-training_neg_sample_num: 0
+  group_by: ~
+  mode: labeled
+neg_sampling: ~
 metrics: ['AUC', 'LogLoss']
 valid_metric: AUC
