@@ -335,8 +335,7 @@ class Config(object):
 
     def _set_train_neg_sample_args(self):
         neg_sampling = self.final_config_dict['neg_sampling']
-        print(neg_sampling)
-        if neg_sampling is None or neg_sampling.lower() == 'none':
+        if neg_sampling is None:
             self.final_config_dict['train_neg_sample_args'] = {'strategy': 'none'}
         else:
             if not isinstance(neg_sampling, dict):
