@@ -298,6 +298,9 @@ class Config(object):
                     eval_type = EvaluatorType.RANKING
         self.final_config_dict['eval_type'] = eval_type
 
+        if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and self.final_config_dict['repeatable'] == False:
+            raise ValueError('Sequential models currently only support NON-Repeatable recommendation, please set `repeatable` as `True`.')
+
         smaller_metric = ['rmse', 'mae', 'logloss', 'averagepopularity', 'giniindex']
         valid_metric = self.final_config_dict['valid_metric'].split('@')[0]
         self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metric else True
