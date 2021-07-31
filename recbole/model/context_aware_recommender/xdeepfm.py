@@ -78,6 +78,7 @@ class xDeepFM(ContextRecommender):
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
         self.apply(self._init_weights)
+        self.other_parameter_name = ['conv1d_list']
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
