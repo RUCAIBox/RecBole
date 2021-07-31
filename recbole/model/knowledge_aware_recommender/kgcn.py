@@ -72,6 +72,7 @@ class KGCN(KnowledgeRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
+        self.other_parameter_name = ['adj_entity', 'adj_relation']
 
     def construct_adj(self, kg_graph):
         r"""Get neighbors and corresponding relations for each entity in the KG.
