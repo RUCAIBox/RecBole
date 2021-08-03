@@ -65,13 +65,13 @@ pinterest: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Pintere
 retailrocket-addtocart-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Retailrocket/merged/retailrocket-addtocart.zip
 retailrocket-transaction-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Retailrocket/merged/retailrocket-transaction.zip
 retailrocket-view-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Retailrocket/merged/retailrocket-view.zip
-retailrocket-addtocart-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Retailrocket/not_merged/retailrocket-addtocart.zip
-retailrocket-transaction-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Retailrocket/not_merged/retailrocket-transaction.zip
-retailrocket-view-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Retailrocket/not_merged/retailrocket-view.zip
+retailrocket-addtocart-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Retailrocket/not-merged/retailrocket-addtocart.zip
+retailrocket-transaction-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Retailrocket/not-merged/retailrocket-transaction.zip
+retailrocket-view-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Retailrocket/not-merged/retailrocket-view.zip
 steam-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Steam/merged/steam.zip
-steam-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Steam/not_merged/steam.zip
+steam-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Steam/not-merged/steam.zip
 ta-feng-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Ta-Feng/merged/ta-feng.zip
-ta-feng-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Ta-Feng/not_merged/ta-feng.zip
+ta-feng-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Ta-Feng/not-merged/ta-feng.zip
 tmall-buy-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Tmall/merged/tmall-buy.zip
 tmall-click-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Tmall/merged/tmall-click.zip
 tmall-buy-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Tmall/not_merged/tmall-buy.zip
@@ -80,8 +80,8 @@ yahoo-music: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Yahoo
 yelp: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Yelp/yelp.zip
 yoochoose-buys-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/YOOCHOOSE/merged/yoochoose-buys.zip
 yoochoose-clicks-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/YOOCHOOSE/merged/yoochoose-clicks.zip
-yoochoose-buys-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/YOOCHOOSE/not_merged/yoochoose-buys.zip
-yoochoose-clicks-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/YOOCHOOSE/not_merged/yoochoose-clicks.zip
+yoochoose-buys-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/YOOCHOOSE/not-merged/yoochoose-buys.zip
+yoochoose-clicks-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/YOOCHOOSE/not-merged/yoochoose-clicks.zip
 
 # session-based recommendation benchmarks
 diginetica-session: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/DIGINETICA/session/diginetica_session.zip
