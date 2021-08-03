@@ -71,8 +71,7 @@ class TestOverallConfig(unittest.TestCase):
         self.assertTrue(run_parms({'learning_rate': [0, 0.001, 1e-5]}))
 
     def test_training_neg_sampling(self):
-        self.assertTrue(run_parms({'neg_sampling': [ {'uniform': 1}, {'uniform': 2}, {'uniform': 3}
-            ]}))
+        self.assertTrue(run_parms({'neg_sampling': [{'uniform': 1}, {'uniform': 2}, {'uniform': 3}]}))
 
     def test_eval_step(self):
         settings = {
