@@ -30,7 +30,7 @@ from tqdm import tqdm
 from recbole.data.interaction import Interaction
 from recbole.evaluator import Evaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
-    DataLoaderType, EvaluatorType, KGDataLoaderState, get_tensorboard, set_color
+    DataLoaderType, EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage
 
 
 class AbstractTrainer(object):
@@ -86,6 +86,7 @@ class Trainer(AbstractTrainer):
         self.valid_metric = config['valid_metric'].lower()
         self.valid_metric_bigger = config['valid_metric_bigger']
         self.test_batch_size = config['eval_batch_size']
+        self.gpu_available = torch.cuda.is_available() and config['use_gpu']
         self.device = config['device']
         self.checkpoint_dir = config['checkpoint_dir']
         ensure_dir(self.checkpoint_dir)
@@ -156,6 +157,7 @@ class Trainer(AbstractTrainer):
             tqdm(
                 enumerate(train_data),
                 total=len(train_data),
+                ncols=100,
                 desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
             ) if show_progress else enumerate(train_data)
         )
@@ -175,6 +177,8 @@ class Trainer(AbstractTrainer):
             if self.clip_grad_norm:
                 clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
             self.optimizer.step()
+            if self.gpu_available and show_progress:
+                iter_data.set_postfix_str(set_color('GPU RAM: ' + get_gpu_usage(self.device), 'yellow'))
         return total_loss
 
     def _valid_epoch(self, valid_data, show_progress=False):
@@ -442,6 +446,7 @@ class Trainer(AbstractTrainer):
             tqdm(
                 enumerate(eval_data),
                 total=len(eval_data),
+                ncols=100,
                 desc=set_color(f"Evaluate   ", 'pink'),
             ) if show_progress else enumerate(eval_data)
         )
@@ -450,6 +455,8 @@ class Trainer(AbstractTrainer):
                 interaction, scores, positive_u, positive_i = self._full_sort_batch_eval(batched_data)
             else:
                 interaction, scores, positive_u, positive_i = self._neg_sample_batch_eval(batched_data)
+            if self.gpu_available and show_progress:
+                iter_data.set_postfix_str(set_color('GPU RAM: ' + get_gpu_usage(self.device), 'yellow'))
             self.eval_collector.eval_batch_collect(scores, interaction, positive_u, positive_i)
         self.eval_collector.model_collect(self.model)
         struct = self.eval_collector.get_data_struct()

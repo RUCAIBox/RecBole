@@ -13,8 +13,8 @@ epochs: 300
 train_batch_size: 2048
 learner: adam
 learning_rate: 0.001
-training_neg_sample_num: 1
-training_neg_sample_distribution: uniform
+neg_sampling:
+  uniform: 1
 eval_step: 1
 stopping_step: 10
 clip_grad_norm: ~
@@ -27,6 +27,7 @@ eval_args:
   group_by: user
   order: RO
   mode: full
+repeatable: False
 metrics: ["Recall","MRR","NDCG","Hit","Precision"]
 topk: [10]
 valid_metric: MRR@10

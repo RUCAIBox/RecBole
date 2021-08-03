@@ -40,7 +40,7 @@ if __name__ == '__main__':
     config_dict = {
         'USER_ID_FIELD': 'session_id',
         'load_col': None,
-        'training_neg_sample_num': 0,
+        'neg_sampling': None,
         'benchmark_filename': ['train', 'test'],
         'alias_of_item_id': ['item_id_list'],
         'topk': [20],

@@ -79,6 +79,7 @@ class RippleNet(KnowledgeRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
+        self.other_parameter_name = ['ripple_set']
 
     def _build_ripple_set(self):
         r"""Get the normalized interaction matrix of users and items according to A_values.
