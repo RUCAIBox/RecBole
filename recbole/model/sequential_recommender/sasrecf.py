@@ -74,6 +74,7 @@ class SASRecF(SequentialRecommender):
 
         # parameters initialization
         self.apply(self._init_weights)
+        self.other_parameter_name = ['feature_embed_layer']
 
     def _init_weights(self, module):
         """ Initialize the weights """

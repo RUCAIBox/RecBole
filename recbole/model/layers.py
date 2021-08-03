@@ -556,15 +556,23 @@ class ContextSeqEmbAbstractLayer(nn.Module):
 
     def __init__(self):
         super(ContextSeqEmbAbstractLayer, self).__init__()
+        self.token_field_offsets = {}
+        self.token_embedding_table = {}
+        self.float_embedding_table = {}
+        self.token_seq_embedding_table = {}
+
+        self.token_field_names = None
+        self.token_field_dims = None
+        self.float_field_names = None
+        self.float_field_dims = None
+        self.token_seq_field_names = None
+        self.token_seq_field_dims = None
+        self.num_feature_field = None
 
     def get_fields_name_dim(self):
         """get user feature field and item feature field.
 
         """
-        self.token_field_offsets = {}
-        self.token_embedding_table = {}
-        self.float_embedding_table = {}
-        self.token_seq_embedding_table = {}
         self.token_field_names = {type: [] for type in self.types}
         self.token_field_dims = {type: [] for type in self.types}
         self.float_field_names = {type: [] for type in self.types}
@@ -594,7 +602,6 @@ class ContextSeqEmbAbstractLayer(nn.Module):
             if len(self.token_field_dims[type]) > 0:
                 self.token_field_offsets[type] = np.array((0, *np.cumsum(self.token_field_dims[type])[:-1]),
                                                           dtype=np.long)
-
                 self.token_embedding_table[type] = FMEmbedding(
                     self.token_field_dims[type], self.token_field_offsets[type], self.embedding_size
                 ).to(self.device)

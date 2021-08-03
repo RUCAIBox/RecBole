@@ -116,6 +116,7 @@ class KGAT(KnowledgeRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
+        self.other_parameter_name = ['restore_user_e', 'restore_entity_e']
 
     def init_graph(self):
         r"""Get the initial attention matrix through the collaborative knowledge graph
