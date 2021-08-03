@@ -21,7 +21,7 @@ from recbole.utils import InputType
 
 
 class MultiVAE(GeneralRecommender):
-    r"""MultiVAE is a item-based model collaborative filtering model that simultaneously rank all items for user .
+    r"""MultiVAE is an item-based collaborative filtering model that simultaneously ranks all items for each user.
 
     We implement the MultiVAE model with only user dataloader.
     """
@@ -129,7 +129,7 @@ class MultiVAE(GeneralRecommender):
 
         scores, _, _ = self.forward(rating_matrix)
 
-        return scores[[user, item]]
+        return scores[[torch.arange(len(item)).to(self.device), item]]
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]

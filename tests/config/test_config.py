@@ -63,8 +63,10 @@ class TestConfigClass(unittest.TestCase):
         self.assertEqual(config['training_neg_sample_num'], 0)
 
     def test_default_sequential_settings(self):
-        config = Config(model='SASRec', dataset='ml-100k')
-
+        para_dict = {
+            'training_neg_sample_num': 0
+        }
+        config = Config(model='SASRec', dataset='ml-100k', config_dict=para_dict)
         self.assertEqual(config['eval_setting'], 'TO_LS,full')
 
     def test_config_file_list(self):

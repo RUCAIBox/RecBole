@@ -13,7 +13,7 @@ recbole.data.dataset
 """
 
 import copy
-import json
+import pickle
 import os
 from collections import Counter
 from logging import getLogger
@@ -26,7 +26,8 @@ from scipy.sparse import coo_matrix
 
 from recbole.data.interaction import Interaction
 from recbole.data.utils import dlapi
-from recbole.utils import FeatureSource, FeatureType
+from recbole.utils import FeatureSource, FeatureType, get_local_time
+from recbole.utils.utils import set_color
 
 
 class Dataset(object):
@@ -40,7 +41,6 @@ class Dataset(object):
 
     Args:
         config (Config): Global configuration object.
-        saved_dataset (str, optional): Restore Dataset object from ``saved_dataset``. Defaults to ``None``.
 
     Attributes:
         dataset_name (str): Name of this dataset.
@@ -89,23 +89,19 @@ class Dataset(object):
         feat_name_list (list): A list contains all the features' name (:class:`str`), including additional features.
     """
 
-    def __init__(self, config, saved_dataset=None):
+    def __init__(self, config):
         self.config = config
         self.dataset_name = config['dataset']
         self.logger = getLogger()
         self._dataloader_apis = {'field2type', 'field2source', 'field2id_token'}
         self._dataloader_apis.update(dlapi.dataloader_apis)
-
-        if saved_dataset is None:
-            self._from_scratch()
-        else:
-            self._restore_saved_dataset(saved_dataset)
+        self._from_scratch()
 
     def _from_scratch(self):
         """Load dataset from scratch.
         Initialize attributes firstly, then load data from atomic files, pre-process the dataset lastly.
         """
-        self.logger.debug(f'Loading {self.__class__} from scratch.')
+        self.logger.debug(set_color(f'Loading {self.__class__} from scratch.', 'green'))
 
         self._get_preset()
         self._get_field_from_config()
@@ -138,8 +134,8 @@ class Dataset(object):
                 'USER_ID_FIELD and ITEM_ID_FIELD need to be set at the same time or not set at the same time.'
             )
 
-        self.logger.debug(f'uid_field: {self.uid_field}')
-        self.logger.debug(f'iid_field: {self.iid_field}')
+        self.logger.debug(set_color('uid_field', 'blue') + f': {self.uid_field}')
+        self.logger.debug(set_color('iid_field', 'blue') + f': {self.iid_field}')
 
     def _data_processing(self):
         """Data preprocessing, including:
@@ -201,34 +197,6 @@ class Dataset(object):
                 if getattr(self, f'{suf}_feat', None) is not None:
                     feat_name_list.append(f'{suf}_feat')
         return feat_name_list
-
-    def _restore_saved_dataset(self, saved_dataset):
-        """Restore saved dataset from ``saved_dataset``.
-
-        Args:
-            saved_dataset (str): path for the saved dataset.
-        """
-        self.logger.debug(f'Restoring dataset from [{saved_dataset}].')
-
-        if (saved_dataset is None) or (not os.path.isdir(saved_dataset)):
-            raise ValueError(f'Filepath [{saved_dataset}] need to be a dir.')
-
-        with open(os.path.join(saved_dataset, 'basic-info.json')) as file:
-            basic_info = json.load(file)
-
-        for k in basic_info:
-            setattr(self, k, basic_info[k])
-
-        feats = ['inter', 'user', 'item']
-        for name in feats:
-            cur_file_name = os.path.join(saved_dataset, f'{name}.csv')
-            if os.path.isfile(cur_file_name):
-                df = pd.read_csv(cur_file_name)
-                setattr(self, f'{name}_feat', df)
-            else:
-                setattr(self, f'{name}_feat', None)
-
-        self._get_field_from_config()
 
     def _load_data(self, token, dataset_path):
         """Load features.
@@ -366,9 +334,9 @@ class Dataset(object):
         if load_col and unload_col:
             raise ValueError(f'load_col [{load_col}] and unload_col [{unload_col}] can not be set the same time.')
 
-        self.logger.debug(f'[{source}]: ')
-        self.logger.debug(f'\t load_col: [{load_col}]')
-        self.logger.debug(f'\t unload_col: [{unload_col}]')
+        self.logger.debug(set_color(f'[{source}]: ', 'pink'))
+        self.logger.debug(set_color('\t load_col', 'blue') + f': [{load_col}]')
+        self.logger.debug(set_color('\t unload_col', 'blue') + f': [{unload_col}]')
         return load_col, unload_col
 
     def _load_feat(self, filepath, source):
@@ -388,7 +356,7 @@ class Dataset(object):
             Their length is limited only after calling :meth:`~_dict_to_interaction` or
             :meth:`~_dataframe_to_interaction`
         """
-        self.logger.debug(f'Loading feature from [{filepath}] (source: [{source}]).')
+        self.logger.debug(set_color(f'Loading feature from [{filepath}] (source: [{source}]).', 'green'))
 
         load_col, unload_col = self._get_load_and_unload_col(source)
         if load_col == set():
@@ -446,11 +414,11 @@ class Dataset(object):
         if self.user_feat is not None:
             new_user_df = pd.DataFrame({self.uid_field: np.arange(self.user_num)})
             self.user_feat = pd.merge(new_user_df, self.user_feat, on=self.uid_field, how='left')
-            self.logger.debug('ordering user features by user id.')
+            self.logger.debug(set_color('ordering user features by user id.', 'green'))
         if self.item_feat is not None:
             new_item_df = pd.DataFrame({self.iid_field: np.arange(self.item_num)})
             self.item_feat = pd.merge(new_item_df, self.item_feat, on=self.iid_field, how='left')
-            self.logger.debug('ordering item features by user id.')
+            self.logger.debug(set_color('ordering item features by user id.', 'green'))
 
     def _preload_weight_matrix(self):
         """Transfer preload weight features into :class:`numpy.ndarray` with shape ``[id_token_length]``
@@ -520,7 +488,7 @@ class Dataset(object):
         For fields with type :obj:`~recbole.utils.enum_type.FeatureType.FLOAT`, missing value will be filled by
         the average of original data.
         """
-        self.logger.debug('Filling nan')
+        self.logger.debug(set_color('Filling nan', 'green'))
 
         for feat_name in self.feat_name_list:
             feat = getattr(self, feat_name)
@@ -560,7 +528,7 @@ class Dataset(object):
         else:
             return
 
-        self.logger.debug(f'Normalized fields: {fields}')
+        self.logger.debug(set_color('Normalized fields', 'blue') + f': {fields}')
 
         for feat_name in self.feat_name_list:
             feat = getattr(self, feat_name)
@@ -715,7 +683,10 @@ class Dataset(object):
         Returns:
             set: illegal ids, whose inter num out of [min_num, max_num]
         """
-        self.logger.debug(f'get_illegal_ids_by_inter_num: field=[{field}], max_num=[{max_num}], min_num=[{min_num}]')
+        self.logger.debug(
+            set_color('get_illegal_ids_by_inter_num', 'blue') +
+            f': field=[{field}], max_num=[{max_num}], min_num=[{min_num}]'
+        )
 
         max_num = max_num or np.inf
         min_num = min_num or -1
@@ -760,7 +731,7 @@ class Dataset(object):
         if val is None:
             return []
 
-        self.logger.debug(f'drop_by_value: val={val}')
+        self.logger.debug(set_color('drop_by_value', 'blue') + f': val={val}')
         filter_field = []
         for field in val:
             if field not in self.field2type:
@@ -908,7 +879,7 @@ class Dataset(object):
         """Get ``config['fields_in_same_space']`` firstly, and remap each.
         """
         fields_in_same_space = self._get_fields_in_same_space()
-        self.logger.debug(f'fields_in_same_space: {fields_in_same_space}')
+        self.logger.debug(set_color('fields_in_same_space', 'blue') + f': {fields_in_same_space}')
         for field_set in fields_in_same_space:
             remap_list = self._get_remap_list(field_set)
             self._remap(remap_list)
@@ -1080,11 +1051,11 @@ class Dataset(object):
             if tokens in self.field2token_id[field]:
                 return self.field2token_id[field][tokens]
             else:
-                raise ValueError('token [{}] is not existed')
+                raise ValueError(f'token [{token}] is not existed in {field}')
         elif isinstance(tokens, (list, np.ndarray)):
             return np.array([self.token2id(field, token) for token in tokens])
         else:
-            raise TypeError('The type of tokens [{}] is not supported')
+            raise TypeError(f'The type of tokens [{token}] is not supported')
 
     @dlapi.set()
     def id2token(self, field, ids):
@@ -1206,19 +1177,21 @@ class Dataset(object):
         return self.__str__()
 
     def __str__(self):
-        info = [self.dataset_name]
+        info = [set_color(self.dataset_name, 'pink')]
         if self.uid_field:
             info.extend([
-                f'The number of users: {self.user_num}', f'Average actions of users: {self.avg_actions_of_users}'
+                set_color('The number of users', 'blue') + f': {self.user_num}',
+                set_color('Average actions of users', 'blue') + f': {self.avg_actions_of_users}'
             ])
         if self.iid_field:
             info.extend([
-                f'The number of items: {self.item_num}', f'Average actions of items: {self.avg_actions_of_items}'
+                set_color('The number of items', 'blue') + f': {self.item_num}',
+                set_color('Average actions of items', 'blue') + f': {self.avg_actions_of_items}'
             ])
-        info.append(f'The number of inters: {self.inter_num}')
+        info.append(set_color('The number of inters', 'blue') + f': {self.inter_num}')
         if self.uid_field and self.iid_field:
-            info.append(f'The sparsity of the dataset: {self.sparsity * 100}%')
-        info.append(f'Remain Fields: {list(self.field2type)}')
+            info.append(set_color('The sparsity of the dataset', 'blue') + f': {self.sparsity * 100}%')
+        info.append(set_color('Remain Fields', 'blue') + f': {list(self.field2type)}')
         return '\n'.join(info)
 
     def copy(self, new_inter_feat):
@@ -1275,6 +1248,12 @@ class Dataset(object):
         """
         cnt = [int(ratios[i] * tot) for i in range(len(ratios))]
         cnt[0] = tot - sum(cnt[1:])
+        for i in range(1, len(ratios)):
+            if cnt[0] <= 1:
+                break
+            if 0 < ratios[-i] * tot < 1:
+                cnt[-i] += 1
+                cnt[0] -= 1
         split_ids = np.cumsum(cnt)[:-1]
         return list(split_ids)
 
@@ -1421,22 +1400,10 @@ class Dataset(object):
         if (filepath is None) or (not os.path.isdir(filepath)):
             raise ValueError(f'Filepath [{filepath}] need to be a dir.')
 
-        self.logger.debug(f'Saving into [{filepath}]')
-        basic_info = {
-            'field2type': self.field2type,
-            'field2source': self.field2source,
-            'field2id_token': self.field2id_token,
-            'field2seqlen': self.field2seqlen
-        }
-
-        with open(os.path.join(filepath, 'basic-info.json'), 'w', encoding='utf-8') as file:
-            json.dump(basic_info, file)
-
-        feats = ['inter', 'user', 'item']
-        for name in feats:
-            df = getattr(self, f'{name}_feat')
-            if df is not None:
-                df.to_csv(os.path.join(filepath, f'{name}.csv'))
+        file = os.path.join(filepath, f'{self.config["dataset"]}-dataset.pth')
+        self.logger.info(set_color('Saving filtered dataset into ', 'pink') + f'[{file}]')
+        with open(file, 'wb') as f:
+            pickle.dump(self, f)
 
     @dlapi.set()
     def get_user_feature(self):

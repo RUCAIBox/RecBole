@@ -12,6 +12,8 @@ recbole.config.eval_setting
 ################################
 """
 
+from recbole.utils.utils import set_color
+
 
 class EvalSetting(object):
     """Class containing settings about model evaluation.
@@ -90,27 +92,27 @@ class EvalSetting(object):
                 setattr(self, args, config[args])
 
     def __str__(self):
-        info = ['Evaluation Setting:']
+        info = [set_color('Evaluation Setting:', 'pink')]
 
         if self.group_field:
-            info.append('Group by {}'.format(self.group_field))
+            info.append(set_color('Group by', 'blue') + f' {self.group_field}')
         else:
-            info.append('No Grouping')
+            info.append(set_color('No Grouping', 'yellow'))
 
         if self.ordering_args is not None and self.ordering_args['strategy'] != 'none':
-            info.append('Ordering: {}'.format(self.ordering_args))
+            info.append(set_color('Ordering', 'blue') + f': {self.ordering_args}')
         else:
-            info.append('No Ordering')
+            info.append(set_color('No Ordering', 'yellow'))
 
         if self.split_args is not None and self.split_args['strategy'] != 'none':
-            info.append('Splitting: {}'.format(self.split_args))
+            info.append(set_color('Splitting', 'blue') + f': {self.split_args}')
         else:
-            info.append('No Splitting')
+            info.append(set_color('No Splitting', 'yellow'))
 
         if self.neg_sample_args is not None and self.neg_sample_args['strategy'] != 'none':
-            info.append('Negative Sampling: {}'.format(self.neg_sample_args))
+            info.append(set_color('Negative Sampling', 'blue') + f': {self.neg_sample_args}')
         else:
-            info.append('No Negative Sampling')
+            info.append(set_color('No Negative Sampling', 'yellow'))
 
         return '\n\t'.join(info)
 

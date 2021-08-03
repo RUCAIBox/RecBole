@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/19, 2020/9/17, 2020/8/31, 2021/3/1
-# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li, Jiawei Guan
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com, guanjw@ruc.edu.cn
+# @Time   : 2020/10/19, 2020/9/17, 2020/8/31, 2021/2/20, 2021/3/1
+# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li, Haoran Cheng, Jiawei Guan
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com, chenghaoran29@foxmail.com, guanjw@ruc.edu.cn
 
 """
 recbole.data.utils
@@ -15,11 +15,13 @@ recbole.data.utils
 import copy
 import importlib
 import os
+import pickle
 
 from recbole.config import EvalSetting
 from recbole.data.dataloader import *
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
-from recbole.utils import ModelType, ensure_dir
+from recbole.utils import ModelType, ensure_dir, get_local_time
+from recbole.utils.utils import set_color
 
 
 def create_dataset(config):
@@ -81,9 +83,6 @@ def data_preparation(config, dataset, save=False):
     train_neg_sample_args = config['train_neg_sample_args']
     eval_neg_sample_args = es.neg_sample_args
 
-    if save:
-        save_datasets(config['checkpoint_dir'], name=phases, dataset=built_datasets)
-
     # Training
     train_kwargs = {
         'config': config,
@@ -109,12 +108,21 @@ def data_preparation(config, dataset, save=False):
             train_kwargs['kg_sampler'] = kg_sampler
 
     dataloader = get_data_loader('train', config, train_neg_sample_args)
-    logger.info(f'Build [{dataloader.__name__}] for [train] with format [{train_kwargs["dl_format"]}]')
+    logger.info(
+        set_color('Build', 'pink') + set_color(f' [{dataloader.__name__}]', 'yellow') + ' for ' +
+        set_color('[train]', 'yellow') + ' with format ' + set_color(f'[{train_kwargs["dl_format"]}]', 'yellow')
+    )
     if train_neg_sample_args['strategy'] != 'none':
-        logger.info(f'[train] Negative Sampling: {train_neg_sample_args}')
+        logger.info(
+            set_color('[train]', 'pink') + set_color(' Negative Sampling', 'blue') + f': {train_neg_sample_args}'
+        )
     else:
-        logger.info(f'[train] No Negative Sampling')
-    logger.info(f'[train] batch_size = [{train_kwargs["batch_size"]}], shuffle = [{train_kwargs["shuffle"]}]\n')
+        logger.info(set_color('[train]', 'pink') + set_color(' No Negative Sampling', 'yellow'))
+    logger.info(
+        set_color('[train]', 'pink') + set_color(' batch_size', 'cyan') + ' = ' +
+        set_color(f'[{train_kwargs["batch_size"]}]', 'yellow') + ', ' + set_color('shuffle', 'cyan') + ' = ' +
+        set_color(f'[{train_kwargs["shuffle"]}]\n', 'yellow')
+    )
     train_data = dataloader(**train_kwargs)
 
     # Evaluation
@@ -146,33 +154,54 @@ def data_preparation(config, dataset, save=False):
     test_kwargs.update(eval_kwargs)
 
     dataloader = get_data_loader('evaluation', config, eval_neg_sample_args)
-    logger.info(f'Build [{dataloader.__name__}] for [evaluation] with format [{eval_kwargs["dl_format"]}]')
+    logger.info(
+        set_color('Build', 'pink') + set_color(f' [{dataloader.__name__}]', 'yellow') + ' for ' +
+        set_color('[evaluation]', 'yellow') + ' with format ' + set_color(f'[{eval_kwargs["dl_format"]}]', 'yellow')
+    )
     logger.info(es)
-    logger.info(f'[evaluation] batch_size = [{eval_kwargs["batch_size"]}], shuffle = [{eval_kwargs["shuffle"]}]\n')
+    logger.info(
+        set_color('[evaluation]', 'pink') + set_color(' batch_size', 'cyan') + ' = ' +
+        set_color(f'[{eval_kwargs["batch_size"]}]', 'yellow') + ', ' + set_color('shuffle', 'cyan') + ' = ' +
+        set_color(f'[{eval_kwargs["shuffle"]}]\n', 'yellow')
+    )
 
     valid_data = dataloader(**valid_kwargs)
     test_data = dataloader(**test_kwargs)
 
+    if save:
+        save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))
+
     return train_data, valid_data, test_data
 
 
-def save_datasets(save_path, name, dataset):
-    """Save split datasets.
+def save_split_dataloaders(config, dataloaders):
+    """Save split dataloaders.
 
     Args:
-        save_path (str): The path of directory for saving.
-        name (str or list of str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
-        dataset (Dataset or list of Dataset): The split datasets.
+        config (Config): An instance object of Config, used to record parameter information.
+        dataloaders (tuple of AbstractDataLoader): The split dataloaders.
     """
-    if (not isinstance(name, list)) and (not isinstance(dataset, list)):
-        name = [name]
-        dataset = [dataset]
-    if len(name) != len(dataset):
-        raise ValueError(f'Length of name {name} should equal to length of dataset {dataset}.')
-    for i, d in enumerate(dataset):
-        cur_path = os.path.join(save_path, name[i])
-        ensure_dir(cur_path)
-        d.save(cur_path)
+    save_path = config['checkpoint_dir']
+    saved_dataloaders_file = f'{config["dataset"]}-for-{config["model"]}-dataloader.pth'
+    file_path = os.path.join(save_path, saved_dataloaders_file)
+    logger = getLogger()
+    logger.info(set_color('Saved split dataloaders', 'blue') + f': {file_path}')
+    with open(file_path, 'wb') as f:
+        pickle.dump(dataloaders, f)
+
+
+def load_split_dataloaders(saved_dataloaders_file):
+    """Load split dataloaders.
+
+    Args:
+        saved_dataloaders_file (str): The path of split dataloaders.
+
+    Returns:
+        dataloaders (tuple of AbstractDataLoader): The split dataloaders.
+    """
+    with open(saved_dataloaders_file, 'rb') as f:
+        dataloaders = pickle.load(f)
+    return dataloaders
 
 
 def get_data_loader(name, config, neg_sample_args):
@@ -188,11 +217,13 @@ def get_data_loader(name, config, neg_sample_args):
     """
     register_table = {
         'DIN': _get_DIN_data_loader,
+        'DIEN': _get_DIEN_data_loader,
         "MultiDAE": _get_AE_data_loader,
         "MultiVAE": _get_AE_data_loader,
         'MacridVAE': _get_AE_data_loader,
         'CDAE': _get_AE_data_loader,
         'ENMF': _get_AE_data_loader,
+        'RaCT': _get_AE_data_loader,
         'RecVAE': _get_AE_data_loader
     }
 
@@ -252,6 +283,26 @@ def _get_DIN_data_loader(name, config, neg_sample_args):
         return SequentialNegSampleDataLoader
     elif neg_sample_strategy == 'full':
         return SequentialFullDataLoader
+
+
+def _get_DIEN_data_loader(name, config, neg_sample_args):
+    """Customized function for DIEN to get correct dataloader class.
+
+    Args:
+        name (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
+        config (Config): An instance object of Config, used to record parameter information.
+        neg_sample_args : Settings of negative sampling.
+
+    Returns:
+        type: The dataloader class that meets the requirements in :attr:`config` and :attr:`eval_setting`.
+    """
+    neg_sample_strategy = neg_sample_args['strategy']
+    if neg_sample_strategy == 'none':
+        return DIENDataLoader
+    elif neg_sample_strategy == 'by':
+        return DIENNegSampleDataLoader
+    elif neg_sample_strategy == 'full':
+        return DIENFullDataLoader
 
 
 def _get_AE_data_loader(name, config, neg_sample_args):

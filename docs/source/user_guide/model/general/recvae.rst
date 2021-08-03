@@ -12,7 +12,7 @@ Introduction
 
 **Abstract:** Recent research has shown the advantages of using autoencoders based on deep neural networks for collaborative filtering. In particular, the recently proposed Mult-VAE model, which used the multinomial likelihood variational autoencoders, has shown excellent results for top-N recommendations. In this work, we propose the Recommender VAE (RecVAE) model that originates from our research on regularization techniques for variational autoencoders. RecVAE introduces several novel ideas to improve Mult-VAE, including a novel composite prior distribution for the latent codes, a new approach to setting the β hyperparameter for the β-VAE framework, and a new approach to training based on alternating updates. In experimental evaluation, we show that RecVAE significantly outperforms previously proposed autoencoder-based models, including Mult-VAE and RaCT, across classical collaborative filtering datasets, and present a detailed ablation study to assess our new developments. Code and models are available at https://github.com/ilya-shenbin/RecVAE.
 
-.. image:: ../../../../../asset/recvae.png
+.. image:: ../../../asset/recvae.png
     :width: 400
     :align: center
 
@@ -40,7 +40,10 @@ Write the following code to a python file, such as `run.py`
 
    from recbole.quick_start import run_recbole
 
-   run_recbole(model='RecVAE', dataset='ml-100k')
+   parameter_dict = {
+      'training_neg_sample_num': 0 
+   }
+   run_recbole(model='RecVAE', dataset='ml-100k', config_dict=parameter_dict)
 
 And then:
 

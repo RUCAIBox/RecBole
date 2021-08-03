@@ -3,7 +3,7 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2020/10/9, 2021/2/17
+# @Time   : 2020/10/04, 2021/3/2, 2021/2/17
 # @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan
 # @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn
 
@@ -22,6 +22,7 @@ from logging import getLogger
 from recbole.evaluator import group_metrics, individual_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
     general_arguments, training_arguments, evaluation_arguments, dataset_arguments
+from recbole.utils.utils import set_color
 
 
 class Config(object):
@@ -241,7 +242,7 @@ class Config(object):
             if dataset == 'ml-100k':
                 self._update_internal_config_dict(context_aware_on_ml_100k_init)
         elif self.internal_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL:
-            if model == 'DIN':
+            if model in ['DIN', 'DIEN']:
                 self._update_internal_config_dict(DIN_init)
                 if dataset == 'ml-100k':
                     self._update_internal_config_dict(DIN_on_ml_100k_init)
@@ -275,6 +276,8 @@ class Config(object):
             self.final_config_dict['MODEL_INPUT_TYPE'] = self.model_class.input_type
         elif 'loss_type' in self.final_config_dict:
             if self.final_config_dict['loss_type'] in ['CE']:
+                if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and self.final_config_dict['training_neg_sample_num'] > 0:
+                    raise ValueError("training_neg_sample_num should be 0 when the loss_type is CE")
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.POINTWISE
             elif self.final_config_dict['loss_type'] in ['BPR']:
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.PAIRWISE
@@ -297,7 +300,7 @@ class Config(object):
 
         smaller_metric = ['rmse', 'mae', 'logloss']
         valid_metric = self.final_config_dict['valid_metric'].split('@')[0]
-        self.final_config_dict['valid_metric_bigger'] = False if valid_metric in smaller_metric else True
+        self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metric else True
 
         if 'additional_feat_suffix' in self.final_config_dict:
             ad_suf = self.final_config_dict['additional_feat_suffix']
@@ -313,10 +316,10 @@ class Config(object):
     def _set_train_neg_sample_args(self):
         if self.final_config_dict['training_neg_sample_num']:
             self.final_config_dict['train_neg_sample_args'] = {
-                'strategy': 'by', 
-                'by': self.final_config_dict['training_neg_sample_num'], 
+                'strategy': 'by',
+                'by': self.final_config_dict['training_neg_sample_num'],
                 'distribution': self.final_config_dict['training_neg_sample_distribution'] or 'uniform'
-                }
+            }
         else:
             self.final_config_dict['train_neg_sample_args'] = {'strategy': 'none'}
 
@@ -337,20 +340,22 @@ class Config(object):
         return key in self.final_config_dict
 
     def __str__(self):
-        args_info = ''
+        args_info = '\n'
         for category in self.parameters:
-            args_info += category + ' Hyper Parameters: \n'
-            args_info += '\n'.join([
-                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
-                if arg in self.parameters[category]
-            ])
+            args_info += set_color(category + ' Hyper Parameters:\n', 'pink')
+            args_info += '\n'.join([(set_color("{}", 'cyan') + " =" + set_color(" {}", 'yellow')).format(arg, value)
+                                    for arg, value in self.final_config_dict.items()
+                                    if arg in self.parameters[category]])
             args_info += '\n\n'
-            
-        args_info += 'Other Hyper Parameters: \n'
+
+        args_info += set_color('Other Hyper Parameters: \n', 'pink')
         args_info += '\n'.join([
-                "{}={}".format(arg, value) for arg, value in self.final_config_dict.items()
-                if arg not in sum(list(self.parameters.values()) + [['model', 'dataset', 'config_files']], [])
-            ])
+            (set_color("{}", 'cyan') + " = " + set_color("{}", 'yellow')).format(arg, value)
+            for arg, value in self.final_config_dict.items()
+            if arg not in {
+                _ for args in self.parameters.values() for _ in args
+            }.union({'model', 'dataset', 'config_files'})
+        ])
         args_info += '\n\n'
         return args_info
 

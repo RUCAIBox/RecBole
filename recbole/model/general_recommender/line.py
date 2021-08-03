@@ -69,7 +69,7 @@ class LINE(GeneralRecommender):
 
     def get_used_ids(self):
         cur = np.array([set() for _ in range(self.n_items)])
-        for iid, uid in zip(self.interaction_feat[self.USER_ID].numpy(), self.interaction_feat[self.ITEM_ID].numpy()):
+        for uid, iid in zip(self.interaction_feat[self.USER_ID].numpy(), self.interaction_feat[self.ITEM_ID].numpy()):
             cur[iid].add(uid)
         return cur
 

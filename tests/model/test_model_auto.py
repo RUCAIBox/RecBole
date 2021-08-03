@@ -341,12 +341,31 @@ class TestContextRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_lightgbm(self):
+        config_dict = {
+            'model': 'lightgbm',
+            'threshold': {'rating': 4},
+            'lgb_params': {
+                'boosting': 'gbdt',
+                'objective': 'binary',
+                'metric': ['auc', 'binary_logloss']
+            },
+            'lgb_num_boost_round': 1,
+        }
+        quick_test(config_dict)
+
 
 class TestSequentialRecommender(unittest.TestCase):
 
     def test_din(self):
         config_dict = {
             'model': 'DIN',
+        }
+        quick_test(config_dict)
+
+    def test_dien(self):
+        config_dict = {
+            'model': 'DIEN',
         }
         quick_test(config_dict)
 
@@ -359,6 +378,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_gru4rec(self):
         config_dict = {
             'model': 'GRU4Rec',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -372,6 +392,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_narm(self):
         config_dict = {
             'model': 'NARM',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -385,6 +406,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_stamp(self):
         config_dict = {
             'model': 'STAMP',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -400,6 +422,7 @@ class TestSequentialRecommender(unittest.TestCase):
             'model': 'Caser',
             'MAX_ITEM_LIST_LENGTH': 10,
             'reproducibility': False,
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -416,6 +439,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'NextItNet',
             'reproducibility': False,
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -436,6 +460,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_sasrec(self):
         config_dict = {
             'model': 'SASRec',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -459,6 +484,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'SRGNN',
             'MAX_ITEM_LIST_LENGTH': 3,
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -474,6 +500,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'GCSAN',
             'MAX_ITEM_LIST_LENGTH': 3,
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -489,6 +516,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_gru4recf(self):
         config_dict = {
             'model': 'GRU4RecF',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -496,6 +524,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'GRU4RecF',
             'pooling_mode': 'max',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -503,12 +532,14 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'GRU4RecF',
             'pooling_mode': 'sum',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
     def test_sasrecf(self):
         config_dict = {
             'model': 'SASRecF',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -516,6 +547,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'SASRecF',
             'pooling_mode': 'max',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -523,12 +555,14 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'SASRecF',
             'pooling_mode': 'sum',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
     def test_hrm(self):
         config_dict = {
             'model': 'HRM',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -542,6 +576,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_npe(self):
         config_dict = {
             'model': 'NPE',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -555,6 +590,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_shan(self):
         config_dict = {
             'model': 'SHAN',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -575,12 +611,14 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'HGN',
             'loss_type': 'CE',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
     def test_fossil(self):
         config_dict = {
             'model': 'FOSSIL',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -593,6 +631,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_fdsa(self):
         config_dict = {
             'model': 'FDSA',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -600,6 +639,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'FDSA',
             'pooling_mode': 'max',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
@@ -607,12 +647,14 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'FDSA',
             'pooling_mode': 'sum',
+            'training_neg_sample_num': 0
         }
         quick_test(config_dict)
 
     def test_bert4rec(self):
         config_dict = {
             'model': 'BERT4Rec',
+            'training_neg_sample_num': 0
         }
         objective_function(config_dict=config_dict,
                            config_file_list=config_file_list, saved=False)

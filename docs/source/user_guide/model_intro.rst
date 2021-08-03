@@ -30,6 +30,7 @@ General Recommendation
    model/general/cdae
    model/general/enmf
    model/general/nncf
+   model/general/ract
    model/general/recvae
    model/general/ease
    model/general/slimelastic
@@ -54,9 +55,11 @@ Context-aware Recommendation
    model/context/dssm
    model/context/widedeep
    model/context/din
+   model/context/dien
    model/context/dcn
    model/context/autoint
    model/context/xgboost
+   model/context/lightgbm
 
 
 Sequential Recommendation

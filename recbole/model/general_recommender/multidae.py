@@ -22,7 +22,7 @@ from recbole.utils import InputType
 
 
 class MultiDAE(GeneralRecommender):
-    r"""MultiDAE is a item-based model collaborative filtering model that simultaneously rank all items for user .
+    r"""MultiDAE is an item-based collaborative filtering model that simultaneously ranks all items for each user.
 
     We implement the the MultiDAE model with only user dataloader.
     """
@@ -104,7 +104,7 @@ class MultiDAE(GeneralRecommender):
 
         scores = self.forward(rating_matrix)
 
-        return scores[[user, item]]
+        return scores[[torch.arange(len(item)).to(self.device), item]]
 
     def full_sort_predict(self, interaction):
 

@@ -1,8 +1,13 @@
 name: RecBole tests
 
+# Controls when the action will run. 
 on:
-- pull_request
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+  pull_request:
 
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
@@ -27,6 +32,7 @@ jobs:
         pip install community
         pip install networkx
         pip install python-louvain
+        pip install lightgbm
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
     # Use "python -m pytest" instead of "pytest" to fix imports

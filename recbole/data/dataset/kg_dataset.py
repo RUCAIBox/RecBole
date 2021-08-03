@@ -22,6 +22,7 @@ from scipy.sparse import coo_matrix
 from recbole.data.dataset import Dataset
 from recbole.data.utils import dlapi
 from recbole.utils import FeatureSource, FeatureType
+from recbole.utils.utils import set_color
 
 
 class KnowledgeBasedDataset(Dataset):
@@ -63,8 +64,8 @@ class KnowledgeBasedDataset(Dataset):
         ``[UI-Relation]`` is a special relation token.
     """
 
-    def __init__(self, config, saved_dataset=None):
-        super().__init__(config, saved_dataset=saved_dataset)
+    def __init__(self, config):
+        super().__init__(config)
 
     def _get_preset(self):
         super()._get_preset()
@@ -80,8 +81,8 @@ class KnowledgeBasedDataset(Dataset):
         self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
         self.set_field_property(self.entity_field, FeatureType.TOKEN, FeatureSource.KG, 1)
 
-        self.logger.debug(f'relation_field: {self.relation_field}')
-        self.logger.debug(f'entity_field: {self.entity_field}')
+        self.logger.debug(set_color('relation_field', 'blue') + f': {self.relation_field}')
+        self.logger.debug(set_color('entity_field', 'blue') + f': {self.entity_field}')
 
     def _data_processing(self):
         self._set_field2ent_level()
@@ -138,7 +139,7 @@ class KnowledgeBasedDataset(Dataset):
         raise NotImplementedError()
 
     def _load_kg(self, token, dataset_path):
-        self.logger.debug(f'Loading kg from [{dataset_path}].')
+        self.logger.debug(set_color(f'Loading kg from [{dataset_path}].', 'green'))
         kg_path = os.path.join(dataset_path, f'{token}.kg')
         if not os.path.isfile(kg_path):
             raise ValueError(f'[{token}.kg] not found in [{dataset_path}].')
@@ -153,7 +154,7 @@ class KnowledgeBasedDataset(Dataset):
         assert self.relation_field in kg, kg_warn_message.format(self.relation_field)
 
     def _load_link(self, token, dataset_path):
-        self.logger.debug(f'Loading link from [{dataset_path}].')
+        self.logger.debug(set_color(f'Loading link from [{dataset_path}].', 'green'))
         link_path = os.path.join(dataset_path, f'{token}.link')
         if not os.path.isfile(link_path):
             raise ValueError(f'[{token}.link] not found in [{dataset_path}].')
@@ -207,7 +208,7 @@ class KnowledgeBasedDataset(Dataset):
             if self._contain_ent_field(field_set):
                 field_set = self._remove_ent_field(field_set)
                 ent_fields.update(field_set)
-        self.logger.debug(f'ent_fields: {fields_in_same_space}')
+        self.logger.debug(set_color('ent_fields', 'blue') + f': {fields_in_same_space}')
         return ent_fields
 
     def _remove_ent_field(self, field_set):
@@ -328,6 +329,7 @@ class KnowledgeBasedDataset(Dataset):
                 item2order[token] = 3
         item_ent_token_list = list(self.field2id_token[self.iid_field])
         item_ent_token_list.sort(key=lambda t: item2order[t])
+        item_ent_token_list = np.array(item_ent_token_list)
         order_list = [item2order[_] for _ in item_ent_token_list]
         order_cnt = Counter(order_list)
         layered_num = []
@@ -335,15 +337,20 @@ class KnowledgeBasedDataset(Dataset):
             layered_num.append(order_cnt[i])
         layered_num = np.cumsum(np.array(layered_num))
         new_id_token = item_ent_token_list[:layered_num[-2]]
+        new_token_id = {t: i for i, t in enumerate(new_id_token)}
         for field in self.rec_level_ent_fields:
             self._reset_ent_remapID(field, new_id_token)
             self.field2id_token[field] = new_id_token
+            self.field2token_id[field] = new_token_id
         new_id_token = item_ent_token_list[:layered_num[-1]]
         new_id_token = [self.item2entity[_] if _ in self.item2entity else _ for _ in new_id_token]
+        new_token_id = {t: i for i, t in enumerate(new_id_token)}
         for field in self.ent_level_ent_fields:
             self._reset_ent_remapID(field, item_ent_token_list[:layered_num[-1]])
             self.field2id_token[field] = new_id_token
-        self.field2id_token[self.entity_field] = item_ent_token_list[:layered_num[-1]]
+            self.field2token_id[field] = new_token_id
+        self.field2id_token[self.entity_field] = new_id_token
+        self.field2token_id[self.entity_field] = new_token_id
 
     def _remap_ID_all(self):
         """Firstly, remap entities and items all together. Then sort entity tokens,
@@ -353,6 +360,7 @@ class KnowledgeBasedDataset(Dataset):
         item_tokens = self._get_rec_item_token()
         super()._remap_ID_all()
         self._sort_remaped_entities(item_tokens)
+        self.field2token_id[self.relation_field]['[UI-Relation]'] = len(self.field2id_token[self.relation_field])
         self.field2id_token[self.relation_field] = np.append(self.field2id_token[self.relation_field], '[UI-Relation]')
 
     @property
