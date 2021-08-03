@@ -74,23 +74,24 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
     def __init__(self, config, dataset, sampler, shuffle=False):
-        user_num = dataset.user_num
-        dataset.sort(by=dataset.uid_field, ascending=True)
-        self.uid_list = []
-        start, end = dict(), dict()
-        for i, uid in enumerate(dataset.inter_feat[dataset.uid_field].numpy()):
-            if uid not in start:
-                self.uid_list.append(uid)
-                start[uid] = i
-            end[uid] = i
-        self.uid2index = np.array([None] * user_num)
-        self.uid2items_num = np.zeros(user_num, dtype=np.int64)
-        for uid in self.uid_list:
-            self.uid2index[uid] = slice(start[uid], end[uid] + 1)
-            self.uid2items_num[uid] = end[uid] - start[uid] + 1
-        self.uid_list = np.array(self.uid_list)
-
         self._set_neg_sample_args(config, dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
+        if self.neg_sample_args['strategy'] == 'by':
+            user_num = dataset.user_num
+            dataset.sort(by=dataset.uid_field, ascending=True)
+            self.uid_list = []
+            start, end = dict(), dict()
+            for i, uid in enumerate(dataset.inter_feat[dataset.uid_field].numpy()):
+                if uid not in start:
+                    self.uid_list.append(uid)
+                    start[uid] = i
+                end[uid] = i
+            self.uid2index = np.array([None] * user_num)
+            self.uid2items_num = np.zeros(user_num, dtype=np.int64)
+            for uid in self.uid_list:
+                self.uid2index[uid] = slice(start[uid], end[uid] + 1)
+                self.uid2items_num[uid] = end[uid] - start[uid] + 1
+            self.uid_list = np.array(self.uid_list)
+
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _init_batch_size_and_step(self):
@@ -112,32 +113,40 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
 
     @property
     def pr_end(self):
-        return len(self.uid_list)
+        if self.neg_sample_args['strategy'] == 'by':
+            return len(self.uid_list)
+        else:
+            return len(self.dataset)
 
     def _shuffle(self):
         self.logger.warnning('NegSampleEvalDataLoader can\'t shuffle')
 
     def _next_batch_data(self):
-        uid_list = self.uid_list[self.pr:self.pr + self.step]
-        data_list = []
-        idx_list = []
-        positive_u = []
-        positive_i = torch.tensor([], dtype=torch.int64)
+        if self.neg_sample_args['strategy'] == 'by':
+            uid_list = self.uid_list[self.pr:self.pr + self.step]
+            data_list = []
+            idx_list = []
+            positive_u = []
+            positive_i = torch.tensor([], dtype=torch.int64)
 
-        for idx, uid in enumerate(uid_list):
-            index = self.uid2index[uid]
-            data_list.append(self._neg_sampling(self.dataset[index]))
-            idx_list += [idx for i in range(self.uid2items_num[uid] * self.times)]
-            positive_u += [idx for i in range(self.uid2items_num[uid])]
-            positive_i = torch.cat((positive_i, self.dataset[index][self.iid_field]), 0)
+            for idx, uid in enumerate(uid_list):
+                index = self.uid2index[uid]
+                data_list.append(self._neg_sampling(self.dataset[index]))
+                idx_list += [idx for i in range(self.uid2items_num[uid] * self.times)]
+                positive_u += [idx for i in range(self.uid2items_num[uid])]
+                positive_i = torch.cat((positive_i, self.dataset[index][self.iid_field]), 0)
 
-        cur_data = cat_interactions(data_list)
-        idx_list = torch.from_numpy(np.array(idx_list))
-        positive_u = torch.from_numpy(np.array(positive_u))
+            cur_data = cat_interactions(data_list)
+            idx_list = torch.from_numpy(np.array(idx_list))
+            positive_u = torch.from_numpy(np.array(positive_u))
 
-        self.pr += self.step
-        
-        return cur_data, idx_list, positive_u, positive_i
+            self.pr += self.step
+
+            return cur_data, idx_list, positive_u, positive_i
+        else:
+            cur_data = self._neg_sampling(self.dataset[self.pr:self.pr + self.step])
+            self.pr += self.step
+            return cur_data, None, None, None
 
 
 class FullSortEvalDataLoader(AbstractDataLoader):

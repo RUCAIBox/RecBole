@@ -447,7 +447,7 @@ class Dataset(object):
 
     def _set_alias(self, alias_name, default_value):
         alias = self.config[f'alias_of_{alias_name}'] or []
-        alias = np.array(default_value + alias)
+        alias = np.array(list(filter(None, default_value)) + alias)
         _, idx = np.unique(alias, return_index=True)
         self.alias[alias_name] = alias[np.sort(idx)]
 
@@ -931,6 +931,8 @@ class Dataset(object):
         Args:
             remap_list (list): See :meth:`_get_remap_list` for detail.
         """
+        if len(remap_list) == 0:
+            return
         tokens, split_point = self._concat_remaped_tokens(remap_list)
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
