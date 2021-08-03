@@ -1470,7 +1470,7 @@ class Dataset(object):
         if split_mode == 'RS':
             if not isinstance(split_args['RS'], list):
                 raise ValueError(f'The value of "RS" [{split_args}] should be a list.')
-            if group_by == 'none':
+            if group_by is None or group_by.lower() == 'none':
                 datasets = self.split_by_ratio(split_args['RS'], group_by=None)
             elif group_by == 'user':
                 datasets = self.split_by_ratio(split_args['RS'], group_by=self.uid_field)

@@ -196,7 +196,7 @@ def create_samplers(config, dataset, built_datasets):
     train_sampler, valid_sampler, test_sampler = None, None, None
 
     if train_neg_sample_args['strategy'] != 'none':
-        if model_type != ModelType.SEQUENTIAL:
+        if not config['repeatable']:
             sampler = Sampler(phases, built_datasets, train_neg_sample_args['distribution'])
         else:
             sampler = RepeatableSampler(phases, dataset, train_neg_sample_args['distribution'])
@@ -204,7 +204,7 @@ def create_samplers(config, dataset, built_datasets):
 
     if eval_neg_sample_args['strategy'] != 'none':
         if sampler is None:
-            if model_type != ModelType.SEQUENTIAL:
+            if not config['repeatable']:
                 sampler = Sampler(phases, built_datasets, eval_neg_sample_args['distribution'])
             else:
                 sampler = RepeatableSampler(phases, dataset, eval_neg_sample_args['distribution'])

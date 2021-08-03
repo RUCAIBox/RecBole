@@ -39,7 +39,7 @@ Running with RecBole
 - ``hidden_size (int)`` : The number of features in the hidden state. Defaults to ``64``.
 - ``joint_train (bool)`` : The indicator whether the train loss should add the repeat_explore_loss. Defaults to ``False``.
 - ``dropout_prob (float)`` : The dropout rate. Defaults to ``0.5``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``training_neg_sample_num = 1``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 **A Running Example:**
 
