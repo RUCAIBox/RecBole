@@ -29,9 +29,12 @@ from recbole.evaluator.base_metric import TopkMetric, LossMetric
 class Hit(TopkMetric):
     r"""Hit_ (also known as hit ratio at :math:`N`) is a way of calculating how many 'hits' you have
     in an n-sized list of ranked items.
+
     .. _Hit: https://medium.com/@rishabhbhatia315/recommendation-system-evaluation-metrics-3f6739288870
+
     .. math::
         \mathrm {HR@K} =\frac{Number \space of \space Hits @K}{|GT|}
+
     :math:`HR` is the number of users with a positive sample in the recommendation list.
     :math:`GT` is the total number of samples in the test set.
     """
@@ -52,13 +55,16 @@ class Hit(TopkMetric):
 
 class MRR(TopkMetric):
     r"""The MRR_ (also known as mean reciprocal rank) is a statistic measure for evaluating any process
-   that produces a list of possible responses to a sample of queries, ordered by probability of correctness.
-   .. _MRR: https://en.wikipedia.org/wiki/Mean_reciprocal_rank
-   .. math::
-       \mathrm {MRR} = \frac{1}{|{U}|} \sum_{i=1}^{|{U}|} \frac{1}{rank_i}
-   :math:`U` is the number of users, :math:`rank_i` is the rank of the first item in the recommendation list
-   in the test set results for user :math:`i`.
-   """
+    that produces a list of possible responses to a sample of queries, ordered by probability of correctness.
+
+    .. _MRR: https://en.wikipedia.org/wiki/Mean_reciprocal_rank
+
+    .. math::
+        \mathrm {MRR} = \frac{1}{|{U}|} \sum_{i=1}^{|{U}|} \frac{1}{rank_i}
+
+    :math:`U` is the number of users, :math:`rank_i` is the rank of the first item in the recommendation list
+    in the test set results for user :math:`i`.
+    """
 
     def __init__(self, config):
         super().__init__(config)
@@ -82,15 +88,18 @@ class MRR(TopkMetric):
 
 class MAP(TopkMetric):
     r"""MAP_ (also known as Mean Average Precision) The MAP is meant to calculate Avg. Precision for the relevant items.
+
     Note:
         In this case the normalization factor used is :math:`\frac{1}{\min (m,N)}`, which prevents your AP score from
         being unfairly suppressed when your number of recommendations couldn't possibly capture all the correct ones.
+
     .. _MAP: http://sdsawtelle.github.io/blog/output/mean-average-precision-MAP-for-recommender-systems.html#MAP-for-Recommender-Algorithms
+
     .. math::
-       \begin{align*}
-       \mathrm{AP@N} &= \frac{1}{\mathrm{min}(m,N)}\sum_{k=1}^N P(k) \cdot rel(k) \\
-       \mathrm{MAP@N}& = \frac{1}{|U|}\sum_{u=1}^{|U|}(\mathrm{AP@N})_u
-       \end{align*}
+        \begin{align*}
+        \mathrm{AP@N} &= \frac{1}{\mathrm{min}(m,N)}\sum_{k=1}^N P(k) \cdot rel(k) \\
+        \mathrm{MAP@N}& = \frac{1}{|U|}\sum_{u=1}^{|U|}(\mathrm{AP@N})_u
+        \end{align*}
     """
 
     def __init__(self, config):
@@ -119,9 +128,12 @@ class MAP(TopkMetric):
 class Recall(TopkMetric):
     r"""Recall_ (also known as sensitivity) is the fraction of the total amount of relevant instances
     that were actually retrieved
+
     .. _recall: https://en.wikipedia.org/wiki/Precision_and_recall#Recall
+
     .. math::
        \mathrm {Recall@K} = \frac{|Rel_u\cap Rec_u|}{Rel_u}
+
     :math:`Rel_u` is the set of items relevant to user :math:`U`,
     :math:`Rec_u` is the top K items recommended to users.
     We obtain the result by calculating the average :math:`Recall@K` of each user.
@@ -143,7 +155,9 @@ class Recall(TopkMetric):
 class NDCG(TopkMetric):
     r"""NDCG_ (also known as normalized discounted cumulative gain) is a measure of ranking quality.
     Through normalizing the score, users and their recommendation list results in the whole test set can be evaluated.
+
     .. _NDCG: https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG
+
     .. math::
         \begin{gather}
             \mathrm {DCG@K}=\sum_{i=1}^{K} \frac{2^{rel_i}-1}{\log_{2}{(i+1)}}\\
@@ -189,9 +203,12 @@ class NDCG(TopkMetric):
 class Precision(TopkMetric):
     r"""Precision_ (also called positive predictive value) is the fraction of
     relevant instances among the retrieved instances
+
     .. _precision: https://en.wikipedia.org/wiki/Precision_and_recall#Precision
+
     .. math::
         \mathrm {Precision@K} = \frac{|Rel_u \cap Rec_u|}{Rec_u}
+
     :math:`Rel_u` is the set of items relevant to user :math:`U`,
     :math:`Rec_u` is the top K items recommended to users.
     We obtain the result by calculating the average :math:`Precision@K` of each user.
@@ -215,16 +232,20 @@ class Precision(TopkMetric):
 class GAUC(object):
     r"""GAUC_ (also known as Group Area Under Curve) is used to evaluate the two-class model, referring to
     the area under the ROC curve grouped by user.
+
     .. _GAUC: https://dl.acm.org/doi/10.1145/3219819.3219823
+
     Note:
         It calculates the AUC score of each user, and finally obtains GAUC by weighting the user AUC.
         It is also not limited to k. Due to our padding for `scores_tensor` in `RankEvaluator` with
         `-np.inf`, the padding value will influence the ranks of origin items. Therefore, we use
         descending sort here and make an identity transformation  to the formula of `AUC`, which is
         shown in `auc_` function. For readability, we didn't do simplification in the code.
+
     .. math::
         \mathrm {GAUC} = \frac {{{M} \times {(M+N+1)} - \frac{M \times (M+1)}{2}} -
         \sum\limits_{i=1}^M rank_{i}} {{M} \times {N}}
+
     :math:`M` is the number of positive samples.
     :math:`N` is the number of negative samples.
     :math:`rank_i` is the descending rank of the ith positive sample.
@@ -278,14 +299,18 @@ class GAUC(object):
 class AUC(LossMetric):
     r"""AUC_ (also known as Area Under Curve) is used to evaluate the two-class model, referring to
     the area under the ROC curve
+
     .. _AUC: https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve
+
     Note:
         This metric does not calculate group-based AUC which considers the AUC scores
         averaged across users. It is also not limited to k. Instead, it calculates the
         scores on the entire prediction results regardless the users.
+
     .. math::
         \mathrm {AUC} = \frac{\sum\limits_{i=1}^M rank_{i}
         - \frac {{M} \times {(M+1)}}{2}} {{{M} \times {N}}}
+
     :math:`M` is the number of positive samples.
     :math:`N` is the number of negative samples.
     :math:`rank_i` is the ascending rank of the ith positive sample.
@@ -329,9 +354,12 @@ class AUC(LossMetric):
 
 class MAE(LossMetric):
     r"""`Mean absolute error regression loss`__
+
     .. __: https://en.wikipedia.org/wiki/Mean_absolute_error
+
     .. math::
         \mathrm{MAE}=\frac{1}{|{T}|} \sum_{(u, i) \in {T}}\left|\hat{r}_{u i}-r_{u i}\right|
+
     :math:`T` is the test set, :math:`\hat{r}_{u i}` is the score predicted by the model,
     and :math:`r_{u i}` the actual score of the test set.
     """
@@ -348,12 +376,15 @@ class MAE(LossMetric):
 
 class RMSE(LossMetric):
     r"""`Mean std error regression loss`__
-   .. __: https://en.wikipedia.org/wiki/Root-mean-square_deviation
-   .. math::
-       \mathrm{RMSE} = \sqrt{\frac{1}{|{T}|} \sum_{(u, i) \in {T}}(\hat{r}_{u i}-r_{u i})^{2}}
-   :math:`T` is the test set, :math:`\hat{r}_{u i}` is the score predicted by the model,
-   and :math:`r_{u i}` the actual score of the test set.
-   """
+
+    .. __: https://en.wikipedia.org/wiki/Root-mean-square_deviation
+
+    .. math::
+        \mathrm{RMSE} = \sqrt{\frac{1}{|{T}|} \sum_{(u, i) \in {T}}(\hat{r}_{u i}-r_{u i})^{2}}
+
+    :math:`T` is the test set, :math:`\hat{r}_{u i}` is the score predicted by the model,
+    and :math:`r_{u i}` the actual score of the test set.
+    """
 
     def __init__(self, config):
         super().__init__(config)
@@ -367,9 +398,12 @@ class RMSE(LossMetric):
 
 class LogLoss(LossMetric):
     r"""`Log loss`__, aka logistic loss or cross-entropy loss
+
     .. __: http://wiki.fast.ai/index.php/Log_Loss
+
     .. math::
         -\log {P(y_t|y_p)} = -(({y_t}\ \log{y_p}) + {(1-y_t)}\ \log{(1 - y_p)})
+
     For a single sample, :math:`y_t` is true label in :math:`\{0,1\}`.
     :math:`y_p` is the estimated probability that :math:`y_t = 1`.
     """
