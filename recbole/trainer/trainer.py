@@ -439,7 +439,8 @@ class Trainer(AbstractTrainer):
         if eval_data.dl_type == DataLoaderType.FULL:
             if self.item_tensor is None:
                 self.item_tensor = eval_data.dataset.get_item_feature().to(self.device).repeat(eval_data.step)
-        self.tot_item_num = eval_data.dataset.item_num
+        if self.config['eval_type'] == EvaluatorType.RANKING:
+            self.tot_item_num = eval_data.dataset.item_num
 
         batch_matrix_list = []
         iter_data = (
