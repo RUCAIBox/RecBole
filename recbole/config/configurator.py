@@ -263,7 +263,6 @@ class Config(object):
         return final_config_dict
 
     def _set_default_parameters(self):
-
         self.final_config_dict['dataset'] = self.dataset
         self.final_config_dict['model'] = self.model
         if self.dataset == 'ml-100k':
@@ -276,13 +275,19 @@ class Config(object):
             self.final_config_dict['MODEL_INPUT_TYPE'] = self.model_class.input_type
         elif 'loss_type' in self.final_config_dict:
             if self.final_config_dict['loss_type'] in ['CE']:
-                if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and self.final_config_dict['training_neg_sample_num'] > 0:
-                    raise ValueError("training_neg_sample_num should be 0 when the loss_type is CE")
+                if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and \
+                   self.final_config_dict['neg_sampling'] is not None:
+                    raise ValueError(f"neg_sampling [{self.final_config_dict['neg_sampling']}] should be 0 "
+                                     f"when the loss_type is CE.")
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.POINTWISE
             elif self.final_config_dict['loss_type'] in ['BPR']:
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.PAIRWISE
         else:
             raise ValueError('Either Model has attr \'input_type\',' 'or arg \'loss_type\' should exist in config.')
+
+        metrics = self.final_config_dict['metrics']
+        if isinstance(metrics, str):
+            self.final_config_dict['metrics'] = [metrics]
 
         eval_type = None
         for metric in self.final_config_dict['metrics']:
@@ -298,17 +303,17 @@ class Config(object):
                     eval_type = EvaluatorType.RANKING
         self.final_config_dict['eval_type'] = eval_type
 
+        if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and not self.final_config_dict['repeatable']:
+            raise ValueError('Sequential models currently only support NON-Repeatable recommendation, '
+                             'please set `repeatable` as `True`.')
+
         smaller_metric = ['rmse', 'mae', 'logloss', 'averagepopularity', 'giniindex']
         valid_metric = self.final_config_dict['valid_metric'].split('@')[0]
         self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metric else True
 
         topk = self.final_config_dict['topk']
-        if isinstance(topk,int):
+        if isinstance(topk, int):
             self.final_config_dict['topk'] = [topk]
-        
-        metrics = self.final_config_dict['metrics']
-        if isinstance(metrics, str):
-            self.final_config_dict['metrics'] = [metrics] 
 
         if 'additional_feat_suffix' in self.final_config_dict:
             ad_suf = self.final_config_dict['additional_feat_suffix']
@@ -322,6 +327,8 @@ class Config(object):
             'group_by': 'user',
             'mode': 'full'
         }
+        if not isinstance(self.final_config_dict['eval_args'], dict):
+            raise ValueError(f"eval_args:[{self.final_config_dict['eval_args']}] should be a dict.")
         for op_args in default_eval_args:
             if op_args not in self.final_config_dict['eval_args']:
                 self.final_config_dict['eval_args'][op_args] = default_eval_args[op_args]
@@ -333,18 +340,32 @@ class Config(object):
         self.final_config_dict['device'] = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
 
     def _set_train_neg_sample_args(self):
-        if self.final_config_dict['training_neg_sample_num']:
+        neg_sampling = self.final_config_dict['neg_sampling']
+        if neg_sampling is None:
+            self.final_config_dict['train_neg_sample_args'] = {'strategy': 'none'}
+        else:
+            if not isinstance(neg_sampling, dict):
+                raise ValueError(f"neg_sampling:[{neg_sampling}] should be a dict.")
+            if len(neg_sampling) > 1:
+                raise ValueError(f"the len of neg_sampling [{neg_sampling}] should be 1.")
+
+            distribution = list(neg_sampling.keys())[0]
+            sample_num = neg_sampling[distribution]
+            if distribution not in ['uniform', 'popularity']:
+                raise ValueError(f"The distribution [{distribution}] of neg_sampling "
+                                 f"should in ['uniform', 'popularity']")
+
             self.final_config_dict['train_neg_sample_args'] = {
                 'strategy': 'by',
-                'by': self.final_config_dict['training_neg_sample_num'],
-                'distribution': self.final_config_dict['training_neg_sample_distribution'] or 'uniform'
+                'by': sample_num,
+                'distribution': distribution
             }
-        else:
-            self.final_config_dict['train_neg_sample_args'] = {'strategy': 'none'}
 
     def _set_eval_neg_sample_args(self):
         eval_mode = self.final_config_dict['eval_args']['mode']
-        if eval_mode == 'none':
+        if not isinstance(eval_mode, str):
+            raise ValueError(f"mode [{eval_mode}] in eval_args should be a str.")
+        if eval_mode == 'labeled':
             eval_neg_sample_args = {'strategy': 'none', 'distribution': 'none'}
         elif eval_mode == 'full':
             eval_neg_sample_args = {'strategy': 'full', 'distribution': 'uniform'}

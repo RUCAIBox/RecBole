@@ -70,9 +70,8 @@ class TestOverallConfig(unittest.TestCase):
     def test_learning_rate(self):
         self.assertTrue(run_parms({'learning_rate': [0, 0.001, 1e-5]}))
 
-    def test_training_neg_sample_num(self):
-        self.assertTrue(run_parms({'training_neg_sample_num': [  # 0,
-            1, 2]}))
+    def test_training_neg_sampling(self):
+        self.assertTrue(run_parms({'neg_sampling': [{'uniform': 1}, {'uniform': 2}, {'uniform': 3}]}))
 
     def test_eval_step(self):
         settings = {
@@ -120,7 +119,7 @@ class TestOverallConfig(unittest.TestCase):
         self.assertTrue(run_parms({'eval_args': [{'split': {'RS': [0.8, 0.1, 0.1]}}, {'split': {'RS': [16, 2, 2]}}]}))
 
     def test_group_by_user(self):
-        self.assertTrue(run_parms({'eval_args': [{'group_by': 'user'}, {'group_by': 'none'}]}))
+        self.assertTrue(run_parms({'eval_args': [{'group_by': 'user'}, {'group_by': 'None'}]}))
 
 
 if __name__ == '__main__':

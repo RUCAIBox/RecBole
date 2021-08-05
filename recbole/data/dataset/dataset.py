@@ -282,7 +282,7 @@ class Dataset(object):
                         overall_field2seqlen[field] = max(overall_field2seqlen[field], self.field2seqlen[field])
                 else:
                     raise ValueError(f'File {file_path} not exist.')
-            inter_feat = pd.concat(sub_inter_feats)
+            inter_feat = pd.concat(sub_inter_feats, ignore_index=True)
             self.inter_feat, self.file_size_list = inter_feat, sub_inter_lens
             self.field2seqlen = overall_field2seqlen
 
@@ -447,7 +447,7 @@ class Dataset(object):
 
     def _set_alias(self, alias_name, default_value):
         alias = self.config[f'alias_of_{alias_name}'] or []
-        alias = np.array(default_value + alias)
+        alias = np.array(list(filter(None, default_value)) + alias)
         _, idx = np.unique(alias, return_index=True)
         self.alias[alias_name] = alias[np.sort(idx)]
 
@@ -920,7 +920,7 @@ class Dataset(object):
             if ftype == FeatureType.TOKEN:
                 tokens.append(feat[field].values)
             elif ftype == FeatureType.TOKEN_SEQ:
-                tokens.append(feat[field].reset_index(drop=True).agg(np.concatenate))
+                tokens.append(feat[field].agg(np.concatenate))
         split_point = np.cumsum(list(map(len, tokens)))[:-1]
         tokens = np.concatenate(tokens)
         return tokens, split_point
@@ -931,6 +931,8 @@ class Dataset(object):
         Args:
             remap_list (list): See :meth:`_get_remap_list` for detail.
         """
+        if len(remap_list) == 0:
+            return
         tokens, split_point = self._concat_remaped_tokens(remap_list)
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
@@ -1470,7 +1472,7 @@ class Dataset(object):
         if split_mode == 'RS':
             if not isinstance(split_args['RS'], list):
                 raise ValueError(f'The value of "RS" [{split_args}] should be a list.')
-            if group_by == 'none':
+            if group_by is None or group_by.lower() == 'none':
                 datasets = self.split_by_ratio(split_args['RS'], group_by=None)
             elif group_by == 'user':
                 datasets = self.split_by_ratio(split_args['RS'], group_by=self.uid_field)

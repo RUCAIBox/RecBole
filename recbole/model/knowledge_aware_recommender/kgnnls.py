@@ -85,6 +85,7 @@ class KGNNLS(KnowledgeRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
+        self.other_parameter_name = ['adj_entity', 'adj_relation']
 
     def get_interaction_table(self, user_id, item_id, y):
         r"""Get interaction_table that is used for fetching user-item interaction label in LS regularization.
