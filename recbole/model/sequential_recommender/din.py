@@ -74,6 +74,8 @@ class DIN(SequentialRecommender):
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
+
+        # parameters initialization
         self.apply(self._init_weights)
         self.other_parameter_name = ['embedding_layer']
 
