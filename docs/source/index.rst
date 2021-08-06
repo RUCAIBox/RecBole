@@ -38,7 +38,7 @@ RecBole v0.2.0
    :maxdepth: 1
    :caption: API REFERENCE:
 
-   recbole/recbole.config
+   recbole/recbole.config.configurator
    recbole/recbole.data
    recbole/recbole.evaluator
    recbole/recbole.model
