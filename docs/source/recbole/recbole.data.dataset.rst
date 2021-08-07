@@ -9,4 +9,3 @@ recbole.data.dataset
    recbole.data.dataset.kg_dataset
    recbole.data.dataset.kg_seq_dataset
    recbole.data.dataset.sequential_dataset
-   recbole.data.dataset.social_dataset
