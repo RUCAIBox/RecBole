@@ -829,7 +829,7 @@ class xgboostTrainer(DecisionTreeTrainer):
         self.eval_true = torch.Tensor(self.deval.get_label())
         self.eval_pred = torch.Tensor(self.model.predict(self.deval))
 
-        self.eval_collector.eval_collect(self.eval_pred, self.eval_pred)
+        self.eval_collector.eval_collect(self.eval_pred, self.eval_true)
         result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
 
@@ -964,7 +964,7 @@ class lightgbmTrainer(DecisionTreeTrainer):
         self.eval_true = torch.Tensor(self.deval_label)
         self.eval_pred = torch.Tensor(self.model.predict(self.deval_data))
 
-        self.eval_collector.eval_collect(self.eval_pred, self.eval_pred)
+        self.eval_collector.eval_collect(self.eval_pred, self.eval_true)
         result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
 
