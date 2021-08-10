@@ -129,7 +129,7 @@ class MultiVAE(GeneralRecommender):
 
         scores, _, _ = self.forward(rating_matrix)
 
-        return scores[[user, item]]
+        return scores[[torch.arange(len(item)).to(self.device), item]]
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]

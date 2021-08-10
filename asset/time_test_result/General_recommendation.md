@@ -2,21 +2,21 @@
 
 ### Datasets information:
 
-| Dataset | #User   | #Item  | #Interaction | Sparsity |
-| ------- | -------: | ------: | ------------: | --------: |
-| ml-1m   | 6,041   | 3,707  | 1,000,209    | 0.9553   |
-| Netflix | 80,476  | 16,821 | 1,977,844    | 0.9985   |
-| Yelp    | 102,046 | 98,408 | 2,903,648    | 0.9997   |
+| Dataset | #User   | #Item   | #Interaction | Sparsity |
+| ------- | ------: | ------: | -----------: | -------: |
+| ml-1m   |  6,040  |  3,629  |   836,478    |  0.9618  |
+| Netflix | 40,227  |  8,727  |  1,752,648   |  0.9950  |
+| Yelp    | 45,478  | 30,709  |  1,777,765   |  0.9987  |
 
 ### Device information
 
 ```
 OS:                   Linux
-Python Version:       3.8.3
-PyTorch Version:      1.7.0
+Python Version:       3.8.10
+PyTorch Version:      1.8.1
 cudatoolkit Version:  10.1
-GPU:                  TITAN RTX（24GB）
-Machine Specs:        32 CPU machine, 64GB RAM
+GPU:                  TITAN V（12GB）
+Machine Specs:        14 CPU machine, 256GB RAM
 ```
 
 ### 1) ml-1m dataset:
@@ -25,19 +25,19 @@ Machine Specs:        32 CPU machine, 64GB RAM
 
 | Method     | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
 | ---------- | ------------------------: | --------------------------: | --------------: |
-| Popularity |                      2.11 |                        8.08 |            0.82 |
-| ItemKNN    |                      2.00 |                       11.76 |            0.82 |
-| BPRMF      |                      1.93 |                        7.43 |            0.91 |
-| NeuMF      |                      4.94 |                       13.12 |            0.94 |
-| DMF        |                      4.47 |                       12.63 |            1.52 |
-| NAIS       |                     59.27 |                       24.41 |           21.83 |
-| NGCF       |                     12.09 |                        7.12 |            1.20 |
-| GCMC       |                      9.04 |                       54.15 |            1.32 |
-| LightGCN   |                      7.83 |                        7.47 |            1.15 |
-| DGCF       |                    181.66 |                        8.06 |            6.59 |
-| ConvNCF    |                      8.46 |                       19.60 |            1.31 |
-| FISM       |                     19.30 |                       10.92 |            6.94 |
-| SpectralCF |                     13.87 |                        6.97 |            1.19 |
+| Popularity |                     0.62  |                       0.41  |           0.00  |
+| ItemKNN    |                     0.65  |                       4.87  |           0.00  |
+| BPRMF      |                     0.89  |                       0.71  |           0.03  |
+| NeuMF      |                     3.63  |                       0.83  |           0.33  |
+| DMF        |                     3.70  |                       1.34  |           0.87  |
+| NAIS       |                    44.94  |                      13.73  |           8.12  |
+| NGCF       |                     6.19  |                       0.40  |           0.19  |
+| GCMC       |                     4.46  |                       1.74  |           0.26  |
+| LightGCN   |                     3.76  |                       0.76  |           0.16  |
+| DGCF       |                    63.83  |                       0.57  |           4.15  |
+| ConvNCF    |                     8.43  |                      10.04  |           8.58  |
+| FISM       |                    17.54  |                       3.46  |           3.35  |
+| SpectralCF |                     8.02  |                       0.43  |           0.18  |
 
 #### Config file of ml-1m dataset:
 
@@ -48,20 +48,23 @@ seq_separator: " "
 USER_ID_FIELD: user_id
 ITEM_ID_FIELD: item_id
 RATING_FIELD: rating
-TIME_FIELD: timestamp
-LABEL_FIELD: label
 NEG_PREFIX: neg_
+LABEL_FIELD: label
 load_col:
-  inter: [user_id, item_id, rating, timestamp]
-min_user_inter_num: 0
-min_item_inter_num: 0
-
+    inter: [user_id, item_id, rating]
+val_interval:
+    rating: "[3,inf)"    
+unused_col: 
+    inter: [rating]
 
 # training and evaluation
 epochs: 500
-train_batch_size: 2048
-eval_batch_size: 2048
+train_batch_size: 4096
+eval_batch_size: 102400
 valid_metric: MRR@10
+
+# model
+embedding_size: 64
 ```
 
 Other parameters (including model parameters) are default value. 
@@ -70,21 +73,21 @@ Other parameters (including model parameters) are default value.
 
 #### Time and memory cost on Netflix dataset:
 
-| Method     | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
-| ---------- | ----------------: | -----------------: | -----------: |
-| Popularity | 3.98              | 58.86             | 0.86     |
-| ItemKNN    | 5.42              | 69.64             | 0.86      |
-| BPRMF      | 4.42              | 52.81             | 1.08    |
-| NeuMF      | 11.33             | 238.92            | 1.26     |
-| DMF        | 20.62             | 68.89             | 7.12     |
-| NAIS       | -                 | -                 | Out of Memory       |
-| NGCF       | 52.50             | 51.60             | 2.00     |
-| GCMC       | 93.15             |                     1810.43 | 3.17     |
-| LightGCN   | 30.21             | 47.12             | 1.58     |
-| DGCF       |                    750.74 |                       47.23 |           12.52 |
-| ConvNCF    | 17.02             | 402.65            | 1.44     |
-| FISM       | 86.52             | 83.26             | 20.54   |
-| SpectralCF | 59.92             | 46.94             | 1.88     |
+| Method     | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB)      |
+| ---------- | ------------------------: | --------------------------: | -------------------: |
+| Popularity |                     1.55  |                       6.62  |                0.00  |
+| ItemKNN    |                     2.48  |                      25.71  |                0.00  |
+| BPRMF      |                     1.92  |                       5.82  |                0.09  |
+| NeuMF      |                     7.54  |                      12.61  |                0.40  |
+| DMF        |                    10.66  |                       8.14  |                3.54  |
+| NAIS       |                         - |                           - |   CUDA out of memory |
+| NGCF       |                    18.26  |                       5.70  |                0.58  |
+| GCMC       |                    22.07  |                      86.32  |                1.17  |
+| LightGCN   |                    10.85  |                       6.31  |                0.41  |
+| DGCF       |                   269.08  |                       5.39  |                8.80  |
+| ConvNCF    |                    15.66  |                     168.54  |                8.29  |
+| FISM       |                    57.58  |                      23.10  |                8.51  |
+| SpectralCF |                    20.67  |                       5.52  |                0.51  |
 
 #### Config file of Netflix dataset:
 
@@ -100,18 +103,22 @@ LABEL_FIELD: label
 NEG_PREFIX: neg_
 load_col:
   inter: [user_id, item_id, rating, timestamp]
-min_user_inter_num: 3
-min_item_inter_num: 0
-lowest_val:
-  timestamp: 1133366400
-  rating: 3
-drop_filter_field : True
+
+user_inter_num_interval: "[10,inf)"
+item_inter_num_interval: "[10,inf)"
+val_interval:
+  rating: "[3,inf)"
+  timestamp: "[1133366400, inf)"
+
 
 # training and evaluation
 epochs: 500
-train_batch_size: 2048
-eval_batch_size: 2048
+train_batch_size: 4096
+eval_batch_size: 102400
 valid_metric: MRR@10
+
+# model
+embedding_size: 64 
 ```
 
 Other parameters (including model parameters) are default value. 
@@ -120,21 +127,21 @@ Other parameters (including model parameters) are default value.
 
 #### Time and memory cost on Yelp dataset:
 
-| Method     | Training Time (sec/epoch) | Evaluate Time (sec/epoch) | GPU Memory (GB) |
-| ---------- | -------------------------: | -------------------------: | ---------------: |
-| Popularity | 5.69                      | 134.23                    | 0.89            |
-| ItemKNN    | 8.44                      | 194.24                    | 0.90            |
-| BPRMF      | 6.31                      | 120.03                    | 1.29            |
-| NeuMF      | 17.38                     | 2069.53                   | 1.67            |
-| DMF        | 43.96                     | 173.13                    | 9.22            |
-| NAIS       | -                         | -                         | Out of Memory               |
-| NGCF       | 122.90                    | 129.59                    | 3.28            |
-| GCMC       | 299.36                    | 9833.24                   | 5.96            |
-| LightGCN   | 67.91                     | 116.16                    | 2.02            |
-| DGCF       | 1542.00                   | 119.00                    | 17.17           |
-| ConvNCF    | 87.56                     | 11155.31                  | 1.62            |
-| FISM       | -                         | -                         | Out of Memory     |
-| SpectralCF | 138.99                    | 133.37                    | 3.10            |
+| Method     | Training Time (sec/epoch) | Evaluate Time (sec/epoch) | GPU Memory (GB)      |
+| ---------- | ------------------------: | ------------------------: | -------------------: |
+| Popularity |                     1.71  |                     6.45  |                0.02  |
+| ItemKNN    |                     5.67  |                    37.37  |                0.02  |
+| BPRMF      |                     2.86  |                     5.96  |                0.13  |
+| NeuMF      |                     7.75  |                    32.75  |                1.27  |
+| DMF        |                    12.82  |                     9.27  |                2.90  |
+| NAIS       |                         - |                         - |   CUDA out of memory |
+| NGCF       |                    23.17  |                     5.62  |                0.79  |
+| GCMC       |                    32.20  |                   110.34  |                1.65  |
+| LightGCN   |                    13.06  |                     5.85  |                0.47  |
+| DGCF       |                   270.31  |                     5.92  |                8.62  |
+| ConvNCF    |                         - |                         - |   CUDA out of memory |
+| FISM       |                         - |                         - |   CUDA out of memory |
+| SpectralCF |                    24.44  |                     5.73  |                0.62  |
 
 #### Config file of Yelp dataset:
 
@@ -150,17 +157,21 @@ LABEL_FIELD: label
 NEG_PREFIX: neg_
 load_col:
   inter: [user_id, business_id, stars]
-min_user_inter_num: 10
-min_item_inter_num: 4
-lowest_val:
-  stars: 3
-drop_filter_field: True
+
+user_inter_num_interval: "[15,inf)"
+item_inter_num_interval: "[15,inf)"
+val_interval:
+  stars: "[3,inf)"
+
 
 # training and evaluation
 epochs: 500
-train_batch_size: 2048
-eval_batch_size: 2048
+train_batch_size: 4096
+eval_batch_size: 102400
 valid_metric: MRR@10
+
+# model
+embedding_size: 64
 ```
 
 Other parameters (including model parameters) are default value. 

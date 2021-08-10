@@ -1,1 +1,5 @@
-eval_setting: TO_LS,full
+eval_args:
+  split: {'LS': 'valid_and_test'}
+  order: TO
+  mode: full
+repeatable: True

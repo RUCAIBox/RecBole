@@ -6,6 +6,9 @@ context-aware recommendation and knowledge-based recommendation. A brief introdu
 
 General Recommendation
 --------------------------
+In the class of general recommendation, the interaction of users and items(.inter file) is the only data
+that can be used by model. Usually, the models are trained on implicit feedback data and evaluated under the
+task of top-n recommendation. All the collaborative filter(CF) based models are classified in this class.
 
 .. toctree::
    :maxdepth: 1
@@ -38,6 +41,9 @@ General Recommendation
 
 Context-aware Recommendation
 -------------------------------
+Context-aware recommendation can be seen as an extension of click-through rate prediction. All the model in this
+class can be used for CTR prediction. Usually, the dataset is explicit and contains label field. Other feature fields
+are also support for these models. And evaluation is always conducted in the way of binary classification.
 
 .. toctree::
    :maxdepth: 1
@@ -64,6 +70,9 @@ Context-aware Recommendation
 
 Sequential Recommendation
 ---------------------------------
+The task of sequential recommendation(next-item recommendation) is the same as general recommendation which sort a list of items according
+to preference. While the history interactions are organized in sequences and the model tend to characterize
+the sequential data. The models of session-based recommendation are also included in this class.
 
 .. toctree::
    :maxdepth: 1
@@ -96,6 +105,8 @@ Sequential Recommendation
 
 Knowledge-based Recommendation
 ---------------------------------
+Knowledge-based recommendation introduce an external knowledge graph to enhance general or sequential recommendation.
+
 
 .. toctree::
    :maxdepth: 1

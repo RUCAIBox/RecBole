@@ -11,8 +11,7 @@ from logging import getLogger
 
 from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
-from recbole.utils import init_logger, get_model, get_trainer, init_seed
-from recbole.utils.utils import set_color
+from recbole.utils import init_logger, get_model, get_trainer, init_seed, set_color
 
 
 def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=None, saved=True):
@@ -29,7 +28,6 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     # configurations initialization
     config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
     init_seed(config['seed'], config['reproducibility'])
-
     # logger initialization
     init_logger(config)
     logger = getLogger()
@@ -44,7 +42,7 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     train_data, valid_data, test_data = data_preparation(config, dataset)
 
     # model loading and initialization
-    model = get_model(config['model'])(config, train_data).to(config['device'])
+    model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
     logger.info(model)
 
     # trainer loading and initialization
@@ -83,7 +81,7 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     logging.basicConfig(level=logging.ERROR)
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)
-    model = get_model(config['model'])(config, train_data).to(config['device'])
+    model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
     trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False, saved=saved)
     test_result = trainer.evaluate(test_data, load_best_model=saved)

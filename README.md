@@ -9,6 +9,7 @@
 [![PyPi Latest Release](https://img.shields.io/pypi/v/recbole)](https://pypi.org/project/recbole/)
 [![Conda Latest Release](https://anaconda.org/aibox/recbole/badges/version.svg)](https://anaconda.org/aibox/recbole)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![arXiv](https://img.shields.io/badge/arXiv-RecBole-%23B21B1B)](https://arxiv.org/abs/2011.01731)
 
 
 [HomePage] | [Docs] | [Datasets] | [Paper] | [Blogs] | [中文版]
@@ -22,7 +23,7 @@
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
-Our library includes 65 recommendation algorithms, covering four major categories:
+Our library includes 72 recommendation algorithms, covering four major categories:
 
 + General Recommendation
 + Sequential Recommendation
@@ -45,7 +46,7 @@ by our team.
 + **General and extensible data structure.** We design general and extensible data structures to unify the formatting and
 usage of various recommendation datasets.
 
-+ **Comprehensive benchmark models and datasets.** We implement 65 commonly used recommendation algorithms, and provide
++ **Comprehensive benchmark models and datasets.** We implement 72 commonly used recommendation algorithms, and provide
 the formatted copies of 28 recommendation datasets.
 
 + **Efficient GPU-accelerated execution.** We optimize the efficiency of our library with a number of improved techniques
@@ -168,6 +169,35 @@ If you want to change the models, just run the script by setting additional comm
 python run_recbole.py --model=[model_name]
 ```
 
+### Auto-tuning Hyperparameter 
+Open `RecBole/hyper.test` and set several hyperparameters to auto-searching in parameter list. The following has two ways to search best hyperparameter:
+* **loguniform**: indicates that the parameters obey the uniform distribution, randomly taking values from e^{-8} to e^{0}.
+* **choice**: indicates that the parameter takes discrete values from the setting list.
+
+Here is an example for `hyper.test`: 
+```
+learning_rate loguniform -8, 0
+embedding_size choice [64, 96 , 128]
+train_batch_size choice [512, 1024, 2048]
+mlp_hidden_size choice ['[64, 64, 64]','[128, 128]']
+```
+Set training command parameters as you need to run:
+```
+python run_hyper.py --model=[model_name] --dataset=[data_name] --config_files=xxxx.yaml --params_file=hyper.test
+e.g.
+python run_hyper.py --model=BPR --dataset=ml-100k --config_files=test.yaml --params_file=hyper.test
+```
+Note that `--config_files=test.yaml` is optional, if you don't have any customize config settings, this parameter can be empty.
+
+This processing maybe take a long time to output best hyperparameter and result:
+```
+running parameters:                                                                                                                    
+{'embedding_size': 64, 'learning_rate': 0.005947474154838498, 'mlp_hidden_size': '[64,64,64]', 'train_batch_size': 512}                
+  0%|                                                                                           | 0/18 [00:00<?, ?trial/s, best loss=?]
+```
+
+More information about parameter tuning can be found in our [docs](https://recbole.io/docs/user_guide/usage/parameter_tuning.html).
+
 
 ## Time and Memory Costs
 We constructed preliminary experiments to test the time and memory cost on three different-sized datasets 
@@ -215,6 +245,14 @@ If you find RecBole useful for your research or development, please cite the fol
 
 ## The Team
 RecBole is developed and maintained by [RUC, BUPT, ECNU](https://www.recbole.io/about.html).
+
+Here is the list of our lead developers in each development phase. They are the souls of RecBole and have made outstanding contributions.
+
+|         Time          |        Version         |                Lead Developers                 |
+| :-------------------: | :--------------------: | :--------------------------------------------: |
+| June 2020<br> ~<br> Nov. 2020 |        v0.1.1         |  Shanlei Mu ([@ShanleiMu](https://github.com/ShanleiMu)), Yupeng Hou ([@hyp1231](https://github.com/@hyp1231)),<br> Zihan Lin ([@linzihan-backforward](https://github.com/linzihan-backforward)), Kaiyuan Li ([@tsotfsk](https://github.com/tsotfsk))|
+|    Nov. 2020<br> ~ <br> now    |  v0.1.2 ~ v0.2.1 |      Yushuo Chen ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), Xingyu Pan ([@2017pxy](https://github.com/2017pxy))    |
+
 
 ## License
 RecBole uses [MIT License](./LICENSE).

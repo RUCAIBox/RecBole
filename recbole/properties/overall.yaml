@@ -13,24 +13,25 @@ epochs: 300
 train_batch_size: 2048
 learner: adam
 learning_rate: 0.001
-training_neg_sample_num: 1
-training_neg_sample_distribution: uniform
+neg_sampling:
+  uniform: 1
 eval_step: 1
 stopping_step: 10
 clip_grad_norm: ~
 # clip_grad_norm:  {'max_norm': 5, 'norm_type': 2}
 weight_decay: 0.0
-draw_loss_pic: False
 
 # evaluation settings
-eval_setting: RO_RS,full
-group_by_user: True
-split_ratio: [0.8,0.1,0.1]
-leave_one_num: 2
-real_time_process: False
-metrics: ["Recall", "MRR","NDCG","Hit","Precision"]
+eval_args: 
+  split: {'RS':[0.8,0.1,0.1]}
+  group_by: user
+  order: RO
+  mode: full
+repeatable: False
+metrics: ["Recall","MRR","NDCG","Hit","Precision"]
 topk: [10]
 valid_metric: MRR@10
+valid_metric_bigger: True
 eval_batch_size: 4096
 loss_decimal_place: 4
 metric_decimal_place: 4
