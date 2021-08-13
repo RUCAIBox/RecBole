@@ -373,9 +373,10 @@ class Trainer(AbstractTrainer):
             # Note: interaction without item ids
             scores = self.model.full_sort_predict(interaction.to(self.device))
         except NotImplementedError:
+            inter_len = len(interaction)
             new_inter = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             batch_size = len(new_inter)
-            new_inter.update(self.item_tensor[:batch_size])
+            new_inter.update(self.item_tensor.repeat(inter_len))
             if batch_size <= self.test_batch_size:
                 scores = self.model.predict(new_inter)
             else:
@@ -438,11 +439,10 @@ class Trainer(AbstractTrainer):
 
         if eval_data.dl_type == DataLoaderType.FULL:
             if self.item_tensor is None:
-                self.item_tensor = eval_data.dataset.get_item_feature().to(self.device).repeat(eval_data.step)
+                self.item_tensor = eval_data.dataset.get_item_feature().to(self.device)
         if self.config['eval_type'] == EvaluatorType.RANKING:
             self.tot_item_num = eval_data.dataset.item_num
 
-        batch_matrix_list = []
         iter_data = (
             tqdm(
                 enumerate(eval_data),
