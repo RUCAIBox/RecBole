@@ -373,9 +373,10 @@ class Trainer(AbstractTrainer):
             # Note: interaction without item ids
             scores = self.model.full_sort_predict(interaction.to(self.device))
         except NotImplementedError:
+            inter_len = len(interaction)
             new_inter = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             batch_size = len(new_inter)
-            new_inter.update(self.item_tensor[:batch_size])
+            new_inter.update(self.item_tensor.repeat(inter_len))
             if batch_size <= self.test_batch_size:
                 scores = self.model.predict(new_inter)
             else:
@@ -438,11 +439,10 @@ class Trainer(AbstractTrainer):
 
         if eval_data.dl_type == DataLoaderType.FULL:
             if self.item_tensor is None:
-                self.item_tensor = eval_data.dataset.get_item_feature().to(self.device).repeat(eval_data.step)
+                self.item_tensor = eval_data.dataset.get_item_feature().to(self.device)
         if self.config['eval_type'] == EvaluatorType.RANKING:
             self.tot_item_num = eval_data.dataset.item_num
 
-        batch_matrix_list = []
         iter_data = (
             tqdm(
                 enumerate(eval_data),
@@ -662,8 +662,17 @@ class DecisionTreeTrainer(AbstractTrainer):
         # model saved
         self.checkpoint_dir = config['checkpoint_dir']
         ensure_dir(self.checkpoint_dir)
+        temp_file = '{}-{}-temp.pth'.format(self.config['model'], get_local_time())
+        self.temp_file = os.path.join(self.checkpoint_dir, temp_file)
+
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
+
+        self.stopping_step = config['stopping_step']
+        self.valid_metric_bigger = config['valid_metric_bigger']
+        self.cur_step = 0
+        self.best_valid_score = -np.inf if self.valid_metric_bigger else np.inf
+        self.best_valid_result = None
 
     def _interaction_to_sparse(self, dataloader):
         r"""Convert data format from interaction to sparse or numpy
@@ -725,7 +734,7 @@ class DecisionTreeTrainer(AbstractTrainer):
         Args:
             valid_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
         """
-        valid_result = self.evaluate(valid_data)
+        valid_result = self.evaluate(valid_data, load_best_model=False)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_result, valid_score
 
@@ -734,9 +743,6 @@ class DecisionTreeTrainer(AbstractTrainer):
         if self.boost_model is not None:
             self.model.load_model(self.boost_model)
 
-        self.best_valid_score = 0.
-        self.best_valid_result = 0.
-
         for epoch_idx in range(self.epochs):
             self._train_at_once(train_data, valid_data)
 
@@ -744,6 +750,15 @@ class DecisionTreeTrainer(AbstractTrainer):
                 # evaluate
                 valid_start_time = time()
                 valid_result, valid_score = self._valid_epoch(valid_data)
+
+                self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
+                    valid_score,
+                    self.best_valid_score,
+                    self.cur_step,
+                    max_step=self.stopping_step,
+                    bigger=self.valid_metric_bigger
+                )
+
                 valid_end_time = time()
                 valid_score_output = (set_color("epoch %d evaluating", 'green') + " [" + set_color("time", 'blue')
                                     + ": %.2fs, " + set_color("valid_score", 'blue') + ": %f]") % \
@@ -754,8 +769,20 @@ class DecisionTreeTrainer(AbstractTrainer):
                     self.logger.info(valid_result_output)
                 self.tensorboard.add_scalar('Vaild_score', valid_score, epoch_idx)
 
-                self.best_valid_score = valid_score
-                self.best_valid_result = valid_result
+                if update_flag:
+                    if saved:
+                        self.model.save_model(self.saved_model_file)
+                        update_output = set_color('Saving current best', 'blue') + ': %s' % self.saved_model_file
+                        if verbose:
+                            self.logger.info(update_output)
+                    self.best_valid_result = valid_result
+
+                if stop_flag:
+                    stop_output = 'Finished training, best eval result in epoch %d' % \
+                                  (epoch_idx - self.cur_step * self.eval_step)
+                    if verbose:
+                        self.logger.info(stop_output)
+                    break
 
         return self.best_valid_score, self.best_valid_result
 
@@ -818,10 +845,16 @@ class xgboostTrainer(DecisionTreeTrainer):
             callbacks=self.callbacks
         )
 
-        self.model.save_model(self.saved_model_file)
-        self.boost_model = self.saved_model_file
+        self.model.save_model(self.temp_file)
+        self.boost_model = self.temp_file
 
     def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
+        if load_best_model:
+            if model_file:
+                checkpoint_file = model_file
+            else:
+                checkpoint_file = self.saved_model_file
+            self.model.load_model(checkpoint_file)
         self.eval_pred = torch.Tensor()
         self.eval_true = torch.Tensor()
 
@@ -829,7 +862,7 @@ class xgboostTrainer(DecisionTreeTrainer):
         self.eval_true = torch.Tensor(self.deval.get_label())
         self.eval_pred = torch.Tensor(self.model.predict(self.deval))
 
-        self.eval_collector.eval_collect(self.eval_pred, self.eval_pred)
+        self.eval_collector.eval_collect(self.eval_pred, self.eval_true)
         result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
 
@@ -953,10 +986,16 @@ class lightgbmTrainer(DecisionTreeTrainer):
             callbacks=self.callbacks
         )
 
-        self.model.save_model(self.saved_model_file)
-        self.boost_model = self.saved_model_file
+        self.model.save_model(self.temp_file)
+        self.boost_model = self.temp_file
 
     def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
+        if load_best_model:
+            if model_file:
+                checkpoint_file = model_file
+            else:
+                checkpoint_file = self.saved_model_file
+            self.model.load_model(checkpoint_file)
         self.eval_pred = torch.Tensor()
         self.eval_true = torch.Tensor()
 
@@ -964,7 +1003,7 @@ class lightgbmTrainer(DecisionTreeTrainer):
         self.eval_true = torch.Tensor(self.deval_label)
         self.eval_pred = torch.Tensor(self.model.predict(self.deval_data))
 
-        self.eval_collector.eval_collect(self.eval_pred, self.eval_pred)
+        self.eval_collector.eval_collect(self.eval_pred, self.eval_true)
         result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
 

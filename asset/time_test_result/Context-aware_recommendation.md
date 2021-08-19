@@ -2,21 +2,21 @@
 
 ### Datasets information:
 
-| Dataset | #Interaction | #Feature Field | #Feature |
-| ------- | ------------: | --------------: | --------: |
-| ml-1m   | 1,000,209    | 5              | 134      |
-| Criteo  | 2,292,530    | 39             | 2,572,192 |
-| Avazu   | 4,218,938    | 21             | 1,326,631 |
+| Dataset | #Interaction | #Feature Field | #Feature   |
+| ------- | -----------: | -------------: | ---------: |
+| ml-1m   |   1,000,209  |             5  |       134  |
+| Criteo  |   1,000,000  |            39  | 2,572,192  |
+| Avazu   |   4,218,938  |            21  | 1,326,631  |
 
 ### Device information
 
 ```
 OS:                   Linux
-Python Version:       3.8.3
-PyTorch Version:      1.7.0
+Python Version:       3.8.10
+PyTorch Version:      1.8.1
 cudatoolkit Version:  10.1
-GPU:                  TITAN RTX（24GB）
-Machine Specs:        32 CPU machine, 64GB RAM
+GPU:                  TITAN V（12GB）
+Machine Specs:        14 CPU machine, 256GB RAM
 ```
 
 ### 1) ml-1m dataset:
@@ -24,22 +24,22 @@ Machine Specs:        32 CPU machine, 64GB RAM
 #### Time and memory cost on ml-1m dataset:
 
 | Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
-| --------- | -----------------: | -----------------: | -----------: |
-| LR        | 18.34             | 2.18              | 0.82        |
-| DIN       | 20.37             | 2.26              | 1.16        |
-| DSSM      | 21.93             | 2.24              | 0.95        |
-| FM        | 19.33             | 2.34              | 0.83        |
-| DeepFM    | 20.42             | 2.27              | 0.91        |
-| Wide&Deep | 26.13             | 2.95              | 0.89        |
-| NFM       | 23.36             | 2.26              | 0.89        |
-| AFM       | 20.08             | 2.26              | 0.92        |
-| AutoInt   | 22.41             | 2.34              | 0.94        |
-| DCN       | 28.33             | 2.97              | 0.93        |
-| FNN(DNN)  | 19.51             | 2.21              | 0.91        |
-| PNN       | 22.29             | 2.23              | 0.91        |
-| FFM       | 22.98             | 2.47              | 0.87        |
-| FwFM      | 23.38             | 2.50              | 0.85        |
-| xDeepFM   | 24.40             | 2.30              | 1.06        |
+| --------- | ------------------------: | --------------------------: | --------------: |
+| LR        |                     1.02  |                       1.38  |           0.03  |
+| DIN       |                    24.26  |                       0.87  |           4.61  |
+| DSSM      |                     5.69  |                       1.17  |           0.19  |
+| FM        |                     1.08  |                       1.34  |           0.03  |
+| DeepFM    |                     2.08  |                       1.50  |           0.06  |
+| Wide&Deep |                     2.12  |                       1.25  |           0.03  |
+| NFM       |                     3.79  |                       1.12  |           0.05  |
+| AFM       |                     1.77  |                       1.36  |           0.15  |
+| AutoInt   |                     3.84  |                       1.44  |           0.17  |
+| DCN       |                     4.98  |                       1.12  |           0.16  |
+| FNN(DNN)  |                     1.95  |                       1.32  |           0.10  |
+| PNN       |                     2.45  |                       1.50  |           0.13  |
+| FFM       |                     2.39  |                       1.17  |           0.13  |
+| FwFM      |                     2.25  |                       1.22  |           0.10  |
+| xDeepFM   |                     7.20  |                       1.17  |           0.87  |
 
 #### Config file of ml-1m dataset:
 
@@ -49,24 +49,30 @@ field_separator: "\t"
 seq_separator: " "
 USER_ID_FIELD: user_id
 ITEM_ID_FIELD: item_id
+RATING_FIELD: rating
+NEG_PREFIX: neg_
 LABEL_FIELD: label
 threshold:
-  rating: 4.0
-unused_col: 
-  inter: [rating]
+    rating: 4
 load_col:
-  inter: [user_id, item_id, rating]
-  item: [item_id, release_year, genre]
-  user: [user_id, age, gender, occupation]
+    inter: [user_id, item_id, rating]
+    user: [user_id, age, gender, occupation]
+    item: [item_id, genre]
 
 # training and evaluation
 epochs: 500
-train_batch_size: 2048
-eval_batch_size: 2048
-eval_setting: RO_RS
-group_by_user: False
+train_batch_size: 4096
+eval_batch_size: 25600
+eval_args:
+  split: {'RS':[0.8, 0.1, 0.1]}
+  group_by: ~
+  mode: labeled
+  order: RO
 valid_metric: AUC
 metrics: ['AUC', 'LogLoss']
+
+# model
+embedding_size: 10
 ```
 
 Other parameters (including model parameters) are default value. 
@@ -76,22 +82,22 @@ Other parameters (including model parameters) are default value.
 #### Time and memory cost on Criteo dataset:
 
 | Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
-| --------- | -------------------------: | ---------------------------: | ---------------: |
-| LR        | 7.65                      | 0.61                        | 1.11            |
-| DIN       | -                         | -                           | -               |
-| DSSM      | -                         | -                           | -               |
-| FM        | 9.77                      | 0.73                        | 1.45            |
-| DeepFM    | 13.64                     | 0.83                        | 1.72            |
-| Wide&Deep | 13.58                     | 0.80                        | 1.72            |
-| NFM       | 13.36                     | 0.75                        | 1.72            |
-| AFM       | 19.40                     | 1.02                        | 2.34            |
-| AutoInt   | 19.40                     | 0.98                        | 2.06            |
-| DCN       | 16.25                     | 0.78                        | 1.67            |
-| FNN(DNN)  | 10.03                     | 0.64                        | 1.63            |
-| PNN       | 12.92                     | 0.72                        | 1.85            |
-| FFM       | -                         | -                           | Out of Memory               |
-| FwFM      | 1175.24                   | 8.90                        | 2.12            |
-| xDeepFM   | 32.27                     | 1.34                        | 2.25            |
+| --------- | ------------------------: | --------------------------: | --------------: |
+| LR        |                     1.16  |                       0.10  |           0.10  |
+| DIN       |                         - |                           - |               - |
+| DSSM      |                         - |                           - |               - |
+| FM        |                     1.67  |                       0.13  |           0.34  |
+| DeepFM    |                     3.55  |                       0.13  |           0.34  |
+| Wide&Deep |                     3.41  |                       0.13  |           0.34  |
+| NFM       |                     3.58  |                       0.14  |           0.35  |
+| AFM       |                     5.69  |                       0.27  |           2.13  |
+| AutoInt   |                     5.42  |                       0.22  |           1.14  |
+| DCN       |                     4.20  |                       0.15  |           0.42  |
+| FNN(DNN)  |                     2.16  |                       0.11  |           0.36  |
+| PNN       |                     3.32  |                       0.14  |           0.77  |
+| FFM       |                    57.66  |                       0.71  |           8.60  |
+| FwFM      |                   482.04  |                       3.21  |           1.59  |
+| xDeepFM   |                    10.55  |                       0.34  |           1.91  |
 
 Note: Criteo dataset is not suitable for DIN model and DSSM model.
 #### Config file of Criteo dataset:
@@ -107,26 +113,21 @@ LABEL_FIELD: label
 load_col: 
     inter: '*'
 
-highest_val:
-    index: 2292530
-
 fill_nan: True
 normalize_all: True
-min_item_inter_num: 0
-min_user_inter_num: 0
-
-unused_col: 
-  inter: [index]
-
 
 # training and evaluation
 epochs: 500
-train_batch_size: 2048
-eval_batch_size: 2048
-eval_setting: RO_RS
-group_by_user: False
+train_batch_size: 4096
+eval_batch_size: 4096
+eval_args:
+  mode: labeled
+  group_by: ~
 valid_metric: AUC
 metrics: ['AUC', 'LogLoss']
+
+# model
+embedding_size: 10
 ```
 
 Other parameters (including model parameters) are default value. 
@@ -135,23 +136,23 @@ Other parameters (including model parameters) are default value.
 
 #### Time and memory cost on Avazu dataset:
 
-| Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
-| --------- | -------------------------: | ---------------------------: | ---------------: |
-| LR        | 9.30                      | 0.76                        | 1.42            |
-| DIN       | -                         | -                           | -               |
-| DSSM      | -                         | -                           | -               |
-| FM        | 25.68                     | 0.94                        | 2.60            |
-| DeepFM    | 28.41                     | 1.19                        | 2.66            |
-| Wide&Deep | 27.58                     | 0.97                        | 2.66            |
-| NFM       | 30.46                     | 1.06                        | 2.66            |
-| AFM       | 31.03                     | 1.06                        | 2.69            |
-| AutoInt   | 38.11                     | 1.41                        | 2.84            |
-| DCN       | 30.78                     | 0.96                        | 2.64            |
-| FNN(DNN)  | 23.53                     | 0.84                        | 2.60            |
-| PNN       | 25.86                     | 0.90                        | 2.68            |
-| FFM       | -                         | -                           | Out of Memory               |
-| FwFM      | 336.75                    | 7.49                        | 2.63            |
-| xDeepFM   | 54.88                     | 1.45                        | 2.89            |
+| Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB)      |
+| --------- | ------------------------: | --------------------------: | -------------------: |
+| LR        |                     4.01  |                       0.37  |                0.36  |
+| DIN       |                         - |                           - |                    - |
+| DSSM      |                         - |                           - |                    - |
+| FM        |                    13.14  |                       0.40  |                1.35  |
+| DeepFM    |                    14.69  |                       0.48  |                1.38  |
+| Wide&Deep |                    14.20  |                       0.41  |                1.36  |
+| NFM       |                    17.40  |                       0.48  |                1.36  |
+| AFM       |                    18.25  |                       0.55  |                1.89  |
+| AutoInt   |                    21.42  |                       0.68  |                1.67  |
+| DCN       |                    18.95  |                       0.44  |                1.37  |
+| FNN(DNN)  |                    12.13  |                       0.40  |                1.31  |
+| PNN       |                    14.19  |                       0.41  |                1.45  |
+| FFM       |                         - |                           - |   CUDA out of memory |
+| FwFM      |                   292.43  |                       3.83  |                1.74  |
+| xDeepFM   |                    35.60  |                       0.93  |                2.20  |
 
 Note: Avazu dataset is not suitable for DIN model and DSSM model.
 #### Config file of Avazu dataset:
@@ -160,28 +161,37 @@ Note: Avazu dataset is not suitable for DIN model and DSSM model.
 # dataset config
 field_separator: "\t"
 seq_separator: " "
+LABEL_FIELD: label
+
+load_col: 
+    inter: '*'
+
+fill_nan: True
 USER_ID_FIELD: ~
 ITEM_ID_FIELD: ~
-LABEL_FIELD: label
-fill_nan: True
 normalize_all: True
-
-load_col:
-    inter: '*'
-    
-lowest_val:
-  timestamp: 14102931
-unused_col: 
-  inter: [timestamp]
+val_interval: 
+  timestamp: "[14102931, inf)"
 
 # training and evaluation
 epochs: 500
-train_batch_size: 2048
-eval_batch_size: 2048
-eval_setting: RO_RS
+train_batch_size: 4096
+eval_batch_size: 4096
+eval_args:
+  group_by: ~
+  split: {'RS':[0.8, 0.1, 0.1]}
+  mode: labeled
+  order: RO
 group_by_user: False
 valid_metric: AUC
 metrics: ['AUC', 'LogLoss']
+
+# model
+embedding_size: 10    
+attention_size: 30
+dropout_prob: 0.1
+learning_rate: 5e-5
+reg_weight: 5
 ```
 
 Other parameters (including model parameters) are default value. 
