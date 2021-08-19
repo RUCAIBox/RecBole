@@ -394,7 +394,11 @@ class Config(object):
         self.final_config_dict[key] = value
 
     def __getattr__(self, item):
-        return self.__getitem__(item)
+        if 'final_config_dict' not in self.__dict__:
+            raise AttributeError(f"'Config' object has no attribute 'final_config_dict'")
+        if item in self.final_config_dict:
+            return self.final_config_dict[item]
+        raise AttributeError(f"'Config' object has no attribute '{item}'")
 
     def __getitem__(self, item):
         if item in self.final_config_dict:

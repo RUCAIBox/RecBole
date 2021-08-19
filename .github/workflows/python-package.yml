@@ -36,6 +36,9 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
     # Use "python -m pytest" instead of "pytest" to fix imports
+    - name: Test Overall
+      run: |
+        python run_recbole.py --model=BPR --epochs=2
     - name: Test metrics
       run: |
         python -m pytest -v tests/metrics
