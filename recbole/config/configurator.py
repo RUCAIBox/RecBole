@@ -312,8 +312,17 @@ class Config(object):
         self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metric else True
 
         topk = self.final_config_dict['topk']
-        if isinstance(topk, int):
-            self.final_config_dict['topk'] = [topk]
+        if isinstance(topk, (int, list)):
+            if isinstance(topk, int):
+                topk = [topk]
+            for k in topk:
+                if k <= 0:
+                    raise ValueError(
+                        f'topk must be a positive integer or a list of positive integers, but get `{k}`'
+                    )
+            self.final_config_dict['topk'] = topk
+        else:
+            raise TypeError(f'The topk [{topk}] must be a integer, list')
 
         if 'additional_feat_suffix' in self.final_config_dict:
             ad_suf = self.final_config_dict['additional_feat_suffix']
@@ -383,6 +392,9 @@ class Config(object):
         if not isinstance(key, str):
             raise TypeError("index must be a str.")
         self.final_config_dict[key] = value
+
+    def __getattr__(self, item):
+        return self.__getitem__(item)
 
     def __getitem__(self, item):
         if item in self.final_config_dict:
