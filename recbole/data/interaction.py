@@ -120,6 +120,8 @@ class Interaction(object):
         return self.interaction.__iter__()
 
     def __getattr__(self, item):
+        if 'interaction' not in self.__dict__:
+            raise AttributeError(f"'Interaction' object has no attribute 'interaction'")
         if item in self.interaction:
             return self.interaction[item]
         raise AttributeError(f"'Interaction' object has no attribute '{item}'")
