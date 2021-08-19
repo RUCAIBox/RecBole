@@ -384,6 +384,9 @@ class Config(object):
             raise TypeError("index must be a str.")
         self.final_config_dict[key] = value
 
+    def __getattr__(self, item):
+        return self.__getitem__(item)
+
     def __getitem__(self, item):
         if item in self.final_config_dict:
             return self.final_config_dict[item]

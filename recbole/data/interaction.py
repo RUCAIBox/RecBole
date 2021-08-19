@@ -119,6 +119,11 @@ class Interaction(object):
     def __iter__(self):
         return self.interaction.__iter__()
 
+    def __getattr__(self, item):
+        if item in self.interaction:
+            return self.interaction[item]
+        raise AttributeError(f"'Interaction' object has no attribute '{item}'")
+
     def __getitem__(self, index):
         if isinstance(index, str):
             return self.interaction[index]
