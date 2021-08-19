@@ -397,7 +397,7 @@ class Trainer(AbstractTrainer):
         else:
             origin_scores = self._spilt_predict(interaction, batch_size)
 
-        if self.config['eval_type'] == EvaluatorType.INDIVIDUAL:
+        if self.config['eval_type'] == EvaluatorType.VALUE:
             return interaction, origin_scores, positive_u, positive_i
         elif self.config['eval_type'] == EvaluatorType.RANKING:
             col_idx = interaction[self.config['ITEM_ID_FIELD']]

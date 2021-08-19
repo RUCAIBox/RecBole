@@ -19,7 +19,7 @@ import yaml
 import torch
 from logging import getLogger
 
-from recbole.evaluator import group_metrics, individual_metrics
+from recbole.evaluator import rank_metrics, value_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
     general_arguments, training_arguments, evaluation_arguments, dataset_arguments, set_color
 
@@ -291,13 +291,13 @@ class Config(object):
 
         eval_type = None
         for metric in self.final_config_dict['metrics']:
-            if metric.lower() in individual_metrics:
+            if metric.lower() in value_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.RANKING:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
-                    eval_type = EvaluatorType.INDIVIDUAL
-            if metric.lower() in group_metrics:
-                if eval_type is not None and eval_type == EvaluatorType.INDIVIDUAL:
+                    eval_type = EvaluatorType.VALUE
+            if metric.lower() in rank_metrics:
+                if eval_type is not None and eval_type == EvaluatorType.VALUE:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
                     eval_type = EvaluatorType.RANKING
@@ -394,7 +394,11 @@ class Config(object):
         self.final_config_dict[key] = value
 
     def __getattr__(self, item):
-        return self.__getitem__(item)
+        if 'final_config_dict' not in self.__dict__:
+            raise AttributeError(f"'Config' object has no attribute 'final_config_dict'")
+        if item in self.final_config_dict:
+            return self.final_config_dict[item]
+        raise AttributeError(f"'Config' object has no attribute '{item}'")
 
     def __getitem__(self, item):
         if item in self.final_config_dict:
