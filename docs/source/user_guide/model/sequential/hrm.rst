@@ -10,18 +10,18 @@ Introduction
 
 **Authors:** Pengfei Wang
 
-**Abstract:**  Next basket recommendation is a crucial task in market bas-
-ket analysis. Given a user’s purchase history, usually a sequence of transaction data, one attempts to build a recom-
-mender that can predict the next few items that the us-
-er most probably would like. Ideally, a good recommender
-should be able to explore the sequential behavior (i.e., buy-
-ing one item leads to buying another next), as well as ac-
-count for users’ general taste (i.e., what items a user is typically interested in) for recommendation. Moreover, these
-two factors may interact with each other to influence users’
-next purchase. To tackle the above problems, in this pa-
-per, we introduce a novel recommendation approach, name-
-ly hierarchical representation model (HRM). HRM can well
-capture both sequential behavior and users’ general taste by
+**Abstract:**  Next basket recommendation is a crucial task in market basket 
+analysis. Given a user's purchase history, usually a sequence of transaction data, one attempts to build a 
+recommender that can predict the next few items that the user 
+most probably would like. Ideally, a good recommender
+should be able to explore the sequential behavior (i.e., buying 
+one item leads to buying another next), as well as account 
+for users' general taste (i.e., what items a user is typically interested in) for recommendation. Moreover, these
+two factors may interact with each other to influence users'
+next purchase. To tackle the above problems, in this paper, 
+we introduce a novel recommendation approach, namely 
+hierarchical representation model (HRM). HRM can well
+capture both sequential behavior and users' general taste by
 involving transaction and user representations in prediction.
 Meanwhile, the flexibility of applying different aggregation
 operations, especially nonlinear operations, on representations allows us to model complicated interactions among

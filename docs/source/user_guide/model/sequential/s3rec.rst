@@ -6,7 +6,7 @@ Introduction
 
 `[paper] <https://dl.acm.org/doi/abs/10.1145/3340531.3411954>`_
 
-**Title:** S^3-Rec: Self-Supervised Learning for Sequential
+**Title:** S3-Rec: Self-Supervised Learning for Sequential
 Recommendation with Mutual Information Maximization
 
 **Authors:** Kun Zhou, Hui Wang, Wayne Xin Zhao, Yutao Zhu, Sirui Wang, Fuzheng Zhang, Zhongyuan Wang, Ji-Rong Wen
