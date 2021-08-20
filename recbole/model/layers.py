@@ -735,7 +735,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
                 feature = user_item_feat[type][field_name][user_item_idx[type]]
                 float_fields.append(feature if len(feature.shape) == (2 + (type == 'item')) else feature.unsqueeze(-1))
             if len(float_fields) > 0:
-                float_fields = torch.cat(float_fields, dim=1)  # [batch_size, max_item_length, num_float_field]
+                float_fields = torch.cat(float_fields, dim=-1)  # [batch_size, max_item_length, num_float_field]
             else:
                 float_fields = None
             # [batch_size, max_item_length, num_float_field]
