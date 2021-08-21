@@ -4,7 +4,7 @@ Introduction
 RecBole is a unified, comprehensive and efficient framework developed based on PyTorch.
 It aims to help the researchers to reproduce and develop recommendation models.
 
-In the first release, our library includes 65 recommendation algorithms `[Model List]`_, covering four major categories:
+In the first release, our library includes 73 recommendation algorithms `[Model List]`_, covering four major categories:
 
 - General Recommendation
 - Sequential Recommendation
@@ -18,7 +18,7 @@ Features:
 - General and extensible data structure
     We deign general and extensible data structures to unify the formatting and usage of various recommendation datasets.
 - Comprehensive benchmark models and datasets
-    We implement 65 commonly used recommendation algorithms, and provide the formatted copies of 28 recommendation datasets.
+    We implement 73 commonly used recommendation algorithms, and provide the formatted copies of 28 recommendation datasets.
 - Efficient GPU-accelerated execution
     We design many tailored strategies in the GPU environment to enhance the efficiency of our library.
 - Extensive and standard evaluation protocols

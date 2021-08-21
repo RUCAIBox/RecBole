@@ -13,8 +13,8 @@ Introduction
 **Abstract:**  Abstract—Predicting personalized sequential behavior is a
 key task for recommender systems. In order to predict user
 actions such as the next product to purchase, movie to watch,
-or place to visit, it is essential to take into account both long-
-term user preferences and sequential patterns (i.e., short-term
+or place to visit, it is essential to take into account both long-term 
+user preferences and sequential patterns (i.e., short-term
 dynamics). Matrix Factorization and Markov Chain methods
 have emerged as two separate but powerful paradigms for
 modeling the two respectively. Combining these ideas has led

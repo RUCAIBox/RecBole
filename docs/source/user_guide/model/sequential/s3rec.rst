@@ -6,7 +6,7 @@ Introduction
 
 `[paper] <https://dl.acm.org/doi/abs/10.1145/3340531.3411954>`_
 
-**Title:** S^3-Rec: Self-Supervised Learning for Sequential
+**Title:** S<sup>3</sup>-Rec: Self-Supervised Learning for Sequential
 Recommendation with Mutual Information Maximization
 
 **Authors:** Kun Zhou, Hui Wang, Wayne Xin Zhao, Yutao Zhu, Sirui Wang, Fuzheng Zhang, Zhongyuan Wang, Ji-Rong Wen
@@ -17,7 +17,7 @@ trained with this loss is prone to suffer from data sparsity problem.
 Since it overemphasizes the final performance, the association or
 fusion between context data and sequence data has not been well
 captured and utilized for sequential recommendation.
-To tackle this problem, we propose the model S3-Rec, which
+To tackle this problem, we propose the model S<sup>3</sup>-Rec, which
 stands for Self-Supervised learning for Sequential Recommendation,
 based on the self-attentive neural architecture. The main idea of
 our approach is to utilize the intrinsic data correlation to derive
