@@ -9,8 +9,11 @@ recbole.quick_start
 import logging
 from logging import getLogger
 
+import torch
+import pickle
+
 from recbole.config import Config
-from recbole.data import create_dataset, data_preparation
+from recbole.data import create_dataset, data_preparation, save_split_dataloaders, load_split_dataloaders
 from recbole.utils import init_logger, get_model, get_trainer, init_seed, set_color
 
 
@@ -36,10 +39,14 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
 
     # dataset filtering
     dataset = create_dataset(config)
+    if config['save_dataset']:
+        dataset.save()
     logger.info(dataset)
 
     # dataset splitting
     train_data, valid_data, test_data = data_preparation(config, dataset)
+    if config['save_dataloaders']:
+        save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))
 
     # model loading and initialization
     model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
@@ -92,3 +99,55 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
         'best_valid_result': best_valid_result,
         'test_result': test_result
     }
+
+
+def load_data_and_model(model_file, dataset_file=None, dataloader_file=None):
+    r"""Load filtered dataset, split dataloaders and saved model.
+
+    Args:
+        model_file (str): The path of saved model file.
+        dataset_file (str): The path of filtered dataset. Defaults to ``None``.
+        dataloader_file (str): The path of split dataloaders. Defaults to ``None``.
+
+    Note:
+        The :attr:`dataset` will be loaded or created according to the following strategy:
+        If :attr:`dataset_file` is not ``None``, the :attr:`dataset` will be loaded from :attr:`dataset_file`.
+        If :attr:`dataset_file` is ``None`` and :attr:`dataloader_file` is ``None``,
+        the :attr:`dataset` will be created according to :attr:`config`.
+        If :attr:`dataset_file` is ``None`` and :attr:`dataloader_file` is not ``None``,
+        the :attr:`dataset` will neither be loaded or created.
+
+        The :attr:`dataloader` will be loaded or created according to the following strategy:
+        If :attr:`dataloader_file` is not ``None``, the :attr:`dataloader` will be loaded from :attr:`dataloader_file`.
+        If :attr:`dataloader_file` is ``None``, the :attr:`dataloader` will be created according to :attr:`config`.
+
+    Returns:
+        tuple:
+            - config (Config): An instance object of Config, which record parameter information in :attr:`model_file`.
+            - model (AbstractRecommender): The model load from :attr:`model_file`.
+            - dataset (Dataset): The filtered dataset.
+            - train_data (AbstractDataLoader): The dataloader for training.
+            - valid_data (AbstractDataLoader): The dataloader for validation.
+            - test_data (AbstractDataLoader): The dataloader for testing.
+    """
+    checkpoint = torch.load(model_file)
+    config = checkpoint['config']
+    init_logger(config)
+
+    dataset = None
+    if dataset_file:
+        with open(dataset_file, 'rb') as f:
+            dataset = pickle.load(f)
+
+    if dataloader_file:
+        train_data, valid_data, test_data = load_split_dataloaders(dataloader_file)
+    else:
+        if dataset is None:
+            dataset = create_dataset(config)
+        train_data, valid_data, test_data = data_preparation(config, dataset)
+
+    model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
+    model.load_state_dict(checkpoint['state_dict'])
+    model.load_other_parameter(checkpoint.get('other_parameter'))
+
+    return config, model, dataset, train_data, valid_data, test_data

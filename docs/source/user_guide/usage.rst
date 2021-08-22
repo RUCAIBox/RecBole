@@ -12,3 +12,5 @@ Here we introduce how to use RecBole.
    usage/running_different_models
    usage/qa
    usage/load_pretrained_embedding
+   usage/save_and_load_data_and_model
+   usage/case_study
