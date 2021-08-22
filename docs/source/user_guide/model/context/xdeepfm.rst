@@ -18,7 +18,7 @@ in web-scale systems. Factorization based models, which measure
 interactions in terms of vector product, can learn patterns of combinatorial
 features automatically and generalize to unseen features
 as well. With the great success of deep neural networks (DNNs)
-in various fields, recently researchers have proposed several DNNbased
+in various fields, recently researchers have proposed several DNN-based
 factorization model to learn both low- and high-order feature
 interactions. Despite the powerful ability of learning an arbitrary
 function from data, plain DNNs generate feature interactions implicitly

@@ -57,12 +57,12 @@ class KGDataLoaderState(Enum):
 class EvaluatorType(Enum):
     """Type for evaluation metrics.
 
-    - ``RANKING``: Ranking metrics like NDCG, Recall, etc.
-    - ``INDIVIDUAL``: Individual metrics like AUC, etc.
+    - ``RANKING``: Ranking-based metrics like NDCG, Recall, etc.
+    - ``VALUE``: Value-based metrics like AUC, etc.
     """
 
     RANKING = 1
-    INDIVIDUAL = 2
+    VALUE = 2
 
 
 class InputType(Enum):

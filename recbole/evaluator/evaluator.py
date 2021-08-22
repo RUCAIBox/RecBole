@@ -10,7 +10,7 @@ recbole.evaluator.evaluator
 
 from recbole.evaluator.metrics import metrics_dict
 from recbole.evaluator.collector import DataStruct
-from recbole.evaluator.register import loss_metrics
+from recbole.evaluator.register import value_metrics
 
 
 class Evaluator(object):
@@ -44,7 +44,7 @@ class Evaluator(object):
 
     def _check_args(self):
         # Check Loss
-        if set(self.metrics) & set(loss_metrics):
+        if set(self.metrics) & set(value_metrics):
             is_full = 'full' in self.config['eval_args']['mode']
             if is_full:
                 raise NotImplementedError('Full sort evaluation do not match the metrics!')

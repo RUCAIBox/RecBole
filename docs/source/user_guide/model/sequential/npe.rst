@@ -21,8 +21,8 @@ for cold-users and can learn effective representations of items. It models a use
 in two terms: the personal preference of the user
 for the item, and the relationships between this
 item and other items clicked by the user. We show
-that NPE outperforms competing methods for top-
-N recommendations, specially for cold-user recommendations. We also performed a qualitative analysis that shows the effectiveness
+that NPE outperforms competing methods for top-N 
+recommendations, specially for cold-user recommendations. We also performed a qualitative analysis that shows the effectiveness
 of the representations learned by the model.
 
 .. image:: ../../../asset/npe.jpg

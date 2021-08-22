@@ -11,7 +11,7 @@ Introduction
 **Authors:** Xiangnan He, Kuan Deng, Xiang Wang, Yan Li, Yongdong Zhang, Meng Wang
 
 **Abstract:**
-Graph Convolution Network (GCN) has become new state-ofthe-art for collaborative filtering. Nevertheless, the reasons of
+Graph Convolution Network (GCN) has become new state-of-the-art for collaborative filtering. Nevertheless, the reasons of
 its effectiveness for recommendation are not well understood.
 Existing work that adapts GCN to recommendation lacks thorough
 ablation analyses on GCN, which is originally designed for graph
