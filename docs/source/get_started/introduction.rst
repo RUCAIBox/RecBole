@@ -13,6 +13,10 @@ In the first release, our library includes 73 recommendation algorithms `[Model 
 
 We design a unified and flexible data file format, and provide the support for 28 benchmark recommendation datasets `[Collected Datasets]`_. A user can apply the provided script to process the original data copy, or simply download the processed datasets by our team.
 
+.. image:: ../../../asset/framework.png
+    :width: 600
+    :align: center
+
 Features:
 
 - General and extensible data structure

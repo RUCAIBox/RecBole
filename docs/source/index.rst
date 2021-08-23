@@ -5,6 +5,13 @@ RecBole v0.2.0
 
 `HomePage <https://recbole.io/>`_ | `Docs <https://recbole.io/docs/>`_ | `GitHub <https://github.com/RUCAIBox/RecBole>`_ | `Datasets <https://github.com/RUCAIBox/RecDatasets>`_ | `v0.1.2 </docs/v0.1.2/>`_
 
+RecBole is a unified, comprehensive and efficient framework developed based on PyTorch. 
+It aims to help the researchers to reproduce and develop recommendation models.
+
+.. image:: ../../../asset/logo.png
+    :width: 600
+    :align: center
+
 .. toctree::
    :maxdepth: 1
    :caption: Get Started
@@ -47,13 +54,5 @@ RecBole v0.2.0
    recbole/recbole.trainer.hyper_tuning
    recbole/recbole.trainer.trainer
    recbole/recbole.utils.case_study
-   recbole/recbole.utils.enum_type
-   recbole/recbole.utils.logger
    recbole/recbole.utils.utils
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`

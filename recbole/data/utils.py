@@ -97,6 +97,7 @@ def data_preparation(config, dataset, save=False):
     """
     model_type = config['MODEL_TYPE']
     built_datasets = dataset.build()
+    logger = getLogger()
 
     train_dataset, valid_dataset, test_dataset = built_datasets
     train_sampler, valid_sampler, test_sampler = create_samplers(config, dataset, built_datasets)
@@ -109,7 +110,16 @@ def data_preparation(config, dataset, save=False):
 
     valid_data = get_dataloader(config, 'evaluation')(config, valid_dataset, valid_sampler, shuffle=False)
     test_data = get_dataloader(config, 'evaluation')(config, test_dataset, test_sampler, shuffle=False)
-
+    logger.info(
+        set_color('[Training]: ', 'pink') + set_color('train_batch_size', 'cyan') + ' = ' +
+        set_color(f'[{config["train_batch_size"]}]', 'yellow') + set_color(' negative sampling', 'cyan') + ': '+
+        set_color(f'[{config["neg_sampling"]}]', 'yellow')
+    )
+    logger.info(
+        set_color('[Evaluation]: ', 'pink') + set_color('eval_batch_size', 'cyan') + ' = ' +
+        set_color(f'[{config["eval_batch_size"]}]', 'yellow') + set_color(' eval_args', 'cyan') + ': '+
+        set_color(f'[{config["eval_args"]}]', 'yellow')
+    )
     if save:
         save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))
 
