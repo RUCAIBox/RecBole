@@ -32,6 +32,7 @@ RecBole v0.2.0
    developer_guide/customize_trainers
    developer_guide/customize_dataloaders
    developer_guide/customize_samplers
+   developer_guide/customize_metrics
 
 
 .. toctree::

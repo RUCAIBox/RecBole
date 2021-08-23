@@ -7,7 +7,7 @@ Here, it only takes three steps to incorporate a new metric and we introduce the
 
 
 Sign in Your Metric in Register
------------------------------
+--------------------------------
 To begin with, we must add a new line in :obj:`~recbole.evaluator.register.metric_information`:
 All the metrics are registered by :obj:`metric_information` which is a dict. Keys are the name of
 metrics and should be lowercase. Value is a list which contain one or multiple string that corresponding
@@ -47,7 +47,7 @@ and the total item number, we can sign in the metric as follow.
 
 
 Create a New Metric Class
------------------------
+--------------------------
 Then, we create a new class in the file :file:`~recbole.evaluator.metrics` and define the parameter in
 ``__init__()``
 
@@ -59,7 +59,7 @@ Then, we create a new class in the file :file:`~recbole.evaluator.metrics` and d
 
 
 Implement calculate_metric(self, dataobject)
-------------------------------
+---------------------------------------------
 All the computational process is defined in this function. The args is a packaged data object that
 contains all the result above. We can treat it as a dict and get data from it by
 ``rec_items = dataobject.get('rec.items')`` . The returned value should be a dict with key of metric name

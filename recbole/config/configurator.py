@@ -113,7 +113,7 @@ class Config(object):
                 continue
             try:
                 value = eval(param)
-                if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
+                if value is not None and not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
                     value = param
             except (NameError, SyntaxError, TypeError):
                 if isinstance(param, str):

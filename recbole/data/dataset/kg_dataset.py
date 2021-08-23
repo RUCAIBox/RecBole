@@ -148,9 +148,6 @@ class KnowledgeBasedDataset(Dataset):
             feat_name_list.append('kg_feat')
         return feat_name_list
 
-    def save(self, filepath):
-        raise NotImplementedError()
-
     def _load_kg(self, token, dataset_path):
         self.logger.debug(set_color(f'Loading kg from [{dataset_path}].', 'green'))
         kg_path = os.path.join(dataset_path, f'{token}.kg')

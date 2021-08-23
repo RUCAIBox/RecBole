@@ -12,7 +12,9 @@ general_arguments = [
     'data_path',
     'benchmark_filename',
     'show_progress',
-    'config_file'
+    'config_file',
+    'save_dataset',
+    'save_dataloaders',
 ]
 
 training_arguments = [

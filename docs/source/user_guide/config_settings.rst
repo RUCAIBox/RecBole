@@ -34,6 +34,12 @@ model training and evaluation.
   Defaults to ``'saved/'``.
 - ``show_progress (bool)`` : Show the progress of training epoch and evaluate epoch.
   Defaults to ``True``.
+- ``save_dataset (bool)``: Whether or not save filtered dataset.
+  If True, save filtered dataset, otherwise it will not be saved.
+  Defaults to ``False``.
+- ``save_dataloaders (bool)``: Whether or not save split dataloaders.
+  If True, save split dataloaders, otherwise they will not be saved.
+  Defaults to ``False``.
 
 **Training Setting**
 
