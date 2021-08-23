@@ -8,7 +8,7 @@
 # @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan, Zihan Lin
 # @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, panxy@ruc.edu.cn, zhlin@ruc.edu.cn
 
-"""
+r"""
 recbole.evaluator.metrics
 ############################
 
@@ -227,7 +227,7 @@ class GAUC(AbstractMetric):
     the area under the ROC curve grouped by user. We weighted the index of each user :math:`u` by the number of positive
     samples of users to get the final result.
 
-    For further details, please refer to the `paper <https://dl.acm.org/doi/10.1145/3219819.3219823>`_
+    For further details, please refer to the `paper <https://dl.acm.org/doi/10.1145/3219819.3219823>`__
 
     Note:
         It calculates the AUC score of each user, and finally obtains GAUC by weighting the user AUC.
@@ -421,8 +421,8 @@ class ItemCoverage(AbstractMetric):
 
     .. _ItemCoverage: https://en.wikipedia.org/wiki/Coverage_(information_systems)
 
-    For further details, please refer to the `paper <https://dl.acm.org/doi/10.1145/1864708.1864761>`_
-    and `paper <https://link.springer.com/article/10.1007/s13042-017-0762-9>`_.
+    For further details, please refer to the `paper <https://dl.acm.org/doi/10.1145/1864708.1864761>`__
+    and `paper <https://link.springer.com/article/10.1007/s13042-017-0762-9>`__.
 
     .. math::
        \mathrm{Coverage@K}=\frac{\left| \bigcup_{u \in U} \hat{R}(u) \right|}{|I|}
@@ -462,8 +462,8 @@ class ItemCoverage(AbstractMetric):
 class AveragePopularity(AbstractMetric):
     r"""AveragePopularity computes the average popularity of recommended items.
 
-    For further details, please refer to the `paper <https://arxiv.org/abs/1205.6700>`_
-    and `paper <https://link.springer.com/article/10.1007/s13042-017-0762-9>`_.
+    For further details, please refer to the `paper <https://arxiv.org/abs/1205.6700>`__
+    and `paper <https://link.springer.com/article/10.1007/s13042-017-0762-9>`__.
 
     .. math::
         \mathrm{AveragePopularity@K}=\frac{1}{|U|} \sum_{u \in U } \frac{\sum_{i \in R_{u}} \phi(i)}{|R_{u}|}
@@ -530,8 +530,8 @@ class ShannonEntropy(AbstractMetric):
 
     .. _ShannonEntropy: https://en.wikipedia.org/wiki/Entropy_(information_theory)
 
-    For further details, please refer to the `paper <https://arxiv.org/abs/1205.6700>`_
-    and `paper <https://link.springer.com/article/10.1007/s13042-017-0762-9>`_
+    For further details, please refer to the `paper <https://arxiv.org/abs/1205.6700>`__
+    and `paper <https://link.springer.com/article/10.1007/s13042-017-0762-9>`__
 
     .. math::
         \mathrm {ShannonEntropy@K}=-\sum_{i=1}^{|I|} p(i) \log p(i)
@@ -582,7 +582,7 @@ class GiniIndex(AbstractMetric):
 
     .. _GiniIndex: https://en.wikipedia.org/wiki/Gini_coefficient
 
-    For further details, please refer to the `paper <https://dl.acm.org/doi/10.1145/3308560.3317303>`_.
+    For further details, please refer to the `paper <https://dl.acm.org/doi/10.1145/3308560.3317303>`__.
 
     .. math::
         \mathrm {GiniIndex@K}=\left(\frac{\sum_{i=1}^{|I|}(2 i-|I|-1) P{(i)}}{|I| \sum_{i=1}^{|I|} P{(i)}}\right)
@@ -633,7 +633,7 @@ class TailPercentage(AbstractMetric):
 
     .. _TailPercentage: https://en.wikipedia.org/wiki/Long_tail#Criticisms
 
-    For further details, please refer to the `paper <https://arxiv.org/pdf/2007.12329.pdf>`_.
+    For further details, please refer to the `paper <https://arxiv.org/pdf/2007.12329.pdf>`__.
 
     .. math::
         \mathrm {TailPercentage@K}=\frac{1}{|U|} \sum_{u \in U} \frac{\sum_{i \in R_{u}} {\delta(i \in T)}}{|R_{u}|}

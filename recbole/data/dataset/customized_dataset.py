@@ -19,19 +19,19 @@ Customized datasets named ``[Model Name]Dataset`` can be automatically called.
 import numpy as np
 import torch
 
-from recbole.data.dataset import Kg_Seq_Dataset, SequentialDataset
+from recbole.data.dataset import KGSeqDataset, SequentialDataset
 from recbole.data.interaction import Interaction
 from recbole.sampler import SeqSampler
 from recbole.utils.enum_type import FeatureType
 
 
-class GRU4RecKGDataset(Kg_Seq_Dataset):
+class GRU4RecKGDataset(KGSeqDataset):
 
     def __init__(self, config):
         super().__init__(config)
 
 
-class KSRDataset(Kg_Seq_Dataset):
+class KSRDataset(KGSeqDataset):
 
     def __init__(self, config):
         super().__init__(config)
