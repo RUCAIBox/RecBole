@@ -235,7 +235,6 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             positive_i = torch.cat(list(positive_item))
 
             self.pr += self.step
-            #print(history_u,history_i)
             return user_df, (history_u, history_i), positive_u, positive_i
         else:
             interaction = self.dataset[self.pr:self.pr + self.step]
