@@ -16,9 +16,7 @@ Evaluation settings are designed to set parameters about model evaluation.
   
   - ``mode (str)``: decides the data range which we evaluate the model on. Now we support four kinds of evaluation mode: ``['full','unixxx','popxxx','labeled']``. ``full`` , ``unixxx`` and ``popxxx`` are designed for the evaluation on implicit feedback (data without label). For implicit feedback, we regard the items with observed interactions as positive items and those without observed interactions as negative items. ``full`` means evaluating the model on the set of all items. ``unixxx``, for example ``uni100``,  means uniformly sample 100 negative items for each positive item in testing set, and evaluate the model on these positive items with their sampled negative items. ``popxxx``, for example ``pop100``, means sample 100 negative items for each positive item in testing set based on item popularity (:obj:`Counter(item)` in `.inter` file), and evaluate the model on these positive items with their sampled negative items. Here the `xxx` must be an integer. For explicit feedback (data with label), you should set the mode as ``None`` and we will evaluate the model based on your label. The default value is ``full``.
 
-- ``repeatable (bool)``: Whether to evaluate the result with a repeatable recommendation scene.
-    Note that it is disabled for sequential models as the recommendation is already repeatable.
-    For other models, defaults to ``False``.
+- ``repeatable (bool)``: Whether to evaluate the result with a repeatable recommendation scene. Note that it is disabled for sequential models as the recommendation is already repeatable. For other models, defaults to ``False``.
 - ``metrics (list or str)``: Evaluation metrics. Defaults to
   ``['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']``. Range in the following table:
 
