@@ -1,19 +1,14 @@
 Running Different Models
 ==========================
-Here, we present how to run different models in RecBole.
+In RecBole, we have 4 categories of models, namely general recommendation, context-aware
+recommendation, sequential recommendation and knowledge-based recommendation. Since different categories of models have different requirements for data
+processing and evaluation setting, we need to configure these settings appropriately.
 
-Proper Parameters Configuration
-----------------------------------
-Since different categories of models have different requirements for data
-processing and evaluation setting, we need to configure these settings
-appropriately.
+Here, we present some examples to show how to these four categories models in RecBole.
 
-The following will introduce the parameter configuration of these four
-categories of models: namely general recommendation, context-aware
-recommendation, sequential recommendation and knowledge-based recommendation.
 
 General Recommendation
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------
 
 **specify and load the user and item columns**
 
@@ -35,19 +30,21 @@ corresponding column names.
 **training and evaluation settings**
 
 General recommendation models usually needs to group data by user and perform
-negative sampling.
+negative sampling. You can set the config like this:
 
 .. code:: yaml
 
-    group_by_user: True
-    training_neg_sample_num: 1
+    eval_args:
+        group_by: user
+    neg_sampling:
+        uniform: 1
 
 Context-aware Recommendation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------
 
 **load the feature columns**
 
-Context-aware recommendation models utilize the features of users, items and
+Generally, context-aware recommendation models utilize the features of users, items and
 interactions to make CTR predictions, so it needs to load the used features.
 
 .. code:: yaml
@@ -62,53 +59,25 @@ inter atomic file.
 
 **label setting**
 
-We also need to configure `LABEL_FIELD`, which represents the label column in
-the CTR prediction. For the Context-aware recommendation models, the setting of
-`LABEL_FIELD` is divided into two cases:
+In general, context-aware recommendation models mainly used in explicit feedback scenes, 
+so your data should have explicit feedback information and you need to set label for them. For more information about label setting, 
+please read the :doc:`../data/label_of_data`.
 
-1) There is a label field in atomic file, and the value is in 0/1, we only need to
-set as follows:
+**evaluation settings**
 
-.. code:: yaml
-
-    LABEL_FIELD: label
-
-2) There is no label field in atomic file, we need to generate label field based
-on some information.
+If you want to apply context-aware recommendation models for CTR predictions, you can set the config like:
 
 .. code:: yaml
 
-    LABEL_FIELD: label
-    threshold:
-        rating: 3
-
-`rating` is a column in atomic file and is loaded (by ``load_col``). In this way,
-the label of the interaction with ``rating >= 3`` is set to 1, the reset are
-set to 0.
-
-**training and evaluation settings**
-
-Context-aware recommendation models usually does not need to group data by user and
-perform negative sampling.
-
-.. code:: yaml
-
-    group_by_user: False
-    training_neg_sample_num: 0
-
-Since there is no need to rank the results, ``eval_setting`` only needs to set
-the first part, for example:
-
-.. code:: yaml
-
-    eval_setting: RO_RS
-
-The evaluation metrics are generally set to `AUC` and `LogLoss`.
-
-.. code:: yaml
-
+    eval_args:
+        group_by: None
+        mode: labeled
     metrics: ['AUC', 'LogLoss']
+    valid_metric: AUC
 
+Note that RecBole also supports to evaluate the context-aware recommendation models by full-ranking like general recommendation models,
+but you need to make sure that your ``.inter`` file can not load any other context information column.  
+    
 
 Sequential Recommendation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -325,7 +325,7 @@ class Dataset(object):
 
         For those additional features, e.g. pretrained entity embedding, user can set them
         as ``config['additional_feat_suffix']``, then they will be loaded and stored in
-        :attr:`feat_name_list`. See :doc:`../user_guide/data/data_args` for details.
+        :attr:`feat_name_list`. See :doc:`../user_guide/data/data_settings` for details.
 
         Args:
             token (str): dataset name.

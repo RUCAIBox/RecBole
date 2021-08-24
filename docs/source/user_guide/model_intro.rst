@@ -107,7 +107,6 @@ Knowledge-based Recommendation
 ---------------------------------
 Knowledge-based recommendation introduce an external knowledge graph to enhance general or sequential recommendation.
 
-
 .. toctree::
    :maxdepth: 1
 

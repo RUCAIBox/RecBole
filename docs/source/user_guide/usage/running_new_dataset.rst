@@ -1,21 +1,23 @@
 Running New Dataset
 =======================
-Here, we present how to use a new dataset in RecBole.
+RecBole has a build-in dataset **ml-100k** for users to quickly get start. 
+However, if you want to use new dataset, Here, we present how to use a new dataset in RecBole.
 
 
-Convert to Atomic Files
+Prepare atomic files
 -------------------------
 
-If the user use the collected datasets, she can choose one of the following ways:
+In order to characterize most forms of the input data required by different recommendation tasks, 
+RecBole designs an input data format called :doc:`../data/atomic_files` and 
+you need to convert your raw data into Atomic Files format before data loading. 
 
-1. Download the converted atomic files from `Google Drive <https://drive.google.com/drive/folders/1so0lckI6N6_niVEYaBu-LIcpOdZf99kj?usp=sharing>`_ or `Baidu Wangpan <https://pan.baidu.com/s/1p51sWMgVFbAaHQmL4aD_-g>`_ (Password: e272).
-2. Find the converting script from RecDatasets_, and transform them to atomic files.
+For the convenience of users, we have collected more than
+28 commonly used datasets (detailed as `Dataset List </dataset_list.html>`_.) and released their Atomic Files format 
+for users to download them freely. More information of downloading our prepared datasets can be found in :doc:`../data/dataset_download`.
 
-If the user use other datasets, she should format the data according to the format of the atomic files.
+However, if the you use other datasets, you should convert your data into the Atomic Files by yourself.
 
-.. _RecDatasets: https://github.com/RUCAIBox/RecDatasets
-
-For the dataset of ml-1m, the converting file is:
+For the ml-1m dataset, the converted atomic files are like:
 
 **ml-1m.inter**
 
@@ -45,11 +47,11 @@ item_id:token   movie_title:token_seq   release_year:token   genre:token_seq
 =============   =====================   ==================   ============================
 
 
-Local Path
+Set data path
 ---------------
-Name of atomic files, name of dir that containing atomic files and ``config['dataset']`` should be the same.
-
-``config['data_path']`` should be the parent dir of the dir that containing atomic files.
+You need to set the data path in config when you want to use new dataset. 
+The name of atomic files, name of dir that containing atomic files and ``config['dataset']`` should be the same, and
+the ``data_path`` in your config should be the parent dir of the dir that containing atomic files.
 
 For example:
 
@@ -75,6 +77,7 @@ Suppose we use ml-1m to train BPR.
 
 According to the dataset information, the user should set the dataset information and filtering parameters in the configuration file `ml-1m.yaml`.
 For example, we conduct 10-core filtering, removing the ratings which are smaller than 3, the time of the record should be earlier than 97830000, and we only load inter data.
+The ``yaml`` file should be like:
 
 .. code:: yaml
 
@@ -86,11 +89,11 @@ For example, we conduct 10-core filtering, removing the ratings which are smalle
     load_col:
         inter: [user_id, item_id, rating, timestamp]
 
-    min_user_inter_num: 10
-    min_item_inter_num: 10
-    lowest_val:
-        rating: 3
-        timestamp: 97830000
+    user_inter_num_interval: "[10,inf)"
+    item_inter_num_interval: "[10,inf)"
+    val_interval:
+        rating: "[3,inf)"
+        timestamp: "[97830000, inf)"
 
 
 .. code:: python
@@ -108,14 +111,16 @@ Convert to Dataloader
 Here, we present how to convert :class:`~recbole.data.dataset.dataset.Dataset` into :obj:`Dataloader`.
 
 We firstly set the parameters in the configuration file `ml-1m.yaml`.
-We leverage random ordering + ratio-based splitting and full ranking with all item candidates, the splitting ratio is set as 8:1:1.
+Suppose we want to leverage random ordering + ratio-based splitting and full ranking with all item candidates, the splitting ratio is set as 8:1:1.
+You can add the following config in your `ml-1m.yaml`:
 
 .. code:: yaml
 
-    ...
-
-    eval_setting: RO_RS,full
-    split_ratio: [0.8,0.1,0.1]
+    eval_args:
+        split: {'RS': [8,1,1]}
+        group_by: user
+        order: RO
+        mode: full
 
 
 .. code:: python
