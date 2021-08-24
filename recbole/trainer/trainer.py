@@ -384,7 +384,6 @@ class Trainer(AbstractTrainer):
 
         scores = scores.view(-1, self.tot_item_num)
         scores[:, 0] = -np.inf
-        ss = scores
         if history_index is not None:
             scores[history_index] = -np.inf
         return interaction, scores, positive_u, positive_i
