@@ -193,7 +193,6 @@ class FullSortEvalDataLoader(AbstractDataLoader):
     def _set_user_property(self, uid, used_item, positive_item):
         if uid is None:
             return
-        #print(used_item)
         history_item = used_item - positive_item
         self.uid2positive_item[uid] = torch.tensor(list(positive_item), dtype=torch.int64) 
         self.uid2items_num[uid] = len(positive_item)
