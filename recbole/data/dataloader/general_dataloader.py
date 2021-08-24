@@ -197,8 +197,6 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         self.uid2positive_item[uid] = torch.tensor(list(positive_item), dtype=torch.int64) 
         self.uid2items_num[uid] = len(positive_item)
         self.uid2history_item[uid] = torch.tensor(list(history_item), dtype=torch.int64)
-        #print(self.uid2history_item[uid])
-        
     def _init_batch_size_and_step(self):
         batch_size = self.config['eval_batch_size']
         if not self.is_sequential:
