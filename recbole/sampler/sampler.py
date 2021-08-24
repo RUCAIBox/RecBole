@@ -60,7 +60,7 @@ class AbstractSampler(object):
         raise NotImplementedError('Method [_uni_sampling] should be implemented')
 
     def _get_candidates_list(self):
-        """Get sample candidates list
+        """Get sample candidates list for _pop_sampling()
 
         Returns:
             candidates_list (list): a list of candidates id.

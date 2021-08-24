@@ -1,13 +1,15 @@
-Data Introduction
+Data Module Introduction
 ===================
 
-RecBole has a flexible and extensible data module.  
+RecBole not only implements lots of popular recommender models, but also collects and releases 28 commonly-used publiced datasets. 
+You can freely download these datasets following our docs :doc:`data/dataset_download`.
 
-For extensibility and reusability, our data module designs an elegant data flow that transforms raw data
+For extensibility and reusability, Recbole has a flexible and extensible data module.  
+our data module designs an elegant data flow that transforms raw data
 into the model input. Detailed as :doc:`data/data_flow`.
-
 In order to characterize most forms of the input data
-required by different recommendation tasks, RecBole designs an input data format called :doc:`data/atomic_files`. 
+required by different recommendation tasks, RecBole designs an input data format called :doc:`data/atomic_files`. All the input data should be 
+convert into `Atomic Files` format. 
 Besides, we design a data structure called :doc:`data/interaction` to provides a unified internal data representation for different
 recommendation algorithms.
 
@@ -22,8 +24,8 @@ Here are the related docs for data module:
 .. toctree::
    :maxdepth: 1
 
+   data/dataset_download
    data/data_flow
    data/atomic_files
    data/interaction
    data/label_of_data
-   data/data_setttings

@@ -13,16 +13,16 @@ The introduction of different parameter configurations are presented as follows 
    :maxdepth: 1
 
    config/environment_settings
-   data/data_settings
-   train_eval/train_settings
-   train_eval/evaluation_settings
+   config/data_settings
+   config/training_settings
+   config/evaluation_settings
 
 How to set config?
 -----------------------------
 RecBole supports three types of parameter configurations: Config files, Parameter Dicts and Command Line. 
 The parameters are assigned via the Configuration module.
 
-For more details about setting config， please read 
+For more details about setting config, please read 
 
 .. toctree::
    :maxdepth: 1
