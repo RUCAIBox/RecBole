@@ -1,5 +1,5 @@
 Training & Evaluation Introduction
-===========================
+===================================
 
 Training introduction
 -----------------------
@@ -89,8 +89,8 @@ The parameters used to control the evaluation metrics are as follows:
   ``['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']``. Range in
   ``['Recall', 'MRR', 'NDCG', 'Hit', 'MAP', 'Precision', 'AUC',
   'MAE', 'RMSE', 'LogLoss', 'ItemCoverage', 'AveragePopularity',
-   'GiniIndex','ShannonEntropy','TailPercentage']``.
-   Note that value-based metrics and ranking-based metrics can not be used together.
+  'GiniIndex','ShannonEntropy','TailPercentage']``.
+  Note that value-based metrics and ranking-based metrics can not be used together.
 - ``topk (list or int or None)``: The value of k for topk evaluation metrics.
   Defaults to ``10``.
 

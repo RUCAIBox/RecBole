@@ -71,11 +71,11 @@ class AbstractDataLoader:
 
     @property
     def pr_end(self):
-        """This property marks the end of dataloader.pr which is used in :meth:`__next__()`."""
+        """This property marks the end of dataloader.pr which is used in :meth:`__next__`."""
         raise NotImplementedError('Method [pr_end] should be implemented')
 
     def _shuffle(self):
-        """Shuffle the order of data, and it will be called by :meth:`__iter__()` if self.shuffle is True.
+        """Shuffle the order of data, and it will be called by :meth:`__iter__` if self.shuffle is True.
         """
         raise NotImplementedError('Method [shuffle] should be implemented.')
 
