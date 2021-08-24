@@ -62,9 +62,7 @@ The parameters used to control the evaluation method are as follows:
   - ``mode (str)``: Control different candidates of ranking.
     Range in ``[labeled, full,unixxx,popxxx]`` and defaults to ``full``.
  
-- ``repeatable (bool)``: Whether to evaluate the result with a repeatable recommendation scene.
-    Note that it is disabled for sequential models as the recommendation is already repeatable.
-    For other models, defaults to ``False``.
+- ``repeatable (bool)``: Whether to evaluate the result with a repeatable recommendation scene. Note that it is disabled for sequential models as the recommendation is already repeatable. For other models, defaults to ``False``.
 
 Evaluation metrics
 >>>>>>>>>>>>>>>>>>>>>>>>>>
