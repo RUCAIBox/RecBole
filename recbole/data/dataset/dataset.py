@@ -345,7 +345,7 @@ class Dataset(object):
 
     def _get_load_and_unload_col(self, source):
         """Parsing ``config['load_col']`` and ``config['unload_col']`` according to source.
-        See :doc:`../user_guide/data/data_args` for detail arg setting.
+        See :doc:`../user_guide/config/data_settings` for detail arg setting.
 
         Args:
             source (FeatureSource): source of input file.
