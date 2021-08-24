@@ -62,9 +62,7 @@ The parameters used to control the evaluation method are as follows:
   - ``mode (str)``: Control different candidates of ranking.
     Range in ``[labeled, full,unixxx,popxxx]`` and defaults to ``full``.
  
-- ``repeatable (bool)``: Whether to evaluate the result with a repeatable recommendation scene.
-    Note that it is disabled for sequential models as the recommendation is already repeatable.
-    For other models, defaults to ``False``.
+- ``repeatable (bool)``: Whether to evaluate the result with a repeatable recommendation scene. Note that it is disabled for sequential models as the recommendation is already repeatable. For other models, defaults to ``False``.
 
 Evaluation metrics
 >>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -86,10 +84,15 @@ More details about metrics can refer to :doc:`/recbole/recbole.evaluator.metrics
 The parameters used to control the evaluation metrics are as follows:
 
 - ``metrics (list or str)``: Evaluation metrics. Defaults to
-  ``['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']``. Range in
-  ``['Recall', 'MRR', 'NDCG', 'Hit', 'MAP', 'Precision', 'AUC',
-  'MAE', 'RMSE', 'LogLoss', 'ItemCoverage', 'AveragePopularity',
-  'GiniIndex','ShannonEntropy','TailPercentage']``.
+  ``['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']``. Range in the following table:
+
+  ==============    =================================================
+  Type              Metrics
+  ==============    =================================================
+  Ranking-based     Recall, MRR, NDCG, Hit, MAP, Precision, GAUC，ItemCoverage, AveragePopularity, GiniIndex, ShannonEntropy, TailPercentage
+  value-based       AUC, MAE, RMSE, LogLoss
+  ==============    =================================================
+
   Note that value-based metrics and ranking-based metrics can not be used together.
 - ``topk (list or int or None)``: The value of k for topk evaluation metrics.
   Defaults to ``10``.
