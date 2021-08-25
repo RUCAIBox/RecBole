@@ -28,9 +28,10 @@ from torch.nn.utils.clip_grad import clip_grad_norm_
 from tqdm import tqdm
 
 from recbole.data.interaction import Interaction
+from recbole.data.dataloader import FullSortEvalDataLoader
 from recbole.evaluator import Evaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
-    DataLoaderType, EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage
+    EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage
 
 
 class AbstractTrainer(object):
@@ -436,9 +437,12 @@ class Trainer(AbstractTrainer):
 
         self.model.eval()
 
-        if eval_data.dl_type == DataLoaderType.FULL:
+        if isinstance(eval_data, FullSortEvalDataLoader):
+            eval_func = self._full_sort_batch_eval
             if self.item_tensor is None:
                 self.item_tensor = eval_data.dataset.get_item_feature().to(self.device)
+        else:
+            eval_func = self._neg_sample_batch_eval
         if self.config['eval_type'] == EvaluatorType.RANKING:
             self.tot_item_num = eval_data.dataset.item_num
 
@@ -451,10 +455,7 @@ class Trainer(AbstractTrainer):
             ) if show_progress else enumerate(eval_data)
         )
         for batch_idx, batched_data in iter_data:
-            if eval_data.dl_type == DataLoaderType.FULL:
-                interaction, scores, positive_u, positive_i = self._full_sort_batch_eval(batched_data)
-            else:
-                interaction, scores, positive_u, positive_i = self._neg_sample_batch_eval(batched_data)
+            interaction, scores, positive_u, positive_i = eval_func(batched_data)
             if self.gpu_available and show_progress:
                 iter_data.set_postfix_str(set_color('GPU RAM: ' + get_gpu_usage(self.device), 'yellow'))
             self.eval_collector.eval_batch_collect(scores, interaction, positive_u, positive_i)

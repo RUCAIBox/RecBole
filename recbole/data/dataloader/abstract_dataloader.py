@@ -39,7 +39,6 @@ class AbstractDataLoader:
         step (int): The increment of :attr:`pr` for each batch.
         batch_size (int): The max interaction number for all batch.
     """
-    dl_type = None
 
     def __init__(self, config, dataset, sampler, shuffle=False):
         self.config = config
