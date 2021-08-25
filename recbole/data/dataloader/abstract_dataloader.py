@@ -95,8 +95,7 @@ class AbstractDataLoader:
         """
         if self.pr != 0:
             raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
-        if self.batch_size != batch_size:
-            self.batch_size = batch_size
+        self.batch_size = batch_size
 
 
 class NegSampleDataLoader(AbstractDataLoader):
