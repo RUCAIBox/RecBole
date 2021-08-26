@@ -104,7 +104,7 @@ class TestOverallConfig(unittest.TestCase):
             'valid_metric': 'auc',
             'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'RO', 'mode': 'uni100'}
         }
-        self.assertTrue(run_parms({'topk': {None, 1}}, extra_dict=settings))
+        self.assertTrue(run_parms({'topk': {1, }}, extra_dict=settings))
 
     def test_metric(self):
         settings = {

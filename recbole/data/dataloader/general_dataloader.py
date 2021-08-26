@@ -17,7 +17,7 @@ import torch
 
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader, NegSampleDataLoader
 from recbole.data.interaction import Interaction, cat_interactions
-from recbole.utils import DataLoaderType, InputType, ModelType
+from recbole.utils import InputType, ModelType
 
 
 class TrainDataLoader(NegSampleDataLoader):
@@ -160,7 +160,6 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         sampler (Sampler): The sampler of dataloader.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
-    dl_type = DataLoaderType.FULL
 
     def __init__(self, config, dataset, sampler, shuffle=False):
         self.uid_field = dataset.uid_field
@@ -197,6 +196,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         self.uid2positive_item[uid] = torch.tensor(list(positive_item), dtype=torch.int64) 
         self.uid2items_num[uid] = len(positive_item)
         self.uid2history_item[uid] = torch.tensor(list(history_item), dtype=torch.int64)
+
     def _init_batch_size_and_step(self):
         batch_size = self.config['eval_batch_size']
         if not self.is_sequential:

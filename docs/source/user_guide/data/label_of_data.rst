@@ -16,7 +16,7 @@ which column represents the label of data, and then set `neg_sampling` as `None`
 For example, if your `.inter` file is like:
 
 =============   =============   ============   ===============
-user_id:token   item_id:token   label:float   timestamp:float
+user_id:token   item_id:token   label:float    timestamp:float
 =============   =============   ============   ===============
 1               1193            1              978300760
 1               661             0              978302109

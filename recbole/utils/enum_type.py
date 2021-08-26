@@ -28,19 +28,6 @@ class ModelType(Enum):
     DECISIONTREE = 6
 
 
-class DataLoaderType(Enum):
-    """Type of DataLoaders.
-
-    - ``ORIGIN``: Original DataLoader
-    - ``FULL``: DataLoader for full-sort evaluation
-    - ``NEGSAMPLE``: DataLoader for negative sample evaluation
-    """
-
-    ORIGIN = 1
-    FULL = 2
-    NEGSAMPLE = 3
-
-
 class KGDataLoaderState(Enum):
     """States for Knowledge-based DataLoader.
 
