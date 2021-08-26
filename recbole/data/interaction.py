@@ -119,6 +119,13 @@ class Interaction(object):
     def __iter__(self):
         return self.interaction.__iter__()
 
+    def __getattr__(self, item):
+        if 'interaction' not in self.__dict__:
+            raise AttributeError(f"'Interaction' object has no attribute 'interaction'")
+        if item in self.interaction:
+            return self.interaction[item]
+        raise AttributeError(f"'Interaction' object has no attribute '{item}'")
+
     def __getitem__(self, index):
         if isinstance(index, str):
             return self.interaction[index]
@@ -227,10 +234,7 @@ class Interaction(object):
         """
         ret = {}
         for k in self.interaction:
-            if len(self.interaction[k].shape) == 1:
-                ret[k] = self.interaction[k].repeat(sizes)
-            else:
-                ret[k] = self.interaction[k].repeat([sizes, 1])
+            ret[k] = self.interaction[k].repeat([sizes] + [1] * (len(self.interaction[k].shape) - 1))
         return Interaction(ret)
 
     def repeat_interleave(self, repeats, dim=0):

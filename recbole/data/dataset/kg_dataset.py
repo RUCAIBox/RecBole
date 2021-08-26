@@ -118,7 +118,7 @@ class KnowledgeBasedDataset(Dataset):
             self.logger.info(
                 f'\nLinked KG for [{self.dataset_name}] requires additional conversion '
                 f'to atomic files (.kg and .link).\n'
-                f'Please refer to https://github.com/RUCAIBox/RecSysDatasets/conversion_tools#knowledge-aware-datasets '
+                f'Please refer to https://github.com/RUCAIBox/RecSysDatasets/tree/master/conversion_tools#knowledge-aware-datasets '
                 f'for detailed instructions.\n'
                 f'You can run RecBole after the conversion, see you soon.'
             )
@@ -147,9 +147,6 @@ class KnowledgeBasedDataset(Dataset):
         if self.kg_feat is not None:
             feat_name_list.append('kg_feat')
         return feat_name_list
-
-    def save(self, filepath):
-        raise NotImplementedError()
 
     def _load_kg(self, token, dataset_path):
         self.logger.debug(set_color(f'Loading kg from [{dataset_path}].', 'green'))

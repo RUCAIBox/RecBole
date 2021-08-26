@@ -28,19 +28,6 @@ class ModelType(Enum):
     DECISIONTREE = 6
 
 
-class DataLoaderType(Enum):
-    """Type of DataLoaders.
-
-    - ``ORIGIN``: Original DataLoader
-    - ``FULL``: DataLoader for full-sort evaluation
-    - ``NEGSAMPLE``: DataLoader for negative sample evaluation
-    """
-
-    ORIGIN = 1
-    FULL = 2
-    NEGSAMPLE = 3
-
-
 class KGDataLoaderState(Enum):
     """States for Knowledge-based DataLoader.
 
@@ -57,12 +44,12 @@ class KGDataLoaderState(Enum):
 class EvaluatorType(Enum):
     """Type for evaluation metrics.
 
-    - ``RANKING``: Ranking metrics like NDCG, Recall, etc.
-    - ``INDIVIDUAL``: Individual metrics like AUC, etc.
+    - ``RANKING``: Ranking-based metrics like NDCG, Recall, etc.
+    - ``VALUE``: Value-based metrics like AUC, etc.
     """
 
     RANKING = 1
-    INDIVIDUAL = 2
+    VALUE = 2
 
 
 class InputType(Enum):

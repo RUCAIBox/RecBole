@@ -28,9 +28,10 @@ from torch.nn.utils.clip_grad import clip_grad_norm_
 from tqdm import tqdm
 
 from recbole.data.interaction import Interaction
+from recbole.data.dataloader import FullSortEvalDataLoader
 from recbole.evaluator import Evaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
-    DataLoaderType, EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage
+    EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage
 
 
 class AbstractTrainer(object):
@@ -271,17 +272,20 @@ class Trainer(AbstractTrainer):
             'learning_rate': self.config['learning_rate'],
             'train_batch_size': self.config['train_batch_size']
         }
+        # unrecorded parameter
+        unrecorded_parameter = {
+            parameter
+            for parameters in self.config.parameters.values()
+            for parameter in parameters
+        }.union({'model', 'dataset', 'config_files', 'device'})
         # other model-specific hparam
         hparam_dict.update({
             para: val
             for para, val in self.config.final_config_dict.items()
-            if para not in {parameter
-                            for parameters in self.config.parameters.values()
-                            for parameter in parameters}.union({'model', 'dataset', 'config_files', 'device'})
+            if para not in unrecorded_parameter
         })
         for k in hparam_dict:
-            if not (isinstance(hparam_dict[k], int) or isinstance(hparam_dict[k], int) or isinstance(hparam_dict[k], int)
-                    or isinstance(hparam_dict[k], int)):
+            if hparam_dict[k] is not None and not isinstance(hparam_dict[k], (bool, str, float, int)):
                 hparam_dict[k] = str(hparam_dict[k])
 
         self.tensorboard.add_hparams(hparam_dict, {'hparam/best_valid_result': best_valid_result})
@@ -373,9 +377,10 @@ class Trainer(AbstractTrainer):
             # Note: interaction without item ids
             scores = self.model.full_sort_predict(interaction.to(self.device))
         except NotImplementedError:
+            inter_len = len(interaction)
             new_inter = interaction.to(self.device).repeat_interleave(self.tot_item_num)
             batch_size = len(new_inter)
-            new_inter.update(self.item_tensor[:batch_size])
+            new_inter.update(self.item_tensor.repeat(inter_len))
             if batch_size <= self.test_batch_size:
                 scores = self.model.predict(new_inter)
             else:
@@ -385,7 +390,6 @@ class Trainer(AbstractTrainer):
         scores[:, 0] = -np.inf
         if history_index is not None:
             scores[history_index] = -np.inf
-
         return interaction, scores, positive_u, positive_i
 
     def _neg_sample_batch_eval(self, batched_data):
@@ -396,7 +400,7 @@ class Trainer(AbstractTrainer):
         else:
             origin_scores = self._spilt_predict(interaction, batch_size)
 
-        if self.config['eval_type'] == EvaluatorType.INDIVIDUAL:
+        if self.config['eval_type'] == EvaluatorType.VALUE:
             return interaction, origin_scores, positive_u, positive_i
         elif self.config['eval_type'] == EvaluatorType.RANKING:
             col_idx = interaction[self.config['ITEM_ID_FIELD']]
@@ -436,13 +440,15 @@ class Trainer(AbstractTrainer):
 
         self.model.eval()
 
-        if eval_data.dl_type == DataLoaderType.FULL:
+        if isinstance(eval_data, FullSortEvalDataLoader):
+            eval_func = self._full_sort_batch_eval
             if self.item_tensor is None:
-                self.item_tensor = eval_data.dataset.get_item_feature().to(self.device).repeat(eval_data.step)
+                self.item_tensor = eval_data.dataset.get_item_feature().to(self.device)
+        else:
+            eval_func = self._neg_sample_batch_eval
         if self.config['eval_type'] == EvaluatorType.RANKING:
             self.tot_item_num = eval_data.dataset.item_num
 
-        batch_matrix_list = []
         iter_data = (
             tqdm(
                 enumerate(eval_data),
@@ -452,10 +458,7 @@ class Trainer(AbstractTrainer):
             ) if show_progress else enumerate(eval_data)
         )
         for batch_idx, batched_data in iter_data:
-            if eval_data.dl_type == DataLoaderType.FULL:
-                interaction, scores, positive_u, positive_i = self._full_sort_batch_eval(batched_data)
-            else:
-                interaction, scores, positive_u, positive_i = self._neg_sample_batch_eval(batched_data)
+            interaction, scores, positive_u, positive_i = eval_func(batched_data)
             if self.gpu_available and show_progress:
                 iter_data.set_postfix_str(set_color('GPU RAM: ' + get_gpu_usage(self.device), 'yellow'))
             self.eval_collector.eval_batch_collect(scores, interaction, positive_u, positive_i)
@@ -538,14 +541,15 @@ class KGATTrainer(Trainer):
         return rs_total_loss, kg_total_loss
 
 
-class S3RecTrainer(Trainer):
-    r"""S3RecTrainer is designed for S3Rec, which is a self-supervised learning based sequential recommenders.
-        It includes two training stages: pre-training ang fine-tuning.
-
-        """
+class PretrainTrainer(Trainer):
+    r"""PretrainTrainer is designed for pre-training.
+    It can be inherited by the trainer which needs pre-training and fine-tuning.
+    """
 
     def __init__(self, config, model):
-        super(S3RecTrainer, self).__init__(config, model)
+        super(PretrainTrainer, self).__init__(config, model)
+        self.pretrain_epochs = self.config['pretrain_epochs']
+        self.save_step = self.config['save_step']
 
     def save_pretrained_model(self, epoch, saved_model_file):
         r"""Store the model parameters information and training information.
@@ -564,8 +568,7 @@ class S3RecTrainer(Trainer):
         torch.save(state, saved_model_file)
 
     def pretrain(self, train_data, verbose=True, show_progress=False):
-
-        for epoch_idx in range(self.start_epoch, self.epochs):
+        for epoch_idx in range(self.start_epoch, self.pretrain_epochs):
             # train
             training_start_time = time()
             train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
@@ -577,7 +580,7 @@ class S3RecTrainer(Trainer):
                 self.logger.info(train_loss_output)
             self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
 
-            if (epoch_idx + 1) % self.config['save_step'] == 0:
+            if (epoch_idx + 1) % self.save_step == 0:
                 saved_model_file = os.path.join(
                     self.checkpoint_dir,
                     '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1))
@@ -589,13 +592,23 @@ class S3RecTrainer(Trainer):
 
         return self.best_valid_score, self.best_valid_result
 
+
+class S3RecTrainer(PretrainTrainer):
+    r"""S3RecTrainer is designed for S3Rec, which is a self-supervised learning based sequential recommenders.
+        It includes two training stages: pre-training ang fine-tuning.
+
+        """
+
+    def __init__(self, config, model):
+        super(S3RecTrainer, self).__init__(config, model)
+
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         if self.model.train_stage == 'pretrain':
             return self.pretrain(train_data, verbose, show_progress)
         elif self.model.train_stage == 'finetune':
             return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
-            raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
+            raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune'!")
 
 
 class MKRTrainer(Trainer):
@@ -662,8 +675,17 @@ class DecisionTreeTrainer(AbstractTrainer):
         # model saved
         self.checkpoint_dir = config['checkpoint_dir']
         ensure_dir(self.checkpoint_dir)
+        temp_file = '{}-{}-temp.pth'.format(self.config['model'], get_local_time())
+        self.temp_file = os.path.join(self.checkpoint_dir, temp_file)
+
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
+
+        self.stopping_step = config['stopping_step']
+        self.valid_metric_bigger = config['valid_metric_bigger']
+        self.cur_step = 0
+        self.best_valid_score = -np.inf if self.valid_metric_bigger else np.inf
+        self.best_valid_result = None
 
     def _interaction_to_sparse(self, dataloader):
         r"""Convert data format from interaction to sparse or numpy
@@ -687,7 +709,7 @@ class DecisionTreeTrainer(AbstractTrainer):
                 else:
                     cur_data = np.hstack((cur_data, value))
 
-        if self.convert_token_to_onehot == True:
+        if self.convert_token_to_onehot:
             from scipy import sparse
             from scipy.sparse import dok_matrix
             convert_col_list = dataloader.dataset.convert_col_list
@@ -725,25 +747,27 @@ class DecisionTreeTrainer(AbstractTrainer):
         Args:
             valid_data (DecisionTreeDataLoader): DecisionTreeDataLoader, which is the same with GeneralDataLoader.
         """
-        valid_result = self.evaluate(valid_data)
+        valid_result = self.evaluate(valid_data, load_best_model=False)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
-        return valid_result, valid_score
+        return valid_score, valid_result
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
-        # load model
-        if self.boost_model is not None:
-            self.model.load_model(self.boost_model)
-
-        self.best_valid_score = 0.
-        self.best_valid_result = 0.
-
         for epoch_idx in range(self.epochs):
             self._train_at_once(train_data, valid_data)
 
             if (epoch_idx + 1) % self.eval_step == 0:
                 # evaluate
                 valid_start_time = time()
-                valid_result, valid_score = self._valid_epoch(valid_data)
+                valid_score, valid_result = self._valid_epoch(valid_data)
+
+                self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
+                    valid_score,
+                    self.best_valid_score,
+                    self.cur_step,
+                    max_step=self.stopping_step,
+                    bigger=self.valid_metric_bigger
+                )
+
                 valid_end_time = time()
                 valid_score_output = (set_color("epoch %d evaluating", 'green') + " [" + set_color("time", 'blue')
                                     + ": %.2fs, " + set_color("valid_score", 'blue') + ": %f]") % \
@@ -754,13 +778,28 @@ class DecisionTreeTrainer(AbstractTrainer):
                     self.logger.info(valid_result_output)
                 self.tensorboard.add_scalar('Vaild_score', valid_score, epoch_idx)
 
-                self.best_valid_score = valid_score
-                self.best_valid_result = valid_result
+                if update_flag:
+                    if saved:
+                        self.model.save_model(self.saved_model_file)
+                        update_output = set_color('Saving current best', 'blue') + ': %s' % self.saved_model_file
+                        if verbose:
+                            self.logger.info(update_output)
+                    self.best_valid_result = valid_result
+
+                if stop_flag:
+                    stop_output = 'Finished training, best eval result in epoch %d' % \
+                                  (epoch_idx - self.cur_step * self.eval_step)
+                    if verbose:
+                        self.logger.info(stop_output)
+                    break
 
         return self.best_valid_score, self.best_valid_result
 
-    def evaluate(self, eval_data):
-        pass
+    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
+        raise NotImplementedError
+
+    def _train_at_once(self, train_data, valid_data):
+        raise NotImplementedError
 
 
 class xgboostTrainer(DecisionTreeTrainer):
@@ -784,6 +823,8 @@ class xgboostTrainer(DecisionTreeTrainer):
         self.evals_result = {}
         self.verbose_eval = config['xgb_verbose_eval']
         self.callbacks = None
+        self.deval = None
+        self.eval_pred = self.eval_true = None
 
     def _interaction_to_lib_datatype(self, dataloader):
         r"""Convert data format from interaction to DMatrix
@@ -818,73 +859,34 @@ class xgboostTrainer(DecisionTreeTrainer):
             callbacks=self.callbacks
         )
 
-        self.model.save_model(self.saved_model_file)
-        self.boost_model = self.saved_model_file
+        self.model.save_model(self.temp_file)
+        self.boost_model = self.temp_file
 
     def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
-        self.eval_pred = torch.Tensor()
-        self.eval_true = torch.Tensor()
+        if load_best_model:
+            if model_file:
+                checkpoint_file = model_file
+            else:
+                checkpoint_file = self.saved_model_file
+            self.model.load_model(checkpoint_file)
 
         self.deval = self._interaction_to_lib_datatype(eval_data)
         self.eval_true = torch.Tensor(self.deval.get_label())
         self.eval_pred = torch.Tensor(self.model.predict(self.deval))
 
-        self.eval_collector.eval_collect(self.eval_pred, self.eval_pred)
+        self.eval_collector.eval_collect(self.eval_pred, self.eval_true)
         result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
 
 
-class RaCTTrainer(Trainer):
+class RaCTTrainer(PretrainTrainer):
     r"""RaCTTrainer is designed for RaCT, which is an actor-critic reinforcement learning based general recommenders.
-        It includes three training stages: actor pre-training, critic pre-training and actor-critic training. 
+        It includes three training stages: actor pre-training, critic pre-training and actor-critic training.
 
         """
 
     def __init__(self, config, model):
         super(RaCTTrainer, self).__init__(config, model)
-        self.pretrain_epochs = self.config['pretrain_epochs']
-
-    def save_pretrained_model(self, epoch, saved_model_file):
-        r"""Store the model parameters information and training information.
-
-        Args:
-            epoch (int): the current epoch id
-            saved_model_file (str): file name for saved pretrained model
-
-        """
-        state = {
-            'config': self.config,
-            'epoch': epoch,
-            'state_dict': self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
-        }
-        torch.save(state, saved_model_file)
-
-    def pretrain(self, train_data, verbose=True, show_progress=False):
-
-        for epoch_idx in range(self.start_epoch, self.pretrain_epochs):
-            # train
-            training_start_time = time()
-            train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
-            self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
-            training_end_time = time()
-            train_loss_output = \
-                self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
-            if verbose:
-                self.logger.info(train_loss_output)
-            self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
-
-            if (epoch_idx + 1) % self.pretrain_epochs == 0:
-                saved_model_file = os.path.join(
-                    self.checkpoint_dir,
-                    '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1))
-                )
-                self.save_pretrained_model(epoch_idx, saved_model_file)
-                update_output = 'Saving current: %s' % saved_model_file
-                if verbose:
-                    self.logger.info(update_output)
-
-        return self.best_valid_score, self.best_valid_result
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         if self.model.train_stage == 'actor_pretrain':
@@ -894,7 +896,8 @@ class RaCTTrainer(Trainer):
         elif self.model.train_stage == 'finetune':
             return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
-            raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
+            raise ValueError("Please make sure that the 'train_stage' is "
+                             "'actor_pretrain', 'critic_pretrain' or 'finetune'!")
 
 
 class lightgbmTrainer(DecisionTreeTrainer):
@@ -918,6 +921,8 @@ class lightgbmTrainer(DecisionTreeTrainer):
         self.verbose_eval = config['lgb_verbose_eval']
         self.learning_rates = config['lgb_learning_rates']
         self.callbacks = None
+        self.deval_data = self.deval_label = None
+        self.eval_pred = self.eval_true = None
 
     def _interaction_to_lib_datatype(self, dataloader):
         r"""Convert data format from interaction to Dataset
@@ -953,18 +958,22 @@ class lightgbmTrainer(DecisionTreeTrainer):
             callbacks=self.callbacks
         )
 
-        self.model.save_model(self.saved_model_file)
-        self.boost_model = self.saved_model_file
+        self.model.save_model(self.temp_file)
+        self.boost_model = self.temp_file
 
     def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
-        self.eval_pred = torch.Tensor()
-        self.eval_true = torch.Tensor()
+        if load_best_model:
+            if model_file:
+                checkpoint_file = model_file
+            else:
+                checkpoint_file = self.saved_model_file
+            self.model = self.lgb.Booster(model_file=checkpoint_file)
 
         self.deval_data, self.deval_label = self._interaction_to_sparse(eval_data)
         self.eval_true = torch.Tensor(self.deval_label)
         self.eval_pred = torch.Tensor(self.model.predict(self.deval_data))
 
-        self.eval_collector.eval_collect(self.eval_pred, self.eval_pred)
+        self.eval_collector.eval_collect(self.eval_pred, self.eval_true)
         result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
 
@@ -979,119 +988,21 @@ class RecVAETrainer(Trainer):
         self.n_enc_epochs = config['n_enc_epochs']
         self.n_dec_epochs = config['n_dec_epochs']
 
-    def _train_epoch(
-        self, train_data, epoch_idx, n_epochs, optimizer, encoder_flag, loss_func=None, show_progress=False
-    ):
-        self.model.train()
-        loss_func = loss_func or self.model.calculate_loss
-        total_loss = None
-        iter_data = (
-            tqdm(
-                enumerate(train_data),
-                total=len(train_data),
-                desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
-            ) if show_progress else enumerate(train_data)
-        )
-        for epoch in range(n_epochs):
-            for batch_idx, interaction in iter_data:
-                interaction = interaction.to(self.device)
-                optimizer.zero_grad()
-                losses = loss_func(interaction, encoder_flag=encoder_flag)
-                if isinstance(losses, tuple):
-                    loss = sum(losses)
-                    loss_tuple = tuple(per_loss.item() for per_loss in losses)
-                    total_loss = loss_tuple if total_loss is None else tuple(map(sum, zip(total_loss, loss_tuple)))
-                else:
-                    loss = losses
-                    total_loss = losses.item() if total_loss is None else total_loss + losses.item()
-                self._check_nan(loss)
-                loss.backward()
-                if self.clip_grad_norm:
-                    clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
-                optimizer.step()
+        self.optimizer_encoder = self._build_optimizer(self.model.encoder.parameters())
+        self.optimizer_decoder = self._build_optimizer(self.model.decoder.parameters())
 
-        return total_loss
+    def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
+        self.optimizer = self.optimizer_encoder
+        encoder_loss_func = lambda data: self.model.calculate_loss(data, encoder_flag=True)
+        for epoch in range(self.n_enc_epochs):
+            super()._train_epoch(train_data, epoch_idx, loss_func=encoder_loss_func, show_progress=show_progress)
 
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
-        if saved and self.start_epoch >= self.epochs:
-            self._save_checkpoint(-1)
-
-        encoder_params = set(self.model.encoder.parameters())
-        decoder_params = set(self.model.decoder.parameters())
-
-        optimizer_encoder = self._build_optimizer(encoder_params)
-        optimizer_decoder = self._build_optimizer(decoder_params)
-
-        for epoch_idx in range(self.start_epoch, self.epochs):
-            # alternate training
-            training_start_time = time()
-            train_loss = self._train_epoch(
-                train_data,
-                epoch_idx,
-                show_progress=show_progress,
-                n_epochs=self.n_enc_epochs,
-                encoder_flag=True,
-                optimizer=optimizer_encoder
+        self.model.update_prior()
+        loss = 0.0
+        self.optimizer = self.optimizer_decoder
+        decoder_loss_func = lambda data: self.model.calculate_loss(data, encoder_flag=False)
+        for epoch in range(self.n_dec_epochs):
+            loss += super()._train_epoch(
+                train_data, epoch_idx, loss_func=decoder_loss_func, show_progress=show_progress
             )
-            self.model.update_prior()
-            train_loss = self._train_epoch(
-                train_data,
-                epoch_idx,
-                show_progress=show_progress,
-                n_epochs=self.n_dec_epochs,
-                encoder_flag=False,
-                optimizer=optimizer_decoder
-            )
-            self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
-            training_end_time = time()
-            train_loss_output = \
-                self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
-            if verbose:
-                self.logger.info(train_loss_output)
-            self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
-
-            # eval
-            if self.eval_step <= 0 or not valid_data:
-                if saved:
-                    self._save_checkpoint(epoch_idx)
-                    update_output = 'Saving current: %s' % self.saved_model_file
-                    if verbose:
-                        self.logger.info(update_output)
-                continue
-            if (epoch_idx + 1) % self.eval_step == 0:
-                valid_start_time = time()
-                valid_score, valid_result = self._valid_epoch(valid_data, show_progress=show_progress)
-                self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
-                    valid_score,
-                    self.best_valid_score,
-                    self.cur_step,
-                    max_step=self.stopping_step,
-                    bigger=self.valid_metric_bigger
-                )
-                valid_end_time = time()
-                valid_score_output = (set_color("epoch %d evaluating", 'green') + " [" + set_color("time", 'blue')
-                                    + ": %.2fs, " + set_color("valid_score", 'blue') + ": %f]") % \
-                                     (epoch_idx, valid_end_time - valid_start_time, valid_score)
-                valid_result_output = set_color('valid result', 'blue') + ': \n' + dict2str(valid_result)
-                if verbose:
-                    self.logger.info(valid_score_output)
-                    self.logger.info(valid_result_output)
-                self.tensorboard.add_scalar('Vaild_score', valid_score, epoch_idx)
-                if update_flag:
-                    if saved:
-                        self._save_checkpoint(epoch_idx)
-                        update_output = set_color('Saving current best', 'blue') + ': %s' % self.saved_model_file
-                        if verbose:
-                            self.logger.info(update_output)
-                    self.best_valid_result = valid_result
-
-                if callback_fn:
-                    callback_fn(epoch_idx, valid_score)
-
-                if stop_flag:
-                    stop_output = 'Finished training, best eval result in epoch %d' % \
-                                  (epoch_idx - self.cur_step * self.eval_step)
-                    if verbose:
-                        self.logger.info(stop_output)
-                    break
-        return self.best_valid_score, self.best_valid_result
+        return loss

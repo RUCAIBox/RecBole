@@ -11,19 +11,19 @@ Introduction
 **Authors:** Pengjie Ren, Zhumin Chen, Jing Li, Zhaochun Ren, Jun Ma, Maarten de Rijke
 
 **Abstract:**  Recurrent neural networks for session-based recommendation have attracted a lot of attention recently because of
-their promising performance. repeat consumption is a com-mon phenomenon in many recommendation scenarios (e.g.,e-commerce, music, and TV program recommendations),
+their promising performance. repeat consumption is a common phenomenon in many recommendation scenarios (e.g.,e-commerce, music, and TV program recommendations),
 where the same item is re-consumed repeatedly over time.
 However, no previous studies have emphasized repeat consumption with neural networks. An effective neural approach
 is needed to decide when to perform repeat recommendation. In this paper, we incorporate a repeat-explore mechanism into neural networks and propose a new model, called
-RepeatNet, with an encoder-decoder structure. RepeatNet integrates a regular neural recommendation approach in the de-
-coder with a new repeat recommendation mechanism that can
+RepeatNet, with an encoder-decoder structure. RepeatNet integrates a regular neural recommendation approach in the decoder 
+with a new repeat recommendation mechanism that can
 choose items from a user’s history and recommends them at
 the right time. We report on extensive experiments on three
 benchmark datasets. RepeatNet outperforms state-of-the-art
 baselines on all three datasets in terms of MRR and Recall.
 Furthermore, as the dataset size and the repeat ratio increase,
-the improvements of RepeatNet over the baselines also in-
-crease, which demonstrates its advantage in handling repeat
+the improvements of RepeatNet over the baselines also increase, 
+which demonstrates its advantage in handling repeat
 recommendation scenarios.
 
 .. image:: ../../../asset/repeatnet.jpg
@@ -89,6 +89,6 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`
 

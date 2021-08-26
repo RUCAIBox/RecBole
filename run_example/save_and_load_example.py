@@ -10,70 +10,47 @@ Here is the sample code for the save and load in RecBole.
 The path to saved data or model can be found in the output of RecBole.
 """
 
-import pickle
-from logging import getLogger
 
-import torch
-
-from recbole.config import Config
-from recbole.data import create_dataset, data_preparation, save_split_dataloaders, load_split_dataloaders
-from recbole.utils import init_seed, init_logger, get_model, get_trainer
+from recbole.quick_start import run_recbole, load_data_and_model
 
 
 def save_example():
     # configurations initialization
     config_dict = {
-        'checkpoint_dir': '../saved'
+        'checkpoint_dir': '../saved',
+        'save_dataset': True,
+        'save_dataloaders': True,
     }
-    config = Config(model='BPR', dataset='ml-100k', config_dict=config_dict)
-    init_seed(config['seed'], config['reproducibility'])
-    init_logger(config)
-
-    # dataset filtering
-    dataset = create_dataset(config)
-    dataset.save('../saved/')
-
-    # dataset splitting
-    train_data, valid_data, test_data = data_preparation(config, dataset)
-    save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))
-
-    model = get_model(config['model'])(config, train_data).to(config['device'])
-
-    # trainer loading and initialization
-    trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
-
-    # model training
-    # the best model will be saved in here
-    best_valid_score, best_valid_result = trainer.fit(
-        train_data, valid_data, saved=True, show_progress=config['show_progress']
-    )
+    run_recbole(model='BPR', dataset='ml-100k', config_dict=config_dict)
 
 
 def load_example():
-    # configurations initialization
-    config_dict = {
-        'checkpoint_dir': '../saved'
-    }
-    config = Config(model='BPR', dataset='ml-100k', config_dict=config_dict)
-    init_seed(config['seed'], config['reproducibility'])
-    init_logger(config)
-    logger = getLogger()
+    # Filtered dataset and split dataloaders are created according to 'config'.
+    config, model, dataset, train_data, valid_data, test_data = load_data_and_model(
+        model_file='../saved/BPR-Aug-20-2021_03-32-13.pth',
+    )
 
-    with open('../saved/ml-100k-dataset.pth', 'rb') as f:  # You can use your filtered data path here.
-        dataset = pickle.load(f)
+    # Filtered dataset is loaded from file, and split dataloaders are created according to 'config'.
+    config, model, dataset, train_data, valid_data, test_data = load_data_and_model(
+        model_file='../saved/BPR-Aug-20-2021_03-32-13.pth',
+        dataset_file='../saved/ml-100k-dataset.pth',
+    )
 
-    train_data, valid_data, test_data = load_split_dataloaders('../saved/ml-100k-for-BPR-dataloader.pth')
-    # You can use your split data path here.
+    # Dataset is neither created nor loaded, and split dataloaders are loaded from file.
+    config, model, dataset, train_data, valid_data, test_data = load_data_and_model(
+        model_file='../saved/BPR-Aug-20-2021_03-32-13.pth',
+        dataloader_file='../saved/ml-100k-for-BPR-dataloader.pth',
+    )
+    assert dataset is None
 
-    model = get_model(config['model'])(config, train_data).to(config['device'])
-    checkpoint = torch.load('../saved/BPR-Mar-20-2021_17-11-05.pth')  # Here you can replace it by your model path.
-    model.load_state_dict(checkpoint['state_dict'])
-    model.load_other_parameter(checkpoint.get('other_parameter'))
-    logger.info(model)
-    logger.info(train_data.dataset)
-    logger.info(valid_data.dataset)
-    logger.info(test_data.dataset)
+    # Filtered dataset and split dataloaders are loaded from file.
+    config, model, dataset, train_data, valid_data, test_data = load_data_and_model(
+        model_file='../saved/BPR-Aug-20-2021_03-32-13.pth',
+        dataset_file='../saved/ml-100k-dataset.pth',
+        dataloader_file='../saved/ml-100k-for-BPR-dataloader.pth',
+    )
 
 
 if __name__ == '__main__':
     save_example()
+    # load_example()

@@ -12,7 +12,7 @@ Introduction
 
 **Abstract:** To address the sparsity and cold start problem of collaborative filtering, researchers usually make use of side information, such as social
 networks or item attributes, to improve recommendation performance. This paper considers the knowledge graph as the source of
-side information. To address the limitations of existing embeddingbased and path-based methods for knowledge-graph-aware recommendation, we propose RippleNet, an end-to-end framework that
+side information. To address the limitations of existing embedding-based and path-based methods for knowledge-graph-aware recommendation, we propose RippleNet, an end-to-end framework that
 naturally incorporates the knowledge graph into recommender
 systems. Similar to actual ripples propagating on the water, RippleNet stimulates the propagation of user preferences over the set
 of knowledge entities by automatically and iteratively extending a
@@ -82,5 +82,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`

@@ -19,7 +19,7 @@ xgb_params:
     eta: 1
     seed: 2020
     # nthread: -1
-xgb_num_boost_round: 500
+xgb_num_boost_round: 100
 xgb_early_stopping_rounds: ~
-xgb_verbose_eval: 100
+xgb_verbose_eval: 50
 

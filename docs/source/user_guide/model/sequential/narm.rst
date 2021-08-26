@@ -10,7 +10,7 @@ Introduction
 
 **Authors:** Jing Li, Pengjie Ren, Zhumin Chen, Zhaochun Ren, Tao Lian, Jun Ma
 
-**Abstract:**  Given e-commerce scenarios that user profiles are invisible, sessionbased recommendation is proposed to generate recommendation
+**Abstract:**  Given e-commerce scenarios that user profiles are invisible, session-based recommendation is proposed to generate recommendation
 results from short sessions. Previous work only considers the
 user’s sequential behavior in the current session, whereas the
 user’s main purpose in the current session is not emphasized. In
@@ -88,5 +88,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`

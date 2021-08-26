@@ -1,4 +1,4 @@
-Args for Data
+Data settings
 =========================
 
 RecBole provides several arguments for describing:

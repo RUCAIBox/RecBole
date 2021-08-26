@@ -15,10 +15,10 @@ in many recommender systems, where the items that users will
 interact may largely depend on those items that users just accessed
 recently. However, with the tremendous increase of users and items,
 sequential recommender systems still face several challenging problems: (1) the hardness of modeling the long-term user interests from
-sparse implicit feedback; (2) the difficulty of capturing the short-
-term user interests given several items the user just accessed. To
-cope with these challenges, we propose a hierarchical gating net-
-work (HGN), integrated with the Bayesian Personalized Ranking
+sparse implicit feedback; (2) the difficulty of capturing the short-term 
+user interests given several items the user just accessed. To
+cope with these challenges, we propose a hierarchical gating network 
+(HGN), integrated with the Bayesian Personalized Ranking
 (BPR) to capture both the long-term and short-term user interests.
 Our HGN consists of a feature gating module, an instance gating
 module, and an item-item product module. In particular, our feature
@@ -91,6 +91,6 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`
 

@@ -10,17 +10,17 @@ Introduction
 
 **Authors:** Ying, H
 
-**Abstract:**  With a large amount of user activity data accumulated, it is crucial to exploit user sequential behavior for sequential recommendations. Convention-
-ally, user general taste and recent demand are combined to promote recommendation performances.
+**Abstract:**  With a large amount of user activity data accumulated, it is crucial to exploit user sequential behavior for sequential recommendations. Conventionally, 
+user general taste and recent demand are combined to promote recommendation performances.
 However, existing methods often neglect that user
 long-term preference keep evolving over time, and
 building a static representation for user general
-taste may not adequately reflect the dynamic characters. Moreover, they integrate user-item or item-
-item interactions through a linear way which lim-
-its the capability of model. To this end, in this
+taste may not adequately reflect the dynamic characters. Moreover, they integrate user-item or item-item 
+interactions through a linear way which limits 
+the capability of model. To this end, in this
 paper, we propose a novel two-layer hierarchical
-attention network, which takes the above proper-
-ties into account, to recommend the next item user
+attention network, which takes the above properties 
+into account, to recommend the next item user
 might be interested. Specifically, the first attention
 layer learns user long-term preferences based on
 the historical purchased item representation, while
@@ -91,6 +91,6 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`
 

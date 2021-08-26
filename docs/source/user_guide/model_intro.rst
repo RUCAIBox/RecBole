@@ -1,6 +1,6 @@
 Model Introduction
 =====================
-We implement 65 recommendation models covering general recommendation, sequential recommendation,
+We implement 73 recommendation models covering general recommendation, sequential recommendation,
 context-aware recommendation and knowledge-based recommendation. A brief introduction to these models are as follows:
 
 
@@ -9,6 +9,7 @@ General Recommendation
 In the class of general recommendation, the interaction of users and items(.inter file) is the only data
 that can be used by model. Usually, the models are trained on implicit feedback data and evaluated under the
 task of top-n recommendation. All the collaborative filter(CF) based models are classified in this class.
+
 .. toctree::
    :maxdepth: 1
 
@@ -72,6 +73,7 @@ Sequential Recommendation
 The task of sequential recommendation(next-item recommendation) is the same as general recommendation which sort a list of items according
 to preference. While the history interactions are organized in sequences and the model tend to characterize
 the sequential data. The models of session-based recommendation are also included in this class.
+
 .. toctree::
    :maxdepth: 1
 
@@ -104,7 +106,6 @@ the sequential data. The models of session-based recommendation are also include
 Knowledge-based Recommendation
 ---------------------------------
 Knowledge-based recommendation introduce an external knowledge graph to enhance general or sequential recommendation.
-
 
 .. toctree::
    :maxdepth: 1
