@@ -752,10 +752,6 @@ class DecisionTreeTrainer(AbstractTrainer):
         return valid_score, valid_result
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
-        # load model
-        if self.boost_model is not None:
-            self.model.load_model(self.boost_model)
-
         for epoch_idx in range(self.epochs):
             self._train_at_once(train_data, valid_data)
 
@@ -971,7 +967,7 @@ class lightgbmTrainer(DecisionTreeTrainer):
                 checkpoint_file = model_file
             else:
                 checkpoint_file = self.saved_model_file
-            self.model.load_model(checkpoint_file)
+            self.model = self.lgb.Booster(model_file=checkpoint_file)
 
         self.deval_data, self.deval_label = self._interaction_to_sparse(eval_data)
         self.eval_true = torch.Tensor(self.deval_label)
