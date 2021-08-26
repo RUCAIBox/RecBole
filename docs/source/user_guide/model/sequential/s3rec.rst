@@ -58,6 +58,7 @@ Running with RecBole
 - ``sp_weight (float)`` : The weight for Segment Prediction loss. Defaults to ``0.5``.
 - ``train_stage (str)`` : The training stage. Defaults to ``'pretrain'``. Range in ``['pretrain', 'finetune']``.
 - ``item_attribute (str)`` : The item features used as attributes for pre-training. Defaults to ``'class'`` for ml-100k dataset.
+- ``pretrain_epochs (int)`` : The epochs of pre-training. Defaults to '500'.
 - ``save_step (int)`` : Save pre-trained model every ``save_step`` pre-training epochs. Defaults to ``10``.
 - ``pre_model_path (str)`` : The path of pretrained model. Defaults to ``''``.
 - ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
@@ -125,7 +126,7 @@ Then, with the source code of RecBole (you can download it from GitHub), you can
 
 .. code:: bash
 
-	python run_hyper.py --model=[model_name] --dataset=[dataset_name] --config_files=[config_files_path] --params_file=hyper.test
+    python run_hyper.py --model=[model_name] --dataset=[dataset_name] --config_files=[config_files_path] --params_file=hyper.test
 
 For more details about Parameter Tuning, refer to :doc:`../../../user_guide/usage/parameter_tuning`.
 

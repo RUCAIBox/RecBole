@@ -29,7 +29,6 @@ Running with RecBole
 - ``mixture_weights (list)`` : The mixture weights of three composite priors. Defaults to ``[0.15, 0.75, 0.1]``.
 - ``n_enc_epochs (int)`` : The training times of encoder per epoch. Defaults to ``3``.
 - ``n_dec_epochs (int)`` : The training times of decoder per epoch. Defaults to ``1``.
-- ``training_neg_sample (int)`` : The negative sample num for training. Defaults to ``0``.
 
 
 **A Running Example:**
@@ -51,7 +50,7 @@ And then:
 
    python run.py
 
-**Note**: Because this model is a non-sampling model, so you must set ``training_neg_sample=0`` when you run this model. 
+**Note**: Because this model is a non-sampling model, so you must set ``neg_sampling=None`` when you run this model.
 
 Tuning Hyper Parameters
 -------------------------

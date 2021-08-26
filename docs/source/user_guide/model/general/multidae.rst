@@ -24,7 +24,6 @@ Running with RecBole
 - ``latent_dimendion (int)`` : The latent dimension of auto-encoder. Defaults to ``64``.
 - ``mlp_hidden_size (list)`` : The MLP hidden layer. Defaults to ``[600]``.
 - ``dropout_prob (float)`` : The drop out probability of input. Defaults to ``0.5``.
-- ``training_neg_sample (int)`` : The negative sample num for training. Defaults to ``0``.
 
 
 **A Running Example:**
@@ -46,7 +45,7 @@ And then:
 
    python run.py
 
-**Note**: Because this model is a non-sampling model, so you must set ``training_neg_sample=0`` when you run this model. 
+**Note**: Because this model is a non-sampling model, so you must set ``neg_sampling=None`` when you run this model.
 
 Tuning Hyper Parameters
 -------------------------

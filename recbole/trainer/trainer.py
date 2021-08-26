@@ -541,14 +541,15 @@ class KGATTrainer(Trainer):
         return rs_total_loss, kg_total_loss
 
 
-class S3RecTrainer(Trainer):
-    r"""S3RecTrainer is designed for S3Rec, which is a self-supervised learning based sequential recommenders.
-        It includes two training stages: pre-training ang fine-tuning.
-
-        """
+class PretrainTrainer(Trainer):
+    r"""PretrainTrainer is designed for pre-training.
+    It can be inherited by the trainer which needs pre-training and fine-tuning.
+    """
 
     def __init__(self, config, model):
-        super(S3RecTrainer, self).__init__(config, model)
+        super(PretrainTrainer, self).__init__(config, model)
+        self.pretrain_epochs = self.config['pretrain_epochs']
+        self.save_step = self.config['save_step']
 
     def save_pretrained_model(self, epoch, saved_model_file):
         r"""Store the model parameters information and training information.
@@ -567,8 +568,7 @@ class S3RecTrainer(Trainer):
         torch.save(state, saved_model_file)
 
     def pretrain(self, train_data, verbose=True, show_progress=False):
-
-        for epoch_idx in range(self.start_epoch, self.epochs):
+        for epoch_idx in range(self.start_epoch, self.pretrain_epochs):
             # train
             training_start_time = time()
             train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
@@ -580,7 +580,7 @@ class S3RecTrainer(Trainer):
                 self.logger.info(train_loss_output)
             self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
 
-            if (epoch_idx + 1) % self.config['save_step'] == 0:
+            if (epoch_idx + 1) % self.save_step == 0:
                 saved_model_file = os.path.join(
                     self.checkpoint_dir,
                     '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1))
@@ -592,13 +592,23 @@ class S3RecTrainer(Trainer):
 
         return self.best_valid_score, self.best_valid_result
 
+
+class S3RecTrainer(PretrainTrainer):
+    r"""S3RecTrainer is designed for S3Rec, which is a self-supervised learning based sequential recommenders.
+        It includes two training stages: pre-training ang fine-tuning.
+
+        """
+
+    def __init__(self, config, model):
+        super(S3RecTrainer, self).__init__(config, model)
+
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         if self.model.train_stage == 'pretrain':
             return self.pretrain(train_data, verbose, show_progress)
         elif self.model.train_stage == 'finetune':
             return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
-            raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
+            raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune'!")
 
 
 class MKRTrainer(Trainer):
@@ -873,57 +883,14 @@ class xgboostTrainer(DecisionTreeTrainer):
         return result
 
 
-class RaCTTrainer(Trainer):
+class RaCTTrainer(PretrainTrainer):
     r"""RaCTTrainer is designed for RaCT, which is an actor-critic reinforcement learning based general recommenders.
-        It includes three training stages: actor pre-training, critic pre-training and actor-critic training. 
+        It includes three training stages: actor pre-training, critic pre-training and actor-critic training.
 
         """
 
     def __init__(self, config, model):
         super(RaCTTrainer, self).__init__(config, model)
-        self.pretrain_epochs = self.config['pretrain_epochs']
-
-    def save_pretrained_model(self, epoch, saved_model_file):
-        r"""Store the model parameters information and training information.
-
-        Args:
-            epoch (int): the current epoch id
-            saved_model_file (str): file name for saved pretrained model
-
-        """
-        state = {
-            'config': self.config,
-            'epoch': epoch,
-            'state_dict': self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
-        }
-        torch.save(state, saved_model_file)
-
-    def pretrain(self, train_data, verbose=True, show_progress=False):
-
-        for epoch_idx in range(self.start_epoch, self.pretrain_epochs):
-            # train
-            training_start_time = time()
-            train_loss = self._train_epoch(train_data, epoch_idx, show_progress=show_progress)
-            self.train_loss_dict[epoch_idx] = sum(train_loss) if isinstance(train_loss, tuple) else train_loss
-            training_end_time = time()
-            train_loss_output = \
-                self._generate_train_loss_output(epoch_idx, training_start_time, training_end_time, train_loss)
-            if verbose:
-                self.logger.info(train_loss_output)
-            self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
-
-            if (epoch_idx + 1) % self.pretrain_epochs == 0:
-                saved_model_file = os.path.join(
-                    self.checkpoint_dir,
-                    '{}-{}-{}.pth'.format(self.config['model'], self.config['dataset'], str(epoch_idx + 1))
-                )
-                self.save_pretrained_model(epoch_idx, saved_model_file)
-                update_output = 'Saving current: %s' % saved_model_file
-                if verbose:
-                    self.logger.info(update_output)
-
-        return self.best_valid_score, self.best_valid_result
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         if self.model.train_stage == 'actor_pretrain':
@@ -933,7 +900,8 @@ class RaCTTrainer(Trainer):
         elif self.model.train_stage == 'finetune':
             return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
-            raise ValueError("Please make sure that the 'train_stage' is 'pretrain' or 'finetune' ")
+            raise ValueError("Please make sure that the 'train_stage' is "
+                             "'actor_pretrain', 'critic_pretrain' or 'finetune'!")
 
 
 class lightgbmTrainer(DecisionTreeTrainer):
