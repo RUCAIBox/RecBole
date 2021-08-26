@@ -325,7 +325,7 @@ class Dataset(object):
 
         For those additional features, e.g. pretrained entity embedding, user can set them
         as ``config['additional_feat_suffix']``, then they will be loaded and stored in
-        :attr:`feat_name_list`. See :doc:`../user_guide/data/data_args` for details.
+        :attr:`feat_name_list`. See :doc:`../user_guide/data/data_settings` for details.
 
         Args:
             token (str): dataset name.
@@ -1485,16 +1485,10 @@ class Dataset(object):
 
         return datasets
 
-    def save(self, filepath):
-        """Saving this :class:`Dataset` object to local path.
-
-        Args:
-            filepath (str): path of saved dir.
+    def save(self):
+        """Saving this :class:`Dataset` object to :attr:`config['checkpoint_dir']`.
         """
-        if (filepath is None) or (not os.path.isdir(filepath)):
-            raise ValueError(f'Filepath [{filepath}] need to be a dir.')
-
-        file = os.path.join(filepath, f'{self.config["dataset"]}-dataset.pth')
+        file = os.path.join(self.config['checkpoint_dir'], f'{self.config["dataset"]}-dataset.pth')
         self.logger.info(set_color('Saving filtered dataset into ', 'pink') + f'[{file}]')
         with open(file, 'wb') as f:
             pickle.dump(self, f)

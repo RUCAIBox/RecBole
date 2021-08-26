@@ -1,6 +1,6 @@
 Model Introduction
 =====================
-We implement 65 recommendation models covering general recommendation, sequential recommendation,
+We implement 73 recommendation models covering general recommendation, sequential recommendation,
 context-aware recommendation and knowledge-based recommendation. A brief introduction to these models are as follows:
 
 
@@ -106,7 +106,6 @@ the sequential data. The models of session-based recommendation are also include
 Knowledge-based Recommendation
 ---------------------------------
 Knowledge-based recommendation introduce an external knowledge graph to enhance general or sequential recommendation.
-
 
 .. toctree::
    :maxdepth: 1

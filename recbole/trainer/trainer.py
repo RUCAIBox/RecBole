@@ -386,7 +386,6 @@ class Trainer(AbstractTrainer):
         scores[:, 0] = -np.inf
         if history_index is not None:
             scores[history_index] = -np.inf
-
         return interaction, scores, positive_u, positive_i
 
     def _neg_sample_batch_eval(self, batched_data):
@@ -397,7 +396,7 @@ class Trainer(AbstractTrainer):
         else:
             origin_scores = self._spilt_predict(interaction, batch_size)
 
-        if self.config['eval_type'] == EvaluatorType.INDIVIDUAL:
+        if self.config['eval_type'] == EvaluatorType.VALUE:
             return interaction, origin_scores, positive_u, positive_i
         elif self.config['eval_type'] == EvaluatorType.RANKING:
             col_idx = interaction[self.config['ITEM_ID_FIELD']]

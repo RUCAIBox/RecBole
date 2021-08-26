@@ -34,18 +34,11 @@ metric_information = {
     'rmse': ['rec.score', 'data.label'],
     'mae': ['rec.score', 'data.label'],
     'logloss': ['rec.score', 'data.label']}
-# These metrics are typical in top-k recommendations
-topk_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP',
+# These metrics are typical in ranking-based recommendations
+rank_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP', 'GAUC'
                                                       'ItemCoverage', 'AveragePopularity', 'ShannonEntropy', 'GiniIndex']}
-# These metrics are typical in loss recommendations
-loss_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOGLOSS']}
-# For GAUC
-rank_metrics = {metric.lower(): metric for metric in ['GAUC']}
-
-# group-based metrics
-group_metrics = ChainMap(topk_metrics, rank_metrics)
-# not group-based metrics
-individual_metrics = ChainMap(loss_metrics)
+# These metrics are typical in value-based recommendations
+value_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOGLOSS']}
 
 
 class Register(object):

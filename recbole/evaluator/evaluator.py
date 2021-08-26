@@ -10,7 +10,7 @@ recbole.evaluator.evaluator
 
 from recbole.evaluator.metrics import metrics_dict
 from recbole.evaluator.collector import DataStruct
-from recbole.evaluator.register import loss_metrics
+from recbole.evaluator.register import value_metrics
 
 
 class Evaluator(object):
@@ -43,25 +43,8 @@ class Evaluator(object):
         return result_dict
 
     def _check_args(self):
-        # Check topk:
-        if hasattr(self.config, 'topk'):
-            topk = getattr(self.config, "topk")
-            if isinstance(topk, (int, list)):
-                if isinstance(self.topk, int):
-                    self.topk = [self.topk]
-                for topk in self.topk:
-                    if topk <= 0:
-                        raise ValueError(
-                            'topk must be a positive integer or a list of positive integers, '
-                            'but get `{}`'.format(topk)
-                        )
-            else:
-                raise TypeError('The topk must be a integer, list')
-
         # Check Loss
-        if set(self.metrics) & set(loss_metrics):
+        if set(self.metrics) & set(value_metrics):
             is_full = 'full' in self.config['eval_args']['mode']
             if is_full:
                 raise NotImplementedError('Full sort evaluation do not match the metrics!')
-
-

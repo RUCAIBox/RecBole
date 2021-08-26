@@ -15,7 +15,7 @@ anonymous sessions, is a key task in many online
 services (e:g:; e-commerce, media streaming). Recently, Self-Attention Network (SAN) has achieved
 significant success in various sequence modeling
 tasks without using either recurrent or convolutional network. However, SAN lacks local dependencies that exist over adjacent items and limits its capacity for learning contextualized representations of items in sequences. In this paper, we propose a graph contextualized self-attention model
-(GC-SAN), which utilizes both graph neural network and self-attention mechanism, for sessionbased recommendation. In GC-SAN, we dynamically construct a graph structure for session sequences and capture rich local dependencies via graph neural network (GNN). Then each session learns long-range dependencies by applying
+(GC-SAN), which utilizes both graph neural network and self-attention mechanism, for session-based recommendation. In GC-SAN, we dynamically construct a graph structure for session sequences and capture rich local dependencies via graph neural network (GNN). Then each session learns long-range dependencies by applying
 the self-attention mechanism. Finally, each session
 is represented as a linear combination of the global
 preference and the current interest of that session.

@@ -28,7 +28,8 @@ of the representations to independently reflect an isolated low-level factor (e.
 the size or the color of a shirt). Empirical results show that our approach can
 achieve substantial improvement over the state-of-the-art baselines. We further
 demonstrate that the learned representations are interpretable and controllable,
-which can potentially lead to a new paradigm for recommendation where users a
+which can potentially lead to a new paradigm for recommendation where users are given 
+fine-grained control over targeted aspects of the recommendation lists.
 
 .. image:: ../../../asset/macridvae.png
     :width: 500

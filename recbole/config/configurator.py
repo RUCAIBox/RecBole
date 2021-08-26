@@ -19,7 +19,7 @@ import yaml
 import torch
 from logging import getLogger
 
-from recbole.evaluator import group_metrics, individual_metrics
+from recbole.evaluator import rank_metrics, value_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
     general_arguments, training_arguments, evaluation_arguments, dataset_arguments, set_color
 
@@ -113,7 +113,7 @@ class Config(object):
                 continue
             try:
                 value = eval(param)
-                if not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
+                if value is not None and not isinstance(value, (str, int, float, list, tuple, dict, bool, Enum)):
                     value = param
             except (NameError, SyntaxError, TypeError):
                 if isinstance(param, str):
@@ -277,7 +277,7 @@ class Config(object):
             if self.final_config_dict['loss_type'] in ['CE']:
                 if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and \
                    self.final_config_dict['neg_sampling'] is not None:
-                    raise ValueError(f"neg_sampling [{self.final_config_dict['neg_sampling']}] should be 0 "
+                    raise ValueError(f"neg_sampling [{self.final_config_dict['neg_sampling']}] should be None "
                                      f"when the loss_type is CE.")
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.POINTWISE
             elif self.final_config_dict['loss_type'] in ['BPR']:
@@ -291,20 +291,20 @@ class Config(object):
 
         eval_type = None
         for metric in self.final_config_dict['metrics']:
-            if metric.lower() in individual_metrics:
+            if metric.lower() in value_metrics:
                 if eval_type is not None and eval_type == EvaluatorType.RANKING:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
-                    eval_type = EvaluatorType.INDIVIDUAL
-            if metric.lower() in group_metrics:
-                if eval_type is not None and eval_type == EvaluatorType.INDIVIDUAL:
+                    eval_type = EvaluatorType.VALUE
+            if metric.lower() in rank_metrics:
+                if eval_type is not None and eval_type == EvaluatorType.VALUE:
                     raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
                 else:
                     eval_type = EvaluatorType.RANKING
         self.final_config_dict['eval_type'] = eval_type
 
         if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and not self.final_config_dict['repeatable']:
-            raise ValueError('Sequential models currently only support NON-Repeatable recommendation, '
+            raise ValueError('Sequential models currently only support repeatable recommendation, '
                              'please set `repeatable` as `True`.')
 
         smaller_metric = ['rmse', 'mae', 'logloss', 'averagepopularity', 'giniindex']
@@ -312,8 +312,17 @@ class Config(object):
         self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metric else True
 
         topk = self.final_config_dict['topk']
-        if isinstance(topk, int):
-            self.final_config_dict['topk'] = [topk]
+        if isinstance(topk, (int, list)):
+            if isinstance(topk, int):
+                topk = [topk]
+            for k in topk:
+                if k <= 0:
+                    raise ValueError(
+                        f'topk must be a positive integer or a list of positive integers, but get `{k}`'
+                    )
+            self.final_config_dict['topk'] = topk
+        else:
+            raise TypeError(f'The topk [{topk}] must be a integer, list')
 
         if 'additional_feat_suffix' in self.final_config_dict:
             ad_suf = self.final_config_dict['additional_feat_suffix']
@@ -383,6 +392,13 @@ class Config(object):
         if not isinstance(key, str):
             raise TypeError("index must be a str.")
         self.final_config_dict[key] = value
+
+    def __getattr__(self, item):
+        if 'final_config_dict' not in self.__dict__:
+            raise AttributeError(f"'Config' object has no attribute 'final_config_dict'")
+        if item in self.final_config_dict:
+            return self.final_config_dict[item]
+        raise AttributeError(f"'Config' object has no attribute '{item}'")
 
     def __getitem__(self, item):
         if item in self.final_config_dict:
