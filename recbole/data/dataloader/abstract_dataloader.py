@@ -39,7 +39,6 @@ class AbstractDataLoader:
         step (int): The increment of :attr:`pr` for each batch.
         batch_size (int): The max interaction number for all batch.
     """
-    dl_type = None
 
     def __init__(self, config, dataset, sampler, shuffle=False):
         self.config = config
@@ -71,11 +70,11 @@ class AbstractDataLoader:
 
     @property
     def pr_end(self):
-        """This property marks the end of dataloader.pr which is used in :meth:`__next__()`."""
+        """This property marks the end of dataloader.pr which is used in :meth:`__next__`."""
         raise NotImplementedError('Method [pr_end] should be implemented')
 
     def _shuffle(self):
-        """Shuffle the order of data, and it will be called by :meth:`__iter__()` if self.shuffle is True.
+        """Shuffle the order of data, and it will be called by :meth:`__iter__` if self.shuffle is True.
         """
         raise NotImplementedError('Method [shuffle] should be implemented.')
 
@@ -95,8 +94,7 @@ class AbstractDataLoader:
         """
         if self.pr != 0:
             raise PermissionError('Cannot change dataloader\'s batch_size while iteration')
-        if self.batch_size != batch_size:
-            self.batch_size = batch_size
+        self.batch_size = batch_size
 
 
 class NegSampleDataLoader(AbstractDataLoader):

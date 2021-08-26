@@ -10,11 +10,11 @@ RNS is to select the negative items in uniform distribution, and PNS is to selec
 For PNS, we set the popularity-biased distribution based on the total number of items' interactions.
 
 In our framework, if you want to create a new sampler, you need to inherit the :class:`~recbole.sampler.sampler.AbstractSampler`, implement
-:obj:`__init__()`,  , 
-:meth:`~recbole.sampler.sampler.KGSampler.__init__()`, 
-, rewrite three functions: :obj: `_uni_sampling()`, 
-:obj: `._get_candidates_list()`, :obj: `get_used_ids()` 
-and create a new sampling function.  
+:meth:`~recbole.sampler.sampler.AbstractSampler.__init__`,
+rewrite three functions: :meth:`~recbole.sampler.sampler.AbstractSampler._uni_sampling`,
+:meth:`~recbole.sampler.sampler.AbstractSampler._get_candidates_list`,
+:meth:`~recbole.sampler.sampler.AbstractSampler.get_used_ids`
+and create a new sampling function.
 
 
 Here, we take the :class:`~recbole.sampler.sampler.KGSampler` as an example.
@@ -33,7 +33,7 @@ To begin with, we create a new sampler based on :class:`~recbole.sampler.sampler
 
 Implement __init__()
 -----------------------
-Then, we implement :meth:`~recbole.sampler.sampler.KGSampler.__init__()`, in this method, we can flexibly define and initialize the parameters,
+Then, we implement :meth:`~recbole.sampler.sampler.KGSampler.__init__`, in this method, we can flexibly define and initialize the parameters,
 where we only need to invoke :obj:`super.__init__(distribution)`.
 
 .. code:: python
@@ -54,7 +54,7 @@ where we only need to invoke :obj:`super.__init__(distribution)`.
 Implement _uni_sampling()
 -------------------------------
 To implement the RNS for KGSampler, we need to rewrite the `:meth:`~recbole.sampler.sampler.AbstractSampler._uni_sampling`.
-Here we use the :obj:`numpy.random.randint()` to help us randomly select the ``entity_id``. This function will return the 
+Here we use the :meth:`numpy.random.randint` to help us randomly select the ``entity_id``. This function will return the
 selected samples' id (here is ``entity_id``).
 
 Example code:

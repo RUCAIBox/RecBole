@@ -1,6 +1,7 @@
 .. RecBole documentation master file.
 .. title:: RecBole v1.0.0
 .. image:: asset/logo.png
+
 =========================================================
 
 `HomePage <https://recbole.io/>`_ | `Docs <https://recbole.io/docs/>`_ | `GitHub <https://github.com/RUCAIBox/RecBole>`_ | `Datasets <https://github.com/RUCAIBox/RecDatasets>`_ | `v0.1.2 </docs/v0.1.2/>`_
@@ -83,6 +84,8 @@ Features:
    recbole/recbole.trainer.hyper_tuning
    recbole/recbole.trainer.trainer
    recbole/recbole.utils.case_study
+   recbole/recbole.utils.enum_type
+   recbole/recbole.utils.logger
    recbole/recbole.utils.utils
 
 The Team

@@ -50,7 +50,6 @@ Running with RecBole
 - ``anneal_cap (float)`` : The super parameter of the weight of KL loss. Defaults to ``0.2``.
 - ``total_anneal_steps (int)`` : The maximum steps of anneal update. Defaults to ``200000``.
 - ``reg_weights (list)`` : L2 regularization. Defaults to ``[0.0,0.0]``.
-- ``training_neg_sample (int)`` : The negative sample num for training. Defaults to ``0``.
 
 
 **A Running Example:**
@@ -72,7 +71,7 @@ And then:
 
    python run.py
 
-**Note**: Because this model is a non-sampling model, so you must set ``training_neg_sample=0`` when you run this model. 
+**Note**: Because this model is a non-sampling model, so you must set ``neg_sampling=None`` when you run this model.
 
 Tuning Hyper Parameters
 -------------------------
@@ -99,5 +98,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`
