@@ -272,17 +272,20 @@ class Trainer(AbstractTrainer):
             'learning_rate': self.config['learning_rate'],
             'train_batch_size': self.config['train_batch_size']
         }
+        # unrecorded parameter
+        unrecorded_parameter = {
+            parameter
+            for parameters in self.config.parameters.values()
+            for parameter in parameters
+        }.union({'model', 'dataset', 'config_files', 'device'})
         # other model-specific hparam
         hparam_dict.update({
             para: val
             for para, val in self.config.final_config_dict.items()
-            if para not in {parameter
-                            for parameters in self.config.parameters.values()
-                            for parameter in parameters}.union({'model', 'dataset', 'config_files', 'device'})
+            if para not in unrecorded_parameter
         })
         for k in hparam_dict:
-            if not (isinstance(hparam_dict[k], int) or isinstance(hparam_dict[k], int) or isinstance(hparam_dict[k], int)
-                    or isinstance(hparam_dict[k], int)):
+            if hparam_dict[k] is not None and not isinstance(hparam_dict[k], (bool, str, float, int)):
                 hparam_dict[k] = str(hparam_dict[k])
 
         self.tensorboard.add_hparams(hparam_dict, {'hparam/best_valid_result': best_valid_result})
@@ -696,7 +699,7 @@ class DecisionTreeTrainer(AbstractTrainer):
                 else:
                     cur_data = np.hstack((cur_data, value))
 
-        if self.convert_token_to_onehot == True:
+        if self.convert_token_to_onehot:
             from scipy import sparse
             from scipy.sparse import dok_matrix
             convert_col_list = dataloader.dataset.convert_col_list
@@ -736,7 +739,7 @@ class DecisionTreeTrainer(AbstractTrainer):
         """
         valid_result = self.evaluate(valid_data, load_best_model=False)
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
-        return valid_result, valid_score
+        return valid_score, valid_result
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
         # load model
@@ -749,7 +752,7 @@ class DecisionTreeTrainer(AbstractTrainer):
             if (epoch_idx + 1) % self.eval_step == 0:
                 # evaluate
                 valid_start_time = time()
-                valid_result, valid_score = self._valid_epoch(valid_data)
+                valid_score, valid_result = self._valid_epoch(valid_data)
 
                 self.best_valid_score, self.cur_step, stop_flag, update_flag = early_stopping(
                     valid_score,
@@ -786,8 +789,11 @@ class DecisionTreeTrainer(AbstractTrainer):
 
         return self.best_valid_score, self.best_valid_result
 
-    def evaluate(self, eval_data):
-        pass
+    def evaluate(self, eval_data, load_best_model=True, model_file=None, show_progress=False):
+        raise NotImplementedError
+
+    def _train_at_once(self, train_data, valid_data):
+        raise NotImplementedError
 
 
 class xgboostTrainer(DecisionTreeTrainer):
@@ -811,6 +817,8 @@ class xgboostTrainer(DecisionTreeTrainer):
         self.evals_result = {}
         self.verbose_eval = config['xgb_verbose_eval']
         self.callbacks = None
+        self.deval = None
+        self.eval_pred = self.eval_true = None
 
     def _interaction_to_lib_datatype(self, dataloader):
         r"""Convert data format from interaction to DMatrix
@@ -855,8 +863,6 @@ class xgboostTrainer(DecisionTreeTrainer):
             else:
                 checkpoint_file = self.saved_model_file
             self.model.load_model(checkpoint_file)
-        self.eval_pred = torch.Tensor()
-        self.eval_true = torch.Tensor()
 
         self.deval = self._interaction_to_lib_datatype(eval_data)
         self.eval_true = torch.Tensor(self.deval.get_label())
@@ -951,6 +957,8 @@ class lightgbmTrainer(DecisionTreeTrainer):
         self.verbose_eval = config['lgb_verbose_eval']
         self.learning_rates = config['lgb_learning_rates']
         self.callbacks = None
+        self.deval_data = self.deval_label = None
+        self.eval_pred = self.eval_true = None
 
     def _interaction_to_lib_datatype(self, dataloader):
         r"""Convert data format from interaction to Dataset
@@ -996,8 +1004,6 @@ class lightgbmTrainer(DecisionTreeTrainer):
             else:
                 checkpoint_file = self.saved_model_file
             self.model.load_model(checkpoint_file)
-        self.eval_pred = torch.Tensor()
-        self.eval_true = torch.Tensor()
 
         self.deval_data, self.deval_label = self._interaction_to_sparse(eval_data)
         self.eval_true = torch.Tensor(self.deval_label)
