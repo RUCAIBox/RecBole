@@ -19,7 +19,7 @@ import yaml
 import torch
 from logging import getLogger
 
-from recbole.evaluator import rank_metrics, value_metrics
+from recbole.evaluator import metric_types, smaller_metrics
 from recbole.utils import get_model, Enum, EvaluatorType, ModelType, InputType, \
     general_arguments, training_arguments, evaluation_arguments, dataset_arguments, set_color
 
@@ -289,27 +289,19 @@ class Config(object):
         if isinstance(metrics, str):
             self.final_config_dict['metrics'] = [metrics]
 
-        eval_type = None
+        eval_type = set()
         for metric in self.final_config_dict['metrics']:
-            if metric.lower() in value_metrics:
-                if eval_type is not None and eval_type == EvaluatorType.RANKING:
-                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
-                else:
-                    eval_type = EvaluatorType.VALUE
-            if metric.lower() in rank_metrics:
-                if eval_type is not None and eval_type == EvaluatorType.VALUE:
-                    raise RuntimeError('Ranking metrics and other metrics can not be used at the same time.')
-                else:
-                    eval_type = EvaluatorType.RANKING
-        self.final_config_dict['eval_type'] = eval_type
+            eval_type.add(metric_types[metric.lower()])
+        if len(eval_type) > 1:
+            raise RuntimeError('Ranking metrics and value metrics can not be used at the same time.')
+        self.final_config_dict['eval_type'] = eval_type.pop()
 
         if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and not self.final_config_dict['repeatable']:
             raise ValueError('Sequential models currently only support repeatable recommendation, '
                              'please set `repeatable` as `True`.')
 
-        smaller_metric = ['rmse', 'mae', 'logloss', 'averagepopularity', 'giniindex']
         valid_metric = self.final_config_dict['valid_metric'].split('@')[0]
-        self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metric else True
+        self.final_config_dict['valid_metric_bigger'] = False if valid_metric.lower() in smaller_metrics else True
 
         topk = self.final_config_dict['topk']
         if isinstance(topk, (int, list)):
@@ -341,6 +333,10 @@ class Config(object):
         for op_args in default_eval_args:
             if op_args not in self.final_config_dict['eval_args']:
                 self.final_config_dict['eval_args'][op_args] = default_eval_args[op_args]
+
+        if (self.final_config_dict['eval_args']['mode'] == 'full'
+                and self.final_config_dict['eval_type'] == EvaluatorType.VALUE):
+            raise NotImplementedError('Full sort evaluation do not match value-based metrics!')
 
     def _init_device(self):
         use_gpu = self.final_config_dict['use_gpu']
