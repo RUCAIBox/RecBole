@@ -30,7 +30,7 @@ dataset which are listed below.
 ==================       ========================================================
   rec.items                        K recommended items for each user
   rec.topk                         Boolean matrix indicating the existence of a recommended item in the test set
-                                   \ and number of positive items for each user
+                                   and number of positive items for each user
   rec.meanrank                        Mean ranking of positive items for each user
   rec.score                        Pure output score
   data.num_items                      Number of item in dataset
@@ -86,7 +86,7 @@ Example code:
             dataobject(DataStruct): it contains all the information needed to calculate metrics.
 
         Returns:
-            dict: such as ``{'mymetric@10': 3153, 'myMetric@20': 0.3824}``
+            dict: such as ``{'mymetric@10': 3153, 'mymetric@20': 0.3824}``
         """
         rec_items = dataobject.get('rec.items')
         # Add the logic of your metric here.
