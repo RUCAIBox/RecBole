@@ -36,7 +36,7 @@ class Dataset(object):
     imputation. Features are stored as :class:`pandas.DataFrame` inside :class:`~recbole.data.dataset.dataset.Dataset`.
     General and Context-aware Models can use this class.
 
-    By calling method :meth:`~recbole.data.dataset.dataset.Dataset.build()`, it will processing dataset into
+    By calling method :meth:`~recbole.data.dataset.dataset.Dataset.build`, it will processing dataset into
     DataLoaders, according to :class:`~recbole.config.eval_setting.EvalSetting`.
 
     Args:
@@ -1738,7 +1738,7 @@ class Dataset(object):
             field (str): preloaded feature field name.
 
         Returns:
-            numpy.ndarray: preloaded weight matrix. See :doc:`../user_guide/data/data_args` for details.
+            numpy.ndarray: preloaded weight matrix. See :doc:`../user_guide/config/data_settings` for details.
         """
         if field not in self._preloaded_weight:
             raise ValueError(f'Field [{field}] not in preload_weight')

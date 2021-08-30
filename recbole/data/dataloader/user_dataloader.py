@@ -15,7 +15,6 @@ import torch
 
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.interaction import Interaction
-from recbole.utils.enum_type import DataLoaderType, InputType
 
 
 class UserDataLoader(AbstractDataLoader):
@@ -31,8 +30,6 @@ class UserDataLoader(AbstractDataLoader):
         shuffle (bool): Whether the dataloader will be shuffle after a round.
             However, in :class:`UserDataLoader`, it's guaranteed to be ``True``.
     """
-
-    dl_type = DataLoaderType.ORIGIN
 
     def __init__(self, config, dataset, sampler, shuffle=False):
         if shuffle is False:

@@ -304,7 +304,7 @@ class Config(object):
         self.final_config_dict['eval_type'] = eval_type
 
         if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and not self.final_config_dict['repeatable']:
-            raise ValueError('Sequential models currently only support NON-Repeatable recommendation, '
+            raise ValueError('Sequential models currently only support repeatable recommendation, '
                              'please set `repeatable` as `True`.')
 
         smaller_metric = ['rmse', 'mae', 'logloss', 'averagepopularity', 'giniindex']
