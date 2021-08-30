@@ -5,22 +5,32 @@ Users can implement their customized metrics and combine the metrics with others
 
 Here, it only takes three steps to incorporate a new metric and we introduce them step by step.
 
+Create a New Metric Class
+--------------------------
+Then, we create a new class in the file :file:`~recbole.evaluator.metrics` and define the parameter in ``__init__()``:
 
-Sign in Your Metric in Register
---------------------------------
-To begin with, we must add a new line in :obj:`~recbole.evaluator.register.metric_information`:
-All the metrics are registered by :obj:`metric_information` which is a dict. Keys are the name of
-metrics and should be lowercase. Value is a list which contain one or multiple string that corresponding
-to needed input of metrics.
+.. code:: python
 
-For now, we support 9 inputs for metrics including both recommendation results and information of dataset
-which are listed below.
+    from recbole.evaluator.base_metric import AbstractMetric
+    class MyMetric(AbstractMetric):
+        def __init__(self, config):
+
+Set properties of the metric
+-----------------------------
+After that, we set the properties of metrics:
+
+Set ``metric_head``
+###################
+It is a list that contains one or multiple string that corresponding to needed input of metrics.
+For now, we support 9 inputs for metrics including both recommendation results and information of
+dataset which are listed below.
 
 ==================       ========================================================
  Notation                   Explanation
 ==================       ========================================================
   rec.items                        K recommended items for each user
-  rec.topk                        K recommended items and number of positive items for each user
+  rec.topk                         Boolean matrix indicating the existence of a recommended item in the test set
+                                   \ and number of positive items for each user
   rec.meanrank                        Mean ranking of positive items for each user
   rec.score                        Pure output score
   data.num_items                      Number of item in dataset
@@ -30,40 +40,40 @@ which are listed below.
   data.label                          Pure label field of input data (Usually used with rec.score together)
 ==================       ========================================================
 
-For example, if we want to add a metric named ``YourMetric`` which need the recommended items
-and the total item number, we can sign in the metric as follow.
+Set ``metric_type``
+###################
+It indicates whether the scores required by metric are grouped by user,
+range in ``EvaluatorType.RANKING`` (for grouped ones) and ``EvaluatorType.VALUE`` (for non-grouped ones).
+In current RecBole, all the "grouped" metrics are ranking-based and all the "non-grouped"
+metrics are value-based. To keep with our paper, we adopted the more formal terms: ``RANKING`` and ``VALUE``.
 
-.. code:: python
+Set ``smaller``
+###############
+It indicates whether the smaller metric value represents better performance, range in
+``True`` and ``False``,  default to ``False``.
 
-    metric_information = {
-    'ndcg': ['rec.topk'],  # Sign in for topk ranking metrics
-    'mrr': ['rec.topk'],
-    'map': ['rec.topk'],
-
-    'itemcoverage': ['rec.items', 'data.num_items'],  # Sign in for topk non-accuracy metrics
-
-    'yourmetric': ['rec.items', 'data.num_items'] # Sign in your customized metric
-    }
-
-
-Create a New Metric Class
---------------------------
-Then, we create a new class in the file :file:`~recbole.evaluator.metrics` and define the parameter in
-``__init__()``
+Example
+#######
+If we want to add a ranking-based metric named ``YourMetric`` which needs the recommended items and the
+total item number, and the smaller ``YourMetric`` indicates better model performance, the code is shown below:
 
 .. code:: python
 
     from recbole.evaluator.base_metric import AbstractMetric
+    from recbole.utils import EvaluatorType
     class MyMetric(AbstractMetric):
-        def __init__(self, config):
+        metric_type = EvaluatorType.RANKING
+        metric_need = ['rec.items', 'data.num_items']
+        smaller = True
 
+        def __init__(self, config):
 
 Implement calculate_metric(self, dataobject)
 ---------------------------------------------
 All the computational process is defined in this function. The args is a packaged data object that
 contains all the result above. We can treat it as a dict and get data from it by
 ``rec_items = dataobject.get('rec.items')`` . The returned value should be a dict with key of metric name
-and value of final result.
+and value of final result. Note that the metric name should be lowercase.
 
 Example code:
 
@@ -76,7 +86,7 @@ Example code:
             dataobject(DataStruct): it contains all the information needed to calculate metrics.
 
         Returns:
-            dict: such as ``{'Mymetric@10': 3153, 'MyMetric@20': 0.3824}``
+            dict: such as ``{'mymetric@10': 3153, 'myMetric@20': 0.3824}``
         """
         rec_items = dataobject.get('rec.items')
         # Add the logic of your metric here.
