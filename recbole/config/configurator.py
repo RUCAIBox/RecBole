@@ -291,7 +291,10 @@ class Config(object):
 
         eval_type = set()
         for metric in self.final_config_dict['metrics']:
-            eval_type.add(metric_types[metric.lower()])
+            if metric.lower() in metric_types:
+                eval_type.add(metric_types[metric.lower()])
+            else:
+                raise NotImplementedError(f"There is no metric named '{metric}'")
         if len(eval_type) > 1:
             raise RuntimeError('Ranking metrics and value metrics can not be used at the same time.')
         self.final_config_dict['eval_type'] = eval_type.pop()
