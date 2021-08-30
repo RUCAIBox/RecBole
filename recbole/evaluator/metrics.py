@@ -4,7 +4,7 @@
 # @email   :   tsotfsk@outlook.com
 
 # UPDATE
-# @Time    :   2020/08/12, 2021/7/5, 2020/9/16, 2021/7/2
+# @Time    :   2020/08/12, 2021/8/29, 2020/9/16, 2021/7/2
 # @Author  :   Kaiyuan Li, Zhichao Feng, Xingyu Pan, Zihan Lin
 # @email   :   tsotfsk@outlook.com, fzcbupt@gmail.com, panxy@ruc.edu.cn, zhlin@ruc.edu.cn
 
@@ -31,6 +31,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from recbole.evaluator.utils import _binary_clf_curve
 from recbole.evaluator.base_metric import AbstractMetric, TopkMetric, LossMetric
+from recbole.utils import EvaluatorType
 
 # TopK Metrics
 
@@ -245,6 +246,9 @@ class GAUC(AbstractMetric):
 
     :math:`rank_i` is the descending rank of the i-th items in :math:`R(u)`.
     """
+    metric_type = EvaluatorType.RANKING
+    metric_need = ['rec.meanrank']
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -259,9 +263,9 @@ class GAUC(AbstractMetric):
         """Get the value of GAUC metric.
 
         Args:
-            pos_rank_sum (np.array): sum of descending rankings for positive items of each users.
-            user_len_list (np.array): the number of predicted items for users.
-            pos_len_list (np.array): the number of positive items for users.
+            pos_rank_sum (numpy.ndarray): sum of descending rankings for positive items of each users.
+            user_len_list (numpy.ndarray): the number of predicted items for users.
+            pos_len_list (numpy.ndarray): the number of positive items for users.
 
         Returns:
             float: The value of the GAUC.
@@ -289,8 +293,7 @@ class GAUC(AbstractMetric):
             non_zero_idx *= (neg_len_list != 0)
         if any_without_pos or any_without_neg:
             item_list = user_len_list, neg_len_list, pos_len_list, pos_rank_sum
-            user_len_list, neg_len_list, pos_len_list, pos_rank_sum = \
-                map(lambda x: x[non_zero_idx], item_list)
+            user_len_list, neg_len_list, pos_len_list, pos_rank_sum = map(lambda x: x[non_zero_idx], item_list)
 
         pair_num = (user_len_list + 1) * pos_len_list - pos_len_list * (pos_len_list + 1) / 2 - np.squeeze(pos_rank_sum)
         user_auc = pair_num / (neg_len_list * pos_len_list)
@@ -365,6 +368,8 @@ class MAE(LossMetric):
 
     :math:`|S|` represents the number of pairs in :math:`S`.
     """
+    smaller = True
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -383,6 +388,8 @@ class RMSE(LossMetric):
     .. math::
        \mathrm{RMSE} = \sqrt{\frac{1}{|{S}|} \sum_{(u, i) \in {S}}(\hat{r}_{u i}-r_{u i})^{2}}
     """
+    smaller = True
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -402,6 +409,8 @@ class LogLoss(LossMetric):
     .. math::
         LogLoss = \frac{1}{|S|} \sum_{(u,i) \in S}(-((r_{u i} \ \log{\hat{r}_{u i}}) + {(1 - r_{u i})}\ \log{(1 - \hat{r}_{u i})}))
     """
+    smaller = True
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -427,6 +436,9 @@ class ItemCoverage(AbstractMetric):
     .. math::
        \mathrm{Coverage@K}=\frac{\left| \bigcup_{u \in U} \hat{R}(u) \right|}{|I|}
     """
+    metric_type = EvaluatorType.RANKING
+    metric_need = ['rec.items', 'data.num_items']
+
     def __init__(self, config):
         super().__init__(config)
         self.topk = config['topk']
@@ -449,7 +461,7 @@ class ItemCoverage(AbstractMetric):
         """Get the coverage of recommended items over all items
 
         Args:
-            item_matrix(np.array): matrix of items recommended to users.
+            item_matrix(numpy.ndarray): matrix of items recommended to users.
             num_items(int): the total number of items.
 
         Returns:
@@ -470,6 +482,10 @@ class AveragePopularity(AbstractMetric):
 
     :math:`\phi(i)` is the number of interaction of item i in training data.
     """
+    metric_type = EvaluatorType.RANKING
+    smaller = True
+    metric_need = ['rec.items', 'data.count_items']
+
     def __init__(self, config):
         super().__init__(config)
         self.topk = config['topk']
@@ -490,11 +506,11 @@ class AveragePopularity(AbstractMetric):
         """Convert the matrix of item id to the matrix of item popularity using a dict:{id,count}.
 
         Args:
-            item_matrix(np.array): matrix of items recommended to users.
+            item_matrix(numpy.ndarray): matrix of items recommended to users.
             item_count(dict): the number of interaction of items in training data.
 
         Returns:
-            np.array: the popularity of items in the recommended list.
+            numpy.ndarray: the popularity of items in the recommended list.
         """
         value = np.zeros_like(item_matrix)
         for i in range(item_matrix.shape[0]):
@@ -511,7 +527,7 @@ class AveragePopularity(AbstractMetric):
 
         Args:
             metric(str): the name of calculated metric.
-            value(np.array): metrics for each user, including values from `metric@1` to `metric@max(self.topk)`.
+            value(numpy.ndarray): metrics for each user, including values from `metric@1` to `metric@max(self.topk)`.
 
         Returns:
             dict: metric values required in the configuration.
@@ -539,6 +555,9 @@ class ShannonEntropy(AbstractMetric):
     :math:`p(i)` is the probability of recommending item i
     which is the number of item i in recommended list over all items.
     """
+    metric_type = EvaluatorType.RANKING
+    metric_need = ['rec.items']
+
     def __init__(self, config):
         super().__init__(config)
         self.topk = config['topk']
@@ -561,7 +580,7 @@ class ShannonEntropy(AbstractMetric):
         """Get shannon entropy through the top-k recommendation list.
 
         Args:
-            item_matrix(np.array): matrix of items recommended to users.
+            item_matrix(numpy.ndarray): matrix of items recommended to users.
 
         Returns:
             float: the shannon entropy.
@@ -590,6 +609,10 @@ class GiniIndex(AbstractMetric):
     :math:`P{(i)}` represents the number of times all items appearing in the recommended list,
     which is indexed in non-decreasing order (P_{(i)} \leq P_{(i+1)}).
     """
+    metric_type = EvaluatorType.RANKING
+    smaller = True
+    metric_need = ['rec.items', 'data.num_items']
+
     def __init__(self, config):
         super().__init__(config)
         self.topk = config['topk']
@@ -612,7 +635,7 @@ class GiniIndex(AbstractMetric):
         """Get gini index through the top-k recommendation list.
 
         Args:
-            item_matrix(np.array): matrix of items recommended to users.
+            item_matrix(numpy.ndarray): matrix of items recommended to users.
             num_items(int): the total number of items.
 
         Returns:
@@ -646,6 +669,9 @@ class TailPercentage(AbstractMetric):
         If you want to use this metric, please set the parameter 'tail_ratio' in the config
         which can be an integer or a float in (0,1]. Otherwise it will default to 0.1.
     """
+    metric_type = EvaluatorType.RANKING
+    metric_need = ['rec.items', 'data.count_items']
+
     def __init__(self, config):
         super().__init__(config)
         self.topk = config['topk']
@@ -663,7 +689,7 @@ class TailPercentage(AbstractMetric):
         """Get long-tail percentage through the top-k recommendation list.
 
         Args:
-            item_matrix(np.array): matrix of items recommended to users.
+            item_matrix(numpy.ndarray): matrix of items recommended to users.
             count_items(dict): the number of interaction of items in training data.
 
         Returns:
@@ -697,7 +723,7 @@ class TailPercentage(AbstractMetric):
 
         Args:
             metric(str): the name of calculated metric.
-            value(np.array): metrics for each user, including values from `metric@1` to `metric@max(self.topk)`.
+            value(numpy.ndarray): metrics for each user, including values from `metric@1` to `metric@max(self.topk)`.
 
         Returns:
             dict: metric values required in the configuration.
@@ -708,23 +734,3 @@ class TailPercentage(AbstractMetric):
             key = '{}@{}'.format(metric, k)
             metric_dict[key] = round(avg_result[k - 1], self.decimal_place)
         return metric_dict
-
-
-metrics_dict = {
-    'ndcg': NDCG,
-    'hit': Hit,
-    'precision': Precision,
-    'map': MAP,
-    'recall': Recall,
-    'mrr': MRR,
-    'rmse': RMSE,
-    'mae': MAE,
-    'logloss': LogLoss,
-    'auc': AUC,
-    'gauc': GAUC,
-    'itemcoverage': ItemCoverage,
-    'averagepopularity': AveragePopularity,
-    'giniindex': GiniIndex,
-    'shannonentropy': ShannonEntropy,
-    'tailpercentage': TailPercentage
-}

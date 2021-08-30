@@ -3,7 +3,7 @@
 # @email  : tsotfsk@outlook.com
 
 # UPDATE
-# @Time   : 2020/10/21, 2021/7/18
+# @Time   : 2020/10/21, 2021/8/29
 # @Author : Kaiyuan Li, Zhichao Feng
 # @email  : tsotfsk@outlook.com, fzcbupt@gmail.com
 
@@ -13,6 +13,7 @@ recbole.evaluator.abstract_metric
 """
 
 import torch
+from recbole.utils import EvaluatorType
 
 
 class AbstractMetric(object):
@@ -22,6 +23,8 @@ class AbstractMetric(object):
     Args:
         config (Config): the config of evaluator.
     """
+    smaller = False
+
     def __init__(self, config):
         self.decimal_place = config['metric_decimal_place']
 
@@ -32,7 +35,7 @@ class AbstractMetric(object):
             dataobject(DataStruct): it contains all the information needed to calculate metrics.
 
         Returns:
-            dict: such as ``{'Hit@10': 3153, 'Hit@20': 0.3824}``
+            dict: such as ``{'metric@10': 3153, 'metric@20': 0.3824}``
         """
         raise NotImplementedError('Method [calculate_metric] should be implemented.')
 
@@ -44,12 +47,16 @@ class TopkMetric(AbstractMetric):
     Args:
         config (Config): The config of evaluator.
     """
+    metric_type = EvaluatorType.RANKING
+    metric_need = ['rec.topk']
+
     def __init__(self, config):
         super().__init__(config)
         self.topk = config['topk']
 
     def used_info(self, dataobject):
-        """Get the bool matrix indicating whether the corresponding item is positive.
+        """Get the bool matrix indicating whether the corresponding item is positive
+        and number of positive items for each user.
         """
         rec_mat = dataobject.get('rec.topk')
         topk_idx, pos_len_list = torch.split(rec_mat, [max(self.topk), 1], dim=1)
@@ -60,7 +67,7 @@ class TopkMetric(AbstractMetric):
 
         Args:
             metric(str): the name of calculated metric.
-            value(np.array): metrics for each user, including values from `metric@1` to `metric@max(self.topk)`.
+            value(numpy.ndarray): metrics for each user, including values from `metric@1` to `metric@max(self.topk)`.
 
         Returns:
             dict: metric values required in the configuration.
@@ -76,12 +83,12 @@ class TopkMetric(AbstractMetric):
         """Calculate the value of the metric.
 
         Args:
-            pos_index(np.array): a bool matrix, shape like ``n_users * max(topk)``. Item with the j-th highest score \
-            of i-th user is positive if ``pos_index[i][j] = True`` otherwise negative.
-            pos_len(np.array): a vector representing the number of positive items per user, shape like ``(n_users,)``.
+            pos_index(numpy.ndarray): a bool matrix, shape of ``n_users * max(topk)``. The item with the (j+1)-th \
+            highest score of i-th user is positive if ``pos_index[i][j] == True`` and negative otherwise.
+            pos_len(numpy.ndarray): a vector representing the number of positive items per user, shape of ``(n_users,)``.
 
         Returns:
-            np.array: metrics for each user, including values from `metric@1` to `metric@max(self.topk)`.
+            numpy.ndarray: metrics for each user, including values from `metric@1` to `metric@max(self.topk)`.
         """
         raise NotImplementedError('Method [metric_info] of top-k metric should be implemented.')
 
@@ -93,6 +100,9 @@ class LossMetric(AbstractMetric):
     Args:
         config (Config): The config of evaluator.
     """
+    metric_type = EvaluatorType.VALUE
+    metric_need = ['rec.score', 'data.label']
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -112,8 +122,8 @@ class LossMetric(AbstractMetric):
         """Calculate the value of the metric.
 
         Args:
-            preds (np.array): the scores predicted by model, a one-dimensional vector.
-            trues (np.array): the label of items, which has the same shape as ``preds``.
+            preds (numpy.ndarray): the scores predicted by model, a one-dimensional vector.
+            trues (numpy.ndarray): the label of items, which has the same shape as ``preds``.
 
         Returns:
             float: The value of the metric.
