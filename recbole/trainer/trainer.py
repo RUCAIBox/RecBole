@@ -160,7 +160,7 @@ class Trainer(AbstractTrainer):
                 total=len(train_data),
                 ncols=100,
                 desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
-            ) if show_progress else enumerate(train_data)
+            ) if show_progress else train_data
         )
         for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
@@ -455,7 +455,7 @@ class Trainer(AbstractTrainer):
                 total=len(eval_data),
                 ncols=100,
                 desc=set_color(f"Evaluate   ", 'pink'),
-            ) if show_progress else enumerate(eval_data)
+            ) if show_progress else eval_data
         )
         for batch_idx, batched_data in enumerate(iter_data):
             interaction, scores, positive_u, positive_i = eval_func(batched_data)
