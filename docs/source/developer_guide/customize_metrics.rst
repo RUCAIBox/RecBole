@@ -19,7 +19,7 @@ Set properties of the metric
 -----------------------------
 After that, we set the properties of metrics:
 
-Set ``metric_head``
+Set ``metric_need``
 ###################
 It is a list that contains one or multiple string that corresponding to needed input of metrics.
 For now, we support 9 inputs for metrics including both recommendation results and information of
