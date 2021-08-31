@@ -198,7 +198,6 @@ def create_samplers(config, dataset, built_datasets):
             - valid_sampler (AbstractSampler): The sampler for validation.
             - test_sampler (AbstractSampler): The sampler for testing.
     """
-    model_type = config['MODEL_TYPE']
     phases = ['train', 'valid', 'test']
     train_neg_sample_args = config['train_neg_sample_args']
     eval_neg_sample_args = config['eval_neg_sample_args']
