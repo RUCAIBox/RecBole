@@ -156,13 +156,13 @@ class Trainer(AbstractTrainer):
         total_loss = None
         iter_data = (
             tqdm(
-                enumerate(train_data),
+                train_data,
                 total=len(train_data),
                 ncols=100,
                 desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
-            ) if show_progress else enumerate(train_data)
+            ) if show_progress else train_data
         )
-        for batch_idx, interaction in iter_data:
+        for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             losses = loss_func(interaction)
@@ -451,13 +451,13 @@ class Trainer(AbstractTrainer):
 
         iter_data = (
             tqdm(
-                enumerate(eval_data),
+                eval_data,
                 total=len(eval_data),
                 ncols=100,
                 desc=set_color(f"Evaluate   ", 'pink'),
-            ) if show_progress else enumerate(eval_data)
+            ) if show_progress else eval_data
         )
-        for batch_idx, batched_data in iter_data:
+        for batch_idx, batched_data in enumerate(iter_data):
             interaction, scores, positive_u, positive_i = eval_func(batched_data)
             if self.gpu_available and show_progress:
                 iter_data.set_postfix_str(set_color('GPU RAM: ' + get_gpu_usage(self.device), 'yellow'))

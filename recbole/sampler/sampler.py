@@ -47,7 +47,9 @@ class AbstractSampler(object):
             distribution (str): Distribution of the negative items.
         """
         self.distribution = distribution
-       
+        if distribution == 'popularity':
+            self._build_alias_table()
+
     def _uni_sampling(self, sample_num):
         """Sample [sample_num] items in the uniform distribution.
 
@@ -103,7 +105,6 @@ class AbstractSampler(object):
         Returns:
             sample_list (np.array): a list of samples. 
         """
-        self._build_alias_table()
 
         keys = list(self.prob.keys())
         random_index_list = np.random.randint(0, len(keys), sample_num)

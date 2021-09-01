@@ -8,9 +8,8 @@ recbole.evaluator.evaluator
 #####################################
 """
 
-from recbole.evaluator.metrics import metrics_dict
+from recbole.evaluator.register import metrics_dict
 from recbole.evaluator.collector import DataStruct
-from recbole.evaluator.register import value_metrics
 
 
 class Evaluator(object):
@@ -20,7 +19,6 @@ class Evaluator(object):
     def __init__(self, config):
         self.config = config
         self.metrics = [metric.lower() for metric in self.config['metrics']]
-        self._check_args()
         self.metric_class = {}
 
         for metric in self.metrics:
@@ -33,7 +31,7 @@ class Evaluator(object):
             dataobject (DataStruct): It contains all the information needed for metrics.
 
         Returns:
-            dict: such as ``{'Hit@20': 0.3824, 'Recall@20': 0.0527, 'Hit@10': 0.3153, 'GAUC': 0.9236}``
+            dict: such as ``{'hit@20': 0.3824, 'recall@20': 0.0527, 'hit@10': 0.3153, 'recall@10': 0.0329, 'gauc': 0.9236}``
 
         """
         result_dict = {}
@@ -42,9 +40,3 @@ class Evaluator(object):
             result_dict.update(metric_val)
         return result_dict
 
-    def _check_args(self):
-        # Check Loss
-        if set(self.metrics) & set(value_metrics):
-            is_full = 'full' in self.config['eval_args']['mode']
-            if is_full:
-                raise NotImplementedError('Full sort evaluation do not match the metrics!')

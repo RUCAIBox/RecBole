@@ -3,7 +3,7 @@
 # @Email  : zhlin@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2021/7/18
+# @Time   : 2021/8/29
 # @Author : Zhichao Feng
 # @email  : fzcbupt@gmail.com
 
@@ -11,44 +11,61 @@
 recbole.evaluator.register
 ################################################
 """
-from collections import ChainMap
-
-metric_information = {
-    'ndcg': ['rec.topk'],  # Sign in for topk ranking metrics
-    'mrr': ['rec.topk'],
-    'hit': ['rec.topk'],
-    'recall': ['rec.topk'],
-    'precision': ['rec.topk'],
-    'map': ['rec.topk'],
-
-    'itemcoverage': ['rec.items', 'data.num_items'],  # Sign in for topk non-accuracy metrics
-    'averagepopularity': ['rec.items', 'data.count_items'],
-    'giniindex': ['rec.items', 'data.num_items'],
-    'shannonentropy': ['rec.items'],
-    'tailpercentage': ['rec.items', 'data.count_items'],
-
-    'gauc': ['rec.meanrank'],  # Sign in for full ranking metrics
+import inspect
+import sys
 
 
-    'auc': ['rec.score', 'data.label'],  # Sign in for scoring metrics
-    'rmse': ['rec.score', 'data.label'],
-    'mae': ['rec.score', 'data.label'],
-    'logloss': ['rec.score', 'data.label']}
-# These metrics are typical in ranking-based recommendations
-rank_metrics = {metric.lower(): metric for metric in ['Hit', 'Recall', 'MRR', 'Precision', 'NDCG', 'MAP', 'GAUC'
-                                                      'ItemCoverage', 'AveragePopularity', 'ShannonEntropy', 'GiniIndex']}
-# These metrics are typical in value-based recommendations
-value_metrics = {metric.lower(): metric for metric in ['AUC', 'RMSE', 'MAE', 'LOGLOSS']}
+def cluster_info(module_name):
+    """Collect information of all metrics, including:
+
+        - ``metric_need``: Information needed to calculate this metric, the combination of ``rec.items, rec.topk,
+          rec.meanrank, rec.score, data.num_items, data.num_users, data.count_items, data.count_users, data.label``.
+        - ``metric_type``: Whether the scores required by metric are grouped by user, range in ``EvaluatorType.RANKING``
+          and ``EvaluatorType.VALUE``.
+        - ``smaller``: Whether the smaller metric value represents better performance,
+          range in ``True`` and ``False``, default to ``False``.
+
+    Note:
+        For ``metric_type``: in current RecBole, all the "grouped-score" metrics are ranking-based and all the
+        "non-grouped-score" metrics are value-based. To keep with our paper, we adopted the more formal terms:
+        ``RANKING`` and ``VALUE``.
+
+    Args:
+        module_name (str): the name of module ``recbole.evaluator.metrics``.
+
+    Returns:
+        dict: Three dictionaries containing the above information
+        and a dictionary matching metric names to metric classes.
+    """
+    smaller_m = []
+    m_dict, m_info, m_types = {}, {}, {}
+    metric_class = inspect.getmembers(sys.modules[module_name],
+                                      lambda x: inspect.isclass(x) and x.__module__ == module_name)
+    for name, metric_cls in metric_class:
+        name = name.lower()
+        m_dict[name] = metric_cls
+        if hasattr(metric_cls, 'metric_need'):
+            m_info[name] = metric_cls.metric_need
+        else:
+            raise AttributeError(f"Metric '{name}' has no attribute [metric_need].")
+        if hasattr(metric_cls, 'metric_type'):
+            m_types[name] = metric_cls.metric_type
+        else:
+            raise AttributeError(f"Metric '{name}' has no attribute [metric_type].")
+        if metric_cls.smaller is True:
+            smaller_m.append(name)
+    return smaller_m, m_info, m_types, m_dict
+
+
+metric_module_name = 'recbole.evaluator.metrics'
+smaller_metrics, metric_information, metric_types, metrics_dict = cluster_info(metric_module_name)
 
 
 class Register(object):
     """ Register module load the registry according to the metrics in config.
         It is a member of DataCollector.
         The DataCollector collect the resource that need for Evaluator under the guidance of Register
-
-        Note:
-            If you want to implement a new metric, please sign the metric above like others !
-        """
+    """
     def __init__(self, config):
 
         self.config = config
@@ -57,11 +74,9 @@ class Register(object):
 
     def _build_register(self):
         for metric in self.metrics:
-            if metric not in metric_information:
-                raise ValueError("Metric {} not be signed up in /evaluator/register.py".format(metric))
             metric_needs = metric_information[metric]
-            for metric_need in metric_needs:
-                setattr(self, metric_need, True)
+            for info in metric_needs:
+                setattr(self, info, True)
 
     def has_metric(self, metric: str):
         if metric.lower() in self.metrics:

@@ -15,7 +15,7 @@ import unittest
 sys.path.append(os.getcwd())
 import numpy as np
 from recbole.config import Config
-from recbole.evaluator.metrics import metrics_dict
+from recbole.evaluator.register import metrics_dict
 
 parameters_dict = {
     'topk': [10],
