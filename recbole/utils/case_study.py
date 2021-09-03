@@ -27,7 +27,7 @@ def full_sort_scores(uid_series, model, test_data, device=None):
         uid_series (numpy.ndarray or list): User id series.
         model (AbstractRecommender): Model to predict.
         test_data (FullSortEvalDataLoader): The test_data of model.
-        device (torch.device): The device which model will run on. Defaults to ``None``.
+        device (torch.device, optional): The device which model will run on. Defaults to ``None``.
             Note: ``device=None`` is equivalent to ``device=torch.device('cpu')``.
 
     Returns:
@@ -79,7 +79,7 @@ def full_sort_topk(uid_series, model, test_data, k, device=None):
         model (AbstractRecommender): Model to predict.
         test_data (FullSortEvalDataLoader): The test_data of model.
         k (int): The top-k items.
-        device (torch.device): The device which model will run on. Defaults to ``None``.
+        device (torch.device, optional): The device which model will run on. Defaults to ``None``.
             Note: ``device=None`` is equivalent to ``device=torch.device('cpu')``.
 
     Returns:
