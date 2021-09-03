@@ -22,11 +22,11 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     training and testing a model on a specified dataset
 
     Args:
-        model (str): model name
-        dataset (str): dataset name
-        config_file_list (list): config files used to modify experiment parameters
-        config_dict (dict): parameters dictionary used to modify experiment parameters
-        saved (bool): whether to save the model
+        model (str, optional): Model name. Defaults to ``None``.
+        dataset (str, optional): Dataset name. Defaults to ``None``.
+        config_file_list (list, optional): Config files used to modify experiment parameters. Defaults to ``None``.
+        config_dict (dict, optional): Parameters dictionary used to modify experiment parameters. Defaults to ``None``.
+        saved (bool, optional): Whether to save the model. Defaults to ``True``.
     """
     # configurations initialization
     config = Config(model=model, dataset=dataset, config_file_list=config_file_list, config_dict=config_dict)
@@ -78,9 +78,9 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     r""" The default objective_function used in HyperTuning
 
     Args:
-        config_dict (dict): parameters dictionary used to modify experiment parameters
-        config_file_list (list): config files used to modify experiment parameters
-        saved (bool): whether to save the model
+        config_dict (dict, optional): Parameters dictionary used to modify experiment parameters. Defaults to ``None``.
+        config_file_list (list, optional): Config files used to modify experiment parameters. Defaults to ``None``.
+        saved (bool, optional): Whether to save the model. Defaults to ``True``.
     """
 
     config = Config(config_dict=config_dict, config_file_list=config_file_list)
@@ -106,8 +106,8 @@ def load_data_and_model(model_file, dataset_file=None, dataloader_file=None):
 
     Args:
         model_file (str): The path of saved model file.
-        dataset_file (str): The path of filtered dataset. Defaults to ``None``.
-        dataloader_file (str): The path of split dataloaders. Defaults to ``None``.
+        dataset_file (str, optional): The path of filtered dataset. Defaults to ``None``.
+        dataloader_file (str, optional): The path of split dataloaders. Defaults to ``None``.
 
     Note:
         The :attr:`dataset` will be loaded or created according to the following strategy:
