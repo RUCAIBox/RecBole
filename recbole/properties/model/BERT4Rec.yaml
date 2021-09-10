@@ -9,3 +9,7 @@ layer_norm_eps: 1e-12
 initializer_range: 0.02
 mask_ratio: 0.2
 loss_type: 'CE'
+###@Juyong Jiang 
+#Note that: `training_neg_sample_num` should be 0 when the `loss_type` is CE
+training_neg_sample_num: 0
+multi_gpus: True
