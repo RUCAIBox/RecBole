@@ -33,6 +33,17 @@ from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_
     DataLoaderType, KGDataLoaderState
 from recbole.utils.utils import set_color
 
+###
+"""
+    # @Time   : 2021/09/10
+    # @Author : Juyong Jiang
+    # @Email  : csjuyongjiang@gmail.com
+"""
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
+from torch.nn.parallel import DistributedDataParallel
+###
 
 class AbstractTrainer(object):
     r"""Trainer Class is used to manage the training and evaluation processes of recommender system models.
@@ -105,6 +116,13 @@ class Trainer(AbstractTrainer):
         self.item_tensor = None
         self.tot_item_num = None
 
+        ###@Juyong Jiang
+        #you can turn on or off(None) this setting in your `config.yaml`
+        self.multi_gpus = config['multi_gpus'] 
+        if torch.cuda.device_count() > 1 and self.multi_gpus:
+            self._build_distribute(backend="nccl")
+            print("Let's use", torch.cuda.device_count(), "GPUs to train ", self.config['model'], "...")
+
     def _build_optimizer(self, params):
         r"""Init the Optimizer
 
@@ -134,6 +152,43 @@ class Trainer(AbstractTrainer):
             optimizer = optim.Adam(params, lr=self.learning_rate)
         return optimizer
 
+    ###@Juyong Jiang
+    def _build_distribute(self, backend):
+        # 1 set backend
+        torch.distributed.init_process_group(backend=backend)
+        # 2 get distributed id
+        local_rank = torch.distributed.get_rank()
+        torch.cuda.set_device(local_rank)
+        device_dis = torch.device("cuda", local_rank)
+        # 3, 4 assign model to be distributed
+        self.model.to(device_dis)
+        self.model = DistributedDataParallel(self.model, 
+                                             device_ids=[local_rank],
+                                             output_device=local_rank).module
+        return self.model
+
+    def _trans_dataload(self, interaction):
+        data_dict = {}
+        #using pytorch dataload to re-wrap dataset
+        def sub_trans(dataset):
+            dis_loader = DataLoader(dataset=dataset,
+                                    batch_size=dataset.shape[0],
+                                    sampler=DistributedSampler(dataset, shuffle=False))
+            for data in dis_loader:
+                batch_data = data
+            
+            return batch_data
+        #change `interaction` datatype to a python `dict` object.  
+        #for some methods, you may need transfer more data unit like the following way.  
+        data_dict[self.config['USER_ID_FIELD']] = sub_trans(interaction[self.config['USER_ID_FIELD']])
+        data_dict[self.config['ITEM_ID_FIELD']] = sub_trans(interaction[self.config['ITEM_ID_FIELD']])
+        data_dict[self.config['TIME_FIELD']] = sub_trans(interaction[self.config['TIME_FIELD']])
+        data_dict[self.config['ITEM_LIST_LENGTH_FIELD']] = sub_trans(interaction[self.config['ITEM_LIST_LENGTH_FIELD']])
+        data_dict['item_id_list'] = sub_trans(interaction['item_id_list'])
+        data_dict['timestamp_list'] = sub_trans(interaction['timestamp_list'])
+        return data_dict
+    ###
+
     def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         r"""Train the model in an epoch
 
@@ -161,6 +216,17 @@ class Trainer(AbstractTrainer):
         )
         for batch_idx, interaction in iter_data:
             interaction = interaction.to(self.device)
+
+            ###@Juyong Jiang
+            #in fact, it costs ignorable time to transfer the dataset. 
+            if torch.cuda.device_count() > 1 and self.multi_gpus:
+                # import time
+                # start_ct = time.time()
+                interaction = self._trans_dataload(interaction)
+                # end_ct = time.time()
+                # print('Dataset Converting Time: ', end_ct-start_ct)
+            ###
+
             self.optimizer.zero_grad()
             losses = loss_func(interaction)
             if isinstance(losses, tuple):
