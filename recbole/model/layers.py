@@ -24,7 +24,7 @@ import torch.nn as nn
 import torch.nn.functional as fn
 from torch.nn.init import normal_
 
-from recbole.utils import FeatureType
+from recbole.utils import FeatureType, FeatureSource
 
 
 class MLPLayers(nn.Module):
@@ -918,7 +918,11 @@ class FMFirstOrderLinear(nn.Module):
     def __init__(self, config, dataset, output_dim=1):
 
         super(FMFirstOrderLinear, self).__init__()
-        self.field_names = dataset.fields()
+        self.field_names = dataset.fields(source=[
+            FeatureSource.INTERACTION,
+            FeatureSource.USER, FeatureSource.USER_ID,
+            FeatureSource.ITEM, FeatureSource.ITEM_ID,
+        ])
         self.LABEL = config['LABEL_FIELD']
         self.device = config['device']
         self.token_field_names = []
@@ -956,6 +960,7 @@ class FMFirstOrderLinear(nn.Module):
 
         Args:
             float_fields (torch.FloatTensor): The input tensor. shape of [batch_size, num_float_field]
+            embed (bool): Return the embedding of columns or just the columns itself. Defaults to ``True``.
 
         Returns:
             torch.FloatTensor: The first order score of float feature columns

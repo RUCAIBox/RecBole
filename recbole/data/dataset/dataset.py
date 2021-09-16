@@ -973,21 +973,25 @@ class Dataset(object):
         else:
             return len(self.field2id_token[field])
 
-    def fields(self, ftype=None):
-        """Given type of features, return all the field name of this type.
-        if ``ftype = None``, return all the fields.
+    def fields(self, ftype=None, source=None):
+        """Given type and source of features, return all the field name of this type and source.
+        If ``ftype == None``, the type of returned fields is not restricted.
+        If ``source == None``, the source of returned fields is not restricted.
 
         Args:
-            ftype (FeatureType, optional): Type of features.
+            ftype (FeatureType, optional): Type of features. Defaults to ``None``.
+            source (FeatureSource, optional): Source of features. Defaults to ``None``.
 
         Returns:
             list: List of field names.
         """
         ftype = set(ftype) if ftype is not None else set(FeatureType)
+        source = set(source) if source is not None else set(FeatureSource)
         ret = []
         for field in self.field2type:
             tp = self.field2type[field]
-            if tp in ftype:
+            src = self.field2source[field]
+            if tp in ftype and src in source:
                 ret.append(field)
         return ret
 
@@ -999,7 +1003,7 @@ class Dataset(object):
         Returns:
             list: List of field names.
         """
-        return self.fields([FeatureType.FLOAT, FeatureType.FLOAT_SEQ])
+        return self.fields(ftype=[FeatureType.FLOAT, FeatureType.FLOAT_SEQ])
 
     @property
     def token_like_fields(self):
@@ -1009,7 +1013,7 @@ class Dataset(object):
         Returns:
             list: List of field names.
         """
-        return self.fields([FeatureType.TOKEN, FeatureType.TOKEN_SEQ])
+        return self.fields(ftype=[FeatureType.TOKEN, FeatureType.TOKEN_SEQ])
 
     @property
     def seq_fields(self):
@@ -1019,7 +1023,7 @@ class Dataset(object):
         Returns:
             list: List of field names.
         """
-        return self.fields([FeatureType.FLOAT_SEQ, FeatureType.TOKEN_SEQ])
+        return self.fields(ftype=[FeatureType.FLOAT_SEQ, FeatureType.TOKEN_SEQ])
 
     @property
     def non_seq_fields(self):
@@ -1029,7 +1033,7 @@ class Dataset(object):
         Returns:
             list: List of field names.
         """
-        return self.fields([FeatureType.FLOAT, FeatureType.TOKEN])
+        return self.fields(ftype=[FeatureType.FLOAT, FeatureType.TOKEN])
 
     def set_field_property(self, field, field_type, field_source, field_seqlen):
         """Set a new field's properties.

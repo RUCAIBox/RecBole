@@ -48,7 +48,10 @@ Write the following code to a python file, such as `run.py`
 
    from recbole.quick_start import run_recbole
 
-   run_recbole(model='STAMP', dataset='ml-100k')
+   parameter_dict = {
+      'neg_sampling': None,
+   }
+   run_recbole(model='STAMP', dataset='ml-100k', config_dict=parameter_dict)
 
 And then:
 
