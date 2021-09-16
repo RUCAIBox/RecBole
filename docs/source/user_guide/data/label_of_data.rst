@@ -39,7 +39,7 @@ Note that the value of your label column should only be 0 or 1 (0 represents the
 2. Set threshold
 ------------------------------
 
-If your data doesn't have labels but has users'feedback information (like rating for items) to show the their preferences, 
+If your data doesn't have labels but has users' feedback information (like rating for items) to show their preferences, 
 a general way to label them is to set threshold. 
 
 For example, if you `.inter` file is like:
@@ -66,12 +66,12 @@ You can set the config like:
         rating: 3
     neg_sampling: None
 
-And then RecBole will automatically set label for each interactions based on their rating column. 
+And then RecBole will automatically set label for interactions based on their rating column. 
     
 3. Negative sampling
 ------------------------------
 If your only have implicit feedback data, without label or users' feedback information.
-A general way to label these kind of data is negative sampling. We will assume that for each user, all the observed interactions are positive,
+A general way to label these kinds of data is negative sampling. We will assume that for each user, all the observed interactions are positive,
 and the unobserved ones are negative. And then, we will set positive label for all the observed interactions, 
 and select some negative samples from the unobserved interactions according to a certain strategy.
 

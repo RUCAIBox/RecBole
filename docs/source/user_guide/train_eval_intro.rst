@@ -3,17 +3,17 @@ Training & Evaluation Introduction
 
 Training introduction
 -----------------------
-Multiple training strategies are supported by Recbole. For traditional CPU-based
+Multiple training strategies are supported by RecBole. For traditional CPU-based
 collaborative filter models, non-gradient training is naturally applied. For
 main-stream neural-based models, automatic gradient descent is well equipped
 and set as default training strategy. Also two-stage training strategy is prepared
-for pretraining-based models. In addition, users who need a unusual training strategy
+for pretraining-based models. In addition, users who need an unusual training strategy
 can customize the ``Trainer`` and please refer to :doc:`../developer_guide/customize_trainers`
 for more details.
 
 Apart from flexible training strategies, an automatic hyper-parameter searching is
-also supported. The implement of searching is fully based on `hyperopt <https://github.com/hyperopt/hyperopt>`_
-Users can set the range of hyper-parameters in an config file with format of hyperopt
+also supported. The implement of searching is fully based on `hyperopt <https://github.com/hyperopt/hyperopt>`_. 
+Users can set the range of hyper-parameters in a config file with format of hyperopt
 and the optimal hyper-parameter and result will be output. 
 You can read :doc:`usage/parameter_tuning` for more information about hyper-parameter-tuning in RecBole.
 
@@ -60,7 +60,7 @@ The parameters used to control the evaluation method are as follows:
   - ``order (str)``: Control the ordering of data and affect the splitting of data.
     Range in ``['RS', 'LS']`` and defaults to ``RS``.
   - ``mode (str)``: Control different candidates of ranking.
-    Range in ``[labeled, full,unixxx,popxxx]`` and defaults to ``full``.
+    Range in ``[labeled, full, unixxx, popxxx]`` and defaults to ``full``.
  
 - ``repeatable (bool)``: Whether to evaluate the result with a repeatable recommendation scene. Note that it is disabled for sequential models as the recommendation is already repeatable. For other models, defaults to ``False``.
 
@@ -78,7 +78,7 @@ common ranking-aware metrics, such as ``Recall``, ``Precision``, ``Hit``,
 ``NDCG``, ``MAP``, ``MRR`` and ``GAUC``, measuring the ranking performance of the
 generated recommendation lists by an algorithm. Besides, several ranking-based
 non-accuracy metrics are supported to evaluate in different views, such as
-``ItemCoverage``, ``AveragePopularity``, ``GiniIndex``,``ShannonEntropy`` and ``TailPercentage``
+``ItemCoverage``, ``AveragePopularity``, ``GiniIndex``, ``ShannonEntropy`` and ``TailPercentage``. 
 More details about metrics can refer to :doc:`/recbole/recbole.evaluator.metrics`.
 
 The parameters used to control the evaluation metrics are as follows:
@@ -89,7 +89,7 @@ The parameters used to control the evaluation metrics are as follows:
   ==============    =================================================
   Type              Metrics
   ==============    =================================================
-  Ranking-based     Recall, MRR, NDCG, Hit, MAP, Precision, GAUC，ItemCoverage, AveragePopularity, GiniIndex, ShannonEntropy, TailPercentage
+  Ranking-based     Recall, MRR, NDCG, Hit, MAP, Precision, GAUC, ItemCoverage, AveragePopularity, GiniIndex, ShannonEntropy, TailPercentage
   value-based       AUC, MAE, RMSE, LogLoss
   ==============    =================================================
 

@@ -10,9 +10,9 @@ For the convenience of users, we implement automatically downloading module in R
 publiced datasets (detailed as `Dataset List </dataset_list.html>`_). If you want to run models on a dataset, you just need to set the
 `dataset` and then the data files will be automatically downloaded.
 
-For example, if you want to run BPR model on the ml-1m dataset but you don't prepare the the :doc:`atomic_files` of ml-1m dataset,
+For example, if you want to run BPR model on the ml-1m dataset but you don't prepare the :doc:`atomic_files` of ml-1m dataset,
 you can use our automatically downloading module to download the data. 
-All you need is run the model as normal, and RecBole will automatically check if you have the data files, if not, it will begin to download the data files
+All you need is to run the model as normal, and RecBole will automatically check if you have the data files, if not, it will begin to download the data files
 and you will get the output like this:
 
 .. code:: none
@@ -33,7 +33,7 @@ You can also download the data from these two resources by yourself.
 3. Covert the raw data 
 -----------------------------
 If you have already download the raw data, you can also covert them into atomic files format by yourself. 
-And we have already publiced some converting scripts in `RecDatasets <https://github.com/RUCAIBox/RecDatasets>_`.
+And we have already publiced some converting scripts in `RecDatasets <https://github.com/RUCAIBox/RecDatasets>`_.
 
 
 

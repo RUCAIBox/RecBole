@@ -94,6 +94,7 @@ And then:
    config_dict = {
        'train_stage': 'finetune',
        'pre_model_path': './saved/S3Rec-ml-100k-100.pth',
+       'neg_sampling': None
    }
    run_recbole(model='S3Rec', dataset='ml-100k',
         config_dict=config_dict)

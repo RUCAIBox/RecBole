@@ -11,7 +11,7 @@ Quick-start From API
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Before running a model, firstly you need to prepare and load data. To help users quickly get start, 
 RecBole has a build-in dataset **ml-100k** and you can directly use it. However, if you want to use other datasets, you can read
-:doc.`../usage/running_new_dataset` for more information.
+:doc:`../usage/running_new_dataset` for more information.
 
 Then, you need to set data config for data loading. You can create a `yaml` file called `test.yaml` and write the following settings:
 
@@ -124,8 +124,8 @@ And you will obtain the output like:
     24 Aug 01:47    INFO  best valid : {'recall@10': 0.2195, 'mrr@10': 0.3871, 'ndcg@10': 0.2344, 'hit@10': 0.7582, 'precision@10': 0.1627}
     24 Aug 01:47    INFO  test result: {'recall@10': 0.2523, 'mrr@10': 0.4855, 'ndcg@10': 0.292, 'hit@10': 0.7953, 'precision@10': 0.1962}
 
-Finally you will get the model's performance on the test set and the model file will be saved under the `/save`. Besides, 
-RecBole allows tracking and visualizing train loss and valid score with TensorBoard, please read the .doc.`../user_guide/usage/use_tensorboard` for more details.
+Finally you will get the model's performance on the test set and the model file will be saved under the `/saved`. Besides, 
+RecBole allows tracking and visualizing train loss and valid score with TensorBoard, please read the :doc:`../user_guide/usage/use_tensorboard` for more details.
 
 The above is the whole process of running a model in RecBole, and you can read other docs for depth usage. 
 
