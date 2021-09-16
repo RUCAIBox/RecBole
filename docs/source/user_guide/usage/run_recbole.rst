@@ -24,7 +24,7 @@ into the file.
 :attr:`config_dict` is the parameter dict.
 The two variables are used to config parameters in our toolkit.
 If you do not want to use the two variables to config parameters,
-please ignore them. In addition, we can also support ot control the parameters
+please ignore them. In addition, we also support to control parameters
 by the command line.
 
 Please refer to :doc:`../config_settings` for more details about config settings.

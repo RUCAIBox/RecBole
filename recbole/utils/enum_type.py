@@ -24,22 +24,8 @@ class ModelType(Enum):
     SEQUENTIAL = 2
     CONTEXT = 3
     KNOWLEDGE = 4
-    SOCIAL = 5
-    TRADITIONAL = 6
-    DECISIONTREE = 7
-
-
-class DataLoaderType(Enum):
-    """Type of DataLoaders.
-
-    - ``ORIGIN``: Original DataLoader
-    - ``FULL``: DataLoader for full-sort evaluation
-    - ``NEGSAMPLE``: DataLoader for negative sample evaluation
-    """
-
-    ORIGIN = 1
-    FULL = 2
-    NEGSAMPLE = 3
+    TRADITIONAL = 5
+    DECISIONTREE = 6
 
 
 class KGDataLoaderState(Enum):
@@ -58,12 +44,12 @@ class KGDataLoaderState(Enum):
 class EvaluatorType(Enum):
     """Type for evaluation metrics.
 
-    - ``RANKING``: Ranking metrics like NDCG, Recall, etc.
-    - ``INDIVIDUAL``: Individual metrics like AUC, etc.
+    - ``RANKING``: Ranking-based metrics like NDCG, Recall, etc.
+    - ``VALUE``: Value-based metrics like AUC, etc.
     """
 
     RANKING = 1
-    INDIVIDUAL = 2
+    VALUE = 2
 
 
 class InputType(Enum):

@@ -6,7 +6,7 @@ Introduction
 
 `[paper] <https://dl.acm.org/doi/abs/10.1145/3340531.3411954>`_
 
-**Title:** S^3-Rec: Self-Supervised Learning for Sequential
+**Title:** S<sup>3</sup>-Rec: Self-Supervised Learning for Sequential
 Recommendation with Mutual Information Maximization
 
 **Authors:** Kun Zhou, Hui Wang, Wayne Xin Zhao, Yutao Zhu, Sirui Wang, Fuzheng Zhang, Zhongyuan Wang, Ji-Rong Wen
@@ -17,7 +17,7 @@ trained with this loss is prone to suffer from data sparsity problem.
 Since it overemphasizes the final performance, the association or
 fusion between context data and sequence data has not been well
 captured and utilized for sequential recommendation.
-To tackle this problem, we propose the model S3-Rec, which
+To tackle this problem, we propose the model S<sup>3</sup>-Rec, which
 stands for Self-Supervised learning for Sequential Recommendation,
 based on the self-attentive neural architecture. The main idea of
 our approach is to utilize the intrinsic data correlation to derive
@@ -58,9 +58,10 @@ Running with RecBole
 - ``sp_weight (float)`` : The weight for Segment Prediction loss. Defaults to ``0.5``.
 - ``train_stage (str)`` : The training stage. Defaults to ``'pretrain'``. Range in ``['pretrain', 'finetune']``.
 - ``item_attribute (str)`` : The item features used as attributes for pre-training. Defaults to ``'class'`` for ml-100k dataset.
+- ``pretrain_epochs (int)`` : The epochs of pre-training. Defaults to '500'.
 - ``save_step (int)`` : Save pre-trained model every ``save_step`` pre-training epochs. Defaults to ``10``.
 - ``pre_model_path (str)`` : The path of pretrained model. Defaults to ``''``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``training_neg_sample_num = 1``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 
 **A Running Example:**
@@ -93,6 +94,7 @@ And then:
    config_dict = {
        'train_stage': 'finetune',
        'pre_model_path': './saved/S3Rec-ml-100k-100.pth',
+       'neg_sampling': None
    }
    run_recbole(model='S3Rec', dataset='ml-100k',
         config_dict=config_dict)
@@ -125,7 +127,7 @@ Then, with the source code of RecBole (you can download it from GitHub), you can
 
 .. code:: bash
 
-	python run_hyper.py --model=[model_name] --dataset=[dataset_name] --config_files=[config_files_path] --params_file=hyper.test
+    python run_hyper.py --model=[model_name] --dataset=[dataset_name] --config_files=[config_files_path] --params_file=hyper.test
 
 For more details about Parameter Tuning, refer to :doc:`../../../user_guide/usage/parameter_tuning`.
 
@@ -134,5 +136,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`

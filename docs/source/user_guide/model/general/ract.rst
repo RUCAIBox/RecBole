@@ -29,9 +29,9 @@ Running with RecBole
 - ``critic_layers (list)`` : The layers of critic network. Defaults to ``[100,100,10]``.
 - ``metrics_k (int)`` : The parameter of NDCG for critic network training. Defaults to ``100``.
 - ``train_stage (str)`` : The training stage. Defaults to ``'actor_pretrain'``. Range in ``['actor_pretrain', 'critic_pretrain', 'finetune']``.
-- ``pretrain_epochs (int)`` : The pretrain epochs of actor pre-training or critic-pretraining. Defaults to '150'
+- ``pretrain_epochs (int)`` : The pretrain epochs of actor pre-training or critic-pretraining. Defaults to '150'.
+- ``save_step (int)`` : Save pre-trained model every ``save_step`` pre-training epochs. Defaults to ``10``.
 - ``pre_model_path (str)`` : The path of pretrained model. Defaults to ``''``.
-- ``training_neg_sample (int)`` : The negative sample num for training. Defaults to ``0``.
 
 
 **A Running Example:**
@@ -45,7 +45,7 @@ Running with RecBole
    config_dict = {
        'train_stage': 'actor_pretrain',
        'pretrain_epochs': 150,
-       'training_neg_sample_num': 0,
+       'neg_sampling': None,
    }
    run_recbole(model='RaCT', dataset='ml-100k',
         config_dict=config_dict, saved=False)
@@ -66,7 +66,7 @@ And then:
        'train_stage': 'critic_pretrain',
        'pretrain_epochs': 50,
        'pre_model_path': './saved/RaCT-ml-100k-150.pth',
-       'training_neg_sample_num': 0,
+       'neg_sampling': None,
    }
    run_recbole(model='RaCT', dataset='ml-100k',
         config_dict=config_dict, saved=False)
@@ -86,7 +86,7 @@ And then:
    config_dict = {
        'train_stage': 'finetune',
        'pre_model_path': './saved/RaCT-ml-100k-50.pth',
-       'training_neg_sample_num': 0,
+       'neg_sampling': None,
    }
    run_recbole(model='RaCT', dataset='ml-100k',
         config_dict=config_dict)
@@ -100,7 +100,7 @@ And then:
 
 **Notes:**
 
-- Because this model is a non-sampling model, so you must set ``training_neg_sample=0`` when you run this model. 
+- Because this model is a non-sampling model, so you must set ``neg_sampling=None`` when you run this model.
 
 - In the actor pre-training and critic pre-training stage, the pre-trained model would be saved , named as ``RaCT-[dataset_name]-[pretrain_epochs].pth`` (e.g. RaCT-ml-100k-100.pth) and saved to ``./saved/``.
 
@@ -133,5 +133,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`

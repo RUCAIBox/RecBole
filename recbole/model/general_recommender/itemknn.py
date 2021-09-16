@@ -176,6 +176,7 @@ class ItemKNN(GeneralRecommender):
         self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
 
         self.fake_loss = torch.nn.Parameter(torch.zeros(1))
+        self.other_parameter_name = ['w', 'pred_mat']
 
     def forward(self, user, item):
         pass

@@ -1,4 +1,4 @@
-.. automodule:: recbole.evaluator.proxy_evaluator
+.. automodule:: recbole.evaluator.collector
    :members:
    :undoc-members:
    :show-inheritance:

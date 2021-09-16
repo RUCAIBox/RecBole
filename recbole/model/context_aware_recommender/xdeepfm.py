@@ -54,7 +54,7 @@ class xDeepFM(ContextRecommender):
                 )
 
         # Create a convolutional layer for each CIN layer
-        self.conv1d_list = []
+        self.conv1d_list = nn.ModuleList()
         self.field_nums = [self.num_feature_field]
         for i, layer_size in enumerate(self.cin_layer_size):
             conv1d = nn.Conv1d(self.field_nums[-1] * self.field_nums[0], layer_size, 1).to(self.device)
@@ -74,13 +74,13 @@ class xDeepFM(ContextRecommender):
         else:
             self.final_len = sum(self.cin_layer_size[:-1]) // 2 + self.cin_layer_size[-1]
 
-        self.cin_linear = nn.Linear(self.final_len, 1, bias=False)
+        self.cin_linear = nn.Linear(self.final_len, 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCELoss()
         self.apply(self._init_weights)
 
     def _init_weights(self, module):
-        if isinstance(module, nn.Embedding):
+        if isinstance(module, nn.Embedding) or isinstance(module, nn.Conv1d):
             xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
             xavier_normal_(module.weight.data)
@@ -113,7 +113,7 @@ class xDeepFM(ContextRecommender):
             l2_reg += self.reg_loss(conv1d.named_parameters())
         return l2_reg
 
-    def compressed_interaction_network(self, input_features, activation='identity'):
+    def compressed_interaction_network(self, input_features, activation='ReLU'):
         r"""For k-th CIN layer, the output :math:`X_k` is calculated via
 
         .. math::
@@ -137,7 +137,7 @@ class xDeepFM(ContextRecommender):
         hidden_nn_layers = [input_features]
         final_result = []
         for i, layer_size in enumerate(self.cin_layer_size):
-            z_i = torch.einsum('bmd,bhd->bhmd', hidden_nn_layers[0], hidden_nn_layers[-1])
+            z_i = torch.einsum('bhd,bmd->bhmd', hidden_nn_layers[-1], hidden_nn_layers[0])
             z_i = z_i.view(batch_size, self.field_nums[0] * self.field_nums[i], embedding_size)
             z_i = self.conv1d_list[i](z_i)
 

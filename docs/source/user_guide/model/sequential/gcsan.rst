@@ -15,7 +15,7 @@ anonymous sessions, is a key task in many online
 services (e:g:; e-commerce, media streaming). Recently, Self-Attention Network (SAN) has achieved
 significant success in various sequence modeling
 tasks without using either recurrent or convolutional network. However, SAN lacks local dependencies that exist over adjacent items and limits its capacity for learning contextualized representations of items in sequences. In this paper, we propose a graph contextualized self-attention model
-(GC-SAN), which utilizes both graph neural network and self-attention mechanism, for sessionbased recommendation. In GC-SAN, we dynamically construct a graph structure for session sequences and capture rich local dependencies via graph neural network (GNN). Then each session learns long-range dependencies by applying
+(GC-SAN), which utilizes both graph neural network and self-attention mechanism, for session-based recommendation. In GC-SAN, we dynamically construct a graph structure for session sequences and capture rich local dependencies via graph neural network (GNN). Then each session learns long-range dependencies by applying
 the self-attention mechanism. Finally, each session
 is represented as a linear combination of the global
 preference and the current interest of that session.
@@ -43,7 +43,7 @@ Running with RecBole
 - ``step (int)`` : The number of layers in GNN. Defaults to ``1``.
 - ``weight (float)`` : The weight parameter controls the contribution of self-attention representation and the last-clicked action, the original paper suggests that setting w to a value of 0.4 to 0.8 is more desirable. Defaults to ``0.6``.
 - ``reg_weight (float)`` : The L2 regularization weight. Defaults to ``[5e-5]``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``training_neg_sample_num = 1``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 **A Running Example:**
 
@@ -53,7 +53,10 @@ Write the following code to a python file, such as `run.py`
 
    from recbole.quick_start import run_recbole
 
-   run_recbole(model='GCSAN', dataset='ml-100k')
+   parameter_dict = {
+      'neg_sampling': None,
+   }
+   run_recbole(model='GCSAN', dataset='ml-100k', config_dict=parameter_dict)
 
 And then:
 
@@ -97,5 +100,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`

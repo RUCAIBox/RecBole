@@ -16,7 +16,7 @@ Running with RecBole
 - ``num_layers (int)`` : The number of layers in GRU. Defaults to ``1``.
 - ``dropout_prob (float)`` : The dropout rate. Defaults to ``0.1``.
 - ``freeze_kg (bool)`` : Whether to freeze the pre-trained knowledge embedding feature. Defaults to ``True``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``training_neg_sample_num = 1``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 
 **A Running Example:**
@@ -27,7 +27,10 @@ Write the following code to a python file, such as `run.py`
 
    from recbole.quick_start import run_recbole
 
-   run_recbole(model='GRU4RecKG', dataset='ml-100k')
+   parameter_dict = {
+      'neg_sampling': None,
+   }
+   run_recbole(model='GRU4RecKG', dataset='ml-100k', config_dict=parameter_dict)
 
 And then:
 
@@ -46,9 +49,7 @@ And then:
             kg: [head_id, relation_id, tail_id]
             link: [item_id, entity_id]
             ent_feature: [ent_id, ent_vec]
-        fields_in_same_space: [
-            [ent_id, entity_id]
-        ]
+        alias_of_entity_id: [ent_id]
         preload_weight:
             ent_id: ent_vec
         additional_feat_suffix: [ent_feature]
@@ -84,5 +85,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`
