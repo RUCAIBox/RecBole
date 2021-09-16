@@ -21,4 +21,4 @@ Training settings are designed to set parameters about model training.
 - ``clip_grad_norm (dict)`` : The args of `clip_grad_norm_ <https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html>`_
   which will clip gradient norm of model. Defaults to ``None``.
 - ``loss_decimal_place(int)``: The decimal place of training loss. Defaults to ``4``.
-- ``weight_decay (float)`` : Weight decay (L2 penalty), used for `optimizer <https://pytorch.org/docs/stable/optim.html?highlight=weight_decay>`_. Default to ``0.0``.
+- ``weight_decay (float)`` : The weight decay (L2 penalty), used for `optimizer <https://pytorch.org/docs/stable/optim.html?highlight=weight_decay>`_. Default to ``0.0``.
