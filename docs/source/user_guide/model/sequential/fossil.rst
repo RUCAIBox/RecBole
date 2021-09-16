@@ -13,8 +13,8 @@ Introduction
 **Abstract:**  Abstract—Predicting personalized sequential behavior is a
 key task for recommender systems. In order to predict user
 actions such as the next product to purchase, movie to watch,
-or place to visit, it is essential to take into account both long-
-term user preferences and sequential patterns (i.e., short-term
+or place to visit, it is essential to take into account both long-term 
+user preferences and sequential patterns (i.e., short-term
 dynamics). Matrix Factorization and Markov Chain methods
 have emerged as two separate but powerful paradigms for
 modeling the two respectively. Combining these ideas has led
@@ -46,7 +46,7 @@ Running with RecBole
 - ``order_len (int)`` : The last N items . Defaults to ``3``.
 - ``reg_weight (float)`` : The L2 regularization weight. Defaults to ``0.00``.
 - ``alpha (float)`` : The parameter of alpha in calculate the similarity. Defaults to ``0.6``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``training_neg_sample_num = 1``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 **A Running Example:**
 
@@ -56,7 +56,10 @@ Write the following code to a python file, such as `run.py`
 
    from recbole.quick_start import run_recbole
 
-   run_recbole(model='FOSSIL', dataset='ml-100k')
+   parameter_dict = {
+      'neg_sampling': None,
+   }
+   run_recbole(model='FOSSIL', dataset='ml-100k', config_dict=parameter_dict)
 
 And then:
 
@@ -96,6 +99,6 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`
 

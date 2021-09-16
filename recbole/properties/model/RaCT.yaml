@@ -7,4 +7,5 @@ critic_layers: [100,100,10]
 metrics_k: 100
 train_stage: 'actor_pretrain'
 pretrain_epochs: 150
+save_step: 10
 pre_model_path: ''

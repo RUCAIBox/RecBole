@@ -86,6 +86,7 @@ class DMF(GeneralRecommender):
 
         # parameters initialization
         self.apply(self._init_weights)
+        self.other_parameter_name = ['i_embedding']
 
     def _init_weights(self, module):
         # We just initialize the module with normal distribution as the paper said

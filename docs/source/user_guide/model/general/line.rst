@@ -50,7 +50,7 @@ If you want to use ``HyperTuning`` to tune hyper parameters of this model, you c
 .. code:: bash
 
    learning_rate choice [0.01,0.005,0.001,0.0005,0.0001]
-   training_neg_sample_num choice [1,3,5]
+   neg_sampling choice [{'uniform':1}, {'uniform':3}, {'uniform':5}]
    second_order_loss_weight choice [0.3,0.6,1]
 
 Note that we just provide these hyper parameter ranges for reference only, and we can not guarantee that they are the optimal range of this model.
@@ -68,5 +68,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`

@@ -13,9 +13,8 @@ recbole.data.dataloader.user_dataloader
 """
 import torch
 
-from recbole.data.dataloader import AbstractDataLoader
+from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.interaction import Interaction
-from recbole.utils.enum_type import DataLoaderType, InputType
 
 
 class UserDataLoader(AbstractDataLoader):
@@ -24,30 +23,28 @@ class UserDataLoader(AbstractDataLoader):
     Args:
         config (Config): The config of dataloader.
         dataset (Dataset): The dataset of dataloader.
-        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
-        dl_format (InputType, optional): The input type of dataloader. Defaults to
-            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
+        sampler (Sampler): The sampler of dataloader.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
 
     Attributes:
         shuffle (bool): Whether the dataloader will be shuffle after a round.
             However, in :class:`UserDataLoader`, it's guaranteed to be ``True``.
     """
-    dl_type = DataLoaderType.ORIGIN
 
-    def __init__(self, config, dataset, batch_size=1, dl_format=InputType.POINTWISE, shuffle=False):
+    def __init__(self, config, dataset, sampler, shuffle=False):
+        if shuffle is False:
+            shuffle = True
+            self.logger.warning('UserDataLoader must shuffle the data.')
+
         self.uid_field = dataset.uid_field
         self.user_list = Interaction({self.uid_field: torch.arange(dataset.user_num)})
 
-        super().__init__(config=config, dataset=dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config, dataset, sampler, shuffle=shuffle)
 
-    def setup(self):
-        """Make sure that the :attr:`shuffle` is True. If :attr:`shuffle` is False, it will be changed to True
-        and give a warning to user.
-        """
-        if self.shuffle is False:
-            self.shuffle = True
-            self.logger.warning('UserDataLoader must shuffle the data')
+    def _init_batch_size_and_step(self):
+        batch_size = self.config['train_batch_size']
+        self.step = batch_size
+        self.set_batch_size(batch_size)
 
     @property
     def pr_end(self):

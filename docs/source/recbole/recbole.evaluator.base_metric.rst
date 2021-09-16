@@ -1,4 +1,4 @@
-.. automodule:: recbole.data.dataset.social_dataset
+.. automodule:: recbole.evaluator.base_metric
    :members:
    :undoc-members:
    :show-inheritance:

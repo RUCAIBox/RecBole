@@ -14,6 +14,7 @@ mip_weight: 0.2
 map_weight: 1.0
 sp_weight: 0.5
 train_stage: 'pretrain'
+pretrain_epochs: 500
 save_step: 10
 pre_model_path: ''
 loss_type: 'CE'

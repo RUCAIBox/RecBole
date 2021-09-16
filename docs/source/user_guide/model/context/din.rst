@@ -13,8 +13,8 @@ Yanghui Yan, Junqi Jin, Han Li, Kun Gai
 
 **Abstract:** Click-through rate prediction is an essential task in industrial
 applications, such as online advertising. Recently deep learning
-based models have been proposed, which follow a similar Embedding&
-MLP paradigm. In these methods large scale sparse input
+based models have been proposed, which follow a similar Embedding&MLP 
+paradigm. In these methods large scale sparse input
 features are first mapped into low dimensional embedding vectors,
 and then transformed into fixed-length vectors in a group-wise
 manner, finally concatenated together to fed into a multilayer perceptron
@@ -96,5 +96,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`

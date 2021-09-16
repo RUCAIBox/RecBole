@@ -83,6 +83,7 @@ class SLIMElastic(GeneralRecommender):
                     X[:, j] = r
 
         self.item_similarity = sp.vstack(item_coeffs).T
+        self.other_parameter_name = ['interaction_matrix', 'item_similarity']
 
     def forward(self):
         pass

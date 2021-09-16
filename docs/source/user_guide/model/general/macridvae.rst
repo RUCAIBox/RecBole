@@ -28,7 +28,8 @@ of the representations to independently reflect an isolated low-level factor (e.
 the size or the color of a shirt). Empirical results show that our approach can
 achieve substantial improvement over the state-of-the-art baselines. We further
 demonstrate that the learned representations are interpretable and controllable,
-which can potentially lead to a new paradigm for recommendation where users a
+which can potentially lead to a new paradigm for recommendation where users are given 
+fine-grained control over targeted aspects of the recommendation lists.
 
 .. image:: ../../../asset/macridvae.png
     :width: 500
@@ -49,7 +50,6 @@ Running with RecBole
 - ``anneal_cap (float)`` : The super parameter of the weight of KL loss. Defaults to ``0.2``.
 - ``total_anneal_steps (int)`` : The maximum steps of anneal update. Defaults to ``200000``.
 - ``reg_weights (list)`` : L2 regularization. Defaults to ``[0.0,0.0]``.
-- ``training_neg_sample (int)`` : The negative sample num for training. Defaults to ``0``.
 
 
 **A Running Example:**
@@ -61,7 +61,7 @@ Write the following code to a python file, such as `run.py`
    from recbole.quick_start import run_recbole
 
    parameter_dict = {
-      'training_neg_sample_num': 0 
+      'neg_sampling': None,
    }
    run_recbole(model='MacridVAE', dataset='ml-100k', config_dict=parameter_dict)
 
@@ -71,7 +71,7 @@ And then:
 
    python run.py
 
-**Note**: Because this model is a non-sampling model, so you must set ``training_neg_sample=0`` when you run this model. 
+**Note**: Because this model is a non-sampling model, so you must set ``neg_sampling=None`` when you run this model.
 
 Tuning Hyper Parameters
 -------------------------
@@ -98,5 +98,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`
