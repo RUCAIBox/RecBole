@@ -39,4 +39,3 @@ class Evaluator(object):
             metric_val = self.metric_class[metric].calculate_metric(dataobject)
             result_dict.update(metric_val)
         return result_dict
-

@@ -918,11 +918,15 @@ class FMFirstOrderLinear(nn.Module):
     def __init__(self, config, dataset, output_dim=1):
 
         super(FMFirstOrderLinear, self).__init__()
-        self.field_names = dataset.fields(source=[
-            FeatureSource.INTERACTION,
-            FeatureSource.USER, FeatureSource.USER_ID,
-            FeatureSource.ITEM, FeatureSource.ITEM_ID,
-        ])
+        self.field_names = dataset.fields(
+            source=[
+                FeatureSource.INTERACTION,
+                FeatureSource.USER,
+                FeatureSource.USER_ID,
+                FeatureSource.ITEM,
+                FeatureSource.ITEM_ID,
+            ]
+        )
         self.LABEL = config['LABEL_FIELD']
         self.device = config['device']
         self.token_field_names = []

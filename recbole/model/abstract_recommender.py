@@ -169,11 +169,15 @@ class ContextRecommender(AbstractRecommender):
     def __init__(self, config, dataset):
         super(ContextRecommender, self).__init__()
 
-        self.field_names = dataset.fields(source=[
-            FeatureSource.INTERACTION,
-            FeatureSource.USER, FeatureSource.USER_ID,
-            FeatureSource.ITEM, FeatureSource.ITEM_ID,
-        ])
+        self.field_names = dataset.fields(
+            source=[
+                FeatureSource.INTERACTION,
+                FeatureSource.USER,
+                FeatureSource.USER_ID,
+                FeatureSource.ITEM,
+                FeatureSource.ITEM_ID,
+            ]
+        )
         self.LABEL = config['LABEL_FIELD']
         self.embedding_size = config['embedding_size']
         self.device = config['device']

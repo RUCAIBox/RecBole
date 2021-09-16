@@ -20,6 +20,7 @@ from numpy.random import sample
 import torch
 from collections import Counter
 
+
 class AbstractSampler(object):
     """:class:`AbstractSampler` is a abstract class, all sampler should inherit from it. This sampler supports returning
     a certain number of random value_ids according to the input key_id, and it also supports to prohibit
@@ -85,18 +86,18 @@ class AbstractSampler(object):
                 large_q.append(i)
             elif self.prob[i] < 1:
                 small_q.append(i)
-        
-        while(len(large_q)!=0 and len(small_q)!=0):
+
+        while len(large_q) != 0 and len(small_q) != 0:
             l = large_q.pop(0)
             s = small_q.pop(0)
-            self.alias[s] = l 
+            self.alias[s] = l
             self.prob[l] = self.prob[l] - (1 - self.prob[s])
             if self.prob[l] < 1:
                 small_q.append(l)
             elif self.prob[l] > 1:
                 large_q.append(l)
 
-    def _pop_sampling(self, sample_num): 
+    def _pop_sampling(self, sample_num):
         """Sample [sample_num] items in the popularity-biased distribution.
 
         Args:
@@ -116,7 +117,7 @@ class AbstractSampler(object):
                 final_random_list.append(keys[idx])
             else:
                 final_random_list.append(self.alias[keys[idx]])
-        
+
         return np.array(final_random_list)
 
     def sampling(self, sample_num):
@@ -128,7 +129,7 @@ class AbstractSampler(object):
         Returns:
             sample_list (np.array): a list of samples and the len is [sample_num].
         """
-        if self.distribution =='uniform':
+        if self.distribution == 'uniform':
             return self._uni_sampling(sample_num)
         elif self.distribution == 'popularity':
             return self._pop_sampling(sample_num)
@@ -165,7 +166,7 @@ class AbstractSampler(object):
             value_ids = self.sampling(total_num)
             check_list = np.arange(total_num)[np.isin(value_ids, used)]
             while len(check_list) > 0:
-                value_ids[check_list] = value = self.sampling(len(check_list))    
+                value_ids[check_list] = value = self.sampling(len(check_list))
                 mask = np.isin(value, used)
                 check_list = check_list[mask]
         else:
@@ -215,13 +216,12 @@ class Sampler(AbstractSampler):
 
         super().__init__(distribution=distribution)
 
-    
     def _get_candidates_list(self):
         candidates_list = []
         for dataset in self.datasets:
             candidates_list.extend(dataset.inter_feat[self.iid_field].numpy())
         return candidates_list
-    
+
     def _uni_sampling(self, sample_num):
         return np.random.randint(1, self.item_num, sample_num)
 

@@ -16,7 +16,9 @@ from recbole.evaluator.register import Register
 import torch
 import copy
 
+
 class DataStruct(object):
+
     def __init__(self):
         self._data_dict = {}
 
@@ -64,6 +66,7 @@ class Collector(object):
         This class is only used in Trainer.
 
     """
+
     def __init__(self, config):
         self.config = config
         self.data_struct = DataStruct()
@@ -123,7 +126,9 @@ class Collector(object):
 
         return avg_rank
 
-    def eval_batch_collect(self, scores_tensor: torch.Tensor, interaction, positive_u: torch.Tensor, positive_i: torch.Tensor):
+    def eval_batch_collect(
+        self, scores_tensor: torch.Tensor, interaction, positive_u: torch.Tensor, positive_i: torch.Tensor
+    ):
         """ Collect the evaluation resource from batched eval data and batched model output.
             Args:
                 scores_tensor (Torch.Tensor): the output tensor of model with the shape of `(N, )`
@@ -173,7 +178,6 @@ class Collector(object):
             self.data_struct.update_tensor('data.label', interaction[self.label_field].to(self.device))
 
     def model_collect(self, model: torch.nn.Module):
-
         """ Collect the evaluation resource from model.
             Args:
                 model (nn.Module): the trained recommendation model.

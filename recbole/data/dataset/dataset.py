@@ -209,8 +209,10 @@ class Dataset(object):
         elif allow_none:
             return None
         else:
-            raise ValueError(f'Neither [{self.dataset_path}] exists in the device'
-                             f'nor [{self.dataset_name}] a known dataset name.')
+            raise ValueError(
+                f'Neither [{self.dataset_path}] exists in the device'
+                f'nor [{self.dataset_name}] a known dataset name.'
+            )
 
     def _download(self):
         url = self._get_download_url('url')
@@ -465,15 +467,19 @@ class Dataset(object):
                 if alias_name_1 != alias_name_2:
                     intersect = np.intersect1d(alias_1, alias_2, assume_unique=True)
                     if len(intersect) > 0:
-                        raise ValueError(f'`alias_of_{alias_name_1}` and `alias_of_{alias_name_2}` '
-                                         f'should not have the same field {list(intersect)}.')
+                        raise ValueError(
+                            f'`alias_of_{alias_name_1}` and `alias_of_{alias_name_2}` '
+                            f'should not have the same field {list(intersect)}.'
+                        )
 
         self._rest_fields = self.token_like_fields
         for alias_name, alias in self.alias.items():
             isin = np.isin(alias, self._rest_fields, assume_unique=True)
             if isin.all() is False:
-                raise ValueError(f'`alias_of_{alias_name}` should not contain '
-                                 f'non-token-like field {list(alias[~isin])}.')
+                raise ValueError(
+                    f'`alias_of_{alias_name}` should not contain '
+                    f'non-token-like field {list(alias[~isin])}.'
+                )
             self._rest_fields = np.setdiff1d(self._rest_fields, alias, assume_unique=True)
 
     def _user_item_feat_preparation(self):
@@ -595,6 +601,7 @@ class Dataset(object):
 
         for field in fields:
             for feat in self.field2feats(field):
+
                 def norm(arr):
                     mx, mn = max(arr), min(arr)
                     if mx == mn:
@@ -678,14 +685,18 @@ class Dataset(object):
         item_inter_num = Counter(self.inter_feat[self.iid_field].values) if item_inter_num_interval else Counter()
 
         while True:
-            ban_users = self._get_illegal_ids_by_inter_num(field=self.uid_field,
-                                                           feat=self.user_feat,
-                                                           inter_num=user_inter_num,
-                                                           inter_interval=user_inter_num_interval)
-            ban_items = self._get_illegal_ids_by_inter_num(field=self.iid_field,
-                                                           feat=self.item_feat,
-                                                           inter_num=item_inter_num,
-                                                           inter_interval=item_inter_num_interval)
+            ban_users = self._get_illegal_ids_by_inter_num(
+                field=self.uid_field,
+                feat=self.user_feat,
+                inter_num=user_inter_num,
+                inter_interval=user_inter_num_interval
+            )
+            ban_items = self._get_illegal_ids_by_inter_num(
+                field=self.iid_field,
+                feat=self.item_feat,
+                inter_num=item_inter_num,
+                inter_interval=item_inter_num_interval
+            )
 
             if len(ban_users) == 0 and len(ban_items) == 0:
                 break
@@ -725,7 +736,8 @@ class Dataset(object):
             set: illegal ids, whose inter num out of inter_intervals.
         """
         self.logger.debug(
-            set_color('get_illegal_ids_by_inter_num', 'blue') + f': field=[{field}], inter_interval=[{inter_interval}]')
+            set_color('get_illegal_ids_by_inter_num', 'blue') + f': field=[{field}], inter_interval=[{inter_interval}]'
+        )
 
         if inter_interval is not None:
             if len(inter_interval) > 1:

@@ -30,6 +30,7 @@ log_colors_config = {
 
 
 class RemoveColorFilter(logging.Filter):
+
     def filter(self, record):
         if record:
             ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')

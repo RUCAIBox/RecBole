@@ -73,6 +73,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
         sampler (Sampler): The sampler of dataloader.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
+
     def __init__(self, config, dataset, sampler, shuffle=False):
         self._set_neg_sample_args(config, dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
         if self.neg_sample_args['strategy'] == 'by':
@@ -193,7 +194,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         if uid is None:
             return
         history_item = used_item - positive_item
-        self.uid2positive_item[uid] = torch.tensor(list(positive_item), dtype=torch.int64) 
+        self.uid2positive_item[uid] = torch.tensor(list(positive_item), dtype=torch.int64)
         self.uid2items_num[uid] = len(positive_item)
         self.uid2history_item[uid] = torch.tensor(list(history_item), dtype=torch.int64)
 
@@ -222,7 +223,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         if not self.is_sequential:
             user_df = self.user_df[self.pr:self.pr + self.step]
             uid_list = list(user_df[self.uid_field])
-   
+
             history_item = self.uid2history_item[uid_list]
             positive_item = self.uid2positive_item[uid_list]
 
@@ -241,4 +242,4 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             positive_i = interaction[self.iid_field]
 
             self.pr += self.step
-            return interaction, None, positive_u, positive_i  
+            return interaction, None, positive_u, positive_i
