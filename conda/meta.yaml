@@ -1,6 +1,6 @@
 package:
   name: recbole
-  version: 0.2.1
+  version: 1.0.0
 
 source:
   path: ../
@@ -9,7 +9,7 @@ requirements:
   build:
     - python
   host:
-    - python >=3.6
+    - python
     - numpy >=1.17.2
     - scipy ==1.6.0
     - pandas >=1.0.5
@@ -21,7 +21,7 @@ requirements:
     - colorama==0.4.4
     - tensorboard >=2.5.0
   run:
-    - python >=3.6
+    - python
     - numpy >=1.17.2
     - scipy ==1.6.0
     - pandas >=1.0.5
