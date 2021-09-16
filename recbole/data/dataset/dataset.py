@@ -404,7 +404,8 @@ class Dataset(object):
         columns = []
         usecols = []
         dtype = {}
-        with open(filepath, 'r') as f:
+        encoding = self.config['encoding']
+        with open(filepath, 'r', encoding=encoding) as f:
             head = f.readline()[:-1]
         for field_type in head.split(field_separator):
             field, ftype = field_type.split(':')
@@ -429,7 +430,9 @@ class Dataset(object):
             self.logger.warning(f'No columns has been loaded from [{source}]')
             return None
 
-        df = pd.read_csv(filepath, delimiter=self.config['field_separator'], usecols=usecols, dtype=dtype)
+        df = pd.read_csv(
+            filepath, delimiter=self.config['field_separator'], usecols=usecols, dtype=dtype, encoding=encoding
+        )
         df.columns = columns
 
         seq_separator = self.config['seq_separator']
@@ -484,7 +487,7 @@ class Dataset(object):
         if self.item_feat is not None:
             new_item_df = pd.DataFrame({self.iid_field: np.arange(self.item_num)})
             self.item_feat = pd.merge(new_item_df, self.item_feat, on=self.iid_field, how='left')
-            self.logger.debug(set_color('ordering item features by user id.', 'green'))
+            self.logger.debug(set_color('ordering item features by item id.', 'green'))
 
     def _preload_weight_matrix(self):
         """Transfer preload weight features into :class:`numpy.ndarray` with shape ``[id_token_length]``
