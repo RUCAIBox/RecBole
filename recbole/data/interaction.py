@@ -13,7 +13,31 @@ recbole.data.interaction
 """
 
 import numpy as np
+import pandas as pd
 import torch
+import torch.nn.utils.rnn as rnn_utils
+
+
+def _convert_to_tensor(data):
+    """This function can convert common data types (list, pandas.Series, numpy.ndarray, torch.Tensor) into torch.Tensor.
+
+    Args:
+        data (list, pandas.Series, numpy.ndarray, torch.Tensor): Origin data.
+
+    Returns:
+        torch.Tensor: Converted tensor from `data`.
+    """
+    elem = data[0]
+    if isinstance(elem, (float, int, np.float, np.int64)):
+        new_data = torch.as_tensor(data)
+    elif isinstance(elem, (list, tuple, pd.Series, np.ndarray, torch.Tensor)):
+        seq_data = [torch.as_tensor(d) for d in data]
+        new_data = rnn_utils.pad_sequence(seq_data, batch_first=True)
+    else:
+        raise ValueError(f'[{type(elem)}] is not supported!')
+    if new_data.dtype == torch.float64:
+        new_data = new_data.float()
+    return new_data
 
 
 class Interaction(object):
@@ -68,37 +92,39 @@ class Interaction(object):
             =======     =======     =======     ========
 
     Attributes:
-        interaction (dict): keys are meaningful str (also can be called field name),
+        interaction (dict or pandas.DataFrame): keys are meaningful str (also can be called field name),
             and values are Torch Tensor of numpy Array with shape (batch_size, \\*).
-
-        pos_len_list (list, optional): length of the list is the number of users in this batch,
-            each value represents the number of a user's **positive** records. The order of the
-            represented users should correspond to the order in the interaction.
-
-        user_len_list (list, optional): length of the list is the number of users in this batch,
-            each value represents the number of a user's **all** records. The order of the
-            represented users should correspond to the order in the interaction.
     """
 
-    def __init__(self, interaction, pos_len_list=None, user_len_list=None):
-        self.interaction = interaction
-        self.pos_len_list = self.user_len_list = None
-        self.set_additional_info(pos_len_list, user_len_list)
-        for k in self.interaction:
-            if not isinstance(self.interaction[k], torch.Tensor):
-                raise ValueError(f'Interaction [{interaction}] should only contains torch.Tensor')
+    def __init__(self, interaction):
+        self.interaction = dict()
+        if isinstance(interaction, dict):
+            for key, value in interaction.items():
+                if isinstance(value, (list, np.ndarray)):
+                    self.interaction[key] = _convert_to_tensor(value)
+                elif isinstance(value, torch.Tensor):
+                    self.interaction[key] = value
+                else:
+                    raise ValueError(f'The type of {key}[{type(value)}] is not supported!')
+        elif isinstance(interaction, pd.DataFrame):
+            for key in interaction:
+                value = interaction[key].values
+                self.interaction[key] = _convert_to_tensor(value)
+        else:
+            raise ValueError(f'[{type(interaction)}] is not supported for initialize `Interaction`!')
         self.length = -1
         for k in self.interaction:
             self.length = max(self.length, self.interaction[k].shape[0])
 
-    def set_additional_info(self, pos_len_list=None, user_len_list=None):
-        self.pos_len_list = pos_len_list
-        self.user_len_list = user_len_list
-        if (self.pos_len_list is None) ^ (self.user_len_list is None):
-            raise ValueError('pos_len_list and user_len_list should be both None or valued.')
-
     def __iter__(self):
         return self.interaction.__iter__()
+
+    def __getattr__(self, item):
+        if 'interaction' not in self.__dict__:
+            raise AttributeError(f"'Interaction' object has no attribute 'interaction'")
+        if item in self.interaction:
+            return self.interaction[item]
+        raise AttributeError(f"'Interaction' object has no attribute '{item}'")
 
     def __getitem__(self, index):
         if isinstance(index, str):
@@ -208,13 +234,8 @@ class Interaction(object):
         """
         ret = {}
         for k in self.interaction:
-            if len(self.interaction[k].shape) == 1:
-                ret[k] = self.interaction[k].repeat(sizes)
-            else:
-                ret[k] = self.interaction[k].repeat([sizes, 1])
-        new_pos_len_list = self.pos_len_list * sizes if self.pos_len_list else None
-        new_user_len_list = self.user_len_list * sizes if self.user_len_list else None
-        return Interaction(ret, new_pos_len_list, new_user_len_list)
+            ret[k] = self.interaction[k].repeat([sizes] + [1] * (len(self.interaction[k].shape) - 1))
+        return Interaction(ret)
 
     def repeat_interleave(self, repeats, dim=0):
         """Similar to repeat_interleave of PyTorch.
@@ -229,9 +250,7 @@ class Interaction(object):
         ret = {}
         for k in self.interaction:
             ret[k] = self.interaction[k].repeat_interleave(repeats, dim=dim)
-        new_pos_len_list = list(np.multiply(self.pos_len_list, repeats)) if self.pos_len_list else None
-        new_user_len_list = list(np.multiply(self.user_len_list, repeats)) if self.user_len_list else None
-        return Interaction(ret, new_pos_len_list, new_user_len_list)
+        return Interaction(ret)
 
     def update(self, new_inter):
         """Similar to ``dict.update()``
@@ -241,10 +260,6 @@ class Interaction(object):
         """
         for k in new_inter.interaction:
             self.interaction[k] = new_inter.interaction[k]
-        if new_inter.pos_len_list is not None:
-            self.pos_len_list = new_inter.pos_len_list
-        if new_inter.user_len_list is not None:
-            self.user_len_list = new_inter.user_len_list
 
     def drop(self, column):
         """Drop column in interaction.
@@ -264,10 +279,6 @@ class Interaction(object):
         """
         for k in self.interaction:
             self.interaction[k] = self.interaction[k][index]
-        if self.pos_len_list is not None:
-            self.pos_len_list = self.pos_len_list[index]
-        if self.user_len_list is not None:
-            self.user_len_list = self.user_len_list[index]
 
     def shuffle(self):
         """Shuffle current interaction inplace.

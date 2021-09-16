@@ -5,7 +5,7 @@ Interaction
 
 It is implemented as a new abstract data type based on :class:`python.dict`. The keys correspond to features from input, which can be conveniently referenced with feature names when writing the recommendation algorithms; and the values correspond to tensors (implemented by :class:`torch.Tensor`), which will be used for the update and computation in learning algorithms. Specially, the value entry for a specific key stores all the corresponding tensor data in a batch or mini-batch.
 
-With such a data structure, our library provides a friendly interface to write the recommendation algorithms in a batch-based mode. For example, we can read all the user embeddings and items embeddings from an instantiated :class:`~recbole.data.interaction.Interaction` object ``inter`` simply based on the feature names:
+With such a data structure, our library provides a friendly interface to write the recommendation algorithms in a batch-based mode. For example, we can read all the user embeddings and item embeddings from an instantiated :class:`~recbole.data.interaction.Interaction` object ``inter`` simply based on the feature names:
 
 .. code:: python
 

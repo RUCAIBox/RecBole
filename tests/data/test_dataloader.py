@@ -4,9 +4,9 @@
 # @Email  : chenyushuo@ruc.edu.cn
 
 # UPDATE
-# @Time    :   2020/1/5
-# @Author  :   Yushuo Chen
-# @email   :   chenyushuo@ruc.edu.cn
+# @Time    :   2020/1/5, 2021/7/1, 2021/7/19
+# @Author  :   Yushuo Chen, Xingyu Pan, Zhichao Feng
+# @email   :   chenyushuo@ruc.edu.cn, xy_pan@foxmail.com, fzcbupt@gmail.com
 
 import logging
 import os
@@ -37,23 +37,26 @@ class TestGeneralDataloader:
             'dataset': 'general_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS',
-            'training_neg_sample_num': 0,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'labeled'},
+            'neg_sampling': None,
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
         train_data, valid_data, test_data = new_dataloader(config_dict=config_dict)
 
-        def check_dataloader(data, item_list, batch_size):
+        def check_dataloader(data, item_list, batch_size, train=False):
             data.shuffle = False
             pr = 0
             for batch_data in data:
                 batch_item_list = item_list[pr: pr + batch_size]
-                assert (batch_data['item_id'].numpy() == batch_item_list).all()
+                if train:
+                    user_df = batch_data
+                else:
+                    user_df = batch_data[0]
+                assert (user_df['item_id'].numpy() == batch_item_list).all()
                 pr += batch_size
 
-        check_dataloader(train_data, list(range(1, 41)), train_batch_size)
+        check_dataloader(train_data, list(range(1, 41)), train_batch_size, True)
         check_dataloader(valid_data, list(range(41, 46)), eval_batch_size)
         check_dataloader(test_data, list(range(46, 51)), eval_batch_size)
 
@@ -65,9 +68,8 @@ class TestGeneralDataloader:
             'dataset': 'general_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS,full',
-            'training_neg_sample_num': 1,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'neg_sampling': {'uniform': 1},
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'full'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
@@ -93,9 +95,8 @@ class TestGeneralDataloader:
             'dataset': 'general_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS,full',
-            'training_neg_sample_num': 1,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'neg_sampling': {'uniform': 1},
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'full'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
@@ -121,9 +122,8 @@ class TestGeneralDataloader:
             'dataset': 'general_full_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS,full',
-            'training_neg_sample_num': 1,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'neg_sampling': {'uniform': 1},
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'full'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
@@ -132,59 +132,43 @@ class TestGeneralDataloader:
         def check_result(data, result):
             assert len(data) == len(result)
             for i, batch_data in enumerate(data):
-                user_df, history_index, swap_row, swap_col_after, swap_col_before = batch_data
+                user_df, history_index, positive_u, positive_i = batch_data
                 history_row, history_col = history_index
                 assert len(user_df) == result[i]['len_user_df']
                 assert (user_df['user_id'].numpy() == result[i]['user_df_user_id']).all()
-                assert (user_df.pos_len_list == result[i]['pos_len_list']).all()
-                assert (user_df.user_len_list == result[i]['user_len_list']).all()
                 assert len(history_row) == len(history_col) == result[i]['history_len']
                 assert (history_row.numpy() == result[i]['history_row']).all()
                 assert (history_col.numpy() == result[i]['history_col']).all()
-                assert len(swap_row) == len(swap_col_after) == len(swap_col_before) == result[i]['swap_len']
-                assert (swap_row.numpy() == result[i]['swap_row']).all()
-                assert (swap_col_after.numpy() == result[i]['swap_col_after']).all()
-                assert (swap_col_before.numpy() == result[i]['swap_col_before']).all()
+                assert (positive_u.numpy() == result[i]['positive_u']).all()
+                assert (positive_i.numpy() == result[i]['positive_i']).all()
 
         valid_result = [
             {
                 'len_user_df': 1,
                 'user_df_user_id': [1],
-                'pos_len_list': [5],
-                'user_len_list': [101],
                 'history_len': 40,
                 'history_row': 0,
                 'history_col': list(range(1, 41)),
-                'swap_len': 10,
-                'swap_row': 0,
-                'swap_col_after': [0, 1, 2, 3, 4, 41, 42, 43, 44, 45],
-                'swap_col_before': [45, 44, 43, 42, 41, 4, 3, 2, 1, 0],
+                'positive_u': [0, 0, 0, 0, 0],
+                'positive_i': [41, 42, 43, 44, 45]
             },
             {
                 'len_user_df': 1,
                 'user_df_user_id': [2],
-                'pos_len_list': [5],
-                'user_len_list': [101],
                 'history_len': 37,
                 'history_row': 0,
                 'history_col': list(range(1, 38)),
-                'swap_len': 10,
-                'swap_row': 0,
-                'swap_col_after': [0, 1, 2, 3, 4, 38, 39, 40, 41, 42],
-                'swap_col_before': [42, 41, 40, 39, 38, 4, 3, 2, 1, 0],
+                'positive_u': [0, 0, 0, 0, 0],
+                'positive_i': [38, 39, 40, 41, 42]
             },
             {
                 'len_user_df': 1,
                 'user_df_user_id': [3],
-                'pos_len_list': [1],
-                'user_len_list': [101],
                 'history_len': 0,
                 'history_row': [],
                 'history_col': [],
-                'swap_len': 2,
-                'swap_row': 0,
-                'swap_col_after': [0, 1],
-                'swap_col_before': [1, 0],
+                'positive_u': [0],
+                'positive_i': [1]
             },
         ]
         check_result(valid_data, valid_result)
@@ -193,41 +177,29 @@ class TestGeneralDataloader:
             {
                 'len_user_df': 1,
                 'user_df_user_id': [1],
-                'pos_len_list': [5],
-                'user_len_list': [101],
                 'history_len': 45,
                 'history_row': 0,
                 'history_col': list(range(1, 46)),
-                'swap_len': 10,
-                'swap_row': 0,
-                'swap_col_after': [0, 1, 2, 3, 4, 46, 47, 48, 49, 50],
-                'swap_col_before': [50, 49, 48, 47, 46, 4, 3, 2, 1, 0],
+                'positive_u': [0, 0, 0, 0, 0],
+                'positive_i': [46, 47, 48, 49, 50]
             },
             {
                 'len_user_df': 1,
                 'user_df_user_id': [2],
-                'pos_len_list': [5],
-                'user_len_list': [101],
                 'history_len': 37,
                 'history_row': 0,
                 'history_col': list(range(1, 36)) + [41, 42],
-                'swap_len': 10,
-                'swap_row': 0,
-                'swap_col_after': [0, 1, 2, 3, 4, 36, 37, 38, 39, 40],
-                'swap_col_before': [40, 39, 38, 37, 36, 4, 3, 2, 1, 0],
+                'positive_u': [0, 0, 0, 0, 0],
+                'positive_i': [36, 37, 38, 39, 40]
             },
             {
                 'len_user_df': 1,
                 'user_df_user_id': [3],
-                'pos_len_list': [1],
-                'user_len_list': [101],
                 'history_len': 0,
                 'history_row': [],
                 'history_col': [],
-                'swap_len': 2,
-                'swap_row': 0,
-                'swap_col_after': [0, 1],
-                'swap_col_before': [1, 0],
+                'positive_u': [0],
+                'positive_i': [1]
             },
         ]
         check_result(test_data, test_result)
@@ -240,9 +212,8 @@ class TestGeneralDataloader:
             'dataset': 'general_uni100_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS,uni100',
-            'training_neg_sample_num': 1,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'neg_sampling': {'uniform': 1},
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'uni100'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
@@ -252,30 +223,35 @@ class TestGeneralDataloader:
             assert data.batch_size == 202
             assert len(data) == len(result)
             for i, batch_data in enumerate(data):
-                assert result[i]['item_id_check'](batch_data['item_id'])
-                assert batch_data.pos_len_list == result[i]['pos_len_list']
-                assert batch_data.user_len_list == result[i]['user_len_list']
+                user_df, row_idx, positive_u, positive_i = batch_data
+                assert result[i]['item_id_check'](user_df['item_id'])
+                assert (row_idx.numpy() == result[i]['row_idx']).all()
+                assert (positive_u.numpy() == result[i]['positive_u']).all()
+                assert (positive_i.numpy() == result[i]['positive_i']).all()
 
         valid_result = [
             {
                 'item_id_check': lambda data: data[0] == 9
                                               and (8 < data[1:]).all()
                                               and (data[1:] <= 100).all(),
-                'pos_len_list': [1],
-                'user_len_list': [101],
+                'row_idx': [0] * 101,
+                'positive_u': [0],
+                'positive_i': [9],
             },
             {
                 'item_id_check': lambda data: data[0] == 1
                                               and (data[1:] != 1).all(),
-                'pos_len_list': [1],
-                'user_len_list': [101],
+                'row_idx': [0] * 101,
+                'positive_u': [0],
+                'positive_i': [1],
             },
             {
                 'item_id_check': lambda data: (data[0: 2].numpy() == [17, 18]).all()
                                               and (16 < data[2:]).all()
                                               and (data[2:] <= 100).all(),
-                'pos_len_list': [2],
-                'user_len_list': [202],
+                'row_idx': [0] * 202,
+                'positive_u': [0, 0],
+                'positive_i': [17, 18],
             },
         ]
         check_result(valid_data, valid_result)
@@ -285,21 +261,24 @@ class TestGeneralDataloader:
                 'item_id_check': lambda data: data[0] == 10
                                               and (9 < data[1:]).all()
                                               and (data[1:] <= 100).all(),
-                'pos_len_list': [1],
-                'user_len_list': [101],
+                'row_idx': [0] * 101,
+                'positive_u': [0],
+                'positive_i': [10],
             },
             {
                 'item_id_check': lambda data: data[0] == 1
                                               and (data[1:] != 1).all(),
-                'pos_len_list': [1],
-                'user_len_list': [101],
+                'row_idx': [0] * 101,
+                'positive_u': [0],
+                'positive_i': [1],
             },
             {
                 'item_id_check': lambda data: (data[0: 2].numpy() == [19, 20]).all()
                                               and (18 < data[2:]).all()
                                               and (data[2:] <= 100).all(),
-                'pos_len_list': [2],
-                'user_len_list': [202],
+                'row_idx': [0] * 202,
+                'positive_u': [0, 0],
+                'positive_i': [19, 20],
             },
         ]
         check_result(test_data, test_result)
@@ -312,9 +291,8 @@ class TestGeneralDataloader:
             'dataset': 'general_uni100_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'eval_setting': 'TO_RS,uni100',
-            'training_neg_sample_num': 1,
-            'split_ratio': [0.8, 0.1, 0.1],
+            'neg_sampling': {'uniform': 1},
+            'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'uni100'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
         }
@@ -324,9 +302,11 @@ class TestGeneralDataloader:
             assert data.batch_size == 303
             assert len(data) == len(result)
             for i, batch_data in enumerate(data):
-                assert result[i]['item_id_check'](batch_data['item_id'])
-                assert batch_data.pos_len_list == result[i]['pos_len_list']
-                assert batch_data.user_len_list == result[i]['user_len_list']
+                user_df, row_idx, positive_u, positive_i = batch_data
+                assert result[i]['item_id_check'](user_df['item_id'])
+                assert (row_idx.numpy() == result[i]['row_idx']).all()
+                assert (positive_u.numpy() == result[i]['positive_u']).all()
+                assert (positive_i.numpy() == result[i]['positive_i']).all()
 
         valid_result = [
             {
@@ -335,15 +315,17 @@ class TestGeneralDataloader:
                                               and (data[1: 101] <= 100).all()
                                               and data[101] == 1
                                               and (data[102:202] != 1).all(),
-                'pos_len_list': [1, 1],
-                'user_len_list': [101, 101],
+                'row_idx': [0] * 101 + [1] * 101,
+                'positive_u': [0, 1],
+                'positive_i': [9, 1],
             },
             {
                 'item_id_check': lambda data: (data[0: 2].numpy() == [17, 18]).all()
                                               and (16 < data[2:]).all()
                                               and (data[2:] <= 100).all(),
-                'pos_len_list': [2],
-                'user_len_list': [202],
+                'row_idx': [0] * 202,
+                'positive_u': [0, 0],
+                'positive_i': [17, 18],
             },
         ]
         check_result(valid_data, valid_result)
@@ -355,15 +337,17 @@ class TestGeneralDataloader:
                                               and (data[1:101] <= 100).all()
                                               and data[101] == 1
                                               and (data[102:202] != 1).all(),
-                'pos_len_list': [1, 1],
-                'user_len_list': [101, 101],
+                'row_idx': [0] * 101 + [1] * 101,
+                'positive_u': [0, 1],
+                'positive_i': [10, 1],
             },
             {
                 'item_id_check': lambda data: (data[0: 2].numpy() == [19, 20]).all()
                                               and (18 < data[2:]).all()
                                               and (data[2:] <= 100).all(),
-                'pos_len_list': [2],
-                'user_len_list': [202],
+                'row_idx': [0] * 202,
+                'positive_u': [0, 0],
+                'positive_i': [19, 20],
             },
         ]
         check_result(test_data, test_result)

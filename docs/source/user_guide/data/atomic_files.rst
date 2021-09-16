@@ -141,4 +141,4 @@ For example, if you want to map the tokens of ``ent_id`` into the same space of 
         # inter/user/item/...: As usual
         ent: [ent_id, ent_emb]
 
-    fields_in_same_space: [[ent_id, entity_id]]
+    alias_of_entity_id: [ent_id]

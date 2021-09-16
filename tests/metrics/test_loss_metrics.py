@@ -10,7 +10,14 @@ import unittest
 
 sys.path.append(os.getcwd())
 import numpy as np
-from recbole.evaluator.metrics import metrics_dict
+from recbole.config import Config
+from recbole.evaluator.register import metrics_dict
+
+parameters_dict = {
+    'metric_decimal_place': 4,
+}
+
+config = Config('BPR', 'ml-1m', config_dict=parameters_dict)
 
 
 class TestCases(object):
@@ -22,9 +29,10 @@ class TestCases(object):
 
 
 def get_result(name, case=0):
-    func = metrics_dict[name]
-    return func(getattr(TestCases, f'trues_{case}'),
-                getattr(TestCases, f'preds_{case}'))
+    Metric = metrics_dict[name](config)
+    return Metric.metric_info(
+        getattr(TestCases, f'preds_{case}'),
+        getattr(TestCases, f'trues_{case}'))
 
 
 class TestLossMetrics(unittest.TestCase):
@@ -36,9 +44,9 @@ class TestLossMetrics(unittest.TestCase):
     def test_rmse(self):
         name = 'rmse'
         self.assertEqual(get_result(name, case=0),
-                         np.sqrt((0.9**2 + 0.9**2 + 0.8**2 + 0.7**2) / 4))
+                         np.sqrt((0.9 ** 2 + 0.9 ** 2 + 0.8 ** 2 + 0.7 ** 2) / 4))
         self.assertEqual(get_result(name, case=1),
-                         np.sqrt((0.7**2 + 0.5**2 + 0.4**2 + 0.2**2) / 4))
+                         np.sqrt((0.7 ** 2 + 0.5 ** 2 + 0.4 ** 2 + 0.2 ** 2) / 4))
 
     def test_logloss(self):
         name = 'logloss'

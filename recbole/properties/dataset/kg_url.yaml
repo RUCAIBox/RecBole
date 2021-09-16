@@ -1,0 +1,11 @@
+amazon-books: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/Amazon-book-KG.zip
+lfm1b-albums-merged: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/LFM-1b-KG.zip
+lfm1b-artists-merged: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/LFM-1b-KG.zip
+lfm1b-tracks-merged: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/LFM-1b-KG.zip
+lfm1b-albums-not-merged: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/LFM-1b-KG.zip
+lfm1b-artists-not-merged: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/LFM-1b-KG.zip
+lfm1b-tracks-not-merged: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/LFM-1b-KG.zip
+ml-100k: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/MovieLens-KG.zip
+ml-1m: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/MovieLens-KG.zip
+ml-10m: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/MovieLens-KG.zip
+ml-20m: https://recbole.s3-accelerate.amazonaws.com/KGDatasets/MovieLens-KG.zip

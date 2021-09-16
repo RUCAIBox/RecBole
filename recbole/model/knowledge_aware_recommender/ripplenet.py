@@ -45,9 +45,9 @@ class RippleNet(KnowledgeRecommender):
         self.n_hop = config['n_hop']
         self.n_memory = config['n_memory']
         self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
-        head_entities = dataset.dataset.head_entities.tolist()
-        tail_entities = dataset.dataset.tail_entities.tolist()
-        relations = dataset.dataset.relations.tolist()
+        head_entities = dataset.head_entities.tolist()
+        tail_entities = dataset.tail_entities.tolist()
+        relations = dataset.relations.tolist()
         kg = {}
         for i in range(len(head_entities)):
             head_ent = head_entities[i]
@@ -79,6 +79,7 @@ class RippleNet(KnowledgeRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
+        self.other_parameter_name = ['ripple_set']
 
     def _build_ripple_set(self):
         r"""Get the normalized interaction matrix of users and items according to A_values.

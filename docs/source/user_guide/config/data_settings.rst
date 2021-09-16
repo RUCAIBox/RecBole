@@ -1,4 +1,4 @@
-Args for Data
+Data settings
 =========================
 
 RecBole provides several arguments for describing:
@@ -24,7 +24,7 @@ Common Features
 - ``ITEM_ID_FIELD (str)`` : Field name of item ID feature. Defaults to ``item_id``.
 - ``RATING_FIELD (str)`` : Field name of rating feature. Defaults to ``rating``.
 - ``TIME_FIELD (str)`` : Field name of timestamp feature. Defaults to ``timestamp``.
-- ``seq_len (dict)`` : Keys are field names of sequence features, values are maximum length of each sequence (which means sequences too long will be cut off). If not set, the sequences will not be cut off. Defaults to ``None``.
+- ``seq_len (dict)`` : Keys are field names of sequence features, values are maximum length of each sequence (which means too long sequences will be cut off). If not set, the sequences will not be cut off. Defaults to ``None``.
 
 Label for Point-wise DataLoader
 '''''''''''''''''''''''''''''''''''
@@ -58,7 +58,7 @@ Selectively Loading
 
 - ``load_col (dict)`` : Keys are the suffix of loaded atomic files, values are the list of field names to be loaded. If a suffix doesn't exist in ``load_col``, the corresponding atomic file will not be loaded. Note that if ``load_col`` is ``None``, then all the existed atomic files will be loaded. Defaults to ``{inter: [user_id, item_id]}``.
 - ``unload_col (dict)`` : Keys are suffix of loaded atomic files, values are list of field names NOT to be loaded. Note that ``load_col`` and ``unload_col`` can not be set at the same time. Defaults to ``None``.
-- ``unused_col (dict)`` : Keys are suffix of loaded atomic files, values are list of field names which is loaded for data processing but will not used in model. E.g. the ``time_field`` may used for time ordering but model does not use this field. Defaults to ``None``.
+- ``unused_col (dict)`` : Keys are suffix of loaded atomic files, values are list of field names which is loaded for data processing but will not be used in model. E.g. the ``time_field`` may be used for time ordering but model does not use this field. Defaults to ``None``.
 - ``additional_feat_suffix (list)``: Control loading additional atomic files. E.g. if you want to load features from ``ml-100k.hello``, just set this arg as ``additional_feat_suffix: [hello]``. Features of additional features will be stored in ``Dataset.feat_list``. Defaults to ``None``.
 
 Filtering
@@ -67,15 +67,12 @@ Filtering
 Remove duplicated user-item interactions
 ''''''''''''''''''''''''''''''''''''''''
 
-- ``rm_dup_inter (str)`` : Whether to remove duplicated user-item interactions. If ``time_field`` exists, ``inter_feat`` will be sorted by ``time_field`` in ascending order. Otherwise it will remain unchanged. After that, if ``rm_dup_inter ==  first``, we will keep the first user-item interaction in duplicates; if ``rm_dup_inter ==  last``, we will keep the last user-item interaction in duplicates. Defaults to ``None``.
+- ``rm_dup_inter (str)`` : Whether to remove duplicated user-item interactions. If ``time_field`` exists, ``inter_feat`` will be sorted by ``time_field`` in ascending order. Otherwise it will remain unchanged. After that, if ``rm_dup_inter ==  first``, we will keep the first user-item interaction in duplicates; if ``rm_dup_inter == last``, we will keep the last user-item interaction in duplicates. Defaults to ``None``.
 
 Filter by value
 ''''''''''''''''''
 
-- ``lowest_val (dict)`` : Has the format ``{k (str): v (float)}, ...``. The rows whose ``feat[k] < v`` will be filtered. Defaults to ``None``.
-- ``highest_val (dict)`` : Has the format ``{k (str): v (float)}, ...``. The rows whose ``feat[k] > v`` will be filtered. Defaults to ``None``.
-- ``equal_val (dict)`` : Has the format ``{k (str): v (float)}, ...``. The rows whose ``feat[k] != v`` will be filtered. Defaults to ``None``.
-- ``not_equal_val (dict)`` : Has the format ``{k (str): v (float)}, ...``. The rows whose ``feat[k] == v`` will be filtered. Defaults to ``None``.
+- ``val_interval (dict)``: Has the format ``{k (str): interval (str), ...}``, where ``interval`` can be set as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``. The rows whose ``feat[k]`` is in the interval ``interval`` will be retained. If you want to specify more than one interval, separate them with semicolon(s). For instance, ``{k: "[A,B);(C,D]"}`` can be adopted and rows whose ``feat[k]`` is in any specified interval will be retained. Defaults to ``None``, which means all rows will be retained.
 
 Remove interation by user or item
 '''''''''''''''''''''''''''''''''''
@@ -85,17 +82,18 @@ Remove interation by user or item
 Filter by number of interactions
 ''''''''''''''''''''''''''''''''''''
 
-- ``max_user_inter_num (int)`` : Users whose number of interactions is more than ``max_user_inter_num`` will be filtered. Defaults to ``None``.
-- ``min_user_inter_num (int)`` : Users whose number of interactions is less than ``min_user_inter_num`` will be filtered. Defaults to ``0``.
-- ``max_item_inter_num (int)`` : Items whose number of interactions is more than ``max_item_inter_num`` will be filtered. Defaults to ``None``.
-- ``min_item_inter_num (int)`` : Items whose number of interactions is less than ``min_item_inter_num`` will be filtered. Defaults to ``0``.
+- ``user_inter_num_interval (str)`` : Has the interval format, such as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``,  where ``A`` and ``B`` are the endpoints of the interval and ``A <= B``. Users whose number of interactions is in the interval will be retained. Defaults to ``[0,inf)``.
+- ``item_inter_num_interval (str)`` : Has the interval format, such as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``,  where ``A`` and ``B`` are the endpoints of the interval and ``A <= B``. Items whose number of interactions is in the interval will be retained. Defaults to ``[0,inf)``.
 
 Preprocessing
 -----------------
 
-- ``fields_in_same_space (list)`` : List of spaces. Space is a list of string similar to the fields' names. The fields in the same space will be remapped into the same index system. Note that if you want to make some fields remapped in the same space with entities, then just set ``fields_in_same_space = [entity_id, xxx, ...]``. (if ``ENTITY_ID_FIELD != 'entity_id'``, then change the ``'entity_id'`` in the above example.) Defaults to ``None``.
-- ``preload_weight (dict)`` : Has the format ``{k (str): v (float)}, ...``. ``k`` if a token field, representing the IDs of each row of preloaded weight matrix. ``v`` is a float like fields. Each pair of ``u`` and ``v`` should be from the same atomic file. This arg can be used to load pretrained vectors. Defaults to ``None``.
-- ``normalize_field (list)`` : List of filed names to be normalized. Note that only float like fields can be normalized. Defaults to ``None``.
+- ``alias_of_user_id (list)``: List of fields' names, which will be remapped into the same index system with ``USER_ID_FIELD``. Defaults to ``None``.
+- ``alias_of_item_id (list)``: List of fields' names, which will be remapped into the same index system with ``ITEM_ID_FIELD``. Defaults to ``None``.
+- ``alias_of_entity_id (list)``: List of fields' names, which will be remapped into the same index system with ``ENTITY_ID_FIELD``, ``HEAD_ENTITY_ID_FIELD`` and ``TAIL_ENTITY_ID_FIELD``. Defaults to ``None``.
+- ``alias_of_relation_id (list)``: List of fields' names, which will be remapped into the same index system with ``RELATION_ID_FIELD``. Defaults to ``None``.
+- ``preload_weight (dict)`` : Has the format ``{k (str): v (float)}, ...``. ``k`` is a token field, representing the IDs of each row of preloaded weight matrix. ``v`` is a float-like field. Each pair of ``k`` and ``v`` should be from the same atomic file. This arg can be used to load pretrained vectors. Defaults to ``None``.
+- ``normalize_field (list)`` : List of filed names to be normalized. Note that only float-like fields can be normalized. Defaults to ``None``.
 - ``normalize_all (bool)`` : Normalize all the float like fields if ``True``. Defaults to ``True``.
 
 Benchmark file

@@ -53,7 +53,7 @@ And then:
 
 **Notes:**
 
-- Different from other sequential models, TransRec must be optimized in pair-wise way using negative sampling, so it needs ``training_neg_sample_num=1``.
+- Different from other sequential models, TransRec must be optimized in pair-wise way using negative sampling, so it needs ``neg_sampling={'uniform': 1}``.
 
 Tuning Hyper Parameters
 -------------------------
@@ -80,5 +80,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`

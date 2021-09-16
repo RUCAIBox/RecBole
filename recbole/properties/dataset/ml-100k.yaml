@@ -31,18 +31,16 @@ unused_col: ~
 
 # Filtering
 rm_dup_inter: ~
-lowest_val: ~
-highest_val: ~
-equal_val: ~
-not_equal_val: ~
+val_interval: ~
 filter_inter_by_user_or_item: True
-max_user_inter_num: ~
-min_user_inter_num: ~
-max_item_inter_num: ~
-min_item_inter_num: ~
+user_inter_num_interval: ~
+item_inter_num_interval: ~
 
 # Preprocessing
-fields_in_same_space: ~
+alias_of_user_id: ~
+alias_of_item_id: ~
+alias_of_entity_id: ~
+alias_of_relation_id: ~
 preload_weight: ~
 normalize_field: ~
 normalize_all: True

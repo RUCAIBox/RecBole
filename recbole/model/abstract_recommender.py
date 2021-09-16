@@ -19,8 +19,7 @@ import torch
 import torch.nn as nn
 
 from recbole.model.layers import FMEmbedding, FMFirstOrderLinear
-from recbole.utils import ModelType, InputType, FeatureSource, FeatureType
-from recbole.utils.utils import set_color
+from recbole.utils import ModelType, InputType, FeatureSource, FeatureType, set_color
 
 
 class AbstractRecommender(nn.Module):
@@ -65,6 +64,17 @@ class AbstractRecommender(nn.Module):
             shape: [n_batch_users * n_candidate_items]
         """
         raise NotImplementedError
+
+    def other_parameter(self):
+        if hasattr(self, 'other_parameter_name'):
+            return {key: getattr(self, key) for key in self.other_parameter_name}
+        return dict()
+
+    def load_other_parameter(self, para):
+        if para is None:
+            return
+        for key, value in para.items():
+            setattr(self, key, value)
 
     def __str__(self):
         """
@@ -159,7 +169,15 @@ class ContextRecommender(AbstractRecommender):
     def __init__(self, config, dataset):
         super(ContextRecommender, self).__init__()
 
-        self.field_names = dataset.fields()
+        self.field_names = dataset.fields(
+            source=[
+                FeatureSource.INTERACTION,
+                FeatureSource.USER,
+                FeatureSource.USER_ID,
+                FeatureSource.ITEM,
+                FeatureSource.ITEM_ID,
+            ]
+        )
         self.LABEL = config['LABEL_FIELD']
         self.embedding_size = config['embedding_size']
         self.device = config['device']
@@ -175,13 +193,8 @@ class ContextRecommender(AbstractRecommender):
         self.num_feature_field = 0
 
         if self.double_tower:
-            self.user_field_names = []
-            self.item_field_names = []
-            for field_name in self.field_names:
-                if dataset.dataset.field2source[field_name] in {FeatureSource.USER, FeatureSource.USER_ID}:
-                    self.user_field_names.append(field_name)
-                elif dataset.dataset.field2source[field_name] in {FeatureSource.ITEM, FeatureSource.ITEM_ID}:
-                    self.item_field_names.append(field_name)
+            self.user_field_names = dataset.fields(source=[FeatureSource.USER, FeatureSource.USER_ID])
+            self.item_field_names = dataset.fields(source=[FeatureSource.ITEM, FeatureSource.ITEM_ID])
             self.field_names = self.user_field_names + self.item_field_names
             self.user_token_field_num = 0
             self.user_float_field_num = 0
@@ -238,7 +251,7 @@ class ContextRecommender(AbstractRecommender):
 
         Args:
             float_fields (torch.FloatTensor): The input dense tensor. shape of [batch_size, num_float_field]
-            embed (bool): Return the embedding of columns or just the columns itself. default=True
+            embed (bool): Return the embedding of columns or just the columns itself. Defaults to ``True``.
 
         Returns:
             torch.FloatTensor: The result embedding tensor of float columns.

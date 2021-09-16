@@ -80,6 +80,7 @@ class DIEN(SequentialRecommender):
         self.loss = nn.BCELoss()
 
         self.apply(self._init_weights)
+        self.other_parameter_name = ['embedding_layer']
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
@@ -92,12 +93,9 @@ class DIEN(SequentialRecommender):
     def forward(self, user, item_seq, neg_item_seq, item_seq_len, next_items):
 
         max_length = item_seq.shape[1]
-
         # concatenate the history item seq with the target item to get embedding together
         item_seq_next_item = torch.cat((item_seq, neg_item_seq, next_items.unsqueeze(1)), dim=-1)
-
         sparse_embedding, dense_embedding = self.embedding_layer(user, item_seq_next_item)
-
         # concat the sparse embedding and float embedding
         feature_table = {}
         for type in self.types:
@@ -109,7 +107,6 @@ class DIEN(SequentialRecommender):
 
             feature_table[type] = torch.cat(feature_table[type], dim=-2)
             table_shape = feature_table[type].shape
-
             feat_num, embedding_size = table_shape[-2], table_shape[-1]
             feature_table[type] = feature_table[type].view(table_shape[:-2] + (feat_num * embedding_size,))
 

@@ -60,9 +60,9 @@ class KGNNLS(KnowledgeRecommender):
         adj_entity, adj_relation = self.construct_adj(kg_graph)
         self.adj_entity, self.adj_relation = adj_entity.to(self.device), adj_relation.to(self.device)
 
-        inter_feat = dataset.dataset.inter_feat
-        pos_users = inter_feat[dataset.dataset.uid_field]
-        pos_items = inter_feat[dataset.dataset.iid_field]
+        inter_feat = dataset.inter_feat
+        pos_users = inter_feat[dataset.uid_field]
+        pos_items = inter_feat[dataset.iid_field]
         pos_label = torch.ones(pos_items.shape)
         pos_interaction_table, self.offset = self.get_interaction_table(pos_users, pos_items, pos_label)
         self.interaction_table = self.sample_neg_interaction(pos_interaction_table, self.offset)
@@ -85,6 +85,7 @@ class KGNNLS(KnowledgeRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
+        self.other_parameter_name = ['adj_entity', 'adj_relation']
 
     def get_interaction_table(self, user_id, item_id, y):
         r"""Get interaction_table that is used for fetching user-item interaction label in LS regularization.

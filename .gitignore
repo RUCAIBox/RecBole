@@ -6,6 +6,7 @@
 .idea/
 *.pyc
 *.log
+log_tensorboard/*
 saved/
 *.lprof
 *.egg-info/

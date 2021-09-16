@@ -4,8 +4,9 @@ recbole.evaluator
 .. toctree::
    :maxdepth: 4
 
-   recbole.evaluator.abstract_evaluator
-   recbole.evaluator.evaluators
+   recbole.evaluator.base_metric
+   recbole.evaluator.collector
+   recbole.evaluator.evaluator
    recbole.evaluator.metrics
-   recbole.evaluator.proxy_evaluator
+   recbole.evaluator.register
    recbole.evaluator.utils

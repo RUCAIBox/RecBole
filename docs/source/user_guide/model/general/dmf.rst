@@ -49,7 +49,7 @@ And then:
 - The last value in ``user_hidden_size_list`` and ``item_hidden_size_list`` must be the same.
 
 - If you set ``inter_matrix_type='rating'``, the 'rating' field from \*.inter atomic files must be remained
-which means that the `rating` cannot be included in ``unload_col`` or ``unused_col``.
+  which means that the `rating` cannot be included in ``unload_col`` or ``unused_col``.
 
 Tuning Hyper Parameters
 -------------------------
@@ -77,5 +77,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`

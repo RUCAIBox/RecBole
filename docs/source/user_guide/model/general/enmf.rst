@@ -37,7 +37,7 @@ Write the following code to a python file, such as `run.py`
    from recbole.quick_start import run_recbole
 
    parameter_dict = {
-      'training_neg_sample_num': 0 
+      'neg_sampling': None,
    }
    run_recbole(model='ENMF', dataset='ml-100k', config_dict=parameter_dict)
 
@@ -47,7 +47,7 @@ And then:
 
    python run.py
 
-**Note**: Because this model is a non-sampling model, so you must set ``training_neg_sample=0`` when you run this model. 
+**Note**: Because this model is a non-sampling model, so you must set ``neg_sampling=None`` when you run this model.
 
 Tuning Hyper Parameters
 -------------------------
@@ -75,5 +75,5 @@ If you want to change parameters, dataset or evaluation settings, take a look at
 
 - :doc:`../../../user_guide/config_settings`
 - :doc:`../../../user_guide/data_intro`
-- :doc:`../../../user_guide/evaluation_support`
+- :doc:`../../../user_guide/train_eval_intro`
 - :doc:`../../../user_guide/usage`

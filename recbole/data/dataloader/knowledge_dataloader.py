@@ -11,8 +11,8 @@
 recbole.data.dataloader.knowledge_dataloader
 ################################################
 """
-
-from recbole.data.dataloader import AbstractDataLoader, GeneralNegSampleDataLoader
+from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
+from recbole.data.dataloader.general_dataloader import TrainDataLoader
 from recbole.data.interaction import Interaction
 from recbole.utils import InputType, KGDataLoaderState
 
@@ -25,9 +25,6 @@ class KGDataLoader(AbstractDataLoader):
         config (Config): The config of dataloader.
         dataset (Dataset): The dataset of dataloader.
         sampler (KGSampler): The knowledge graph sampler of dataloader.
-        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
-        dl_format (InputType, optional): The input type of dataloader. Defaults to
-            :obj:`~recbole.utils.InputType.PAIRWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
 
     Attributes:
@@ -35,8 +32,11 @@ class KGDataLoader(AbstractDataLoader):
             However, in :class:`KGDataLoader`, it's guaranteed to be ``True``.
     """
 
-    def __init__(self, config, dataset, sampler, batch_size=1, dl_format=InputType.PAIRWISE, shuffle=False):
-        self.sampler = sampler
+    def __init__(self, config, dataset, sampler, shuffle=False):
+        if shuffle is False:
+            shuffle = True
+            self.logger.warning('kg based dataloader must shuffle the data')
+
         self.neg_sample_num = 1
 
         self.neg_prefix = config['NEG_PREFIX']
@@ -47,15 +47,12 @@ class KGDataLoader(AbstractDataLoader):
         self.neg_tid_field = self.neg_prefix + self.tid_field
         dataset.copy_field_property(self.neg_tid_field, self.tid_field)
 
-        super().__init__(config, dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config, dataset, sampler, shuffle=shuffle)
 
-    def setup(self):
-        """Make sure that the :attr:`shuffle` is True. If :attr:`shuffle` is False, it will be changed to True
-        and give a warning to user.
-        """
-        if self.shuffle is False:
-            self.shuffle = True
-            self.logger.warning('kg based dataloader must shuffle the data')
+    def _init_batch_size_and_step(self):
+        batch_size = self.config['train_batch_size']
+        self.step = batch_size
+        self.set_batch_size(batch_size)
 
     @property
     def pr_end(self):
@@ -65,15 +62,12 @@ class KGDataLoader(AbstractDataLoader):
         self.dataset.kg_feat.shuffle()
 
     def _next_batch_data(self):
-        cur_data = self._neg_sampling(self.dataset.kg_feat[self.pr:self.pr + self.step])
+        cur_data = self.dataset.kg_feat[self.pr:self.pr + self.step]
+        head_ids = cur_data[self.hid_field]
+        neg_tail_ids = self.sampler.sample_by_entity_ids(head_ids, self.neg_sample_num)
+        cur_data.update(Interaction({self.neg_tid_field: neg_tail_ids}))
         self.pr += self.step
         return cur_data
-
-    def _neg_sampling(self, kg_feat):
-        hids = kg_feat[self.hid_field]
-        neg_tids = self.sampler.sample_by_entity_ids(hids, self.neg_sample_num)
-        kg_feat.update(Interaction({self.neg_tid_field: neg_tids}))
-        return kg_feat
 
 
 class KnowledgeBasedDataLoader(AbstractDataLoader):
@@ -88,21 +82,18 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         dataset (Dataset): The dataset of dataloader.
         sampler (Sampler): The sampler of dataloader.
         kg_sampler (KGSampler): The knowledge graph sampler of dataloader.
-        neg_sample_args (dict): The neg_sample_args of dataloader.
-        batch_size (int, optional): The batch_size of dataloader. Defaults to ``1``.
-        dl_format (InputType, optional): The input type of dataloader. Defaults to
-            :obj:`~recbole.utils.enum_type.InputType.POINTWISE`.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
 
     Attributes:
-        state (KGDataLoaderState): 
+        state (KGDataLoaderState):
             This dataloader has three states:
 
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RS`
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.KG`
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RSKG`
 
-            In the first state, this dataloader would only return the triplets with negative examples in a knowledge graph.
+            In the first state, this dataloader would only return the triplets with negative
+            examples in a knowledge graph.
 
             In the second state, this dataloader would only return the user-item interaction.
 
@@ -110,37 +101,20 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
             and user-item interaction information.
     """
 
-    def __init__(
-        self,
-        config,
-        dataset,
-        sampler,
-        kg_sampler,
-        neg_sample_args,
-        batch_size=1,
-        dl_format=InputType.POINTWISE,
-        shuffle=False
-    ):
+    def __init__(self, config, dataset, sampler, kg_sampler, shuffle=False):
 
         # using sampler
-        self.general_dataloader = GeneralNegSampleDataLoader(
-            config=config,
-            dataset=dataset,
-            sampler=sampler,
-            neg_sample_args=neg_sample_args,
-            batch_size=batch_size,
-            dl_format=dl_format,
-            shuffle=shuffle
-        )
+        self.general_dataloader = TrainDataLoader(config, dataset, sampler, shuffle=shuffle)
 
-        # using kg_sampler and dl_format is pairwise
-        self.kg_dataloader = KGDataLoader(
-            config, dataset, kg_sampler, batch_size=batch_size, dl_format=InputType.PAIRWISE, shuffle=True
-        )
+        # using kg_sampler
+        self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, shuffle=True)
 
         self.state = None
 
-        super().__init__(config, dataset, batch_size=batch_size, dl_format=dl_format, shuffle=shuffle)
+        super().__init__(config, dataset, sampler, shuffle=shuffle)
+
+    def _init_batch_size_and_step(self):
+        pass
 
     def __iter__(self):
         if self.state is None:
