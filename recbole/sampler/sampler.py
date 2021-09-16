@@ -24,15 +24,12 @@ from collections import Counter
 class AbstractSampler(object):
     """:class:`AbstractSampler` is a abstract class, all sampler should inherit from it. This sampler supports returning
     a certain number of random value_ids according to the input key_id, and it also supports to prohibit
-    certain key-value pairs by setting used_ids. Besides, in order to improve efficiency, we use :attr:`random_pr`
-    to move around the :attr:`random_list` to generate random numbers, so we need to implement the
-    :meth:`get_random_list` method in the subclass.
+    certain key-value pairs by setting used_ids.
 
     Args:
         distribution (str): The string of distribution, which is used for subclass.
 
     Attributes:
-        random_list (list or numpy.ndarray): The shuffled result of :meth:`get_random_list`.
         used_ids (numpy.ndarray): The result of :meth:`get_used_ids`.
     """
 
@@ -385,18 +382,6 @@ class RepeatableSampler(AbstractSampler):
 
     def _get_candidates_list(self):
         return list(self.dataset.inter_feat[self.iid_field].numpy())
-
-    def get_random_list(self):
-        """
-        Returns:
-            numpy.ndarray or list: Random list of item_id.
-        """
-        if self.distribution == 'uniform':
-            return np.arange(1, self.item_num)
-        elif self.distribution == 'popularity':
-            return self.dataset.inter_feat[self.iid_field].numpy()
-        else:
-            raise NotImplementedError(f'Distribution [{self.distribution}] has not been implemented.')
 
     def get_used_ids(self):
         """
