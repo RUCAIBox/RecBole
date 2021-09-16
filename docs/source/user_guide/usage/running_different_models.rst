@@ -29,7 +29,7 @@ corresponding column names.
 
 **training and evaluation settings**
 
-General recommendation models usually needs to group data by user and perform
+General recommendation models usually need to group data by user and perform
 negative sampling. You can set the config like this:
 
 .. code:: yaml
@@ -59,7 +59,7 @@ inter atomic file.
 
 **label setting**
 
-In general, context-aware recommendation models mainly used in explicit feedback scenes, 
+In general, context-aware recommendation models are mainly used in explicit feedback scenes, 
 so your data should have explicit feedback information and you need to set label for them. For more information about label setting, 
 please read the :doc:`../data/label_of_data`.
 

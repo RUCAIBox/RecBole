@@ -70,8 +70,8 @@ are also support for these models. And evaluation is always conducted in the way
 
 Sequential Recommendation
 ---------------------------------
-The task of sequential recommendation(next-item recommendation) is the same as general recommendation which sort a list of items according
-to preference. While the history interactions are organized in sequences and the model tend to characterize
+The task of sequential recommendation(next-item recommendation) is the same as general recommendation which sorts a list of items according
+to preference. While the history interactions are organized in sequences and the model tends to characterize
 the sequential data. The models of session-based recommendation are also included in this class.
 
 .. toctree::
@@ -105,7 +105,7 @@ the sequential data. The models of session-based recommendation are also include
 
 Knowledge-based Recommendation
 ---------------------------------
-Knowledge-based recommendation introduce an external knowledge graph to enhance general or sequential recommendation.
+Knowledge-based recommendation introduces an external knowledge graph to enhance general or sequential recommendation.
 
 .. toctree::
    :maxdepth: 1

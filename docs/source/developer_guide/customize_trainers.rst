@@ -8,11 +8,11 @@ The function used to train the model is :meth:`fit`, it will call :meth:`_train_
 
 The function used to evaluate the model is :meth:`evaluate`, it will call :meth:`_valid_epoch` to evaluate the model.
 
-If the developed model need more complex training method,
+If the developed model needs more complex training method,
 then one can inherent the :class:`~recbole.trainer.trainer.Trainer`,
 and revise :meth:`~recbole.trainer.trainer.Trainer.fit` or :meth:`~recbole.trainer.trainer.Trainer._train_epoch`.
 
-If the developed model need more complex evaluation method,
+If the developed model needs more complex evaluation method,
 then one can inherent the :class:`~recbole.trainer.trainer.Trainer`,
 and revise :meth:`~recbole.trainer.trainer.Trainer.evaluate` or :meth:`~recbole.trainer.trainer.Trainer._valid_epoch`.
 
