@@ -11,7 +11,7 @@ Quick-start From API
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Before running a model, firstly you need to prepare and load data. To help users quickly get start, 
 RecBole has a build-in dataset **ml-100k** and you can directly use it. However, if you want to use other datasets, you can read
-:doc:`../usage/running_new_dataset` for more information.
+:doc:`../user_guide/usage/running_new_dataset` for more information.
 
 Then, you need to set data config for data loading. You can create a `yaml` file called `test.yaml` and write the following settings:
 
