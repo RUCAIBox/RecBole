@@ -57,6 +57,8 @@ for testing and comparing recommendation algorithms.
 
 
 ## RecBole News
+**09/17/2021**: We release RecBole [v1.0.0](https://github.com/RUCAIBox/RecBole/releases/tag/v1.0.0).
+
 **03/22/2021**: We release RecBole [v0.2.1](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.1).
 
 **01/15/2021**: We release RecBole [v0.2.0](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.0).
@@ -214,10 +216,11 @@ We will keep improving our implementations, and update these test results.
 
 
 ## RecBole Major Releases
-| Releases  | Date   | Features |
-|-----------|--------|-------------------------|
-| v0.2.0    | 01/15/2021 |  RecBole |
-| v0.1.1    | 11/03/2020 |  Basic RecBole |
+| Releases  | Date   |
+|-----------|--------|
+| v1.0.0    | 09/17/2021 |
+| v0.2.0    | 01/15/2021 |
+| v0.1.1    | 11/03/2020 |
 
 ## Contributing
 
