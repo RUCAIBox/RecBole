@@ -83,7 +83,7 @@ RecBole works with the following operating systems:
 
 RecBole requires Python version 3.6 or later.
 
-RecBole requires torch version 1.6.0 or later. If you want to use RecBole with GPU,
+RecBole requires torch version 1.7.0 or later. If you want to use RecBole with GPU,
 please ensure that CUDA or cudatoolkit version is 9.2 or later.
 This requires NVIDIA driver version >= 396.26 (for Linux) or >= 397.44 (for Windows10).
 
@@ -254,7 +254,7 @@ Here is the list of our lead developers in each development phase. They are the 
 |         Time          |        Version         |                Lead Developers                 |
 | :-------------------: | :--------------------: | :--------------------------------------------: |
 | June 2020<br> ~<br> Nov. 2020 |        v0.1.1         |  Shanlei Mu ([@ShanleiMu](https://github.com/ShanleiMu)), Yupeng Hou ([@hyp1231](https://github.com/@hyp1231)),<br> Zihan Lin ([@linzihan-backforward](https://github.com/linzihan-backforward)), Kaiyuan Li ([@tsotfsk](https://github.com/tsotfsk))|
-|    Nov. 2020<br> ~ <br> now    |  v0.1.2 ~ v0.2.1 |      Yushuo Chen ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), Xingyu Pan ([@2017pxy](https://github.com/2017pxy))    |
+|    Nov. 2020<br> ~ <br> now    |  v0.1.2 ~ v1.0.0 |      Yushuo Chen ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), Xingyu Pan ([@2017pxy](https://github.com/2017pxy))    |
 
 
 ## License
