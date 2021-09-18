@@ -749,6 +749,21 @@ class DecisionTreeTrainer(AbstractTrainer):
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_score, valid_result
 
+    def _save_checkpoint(self, epoch):
+        r"""Store the model parameters information and training information.
+
+        Args:
+            epoch (int): the current epoch id
+
+        """
+        state = {
+            'config': self.config,
+            'epoch': epoch,
+            'cur_step': self.cur_step,
+            'best_valid_score': self.best_valid_score
+        }
+        torch.save(state, self.saved_model_file)
+
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
         for epoch_idx in range(self.epochs):
             self._train_at_once(train_data, valid_data)
@@ -778,7 +793,7 @@ class DecisionTreeTrainer(AbstractTrainer):
 
                 if update_flag:
                     if saved:
-                        self.model.save_model(self.saved_model_file)
+                        self._save_checkpoint(epoch_idx)
                         update_output = set_color('Saving current best', 'blue') + ': %s' % self.saved_model_file
                         if verbose:
                             self.logger.info(update_output)
@@ -865,7 +880,7 @@ class xgboostTrainer(DecisionTreeTrainer):
             if model_file:
                 checkpoint_file = model_file
             else:
-                checkpoint_file = self.saved_model_file
+                checkpoint_file = self.temp_file
             self.model.load_model(checkpoint_file)
 
         self.deval = self._interaction_to_lib_datatype(eval_data)
@@ -966,7 +981,7 @@ class lightgbmTrainer(DecisionTreeTrainer):
             if model_file:
                 checkpoint_file = model_file
             else:
-                checkpoint_file = self.saved_model_file
+                checkpoint_file = self.temp_file
             self.model = self.lgb.Booster(model_file=checkpoint_file)
 
         self.deval_data, self.deval_label = self._interaction_to_sparse(eval_data)
