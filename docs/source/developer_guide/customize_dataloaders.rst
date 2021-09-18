@@ -11,7 +11,7 @@ In this project, there are two abstract dataloaders:
 :class:`~recbole.data.dataloader.abstract_dataloader.NegSampleDataLoader`.
 
 In general, the new dataloader should inherit from the above two abstract classes.
-If one only needs to modify existing DataLoader, you can also inherit from the it.
+If one only needs to modify existing DataLoader, you can also inherit from it.
 The documentation of dataloader: :doc:`../../recbole/recbole.data.dataloader`
 
 
@@ -49,14 +49,14 @@ which will be invoked in :meth:`~recbole.data.dataloader.abstract_dataloader.Abs
 
 NegSampleDataLoader
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-:class:`~recbole.data.dataloader.abstract_dataloader.NegSampleDataLoader` inherent from
+:class:`~recbole.data.dataloader.abstract_dataloader.NegSampleDataLoader` inherents from
 :class:`~recbole.data.dataloader.abstract_dataloader.AbstractDataLoader`, which is used for negative sampling.
-It has four additional functions upon its father class:
+It has four additional functions upon its parent class:
 :meth:`~recbole.data.dataloader.abstract_dataloader.NegSampleDataLoader._set_neg_sample_args`,
 :meth:`~recbole.data.dataloader.abstract_dataloader.NegSampleDataLoader._neg_sampling`,
 :meth:`~recbole.data.dataloader.abstract_dataloader.NegSampleDataLoader._neg_sample_by_pair_wise_sampling`,
 and :meth:`~recbole.data.dataloader.abstract_dataloader.NegSampleDataLoader._neg_sample_by_point_wise_sampling`.
-These four functions don't need to be implemented, they are just auxiliary function to
+These four functions don't need to be implemented, they are just auxiliary functions to
 :class:`~recbole.data.dataloader.abstract_dataloader.NegSampleDataLoader`.
 
 In current studies, there have only two sampling strategies,
@@ -84,7 +84,7 @@ Implement __init__()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :meth:`__init__` can be used to initialize some of the necessary parameters.
 Here, we just need to record :attr:`uid_field` and generate :attr:`user_list` which contains all user ids.
-And because of some training requirement, :attr:`shuffle` should be set to ``True``.
+And because of some training requirements, :attr:`shuffle` should be set to ``True``.
 
 .. code:: python
 
@@ -125,7 +125,7 @@ Since this dataloader only returns user id, these function can be implemented re
 
 Implement _next_batch_data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-This function only require return user id from :attr:`user_list`,
+This function only requires to return user id from :attr:`user_list`,
 we just select corresponding slice of :attr:`user_list` and return this slice.
 
 .. code:: python

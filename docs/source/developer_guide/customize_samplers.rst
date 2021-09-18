@@ -53,7 +53,7 @@ where we only need to invoke :obj:`super.__init__(distribution)`.
 
 Implement _uni_sampling()
 -------------------------------
-To implement the RNS for KGSampler, we need to rewrite the `:meth:`~recbole.sampler.sampler.AbstractSampler._uni_sampling`.
+To implement the RNS for KGSampler, we need to rewrite the :meth:`~recbole.sampler.sampler.AbstractSampler._uni_sampling`.
 Here we use the :meth:`numpy.random.randint` to help us randomly select the ``entity_id``. This function will return the
 selected samples' id (here is ``entity_id``).
 
@@ -66,13 +66,13 @@ Example code:
 
 Implement _get_candidates_list()
 -------------------------------------
-To implement PNS for KGSampler, we need to rewrite the `:meth:`~recbole.sampler.sampler.AbstractSampler._get_candidates_list`.
+To implement PNS for KGSampler, we need to rewrite the :meth:`~recbole.sampler.sampler.AbstractSampler._get_candidates_list`.
 This function is used to get a candidate list for PNS, and we will set the sampling distribution based on 
 :obj:`Counter(candidate_list)`. This function will return a list of candidates' id.
 
 Example code:
 
-..code:: python
+.. code:: python
 
     def _get_candidates_list(self):
         return list(self.hid_list) + list(self.tid_list)
@@ -81,7 +81,7 @@ Example code:
 Implement get_used_ids()
 ----------------------------
 For negative sampling, we do not want to sample positive instance, this function is used to record the positive sample.
-The function will return numpy, and the index is the ID. The return value will be saved in :attr:`self.used_ids`.
+The function will return numpy, and the index is the ID. The returned value will be saved in :attr:`self.used_ids`.
 
 Example code:
 
@@ -105,13 +105,13 @@ Implement the sampling function
 -----------------------------------
 In :class:`~recbole.sampler.sampler.AbstractSampler`, we have implemented :meth:`~recbole.sampler.sampler.AbstractSampler.sample_by_key_ids` function,
 where we have three parameters: :attr:`key_ids`, :attr:`num` and :attr:`used_ids`.
-:attr:`Key_ids` is the candidate objective ID list, :attr:`num` is the number of samples, :attr:`used_ids` are the positive sample list.
+:attr:`Key_ids` is the candidate objective ID list, :attr:`num` is the number of samples, :attr:`used_ids` is the positive sample list.
 
 In the function, we sample :attr:`num` instances for each element in :attr:`key_ids`. The function finally return :class:`numpy.ndarray`,
 the index of 0, len(key_ids), len(key_ids) * 2, …, len(key_ids) * (num - 1) is the result of key_ids[0].
 The index of 1, len(key_ids) + 1, len(key_ids) * 2 + 1, …, len(key_ids) * (num - 1) + 1 is the result of key_ids[1].
 
-One can also design her own sampler, if the above process is not appropriate.
+One can also design his own sampler, if the above process is not appropriate.
 
 Example code:
 

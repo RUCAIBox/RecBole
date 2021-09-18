@@ -53,6 +53,8 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 
 
 ## RecBole 新闻
+**09/17/2021**: 我们发布了 [v1.0.0](https://github.com/RUCAIBox/RecBole/releases/tag/v1.0.0).
+
 **03/22/2021**: 我们发布了 [v0.2.1](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.1).
 
 **01/15/2021**: 我们发布了 [v0.2.0](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.0).
@@ -76,7 +78,7 @@ RecBole可以在以下几种系统上运行:
 
 RecBole需要在python 3.6或更高的环境下运行。
 
-RecBole要求torch版本在1.6.0及以上，如果你想在GPU上运行RecBole，请确保你的CUDA版本或CUDAToolkit版本在9.2及以上。
+RecBole要求torch版本在1.7.0及以上，如果你想在GPU上运行RecBole，请确保你的CUDA版本或CUDAToolkit版本在9.2及以上。
 这需要你的NVIDIA驱动版本为396.26或以上（在linux系统上）或者为397.44或以上（在Windows10系统上）。
 
 
@@ -206,9 +208,11 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 
 
 ## RecBole 重要发布
-| Releases  | Date   | Features |
-|-----------|--------|-------------------------|
-| v0.1.1    | 11/03/2020 |  Basic RecBole |
+| Releases  | Date   |
+|-----------|--------|
+| v1.0.0    | 09/17/2021 |
+| v0.2.0    | 01/15/2021 |
+| v0.1.1    | 11/03/2020 |
 
 
 ## 贡献
@@ -244,7 +248,7 @@ RecBole由 [中国人民大学, 北京邮电大学, 华东师范大学](https://
 |         时间段          |        版本         |               首席开发者                 |
 | :-------------------: | :--------------------: | :--------------------------------------------: |
 | 2020年6月<br> ~<br> 2020年11月 |        v0.1.1         |  牟善磊 ([@ShanleiMu](https://github.com/ShanleiMu)), 侯宇蓬 ([@hyp1231](https://github.com/@hyp1231)),<br> 林子涵 ([@linzihan-backforward](https://github.com/linzihan-backforward)), 李凯元 ([@tsotfsk](https://github.com/tsotfsk))|
-|   2020年11月<br> ~ <br> 现在    |  v0.1.2 ~ v0.2.1 |      陈昱硕 ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), 潘星宇 ([@2017pxy](https://github.com/2017pxy))    |
+|   2020年11月<br> ~ <br> 现在    |  v0.1.2 ~ v1.0.0 |      陈昱硕 ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), 潘星宇 ([@2017pxy](https://github.com/2017pxy))    |
 
 
 ## 免责声明

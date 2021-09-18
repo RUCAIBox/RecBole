@@ -108,6 +108,7 @@ class NegSampleDataLoader(AbstractDataLoader):
         sampler (Sampler): The sampler of dataloader.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
     """
+
     def __init__(self, config, dataset, sampler, shuffle=True):
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 

@@ -6,7 +6,7 @@ a given model according to the provided hyper-parameter spaces.
 
 The general steps are given as follows:
 
-To begin with, the user has to claim an
+To begin with, the user has to claim a
 :class:`~recbole.trainer.hyper_tuning.HyperTuning`
 instance in the running python file (e.g., `run.py`):
 
@@ -18,7 +18,7 @@ instance in the running python file (e.g., `run.py`):
     hp = HyperTuning(objective_function=objective_function, algo='exhaustive',
                     params_file='model.hyper', fixed_config_file_list=['example.yaml'])
 
-:attr:`objective_function`　is the optimization objective,
+:attr:`objective_function` is the optimization objective,
 the input of :attr:`objective_function` is the parameter,
 and the output is the optimal result of these parameters.
 The users can design this :attr:`objective_function` according to their own requirements.
@@ -44,7 +44,7 @@ The user can also use an encapsulated :attr:`objective_function`, that is:
             'test_result': test_result
         }
 
-:attr:`algo` is the optimization algorithm. RecBole realize this module based
+:attr:`algo` is the optimization algorithm. RecBole realizes this module based
 on hyperopt_. In addition, we also support grid search tunning method.
 
 .. code:: python
@@ -66,7 +66,7 @@ on hyperopt_. In addition, we also support grid search tunning method.
     embedding_size choice [64,96,128]
     mlp_hidden_size choice ['[64,64,64]','[128,128]']
 
-Each line represent a parameter and the corresponding search range.
+Each line represents a parameter and the corresponding search range.
 There are three components: parameter name, range type, range.
 
 :class:`~recbole.trainer.hyper_tuning.HyperTuning` supports four range types,

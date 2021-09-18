@@ -275,14 +275,12 @@ class Trainer(AbstractTrainer):
         # unrecorded parameter
         unrecorded_parameter = {
             parameter
-            for parameters in self.config.parameters.values()
-            for parameter in parameters
+            for parameters in self.config.parameters.values() for parameter in parameters
         }.union({'model', 'dataset', 'config_files', 'device'})
         # other model-specific hparam
         hparam_dict.update({
             para: val
-            for para, val in self.config.final_config_dict.items()
-            if para not in unrecorded_parameter
+            for para, val in self.config.final_config_dict.items() if para not in unrecorded_parameter
         })
         for k in hparam_dict:
             if hparam_dict[k] is not None and not isinstance(hparam_dict[k], (bool, str, float, int)):
@@ -896,8 +894,10 @@ class RaCTTrainer(PretrainTrainer):
         elif self.model.train_stage == 'finetune':
             return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
         else:
-            raise ValueError("Please make sure that the 'train_stage' is "
-                             "'actor_pretrain', 'critic_pretrain' or 'finetune'!")
+            raise ValueError(
+                "Please make sure that the 'train_stage' is "
+                "'actor_pretrain', 'critic_pretrain' or 'finetune'!"
+            )
 
 
 class lightgbmTrainer(DecisionTreeTrainer):

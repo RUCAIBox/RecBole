@@ -1,7 +1,7 @@
 Running New Dataset
 =======================
 RecBole has a build-in dataset **ml-100k** for users to quickly get start. 
-However, if you want to use new dataset, Here, we present how to use a new dataset in RecBole.
+However, if you want to use new dataset, here, we present how to use a new dataset in RecBole.
 
 
 Prepare atomic files
@@ -15,7 +15,7 @@ For the convenience of users, we have collected more than
 28 commonly used datasets (detailed as `Dataset List </dataset_list.html>`_.) and released their Atomic Files format 
 for users to download them freely. More information of downloading our prepared datasets can be found in :doc:`../data/dataset_download`.
 
-However, if the you use other datasets, you should convert your data into the Atomic Files by yourself.
+However, if you use other datasets, you should convert your data into the Atomic Files by yourself.
 
 For the ml-1m dataset, the converted atomic files are like:
 
@@ -51,7 +51,7 @@ Set data path
 ---------------
 You need to set the data path in config when you want to use new dataset. 
 The name of atomic files, name of dir that containing atomic files and ``config['dataset']`` should be the same, and
-the ``data_path`` in your config should be the parent dir of the dir that containing atomic files.
+the ``data_path`` in your config should be the parent dir of the directory that contains atomic files.
 
 For example:
 
@@ -111,7 +111,7 @@ Convert to Dataloader
 Here, we present how to convert :class:`~recbole.data.dataset.dataset.Dataset` into :obj:`Dataloader`.
 
 We firstly set the parameters in the configuration file `ml-1m.yaml`.
-Suppose we want to leverage random ordering + ratio-based splitting and full ranking with all item candidates, the splitting ratio is set as 8:1:1.
+Suppose we want to leverage random ordering, ratio-based splitting and full ranking with all item candidates, the splitting ratio is set as 8:1:1.
 You can add the following config in your `ml-1m.yaml`:
 
 .. code:: yaml

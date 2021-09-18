@@ -39,8 +39,9 @@ def cluster_info(module_name):
     """
     smaller_m = []
     m_dict, m_info, m_types = {}, {}, {}
-    metric_class = inspect.getmembers(sys.modules[module_name],
-                                      lambda x: inspect.isclass(x) and x.__module__ == module_name)
+    metric_class = inspect.getmembers(
+        sys.modules[module_name], lambda x: inspect.isclass(x) and x.__module__ == module_name
+    )
     for name, metric_cls in metric_class:
         name = name.lower()
         m_dict[name] = metric_cls
@@ -66,6 +67,7 @@ class Register(object):
         It is a member of DataCollector.
         The DataCollector collect the resource that need for Evaluator under the guidance of Register
     """
+
     def __init__(self, config):
 
         self.config = config
@@ -88,4 +90,3 @@ class Register(object):
         if hasattr(self, key):
             return getattr(self, key)
         return False
-

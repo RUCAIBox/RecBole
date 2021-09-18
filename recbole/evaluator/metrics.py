@@ -49,6 +49,7 @@ class Hit(TopkMetric):
     :math:`\delta(·)` is an indicator function. :math:`\delta(b)` = 1 if :math:`b` is true and 0 otherwise.
     :math:`\emptyset` denotes the empty set.
     """
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -74,6 +75,7 @@ class MRR(TopkMetric):
 
     :math:`{rank}_{u}^{*}` is the rank position of the first relevant item found by an algorithm for a user :math:`u`.
     """
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -110,6 +112,7 @@ class MAP(TopkMetric):
 
     :math:`\hat{R}_{j}(u)` is the j-th item in the recommendation list of \hat R (u)).
     """
+
     def __init__(self, config):
         super().__init__(config)
         self.config = config
@@ -143,6 +146,7 @@ class Recall(TopkMetric):
 
     :math:`|R(u)|` represents the item count of :math:`R(u)`.
     """
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -169,6 +173,7 @@ class NDCG(TopkMetric):
 
     :math:`\delta(·)` is an indicator function.
     """
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -208,6 +213,7 @@ class Precision(TopkMetric):
 
     :math:`|\hat R(u)|` represents the item count of :math:`\hat R(u)`.
     """
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -222,6 +228,7 @@ class Precision(TopkMetric):
 
 
 # CTR Metrics
+
 
 class GAUC(AbstractMetric):
     r"""GAUC (also known as Grouped Area Under Curve) is used to evaluate the two-class model, referring to
@@ -321,6 +328,7 @@ class AUC(LossMetric):
     :math:`N` denotes the total number of user-item interactions.
     :math:`rank_i` denotes the descending rank of the i-th positive item.
     """
+
     def __init__(self, config):
         super().__init__(config)
 
@@ -356,6 +364,7 @@ class AUC(LossMetric):
 
 
 # Loss-based Metrics
+
 
 class MAE(LossMetric):
     r"""MAE_ (also known as Mean Absolute Error regression loss) is used to evaluate the difference between

@@ -14,13 +14,12 @@ from logging import getLogger
 
 from tqdm import tqdm
 
-
 GBFACTOR = float(1 << 30)
 
 
 def decide_download(url):
     d = ur.urlopen(url)
-    size = int(d.info()['Content-Length'])/GBFACTOR
+    size = int(d.info()['Content-Length']) / GBFACTOR
 
     ### confirm if larger than 1GB
     if size > 1:
@@ -60,8 +59,8 @@ def download_url(url, folder):
 
     size = int(data.info()['Content-Length'])
 
-    chunk_size = 1024*1024
-    num_iter = int(size/chunk_size) + 2
+    chunk_size = 1024 * 1024
+    num_iter = int(size / chunk_size) + 2
 
     downloaded_size = 0
 
@@ -71,13 +70,12 @@ def download_url(url, folder):
             for i in pbar:
                 chunk = data.read(chunk_size)
                 downloaded_size += len(chunk)
-                pbar.set_description('Downloaded {:.2f} GB'.format(float(downloaded_size)/GBFACTOR))
+                pbar.set_description('Downloaded {:.2f} GB'.format(float(downloaded_size) / GBFACTOR))
                 f.write(chunk)
     except:
         if os.path.exists(path):
-             os.remove(path)
+            os.remove(path)
         raise RuntimeError('Stopped downloading due to interruption.')
-
 
     return path
 
@@ -109,9 +107,8 @@ def rename_atomic_files(folder, old_name, new_name):
         if not old_name in base:
             continue
         assert suf in {'.inter', '.user', '.item'}
-        os.rename(
-            os.path.join(folder, f),
-            os.path.join(folder, base.replace(old_name, new_name) + suf))
+        os.rename(os.path.join(folder, f), os.path.join(folder, base.replace(old_name, new_name) + suf))
+
 
 if __name__ == '__main__':
     pass

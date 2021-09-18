@@ -170,7 +170,7 @@ class SequentialDataset(Dataset):
         for field in l1_inter_dict:
             if field != self.uid_field and field + list_suffix in l1_inter_dict:
                 candidate_field_set.add(field)
-                new_dict[field] = torch.cat([self.inter_feat[field], l1_inter_dict[field + list_suffix][:,0]])
+                new_dict[field] = torch.cat([self.inter_feat[field], l1_inter_dict[field + list_suffix][:, 0]])
             elif (not field.endswith(list_suffix)) and (field != self.item_list_length_field):
                 new_dict[field] = torch.cat([self.inter_feat[field], l1_inter_dict[field]])
         local_inter_feat = Interaction(new_dict)

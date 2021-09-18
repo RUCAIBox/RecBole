@@ -8,6 +8,8 @@ Environment settings are designed to set basic parameters of running environment
 - ``seed (int)`` : Random seed. Defaults to ``2020``.
 - ``state (str)`` : Logging level. Defaults to ``'INFO'``.
   Range in ``['INFO', 'DEBUG', 'WARNING', 'ERROR', 'CRITICAL']``.
+- ``encoding (str)``: Encoding to use for reading atomic files. Defaults to ``'utf-8'``.
+  The available encoding can be found in `here <https://docs.python.org/3/library/codecs.html#standard-encodings>`__.
 - ``reproducibility (bool)`` : If True, the tool will use deterministic
   convolution algorithms, which makes the result reproducible. If False,
   the tool will benchmark multiple convolution algorithms and select the fastest one,

@@ -52,6 +52,7 @@ class DIENDataset(SequentialDataset):
         neg_item_list_field (str): Field name for negative item sequence.
         neg_item_list (torch.tensor): all users' negative item history sequence.
     """
+
     def __init__(self, config):
         super().__init__(config)
 
