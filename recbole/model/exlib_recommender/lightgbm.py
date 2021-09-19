@@ -24,3 +24,12 @@ class lightgbm(lgb.Booster):
 
     def to(self, device):
         return self
+
+    def load_state_dict(self, model_file):
+        r"""Load state dictionary
+
+        Args:
+            model_file (str): file path of saved model
+
+        """
+        self = lgb.Booster(model_file=model_file)
