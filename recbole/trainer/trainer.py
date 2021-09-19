@@ -764,7 +764,8 @@ class DecisionTreeTrainer(AbstractTrainer):
             'epoch': epoch,
             'cur_step': self.cur_step,
             'best_valid_score': self.best_valid_score,
-            'state_dict': self.temp_best_file
+            'state_dict': self.temp_best_file,
+            'other_parameter': None
         }
         torch.save(state, self.saved_model_file)
 

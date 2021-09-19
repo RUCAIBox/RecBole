@@ -33,3 +33,8 @@ class xgboost(xgb.Booster):
 
         """
         self.load_model(model_file)
+
+    def load_other_parameter(self, other_parameter):
+        r"""Load other parameters
+        """
+        pass

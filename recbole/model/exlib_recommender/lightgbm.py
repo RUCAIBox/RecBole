@@ -33,3 +33,8 @@ class lightgbm(lgb.Booster):
 
         """
         self = lgb.Booster(model_file=model_file)
+
+    def load_other_parameter(self, other_parameter):
+        r"""Load other parameters
+        """
+        pass
