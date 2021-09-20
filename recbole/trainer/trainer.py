@@ -676,6 +676,9 @@ class DecisionTreeTrainer(AbstractTrainer):
         temp_file = '{}-{}-temp.pth'.format(self.config['model'], get_local_time())
         self.temp_file = os.path.join(self.checkpoint_dir, temp_file)
 
+        temp_best_file = '{}-{}-temp-best.pth'.format(self.config['model'], get_local_time())
+        self.temp_best_file = os.path.join(self.checkpoint_dir, temp_best_file)
+
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
 
@@ -749,6 +752,23 @@ class DecisionTreeTrainer(AbstractTrainer):
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_score, valid_result
 
+    def _save_checkpoint(self, epoch):
+        r"""Store the model parameters information and training information.
+
+        Args:
+            epoch (int): the current epoch id
+
+        """
+        state = {
+            'config': self.config,
+            'epoch': epoch,
+            'cur_step': self.cur_step,
+            'best_valid_score': self.best_valid_score,
+            'state_dict': self.temp_best_file,
+            'other_parameter': None
+        }
+        torch.save(state, self.saved_model_file)
+
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
         for epoch_idx in range(self.epochs):
             self._train_at_once(train_data, valid_data)
@@ -778,7 +798,8 @@ class DecisionTreeTrainer(AbstractTrainer):
 
                 if update_flag:
                     if saved:
-                        self.model.save_model(self.saved_model_file)
+                        self.model.save_model(self.temp_best_file)
+                        self._save_checkpoint(epoch_idx)
                         update_output = set_color('Saving current best', 'blue') + ': %s' % self.saved_model_file
                         if verbose:
                             self.logger.info(update_output)
@@ -787,6 +808,8 @@ class DecisionTreeTrainer(AbstractTrainer):
                 if stop_flag:
                     stop_output = 'Finished training, best eval result in epoch %d' % \
                                   (epoch_idx - self.cur_step * self.eval_step)
+                    if self.temp_file:
+                        os.remove(self.temp_file)
                     if verbose:
                         self.logger.info(stop_output)
                     break
@@ -865,7 +888,7 @@ class xgboostTrainer(DecisionTreeTrainer):
             if model_file:
                 checkpoint_file = model_file
             else:
-                checkpoint_file = self.saved_model_file
+                checkpoint_file = self.temp_best_file
             self.model.load_model(checkpoint_file)
 
         self.deval = self._interaction_to_lib_datatype(eval_data)
@@ -875,29 +898,6 @@ class xgboostTrainer(DecisionTreeTrainer):
         self.eval_collector.eval_collect(self.eval_pred, self.eval_true)
         result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
-
-
-class RaCTTrainer(PretrainTrainer):
-    r"""RaCTTrainer is designed for RaCT, which is an actor-critic reinforcement learning based general recommenders.
-        It includes three training stages: actor pre-training, critic pre-training and actor-critic training.
-
-        """
-
-    def __init__(self, config, model):
-        super(RaCTTrainer, self).__init__(config, model)
-
-    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
-        if self.model.train_stage == 'actor_pretrain':
-            return self.pretrain(train_data, verbose, show_progress)
-        elif self.model.train_stage == "critic_pretrain":
-            return self.pretrain(train_data, verbose, show_progress)
-        elif self.model.train_stage == 'finetune':
-            return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
-        else:
-            raise ValueError(
-                "Please make sure that the 'train_stage' is "
-                "'actor_pretrain', 'critic_pretrain' or 'finetune'!"
-            )
 
 
 class lightgbmTrainer(DecisionTreeTrainer):
@@ -966,7 +966,7 @@ class lightgbmTrainer(DecisionTreeTrainer):
             if model_file:
                 checkpoint_file = model_file
             else:
-                checkpoint_file = self.saved_model_file
+                checkpoint_file = self.temp_best_file
             self.model = self.lgb.Booster(model_file=checkpoint_file)
 
         self.deval_data, self.deval_label = self._interaction_to_sparse(eval_data)
@@ -976,6 +976,29 @@ class lightgbmTrainer(DecisionTreeTrainer):
         self.eval_collector.eval_collect(self.eval_pred, self.eval_true)
         result = self.evaluator.evaluate(self.eval_collector.get_data_struct())
         return result
+
+
+class RaCTTrainer(PretrainTrainer):
+    r"""RaCTTrainer is designed for RaCT, which is an actor-critic reinforcement learning based general recommenders.
+        It includes three training stages: actor pre-training, critic pre-training and actor-critic training.
+
+        """
+
+    def __init__(self, config, model):
+        super(RaCTTrainer, self).__init__(config, model)
+
+    def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
+        if self.model.train_stage == 'actor_pretrain':
+            return self.pretrain(train_data, verbose, show_progress)
+        elif self.model.train_stage == "critic_pretrain":
+            return self.pretrain(train_data, verbose, show_progress)
+        elif self.model.train_stage == 'finetune':
+            return super().fit(train_data, valid_data, verbose, saved, show_progress, callback_fn)
+        else:
+            raise ValueError(
+                "Please make sure that the 'train_stage' is "
+                "'actor_pretrain', 'critic_pretrain' or 'finetune'!"
+            )
 
 
 class RecVAETrainer(Trainer):
