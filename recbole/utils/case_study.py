@@ -43,11 +43,7 @@ def full_sort_scores(uid_series, model, test_data, device=None):
 
     if not test_data.is_sequential:
         input_interaction = dataset.join(Interaction({uid_field: uid_series}))
-        if len(uid_series) == 1:
-            history_item = np.array([None])
-            history_item[0] = test_data.uid2history_item[uid_series]
-        else:
-            history_item = test_data.uid2history_item[uid_series]
+        history_item = test_data.uid2history_item[list(uid_series)]
         history_row = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
         history_col = torch.cat(list(history_item))
         history_index = history_row, history_col
