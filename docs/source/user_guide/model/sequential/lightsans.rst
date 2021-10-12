@@ -35,7 +35,7 @@ Running with RecBole
 
 - ``num_layers (int)`` : The number of transformer layers in transformer encoder. Default to ``2``.
 - ``n_heads (int)`` : The number of attention heads for multi-head attention layer. Defaults to ``2``.
-- ``k_interests (int)`` : The number of latent interests dimension in item-to-interest aggregation. Defaults to ``5``.
+- ``k_interests (int)`` : The number of latent interests dimension in item-to-interest aggregation. Defaults to ``5``. We recommend setting `k_interests=0.1*MAX_ITEM_LIST_LENGTH` to ensure the compression effect.
 - ``hidden_size (int)`` : The input and output hidden size. Defaults to ``64``.
 - ``inner_size (int)`` : The imensionality in feed-forward layer. Defaults to ``256``.
 - ``hidden_dropout_prob (float)``: The probability of an element to be zeroed. Defaults to ``0.5``.
