@@ -42,6 +42,7 @@ Machine Specs:        14 CPU machine, 256GB RAM
 | GCSAN            |                   671.66  |                       4.99  |                    2.96  |
 | KSR              |                    61.18  |                       0.21  |                    6.94  |
 | GRU4RecKG        |                    11.36  |                       0.07  |                    2.22  |
+| LightSANs        |                    55.22  |                       0.39  |                    4.34  |
 
 #### Config file of ml-1m dataset:
 
@@ -117,6 +118,7 @@ load_col:
 | GCSAN            |                    69.03  |                      14.29  |                    3.13  |
 | KSR              |                         - |                           - |                        - |
 | GRU4RecKG        |                         - |                           - |                        - |
+| LightSANs        |                    14.66  |                       1.84  |                    3.71  |
 
 #### Config file of DIGINETICA dataset:
 
@@ -183,14 +185,15 @@ load_col:
 | NextItNet        |                   413.43  |                       5.57  |                    5.73  |
 | TransRec         |                         - |                           - |       CUDA out of memory |
 | S3Rec            |                         - |                           - |       CUDA out of memory |
-| GRU4RecF         |                     62,41 |                        1.32 |                     7.36 |
-| SASRecF          |                    86.20  |                        1.42 |                     6.12 |
+| GRU4RecF         |                    62,41  |                       1.32  |                    7.36  |
+| SASRecF          |                    86.20  |                       1.42  |                    6.12  |
 | BERT4Rec         |                         - |                           - |       CUDA out of memory |
 | FDSA             |                   133.52  |                       1.87  |                    9.19  |
 | SRGNN            |                  1165.06  |                      30.35  |                    3.41  |
 | GCSAN            |                  1112.46  |                      29.84  |                    4.67  |
 | KSR              |                         - |                           - |                        - |
 | GRU4RecKG        |                         - |                           - |                        - |
+| LightSANs        |                    58.02  |                       0.82  |                    5.85  |
 
 #### Config file of Yelp dataset:
 
