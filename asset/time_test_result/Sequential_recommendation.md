@@ -42,7 +42,7 @@ Machine Specs:        14 CPU machine, 256GB RAM
 | GCSAN            |                   671.66  |                       4.99  |                    2.96  |
 | KSR              |                    61.18  |                       0.21  |                    6.94  |
 | GRU4RecKG        |                    11.36  |                       0.07  |                    2.22  |
-| LightSANs        |                    55.22  |                       0.39  |                    4.34  |
+| LightSANs        |                    28.21  |                       0.12  |                    3.85  |
 
 #### Config file of ml-1m dataset:
 
@@ -118,7 +118,7 @@ load_col:
 | GCSAN            |                    69.03  |                      14.29  |                    3.13  |
 | KSR              |                         - |                           - |                        - |
 | GRU4RecKG        |                         - |                           - |                        - |
-| LightSANs        |                    14.66  |                       1.84  |                    3.71  |
+| LightSANs        |                     7.12  |                       0.88  |                    3.48  |
 
 #### Config file of DIGINETICA dataset:
 
@@ -193,7 +193,7 @@ load_col:
 | GCSAN            |                  1112.46  |                      29.84  |                    4.67  |
 | KSR              |                         - |                           - |                        - |
 | GRU4RecKG        |                         - |                           - |                        - |
-| LightSANs        |                    58.02  |                       0.82  |                    5.85  |
+| LightSANs        |                    58.46  |                       0.83  |                    5.08  |
 
 #### Config file of Yelp dataset:
 
