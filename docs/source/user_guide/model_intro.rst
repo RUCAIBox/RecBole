@@ -1,6 +1,6 @@
 Model Introduction
 =====================
-We implement 73 recommendation models covering general recommendation, sequential recommendation,
+We implement 74 recommendation models covering general recommendation, sequential recommendation,
 context-aware recommendation and knowledge-based recommendation. A brief introduction to these models are as follows:
 
 
@@ -100,7 +100,7 @@ the sequential data. The models of session-based recommendation are also include
    model/sequential/hgn
    model/sequential/hrm
    model/sequential/npe
-
+   model/sequential/lightsans
 
 
 Knowledge-based Recommendation
