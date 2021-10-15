@@ -54,6 +54,15 @@ class AbstractDataLoader:
         """Initializing :attr:`step` and :attr:`batch_size`."""
         raise NotImplementedError('Method [init_batch_size_and_step] should be implemented')
 
+    def update_config(self, config):
+        """Update configure of dataloader, such as :attr:`batch_size`, :attr:`step` etc.
+
+        Args:
+            config (Config): The new config of dataloader.
+        """
+        self.config = config
+        self._init_batch_size_and_step()
+
     def __len__(self):
         return math.ceil(self.pr_end / self.step)
 

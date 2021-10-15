@@ -116,6 +116,10 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
     def _init_batch_size_and_step(self):
         pass
 
+    def update_config(self, config):
+        self.general_dataloader.update_config(config)
+        self.kg_dataloader.update_config(config)
+
     def __iter__(self):
         if self.state is None:
             raise ValueError(

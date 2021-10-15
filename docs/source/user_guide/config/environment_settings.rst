@@ -23,6 +23,14 @@ Environment settings are designed to set basic parameters of running environment
 - ``save_dataset (bool)``: Whether or not save filtered dataset.
   If True, save filtered dataset, otherwise it will not be saved.
   Defaults to ``False``.
+- ``dataset_save_path (str)``: The path of saved dataset. The tool will attempt to load the dataset from this path.
+  If it equals to ``None``, the tool will try to load the dataset from ``{checkpoint_dir}/{dataset}-{dataset_class_name}.pth``.
+  If the config of saved dataset is not equal to current config, the tool will create dataset from scratch.
+  Defaults to ``None``.
 - ``save_dataloaders (bool)``: Whether or not save split dataloaders.
   If True, save split dataloaders, otherwise they will not be saved.
   Defaults to ``False``.
+- ``dataloaders_save_path (str)``: The path of saved dataloaders. The tool will attempt to load the dataloaders from this path.
+  If it equals to ``None``, the tool will try to load the dataloaders from ``{checkpoint_dir}/{dataset}-for-{model}-dataloader.pth``.
+  If the config of saved dataloaders is not equal to current config, the tool will create dataloaders from scratch.
+  Defaults to ``None``.
