@@ -1,0 +1,7 @@
+type: "ED"
+layers: 3
+lamb: 0.5
+reg: 1e-5
+ssl_reg: 0.05
+ratio: 0.1
+embedding_dim: 64
