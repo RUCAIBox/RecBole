@@ -656,8 +656,7 @@ class TestSequentialRecommender(unittest.TestCase):
             'model': 'BERT4Rec',
             'neg_sampling': None
         }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
+        quick_test(config_dict)
 
     def test_bert4rec_with_BPR_loss_and_swish(self):
         config_dict = {
@@ -665,8 +664,21 @@ class TestSequentialRecommender(unittest.TestCase):
             'loss_type': 'BPR',
             'hidden_act': 'swish'
         }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
+        quick_test(config_dict)
+
+    def test_lightsans(self):
+        config_dict = {
+            'model': 'LightSANs',
+            'neg_sampling': None
+        }
+        quick_test(config_dict)
+
+    def test_lightsans_with_BPR_loss(self):
+        config_dict = {
+            'model': 'LightSANs',
+            'loss_type': 'BPR',
+        }
+        quick_test(config_dict)
 
     # def test_gru4reckg(self):
     #     config_dict = {
