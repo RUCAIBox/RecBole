@@ -772,8 +772,6 @@ class DecisionTreeTrainer(AbstractTrainer):
         torch.save(state, self.saved_model_file)
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False):
-        if isinstance(self.sample_strategy, dict):
-            train_data.get_model(self.model)
         for epoch_idx in range(self.epochs):
             self._train_at_once(train_data, valid_data)
 
