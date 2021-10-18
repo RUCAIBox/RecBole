@@ -9,10 +9,11 @@ Training settings are designed to set parameters about model training.
   Range in ``['adam', 'sgd', 'adagrad', 'rmsprop', 'sparse_adam']``.
 - ``learning_rate (float)`` : Learning rate. Defaults to ``0.001``.
 - ``neg_sampling(dict)``: This parameter controls the negative sampling for model training.
-  The key range is ``['uniform', 'popularity']``, which decides the distribution of negative items in sampling pools.
+  The key range is ``['uniform', 'popularity']``, which decides the distribution of negative items in sampling pools. In addition, we also support dynamic negative sampling ``['dns']``.
   ``uniform`` means uniformly select negative items while ``popularity`` means select negative items based on 
   their popularity (Counter(item) in `.inter` file). Note that if your data is labeled, you need to set this parameter as ``None``.
   The default value of this parameter is ``{'uniform': 1}``. 
+  When dynamic negative sampling, ``dynamic_sampling(dict)`` decides the dynamic negative sampler and the number of candidate negative items. For example, ``{uniform: 1, dynamic_sampling: {sampler: dns, candidate_num: 2}}`` means sample 2 items for each positive item uniformly, and dynamically choose the item with the higher score as the selected negative item.
 - ``eval_step (int)`` : The number of training epochs before an evaluation
   on the valid dataset. If it is less than 1, the model will not be
   evaluated on the valid dataset. Defaults to ``1``.
