@@ -155,7 +155,7 @@ class NegSampleDataLoader(AbstractDataLoader):
             raise ValueError(f'`neg_sample_args` [{self.neg_sample_args["strategy"]}] is not supported!')
 
     def _neg_sampling(self, inter_feat):
-        if self.neg_sample_args['dynamic'] != 'none':
+        if 'dynamic' in self.neg_sample_args.keys() and self.neg_sample_args['dynamic'] != 'none':
             candidate_num = self.neg_sample_args['dynamic']
             user_ids = inter_feat[self.uid_field]
             item_ids = inter_feat[self.iid_field]
