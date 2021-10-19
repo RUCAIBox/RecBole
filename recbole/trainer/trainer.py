@@ -80,7 +80,6 @@ class Trainer(AbstractTrainer):
         self.tensorboard = get_tensorboard(self.logger)
         self.learner = config['learner']
         self.learning_rate = config['learning_rate']
-        self.sample_strategy = config['train_neg_sample_args']['strategy']
         self.epochs = config['epochs']
         self.eval_step = min(config['eval_step'], self.epochs)
         self.stopping_step = config['stopping_step']
@@ -309,7 +308,7 @@ class Trainer(AbstractTrainer):
             self._save_checkpoint(-1)
 
         self.eval_collector.data_collect(train_data)
-        if isinstance(self.sample_strategy, dict):
+        if self.config['train_neg_sample_args']['dynamic'] != 'none':
             train_data.get_model(self.model)
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train

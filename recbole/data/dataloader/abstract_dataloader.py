@@ -128,8 +128,7 @@ class NegSampleDataLoader(AbstractDataLoader):
         self.dl_format = dl_format
         self.neg_sample_args = neg_sample_args
         self.times = 1
-        self.strategy = self.neg_sample_args['strategy']
-        if self.strategy == 'by' or isinstance(self.strategy, dict):
+        if self.neg_sample_args['strategy'] == 'by':
             self.neg_sample_num = self.neg_sample_args['by']
 
             if self.dl_format == InputType.POINTWISE:
@@ -152,32 +151,27 @@ class NegSampleDataLoader(AbstractDataLoader):
             else:
                 raise ValueError(f'`neg sampling by` with dl_format [{self.dl_format}] not been implemented.')
 
-        elif self.strategy != 'none':
-            raise ValueError(f'`neg_sample_args` [{self.strategy}] is not supported!')
+        elif self.neg_sample_args['strategy'] != 'none':
+            raise ValueError(f'`neg_sample_args` [{self.neg_sample_args["strategy"]}] is not supported!')
 
     def _neg_sampling(self, inter_feat):
-        if isinstance(self.strategy, dict):
-            sampler = self.strategy['sampler']
-            candidate_num = self.strategy['candidate_num']
-            if sampler.lower() == 'dns':
-                user_ids = inter_feat[self.uid_field]
-                item_ids = inter_feat[self.iid_field]
-                neg_candidate_ids = self.sampler.sample_by_user_ids(user_ids, item_ids, self.neg_sample_num * candidate_num)
-
-                self.model.eval()
-                interaction = copy.deepcopy(inter_feat).to(self.model.device)
-                interaction = interaction.repeat(self.neg_sample_num * candidate_num)
-                neg_item_feat = Interaction({self.iid_field: neg_candidate_ids.to(self.model.device)})
-                interaction.update(neg_item_feat)
-                scores = self.model.predict(interaction).reshape(candidate_num, -1)            
-                indices = torch.max(scores, dim=0)[1].detach()
-                neg_candidate_ids = neg_candidate_ids.reshape(candidate_num, -1)
-                neg_item_ids = neg_candidate_ids[indices, [i for i in range(neg_candidate_ids.shape[1])]].view(-1)
-                self.model.train()
-                return self.sampling_func(inter_feat, neg_item_ids)
-            else:
-                raise NotImplementedError
-        elif self.strategy == 'by':
+        if self.neg_sample_args['dynamic'] != 'none':
+            candidate_num = self.neg_sample_args['dynamic']
+            user_ids = inter_feat[self.uid_field]
+            item_ids = inter_feat[self.iid_field]
+            neg_candidate_ids = self.sampler.sample_by_user_ids(user_ids, item_ids, self.neg_sample_num * candidate_num)
+            self.model.eval()
+            interaction = copy.deepcopy(inter_feat).to(self.model.device)
+            interaction = interaction.repeat(self.neg_sample_num * candidate_num)
+            neg_item_feat = Interaction({self.iid_field: neg_candidate_ids.to(self.model.device)})
+            interaction.update(neg_item_feat)
+            scores = self.model.predict(interaction).reshape(candidate_num, -1)            
+            indices = torch.max(scores, dim=0)[1].detach()
+            neg_candidate_ids = neg_candidate_ids.reshape(candidate_num, -1)
+            neg_item_ids = neg_candidate_ids[indices, [i for i in range(neg_candidate_ids.shape[1])]].view(-1)
+            self.model.train()
+            return self.sampling_func(inter_feat, neg_item_ids)
+        elif self.neg_sample_args['strategy'] == 'by':
             user_ids = inter_feat[self.uid_field]
             item_ids = inter_feat[self.iid_field]
             neg_item_ids = self.sampler.sample_by_user_ids(user_ids, item_ids, self.neg_sample_num)

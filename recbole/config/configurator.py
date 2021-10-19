@@ -361,24 +361,15 @@ class Config(object):
                 raise ValueError(f"The distribution [{distribution}] of neg_sampling "
                                  f"should in ['uniform', 'popularity']")
 
-            strategy = 'by'
-            if 'dynamic_sampling' in neg_sampling.keys():
-                dynamic_sampling = neg_sampling['dynamic_sampling']
-                if not isinstance(dynamic_sampling, dict): 
-                    raise ValueError(f"dynamic_sampling:[{dynamic_sampling}] should be a dict.")
-                if not ({'sampler', 'candidate_num'} <= set(dynamic_sampling.keys())):
-                    raise ValueError(f"'sampler' and 'candidate_num' should be in "
-                                  f"dynamic_sampling:[{dynamic_sampling}].keys()")
-                dynamic_sampler = dynamic_sampling['sampler']
-                if dynamic_sampler.lower() not in ['dns']:
-                    raise ValueError(f"The sampler [{sampler}] of dynamic_sampling "
-                                 f"should be in ['dns']")
-                strategy = dynamic_sampling
+            dynamic = 'none'
+            if 'dynamic' in neg_sampling.keys():
+                dynamic = neg_sampling['dynamic']
 
             self.final_config_dict['train_neg_sample_args'] = {
-                'strategy': strategy,
+                'strategy': 'by',
                 'by': sample_num,
-                'distribution': distribution
+                'distribution': distribution,
+                'dynamic': dynamic
             }
 
     def _set_eval_neg_sample_args(self):
