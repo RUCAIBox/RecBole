@@ -41,6 +41,16 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_bpr_with_dns(self):
+        config_dict = {
+            'model': 'BPR',
+            'neg_sampling': {
+                'uniform': 1,
+                'dynamic': 2
+            }
+        }
+        quick_test(config_dict)
+
     def test_neumf(self):
         config_dict = {
             'model': 'NeuMF',
