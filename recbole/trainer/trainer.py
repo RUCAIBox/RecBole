@@ -308,7 +308,8 @@ class Trainer(AbstractTrainer):
             self._save_checkpoint(-1)
 
         self.eval_collector.data_collect(train_data)
-
+        if 'dynamic' in self.config['train_neg_sample_args'].keys() and self.config['train_neg_sample_args']['dynamic'] != 'none':
+            train_data.get_model(self.model)
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
             training_start_time = time()
