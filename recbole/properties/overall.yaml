@@ -8,7 +8,9 @@ data_path: 'dataset/'
 checkpoint_dir: 'saved'
 show_progress: True
 save_dataset: False
+dataset_save_path: ~
 save_dataloaders: False
+dataloaders_save_path: ~
 
 # training settings
 epochs: 300
@@ -22,6 +24,7 @@ stopping_step: 10
 clip_grad_norm: ~
 # clip_grad_norm:  {'max_norm': 5, 'norm_type': 2}
 weight_decay: 0.0
+loss_decimal_place: 4
 
 # evaluation settings
 eval_args: 
@@ -35,5 +38,4 @@ topk: [10]
 valid_metric: MRR@10
 valid_metric_bigger: True
 eval_batch_size: 4096
-loss_decimal_place: 4
 metric_decimal_place: 4

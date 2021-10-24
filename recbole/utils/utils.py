@@ -167,10 +167,7 @@ def dict2str(result_dict):
         str: result str
     """
 
-    result_str = ''
-    for metric, value in result_dict.items():
-        result_str += str(metric) + ' : ' + str(value) + '    '
-    return result_str
+    return '    '.join([str(metric) + ' : ' + str(value) for metric, value in result_dict.items()])
 
 
 def init_seed(seed, reproducibility):

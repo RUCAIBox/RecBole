@@ -116,6 +116,10 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
     def _init_batch_size_and_step(self):
         pass
 
+    def update_config(self, config):
+        self.general_dataloader.update_config(config)
+        self.kg_dataloader.update_config(config)
+
     def __iter__(self):
         if self.state is None:
             raise ValueError(
@@ -178,3 +182,8 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         if state not in set(KGDataLoaderState):
             raise NotImplementedError(f'Kg data loader has no state named [{self.state}].')
         self.state = state
+
+    def get_model(self, model):
+        """Let the general_dataloader get the model, used for dynamic sampling.
+        """
+        self.general_dataloader.get_model(model)

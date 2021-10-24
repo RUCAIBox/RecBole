@@ -48,6 +48,10 @@ class TrainDataLoader(NegSampleDataLoader):
             self.step = batch_size
             self.set_batch_size(batch_size)
 
+    def update_config(self, config):
+        self._set_neg_sample_args(config, self.dataset, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
+        super().update_config(config)
+
     @property
     def pr_end(self):
         return len(self.dataset)
@@ -111,6 +115,10 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
         else:
             self.step = batch_size
             self.set_batch_size(batch_size)
+
+    def update_config(self, config):
+        self._set_neg_sample_args(config, self.dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
+        super().update_config(config)
 
     @property
     def pr_end(self):
