@@ -26,7 +26,7 @@ import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 
 from recbole.data.interaction import Interaction
-from recbole.utils import FeatureSource, FeatureType, get_local_time, set_color
+from recbole.utils import FeatureSource, FeatureType, get_local_time, set_color, ensure_dir
 from recbole.utils.url import decide_download, download_url, extract_zip, makedirs, rename_atomic_files
 
 
@@ -433,7 +433,7 @@ class Dataset(object):
             return None
 
         df = pd.read_csv(
-            filepath, delimiter=self.config['field_separator'], usecols=usecols, dtype=dtype, encoding=encoding
+            filepath, delimiter=self.config['field_separator'], usecols=usecols, dtype=dtype, encoding=encoding, engine='python'
         )
         df.columns = columns
 
@@ -1507,8 +1507,9 @@ class Dataset(object):
     def save(self):
         """Saving this :class:`Dataset` object to :attr:`config['checkpoint_dir']`.
         """
-        file = os.path.join(self.config['checkpoint_dir'], f'{self.config["dataset"]}-dataset.pth')
-        self.logger.info(set_color('Saving filtered dataset into ', 'pink') + f'[{file}]')
+        ensure_dir(self.config['checkpoint_dir'])
+        file = os.path.join(self.config['checkpoint_dir'], f'{self.config["dataset"]}-{self.__class__.__name__}.pth')
+        self.logger.info(set_color('Saving filtered dataset into', 'pink') + f': [{file}]')
         with open(file, 'wb') as f:
             pickle.dump(self, f)
 
