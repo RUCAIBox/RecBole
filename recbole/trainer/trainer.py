@@ -223,6 +223,7 @@ class Trainer(AbstractTrainer):
 
         """
         resume_file = str(resume_file)
+        self.saved_model_file = resume_file
         checkpoint = torch.load(resume_file)
         self.start_epoch = checkpoint['epoch'] + 1
         self.cur_step = checkpoint['cur_step']
