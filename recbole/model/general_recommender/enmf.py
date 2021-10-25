@@ -82,8 +82,9 @@ class ENMF(GeneralRecommender):
                              self.item_embedding.weight.unsqueeze(1)).sum(dim=0)
 
         # shape: [embedding_size, embedding_size]
-        user_sum = torch.bmm(self.user_embedding.weight.unsqueeze(2),
-                             self.user_embedding.weight.unsqueeze(1)).sum(dim=0)
+        batch_user = self.user_embedding(user)
+        user_sum = torch.bmm(batch_user.unsqueeze(2),
+                             batch_user.unsqueeze(1)).sum(dim=0)
 
         # shape: [embedding_size, embedding_size]
         H_sum = torch.matmul(self.H_i.weight.t(), self.H_i.weight)
