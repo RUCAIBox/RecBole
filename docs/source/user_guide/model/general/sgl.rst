@@ -51,12 +51,12 @@ Running with RecBole
 **Model Hyper-Parameters:**
 
 - ``type (str)`` : The operators to generate the views. ``"ED"`` stands for edge dropout mode. ``"ND"`` stands for node dropout mode. ``"RW"`` stands for random walk mode. Defaults to ``"ED"``.
-- ``layers (int)`` : The number of layers in SGL. Defaults to ``3``.
-- ``lamb (float)`` : The temperature in softmax. Defaults to ``0.5``.
-- ``embedding_dim (int)`` : the embedding size of users and items. Defaults to ``64``.
-- ``ratio (float)`` The dropout ratio. Defaults to ``0.1``.
-- ``reg (float)`` : The L2 regularization weight. Defaults to ``1e-05``.
-- ``ssl_reg (float)`` : The hyperparameters to control the strengths of SSL. Defaults to ``0.05``.
+- ``n_layers (int)`` : The number of layers in SGL. Defaults to ``3``.
+- ``ssl_tau (float)`` : The temperature in softmax. Defaults to ``0.5``.
+- ``embedding_size (int)`` : the embedding size of users and items. Defaults to ``64``.
+- ``drop_ratio (float)`` The dropout ratio. Defaults to ``0.1``.
+- ``reg_weight (float)`` : The L2 regularization weight. Defaults to ``1e-05``.
+- ``ssl_weight (float)`` : The hyperparameters to control the strengths of SSL. Defaults to ``0.05``.
 
 **A Running Example:**
 
@@ -82,10 +82,10 @@ If you want to use ``HyperTuning`` to tune hyper parameters of this model, you c
 
 .. code:: bash
 
-   lamb choice [0.1,0.2,0.5,1.0]
-   ratio choice [0,0.1,0.2,0.4,0.5]
-   ssl_reg choice [0.005,0.05,0.1,0.5,1.0]
-   
+   ssl_tau choice [0.1,0.2,0.5,1.0]
+   drop_ratio choice [0,0.1,0.2,0.4,0.5]
+   ssl_weight choice [0.005,0.05,0.1,0.5,1.0]
+
 
 Note that we just provide these hyper parameter ranges for reference only, and we can not guarantee that they are the optimal range of this model.
 
