@@ -190,7 +190,6 @@ class SGL(GeneralRecommender):
         user_sub2, item_sub2 = self.forward(self.sub_graph2)
         total_loss = self.calc_bpr_loss(user_emd,item_emd,user_list,pos_item_list,neg_item_list) + \
             self.calc_ssl_loss(user_list,pos_item_list,user_sub1,user_sub2,item_sub1,item_sub2)
-        self.update = True
         return total_loss
 
     def calc_bpr_loss(self, user_emd, item_emd, user_list, pos_item_list, neg_item_list):
