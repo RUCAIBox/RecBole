@@ -209,6 +209,12 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'SLIMElastic',
         }
         quick_test(config_dict)
+    
+    def test_SGL(self):
+        config_dict = {
+            'model': 'SGL',
+        }
+        quick_test(config_dict)
 
 
 class TestContextRecommender(unittest.TestCase):
