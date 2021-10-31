@@ -54,11 +54,11 @@ The parameters used to control the evaluation method are as follows:
   including ``split``, ``group_by``, ``order`` and ``mode``.
 
   - ``split (dict)``:  Control the splitting of dataset and the split ratio. The key is splitting method
-    and value is the list of split ratio. The range of key is ``[RO,TO]``. Defaults to ``{'RO':[0.8, 0.1, 0.1]}``
+    and value is the list of split ratio. The range of key is ``[RS,LS]``. Defaults to ``{'RS':[0.8, 0.1, 0.1]}``
   - ``group_by (str)``: Whether to split dataset with the group of user.
     Range in ``[None, user]`` and defaults to ``user``.
   - ``order (str)``: Control the ordering of data and affect the splitting of data.
-    Range in ``['RS', 'LS']`` and defaults to ``RS``.
+    Range in ``['RO', 'TO']`` and defaults to ``RO``.
   - ``mode (str)``: Control different candidates of ranking.
     Range in ``[labeled, full, unixxx, popxxx]`` and defaults to ``full``.
  
