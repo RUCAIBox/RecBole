@@ -155,7 +155,7 @@ class RepeatNet(SequentialRecommender):
         # batch_size * num_items
         seq_output = seq_output.unsqueeze(-1)
         # batch_size * num_items * 1
-        scores = self.gather_indexes(seq_output, test_item).squeeze()
+        scores = self.gather_indexes(seq_output, test_item).squeeze(-1)
 
         return scores
 

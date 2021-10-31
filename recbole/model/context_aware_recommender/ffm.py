@@ -118,7 +118,7 @@ class FFM(ContextRecommender):
         ffm_output = torch.sum(torch.sum(self.ffm(ffm_input), dim=1), dim=1, keepdim=True)
         output = self.sigmoid(self.first_order_linear(interaction) + ffm_output)
 
-        return output.squeeze()
+        return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

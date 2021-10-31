@@ -111,11 +111,10 @@ class DIEN(SequentialRecommender):
             feature_table[type] = feature_table[type].view(table_shape[:-2] + (feat_num * embedding_size,))
 
         user_feat_list = feature_table['user']
-        item_feat_list, neg_item_feat_list, target_item_feat_emb = feature_table['item'].split([
-            max_length, max_length, 1
-        ],
-                                                                                               dim=1)
-        target_item_feat_emb = target_item_feat_emb.squeeze()
+        item_feat_list, neg_item_feat_list, target_item_feat_emb = feature_table['item'].split(
+            [max_length, max_length, 1], dim=1
+        )
+        target_item_feat_emb = target_item_feat_emb.squeeze(1)
 
         # interest
         interest, aux_loss = self.interset_extractor(item_feat_list, item_seq_len, neg_item_feat_list)
