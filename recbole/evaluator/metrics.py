@@ -262,7 +262,7 @@ class GAUC(AbstractMetric):
     def calculate_metric(self, dataobject):
         mean_rank = dataobject.get('rec.meanrank').numpy()
         pos_rank_sum, user_len_list, pos_len_list = np.split(mean_rank, 3, axis=1)
-        user_len_list, pos_len_list = user_len_list.squeeze(), pos_len_list.squeeze()
+        user_len_list, pos_len_list = user_len_list.squeeze(-1), pos_len_list.squeeze(-1)
         result = self.metric_info(pos_rank_sum, user_len_list, pos_len_list)
         return {'gauc': round(result, self.decimal_place)}
 

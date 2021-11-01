@@ -99,7 +99,7 @@ class PNN(ContextRecommender):
 
         output = self.predict_layer(self.mlp_layers(output))  # [batch_size,1]
         output = self.sigmoid(output)
-        return output.squeeze()
+        return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

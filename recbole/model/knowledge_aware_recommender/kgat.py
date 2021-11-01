@@ -167,9 +167,9 @@ class KGAT(KnowledgeRecommender):
         r_e = self.relation_embedding(r)
         r_trans_w = self.trans_w(r).view(r.size(0), self.embedding_size, self.kg_embedding_size)
 
-        h_e = torch.bmm(h_e, r_trans_w).squeeze()
-        pos_t_e = torch.bmm(pos_t_e, r_trans_w).squeeze()
-        neg_t_e = torch.bmm(neg_t_e, r_trans_w).squeeze()
+        h_e = torch.bmm(h_e, r_trans_w).squeeze(1)
+        pos_t_e = torch.bmm(pos_t_e, r_trans_w).squeeze(1)
+        neg_t_e = torch.bmm(neg_t_e, r_trans_w).squeeze(1)
 
         return h_e, r_e, pos_t_e, neg_t_e
 

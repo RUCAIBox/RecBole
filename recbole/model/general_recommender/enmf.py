@@ -68,7 +68,7 @@ class ENMF(GeneralRecommender):
         item_embedding = self.item_embedding(user_inter)  # shape: [B, max_len, embedding_size]
         score = torch.mul(user_embedding.unsqueeze(1), item_embedding)  # shape: [B, max_len, embedding_size]
         score = self.H_i(score)  # shape: [B,max_len,1]
-        score = score.squeeze()  # shape:[B,max_len]
+        score = score.squeeze(-1)  # shape:[B,max_len]
 
         return score
 

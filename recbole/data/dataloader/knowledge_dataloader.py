@@ -63,7 +63,7 @@ class KGDataLoader(AbstractDataLoader):
 
     def _next_batch_data(self):
         cur_data = self.dataset.kg_feat[self.pr:self.pr + self.step]
-        head_ids = cur_data[self.hid_field]
+        head_ids = cur_data[self.hid_field].numpy()
         neg_tail_ids = self.sampler.sample_by_entity_ids(head_ids, self.neg_sample_num)
         cur_data.update(Interaction({self.neg_tid_field: neg_tail_ids}))
         self.pr += self.step

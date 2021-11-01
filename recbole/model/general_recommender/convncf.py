@@ -88,7 +88,7 @@ class ConvNCF(GeneralRecommender):
         cnn_output = cnn_output.sum(axis=(2, 3))
 
         prediction = self.predict_layers(cnn_output)
-        prediction = prediction.squeeze()
+        prediction = prediction.squeeze(-1)
 
         return prediction
 
