@@ -11,7 +11,7 @@ RecBole is compatible with the following operating systems:
 * Windows 10
 * macOS X
 
-Python 3.6 (or later), torch 1.7.0 (or later) are required to install our library. If you want to use RecBole with GPU,
+Python 3.7 (or later), torch 1.7.0 (or later) are required to install our library. If you want to use RecBole with GPU,
 please ensure that CUDA or CUDAToolkit version is 9.2 or later.
 This requires NVIDIA driver version >= 396.26 (for Linux) or >= 397.44 (for Windows10).
 
@@ -23,7 +23,7 @@ the full `anaconda <https://www.anaconda.com/download/>`_.
 If you are in China, `Tsinghua Mirrors <https://mirror.tuna.tsinghua.edu.cn/help/anaconda/>`_ is recommended.
 
 After installing ``conda``,
-run `conda create -n recbole python=3.6` to create the Python 3.6 conda environment.
+run `conda create -n recbole python=3.7` to create the Python 3.7 conda environment.
 Then the environment can be activated by `conda activate recbole`.
 At last, run the following command to install RecBole:
 
