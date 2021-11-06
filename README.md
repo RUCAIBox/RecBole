@@ -81,7 +81,7 @@ RecBole works with the following operating systems:
 * Windows 10
 * macOS X
 
-RecBole requires Python version 3.6 or later.
+RecBole requires Python version 3.7 or later.
 
 RecBole requires torch version 1.7.0 or later. If you want to use RecBole with GPU,
 please ensure that CUDA or cudatoolkit version is 9.2 or later.

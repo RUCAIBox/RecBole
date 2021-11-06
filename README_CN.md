@@ -76,7 +76,7 @@ RecBole可以在以下几种系统上运行:
 * Windows 10
 * macOS X
 
-RecBole需要在python 3.6或更高的环境下运行。
+RecBole需要在python 3.7或更高的环境下运行。
 
 RecBole要求torch版本在1.7.0及以上，如果你想在GPU上运行RecBole，请确保你的CUDA版本或CUDAToolkit版本在9.2及以上。
 这需要你的NVIDIA驱动版本为396.26或以上（在linux系统上）或者为397.44或以上（在Windows10系统上）。
