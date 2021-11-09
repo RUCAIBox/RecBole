@@ -109,11 +109,11 @@ class DIN(SequentialRecommender):
 
         user_feat_list = feature_table['user']
         item_feat_list, target_item_feat_emb = feature_table['item'].split([max_length, 1], dim=1)
-        target_item_feat_emb = target_item_feat_emb.squeeze()
+        target_item_feat_emb = target_item_feat_emb.squeeze(1)
 
         # attention
         user_emb = self.attention(target_item_feat_emb, item_feat_list, item_seq_len)
-        user_emb = user_emb.squeeze()
+        user_emb = user_emb.squeeze(1)
 
         # input the DNN to get the prediction score
         din_in = torch.cat([user_emb, target_item_feat_emb, user_emb * target_item_feat_emb], dim=-1)
