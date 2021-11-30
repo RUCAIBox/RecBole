@@ -880,7 +880,8 @@ class Dataset(object):
                 self.inter_feat[self.label_field] = (self.inter_feat[field] >= value).astype(int)
             else:
                 raise ValueError(f'Field [{field}] not in inter_feat.')
-            self._del_col(self.inter_feat, field)
+            if field != self.label_field:
+                self._del_col(self.inter_feat, field)
 
     def _get_remap_list(self, field_list):
         """Transfer set of fields in the same remapping space into remap list.
