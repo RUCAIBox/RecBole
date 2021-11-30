@@ -94,7 +94,7 @@ Preprocessing
 - ``alias_of_relation_id (list)``: List of fields' names, which will be remapped into the same index system with ``RELATION_ID_FIELD``. Defaults to ``None``.
 - ``preload_weight (dict)`` : Has the format ``{k (str): v (float)}, ...``. ``k`` is a token field, representing the IDs of each row of preloaded weight matrix. ``v`` is a float-like field. Each pair of ``k`` and ``v`` should be from the same atomic file. This arg can be used to load pretrained vectors. Defaults to ``None``.
 - ``normalize_field (list)`` : List of filed names to be normalized. Note that only float-like fields can be normalized. Defaults to ``None``.
-- ``normalize_all (bool)`` : Normalize all the float like fields if ``True``. Defaults to ``True``.
+- ``normalize_all (bool)`` : Normalize all the float like fields if ``True``. Defaults to ``None``.
 
 Benchmark file
 -------------------
