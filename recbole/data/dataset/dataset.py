@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2021/7/14 2021/7/1, 2020/11/10
-# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn
+# @Time   : 2021/12/18 2021/7/14 2021/7/1, 2020/11/10
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen, Juyong Jiang
+# @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn, csjuyongjiang@gmail.com
 
 """
 recbole.data.dataset
@@ -1508,7 +1508,10 @@ class Dataset(object):
     def save(self):
         """Saving this :class:`Dataset` object to :attr:`config['checkpoint_dir']`.
         """
-        file = os.path.join(self.config['checkpoint_dir'], f'{self.config["dataset"]}-dataset.pth')
+        save_dir = self.config['checkpoint_dir']
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        file = os.path.join(save_dir, f'{self.config["dataset"]}-dataset.pth')
         self.logger.info(set_color('Saving filtered dataset into ', 'pink') + f'[{file}]')
         with open(file, 'wb') as f:
             pickle.dump(self, f)
