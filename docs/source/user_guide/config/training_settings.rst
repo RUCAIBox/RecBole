@@ -22,3 +22,4 @@ Training settings are designed to set parameters about model training.
   which will clip gradient norm of model. Defaults to ``None``.
 - ``loss_decimal_place(int)``: The decimal place of training loss. Defaults to ``4``.
 - ``weight_decay (float)`` : The weight decay (L2 penalty), used for `optimizer <https://pytorch.org/docs/stable/optim.html?highlight=weight_decay>`_. Default to ``0.0``.
+- ``require_pow(bool)``: The sign identifies whether the power operation is performed based on the norm in EmbLoss. Defaults to ``False``.
