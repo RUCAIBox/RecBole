@@ -96,7 +96,7 @@ Model Initialization
 
 .. code:: python
 
-    model = BPR(config, train_data).to(config['device'])
+    model = BPR(config, train_data.dataset).to(config['device'])
 
 Initializing the model according to the model names, and initializing the instance of the model.
 
