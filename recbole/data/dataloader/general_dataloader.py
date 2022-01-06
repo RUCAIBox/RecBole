@@ -39,9 +39,9 @@ class TrainDataLoader(NegSampleDataLoader):
 
     def _init_batch_size_and_step(self):
         batch_size = self.config['train_batch_size']
-        if self.neg_sample_args['strategy'] == 'by': # self.times = 1 + neg_sample_num
-            batch_num = max(batch_size // self.times, 1) # batch size 整除 采样次数 + 1，最少一个 正例
-            new_batch_size = batch_num * self.times # 最后 batch 有几个为
+        if self.neg_sample_args['strategy'] == 'by':
+            batch_num = max(batch_size // self.times, 1)
+            new_batch_size = batch_num * self.times
             self.step = batch_num
             self.set_batch_size(new_batch_size)
         else:
