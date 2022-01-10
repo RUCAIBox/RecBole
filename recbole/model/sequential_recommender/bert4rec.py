@@ -240,7 +240,7 @@ class BERT4Rec(SequentialRecommender):
         test_item = interaction[self.ITEM_ID]
         item_seq = self.reconstruct_test_data(item_seq, item_seq_len)
         seq_output = self.forward(item_seq)
-        seq_output = self.gather_indexes(seq_output, item_seq_len - 1)  # [B H]
+        seq_output = self.gather_indexes(seq_output, item_seq_len)  # [B H]
         test_item_emb = self.item_embedding(test_item)
         scores = torch.mul(seq_output, test_item_emb).sum(dim=1)  # [B]
         return scores
@@ -250,7 +250,7 @@ class BERT4Rec(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         item_seq = self.reconstruct_test_data(item_seq, item_seq_len)
         seq_output = self.forward(item_seq)
-        seq_output = self.gather_indexes(seq_output, item_seq_len - 1)  # [B H]
+        seq_output = self.gather_indexes(seq_output, item_seq_len)  # [B H]
         test_items_emb = self.item_embedding.weight[:self.n_items]  # delete masked token
         scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, item_num]
         return scores
