@@ -563,6 +563,7 @@ class PretrainTrainer(Trainer):
             'epoch': epoch,
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
+            'other_parameter': self.model.other_parameter(),
         }
         torch.save(state, saved_model_file)
 
