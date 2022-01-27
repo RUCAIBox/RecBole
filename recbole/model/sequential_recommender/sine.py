@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# @Time    : 2021/11/23 11:10
+# @Author  : Jingqi Gao
+# @Email   : jgaoaz@connect.ust.hk
+
+"""
+Sparse-Interest Network for Sequential Recommendation
+################################################
+
+Reference:
+    Qiaoyu Tan, Jianwei Zhang, Jiangchao Yao, Ninghao Liu, Jingren Zhou,
+    Hongxia Yang, Xia Hu. 2021. Sparse-Interest Network for Sequential Recommendation.
+    In Proceedings of the Fourteenth ACM International Conference on
+    Web Search and Data Mining (WSDM ’21), March 8–12, 2021, Virtual Event, Israel.
+    ACM, New York, NY, USA, 9 pages. https://doi.org/10.1145/3437963.3441811
+
+"""
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -39,37 +57,31 @@ class SINE(SequentialRecommender):
         self.D = config['embedding_size']
         self.L = config['prototype_size']  # 500 for movie-len dataset
         self.k = config['interest_size']  # 4 for movie-len dataset
-        self.M = self.n_items
         self.tau = config['tau_ratio']  # 0.1 in paper
+        self.reg_loss_ratio = config['reg_loss_ratio']  # 0.1 in paper
 
         self.initializer_range = 0.01
-        self.w1 = torch.tensor(np.random.normal(0, self.initializer_range, (self.D, self.D)), dtype=torch.float32,
-                               requires_grad=True).to(
-            self.device)
-        self.w2 = torch.tensor(np.random.normal(0, self.initializer_range, self.D), dtype=torch.float32,
-                               requires_grad=True).to(
-            self.device)
-        self.w3 = torch.tensor(np.random.normal(0, self.initializer_range, (self.D, self.D)), dtype=torch.float32,
-                               requires_grad=True).to(
-            self.device)
-        self.w4 = torch.tensor(np.random.normal(0, self.initializer_range, (self.D, self.D)), dtype=torch.float32,
-                               requires_grad=True).to(self.device)
-        self.w5 = torch.tensor(np.random.normal(0, self.initializer_range, self.D), dtype=torch.float32,
-                               requires_grad=True).to(self.device)
+
+        self.w1 = self._init_weight((self.D, self.D))
+        self.w2 = self._init_weight(self.D)
+        self.w3 = self._init_weight((self.D, self.D))
+        self.w4 = self._init_weight((self.D, self.D))
+        self.w5 = self._init_weight(self.D)
 
         self.C = nn.Embedding(self.L, self.D)
 
-        self.w_k_1 = torch.tensor(np.random.normal(0, self.initializer_range, (self.k, self.D, self.D)),
-                                  dtype=torch.float32,
-                                  requires_grad=True).to(self.device)
-        self.w_k_2 = torch.tensor(np.random.normal(0, self.initializer_range, (self.k, self.D)), dtype=torch.float32,
-                                  requires_grad=True).to(self.device)
-        self.item_embedding = nn.Embedding(self.M, self.D, padding_idx=0)
+        self.w_k_1 = self._init_weight((self.k, self.D, self.D))
+        self.w_k_2 = self._init_weight((self.k, self.D))
+        self.item_embedding = nn.Embedding(self.n_items, self.D, padding_idx=0)
         self.ln2 = nn.LayerNorm(self.embedding_size, eps=self.layer_norm_eps)
         self.ln4 = nn.LayerNorm(self.embedding_size, eps=self.layer_norm_eps)
 
         # parameters initialization
         self.apply(self._init_weights)
+
+    def _init_weight(self, shape):
+        mat = np.random.normal(0, self.initializer_range, shape)
+        return torch.tensor(mat, dtype=torch.float32, requires_grad=True).to(self.device)
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
@@ -102,7 +114,7 @@ class SINE(SequentialRecommender):
             logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
             logits = F.log_softmax(logits, dim=1)
             loss = self.loss_fct(logits, pos_items)
-            return loss + self.calculate_reg_loss() / 2
+            return loss + self.calculate_reg_loss() * self.reg_loss_ratio
 
     def calculate_reg_loss(self):
         C_mean = torch.mean(self.C.weight, dim=1, keepdim=True)
@@ -153,19 +165,20 @@ class SINE(SequentialRecommender):
         # interest embedding generation
         mul_p = P_k_t_b_t.mul(P_t_k)
         x_u_re = x_u.unsqueeze(1).repeat(1, self.k, 1, 1)
-        mul_p_re = mul_p.unsqueeze(3).repeat(1, 1, 1, self.embedding_size)
+        mul_p_re = mul_p.unsqueeze(3)
         delta_k = x_u_re.mul(mul_p_re).sum(2)
         delta_k = F.normalize(delta_k, p=2, dim=2)
 
         # prototype sequence
         x_u_bar = P_k_t_b.matmul(C_u)
-        C_apt = F.softmax(torch.tanh(x_u_bar.matmul(self.w4)).matmul(self.w5), dim=1).reshape(-1, 1, self.max_seq_length).matmul(x_u_bar)
+        C_apt = F.softmax(torch.tanh(x_u_bar.matmul(self.w4)).matmul(self.w5), dim=1)
+        C_apt = C_apt.reshape(-1, 1, self.max_seq_length).matmul(x_u_bar)
         C_apt = self.ln4(C_apt)
 
         # aggregation weight
         e_k = delta_k.bmm(C_apt.reshape(-1, self.embedding_size, 1)) / self.tau
         e_k_u = F.softmax(e_k.squeeze(2), dim=1)
-        v_u = e_k_u.unsqueeze(2).repeat(1, 1, self.embedding_size).mul(delta_k).sum(dim=1)
+        v_u = e_k_u.unsqueeze(2).mul(delta_k).sum(dim=1)
 
         return v_u
 
