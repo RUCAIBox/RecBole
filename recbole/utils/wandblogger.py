@@ -35,22 +35,37 @@ class WandbLogger(object):
             # Initialize a W&B run
             if self._wandb.run is None:
                 self._wandb.init(
-                    project='recbole-test',
+                    project=self.config.wandb_project,
                     config=self.config
                 )
 
-    def log_metrics(self, metrics, head='train'):
+            self._set_steps()
+
+    def log_metrics(self, metrics, head='train', commit=True):
         if self.log_wandb:
             if head:
-                metrics = self.add_head_to_metrics(metrics, head)
-                self._wandb.log(metrics)
+                metrics = self._add_head_to_metrics(metrics, head)
+                self._wandb.log(metrics, commit=commit)
             else:
-                self._wandb.log(metrics)
+                self._wandb.log(metrics, commit=commit)
 
-    def add_head_to_metrics(self, metrics, head):
+    def log_eval_metrics(self, metrics, head='eval'):
+        if self.log_wandb:
+            metrics = self._add_head_to_metrics(metrics, head)
+            for k, v in metrics.items():
+                self._wandb.run.summary[k] = v
+
+    def _set_steps(self):
+        self._wandb.define_metric('train/*', step_metric='train_step')
+        self._wandb.define_metric('valid/*', step_metric='valid_step')
+
+    def _add_head_to_metrics(self, metrics, head):
         head_metrics = dict()
         for k, v in metrics.items():
-            head_metrics[f'{head}/{k}'] = v
+            if '_step' in k:
+                head_metrics[k] = v
+            else:
+                head_metrics[f'{head}/{k}'] = v
 
         return head_metrics
         

@@ -310,6 +310,7 @@ class Trainer(AbstractTrainer):
             self._save_checkpoint(-1)
 
         self.eval_collector.data_collect(train_data)
+        valid_step = 0
 
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
@@ -322,7 +323,7 @@ class Trainer(AbstractTrainer):
             if verbose:
                 self.logger.info(train_loss_output)
             self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
-            self.wandblogger.log_metrics({'epoch': epoch_idx, 'train_loss': train_loss}, head='train')
+            self.wandblogger.log_metrics({'epoch': epoch_idx, 'train_loss': train_loss, 'train_step':epoch_idx}, head='train')
 
             # eval
             if self.eval_step <= 0 or not valid_data:
@@ -351,7 +352,7 @@ class Trainer(AbstractTrainer):
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
                 self.tensorboard.add_scalar('Vaild_score', valid_score, epoch_idx)
-                self.wandblogger.log_metrics(valid_result, head='valid')
+                self.wandblogger.log_metrics({**valid_result, 'valid_step': valid_step}, head='valid')
 
                 if update_flag:
                     if saved:
@@ -370,6 +371,9 @@ class Trainer(AbstractTrainer):
                     if verbose:
                         self.logger.info(stop_output)
                     break
+
+                valid_step+=1
+
         self._add_hparam_to_tensorboard(self.best_valid_score)
         return self.best_valid_score, self.best_valid_result
 
@@ -467,8 +471,8 @@ class Trainer(AbstractTrainer):
         self.eval_collector.model_collect(self.model)
         struct = self.eval_collector.get_data_struct()
         result = self.evaluator.evaluate(struct)
-        self.wandblogger.log_metrics(result, head='eval')
-        
+        self.wandblogger.log_eval_metrics(result, head='eval')
+
         return result
 
     def _spilt_predict(self, interaction, batch_size):
