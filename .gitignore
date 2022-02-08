@@ -11,3 +11,4 @@ saved/
 *.lprof
 *.egg-info/
 docs/build/
+wandb/*

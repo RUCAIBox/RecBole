@@ -15,6 +15,7 @@ general_arguments = [
     'config_file',
     'save_dataset',
     'save_dataloaders',
+    'log_wandb',
 ]
 
 training_arguments = [

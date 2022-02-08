@@ -9,6 +9,7 @@ checkpoint_dir: 'saved'
 show_progress: True
 save_dataset: False
 save_dataloaders: False
+log_wandb: True
 
 # training settings
 epochs: 300

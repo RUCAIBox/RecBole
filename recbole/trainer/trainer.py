@@ -31,7 +31,7 @@ from recbole.data.interaction import Interaction
 from recbole.data.dataloader import FullSortEvalDataLoader
 from recbole.evaluator import Evaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
-    EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage
+    EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage, WandbLogger
 
 
 class AbstractTrainer(object):
@@ -78,6 +78,7 @@ class Trainer(AbstractTrainer):
 
         self.logger = getLogger()
         self.tensorboard = get_tensorboard(self.logger)
+        self.wandblogger = WandbLogger(config)
         self.learner = config['learner']
         self.learning_rate = config['learning_rate']
         self.epochs = config['epochs']
