@@ -39,6 +39,18 @@ class WandbLogger(object):
                     config=self.config
                 )
 
+    def log_metrics(self, metrics, head='train'):
+        if self.log_wandb:
+            if head:
+                metrics = self.add_head_to_metrics(metrics, head)
+                self._wandb.log(metrics)
+            else:
+                self._wandb.log(metrics)
 
-    def log_metrics(self):
-        pass
+    def add_head_to_metrics(self, metrics, head):
+        head_metrics = dict()
+        for k, v in metrics.items():
+            head_metrics[f'{head}/{k}'] = v
+
+        return head_metrics
+        
