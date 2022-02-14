@@ -557,9 +557,9 @@ class ContextSeqEmbAbstractLayer(nn.Module):
     def __init__(self):
         super(ContextSeqEmbAbstractLayer, self).__init__()
         self.token_field_offsets = {}
-        self.token_embedding_table = {}
-        self.float_embedding_table = {}
-        self.token_seq_embedding_table = {}
+        self.token_embedding_table = nn.ModuleDict()
+        self.float_embedding_table = nn.ModuleDict()
+        self.token_seq_embedding_table = nn.ModuleDict()
 
         self.token_field_names = None
         self.token_field_dims = None
