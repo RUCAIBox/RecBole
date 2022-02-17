@@ -65,8 +65,7 @@ class SINE(SequentialRecommender):
         self.w1 = self._init_weight((self.D, self.D))
         self.w2 = self._init_weight(self.D)
         self.w3 = self._init_weight((self.D, self.D))
-        self.w4 = self._init_weight((self.D, self.D))
-        self.w5 = self._init_weight(self.D)
+        self.w4 = self._init_weight(self.D)
 
         self.C = nn.Embedding(self.L, self.D)
 
@@ -151,8 +150,7 @@ class SINE(SequentialRecommender):
 
         # intention assignment
         # use matrix multiplication instead of cos()
-        w3_x_u = x_u.matmul(self.w3)
-        w3_x_u_norm = F.normalize(w3_x_u, p=2, dim=2)
+        w3_x_u_norm = F.normalize(x_u.matmul(self.w3), p=2, dim=2)
         C_u_norm = self.ln2(C_u)
         P_k_t = torch.bmm(w3_x_u_norm, C_u_norm.transpose(1, 2))
         P_k_t_b = F.softmax(P_k_t, dim=2)
@@ -171,7 +169,7 @@ class SINE(SequentialRecommender):
 
         # prototype sequence
         x_u_bar = P_k_t_b.matmul(C_u)
-        C_apt = F.softmax(torch.tanh(x_u_bar.matmul(self.w4)).matmul(self.w5), dim=1)
+        C_apt = F.softmax(torch.tanh(x_u_bar.matmul(self.w3)).matmul(self.w4), dim=1)
         C_apt = C_apt.reshape(-1, 1, self.max_seq_length).matmul(x_u_bar)
         C_apt = self.ln4(C_apt)
 
