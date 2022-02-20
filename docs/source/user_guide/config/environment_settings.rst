@@ -26,3 +26,8 @@ Environment settings are designed to set basic parameters of running environment
 - ``save_dataloaders (bool)``: Whether or not save split dataloaders.
   If True, save split dataloaders, otherwise they will not be saved.
   Defaults to ``False``.
+- ``log_wandb (bool)``: Whether or not use Weights & Biases(W&B).
+  If True, use W&B to visualize configs and metrics of different experiments, otherwise it will not be used.
+  Defaults to ``False``.
+- ``wandb_project (str)``: The project to conduct experiment in W&B.
+  Defaults to ``'recbole'``.
