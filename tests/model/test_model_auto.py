@@ -696,6 +696,28 @@ class TestSequentialRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_sine(self):
+        config_dict = {
+            'model': 'SINE',
+            'neg_sampling': None
+        }
+        quick_test(config_dict)
+
+    def test_sine_with_BPR_loss(self):
+        config_dict = {
+            'model': 'SINE',
+            'loss_type': 'BPR',
+        }
+        quick_test(config_dict)
+
+    def test_sine_with_NLL_loss(self):
+        config_dict = {
+            'model': 'SINE',
+            'neg_sampling': None,
+            'loss_type': 'NLL',
+        }
+        quick_test(config_dict)
+
     # def test_gru4reckg(self):
     #     config_dict = {
     #         'model': 'GRU4RecKG',
