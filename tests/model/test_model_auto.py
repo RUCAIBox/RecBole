@@ -205,6 +205,12 @@ class TestGeneralRecommender(unittest.TestCase):
             'model': 'SGL',
         }
         quick_test(config_dict)
+    
+    def test_ADMMSLIM(self):
+        config_dict = {
+            'model': 'ADMMSLIM',
+        }
+        quick_test(config_dict)
 
 
 class TestContextRecommender(unittest.TestCase):
