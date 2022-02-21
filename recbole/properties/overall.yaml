@@ -7,8 +7,8 @@ reproducibility: True
 data_path: 'dataset/'
 checkpoint_dir: 'saved'
 show_progress: True
-save_dataset: True
-save_dataloaders: True
+save_dataset: False
+save_dataloaders: False
 
 # training settings
 epochs: 300
