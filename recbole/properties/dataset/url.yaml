@@ -54,7 +54,7 @@ lfm1b-tracks-not-merged: https://recbole.s3-accelerate.amazonaws.com/ProcessedDa
 mind-large-dev: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MIND/mind_large_dev.zip
 mind-large-train: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MIND/mind_large_train.zip
 mind-small-dev: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MIND/mind_small_dev.zip
-mind-small_train: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MIND/mind_small_train.zip
+mind-small-train: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MIND/mind_small_train.zip
 ml-100k: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MovieLens/ml-100k.zip
 ml-1m: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MovieLens/ml-1m.zip
 ml-10m: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MovieLens/ml-10m.zip

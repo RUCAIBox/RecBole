@@ -182,3 +182,8 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         if state not in set(KGDataLoaderState):
             raise NotImplementedError(f'Kg data loader has no state named [{self.state}].')
         self.state = state
+
+    def get_model(self, model):
+        """Let the general_dataloader get the model, used for dynamic sampling.
+        """
+        self.general_dataloader.get_model(model)
