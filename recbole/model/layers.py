@@ -359,11 +359,13 @@ class MultiHeadAttention(nn.Module):
         self.num_attention_heads = n_heads
         self.attention_head_size = int(hidden_size / n_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size
+        self.sqrt_attention_head_size = math.sqrt(self.attention_head_size)
 
         self.query = nn.Linear(hidden_size, self.all_head_size)
         self.key = nn.Linear(hidden_size, self.all_head_size)
         self.value = nn.Linear(hidden_size, self.all_head_size)
 
+        self.softmax = nn.Softmax(dim=-1)
         self.attn_dropout = nn.Dropout(attn_dropout_prob)
 
         self.dense = nn.Linear(hidden_size, hidden_size)
@@ -373,28 +375,28 @@ class MultiHeadAttention(nn.Module):
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
         x = x.view(*new_x_shape)
-        return x.permute(0, 2, 1, 3)
+        return x
 
     def forward(self, input_tensor, attention_mask):
         mixed_query_layer = self.query(input_tensor)
         mixed_key_layer = self.key(input_tensor)
         mixed_value_layer = self.value(input_tensor)
 
-        query_layer = self.transpose_for_scores(mixed_query_layer)
-        key_layer = self.transpose_for_scores(mixed_key_layer)
-        value_layer = self.transpose_for_scores(mixed_value_layer)
+        query_layer = self.transpose_for_scores(mixed_query_layer).permute(0, 2, 1, 3)
+        key_layer = self.transpose_for_scores(mixed_key_layer).permute(0, 2, 3, 1)
+        value_layer = self.transpose_for_scores(mixed_value_layer).permute(0, 2, 1, 3)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
-        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+        attention_scores = torch.matmul(query_layer, key_layer)
 
-        attention_scores = attention_scores / math.sqrt(self.attention_head_size)
+        attention_scores = attention_scores / self.sqrt_attention_head_size
         # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
         # [batch_size heads seq_len seq_len] scores
         # [batch_size 1 1 seq_len]
         attention_scores = attention_scores + attention_mask
 
         # Normalize the attention scores to probabilities.
-        attention_probs = nn.Softmax(dim=-1)(attention_scores)
+        attention_probs = self.softmax(attention_scores)
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
 
@@ -725,9 +727,9 @@ class ContextSeqEmbAbstractLayer(nn.Module):
     def __init__(self):
         super(ContextSeqEmbAbstractLayer, self).__init__()
         self.token_field_offsets = {}
-        self.token_embedding_table = {}
-        self.float_embedding_table = {}
-        self.token_seq_embedding_table = {}
+        self.token_embedding_table = nn.ModuleDict()
+        self.float_embedding_table = nn.ModuleDict()
+        self.token_seq_embedding_table = nn.ModuleDict()
 
         self.token_field_names = None
         self.token_field_dims = None
