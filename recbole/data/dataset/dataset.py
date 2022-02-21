@@ -1509,8 +1509,7 @@ class Dataset(object):
         """Saving this :class:`Dataset` object to :attr:`config['checkpoint_dir']`.
         """
         save_dir = self.config['checkpoint_dir']
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+        ensure_dir(self.config['checkpoint_dir'])
         file = os.path.join(save_dir, f'{self.config["dataset"]}-dataset.pth')
         self.logger.info(set_color('Saving filtered dataset into ', 'pink') + f'[{file}]')
         with open(file, 'wb') as f:
