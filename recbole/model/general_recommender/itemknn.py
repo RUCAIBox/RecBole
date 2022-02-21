@@ -92,10 +92,7 @@ class ComputeSimilarity:
                 data = self.dataMatrix[start_block:end_block, :]
             else:
                 data = self.dataMatrix[:, start_block:end_block]
-            data = data.toarray().squeeze()
-
-            if data.ndim == 1:
-                data = np.expand_dims(data, axis=1)
+            data = data.toarray()
 
             # Compute similarities
 
@@ -105,11 +102,7 @@ class ComputeSimilarity:
                 this_block_weights = self.dataMatrix.T.dot(data)
 
             for index_in_block in range(this_block_size):
-
-                if this_block_size == 1:
-                    this_line_weights = this_block_weights.squeeze()
-                else:
-                    this_line_weights = this_block_weights[:, index_in_block]
+                this_line_weights = this_block_weights[:, index_in_block]
 
                 Index = index_in_block + start_block
                 this_line_weights[Index] = 0.0

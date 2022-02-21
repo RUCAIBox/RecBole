@@ -68,7 +68,7 @@ class ENMF(GeneralRecommender):
         item_embedding = self.item_embedding(user_inter)  # shape: [B, max_len, embedding_size]
         score = torch.mul(user_embedding.unsqueeze(1), item_embedding)  # shape: [B, max_len, embedding_size]
         score = self.H_i(score)  # shape: [B,max_len,1]
-        score = score.squeeze()  # shape:[B,max_len]
+        score = score.squeeze(-1)  # shape:[B,max_len]
 
         return score
 
@@ -82,8 +82,9 @@ class ENMF(GeneralRecommender):
                              self.item_embedding.weight.unsqueeze(1)).sum(dim=0)
 
         # shape: [embedding_size, embedding_size]
-        user_sum = torch.bmm(self.user_embedding.weight.unsqueeze(2),
-                             self.user_embedding.weight.unsqueeze(1)).sum(dim=0)
+        batch_user = self.user_embedding(user)
+        user_sum = torch.bmm(batch_user.unsqueeze(2),
+                             batch_user.unsqueeze(1)).sum(dim=0)
 
         # shape: [embedding_size, embedding_size]
         H_sum = torch.matmul(self.H_i.weight.t(), self.H_i.weight)
