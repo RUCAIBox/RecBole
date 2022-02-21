@@ -125,9 +125,7 @@ class SequentialDataset(Dataset):
                 list_field = getattr(self, f'{field}_list_field')
                 list_len = self.field2seqlen[list_field]
                 shape = (new_length, list_len) if isinstance(list_len, int) else (new_length,) + list_len
-                list_ftype = self.field2type[list_field]
-                dtype = torch.int64 if list_ftype in [FeatureType.TOKEN, FeatureType.TOKEN_SEQ] else torch.float64
-                new_dict[list_field] = torch.zeros(shape, dtype=dtype)
+                new_dict[list_field] = torch.zeros(shape, dtype=self.inter_feat[field].dtype)
 
                 value = self.inter_feat[field]
                 for i, (index, length) in enumerate(zip(item_list_index, item_list_length)):
