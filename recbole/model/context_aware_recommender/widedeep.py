@@ -59,7 +59,7 @@ class WideDeep(ContextRecommender):
 
         deep_output = self.deep_predict_layer(self.mlp_layers(widedeep_all_embeddings.view(batch_size, -1)))
         output = self.sigmoid(fm_output + deep_output)
-        return output.squeeze()
+        return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

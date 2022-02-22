@@ -121,7 +121,7 @@ def early_stopping(value, best, cur_step, max_step, bigger=True):
     stop_flag = False
     update_flag = False
     if bigger:
-        if value > best:
+        if value >= best:
             cur_step = 0
             best = value
             update_flag = True
@@ -130,7 +130,7 @@ def early_stopping(value, best, cur_step, max_step, bigger=True):
             if cur_step > max_step:
                 stop_flag = True
     else:
-        if value < best:
+        if value <= best:
             cur_step = 0
             best = value
             update_flag = True

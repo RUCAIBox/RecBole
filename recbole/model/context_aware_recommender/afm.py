@@ -102,7 +102,7 @@ class AFM(ContextRecommender):
         afm_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
 
         output = self.sigmoid(self.first_order_linear(interaction) + self.afm_layer(afm_all_embeddings))
-        return output.squeeze()
+        return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

@@ -47,7 +47,7 @@ class FM(ContextRecommender):
     def forward(self, interaction):
         fm_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
         y = self.sigmoid(self.first_order_linear(interaction) + self.fm(fm_all_embeddings))
-        return y.squeeze()
+        return y.squeeze(-1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

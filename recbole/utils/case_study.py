@@ -48,7 +48,7 @@ def full_sort_scores(uid_series, model, test_data, device=None):
         history_col = torch.cat(list(history_item))
         history_index = history_row, history_col
     else:
-        _, index = (dataset[uid_field] == uid_series[:, None]).nonzero(as_tuple=True)
+        _, index = (dataset.inter_feat[uid_field] == uid_series[:, None]).nonzero(as_tuple=True)
         input_interaction = dataset[index]
         history_index = None
 
@@ -57,7 +57,7 @@ def full_sort_scores(uid_series, model, test_data, device=None):
     try:
         scores = model.full_sort_predict(input_interaction)
     except NotImplementedError:
-        input_interaction = input_interaction.repeat(dataset.item_num)
+        input_interaction = input_interaction.repeat_interleave(dataset.item_num)
         input_interaction.update(test_data.dataset.get_item_feature().to(device).repeat(len(uid_series)))
         scores = model.predict(input_interaction)
 

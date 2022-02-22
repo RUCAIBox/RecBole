@@ -26,7 +26,7 @@ from torch.nn.init import xavier_normal_, constant_
 
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.layers import MLPLayers, SequenceAttLayer, ContextSeqEmbLayer
-from recbole.utils import InputType
+from recbole.utils import InputType, FeatureType
 
 
 class DIN(SequentialRecommender):
@@ -60,7 +60,10 @@ class DIN(SequentialRecommender):
         # init MLP layers
         # self.dnn_list = [(3 * self.num_feature_field['item'] + self.num_feature_field['user'])
         #                  * self.embedding_size] + self.mlp_hidden_size
-        num_item_feature = len(self.item_feat.interaction.keys())
+        num_item_feature = sum(
+            1 if dataset.field2type[field] != FeatureType.FLOAT_SEQ else dataset.num(field)
+            for field in self.item_feat.interaction.keys()
+        )
         self.dnn_list = [3 * num_item_feature * self.embedding_size] + self.mlp_hidden_size
         self.att_list = [4 * num_item_feature * self.embedding_size] + self.mlp_hidden_size
 
@@ -109,11 +112,11 @@ class DIN(SequentialRecommender):
 
         user_feat_list = feature_table['user']
         item_feat_list, target_item_feat_emb = feature_table['item'].split([max_length, 1], dim=1)
-        target_item_feat_emb = target_item_feat_emb.squeeze()
+        target_item_feat_emb = target_item_feat_emb.squeeze(1)
 
         # attention
         user_emb = self.attention(target_item_feat_emb, item_feat_list, item_seq_len)
-        user_emb = user_emb.squeeze()
+        user_emb = user_emb.squeeze(1)
 
         # input the DNN to get the prediction score
         din_in = torch.cat([user_emb, target_item_feat_emb, user_emb * target_item_feat_emb], dim=-1)
