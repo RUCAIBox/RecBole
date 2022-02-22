@@ -62,7 +62,7 @@ class DeepFM(ContextRecommender):
 
         y_deep = self.deep_predict_layer(self.mlp_layers(deepfm_all_embeddings.view(batch_size, -1)))
         y = self.sigmoid(y_fm + y_deep)
-        return y.squeeze()
+        return y.squeeze(-1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

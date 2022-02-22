@@ -124,7 +124,7 @@ class FwFM(ContextRecommender):
 
         output = self.sigmoid(self.first_order_linear(interaction) + self.fwfm_layer(fwfm_all_embeddings))
 
-        return output.squeeze()
+        return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

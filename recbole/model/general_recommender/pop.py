@@ -48,7 +48,7 @@ class Pop(GeneralRecommender):
     def predict(self, interaction):
         item = interaction[self.ITEM_ID]
         result = torch.true_divide(self.item_cnt[item, :], self.max_cnt)
-        return result.squeeze()
+        return result.squeeze(-1)
 
     def full_sort_predict(self, interaction):
         batch_user_num = interaction[self.USER_ID].shape[0]

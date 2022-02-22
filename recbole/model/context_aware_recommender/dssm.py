@@ -86,7 +86,7 @@ class DSSM(ContextRecommender):
         score = torch.cosine_similarity(user_dnn_out, item_dnn_out, dim=1)
 
         sig_score = self.sigmoid(score)
-        return sig_score.squeeze()
+        return sig_score.squeeze(-1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]

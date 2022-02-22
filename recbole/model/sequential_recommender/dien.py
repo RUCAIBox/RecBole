@@ -58,8 +58,14 @@ class DIEN(SequentialRecommender):
         self.user_feat = dataset.get_user_feature()
         self.item_feat = dataset.get_item_feature()
 
-        num_item_feature = len(self.item_feat.interaction)
-        num_user_feature = len(self.user_feat.interaction)
+        num_item_feature = sum(
+            1 if dataset.field2type[field] != FeatureType.FLOAT_SEQ else dataset.num(field)
+            for field in self.item_feat.interaction.keys()
+        )
+        num_user_feature = sum(
+            1 if dataset.field2type[field] != FeatureType.FLOAT_SEQ else dataset.num(field)
+            for field in self.user_feat.interaction.keys()
+        )
         item_feat_dim = num_item_feature * self.embedding_size
         mask_mat = torch.arange(self.max_seq_length).to(self.device).view(1, -1)  # init mask
 
@@ -111,11 +117,10 @@ class DIEN(SequentialRecommender):
             feature_table[type] = feature_table[type].view(table_shape[:-2] + (feat_num * embedding_size,))
 
         user_feat_list = feature_table['user']
-        item_feat_list, neg_item_feat_list, target_item_feat_emb = feature_table['item'].split([
-            max_length, max_length, 1
-        ],
-                                                                                               dim=1)
-        target_item_feat_emb = target_item_feat_emb.squeeze()
+        item_feat_list, neg_item_feat_list, target_item_feat_emb = feature_table['item'].split(
+            [max_length, max_length, 1], dim=1
+        )
+        target_item_feat_emb = target_item_feat_emb.squeeze(1)
 
         # interest
         interest, aux_loss = self.interset_extractor(item_feat_list, item_seq_len, neg_item_feat_list)
