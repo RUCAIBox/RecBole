@@ -78,14 +78,14 @@ You can create a new python file (e.g., `run.py`), and write the following code:
 
     from recbole.quick_start import run_recbole
 
-    run_recbole(model='BPR', dataset='ml-100k')
+    run_recbole(model='BPR', dataset='ml-100k', config_file_list=['test.yaml'])
 
 
 Then run the following command:
 
 .. code:: bash
 
-    python run.py --config_files=test.yaml
+    python run.py 
 
 And you will obtain the output like:
 
@@ -98,8 +98,8 @@ And you will obtain the output like:
     Average actions of items: 59.45303210463734
     The number of inters: 100000
     The sparsity of the dataset: 93.70575143257098%
-    Remain Fields: ['user_id', 'item_id', 'rating', 'timestamp']
-    24 Aug 01:46    INFO  [Training]: train_batch_size = [2048] negative sampling: [{'uniform': 1}]
+    Remain Fields: ['user_id', 'item_id']
+    24 Aug 01:46    INFO  [Training]: train_batch_size = [4096] negative sampling: [{'uniform': 1}]
     24 Aug 01:46    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'split': {'RS': [0.8, 0.1, 0.1]}, 'group_by': 'user', 'order': 'RO', 'mode': 'full'}]
     24 Aug 01:46    INFO  BPR(
     (user_embedding): Embedding(944, 64)
