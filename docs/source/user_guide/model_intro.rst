@@ -37,6 +37,7 @@ task of top-n recommendation. All the collaborative filter(CF) based models are 
    model/general/recvae
    model/general/ease
    model/general/slimelastic
+   model/general/nceplrec
 
 
 Context-aware Recommendation
