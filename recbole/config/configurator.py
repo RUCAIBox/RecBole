@@ -354,8 +354,6 @@ class Config(object):
         else:
             if not isinstance(neg_sampling, dict):
                 raise ValueError(f"neg_sampling:[{neg_sampling}] should be a dict.")
-            if len(neg_sampling) > 1:
-                raise ValueError(f"the len of neg_sampling [{neg_sampling}] should be 1.")
 
             distribution = list(neg_sampling.keys())[0]
             sample_num = neg_sampling[distribution]
@@ -363,10 +361,15 @@ class Config(object):
                 raise ValueError(f"The distribution [{distribution}] of neg_sampling "
                                  f"should in ['uniform', 'popularity']")
 
+            dynamic = 'none'
+            if 'dynamic' in neg_sampling.keys():
+                dynamic = neg_sampling['dynamic']
+
             self.final_config_dict['train_neg_sample_args'] = {
                 'strategy': 'by',
                 'by': sample_num,
-                'distribution': distribution
+                'distribution': distribution,
+                'dynamic': dynamic
             }
 
     def _set_eval_neg_sample_args(self):

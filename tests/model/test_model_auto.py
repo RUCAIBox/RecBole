@@ -41,6 +41,16 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_bpr_with_dns(self):
+        config_dict = {
+            'model': 'BPR',
+            'neg_sampling': {
+                'uniform': 1,
+                'dynamic': 2
+            }
+        }
+        quick_test(config_dict)
+
     def test_neumf(self):
         config_dict = {
             'model': 'NeuMF',
@@ -197,6 +207,18 @@ class TestGeneralRecommender(unittest.TestCase):
     def test_slimelastic(self):
         config_dict = {
             'model': 'SLIMElastic',
+        }
+        quick_test(config_dict)
+    
+    def test_SGL(self):
+        config_dict = {
+            'model': 'SGL',
+        }
+        quick_test(config_dict)
+    
+    def test_ADMMSLIM(self):
+        config_dict = {
+            'model': 'ADMMSLIM',
         }
         quick_test(config_dict)
 
@@ -656,8 +678,7 @@ class TestSequentialRecommender(unittest.TestCase):
             'model': 'BERT4Rec',
             'neg_sampling': None
         }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
+        quick_test(config_dict)
 
     def test_bert4rec_with_BPR_loss_and_swish(self):
         config_dict = {
@@ -665,8 +686,43 @@ class TestSequentialRecommender(unittest.TestCase):
             'loss_type': 'BPR',
             'hidden_act': 'swish'
         }
-        objective_function(config_dict=config_dict,
-                           config_file_list=config_file_list, saved=False)
+        quick_test(config_dict)
+
+    def test_lightsans(self):
+        config_dict = {
+            'model': 'LightSANs',
+            'neg_sampling': None
+        }
+        quick_test(config_dict)
+
+    def test_lightsans_with_BPR_loss(self):
+        config_dict = {
+            'model': 'LightSANs',
+            'loss_type': 'BPR',
+        }
+        quick_test(config_dict)
+
+    def test_sine(self):
+        config_dict = {
+            'model': 'SINE',
+            'neg_sampling': None
+        }
+        quick_test(config_dict)
+
+    def test_sine_with_BPR_loss(self):
+        config_dict = {
+            'model': 'SINE',
+            'loss_type': 'BPR',
+        }
+        quick_test(config_dict)
+
+    def test_sine_with_NLL_loss(self):
+        config_dict = {
+            'model': 'SINE',
+            'neg_sampling': None,
+            'loss_type': 'NLL',
+        }
+        quick_test(config_dict)
 
     # def test_gru4reckg(self):
     #     config_dict = {
