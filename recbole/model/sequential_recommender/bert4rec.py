@@ -87,15 +87,6 @@ class BERT4Rec(SequentialRecommender):
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
 
-    def get_attention_mask(self, item_seq):
-        """Generate bidirectional attention mask for multi-head attention."""
-        attention_mask = (item_seq > 0).long()
-        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
-        # bidirectional mask
-        extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
-        return extended_attention_mask
-
     def _neg_sample(self, item_set):
         item = random.randint(1, self.n_items - 1)
         while item in item_set:
@@ -173,7 +164,7 @@ class BERT4Rec(SequentialRecommender):
         input_emb = item_emb + position_embedding
         input_emb = self.LayerNorm(input_emb)
         input_emb = self.dropout(input_emb)
-        extended_attention_mask = self.get_attention_mask(item_seq)
+        extended_attention_mask = self.get_attention_mask(item_seq, bidirectional=True)
         trm_output = self.trm_encoder(input_emb, extended_attention_mask, output_all_encoded_layers=True)
         output = trm_output[-1]
         return output  # [B L H]
