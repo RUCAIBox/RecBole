@@ -39,6 +39,7 @@ task of top-n recommendation. All the collaborative filter(CF) based models are 
    model/general/slimelastic
    model/general/sgl
    model/general/admmslim
+   model/general/nceplrec
 
 
 Context-aware Recommendation

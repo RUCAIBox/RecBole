@@ -97,8 +97,8 @@ Here is the list of our lead developers in each development phase. They are the 
 ======================   ===============   =============================================
 Time                     Version 	        Lead Developers
 ======================   ===============   =============================================
-June 2020 ~ Nov. 2020    v0.1.1            `Shanlei Mu <https://github.com/ShanleiMu>`_, `Yupeng Hou <https://github.com/@hyp1231>`_, `Zihan Lin <https://github.com/linzihan-backforward>`_, `Kaiyuan Li <https://github.com/tsotfsk>`_
-Nov. 2020 ~ Now          v0.1.2 ~ v1.0.0   `Yushuo Chen <https://github.com/https://github.com/chenyushuo>`_, `Xingyu Pan <https://github.com/2017pxy>`_
+June 2020 ~ Nov. 2020    v0.1.1            `Shanlei Mu <https://github.com/ShanleiMu>`_, `Yupeng Hou <https://github.com/hyp1231>`_, `Zihan Lin <https://github.com/linzihan-backforward>`_, `Kaiyuan Li <https://github.com/tsotfsk>`_
+Nov. 2020 ~ Now          v0.1.2 ~ v1.0.0   `Yushuo Chen <https://github.com/chenyushuo>`_, `Xingyu Pan <https://github.com/2017pxy>`_
 ======================   ===============   =============================================
 
 License

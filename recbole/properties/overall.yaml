@@ -11,6 +11,8 @@ save_dataset: False
 dataset_save_path: ~
 save_dataloaders: False
 dataloaders_save_path: ~
+log_wandb: False
+wandb_project: 'recbole'
 
 # training settings
 epochs: 300
@@ -25,6 +27,7 @@ clip_grad_norm: ~
 # clip_grad_norm:  {'max_norm': 5, 'norm_type': 2}
 weight_decay: 0.0
 loss_decimal_place: 4
+require_pow: False
 
 # evaluation settings
 eval_args: 

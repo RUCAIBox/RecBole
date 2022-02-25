@@ -23,7 +23,7 @@
 
 
 RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与复现的，统一、全面、高效的推荐系统代码库。
-我们实现了77个推荐系统模型，包含常见的推荐系统类别，如:
+我们实现了78个推荐系统模型，包含常见的推荐系统类别，如:
 
 + General Recommendation
 + Sequential Recommendation
@@ -45,7 +45,7 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 ## 特色
 + **通用和可扩展的数据结构** 我们设计了通用和可扩展的数据结构来支持各种推荐数据集统一化格式和使用。
 
-+ **全面的基准模型和数据集** 我们实现了77个常用的推荐算法，并提供了28个推荐数据集的格式化副本。
++ **全面的基准模型和数据集** 我们实现了78个常用的推荐算法，并提供了28个推荐数据集的格式化副本。
 
 + **高效的 GPU 加速实现** 我们针对GPU环境使用了一系列的优化技术来提升代码库的效率。
 
@@ -53,6 +53,8 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 
 
 ## RecBole 新闻
+**02/25/2022**: 我们发布了 [v1.0.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.0.1).
+
 **09/17/2021**: 我们发布了 [v1.0.0](https://github.com/RUCAIBox/RecBole/releases/tag/v1.0.0).
 
 **03/22/2021**: 我们发布了 [v0.2.1](https://github.com/RUCAIBox/RecBole/releases/tag/v0.2.1).
@@ -76,7 +78,7 @@ RecBole可以在以下几种系统上运行:
 * Windows 10
 * macOS X
 
-RecBole需要在python 3.6或更高的环境下运行。
+RecBole需要在python 3.7或更高的环境下运行。
 
 RecBole要求torch版本在1.7.0及以上，如果你想在GPU上运行RecBole，请确保你的CUDA版本或CUDAToolkit版本在9.2及以上。
 这需要你的NVIDIA驱动版本为396.26或以上（在linux系统上）或者为397.44或以上（在Windows10系统上）。

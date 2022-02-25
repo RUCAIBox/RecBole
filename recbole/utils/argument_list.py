@@ -17,6 +17,7 @@ general_arguments = [
     'dataset_save_path',
     'save_dataloaders',
     'dataloaders_save_path',
+    'log_wandb',
 ]
 
 training_arguments = [

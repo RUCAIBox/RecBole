@@ -34,3 +34,8 @@ Environment settings are designed to set basic parameters of running environment
   If it equals to ``None``, the tool will try to load the dataloaders from ``{checkpoint_dir}/{dataset}-for-{model}-dataloader.pth``.
   If the config of saved dataloaders is not equal to current config, the tool will create dataloaders from scratch.
   Defaults to ``None``.
+- ``log_wandb (bool)``: Whether or not use Weights & Biases(W&B).
+  If True, use W&B to visualize configs and metrics of different experiments, otherwise it will not be used.
+  Defaults to ``False``.
+- ``wandb_project (str)``: The project to conduct experiment in W&B.
+  Defaults to ``'recbole'``.

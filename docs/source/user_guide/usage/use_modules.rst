@@ -36,7 +36,7 @@ The complete process is as follows:
         train_data, valid_data, test_data = data_preparation(config, dataset)
 
         # model loading and initialization
-        model = BPR(config, train_data).to(config['device'])
+        model = BPR(config, train_data.dataset).to(config['device'])
         logger.info(model)
 
         # trainer loading and initialization
@@ -96,7 +96,7 @@ Model Initialization
 
 .. code:: python
 
-    model = BPR(config, train_data).to(config['device'])
+    model = BPR(config, train_data.dataset).to(config['device'])
 
 Initializing the model according to the model names, and initializing the instance of the model.
 

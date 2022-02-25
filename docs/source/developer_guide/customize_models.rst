@@ -243,7 +243,7 @@ Then, we can use NewModel in RecBole as follows (e.g., `run.py`):
         train_data, valid_data, test_data = data_preparation(config, dataset)
 
         # model loading and initialization
-        model = NewModel(config, train_data).to(config['device'])
+        model = NewModel(config, train_data.dataset).to(config['device'])
         logger.info(model)
 
         # trainer loading and initialization

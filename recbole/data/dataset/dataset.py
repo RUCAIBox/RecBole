@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2021/7/14 2021/7/1, 2020/11/10
-# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn
+# @Time   : 2021/12/18 2021/7/14 2021/7/1, 2020/11/10
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen, Juyong Jiang
+# @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn, csjuyongjiang@gmail.com
 
 """
 recbole.data.dataset
@@ -888,7 +888,8 @@ class Dataset:
                 self.inter_feat[self.label_field] = (self.inter_feat[field] >= value).astype(int)
             else:
                 raise ValueError(f'Field [{field}] not in inter_feat.')
-            self._del_col(self.inter_feat, field)
+            if field != self.label_field:
+                self._del_col(self.inter_feat, field)
 
     def _get_remap_list(self, field_list):
         """Transfer set of fields in the same remapping space into remap list.
@@ -1515,9 +1516,10 @@ class Dataset:
     def save(self):
         """Saving this :class:`Dataset` object to :attr:`config['checkpoint_dir']`.
         """
-        ensure_dir(self.config['checkpoint_dir'])
-        file = os.path.join(self.config['checkpoint_dir'], f'{self.config["dataset"]}-{self.__class__.__name__}.pth')
-        self.logger.info(set_color('Saving filtered dataset into', 'pink') + f': [{file}]')
+        save_dir = self.config['checkpoint_dir']
+        ensure_dir(save_dir)
+        file = os.path.join(save_dir, f'{self.config["dataset"]}-dataset.pth')
+        self.logger.info(set_color('Saving filtered dataset into ', 'pink') + f'[{file}]')
         with open(file, 'wb') as f:
             pickle.dump(self, f)
 
