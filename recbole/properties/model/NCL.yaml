@@ -1,0 +1,15 @@
+embedding_size: 64
+n_layers: 3
+reg_weight: 1e-4
+
+ssl_temp: 0.1
+ssl_reg: 1e-7
+hyper_layers: 1
+
+alpha: 1
+
+proto_reg: 8e-8
+num_clusters: 1000
+
+m_step: 1
+warm_up_step: 20
