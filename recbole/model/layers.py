@@ -501,15 +501,16 @@ class TransformerLayer(nn.Module):
 class TransformerEncoder(nn.Module):
     r""" One TransformerEncoder consists of several TransformerLayers.
 
-        - n_layers(num): num of transformer layers in transformer encoder. Default: 2
-        - n_heads(num): num of attention heads for multi-head attention layer. Default: 2
-        - hidden_size(num): the input and output hidden size. Default: 64
-        - inner_size(num): the dimensionality in feed-forward layer. Default: 256
-        - hidden_dropout_prob(float): probability of an element to be zeroed. Default: 0.5
-        - attn_dropout_prob(float): probability of an attention score to be zeroed. Default: 0.5
-        - hidden_act(str): activation function in feed-forward layer. Default: 'gelu'
+    Args:
+        n_layers(num): num of transformer layers in transformer encoder. Default: 2
+        n_heads(num): num of attention heads for multi-head attention layer. Default: 2
+        hidden_size(num): the input and output hidden size. Default: 64
+        inner_size(num): the dimensionality in feed-forward layer. Default: 256
+        hidden_dropout_prob(float): probability of an element to be zeroed. Default: 0.5
+        attn_dropout_prob(float): probability of an attention score to be zeroed. Default: 0.5
+        hidden_act(str): activation function in feed-forward layer. Default: 'gelu'
                       candidates: 'gelu', 'relu', 'swish', 'tanh', 'sigmoid'
-        - layer_norm_eps(float): a value added to the denominator for numerical stability. Default: 1e-12
+        layer_norm_eps(float): a value added to the denominator for numerical stability. Default: 1e-12
 
     """
 
@@ -651,9 +652,11 @@ class LightMultiHeadAttention(nn.Module):
 class LightTransformerLayer(nn.Module):
     """
     One transformer layer consists of a multi-head self-attention layer and a point-wise feed-forward layer.
+
     Args:
         hidden_states (torch.Tensor): the input of the multi-head self-attention sublayer
         attention_mask (torch.Tensor): the attention mask for the multi-head self-attention sublayer
+
     Returns:
         feedforward_output (torch.Tensor): the output of the point-wise feed-forward sublayer, is the output of the transformer layer
     """
@@ -673,15 +676,17 @@ class LightTransformerLayer(nn.Module):
 
 class LightTransformerEncoder(nn.Module):
     r""" One LightTransformerEncoder consists of several LightTransformerLayers.
-        - n_layers(num): num of transformer layers in transformer encoder. Default: 2
-        - n_heads(num): num of attention heads for multi-head attention layer. Default: 2
-        - hidden_size(num): the input and output hidden size. Default: 64
-        - inner_size(num): the dimensionality in feed-forward layer. Default: 256
-        - hidden_dropout_prob(float): probability of an element to be zeroed. Default: 0.5
-        - attn_dropout_prob(float): probability of an attention score to be zeroed. Default: 0.5
-        - hidden_act(str): activation function in feed-forward layer. Default: 'gelu'
-                      candidates: 'gelu', 'relu', 'swish', 'tanh', 'sigmoid'
-        - layer_norm_eps(float): a value added to the denominator for numerical stability. Default: 1e-12
+
+    Args:
+        n_layers(num): num of transformer layers in transformer encoder. Default: 2
+        n_heads(num): num of attention heads for multi-head attention layer. Default: 2
+        hidden_size(num): the input and output hidden size. Default: 64
+        inner_size(num): the dimensionality in feed-forward layer. Default: 256
+        hidden_dropout_prob(float): probability of an element to be zeroed. Default: 0.5
+        attn_dropout_prob(float): probability of an attention score to be zeroed. Default: 0.5
+        hidden_act(str): activation function in feed-forward layer. Default: 'gelu'.
+            candidates: 'gelu', 'relu', 'swish', 'tanh', 'sigmoid'
+        layer_norm_eps(float): a value added to the denominator for numerical stability. Default: 1e-12
     """
     def __init__(self,
                  n_layers=2,
@@ -707,6 +712,7 @@ class LightTransformerEncoder(nn.Module):
             hidden_states (torch.Tensor): the input of the TrandformerEncoder
             attention_mask (torch.Tensor): the attention mask for the input hidden_states
             output_all_encoded_layers (Bool): whether output all transformer layers' output
+
         Returns:
             all_encoder_layers (list): if output_all_encoded_layers is True, return a list consists of all transformer layers' output,
             otherwise return a list only consists of the output of last transformer layer.
