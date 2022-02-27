@@ -31,7 +31,7 @@ from recbole.data.interaction import Interaction
 from recbole.data.dataloader import FullSortEvalDataLoader
 from recbole.evaluator import Evaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
-    EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage
+    EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage, WandbLogger
 
 
 class AbstractTrainer(object):
@@ -78,6 +78,7 @@ class Trainer(AbstractTrainer):
 
         self.logger = getLogger()
         self.tensorboard = get_tensorboard(self.logger)
+        self.wandblogger = WandbLogger(config)
         self.learner = config['learner']
         self.learning_rate = config['learning_rate']
         self.epochs = config['epochs']
@@ -100,40 +101,52 @@ class Trainer(AbstractTrainer):
         self.best_valid_score = -np.inf if self.valid_metric_bigger else np.inf
         self.best_valid_result = None
         self.train_loss_dict = dict()
-        self.optimizer = self._build_optimizer(self.model.parameters())
+        self.optimizer = self._build_optimizer()
         self.eval_type = config['eval_type']
         self.eval_collector = Collector(config)
         self.evaluator = Evaluator(config)
         self.item_tensor = None
         self.tot_item_num = None
 
-    def _build_optimizer(self, params):
+    def _build_optimizer(self, **kwargs):
         r"""Init the Optimizer
+
+        Args:
+            params (torch.nn.Parameter, optional): The parameters to be optimized.
+                Defaults to ``self.model.parameters()``.
+            learner (str, optional): The name of used optimizer. Defaults to ``self.learner``.
+            learning_rate (float, optional): Learning rate. Defaults to ``self.learning_rate``.
+            weight_decay (float, optional): The L2 regularization weight. Defaults to ``self.weight_decay``.
 
         Returns:
             torch.optim: the optimizer
         """
-        if self.config['reg_weight'] and self.weight_decay and self.weight_decay * self.config['reg_weight'] > 0:
+        params = kwargs.pop('params', self.model.parameters())
+        learner = kwargs.pop('learner', self.learner)
+        learning_rate = kwargs.pop('learning_rate', self.learning_rate)
+        weight_decay = kwargs.pop('weight_decay', self.weight_decay)
+
+        if self.config['reg_weight'] and weight_decay and weight_decay * self.config['reg_weight'] > 0:
             self.logger.warning(
                 'The parameters [weight_decay] and [reg_weight] are specified simultaneously, '
                 'which may lead to double regularization.'
             )
 
-        if self.learner.lower() == 'adam':
-            optimizer = optim.Adam(params, lr=self.learning_rate, weight_decay=self.weight_decay)
-        elif self.learner.lower() == 'sgd':
-            optimizer = optim.SGD(params, lr=self.learning_rate, weight_decay=self.weight_decay)
-        elif self.learner.lower() == 'adagrad':
-            optimizer = optim.Adagrad(params, lr=self.learning_rate, weight_decay=self.weight_decay)
-        elif self.learner.lower() == 'rmsprop':
-            optimizer = optim.RMSprop(params, lr=self.learning_rate, weight_decay=self.weight_decay)
-        elif self.learner.lower() == 'sparse_adam':
-            optimizer = optim.SparseAdam(params, lr=self.learning_rate)
-            if self.weight_decay > 0:
+        if learner.lower() == 'adam':
+            optimizer = optim.Adam(params, lr=learning_rate, weight_decay=weight_decay)
+        elif learner.lower() == 'sgd':
+            optimizer = optim.SGD(params, lr=learning_rate, weight_decay=weight_decay)
+        elif learner.lower() == 'adagrad':
+            optimizer = optim.Adagrad(params, lr=learning_rate, weight_decay=weight_decay)
+        elif learner.lower() == 'rmsprop':
+            optimizer = optim.RMSprop(params, lr=learning_rate, weight_decay=weight_decay)
+        elif learner.lower() == 'sparse_adam':
+            optimizer = optim.SparseAdam(params, lr=learning_rate)
+            if weight_decay > 0:
                 self.logger.warning('Sparse Adam cannot argument received argument [{weight_decay}]')
         else:
             self.logger.warning('Received unrecognized optimizer, set default Adam optimizer')
-            optimizer = optim.Adam(params, lr=self.learning_rate)
+            optimizer = optim.Adam(params, lr=learning_rate)
         return optimizer
 
     def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
@@ -197,13 +210,14 @@ class Trainer(AbstractTrainer):
         valid_score = calculate_valid_score(valid_result, self.valid_metric)
         return valid_score, valid_result
 
-    def _save_checkpoint(self, epoch):
+    def _save_checkpoint(self, epoch, verbose=True, **kwargs):
         r"""Store the model parameters information and training information.
 
         Args:
             epoch (int): the current epoch id
 
         """
+        saved_model_file = kwargs.pop('saved_model_file', self.saved_model_file)
         state = {
             'config': self.config,
             'epoch': epoch,
@@ -213,7 +227,9 @@ class Trainer(AbstractTrainer):
             'other_parameter': self.model.other_parameter(),
             'optimizer': self.optimizer.state_dict(),
         }
-        torch.save(state, self.saved_model_file)
+        torch.save(state, saved_model_file)
+        if verbose:
+            self.logger.info(set_color('Saving current', 'blue') + f': {saved_model_file}')
 
     def resume_checkpoint(self, resume_file):
         r"""Load the model parameters information and training information.
@@ -306,9 +322,12 @@ class Trainer(AbstractTrainer):
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
         """
         if saved and self.start_epoch >= self.epochs:
-            self._save_checkpoint(-1)
+            self._save_checkpoint(-1, verbose=verbose)
 
         self.eval_collector.data_collect(train_data)
+        if self.config['train_neg_sample_args'].get('dynamic', 'none') != 'none':
+            train_data.get_model(self.model)
+        valid_step = 0
 
         for epoch_idx in range(self.start_epoch, self.epochs):
             # train
@@ -321,14 +340,12 @@ class Trainer(AbstractTrainer):
             if verbose:
                 self.logger.info(train_loss_output)
             self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
+            self.wandblogger.log_metrics({'epoch': epoch_idx, 'train_loss': train_loss, 'train_step':epoch_idx}, head='train')
 
             # eval
             if self.eval_step <= 0 or not valid_data:
                 if saved:
-                    self._save_checkpoint(epoch_idx)
-                    update_output = set_color('Saving current', 'blue') + ': %s' % self.saved_model_file
-                    if verbose:
-                        self.logger.info(update_output)
+                    self._save_checkpoint(epoch_idx, verbose=verbose)
                 continue
             if (epoch_idx + 1) % self.eval_step == 0:
                 valid_start_time = time()
@@ -349,13 +366,11 @@ class Trainer(AbstractTrainer):
                     self.logger.info(valid_score_output)
                     self.logger.info(valid_result_output)
                 self.tensorboard.add_scalar('Vaild_score', valid_score, epoch_idx)
+                self.wandblogger.log_metrics({**valid_result, 'valid_step': valid_step}, head='valid')
 
                 if update_flag:
                     if saved:
-                        self._save_checkpoint(epoch_idx)
-                        update_output = set_color('Saving current best', 'blue') + ': %s' % self.saved_model_file
-                        if verbose:
-                            self.logger.info(update_output)
+                        self._save_checkpoint(epoch_idx, verbose=verbose)
                     self.best_valid_result = valid_result
 
                 if callback_fn:
@@ -367,6 +382,9 @@ class Trainer(AbstractTrainer):
                     if verbose:
                         self.logger.info(stop_output)
                     break
+
+                valid_step+=1
+
         self._add_hparam_to_tensorboard(self.best_valid_score)
         return self.best_valid_score, self.best_valid_result
 
@@ -421,16 +439,13 @@ class Trainer(AbstractTrainer):
             show_progress (bool): Show the progress of evaluate epoch. Defaults to ``False``.
 
         Returns:
-            dict: eval result, key is the eval metric and value in the corresponding metric value.
+            collections.OrderedDict: eval result, key is the eval metric and value in the corresponding metric value.
         """
         if not eval_data:
             return
 
         if load_best_model:
-            if model_file:
-                checkpoint_file = model_file
-            else:
-                checkpoint_file = self.saved_model_file
+            checkpoint_file = model_file or self.saved_model_file
             checkpoint = torch.load(checkpoint_file)
             self.model.load_state_dict(checkpoint['state_dict'])
             self.model.load_other_parameter(checkpoint.get('other_parameter'))
@@ -464,6 +479,7 @@ class Trainer(AbstractTrainer):
         self.eval_collector.model_collect(self.model)
         struct = self.eval_collector.get_data_struct()
         result = self.evaluator.evaluate(struct)
+        self.wandblogger.log_eval_metrics(result, head='eval')
 
         return result
 
@@ -802,9 +818,6 @@ class DecisionTreeTrainer(AbstractTrainer):
                     if saved:
                         self.model.save_model(self.temp_best_file)
                         self._save_checkpoint(epoch_idx)
-                        update_output = set_color('Saving current best', 'blue') + ': %s' % self.saved_model_file
-                        if verbose:
-                            self.logger.info(update_output)
                     self.best_valid_result = valid_result
 
                 if stop_flag:
@@ -1013,8 +1026,8 @@ class RecVAETrainer(Trainer):
         self.n_enc_epochs = config['n_enc_epochs']
         self.n_dec_epochs = config['n_dec_epochs']
 
-        self.optimizer_encoder = self._build_optimizer(self.model.encoder.parameters())
-        self.optimizer_decoder = self._build_optimizer(self.model.decoder.parameters())
+        self.optimizer_encoder = self._build_optimizer(params=self.model.encoder.parameters())
+        self.optimizer_decoder = self._build_optimizer(params=self.model.decoder.parameters())
 
     def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         self.optimizer = self.optimizer_encoder

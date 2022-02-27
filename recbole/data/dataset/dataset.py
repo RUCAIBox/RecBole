@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2021/7/14 2021/7/1, 2020/11/10
-# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn
+# @Time   : 2021/12/18 2021/7/14 2021/7/1, 2020/11/10
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen, Juyong Jiang
+# @Email  : houyupeng@ruc.edu.cn, xy_pan@foxmail.com, chenyushuo@ruc.edu.cn, csjuyongjiang@gmail.com
 
 """
 recbole.data.dataset
@@ -26,11 +26,11 @@ import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
 
 from recbole.data.interaction import Interaction
-from recbole.utils import FeatureSource, FeatureType, get_local_time, set_color
+from recbole.utils import FeatureSource, FeatureType, get_local_time, set_color, ensure_dir
 from recbole.utils.url import decide_download, download_url, extract_zip, makedirs, rename_atomic_files
 
 
-class Dataset(object):
+class Dataset:
     """:class:`Dataset` stores the original dataset in memory.
     It provides many useful functions for data preprocessing, such as k-core data filtering and missing value
     imputation. Features are stored as :class:`pandas.DataFrame` inside :class:`~recbole.data.dataset.dataset.Dataset`.
@@ -305,6 +305,8 @@ class Dataset(object):
             :obj:`~recbole.utils.enum_type.FeatureSource.ITEM_ID`
         """
         feat_path = os.path.join(dataset_path, f'{token}.{source.value}')
+        field = getattr(self, field_name, None)
+
         if os.path.isfile(feat_path):
             feat = self._load_feat(feat_path, source)
             self.logger.debug(f'[{source.value}] feature loaded successfully from [{feat_path}].')
@@ -312,11 +314,12 @@ class Dataset(object):
             feat = None
             self.logger.debug(f'[{feat_path}] not found, [{source.value}] features are not loaded.')
 
-        field = getattr(self, field_name, None)
         if feat is not None and field is None:
             raise ValueError(f'{field_name} must be exist if {source.value}_feat exist.')
         if feat is not None and field not in feat:
             raise ValueError(f'{field_name} must be loaded if {source.value}_feat is loaded.')
+        if feat is not None:
+            feat.drop_duplicates(subset=[field], keep='first', inplace=True)
 
         if field in self.field2source:
             self.field2source[field] = FeatureSource(source.value + '_id')
@@ -433,7 +436,7 @@ class Dataset(object):
             return None
 
         df = pd.read_csv(
-            filepath, delimiter=self.config['field_separator'], usecols=usecols, dtype=dtype, encoding=encoding
+            filepath, delimiter=field_separator, usecols=usecols, dtype=dtype, encoding=encoding, engine='python'
         )
         df.columns = columns
 
@@ -681,6 +684,9 @@ class Dataset(object):
         user_inter_num_interval = self._parse_intervals_str(self.config['user_inter_num_interval'])
         item_inter_num_interval = self._parse_intervals_str(self.config['item_inter_num_interval'])
 
+        if user_inter_num_interval is None and item_inter_num_interval is None:
+            return
+
         user_inter_num = Counter(self.inter_feat[self.uid_field].values) if user_inter_num_interval else Counter()
         item_inter_num = Counter(self.inter_feat[self.iid_field].values) if item_inter_num_interval else Counter()
 
@@ -798,18 +804,20 @@ class Dataset(object):
         """Filter features according to its values.
         """
 
-        val_intervals = [] if self.config['val_interval'] is None else self.config['val_interval']
+        val_intervals = {} if self.config['val_interval'] is None else self.config['val_interval']
         self.logger.debug(set_color('drop_by_value', 'blue') + f': val={val_intervals}')
 
-        for field in val_intervals:
+        for field, interval in val_intervals.items():
             if field not in self.field2type:
                 raise ValueError(f'Field [{field}] not defined in dataset.')
-            if self.field2type[field] not in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
-                raise ValueError(f'Field [{field}] is not float-like field in dataset, which can\'t be filter.')
 
-            field_val_interval = self._parse_intervals_str(val_intervals[field])
-            for feat in self.field2feats(field):
-                feat.drop(feat.index[~self._within_intervals(feat[field].values, field_val_interval)], inplace=True)
+            if self.field2type[field] in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
+                field_val_interval = self._parse_intervals_str(interval)
+                for feat in self.field2feats(field):
+                    feat.drop(feat.index[~self._within_intervals(feat[field].values, field_val_interval)], inplace=True)
+            else:  # token-like field
+                for feat in self.field2feats(field):
+                    feat.drop(feat.index[~feat[field].isin(interval)], inplace=True)
 
     def _reset_index(self):
         """Reset index for all feats in :attr:`feat_name_list`.
@@ -1508,7 +1516,9 @@ class Dataset(object):
     def save(self):
         """Saving this :class:`Dataset` object to :attr:`config['checkpoint_dir']`.
         """
-        file = os.path.join(self.config['checkpoint_dir'], f'{self.config["dataset"]}-dataset.pth')
+        save_dir = self.config['checkpoint_dir']
+        ensure_dir(save_dir)
+        file = os.path.join(save_dir, f'{self.config["dataset"]}-dataset.pth')
         self.logger.info(set_color('Saving filtered dataset into ', 'pink') + f'[{file}]')
         with open(file, 'wb') as f:
             pickle.dump(self, f)

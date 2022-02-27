@@ -152,25 +152,6 @@ class S3Rec(SequentialRecommender):
         score = torch.mul(context, segment_emb)  # [B H]
         return torch.sigmoid(torch.sum(score, dim=-1))  # [B]
 
-    def get_attention_mask(self, sequence, bidirectional=True):
-        """
-        In the pre-training stage, we generate bidirectional attention mask for multi-head attention.
-
-        In the fine-tuning stage, we generate left-to-right uni-directional attention mask for multi-head attention.
-        """
-        attention_mask = (sequence > 0).long()
-        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
-        if not bidirectional:
-            max_len = attention_mask.size(-1)
-            attn_shape = (1, max_len, max_len)
-            subsequent_mask = torch.triu(torch.ones(attn_shape), diagonal=1)  # torch.uint8
-            subsequent_mask = (subsequent_mask == 0).unsqueeze(1)
-            subsequent_mask = subsequent_mask.long().to(sequence.device)
-            extended_attention_mask = extended_attention_mask * subsequent_mask
-        extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
-        return extended_attention_mask
-
     def forward(self, item_seq, bidirectional=True):
         position_ids = torch.arange(item_seq.size(1), dtype=torch.long, device=item_seq.device)
         position_ids = position_ids.unsqueeze(0).expand_as(item_seq)

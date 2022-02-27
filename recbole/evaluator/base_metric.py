@@ -60,7 +60,7 @@ class TopkMetric(AbstractMetric):
         """
         rec_mat = dataobject.get('rec.topk')
         topk_idx, pos_len_list = torch.split(rec_mat, [max(self.topk), 1], dim=1)
-        return rec_mat.to(torch.bool).numpy(), pos_len_list.squeeze(-1).numpy()
+        return topk_idx.to(torch.bool).numpy(), pos_len_list.squeeze(-1).numpy()
 
     def topk_result(self, metric, value):
         """Match the metric value to the `k` and put them in `dictionary` form.

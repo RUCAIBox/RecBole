@@ -135,6 +135,16 @@ class Interaction(object):
                 ret[k] = self.interaction[k][index]
             return Interaction(ret)
 
+    def __setitem__(self, key, value):
+        if not isinstance(key, str):
+            raise KeyError(f'{type(key)} object does not support item assigment')
+        self.interaction[key] = value
+
+    def __delitem__(self, key):
+        if key not in self.interaction:
+            raise KeyError(f'{type(key)} object does not in this interaction')
+        del self.interaction[key]
+
     def __contains__(self, item):
         return item in self.interaction
 

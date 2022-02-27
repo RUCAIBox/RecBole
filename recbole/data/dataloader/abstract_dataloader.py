@@ -13,6 +13,7 @@ recbole.data.dataloader.abstract_dataloader
 """
 
 import math
+import copy
 from logging import getLogger
 
 import torch
@@ -45,7 +46,7 @@ class AbstractDataLoader:
         self.logger = getLogger()
         self.dataset = dataset
         self.sampler = sampler
-        self.batch_size = self.step = None
+        self.batch_size = self.step = self.model = None
         self.shuffle = shuffle
         self.pr = 0
         self._init_batch_size_and_step()
@@ -53,6 +54,15 @@ class AbstractDataLoader:
     def _init_batch_size_and_step(self):
         """Initializing :attr:`step` and :attr:`batch_size`."""
         raise NotImplementedError('Method [init_batch_size_and_step] should be implemented')
+
+    def update_config(self, config):
+        """Update configure of dataloader, such as :attr:`batch_size`, :attr:`step` etc.
+
+        Args:
+            config (Config): The new config of dataloader.
+        """
+        self.config = config
+        self._init_batch_size_and_step()
 
     def __len__(self):
         return math.ceil(self.pr_end / self.step)
@@ -145,7 +155,23 @@ class NegSampleDataLoader(AbstractDataLoader):
             raise ValueError(f'`neg_sample_args` [{self.neg_sample_args["strategy"]}] is not supported!')
 
     def _neg_sampling(self, inter_feat):
-        if self.neg_sample_args['strategy'] == 'by':
+        if 'dynamic' in self.neg_sample_args.keys() and self.neg_sample_args['dynamic'] != 'none':
+            candidate_num = self.neg_sample_args['dynamic']
+            user_ids = inter_feat[self.uid_field].numpy()
+            item_ids = inter_feat[self.iid_field].numpy()
+            neg_candidate_ids = self.sampler.sample_by_user_ids(user_ids, item_ids, self.neg_sample_num * candidate_num)
+            self.model.eval()
+            interaction = copy.deepcopy(inter_feat).to(self.model.device)
+            interaction = interaction.repeat(self.neg_sample_num * candidate_num)
+            neg_item_feat = Interaction({self.iid_field: neg_candidate_ids.to(self.model.device)})
+            interaction.update(neg_item_feat)
+            scores = self.model.predict(interaction).reshape(candidate_num, -1)
+            indices = torch.max(scores, dim=0)[1].detach()
+            neg_candidate_ids = neg_candidate_ids.reshape(candidate_num, -1)
+            neg_item_ids = neg_candidate_ids[indices, [i for i in range(neg_candidate_ids.shape[1])]].view(-1)
+            self.model.train()
+            return self.sampling_func(inter_feat, neg_item_ids)
+        elif self.neg_sample_args['strategy'] == 'by':
             user_ids = inter_feat[self.uid_field].numpy()
             item_ids = inter_feat[self.iid_field].numpy()
             neg_item_ids = self.sampler.sample_by_user_ids(user_ids, item_ids, self.neg_sample_num)
@@ -170,3 +196,6 @@ class NegSampleDataLoader(AbstractDataLoader):
         labels[:pos_inter_num] = 1.0
         new_data.update(Interaction({self.label_field: labels}))
         return new_data
+
+    def get_model(self, model):
+        self.model = model
