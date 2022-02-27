@@ -13,7 +13,6 @@ import scipy.sparse as sp
 import torch
 import torch.nn.functional as F
 
-import faiss
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.init import xavier_uniform_initialization
 from recbole.model.loss import BPRLoss, EmbLoss
@@ -77,6 +76,7 @@ class NCL(GeneralRecommender):
     def run_kmeans(self, x):
         """Run K-means algorithm to get k clusters of the input tensor x
         """
+        import faiss
         kmeans = faiss.Kmeans(d=self.latent_dim, k=self.k, gpu=True)
         kmeans.train(x)
         cluster_cents = kmeans.centroids
