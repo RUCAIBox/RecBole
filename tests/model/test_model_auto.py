@@ -222,6 +222,12 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_NCEPLRec(self):
+        config_dict = {
+            'model': 'NCEPLRec',
+        }
+        quick_test(config_dict)
+
     def test_NCL(self):
         config_dict = {
             'model': 'NCL',
