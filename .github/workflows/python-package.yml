@@ -19,6 +19,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        python-version: ${{ matrix.python-version }}
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -33,8 +37,8 @@ jobs:
         pip install networkx
         pip install python-louvain
         pip install lightgbm
-        pip install faiss
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        conda install -c pytorch faiss-cpu
         
     # Use "python -m pytest" instead of "pytest" to fix imports
     - name: Test Overall
