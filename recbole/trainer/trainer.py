@@ -1056,8 +1056,9 @@ class NCLTrainer(Trainer):
 
     def fit(self, train_data, valid_data=None, verbose=True, saved=True, show_progress=False, callback_fn=None):
         r"""Train the model based on the train data and the valid data.
+
         Args:
-            train_data (DataLoader): the train data
+            train_data (DataLoader): the train data.
             valid_data (DataLoader, optional): the valid data, default: None.
                                                If it's None, the early_stopping is invalid.
             verbose (bool, optional): whether to write training and evaluation information to logger, default: True
@@ -1065,6 +1066,7 @@ class NCLTrainer(Trainer):
             show_progress (bool): Show the progress of training epoch and evaluate epoch. Defaults to ``False``.
             callback_fn (callable): Optional callback function executed at end of epoch.
                                     Includes (epoch_idx, valid_score) input arguments.
+
         Returns:
              (float, dict): best valid score and best valid result. If valid_data is None, it returns (-1, None)
         """
