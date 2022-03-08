@@ -428,7 +428,7 @@ class ContextRecommender(AbstractRecommender):
             if token_seq_fields_embedding is None:
                 sparse_embedding = token_fields_embedding
             else:
-                sparse_embedding = torch.cat([token_fields_embedding, token_seq_fields_embedding], dim=1)
+                sparse_embedding = torch.cat([token_seq_fields_embedding, token_fields_embedding], dim=1)
 
         dense_embedding = float_fields_embedding
 
