@@ -48,8 +48,8 @@ class SGL(GeneralRecommender):
         self.ssl_tau = config["ssl_tau"]
         self.reg_weight = config["reg_weight"]
         self.ssl_weight = config["ssl_weight"]
-        self.user_embedding = torch.nn.Embedding(self.n_users, self.embed_dim, device=self.device)
-        self.item_embedding = torch.nn.Embedding(self.n_items, self.embed_dim, device=self.device)
+        self.user_embedding = torch.nn.Embedding(self.n_users, self.embed_dim)
+        self.item_embedding = torch.nn.Embedding(self.n_items, self.embed_dim)
         self.reg_loss = EmbLoss()
         self.train_graph = self.csr2tensor(self.create_adjust_matrix(is_sub=False))
         self.restore_user_e = None
