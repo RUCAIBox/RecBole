@@ -94,7 +94,7 @@ class NeuMF(GeneralRecommender):
         predict_bias = mf.predict_layer.bias + mlp.predict_layer.bias
 
         self.predict_layer.weight.data.copy_(0.5 * predict_weight)
-        self.predict_layer.weight.data.copy_(0.5 * predict_bias)
+        self.predict_layer.bias.data.copy_(0.5 * predict_bias)
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
