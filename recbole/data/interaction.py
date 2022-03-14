@@ -114,7 +114,7 @@ class Interaction(object):
             raise ValueError(f'[{type(interaction)}] is not supported for initialize `Interaction`!')
         self.length = -1
         for k in self.interaction:
-            self.length = max(self.length, self.interaction[k].shape[0])
+            self.length = max(self.length, self.interaction[k].unsqueeze(-1).shape[0])
 
     def __iter__(self):
         return self.interaction.__iter__()
