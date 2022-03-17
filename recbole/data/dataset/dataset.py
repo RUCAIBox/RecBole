@@ -210,7 +210,7 @@ class Dataset:
             return None
         else:
             raise ValueError(
-                f'Neither [{self.dataset_path}] exists in the device'
+                f'Neither [{self.dataset_path}] exists in the device '
                 f'nor [{self.dataset_name}] a known dataset name.'
             )
 
