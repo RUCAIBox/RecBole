@@ -46,7 +46,7 @@ And then:
 
 **Notes:**
 
-- The last value in ``user_hidden_size_list`` and ``item_hidden_size_list`` must be the same.
+- The last value in ``user_hidden_size_list`` and ``item_hidden_size_list`` must be the same, which is the final embedding size of users and items.
 
 - If you set ``inter_matrix_type='rating'``, the 'rating' field from \*.inter atomic files must be remained
   which means that the `rating` cannot be included in ``unload_col`` or ``unused_col``.
