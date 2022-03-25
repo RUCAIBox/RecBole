@@ -19,3 +19,5 @@ from recbole.model.sequential_recommender.sine import SINE
 from recbole.model.sequential_recommender.srgnn import SRGNN
 from recbole.model.sequential_recommender.stamp import STAMP
 from recbole.model.sequential_recommender.transrec import TransRec
+from recbole.model.sequential_recommender.simplex import SimpleX
+

@@ -1,0 +1,10 @@
+embedding_size: 64
+
+#Parameters required by the CCL formula
+CCL_margin: 0.7
+neg_sampling:
+  uniform: 200
+CCL_weight: 150
+
+#Parameters required by SimpleX architecture
+user_item_aggregation_weight: 0.5
