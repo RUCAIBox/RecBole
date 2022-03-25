@@ -94,9 +94,10 @@ class SimpleX(SequentialRecommender):
     def calculate_loss(self, interaction):
         #数据处理
         # 想使用SimpleX，首先一个用户要对应一批自己的商品时间序列，一个pos item和一批neg_item序列
-        #基于RecBole框架，我们将数据按用户进行区分，一个用户有neg_seq_len条数据。
+        #基于RecBole框架，我们将数据按用户进行区分，一个用户有neg_seq_len条数据
         # 对于商品时间序列，和pos item，从多条数据中使用随机数随机抽一个出来
         #对于neg item序列，我们将多条数据的neg item聚合起来成为一个序列
+        # 由于RecBole的特性，是比较容易获得以上属性的
         user = interaction[self.USER_ID]
         item_seq = interaction[self.ITEM_SEQ]
         pos_seq_len = interaction[self.ITEM_SEQ_LEN]
@@ -104,10 +105,9 @@ class SimpleX(SequentialRecommender):
         neg_items = interaction[self.NEG_ITEM_ID]
 
         # 获得neg item序列
-        neg_items=torch.reshape(neg_items,(self.neg_seq_len,-1))
-        neg_items=torch.transpose(neg_items, 0, 1)
+        neg_items_seq=torch.reshape(neg_items,(self.neg_seq_len,-1))
+        neg_items_seq=torch.transpose(neg_items_seq, 0, 1)
 
-        # 当前训练用户人数
         user_number=int(len(user)/self.neg_seq_len)
         rand=torch.rand(user_number).cpu().numpy()
         rand=(rand*self.neg_seq_len).astype(int)
@@ -115,7 +115,7 @@ class SimpleX(SequentialRecommender):
         select_index=[i+rand[i]*user_number for i in range(user_number)]
         # 获得user，商品时间序列，和pos item，pos_seq_len
         user=user[select_index]
-        item_seq=item_seq[select_index]
+        pos_item_seq=item_seq[select_index]
         pos_items=pos_items[select_index]
         pos_seq_len=pos_seq_len[select_index]
 
@@ -131,7 +131,7 @@ class SimpleX(SequentialRecommender):
         # dict_index=torch.rand(len(user_group_dict)).cpu().numpy()
         # dict_index=(dict_index*self.neg_seq_len).astype(int)
 
-        loss = self.forward(user,pos_items,item_seq,pos_seq_len,neg_items)
+        loss = self.forward(user,pos_items,pos_item_seq,pos_seq_len,neg_items_seq)
         return loss
 
     def predict(self, interaction):
