@@ -8,7 +8,7 @@ Introduction
 
 **Title:** Session-based Recommendation with Graph Neural Networks
 
-**Authors:** Fuzheng Zhang, Nicholas Jing Yuan, Defu Lian, Xing Xie, Wei-Ying Ma
+**Authors:** Shu Wu, Yuyuan Tang, Yanqiao Zhu, Liang Wang, Xing Xie, Tieniu Tan
 
 **Abstract:**  The problem of session-based recommendation aims to predict user actions based on anonymous sessions. Previous
 methods model a session as a sequence and estimate user representations besides item representations to make recommendations. Though achieved promising results, they are insufficient to obtain accurate user vectors in sessions and neglect
