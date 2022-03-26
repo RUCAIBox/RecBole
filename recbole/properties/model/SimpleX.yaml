@@ -7,4 +7,4 @@ neg_sampling:
 CCL_weight: 150
 
 #Parameters required by SimpleX architecture
-user_item_aggregation_weight: 0.5
+UI_aggregation_weight: 0.5

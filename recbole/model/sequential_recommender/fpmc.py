@@ -97,12 +97,6 @@ class FPMC(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         pos_items = interaction[self.POS_ITEM_ID]
         neg_items = interaction[self.NEG_ITEM_ID]
-        
-        user_n=user.cpu().numpy()
-        user_dict={}
-        for i in range(len(user)):
-            user_dict[user[i]]=''
-
 
         pos_score = self.forward(user, item_seq, item_seq_len, pos_items)
         neg_score = self.forward(user, item_seq, item_seq_len, neg_items)

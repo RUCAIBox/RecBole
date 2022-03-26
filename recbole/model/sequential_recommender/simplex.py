@@ -14,6 +14,9 @@ Reference:
 import torch
 from torch import nn
 from torch.nn.init import xavier_normal_
+import torch.nn.functional as F
+
+import numpy as np
 
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
@@ -41,7 +44,7 @@ class SimpleX(SequentialRecommender):
         self.embedding_size = config['embedding_size']
         self.CCL_margin=config['CCL_margin']
         self.CCL_weight=config['CCL_weight']
-        self.user_item_aggregation_weight=config['user_item_aggregation_weight']
+        self.UI_aggregation_weight=config['UI_aggregation_weight']
         # 一个用户对应的负采样序列长度
         self.neg_seq_len=config['neg_sampling']['uniform']
 
@@ -62,34 +65,73 @@ class SimpleX(SequentialRecommender):
             xavier_normal_(module.weight.data)
 
     #user:[n]，类型tensor。pos_item:[n]，类型tensor
-    #pos_item_seq:[n,MAX_ITEM_LIST_LENGTH]，类型tensor。pos_seq_len，有效的长度，类型tensor
+    #pos_item_seq:[n,MAX_ITEM_LIST_LENGTH]，类型tensor。
+    # pos_seq_len，[n]pos_item_seq有效的长度，类型tensor
     # neg_item_seq:[n,neg_seq_len]，类型tensor
-    # 目的是为了获得loss
+    # forward函数的作用是为了获得loss
     def forward(self, user, pos_item, pos_item_seq, pos_seq_len, neg_item_seq):
-        item_last_click_index = item_seq_len - 1
-        item_last_click = torch.gather(item_seq, dim=1, index=item_last_click_index.unsqueeze(1))
-        item_seq_emb = self.LI_emb(item_last_click)  # [b,1,emb]
 
-        user_emb = self.UI_emb(user)
-        user_emb = torch.unsqueeze(user_emb, dim=1)  # [b,1,emb]
+        self.full_sort_predict(user,pos_item_seq,pos_seq_len)
+        # self.predict(user,pos_item_seq,pos_seq_len,pos_item)
 
-        iu_emb = self.IU_emb(next_item)
-        iu_emb = torch.unsqueeze(iu_emb, dim=1)  # [b,n,emb] in here n = 1
+        # [n,embedding_size]
+        user_e=self._get_emb_normalization(user,self.user_emb)
+        #[n,embedding_size]
+        pos_item_e=self._get_emb_normalization(pos_item,self.item_emb)
+        #[n,MAX_ITEM_LIST_LENGTH,embedding_size]
+        pos_item_seq_e=self._get_emb_normalization(pos_item_seq,self.item_emb)
+        #[n,neg_seq_len,embedding_size]
+        neg_item_seq_e=self._get_emb_normalization(neg_item_seq,self.item_emb)
+        
+        # 获得UI_aggregation_e，大小是[n,embedding_size]
+        UI_aggregation_e=self._get_UI_aggregation(user_e,pos_item_seq_e,pos_seq_len)
 
-        il_emb = self.IL_emb(next_item)
-        il_emb = torch.unsqueeze(il_emb, dim=1)  # [b,n,emb] in here n = 1
+        UI_pos_cos=self._get_cos(UI_aggregation_e,pos_item_e.unsqueeze(1))
+        UI_neg_seq_cos=self._get_cos(UI_aggregation_e,neg_item_seq_e)
 
-        # This is the core part of the FPMC model,can be expressed by a combination of a MF and a FMC model
-        #  MF
-        mf = torch.matmul(user_emb, iu_emb.permute(0, 2, 1))
-        mf = torch.squeeze(mf, dim=1)  # [B,1]
-        #  FMC
-        fmc = torch.matmul(il_emb, item_seq_emb.permute(0, 2, 1))
-        fmc = torch.squeeze(fmc, dim=1)  # [B,1]
+        pos_score=1-UI_pos_cos
+        temp=UI_neg_seq_cos-self.CCL_margin
+        temp=torch.maximum(torch.zeros(1),temp)
+        temp=temp.sum(1).unsqueeze(1)
+        neg_score=self.CCL_weight/self.neg_seq_len*temp
 
-        score = mf + fmc
-        score = torch.squeeze(score)
-        return score
+        CCL_loss=(pos_score+neg_score).mean()
+        return CCL_loss
+    
+    # 返回归一化特征向量
+    # id长度为一维，embedding_layer为对应嵌入层
+    def _get_emb_normalization(self,id,embedding_layer):
+        id_e = embedding_layer(id)
+        id_e=F.normalize(id_e,dim=id_e.dim()-1)
+        return id_e
+
+    # 获得所有的SimpleX中user和项目序列的结合向量
+    # user_e：[n,embedding_size]类型tesor，n是用户数，每一行代表第i个用户的特征向量
+    # pos_item_seq_e：[n,MAX_ITEM_LIST_LENGTH,embedding_size]类型tensor
+    # pos_seq_len:[n]，类型tensor，代表pos_item_seq_e：在第二维的有效长度
+    # 输出：[n,embedding_size]类型tensor，第i行是user_i和项目序列的结合向量
+    def _get_UI_aggregation(self,user_e,pos_item_seq_e,pos_seq_len):
+        # 获得UI_aggregation_e，大小是[n,embedding_size]
+        UI_aggregation_e=[0]*len(user_e)
+        for i in range(len(user_e)):
+            pos_item_mean=pos_item_seq_e[i][0:pos_seq_len[i]].mean(dim=0)
+            g=self.UI_aggregation_weight
+            UI_aggregation_e[i]=g*user_e[i]+(1-g)*pos_item_mean
+        UI_aggregation_e=torch.stack(UI_aggregation_e)
+        return UI_aggregation_e
+    
+    # 获得SimpleX的余弦值
+    # UI_aggregation_e：[n,embedding_size]类型tesor，n是用户数量，每一行是user和项目序列的结合向量
+    # item_e：[n,m,embedding_size]类型tensor，m代表项目数量，每一行是项目的特征向量
+    # 输出：[n,m]类型tensor，[i,j]代表第i个用户对第j个项目的余弦值
+    def _get_cos(self,UI_aggregation_e,item_e):
+        # 计划使用归一化后进行点乘即可
+        UI_aggregation_e=F.normalize(UI_aggregation_e,dim=1)
+        # [n,embedding_size,1]
+        UI_aggregation_e=UI_aggregation_e.unsqueeze(2)
+        item_e=F.normalize(item_e,dim=2)
+        UI_cos=torch.matmul(item_e,UI_aggregation_e)
+        return UI_cos.squeeze(2)
 
     def calculate_loss(self, interaction):
         #数据处理
@@ -105,12 +147,11 @@ class SimpleX(SequentialRecommender):
         neg_items = interaction[self.NEG_ITEM_ID]
 
         # 获得neg item序列
-        neg_items_seq=torch.reshape(neg_items,(self.neg_seq_len,-1))
+        neg_items_seq=neg_items.reshape((self.neg_seq_len,-1))
         neg_items_seq=torch.transpose(neg_items_seq, 0, 1)
 
         user_number=int(len(user)/self.neg_seq_len)
-        rand=torch.rand(user_number).cpu().numpy()
-        rand=(rand*self.neg_seq_len).astype(int)
+        rand=np.random.randint(self.neg_seq_len,size=user_number)
         # select_index是第i个用户选中的那条数据的下标
         select_index=[i+rand[i]*user_number for i in range(user_number)]
         # 获得user，商品时间序列，和pos item，pos_seq_len
@@ -118,18 +159,6 @@ class SimpleX(SequentialRecommender):
         pos_item_seq=item_seq[select_index]
         pos_items=pos_items[select_index]
         pos_seq_len=pos_seq_len[select_index]
-
-
-        # # 按用户分组
-        # user_group_dict={}
-        # user_numpy=user.cpu().numpy()
-        # for i in range(len(user_numpy)):
-        #     if user_numpy[i] not in user_group_dict:
-        #         user_group_dict[user_numpy[i]]=[]
-        #     user_group_dict[user_numpy[i]].append(i)
-        # # 对每一个user，抽一条数据获得商品时间序列，和pos item
-        # dict_index=torch.rand(len(user_group_dict)).cpu().numpy()
-        # dict_index=(dict_index*self.neg_seq_len).astype(int)
 
         loss = self.forward(user,pos_items,pos_item_seq,pos_seq_len,neg_items_seq)
         return loss
@@ -139,23 +168,39 @@ class SimpleX(SequentialRecommender):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         test_item = interaction[self.ITEM_ID]
-        score = self.forward(user, item_seq, item_seq_len, test_item)  # [B]
-        return score
+    # def predict(self, user,item_seq,item_seq_len,test_item):
+
+        # [n,embedding_size]
+        user_e=self._get_emb_normalization(user,self.user_emb)
+        #[n,embedding_size]
+        test_item_e=self._get_emb_normalization(test_item,self.item_emb)
+        #[n,MAX_ITEM_LIST_LENGTH,embedding_size]
+        item_seq_e=self._get_emb_normalization(item_seq,self.item_emb)
+        
+        # 获得UI_aggregation_e，大小是[n,embedding_size]
+        UI_aggregation_e=self._get_UI_aggregation(user_e,item_seq_e,item_seq_len)
+
+        UI_cos=self._get_cos(UI_aggregation_e,test_item_e.unsqueeze(1))
+        return UI_cos
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
+    # def full_sort_predict(self, user,item_seq,item_seq_len):
 
-        user_emb = self.UI_emb(user)
-        all_iu_emb = self.IU_emb.weight
-        mf = torch.matmul(user_emb, all_iu_emb.transpose(0, 1))
-        all_il_emb = self.IL_emb.weight
+        # [n,embedding_size]
+        user_e=self._get_emb_normalization(user,self.user_emb)
+        #[n,MAX_ITEM_LIST_LENGTH,embedding_size]
+        item_seq_e=self._get_emb_normalization(item_seq,self.item_emb)
+        
+        # 获得UI_aggregation_e，大小是[n,embedding_size]
+        UI_aggregation_e=self._get_UI_aggregation(user_e,item_seq_e,item_seq_len)
 
-        item_last_click_index = item_seq_len - 1
-        item_last_click = torch.gather(item_seq, dim=1, index=item_last_click_index.unsqueeze(1))
-        item_seq_emb = self.LI_emb(item_last_click)  # [b,1,emb]
-        fmc = torch.matmul(item_seq_emb, all_il_emb.transpose(0, 1))
-        fmc = torch.squeeze(fmc, dim=1)
-        score = mf + fmc
-        return score
+        UI_aggregation_e=F.normalize(UI_aggregation_e,dim=1)
+        all_item_emb=self.item_emb.weight
+        all_item_emb=F.normalize(all_item_emb,dim=1)
+        all_item_emb=torch.transpose(all_item_emb, 0, 1)
+        UI_cos=torch.matmul(UI_aggregation_e,all_item_emb)
+        return UI_cos
+
