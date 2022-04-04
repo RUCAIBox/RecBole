@@ -156,7 +156,7 @@ class SGL(GeneralRecommender):
         """
         matrix = matrix.tocoo()
         x = torch.sparse.FloatTensor(
-            torch.LongTensor([matrix.row.tolist(), matrix.col.tolist()]),
+            torch.LongTensor(np.array([matrix.row, matrix.col])),
             torch.FloatTensor(matrix.data.astype(np.float32)), matrix.shape
         ).to(self.device)
         return x
