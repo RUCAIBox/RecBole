@@ -737,6 +737,22 @@ class TestSequentialRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_core_trm(self):
+        config_dict = {
+            'model': 'CORE',
+            'neg_sampling': None,
+            'dnn_type': 'trm'
+        }
+        quick_test(config_dict)
+
+    def test_core_ave(self):
+        config_dict = {
+            'model': 'CORE',
+            'neg_sampling': None,
+            'dnn_type': 'ave'
+        }
+        quick_test(config_dict)
+
     # def test_gru4reckg(self):
     #     config_dict = {
     #         'model': 'GRU4RecKG',
