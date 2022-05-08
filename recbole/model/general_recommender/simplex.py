@@ -39,22 +39,21 @@ class SimpleX(GeneralRecommender):
     def __init__(self, config, dataset):
         super(SimpleX, self).__init__(config, dataset)
 
+        # Get user transaction history
+        self.history_item_id, _, self.history_item_len = dataset.history_item_matrix()
+
         # load parameters info
         self.embedding_size = config['embedding_size']
         self.margin = config['margin']
         self.negative_weight = config['negative_weight']
         self.gamma = config['gamma']
-        neg_num_dict = config['neg_sampling']
-        if 'uniform' in neg_num_dict:
-            self.neg_seq_len = neg_num_dict['uniform']
-        elif 'popularity' in neg_num_dict:
-            self.neg_seq_len = neg_num_dict['popularity']
-        else:
-            raise ValueError('neg_sampling must be uniform or popularity')
+        self.neg_seq_len = list(config['neg_sampling'].values())[0]
         self.reg_weight = config['reg_weight']
-
-        # Get user transaction history
-        self.history_item_id, _, self.history_item_len = dataset.history_item_matrix()
+        self.aggregator = config['aggregator']
+        if self.aggregator not in ['mean', 'user_attention', 'self_attention']:
+            raise ValueError('aggregator must be mean, user_attention or self_attention')
+        self.history_len=min(config['history_len'],self.history_item_len.shape[0])
+        
         # user embedding matrix
         self.user_emb = nn.Embedding(self.n_users, self.embedding_size)
         # item embedding matrix
@@ -63,6 +62,11 @@ class SimpleX(GeneralRecommender):
         # feature space mapping matrix of user and item
         self.UI_map = nn.Linear(self.embedding_size,
                                 self.embedding_size, bias=False)
+        if self.aggregator in ['user_attention', 'self_attention']:
+            self.W_k = nn.Sequential(nn.Linear(self.embedding_size, self.embedding_size),
+                                     nn.Tanh())
+            if self.aggregator == 'self_attention':
+                self.W_q = nn.Linear(self.embedding_size, 1, bias=False)
         # dropout
         self.dropout = nn.Dropout(0.1)
         self.require_pow = config['require_pow']
@@ -73,9 +77,9 @@ class SimpleX(GeneralRecommender):
         self.apply(xavier_normal_initialization)
         # get the mask
         self.item_emb.weight.data[0, :] = 0
-
+            
     def get_UI_aggregation(self, user_e, history_item_e, history_len):
-        r"""Get the combined vector of user and item sequences
+        r"""Get the combined vector of user and historically interacted items
 
         Args:
             user_e (torch.Tensor): User's feature vector, shape: [user_num, embedding_size]
@@ -86,12 +90,30 @@ class SimpleX(GeneralRecommender):
         Returns:
             torch.Tensor: Combined vector of user and item sequences, shape: [user_num, embedding_size]
         """
-        pos_item_sum = history_item_e.sum(dim=1)
-        temp = (history_len + 1.e-12).unsqueeze(1)
-        pos_item_mean = pos_item_sum / temp
+        if self.aggregator == 'mean':
+            pos_item_sum = history_item_e.sum(dim=1)
+            # [user_num, embedding_size]
+            out = pos_item_sum / (history_len + 1.e-10).unsqueeze(1)
+        elif self.aggregator in ['user_attention', 'self_attention']:
+            # [user_num, max_history_len, embedding_size]
+            key = self.W_k(history_item_e)
+            if self.aggregator == 'user_attention':
+                # [user_num, max_history_len]
+                attention = torch.matmul(key, user_e.unsqueeze(2)).squeeze(2)
+            elif self.aggregator == 'self_attention':
+                # [user_num, max_history_len]
+                attention = self.W_q(key).squeeze(2)
+            e_attention = torch.exp(attention)
+            mask = (history_item_e.sum(dim=-1) != 0).int()
+            e_attention = e_attention*mask
+            # [user_num, max_history_len]
+            attention_weight = e_attention / (e_attention.sum(dim=1, keepdim=True)+1.e-10)
+            # [user_num, embedding_size]
+            out = torch.matmul(attention_weight.unsqueeze(1), history_item_e).squeeze(1)
         # Combined vector of user and item sequences
+        out = self.UI_map(out)
         g = self.gamma
-        UI_aggregation_e = g*user_e+(1-g)*self.UI_map(pos_item_mean)
+        UI_aggregation_e = g*user_e+(1-g)*out
         return UI_aggregation_e
 
     def get_cos(self, user_e, item_e):
@@ -135,8 +157,7 @@ class SimpleX(GeneralRecommender):
         neg_item_seq_e = self.item_emb(neg_item_seq)
 
         # [user_num, embedding_size]
-        UI_aggregation_e = self.get_UI_aggregation(
-            user_e, history_item_e, history_len)
+        UI_aggregation_e = self.get_UI_aggregation(user_e, history_item_e, history_len)
         UI_aggregation_e = self.dropout(UI_aggregation_e)
 
         pos_cos = self.get_cos(UI_aggregation_e, pos_item_e.unsqueeze(1))
@@ -175,23 +196,22 @@ class SimpleX(GeneralRecommender):
         user = user[0:user_number]
         # historical transaction record
         history_item = self.history_item_id[user]
-        history_item = history_item[:, :50]
+        history_item = history_item[:, :self.history_len]
         # positive item's id
         pos_item = pos_item[0:user_number]
         # history_len
         history_len = self.history_item_len[user]
-        history_len = torch.minimum(history_len, torch.zeros(1)+50)
+        history_len = torch.minimum(history_len, torch.zeros(1)+self.history_len)
 
-        loss = self.forward(user, pos_item, history_item,
-                            history_len, neg_item_seq)
+        loss = self.forward(user, pos_item, history_item, history_len, neg_item_seq)
         return loss
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item_seq = self.history_item_id[user]
-        item_seq = item_seq[:, :50]
+        item_seq = item_seq[:, :self.history_len]
         item_seq_len = self.history_item_len[user]
-        item_seq_len = torch.minimum(item_seq_len, torch.zeros(1)+50)
+        item_seq_len = torch.minimum(item_seq_len, torch.zeros(1)+self.history_len)
         test_item = interaction[self.ITEM_ID]
 
         # [user_num, embedding_size]
@@ -211,9 +231,9 @@ class SimpleX(GeneralRecommender):
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
         item_seq = self.history_item_id[user]
-        item_seq = item_seq[:, :50]
+        item_seq = item_seq[:, :self.history_len]
         item_seq_len = self.history_item_len[user]
-        item_seq_len = torch.minimum(item_seq_len, torch.zeros(1)+50)
+        item_seq_len = torch.minimum(item_seq_len, torch.zeros(1)+self.history_len)
 
         # [user_num, embedding_size]
         user_e = self.user_emb(user)
