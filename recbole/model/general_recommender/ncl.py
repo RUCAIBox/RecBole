@@ -121,7 +121,7 @@ class NCL(GeneralRecommender):
         L = sp.coo_matrix(L)
         row = L.row
         col = L.col
-        i = torch.LongTensor([row, col])
+        i = torch.LongTensor(np.array([row, col]))
         data = torch.FloatTensor(L.data)
         SparseL = torch.sparse.FloatTensor(i, data, torch.Size(L.shape))
         return SparseL

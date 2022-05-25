@@ -106,6 +106,7 @@ the sequential data. The models of session-based recommendation are also include
    model/sequential/npe
    model/sequential/lightsans
    model/sequential/sine
+   model/sequential/core
 
 
 Knowledge-based Recommendation
