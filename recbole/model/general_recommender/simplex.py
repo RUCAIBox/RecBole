@@ -41,6 +41,8 @@ class SimpleX(GeneralRecommender):
 
         # Get user transaction history
         self.history_item_id, _, self.history_item_len = dataset.history_item_matrix()
+        self.history_item_id = self.history_item_id.to(self.device)
+        self.history_item_len = self.history_item_len.to(self.device)
 
         # load parameters info
         self.embedding_size = config['embedding_size']
@@ -201,17 +203,19 @@ class SimpleX(GeneralRecommender):
         pos_item = pos_item[0:user_number]
         # history_len
         history_len = self.history_item_len[user]
-        history_len = torch.minimum(history_len, torch.zeros(1)+self.history_len)
+        history_len = torch.minimum(
+            history_len, torch.zeros(1, device=self.device)+self.history_len)
 
         loss = self.forward(user, pos_item, history_item, history_len, neg_item_seq)
         return loss
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
-        item_seq = self.history_item_id[user]
-        item_seq = item_seq[:, :self.history_len]
-        item_seq_len = self.history_item_len[user]
-        item_seq_len = torch.minimum(item_seq_len, torch.zeros(1)+self.history_len)
+        history_item = self.history_item_id[user]
+        history_item = history_item[:, :self.history_len]
+        history_len = self.history_item_len[user]
+        history_len = torch.minimum(history_len, torch.zeros(
+            1, device=self.device)+self.history_len)
         test_item = interaction[self.ITEM_ID]
 
         # [user_num, embedding_size]
@@ -219,30 +223,29 @@ class SimpleX(GeneralRecommender):
         # [user_num, embedding_size]
         test_item_e = self.item_emb(test_item)
         # [user_num, max_history_len, embedding_size]
-        item_seq_e = self.item_emb(item_seq)
+        history_item_e = self.item_emb(history_item)
 
         # [user_num, embedding_size]
-        UI_aggregation_e = self.get_UI_aggregation(
-            user_e, item_seq_e, item_seq_len)
+        UI_aggregation_e = self.get_UI_aggregation(user_e, history_item_e, history_len)
 
         UI_cos = self.get_cos(UI_aggregation_e, test_item_e.unsqueeze(1))
-        return UI_cos.squeeze()
+        return UI_cos.squeeze(1)
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
-        item_seq = self.history_item_id[user]
-        item_seq = item_seq[:, :self.history_len]
-        item_seq_len = self.history_item_len[user]
-        item_seq_len = torch.minimum(item_seq_len, torch.zeros(1)+self.history_len)
+        history_item = self.history_item_id[user]
+        history_item = history_item[:, :self.history_len]
+        history_len = self.history_item_len[user]
+        history_len = torch.minimum(
+            history_len, torch.zeros(1, device=self.device)+self.history_len)
 
         # [user_num, embedding_size]
         user_e = self.user_emb(user)
         # [user_num, max_history_len, embedding_size]
-        item_seq_e = self.item_emb(item_seq)
+        history_item_e = self.item_emb(history_item)
 
         # [user_num, embedding_size]
-        UI_aggregation_e = self.get_UI_aggregation(
-            user_e, item_seq_e, item_seq_len)
+        UI_aggregation_e = self.get_UI_aggregation(user_e, history_item_e, history_len)
 
         UI_aggregation_e = F.normalize(UI_aggregation_e, dim=1)
         all_item_emb = self.item_emb.weight
