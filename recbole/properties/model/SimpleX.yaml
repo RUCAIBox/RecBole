@@ -1,0 +1,7 @@
+embedding_size: 64
+margin: 0.5
+negative_weight: 10
+gamma: 0.5
+aggregator: 'mean'
+history_len: 50
+reg_weight: 1e-05
