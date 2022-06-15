@@ -54,7 +54,7 @@ class FISSA(SequentialRecommender):
         elif self.loss_type == 'CE':
             self.loss_fct = nn.CrossEntropyLoss()
         else:
-            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE', 'NLL']!")
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         self.D = config['hidden_size']
         self.g = config['gating_ratio']
