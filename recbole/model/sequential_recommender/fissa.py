@@ -57,8 +57,6 @@ class FISSA(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         self.D = config['hidden_size']
-        self.g = config['gating_ratio']
-
         self.initializer_range = 0.01
 
         self.w1 = self._init_weight((self.D, self.D))
