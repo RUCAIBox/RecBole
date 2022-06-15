@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2022/02/24 10:43
 # @Author  : Jingqi Gao
-# @Email   : jgaoaz@connect.ust.hk
+# @Email   : mrgao.ary@gmail.com
 """
 FISSA: Fusing Item Similarity Models with Self-Attention Networks for Sequential Recommendation
 ################################################
@@ -61,13 +61,11 @@ class FISSA(SequentialRecommender):
 
         self.initializer_range = 0.01
 
-        print(self.D)
         self.w1 = self._init_weight((self.D, self.D))
         self.w2 = self._init_weight((self.D, self.D))
         self.q_s = self._init_weight(self.D)
-        self.gating_lr = torch.nn.Linear(2*self.D, 1)
+        self.gating_lr = torch.nn.Linear(self.D * 3, 1)
         self.gating_sig = torch.nn.Sigmoid()
-
 
         self.item_embedding = nn.Embedding(self.n_items, self.D, padding_idx=0)
         self.position_embedding = nn.Embedding(self.max_seq_length + 1, self.D)  # add mask_token at the last
@@ -105,25 +103,35 @@ class FISSA(SequentialRecommender):
         pos_items = interaction[self.POS_ITEM_ID]
 
         seq_x, seq_y = self.forward(item_seq, item_seq_len)
-        test_item_emb = self.item_embedding.weight
-        seq_output = self.cal_final(seq_x, seq_y, item_seq)
-        logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
-        loss = self.loss_fct(logits, pos_items)
-        return loss
+        if self.loss_type == 'BPR':
+            neg_items = interaction[self.NEG_ITEM_ID]
+            pos_items_emb = self.item_embedding(pos_items).unsqueeze(1)
+            neg_items_emb = self.item_embedding(neg_items).unsqueeze(1)
+            seq_output_pos = self.cal_final(seq_x, seq_y, item_seq, pos_items_emb)
+            seq_output_neg = self.cal_final(seq_x, seq_y, item_seq, neg_items_emb)
 
-    def cal_final(self, seq_x, seq_y, item_seq, test_candidates=None):
+            pos_score = torch.sum(seq_output_pos * pos_items_emb, dim=-1)  # [B]
+            neg_score = torch.sum(seq_output_neg * neg_items_emb, dim=-1)  # [B]
+            loss = self.loss_fct(pos_score, neg_score)
+            return loss
+        else:  # self.loss_type = 'CE'
+            test_item_emb = self.item_embedding.weight
+            test_item_emb_can = test_item_emb.unsqueeze(0).repeat(seq_x.size(0), 1, 1)
+            seq_output_pos = self.cal_final(seq_x, seq_y, item_seq, test_item_emb_can)
+            logits = torch.sum(seq_output_pos * test_item_emb_can, dim=-1)  # [B]
+            loss = self.loss_fct(logits, pos_items)
+            return loss
+
+    def cal_final(self, seq_x, seq_y, item_seq, candidates_embedding):
         last_embedding = self.item_embedding(item_seq[:, -1]).to(self.device)  # [B, 1, D]
-        candidates_embedding = self.item_embedding.weight
-        if test_candidates is not None:
-            candidates_embedding = self.item_embedding(test_candidates).to(self.device)  # [B, 1, D]
-        g = torch.cat((last_embedding, seq_y), 1)
-        # g = torch.cat((g, candidates_embedding), 2)
-        g = self.gating_sig(self.gating_lr(g))
-        seq = seq_x * g + seq_y * (1-g)
+        isg_input = torch.cat((last_embedding, seq_y), 1)
+        isg_input = isg_input.unsqueeze(1).repeat((1, candidates_embedding.size(1), 1))
+        isg_input = torch.cat((isg_input, candidates_embedding), 2)
+        g = self.gating_sig(self.gating_lr(isg_input))
+        seq_x_can = seq_x.unsqueeze(1).repeat(1, candidates_embedding.size(1), 1)
+        seq_y_can = seq_y.unsqueeze(1).repeat(1, candidates_embedding.size(1), 1)
+        seq = seq_x_can * g + seq_y_can * (1 - g)
         return seq
-
-
-
 
     def predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
@@ -143,7 +151,6 @@ class FISSA(SequentialRecommender):
         extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
         return extended_attention_mask
-
 
     def forward(self, item_seq, item_seq_len):
         item_embedding = self.item_embedding(item_seq).to(self.device)  # [B, N, D]
@@ -167,7 +174,6 @@ class FISSA(SequentialRecommender):
         y = a.unsqueeze(2).repeat(1, 1, self.D) * x
         y = self.d1(y.sum(dim=1))
 
-
         return x_l, y
 
     def full_sort_predict(self, interaction):
@@ -178,4 +184,3 @@ class FISSA(SequentialRecommender):
         test_items_emb = self.item_embedding.weight
         scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
         return scores
-
