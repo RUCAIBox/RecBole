@@ -140,10 +140,9 @@ class FISSA(SequentialRecommender):
 
         test_item = interaction[self.ITEM_ID]
         seq_x, seq_y = self.forward(item_seq, item_seq_len)
-        test_item_emb = self.item_embedding(test_item)
-        test_item_emb_can = test_item_emb.unsqueeze(0).repeat(seq_x.size(0), 1, 1)
-        seq_output = self.cal_final(seq_x, seq_y, last_item_emb, test_item_emb_can)
-        scores = torch.sum(seq_output * test_item_emb_can, dim=-1)
+        test_item_emb = self.item_embedding(test_item).unsqueeze(1)
+        seq_output = self.cal_final(seq_x, seq_y, last_item_emb, test_item_emb)
+        scores = torch.sum(seq_output * test_item_emb, dim=-1)
         return scores
 
     def get_attention_mask(self, item_seq):
