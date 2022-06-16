@@ -28,7 +28,6 @@ from recbole.model.layers import TransformerEncoder
 
 
 class FISSA(SequentialRecommender):
-    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(FISSA, self).__init__(config, dataset)
@@ -57,7 +56,7 @@ class FISSA(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         self.D = config['hidden_size']
-        self.initializer_range = 0.01
+        self.initializer_range = config['initializer_range']
 
         self.w1 = self._init_weight((self.D, self.D))
         self.w2 = self._init_weight((self.D, self.D))
