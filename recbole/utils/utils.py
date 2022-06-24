@@ -97,7 +97,7 @@ def get_trainer(model_type, model_name):
             return getattr(importlib.import_module('recbole.trainer'), 'Trainer')
 
 
-def early_stopping(value, best, cur_step, max_step, bigger=True):
+def early_stopping(value, best, cur_step, max_step, bigger=True, min_delta=0.001):
     r""" validation-based early stopping
 
     Args:
@@ -121,7 +121,7 @@ def early_stopping(value, best, cur_step, max_step, bigger=True):
     stop_flag = False
     update_flag = False
     if bigger:
-        if value >= best:
+        if value >= best and abs(value - best) >= min_delta:
             cur_step = 0
             best = value
             update_flag = True
@@ -130,7 +130,7 @@ def early_stopping(value, best, cur_step, max_step, bigger=True):
             if cur_step > max_step:
                 stop_flag = True
     else:
-        if value <= best:
+        if value <= best and abs(best - value) >= min_delta:
             cur_step = 0
             best = value
             update_flag = True

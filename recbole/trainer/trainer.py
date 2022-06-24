@@ -87,6 +87,7 @@ class Trainer(AbstractTrainer):
         self.clip_grad_norm = config['clip_grad_norm']
         self.valid_metric = config['valid_metric'].lower()
         self.valid_metric_bigger = config['valid_metric_bigger']
+        self.min_delta = config['min_delta']
         self.test_batch_size = config['eval_batch_size']
         self.gpu_available = torch.cuda.is_available() and config['use_gpu']
         self.device = config['device']
@@ -355,7 +356,8 @@ class Trainer(AbstractTrainer):
                     self.best_valid_score,
                     self.cur_step,
                     max_step=self.stopping_step,
-                    bigger=self.valid_metric_bigger
+                    bigger=self.valid_metric_bigger,
+                    min_delta=self.min_delta
                 )
                 valid_end_time = time()
                 valid_score_output = (set_color("epoch %d evaluating", 'green') + " [" + set_color("time", 'blue')
@@ -702,6 +704,7 @@ class DecisionTreeTrainer(AbstractTrainer):
 
         self.stopping_step = config['stopping_step']
         self.valid_metric_bigger = config['valid_metric_bigger']
+        self.min_delta = config['min_delta']
         self.cur_step = 0
         self.best_valid_score = -np.inf if self.valid_metric_bigger else np.inf
         self.best_valid_result = None
@@ -801,7 +804,8 @@ class DecisionTreeTrainer(AbstractTrainer):
                     self.best_valid_score,
                     self.cur_step,
                     max_step=self.stopping_step,
-                    bigger=self.valid_metric_bigger
+                    bigger=self.valid_metric_bigger,
+                    min_delta=self.min_delta
                 )
 
                 valid_end_time = time()
@@ -1108,7 +1112,8 @@ class NCLTrainer(Trainer):
                     self.best_valid_score,
                     self.cur_step,
                     max_step=self.stopping_step,
-                    bigger=self.valid_metric_bigger
+                    bigger=self.valid_metric_bigger,
+                    min_delta=self.min_delta
                 )
                 valid_end_time = time()
                 valid_score_output = (set_color("epoch %d evaluating", 'green') + " [" + set_color("time", 'blue')

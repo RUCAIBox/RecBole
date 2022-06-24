@@ -45,6 +45,7 @@ class TestConfigClass(unittest.TestCase):
         self.assertIsInstance(config['neg_sampling'], dict)
         self.assertIsInstance(config['eval_step'], int)
         self.assertIsInstance(config['stopping_step'], int)
+        self.assertIsInstance(config['min_delta'], float)
         self.assertIsInstance(config['checkpoint_dir'], str)
 
         self.assertIsInstance(config['eval_args'], dict)
