@@ -39,9 +39,8 @@ A user can apply the provided script to process the original data copy, or simpl
   <br>
   <b>Figure</b>: RecBole Overall Architecture
 </p>
-In order to support the study of recent advances in recommender systems, we construct an extended recommendation library 
-[RecBole2.0](https://github.com/RUCAIBox/RecBole2.0) 
-consisting of 8 packages for up-to-date topics and architectures (e.g., debased, fairness and GNNs). 
+
+In order to support the study of recent advances in recommender systems, we construct an extended recommendation library [RecBole2.0](https://github.com/RUCAIBox/RecBole2.0) consisting of 8 packages for up-to-date topics and architectures (e.g., debased, fairness and GNNs). 
 
 ## Feature
 + **General and extensible data structure.** We design general and extensible data structures to unify the formatting and
