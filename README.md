@@ -31,7 +31,8 @@ Our library includes 78 recommendation algorithms, covering four major categorie
 + Knowledge-based Recommendation
 
 We design a unified and flexible data file format, and provide the support for 28 benchmark recommendation datasets.
-A user can apply the provided script to process the original data copy, or simply download the processed datasets by our team.
+A user can apply the provided script to process the original data copy, or simply download the processed datasets 
+by our team.
 
 
 <p align="center">
