@@ -243,7 +243,7 @@ We thank the nice contributions through PRs from [@rowedenny](https://github.com
 If you find RecBole useful for your research or development, please cite the following papers: [RecBole](https://arxiv.org/abs/2011.01731) and [RecBole2.0](https://arxiv.org/pdf/2206.07351)
 
 ```
-@inproceedings{zhao2021recbole,
+@inproceedings{recbole1.0,
   title={Recbole: Towards a unified, comprehensive and efficient framework for recommendation algorithms},
   author={Zhao, Wayne Xin and Mu, Shanlei and Hou, Yupeng and Lin, Zihan and Chen, Yushuo and Pan, Xingyu and Li, Kaiyuan and Lu, Yujie and Wang, Hui and Tian, Changxin and others},
   booktitle={Proceedings of the 30th ACM International Conference on Information \& Knowledge Management},
@@ -252,7 +252,7 @@ If you find RecBole useful for your research or development, please cite the fol
 ```
 
 ```
-@article{zhao2022recbole,
+@article{recbole2.0,
   title={RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
   author={Zhao, Wayne Xin and Hou, Yupeng and Pan, Xingyu and Yang, Chen and Zhang, Zeyu and Lin, Zihan and Zhang, Jingsen and Bian, Shuqing and Tang, Jiakai and Sun, Wenqi and others},
   journal={arXiv preprint arXiv:2206.07351},
@@ -262,7 +262,7 @@ If you find RecBole useful for your research or development, please cite the fol
 
 ## The Team
 
-RecBole is developed and maintained by [RUC, BUPT, ECNU](https://www.recbole.io/about.html).
+RecBole is developed by [RUC, BUPT, ECNU](https://www.recbole.io/about.html), and maintained by RUC.
 
 Here is the list of our lead developers in each development phase. They are the souls of RecBole and have made outstanding contributions.
 
