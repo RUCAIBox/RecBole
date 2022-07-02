@@ -222,6 +222,27 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_SimpleX_with_mean(self):
+        config_dict = {
+            'model': 'SimpleX',
+            'aggregator': 'mean'
+        }
+        quick_test(config_dict)
+
+    def test_SimpleX_with_user_attention(self):
+        config_dict = {
+            'model': 'SimpleX',
+            'aggregator': 'user_attention'
+        }
+        quick_test(config_dict)
+
+    def test_SimpleX_with_self_attention(self):
+        config_dict = {
+            'model': 'SimpleX',
+            'aggregator': 'self_attention'
+        }
+        quick_test(config_dict)
+
     def test_NCEPLRec(self):
         config_dict = {
             'model': 'NCEPLRec',
