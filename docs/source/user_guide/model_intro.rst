@@ -41,6 +41,7 @@ task of top-n recommendation. All the collaborative filter(CF) based models are 
    model/general/admmslim
    model/general/nceplrec
    model/general/simplex
+   model/general/ncl
 
 
 Context-aware Recommendation
@@ -106,6 +107,7 @@ the sequential data. The models of session-based recommendation are also include
    model/sequential/npe
    model/sequential/lightsans
    model/sequential/sine
+   model/sequential/core
 
 
 Knowledge-based Recommendation

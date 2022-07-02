@@ -15,6 +15,7 @@ from recbole.model.general_recommender.multidae import MultiDAE
 from recbole.model.general_recommender.multivae import MultiVAE
 from recbole.model.general_recommender.enmf import ENMF
 from recbole.model.general_recommender.nais import NAIS
+from recbole.model.general_recommender.ncl import NCL
 from recbole.model.general_recommender.neumf import NeuMF
 from recbole.model.general_recommender.ngcf import NGCF
 from recbole.model.general_recommender.nncf import NNCF

@@ -210,7 +210,7 @@ class Dataset:
             return None
         else:
             raise ValueError(
-                f'Neither [{self.dataset_path}] exists in the device'
+                f'Neither [{self.dataset_path}] exists in the device '
                 f'nor [{self.dataset_name}] a known dataset name.'
             )
 
@@ -1474,6 +1474,7 @@ class Dataset:
         self._change_feat_format()
 
         if self.benchmark_filename_list is not None:
+            self._drop_unused_col()
             cumsum = list(np.cumsum(self.file_size_list))
             datasets = [self.copy(self.inter_feat[start:end]) for start, end in zip([0] + cumsum[:-1], cumsum)]
             return datasets

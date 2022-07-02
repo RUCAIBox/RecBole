@@ -41,6 +41,7 @@ by our team.
   <b>Figure</b>: RecBole Overall Architecture
 </p>
 
+In order to support the study of recent advances in recommender systems, we construct an extended recommendation library [RecBole2.0](https://github.com/RUCAIBox/RecBole2.0) consisting of 8 packages for up-to-date topics and architectures (e.g., debased, fairness and GNNs). 
 
 ## Feature
 + **General and extensible data structure.** We design general and extensible data structures to unify the formatting and
@@ -57,6 +58,8 @@ for testing and comparing recommendation algorithms.
 
 
 ## RecBole News
+![new](/asset/new.gif) **06/28/2022**: We release [**RecBole2.0**](https://github.com/RUCAIBox/RecBole2.0) with **8 packages** consisting of **65 newly implement models**. 
+
 **02/25/2022**: We release RecBole [v1.0.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.0.1).
 
 **09/17/2021**: We release RecBole [v1.0.0](https://github.com/RUCAIBox/RecBole/releases/tag/v1.0.0).
@@ -237,25 +240,35 @@ We thank the insightful suggestions from [@tszumowski](https://github.com/tszumo
 We thank the nice contributions through PRs from [@rowedenny](https://github.com/rowedenny)，[@deklanw](https://github.com/deklanw) et.al.
 
 ## Cite
-If you find RecBole useful for your research or development, please cite the following [paper](https://arxiv.org/abs/2011.01731):
+If you find RecBole useful for your research or development, please cite the following papers: [RecBole](https://arxiv.org/abs/2011.01731) and [RecBole2.0](https://arxiv.org/pdf/2206.07351)
 
 ```
-@article{recbole,
-    title={RecBole: Towards a Unified, Comprehensive and Efficient Framework for Recommendation Algorithms},
-    author={Wayne Xin Zhao and Shanlei Mu and Yupeng Hou and Zihan Lin and Kaiyuan Li and Yushuo Chen and Yujie Lu and Hui Wang and Changxin Tian and Xingyu Pan and Yingqian Min and Zhichao Feng and Xinyan Fan and Xu Chen and Pengfei Wang and Wendi Ji and Yaliang Li and Xiaoling Wang and Ji-Rong Wen},
-    year={2020},
-    journal={arXiv preprint arXiv:2011.01731}
+@inproceedings{recbole1.0,
+  title={Recbole: Towards a unified, comprehensive and efficient framework for recommendation algorithms},
+  author={Zhao, Wayne Xin and Mu, Shanlei and Hou, Yupeng and Lin, Zihan and Chen, Yushuo and Pan, Xingyu and Li, Kaiyuan and Lu, Yujie and Wang, Hui and Tian, Changxin and others},
+  booktitle={Proceedings of the 30th ACM International Conference on Information \& Knowledge Management},
+  year={2021}
+}
+```
+
+```
+@article{recbole2.0,
+  title={RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
+  author={Zhao, Wayne Xin and Hou, Yupeng and Pan, Xingyu and Yang, Chen and Zhang, Zeyu and Lin, Zihan and Zhang, Jingsen and Bian, Shuqing and Tang, Jiakai and Sun, Wenqi and others},
+  journal={arXiv preprint arXiv:2206.07351},
+  year={2022}
 }
 ```
 
 ## The Team
-RecBole is developed and maintained by [RUC, BUPT, ECNU](https://www.recbole.io/about.html).
+
+RecBole is developed by [RUC, BUPT, ECNU](https://www.recbole.io/about.html), and maintained by RUC.
 
 Here is the list of our lead developers in each development phase. They are the souls of RecBole and have made outstanding contributions.
 
 |         Time          |        Version         |                Lead Developers                 |
 | :-------------------: | :--------------------: | :--------------------------------------------: |
-| June 2020<br> ~<br> Nov. 2020 |        v0.1.1         |  Shanlei Mu ([@ShanleiMu](https://github.com/ShanleiMu)), Yupeng Hou ([@hyp1231](https://github.com/@hyp1231)),<br> Zihan Lin ([@linzihan-backforward](https://github.com/linzihan-backforward)), Kaiyuan Li ([@tsotfsk](https://github.com/tsotfsk))|
+| June 2020<br> ~<br> Nov. 2020 |        v0.1.1         |  Shanlei Mu ([@ShanleiMu](https://github.com/ShanleiMu)), Yupeng Hou ([@hyp1231](https://github.com/hyp1231)),<br> Zihan Lin ([@linzihan-backforward](https://github.com/linzihan-backforward)), Kaiyuan Li ([@tsotfsk](https://github.com/tsotfsk))|
 |    Nov. 2020<br> ~ <br> now    |  v0.1.2 ~ v1.0.0 |      Yushuo Chen ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), Xingyu Pan ([@2017pxy](https://github.com/2017pxy))    |
 
 

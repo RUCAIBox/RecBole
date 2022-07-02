@@ -24,3 +24,6 @@ recbole.model.general\_recommender
    recbole.model.general_recommender.sgl
    recbole.model.general_recommender.simplex
    recbole.model.general_recommender.spectralcf
+   recbole.model.general_recommender.spectralcf
+   recbole.model.general_recommender.sgl
+   recbole.model.general_recommender.ncl

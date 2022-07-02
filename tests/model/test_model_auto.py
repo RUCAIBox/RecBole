@@ -243,6 +243,19 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_NCEPLRec(self):
+        config_dict = {
+            'model': 'NCEPLRec',
+        }
+        quick_test(config_dict)
+
+    def test_NCL(self):
+        config_dict = {
+            'model': 'NCL',
+            'num_clusters': 100
+        }
+        quick_test(config_dict)
+
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
@@ -742,6 +755,22 @@ class TestSequentialRecommender(unittest.TestCase):
             'model': 'SINE',
             'neg_sampling': None,
             'loss_type': 'NLL',
+        }
+        quick_test(config_dict)
+
+    def test_core_trm(self):
+        config_dict = {
+            'model': 'CORE',
+            'neg_sampling': None,
+            'dnn_type': 'trm'
+        }
+        quick_test(config_dict)
+
+    def test_core_ave(self):
+        config_dict = {
+            'model': 'CORE',
+            'neg_sampling': None,
+            'dnn_type': 'ave'
         }
         quick_test(config_dict)
 
