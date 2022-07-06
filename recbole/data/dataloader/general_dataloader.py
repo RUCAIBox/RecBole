@@ -50,7 +50,7 @@ class TrainDataLoader(NegSampleDataLoader):
             self.set_batch_size(batch_size)
 
     def update_config(self, config):
-        self._set_neg_sample_args(config, self.dataset, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
+        self._set_neg_sample_args(config, self.datasets, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
         super().update_config(config)
 
     def collate_fn(self, index):
@@ -116,7 +116,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
             self.set_batch_size(batch_size)
 
     def update_config(self, config):
-        self._set_neg_sample_args(config, self.dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
+        self._set_neg_sample_args(config, self.datasets, InputType.POINTWISE, config['eval_neg_sample_args'])
         super().update_config(config)
 
     def collate_fn(self, index):
