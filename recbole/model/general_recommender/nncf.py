@@ -359,5 +359,4 @@ class NNCF(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        predict=torch.sigmoid(self.forward(user, item))
-        return predict
+        return torch.sigmoid(self.forward(user, item))
