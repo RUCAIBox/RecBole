@@ -45,7 +45,7 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
         self.config = config
         self.datasets = dataset
         self._sampler = sampler
-        self.batch_size = self.step = self.model = None
+        self._batch_size = self.step = self.model = None
         self._init_batch_size_and_step()
         index_sampler = None
         if not config['SingleSpec']:
@@ -73,7 +73,7 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
         Args:
             batch_size (int): the new batch_size of dataloader.
         """
-        self.batch_size = batch_size
+        self._batch_size = batch_size
 
     def collate_fn(self):
         """Collect the sampled index, and apply neg_sampling or other methods to get the final data.
