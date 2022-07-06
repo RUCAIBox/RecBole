@@ -32,8 +32,8 @@ class TestConfigClass(unittest.TestCase):
         self.assertEqual(config['model'], 'BPR')
         self.assertEqual(config['dataset'], 'ml-100k')
 
-        self.assertIsInstance(config['gpu_id'], int)
-        self.assertIsInstance(config['use_gpu'], bool)
+        self.assertIsInstance(config['gpu_ids'], list)
+        self.assertIsInstance(config['worker'], int)
         self.assertIsInstance(config['seed'], int)
         self.assertIsInstance(config['state'], str)
         self.assertIsInstance(config['data_path'], str)

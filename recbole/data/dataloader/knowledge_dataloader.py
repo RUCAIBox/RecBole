@@ -34,10 +34,10 @@ class KGDataLoader(AbstractDataLoader):
     """
 
     def __init__(self, config, dataset, sampler, shuffle=False):
+        self.logger = getLogger()
         if shuffle is False:
             shuffle = True
-            logger = getLogger()
-            logger.warning('kg based dataloader must shuffle the data')
+            self.logger.warning('kg based dataloader must shuffle the data')
 
         self.neg_sample_num = 1
 
@@ -90,7 +90,7 @@ class KnowledgeBasedDataLoader():
     """
 
     def __init__(self, config, dataset, sampler, kg_sampler, shuffle=False):
-
+        self.logger = getLogger()
         # using sampler
         self.general_dataloader = TrainDataLoader(config, dataset, sampler, shuffle=shuffle)
 

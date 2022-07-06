@@ -41,8 +41,8 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
     """
 
     def __init__(self, config, dataset, sampler, shuffle=False):
+        self.shuffle = shuffle
         self.config = config
-        self.logger = getLogger()
         self.datasets = dataset
         self._sampler = sampler
         self.batch_size = self.step = self.model = None
@@ -94,6 +94,7 @@ class NegSampleDataLoader(AbstractDataLoader):
     """
 
     def __init__(self, config, dataset, sampler, shuffle=True):
+        self.logger = getLogger()
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _set_neg_sample_args(self, config, dataset, dl_format, neg_sample_args):

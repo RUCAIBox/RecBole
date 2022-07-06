@@ -14,7 +14,7 @@ recbole.data.dataloader.general_dataloader
 
 import numpy as np
 import torch
-
+from logging import getLogger
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader, NegSampleDataLoader
 from recbole.data.interaction import Interaction, cat_interactions
 from recbole.utils import InputType, ModelType
@@ -34,6 +34,7 @@ class TrainDataLoader(NegSampleDataLoader):
     """
 
     def __init__(self, config, dataset, sampler, shuffle=False):
+        self.logger = getLogger()
         self._set_neg_sample_args(config, dataset, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
         self.sample_size = len(dataset)
         super().__init__(config, dataset, sampler, shuffle=shuffle)
@@ -73,6 +74,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
     """
 
     def __init__(self, config, dataset, sampler, shuffle=False):
+        self.logger = getLogger()
         self._set_neg_sample_args(config, dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
         if self.neg_sample_args['strategy'] == 'by':
             user_num = dataset.user_num
@@ -136,8 +138,8 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
                 positive_i = torch.cat((positive_i, self.datasets[index][self.iid_field]), 0)
 
             cur_data = cat_interactions(data_list)
-            idx_list = torch.from_numpy(np.array(idx_list))
-            positive_u = torch.from_numpy(np.array(positive_u))
+            idx_list = torch.from_numpy(np.array(idx_list)).long()
+            positive_u = torch.from_numpy(np.array(positive_u)).long()
 
             return cur_data, idx_list, positive_u, positive_i
         else:
@@ -159,6 +161,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
     """
 
     def __init__(self, config, dataset, sampler, shuffle=False):
+        self.logger = getLogger()
         self.uid_field = dataset.uid_field
         self.iid_field = dataset.iid_field
         self.is_sequential = config['MODEL_TYPE'] == ModelType.SEQUENTIAL

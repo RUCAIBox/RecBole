@@ -12,7 +12,7 @@ recbole.data.dataloader.user_dataloader
 ################################################
 """
 import torch
-
+from logging import getLogger
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.interaction import Interaction
 import numpy as np
@@ -32,6 +32,7 @@ class UserDataLoader(AbstractDataLoader):
     """
 
     def __init__(self, config, dataset, sampler, shuffle=False):
+        self.logger = getLogger()
         if shuffle is False:
             shuffle = True
             self.logger.warning('UserDataLoader must shuffle the data.')

@@ -29,6 +29,7 @@ clip_grad_norm: ~
 weight_decay: 0.0
 loss_decimal_place: 4
 require_pow: False
+shuffle: False
 
 # evaluation settings
 eval_args: 

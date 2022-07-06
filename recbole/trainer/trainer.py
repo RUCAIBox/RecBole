@@ -202,7 +202,7 @@ class Trainer(AbstractTrainer):
             ) if show_progress else train_data
         )
         
-        if not self.config['SingleSpec'] and self.config['shuffle']:
+        if not self.config['SingleSpec'] and train_data.shuffle:
             train_data.sampler.set_epoch(epoch_idx)
 
         for batch_idx, interaction in enumerate(iter_data):
@@ -446,6 +446,7 @@ class Trainer(AbstractTrainer):
         return interaction, scores, positive_u, positive_i
 
     def _neg_sample_batch_eval(self, batched_data):
+        print(batched_data)
         interaction, row_idx, positive_u, positive_i = batched_data
         batch_size = interaction.length
         if batch_size <= self.test_batch_size:
@@ -1219,7 +1220,7 @@ class NCLTrainer(Trainer):
             ) if show_progress else train_data
         )
 
-        if not self.config['SingleSpec'] and self.config['shuffle']:
+        if not self.config['SingleSpec'] and train_data.shuffle:
             train_data.sampler.set_epoch(epoch_idx)
         
         for batch_idx, interaction in enumerate(iter_data):
