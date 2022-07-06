@@ -62,7 +62,7 @@ class DCN(ContextRecommender):
         self.predict_layer = nn.Linear(in_feature_num, 1)
         self.reg_loss = RegLoss()
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -108,7 +108,7 @@ class DCN(ContextRecommender):
         # Cross Network
         cross_output = self.cross_network(dcn_all_embeddings)
         stack = torch.cat([cross_output, deep_output], dim=-1)
-        output = self.sigmoid(self.predict_layer(stack))
+        output = self.predict_layer(stack)
 
         return output.squeeze(1)
 
@@ -119,4 +119,4 @@ class DCN(ContextRecommender):
         return self.loss(output, label) + l2_loss
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))

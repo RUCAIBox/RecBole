@@ -66,7 +66,7 @@ class NeuMF(GeneralRecommender):
         elif self.mlp_train:
             self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         if self.use_pretrain:
@@ -110,11 +110,11 @@ class NeuMF(GeneralRecommender):
         if self.mlp_train:
             mlp_output = self.mlp_layers(torch.cat((user_mlp_e, item_mlp_e), -1))  # [batch_size, layers[-1]]
         if self.mf_train and self.mlp_train:
-            output = self.sigmoid(self.predict_layer(torch.cat((mf_output, mlp_output), -1)))
+            output = self.predict_layer(torch.cat((mf_output, mlp_output), -1))
         elif self.mf_train:
-            output = self.sigmoid(self.predict_layer(mf_output))
+            output = self.predict_layer(mf_output)
         elif self.mlp_train:
-            output = self.sigmoid(self.predict_layer(mlp_output))
+            output = self.predict_layer(mlp_output)
         else:
             raise RuntimeError('mf_train and mlp_train can not be False at the same time')
         return output.squeeze(-1)
@@ -123,14 +123,15 @@ class NeuMF(GeneralRecommender):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
         label = interaction[self.LABEL]
-
-        output = self.forward(user, item)
+        
+        output = self.forward(user, item)         
         return self.loss(output, label)
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        return self.forward(user, item)
+        predict=self.sigmoid(self.forward(user, item))
+        return predict
 
     def dump_parameters(self):
         r"""A simple implementation of dumping model parameters for pretrain.

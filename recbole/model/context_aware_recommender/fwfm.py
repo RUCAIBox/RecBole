@@ -51,7 +51,7 @@ class FwFM(ContextRecommender):
         self.num_fields = len(set(self.feature2field.values()))  # the number of fields
         self.num_pair = self.num_fields * self.num_fields
 
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -122,7 +122,7 @@ class FwFM(ContextRecommender):
     def forward(self, interaction):
         fwfm_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
 
-        output = self.sigmoid(self.first_order_linear(interaction) + self.fwfm_layer(fwfm_all_embeddings))
+        output = self.first_order_linear(interaction) + self.fwfm_layer(fwfm_all_embeddings)
 
         return output.squeeze(-1)
 
@@ -133,4 +133,4 @@ class FwFM(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))

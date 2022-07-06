@@ -53,7 +53,7 @@ class FFM(ContextRecommender):
             self.feature_names, self.feature_dims, self.feature2id, self.feature2field, self.num_fields,
             self.embedding_size, self.device
         )
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -116,7 +116,7 @@ class FFM(ContextRecommender):
     def forward(self, interaction):
         ffm_input = self.get_ffm_input(interaction)
         ffm_output = torch.sum(torch.sum(self.ffm(ffm_input), dim=1), dim=1, keepdim=True)
-        output = self.sigmoid(self.first_order_linear(interaction) + ffm_output)
+        output = self.first_order_linear(interaction) + ffm_output
 
         return output.squeeze(-1)
 
@@ -127,7 +127,7 @@ class FFM(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))
 
 
 class FieldAwareFactorizationMachine(nn.Module):

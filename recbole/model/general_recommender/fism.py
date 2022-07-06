@@ -59,7 +59,7 @@ class FISM(GeneralRecommender):
         self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         self.user_bias = nn.Parameter(torch.zeros(self.n_users))
         self.item_bias = nn.Parameter(torch.zeros(self.n_items))
-        self.bceloss = nn.BCELoss()
+        self.bceloss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -147,7 +147,7 @@ class FISM(GeneralRecommender):
             item_bias = self.item_bias[pred_slc]
         similarity = torch.bmm(user_history, targets.unsqueeze(2)).squeeze(2)  # inter_num x target_items
         coeff = torch.pow(item_num.squeeze(1), -self.alpha)
-        scores = torch.sigmoid(coeff.float() * torch.sum(similarity, dim=1) + user_bias + item_bias)
+        scores = coeff.float() * torch.sum(similarity, dim=1) + user_bias + item_bias
         return scores
 
     def forward(self, user, item):
@@ -187,5 +187,5 @@ class FISM(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        output = self.forward(user, item)
+        output = torch.sigmoid(self.forward(user, item))
         return output
