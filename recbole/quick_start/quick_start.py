@@ -45,7 +45,7 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
 
     # model loading and initialization
     init_seed(config['seed'] + config['local_rank'], config['reproducibility'])
-    model = get_model(config['model'])(config, train_data.datasets).to(config['device'])
+    model = get_model(config['model'])(config, train_data._dataset).to(config['device'])
     logger.info(model)
 
     # trainer loading and initialization
@@ -89,7 +89,7 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)
     init_seed(config['seed'], config['reproducibility'])
-    model = get_model(config['model'])(config, train_data.datasets).to(config['device'])
+    model = get_model(config['model'])(config, train_data._dataset).to(config['device'])
     trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False, saved=saved)
     test_result = trainer.evaluate(test_data, load_best_model=saved)
@@ -130,7 +130,7 @@ def load_data_and_model(model_file):
     train_data, valid_data, test_data = data_preparation(config, dataset)
 
     init_seed(config['seed'], config['reproducibility'])
-    model = get_model(config['model'])(config, train_data.datasets).to(config['device'])
+    model = get_model(config['model'])(config, train_data._dataset).to(config['device'])
     model.load_state_dict(checkpoint['state_dict'])
     model.load_other_parameter(checkpoint.get('other_parameter'))
 

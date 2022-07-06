@@ -51,12 +51,12 @@ class TrainDataLoader(NegSampleDataLoader):
             self.set_batch_size(batch_size)
 
     def update_config(self, config):
-        self._set_neg_sample_args(config, self.datasets, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
+        self._set_neg_sample_args(config, self._dataset, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
         super().update_config(config)
 
     def collate_fn(self, index):
         index = np.array(index)
-        data = self.datasets[index]
+        data = self._dataset[index]
         return self._neg_sampling(data)
 
 
@@ -118,7 +118,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
             self.set_batch_size(batch_size)
 
     def update_config(self, config):
-        self._set_neg_sample_args(config, self.datasets, InputType.POINTWISE, config['eval_neg_sample_args'])
+        self._set_neg_sample_args(config, self._dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
         super().update_config(config)
 
     def collate_fn(self, index):
@@ -132,10 +132,10 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
 
             for idx, uid in enumerate(uid_list):
                 index = self.uid2index[uid]
-                data_list.append(self._neg_sampling(self.datasets[index]))
+                data_list.append(self._neg_sampling(self._dataset[index]))
                 idx_list += [idx for i in range(self.uid2items_num[uid] * self.times)]
                 positive_u += [idx for i in range(self.uid2items_num[uid])]
-                positive_i = torch.cat((positive_i, self.datasets[index][self.iid_field]), 0)
+                positive_i = torch.cat((positive_i, self._dataset[index][self.iid_field]), 0)
 
             cur_data = cat_interactions(data_list)
             idx_list = torch.from_numpy(np.array(idx_list)).long()
@@ -143,7 +143,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
 
             return cur_data, idx_list, positive_u, positive_i
         else:
-            data = self.datasets[index]
+            data = self._dataset[index]
             cur_data = self._neg_sampling(data)
             return cur_data, None, None, None
 
@@ -204,8 +204,8 @@ class FullSortEvalDataLoader(AbstractDataLoader):
     def _init_batch_size_and_step(self):
         batch_size = self.config['eval_batch_size']
         if not self.is_sequential:
-            batch_num = max(batch_size // self.datasets.item_num, 1)
-            new_batch_size = batch_num * self.datasets.item_num
+            batch_num = max(batch_size // self._dataset.item_num, 1)
+            new_batch_size = batch_num * self._dataset.item_num
             self.step = batch_num
             self.set_batch_size(new_batch_size)
         else:
@@ -229,7 +229,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
 
             return user_df, (history_u, history_i), positive_u, positive_i
         else:
-            interaction = self.datasets[index]
+            interaction = self._dataset[index]
             inter_num = len(interaction)
             positive_u = torch.arange(inter_num)
             positive_i = interaction[self.iid_field]

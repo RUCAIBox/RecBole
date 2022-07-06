@@ -494,11 +494,11 @@ class Trainer(AbstractTrainer):
         if isinstance(eval_data, FullSortEvalDataLoader):
             eval_func = self._full_sort_batch_eval
             if self.item_tensor is None:
-                self.item_tensor = eval_data.datasets.get_item_feature().to(self.device)
+                self.item_tensor = eval_data._dataset.get_item_feature().to(self.device)
         else:
             eval_func = self._neg_sample_batch_eval
         if self.config['eval_type'] == EvaluatorType.RANKING:
-            self.tot_item_num = eval_data.datasets.item_num
+            self.tot_item_num = eval_data._dataset.item_num
 
         iter_data = (
             tqdm(
@@ -770,7 +770,7 @@ class DecisionTreeTrainer(AbstractTrainer):
             cur_data (sparse or numpy): data.
             interaction_np[self.label_field] (numpy): label.
         """
-        interaction = dataloader.datasets[:]
+        interaction = dataloader._dataset[:]
         interaction_np = interaction.numpy()
         cur_data = np.array([])
         columns = []
@@ -786,8 +786,8 @@ class DecisionTreeTrainer(AbstractTrainer):
         if self.convert_token_to_onehot:
             from scipy import sparse
             from scipy.sparse import dok_matrix
-            convert_col_list = dataloader.datasets.convert_col_list
-            hash_count = dataloader.datasets.hash_count
+            convert_col_list = dataloader._dataset.convert_col_list
+            hash_count = dataloader._dataset.hash_count
 
             new_col = cur_data.shape[1] - len(convert_col_list)
             for key, values in hash_count.items():

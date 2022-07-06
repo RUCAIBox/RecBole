@@ -43,7 +43,7 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
     def __init__(self, config, dataset, sampler, shuffle=False):
         self.shuffle = shuffle
         self.config = config
-        self.datasets = dataset
+        self._dataset = dataset
         self._sampler = sampler
         self._batch_size = self.step = self.model = None
         self._init_batch_size_and_step()
@@ -157,7 +157,7 @@ class NegSampleDataLoader(AbstractDataLoader):
     def _neg_sample_by_pair_wise_sampling(self, inter_feat, neg_item_ids):
         inter_feat = inter_feat.repeat(self.times)
         neg_item_feat = Interaction({self.iid_field: neg_item_ids})
-        neg_item_feat = self.datasets.join(neg_item_feat)
+        neg_item_feat = self._dataset.join(neg_item_feat)
         neg_item_feat.add_prefix(self.neg_prefix)
         inter_feat.update(neg_item_feat)
         return inter_feat
@@ -166,7 +166,7 @@ class NegSampleDataLoader(AbstractDataLoader):
         pos_inter_num = len(inter_feat)
         new_data = inter_feat.repeat(self.times)
         new_data[self.iid_field][pos_inter_num:] = neg_item_ids
-        new_data = self.datasets.join(new_data)
+        new_data = self._dataset.join(new_data)
         labels = torch.zeros(pos_inter_num * self.times)
         labels[:pos_inter_num] = 1.0
         new_data.update(Interaction({self.label_field: labels}))

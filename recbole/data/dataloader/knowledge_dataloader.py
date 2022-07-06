@@ -59,7 +59,7 @@ class KGDataLoader(AbstractDataLoader):
     
     def collate_fn(self, index):
         index = np.array(index)
-        cur_data = self.datasets.kg_feat[index]
+        cur_data = self._dataset.kg_feat[index]
         head_ids = cur_data[self.hid_field].numpy()
         neg_tail_ids = self._sampler.sample_by_entity_ids(head_ids, self.neg_sample_num)
         cur_data.update(Interaction({self.neg_tid_field: neg_tail_ids}))
@@ -98,7 +98,7 @@ class KnowledgeBasedDataLoader():
         self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, shuffle=True)
 
         self.state = None
-        self.datasets = dataset
+        self._dataset = dataset
         self.kg_iter , self.gen_iter = None, None
 
     def update_config(self, config):
