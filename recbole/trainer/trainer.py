@@ -446,7 +446,6 @@ class Trainer(AbstractTrainer):
         return interaction, scores, positive_u, positive_i
 
     def _neg_sample_batch_eval(self, batched_data):
-        print(batched_data)
         interaction, row_idx, positive_u, positive_i = batched_data
         batch_size = interaction.length
         if batch_size <= self.test_batch_size:

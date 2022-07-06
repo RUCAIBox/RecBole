@@ -1,5 +1,5 @@
 # general
-gpu_ids: []
+gpu_ids: ['0']
 worker: 0
 use_gpu: True
 seed: 2020
