@@ -11,11 +11,12 @@
 recbole.data.dataloader.knowledge_dataloader
 ################################################
 """
+from logging import getLogger
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.dataloader.general_dataloader import TrainDataLoader
 from recbole.data.interaction import Interaction
 from recbole.utils import InputType, KGDataLoaderState
-
+import numpy as np
 
 class KGDataLoader(AbstractDataLoader):
     """:class:`KGDataLoader` is a dataloader which would return the triplets with negative examples
@@ -35,7 +36,8 @@ class KGDataLoader(AbstractDataLoader):
     def __init__(self, config, dataset, sampler, shuffle=False):
         if shuffle is False:
             shuffle = True
-            self.logger.warning('kg based dataloader must shuffle the data')
+            logger = getLogger()
+            logger.warning('kg based dataloader must shuffle the data')
 
         self.neg_sample_num = 1
 
@@ -47,56 +49,42 @@ class KGDataLoader(AbstractDataLoader):
         self.neg_tid_field = self.neg_prefix + self.tid_field
         dataset.copy_field_property(self.neg_tid_field, self.tid_field)
 
+        self.sample_size = len(dataset.kg_feat)
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _init_batch_size_and_step(self):
         batch_size = self.config['train_batch_size']
         self.step = batch_size
         self.set_batch_size(batch_size)
-
-    @property
-    def pr_end(self):
-        return len(self.dataset.kg_feat)
-
-    def _shuffle(self):
-        self.dataset.kg_feat.shuffle()
-
-    def _next_batch_data(self):
-        cur_data = self.dataset.kg_feat[self.pr:self.pr + self.step]
+    
+    def collate_fn(self, index):
+        index = np.array(index)
+        cur_data = self.datasets.kg_feat[index]
         head_ids = cur_data[self.hid_field].numpy()
-        neg_tail_ids = self.sampler.sample_by_entity_ids(head_ids, self.neg_sample_num)
+        neg_tail_ids = self._sampler.sample_by_entity_ids(head_ids, self.neg_sample_num)
         cur_data.update(Interaction({self.neg_tid_field: neg_tail_ids}))
-        self.pr += self.step
         return cur_data
 
-
-class KnowledgeBasedDataLoader(AbstractDataLoader):
+class KnowledgeBasedDataLoader():
     """:class:`KnowledgeBasedDataLoader` is used for knowledge based model.
-
     It has three states, which is saved in :attr:`state`.
     In different states, :meth:`~_next_batch_data` will return different :class:`~recbole.data.interaction.Interaction`.
     Detailed, please see :attr:`~state`.
-
     Args:
         config (Config): The config of dataloader.
         dataset (Dataset): The dataset of dataloader.
         sampler (Sampler): The sampler of dataloader.
         kg_sampler (KGSampler): The knowledge graph sampler of dataloader.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
-
     Attributes:
         state (KGDataLoaderState):
             This dataloader has three states:
-
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RS`
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.KG`
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RSKG`
-
             In the first state, this dataloader would only return the triplets with negative
             examples in a knowledge graph.
-
             In the second state, this dataloader would only return the user-item interaction.
-
             In the last state, this dataloader would return both knowledge graph information
             and user-item interaction information.
     """
@@ -110,11 +98,8 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, shuffle=True)
 
         self.state = None
-
-        super().__init__(config, dataset, sampler, shuffle=shuffle)
-
-    def _init_batch_size_and_step(self):
-        pass
+        self.datasets = dataset
+        self.kg_iter , self.gen_iter = None, None
 
     def update_config(self, config):
         self.general_dataloader.update_config(config)
@@ -131,19 +116,19 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         elif self.state == KGDataLoaderState.RS:
             return self.general_dataloader.__iter__()
         elif self.state == KGDataLoaderState.RSKG:
-            self.kg_dataloader.__iter__()
-            self.general_dataloader.__iter__()
+            self.kg_iter = self.kg_dataloader.__iter__()
+            self.gen_iter = self.general_dataloader.__iter__()
             return self
 
-    def _shuffle(self):
-        pass
-
     def __next__(self):
-        if self.general_dataloader.pr >= self.general_dataloader.pr_end:
-            self.general_dataloader.pr = 0
-            self.kg_dataloader.pr = 0
-            raise StopIteration()
-        return self._next_batch_data()
+        try:
+            kg_data = next(self.kg_iter)
+        except StopIteration:
+            self.kg_iter = self.kg_dataloader.__iter__()
+            kg_data = next(self.kg_iter)
+        recdata = next(self.gen_iter)
+        recdata.update(kg_data)
+        return recdata
 
     def __len__(self):
         if self.state == KGDataLoaderState.KG:
@@ -158,24 +143,21 @@ class KnowledgeBasedDataLoader(AbstractDataLoader):
         else:
             return self.general_dataloader.pr_end
 
-    def _next_batch_data(self):
+    def _next_batch_data(self, recdata):
         try:
-            kg_data = self.kg_dataloader.__next__()
+            kg_data = next(self.kg_iter)
         except StopIteration:
-            kg_data = self.kg_dataloader.__next__()
-        rec_data = self.general_dataloader.__next__()
-        rec_data.update(kg_data)
-        return rec_data
+            self.kg_iter = self.kg_dataloader.__iter__()
+            kg_data = next(self.kg_iter)
+        recdata.update(kg_data)
+        return recdata
 
     def set_mode(self, state):
         """Set the mode of :class:`KnowledgeBasedDataLoader`, it can be set to three states:
-
             - KGDataLoaderState.RS
             - KGDataLoaderState.KG
             - KGDataLoaderState.RSKG
-
         The state of :class:`KnowledgeBasedDataLoader` would affect the result of _next_batch_data().
-
         Args:
             state (KGDataLoaderState): the state of :class:`KnowledgeBasedDataLoader`.
         """

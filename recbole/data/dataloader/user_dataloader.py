@@ -15,7 +15,7 @@ import torch
 
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.interaction import Interaction
-
+import numpy as np
 
 class UserDataLoader(AbstractDataLoader):
     """:class:`UserDataLoader` will return a batch of data which only contains user-id when it is iterated.
@@ -38,7 +38,7 @@ class UserDataLoader(AbstractDataLoader):
 
         self.uid_field = dataset.uid_field
         self.user_list = Interaction({self.uid_field: torch.arange(dataset.user_num)})
-
+        self.sample_size = len(self.user_list)
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _init_batch_size_and_step(self):
@@ -46,14 +46,6 @@ class UserDataLoader(AbstractDataLoader):
         self.step = batch_size
         self.set_batch_size(batch_size)
 
-    @property
-    def pr_end(self):
-        return len(self.user_list)
-
-    def _shuffle(self):
-        self.user_list.shuffle()
-
-    def _next_batch_data(self):
-        cur_data = self.user_list[self.pr:self.pr + self.step]
-        self.pr += self.step
-        return cur_data
+    def collate_fn(self, index):
+        index = np.array(index)
+        return self.user_list[index]

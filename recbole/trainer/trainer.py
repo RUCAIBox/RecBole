@@ -17,9 +17,13 @@ recbole.trainer.trainer
 ################################
 """
 
+from modulefinder import Module
 import os
+
 from logging import getLogger
+from pickletools import optimize
 from time import time
+from turtle import forward
 
 import numpy as np
 import torch
@@ -32,7 +36,7 @@ from recbole.data.dataloader import FullSortEvalDataLoader
 from recbole.evaluator import Evaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
     EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage, WandbLogger
-
+from torch.nn.parallel import DistributedDataParallel
 
 class AbstractTrainer(object):
     r"""Trainer Class is used to manage the training and evaluation processes of recommender system models.
@@ -43,6 +47,9 @@ class AbstractTrainer(object):
     def __init__(self, config, model):
         self.config = config
         self.model = model
+        if not config['SingleSpec']:
+            self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+            self.distributed_model = DistributedDataParallel(self.model , device_ids=[config['local_rank']])
 
     def fit(self, train_data):
         r"""Train the model based on the train data.
@@ -56,7 +63,26 @@ class AbstractTrainer(object):
         """
 
         raise NotImplementedError('Method [next] should be implemented.')
+    
+    def set_reduce_hook(self):
+        r"""Call the forward function of 'distributed_model' to apply grads
+        reduce hook to each parameter of its module.
 
+        """
+        t = self.model.forward
+        self.model.forward = lambda x : x
+        self.distributed_model(torch.LongTensor([0]).to(self.device))
+        self.model.forward = t
+    
+    def sync_grad_loss(self):
+        r"""Ensure that each parameter appears to the loss function to
+            make the grads reduce sync in each node.
+
+        """
+        sync_loss = 0
+        for params in self.model.parameters():
+            sync_loss += torch.sum(params) * 0
+        return sync_loss
 
 class Trainer(AbstractTrainer):
     r"""The basic Trainer for basic training and evaluation strategies in recommender systems. This class defines common
@@ -175,9 +201,17 @@ class Trainer(AbstractTrainer):
                 desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
             ) if show_progress else train_data
         )
+        
+        if not self.config['SingleSpec'] and self.config['shuffle']:
+            train_data.sampler.set_epoch(epoch_idx)
+
         for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
+            sync_loss = 0
+            if not self.config['SingleSpec']:
+                self.set_reduce_hook()
+                sync_loss = self.sync_grad_loss()
             losses = loss_func(interaction)
             if isinstance(losses, tuple):
                 loss = sum(losses)
@@ -187,7 +221,7 @@ class Trainer(AbstractTrainer):
                 loss = losses
                 total_loss = losses.item() if total_loss is None else total_loss + losses.item()
             self._check_nan(loss)
-            loss.backward()
+            (loss + sync_loss).backward()
             if self.clip_grad_norm:
                 clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
             self.optimizer.step()
@@ -217,6 +251,8 @@ class Trainer(AbstractTrainer):
             epoch (int): the current epoch id
 
         """
+        if not self.config['SingleSpec'] and self.config['local_rank'] != 0:
+            return
         saved_model_file = kwargs.pop('saved_model_file', self.saved_model_file)
         state = {
             'config': self.config,
@@ -240,7 +276,7 @@ class Trainer(AbstractTrainer):
         """
         resume_file = str(resume_file)
         self.saved_model_file = resume_file
-        checkpoint = torch.load(resume_file)
+        checkpoint = torch.load(resume_file, map_location=self.device)
         self.start_epoch = checkpoint['epoch'] + 1
         self.cur_step = checkpoint['cur_step']
         self.best_valid_score = checkpoint['best_valid_score']
@@ -446,7 +482,7 @@ class Trainer(AbstractTrainer):
 
         if load_best_model:
             checkpoint_file = model_file or self.saved_model_file
-            checkpoint = torch.load(checkpoint_file)
+            checkpoint = torch.load(checkpoint_file, map_location= self.device)
             self.model.load_state_dict(checkpoint['state_dict'])
             self.model.load_other_parameter(checkpoint.get('other_parameter'))
             message_output = 'Loading model structure and parameters from {}'.format(checkpoint_file)
@@ -457,11 +493,11 @@ class Trainer(AbstractTrainer):
         if isinstance(eval_data, FullSortEvalDataLoader):
             eval_func = self._full_sort_batch_eval
             if self.item_tensor is None:
-                self.item_tensor = eval_data.dataset.get_item_feature().to(self.device)
+                self.item_tensor = eval_data.datasets.get_item_feature().to(self.device)
         else:
             eval_func = self._neg_sample_batch_eval
         if self.config['eval_type'] == EvaluatorType.RANKING:
-            self.tot_item_num = eval_data.dataset.item_num
+            self.tot_item_num = eval_data.datasets.item_num
 
         iter_data = (
             tqdm(
@@ -471,7 +507,10 @@ class Trainer(AbstractTrainer):
                 desc=set_color(f"Evaluate   ", 'pink'),
             ) if show_progress else eval_data
         )
+
+        num_sample = 0
         for batch_idx, batched_data in enumerate(iter_data):
+            num_sample += len(batched_data)
             interaction, scores, positive_u, positive_i = eval_func(batched_data)
             if self.gpu_available and show_progress:
                 iter_data.set_postfix_str(set_color('GPU RAM: ' + get_gpu_usage(self.device), 'yellow'))
@@ -479,9 +518,24 @@ class Trainer(AbstractTrainer):
         self.eval_collector.model_collect(self.model)
         struct = self.eval_collector.get_data_struct()
         result = self.evaluator.evaluate(struct)
+        if not self.config['SingleSpec']:
+            result = self._map_reduce(result , num_sample)
         self.wandblogger.log_eval_metrics(result, head='eval')
-
         return result
+    
+    def _map_reduce(self, result, num_sample):
+        gather_result = {}
+        total_sample = [torch.zeros(1).to(self.device) for _ in range(self.config['world_size'])]
+        torch.distributed.all_gather(total_sample ,  torch.Tensor([num_sample]).to(self.device))
+        total_sample = torch.cat(total_sample , 0)
+        total_sample = torch.sum(total_sample).item()
+        for key , value in result.items():
+            result[key] = torch.Tensor([value * num_sample]).to(self.device)
+            gather_result[key] = [torch.zeros_like(result[key]).to(self.device) for _ in range(self.config['world_size'])]
+            torch.distributed.all_gather(gather_result[key] , result[key])
+            gather_result[key] = torch.cat(gather_result[key] , dim = 0)
+            gather_result[key] = round(torch.sum(gather_result[key]).item() / total_sample, self.config['metric_decimal_place'])
+        return gather_result
 
     def _spilt_predict(self, interaction, batch_size):
         spilt_interaction = dict()
@@ -715,7 +769,7 @@ class DecisionTreeTrainer(AbstractTrainer):
             cur_data (sparse or numpy): data.
             interaction_np[self.label_field] (numpy): label.
         """
-        interaction = dataloader.dataset[:]
+        interaction = dataloader.datasets[:]
         interaction_np = interaction.numpy()
         cur_data = np.array([])
         columns = []
@@ -731,8 +785,8 @@ class DecisionTreeTrainer(AbstractTrainer):
         if self.convert_token_to_onehot:
             from scipy import sparse
             from scipy.sparse import dok_matrix
-            convert_col_list = dataloader.dataset.convert_col_list
-            hash_count = dataloader.dataset.hash_count
+            convert_col_list = dataloader.datasets.convert_col_list
+            hash_count = dataloader.datasets.hash_count
 
             new_col = cur_data.shape[1] - len(convert_col_list)
             for key, values in hash_count.items():
@@ -1164,9 +1218,17 @@ class NCLTrainer(Trainer):
                 desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
             ) if show_progress else train_data
         )
+
+        if not self.config['SingleSpec'] and self.config['shuffle']:
+            train_data.sampler.set_epoch(epoch_idx)
+        
         for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
+            sync_loss = 0
+            if not self.config['SingleSpec']:
+                self.set_reduce_hook()
+                sync_loss = self.sync_grad_loss()
             losses = loss_func(interaction)
             if isinstance(losses, tuple):
                 if epoch_idx < self.config['warm_up_step']:
@@ -1178,7 +1240,7 @@ class NCLTrainer(Trainer):
                 loss = losses
                 total_loss = losses.item() if total_loss is None else total_loss + losses.item()
             self._check_nan(loss)
-            loss.backward()
+            (loss + sync_loss).backward()
             if self.clip_grad_norm:
                 clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
             self.optimizer.step()

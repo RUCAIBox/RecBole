@@ -9,7 +9,6 @@ recbole.quick_start
 import logging
 from logging import getLogger
 
-import torch
 import pickle
 
 from recbole.config import Config
@@ -45,8 +44,8 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     train_data, valid_data, test_data = data_preparation(config, dataset)
 
     # model loading and initialization
-    init_seed(config['seed'], config['reproducibility'])
-    model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
+    init_seed(config['seed'] + config['local_rank'], config['reproducibility'])
+    model = get_model(config['model'])(config, train_data.datasets).to(config['device'])
     logger.info(model)
 
     # trainer loading and initialization
@@ -70,6 +69,10 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
         'test_result': test_result
     }
 
+def run_recboles(rank,*args):
+    ip, port, world_size, nproc = args[3:]
+    args = args[:3]
+    run_recbole(*args,config_dict={'local_rank':rank,'world_size':world_size, 'ip': ip, 'port': port, 'nproc': nproc})
 
 def objective_function(config_dict=None, config_file_list=None, saved=True):
     r""" The default objective_function used in HyperTuning
@@ -114,6 +117,7 @@ def load_data_and_model(model_file):
             - valid_data (AbstractDataLoader): The dataloader for validation.
             - test_data (AbstractDataLoader): The dataloader for testing.
     """
+    import torch
     checkpoint = torch.load(model_file)
     config = checkpoint['config']
     init_seed(config['seed'], config['reproducibility'])
