@@ -1,52 +1,56 @@
 # Atomic File Format
-field_separator: "\t"           # (str) Separator of different columns in atomic files.
-seq_separator: " "              # (str) Separator inside the sequence features.
+field_separator: "\t"
+seq_separator: " "
 
-# Basic Information
-USER_ID_FIELD: user_id          # (str) Field name of user ID feature.
-ITEM_ID_FIELD: item_id          # (str) Field name of item ID feature.
-RATING_FIELD: rating            # (str) Field name of rating feature.
-TIME_FIELD: timestamp           # (str) Field name of timestamp feature.
-seq_len: ~                      # (dict) Field name of sequence feature: maximum length of each sequence
-LABEL_FIELD: label              # (str) Expected field name of the generated labels for point-wise dataLoaders. 
-threshold: ~                    # (dict) 0/1 labels will be generated according to the pairs.
-NEG_PREFIX: neg_                # (str) Negative sampling prefix for pair-wise dataLoaders.
+# Common Features
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: item_id
+RATING_FIELD: rating
+TIME_FIELD: timestamp
+seq_len: ~
+
+# Label for Point-wise DataLoader
+LABEL_FIELD: label
+threshold: ~
+
+# NegSample Prefix for Pair-wise DataLoader
+NEG_PREFIX: neg_
 
 # Selectively Loading
-load_col:                       # (dict) The suffix of atomic files: (list) field names to be loaded.
+load_col:
     inter: [user_id, item_id]
     # the others
-unload_col: ~                   # (dict) The suffix of atomic files: (list) field names NOT to be loaded.
-unused_col: ~                   # (dict) The suffix of atomic files: (list) field names which are loaded but not used.
-additional_feat_suffix: ~       # (list) Control loading additional atomic files.
+unload_col: ~
+unused_col: ~
+additional_feat_suffix: ~
 
 # Filtering
-rm_dup_inter: ~                 # (str) Whether to remove duplicated user-item interactions.
-val_interval: ~                 # (dict) Filter inter by values in {value field (str): interval (str)}.
-filter_inter_by_user_or_item: True    # (bool) Whether or not to filter inter by user or item.
-user_inter_num_interval: "[0,inf)"    # (str) User interval for filtering inter, such as [A,B] / [A,B) / (A,B) / (A,B].
-item_inter_num_interval: "[0,inf)"    # (str) Item interval for filtering inter, such as [A,B] / [A,B) / (A,B) / (A,B].
+rm_dup_inter: ~
+val_interval: ~
+filter_inter_by_user_or_item: True
+user_inter_num_interval: "[0,inf)"
+item_inter_num_interval: "[0,inf)"
 
 # Preprocessing
-alias_of_user_id: ~             # (list) Fields' names remapped into the same index system with USER_ID_FIELD.
-alias_of_item_id: ~             # (list) Fields' names remapped into the same index system with ITEM_ID_FIELD.
-alias_of_entity_id: ~           # (list) Fields' names remapped into the same index system with ENTITY_ID_FIELD.
-alias_of_relation_id: ~         # (list) Fields' names remapped into the same index system with RELATION_ID_FIELD.
-preload_weight: ~               # (dict) Preloaded weight in {IDs (token): pretrained vectors (float-like)}.
-normalize_field: ~              # (list) List of filed names to be normalized.
-normalize_all: True             # (bool) Whether or not to normalize all the float like fields.
+alias_of_user_id: ~
+alias_of_item_id: ~
+alias_of_entity_id: ~
+alias_of_relation_id: ~
+preload_weight: ~
+normalize_field: ~
+normalize_all: ~
 
 # Sequential Model Needed
-ITEM_LIST_LENGTH_FIELD: item_length   # (str) Field name of the feature representing item sequences' length. 
-LIST_SUFFIX: _list              # (str) Suffix of field names which are generated as sequences.
-MAX_ITEM_LIST_LENGTH: 50        # (int) Maximum length of each generated sequence.
-POSITION_FIELD: position_id     # (str) Field name of the generated position sequence.
+ITEM_LIST_LENGTH_FIELD: item_length
+LIST_SUFFIX: _list
+MAX_ITEM_LIST_LENGTH: 50
+POSITION_FIELD: position_id
 
 # Knowledge-based Model Needed
-HEAD_ENTITY_ID_FIELD: head_id   # (str) Field name of the head entity ID feature.
-TAIL_ENTITY_ID_FIELD: tail_id   # (str) Field name of the tail entity ID feature.
-RELATION_ID_FIELD: relation_id  # (str) Field name of the relation ID feature.
-ENTITY_ID_FIELD: entity_id      # (str) Field name of the entity ID.
+HEAD_ENTITY_ID_FIELD: head_id
+TAIL_ENTITY_ID_FIELD: tail_id
+RELATION_ID_FIELD: relation_id
+ENTITY_ID_FIELD: entity_id
 
-# Benchmark .inter file
-benchmark_filename: ~           # (list) List of pre-split user-item interaction suffix.
+# Benchmark .inter
+benchmark_filename: ~
