@@ -41,6 +41,7 @@ class TestGeneralDataloader:
             'neg_sampling': None,
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
+            'shuffle': False
         }
         train_data, valid_data, test_data = new_dataloader(config_dict=config_dict)
 
@@ -220,7 +221,7 @@ class TestGeneralDataloader:
         train_data, valid_data, test_data = new_dataloader(config_dict=config_dict)
 
         def check_result(data, result):
-            assert data.batch_size == 202
+            assert data._batch_size == 202
             assert len(data) == len(result)
             for i, batch_data in enumerate(data):
                 user_df, row_idx, positive_u, positive_i = batch_data
@@ -299,7 +300,7 @@ class TestGeneralDataloader:
         train_data, valid_data, test_data = new_dataloader(config_dict=config_dict)
 
         def check_result(data, result):
-            assert data.batch_size == 303
+            assert data._batch_size == 303
             assert len(data) == len(result)
             for i, batch_data in enumerate(data):
                 user_df, row_idx, positive_u, positive_i = batch_data
