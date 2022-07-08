@@ -76,7 +76,7 @@ class DIN(SequentialRecommender):
         self.embedding_layer = ContextSeqEmbLayer(dataset, self.embedding_size, self.pooling_mode, self.device)
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -122,7 +122,6 @@ class DIN(SequentialRecommender):
         din_in = torch.cat([user_emb, target_item_feat_emb, user_emb * target_item_feat_emb], dim=-1)
         din_out = self.dnn_mlp_layers(din_in)
         preds = self.dnn_predict_layers(din_out)
-        preds = self.sigmoid(preds)
 
         return preds.squeeze(1)
 
@@ -141,5 +140,5 @@ class DIN(SequentialRecommender):
         user = interaction[self.USER_ID]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         next_items = interaction[self.POS_ITEM_ID]
-        scores = self.forward(user, item_seq, item_seq_len, next_items)
+        scores = self.sigmoid(self.forward(user, item_seq, item_seq_len, next_items))
         return scores

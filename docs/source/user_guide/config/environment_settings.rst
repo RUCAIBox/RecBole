@@ -2,9 +2,8 @@ Environment Settings
 ===========================
 Environment settings are designed to set basic parameters of running environment.
 
-- ``gpu_id (int or str)`` : The id of GPU device. Defaults to ``0``.
-- ``use_gpu (bool)`` : Whether or not to use GPU. If True, using GPU, else using CPU.
-  Defaults to ``True``.
+- ``gpu_id (str)`` : The id of available GPU devices. Defaults to ``0``.
+- ``worker (int)`` : The number of workers processing the data.
 - ``seed (int)`` : Random seed. Defaults to ``2020``.
 - ``state (str)`` : Logging level. Defaults to ``'INFO'``.
   Range in ``['INFO', 'DEBUG', 'WARNING', 'ERROR', 'CRITICAL']``.
@@ -39,3 +38,4 @@ Environment settings are designed to set basic parameters of running environment
   Defaults to ``False``.
 - ``wandb_project (str)``: The project to conduct experiments in W&B.
   Defaults to ``'recbole'``.
+- ``shuffle (bool)``: Whether or not shuffle the training data before each epoch. Defaults to ``True``.
