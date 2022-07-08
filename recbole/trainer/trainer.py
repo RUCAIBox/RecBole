@@ -206,11 +206,6 @@ class Trainer(AbstractTrainer):
             ) if show_progress else train_data
         )
         
-        for batch_idx, interaction in enumerate(iter_data):
-            interaction = interaction.to(self.device)
-            self.optimizer.zero_grad()
-
-        
         if not self.config['single_spec'] and train_data.shuffle:
             train_data.sampler.set_epoch(epoch_idx)
         scaler = amp.GradScaler(enabled=self.enable_scaler)
