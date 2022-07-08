@@ -99,6 +99,7 @@ class KnowledgeBasedDataLoader():
         # using kg_sampler
         self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, shuffle=True)
 
+        self.shuffle = False
         self.state = None
         self._dataset = dataset
         self.kg_iter, self.gen_iter = None, None
@@ -155,3 +156,10 @@ class KnowledgeBasedDataLoader():
         """Let the general_dataloader get the model, used for dynamic sampling.
         """
         self.general_dataloader.get_model(model)
+    
+    def knowledge_shuffle(self, epoch_seed):
+        """Reset the seed to ensure that each subprocess generates the same index squence."""
+        self.kg_dataloader.sampler.set_epoch(epoch_seed)
+        
+        if self.general_dataloader.shuffle:
+            self.general_dataloader.sampler.set_epoch(epoch_seed)

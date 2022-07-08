@@ -573,6 +573,8 @@ class KGTrainer(Trainer):
             interaction_state = KGDataLoaderState.RS
         else:
             interaction_state = KGDataLoaderState.KG
+        if not self.config['single_spec']:
+            train_data.knowledge_shuffle(epoch_idx)
         train_data.set_mode(interaction_state)
         if interaction_state in [KGDataLoaderState.RSKG, KGDataLoaderState.RS]:
             return super()._train_epoch(train_data, epoch_idx, show_progress=show_progress)
@@ -593,6 +595,8 @@ class KGATTrainer(Trainer):
 
     def _train_epoch(self, train_data, epoch_idx, loss_func=None, show_progress=False):
         # train rs
+        if not self.config['single_spec']:
+            train_data.knowledge_shuffle(epoch_idx)
         train_data.set_mode(KGDataLoaderState.RS)
         rs_total_loss = super()._train_epoch(train_data, epoch_idx, show_progress=show_progress)
 
