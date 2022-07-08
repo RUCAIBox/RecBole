@@ -18,6 +18,7 @@ from recbole.data.interaction import Interaction
 from recbole.utils import InputType, KGDataLoaderState
 import numpy as np
 
+
 class KGDataLoader(AbstractDataLoader):
     """:class:`KGDataLoader` is a dataloader which would return the triplets with negative examples
     in a knowledge graph.
@@ -56,7 +57,7 @@ class KGDataLoader(AbstractDataLoader):
         batch_size = self.config['train_batch_size']
         self.step = batch_size
         self.set_batch_size(batch_size)
-    
+
     def collate_fn(self, index):
         index = np.array(index)
         cur_data = self._dataset.kg_feat[index]
@@ -64,6 +65,7 @@ class KGDataLoader(AbstractDataLoader):
         neg_tail_ids = self._sampler.sample_by_entity_ids(head_ids, self.neg_sample_num)
         cur_data.update(Interaction({self.neg_tid_field: neg_tail_ids}))
         return cur_data
+
 
 class KnowledgeBasedDataLoader():
     """:class:`KnowledgeBasedDataLoader` is used for knowledge based model.
@@ -99,7 +101,7 @@ class KnowledgeBasedDataLoader():
 
         self.state = None
         self._dataset = dataset
-        self.kg_iter , self.gen_iter = None, None
+        self.kg_iter, self.gen_iter = None, None
 
     def update_config(self, config):
         self.general_dataloader.update_config(config)
@@ -135,22 +137,6 @@ class KnowledgeBasedDataLoader():
             return len(self.kg_dataloader)
         else:
             return len(self.general_dataloader)
-
-    @property
-    def pr_end(self):
-        if self.state == KGDataLoaderState.KG:
-            return self.kg_dataloader.pr_end
-        else:
-            return self.general_dataloader.pr_end
-
-    def _next_batch_data(self, recdata):
-        try:
-            kg_data = next(self.kg_iter)
-        except StopIteration:
-            self.kg_iter = self.kg_dataloader.__iter__()
-            kg_data = next(self.kg_iter)
-        recdata.update(kg_data)
-        return recdata
 
     def set_mode(self, state):
         """Set the mode of :class:`KnowledgeBasedDataLoader`, it can be set to three states:

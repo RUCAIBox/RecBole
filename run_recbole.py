@@ -7,12 +7,10 @@
 # @Author : Yupeng Hou, Zihan Lin
 # @Email  : houyupeng@ruc.edu.cn, zhlin@ruc.edu.cn
 
-
 import argparse
 from ast import arg
 
 from recbole.quick_start import run_recbole, run_recboles
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -34,4 +32,8 @@ if __name__ == '__main__':
         if args.world_size == -1:
             args.world_size = args.nproc
         import torch.multiprocessing as mp
-        mp.spawn(run_recboles, args=(args.model, args.dataset, config_file_list, args.ip, args.port, args.world_size, args.nproc), nprocs= args.nproc)
+        mp.spawn(
+            run_recboles,
+            args=(args.model, args.dataset, config_file_list, args.ip, args.port, args.world_size, args.nproc),
+            nprocs=args.nproc
+        )

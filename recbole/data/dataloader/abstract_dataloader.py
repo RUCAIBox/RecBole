@@ -21,6 +21,7 @@ import torch
 from recbole.data.interaction import Interaction
 from recbole.utils import InputType, FeatureType, FeatureSource
 
+
 class AbstractDataLoader(torch.utils.data.DataLoader):
     """:class:`AbstractDataLoader` is an abstract object which would return a batch of data which is loaded by
     :class:`~recbole.data.interaction.Interaction` when it is iterated.
@@ -48,11 +49,20 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
         self._batch_size = self.step = self.model = None
         self._init_batch_size_and_step()
         index_sampler = None
-        if not config['SingleSpec']:
-            index_sampler = torch.utils.data.distributed.DistributedSampler(list(range(self.sample_size)), shuffle = shuffle, drop_last = False)
-            self.step = max(1 , self.step // config['world_size'])
+        if not config['single_spec']:
+            index_sampler = torch.utils.data.distributed.DistributedSampler(
+                list(range(self.sample_size)), shuffle=shuffle, drop_last=False
+            )
+            self.step = max(1, self.step // config['world_size'])
             shuffle = False
-        super().__init__(dataset = list(range(self.sample_size)) , batch_size = self.step, collate_fn = self.collate_fn, num_workers = config['worker'], shuffle = shuffle, sampler = index_sampler)
+        super().__init__(
+            dataset=list(range(self.sample_size)),
+            batch_size=self.step,
+            collate_fn=self.collate_fn,
+            num_workers=config['worker'],
+            shuffle=shuffle,
+            sampler=index_sampler
+        )
 
     def _init_batch_size_and_step(self):
         """Initializing :attr:`step` and :attr:`batch_size`."""
@@ -134,7 +144,9 @@ class NegSampleDataLoader(AbstractDataLoader):
             candidate_num = self.neg_sample_args['dynamic']
             user_ids = inter_feat[self.uid_field].numpy()
             item_ids = inter_feat[self.iid_field].numpy()
-            neg_candidate_ids = self._sampler.sample_by_user_ids(user_ids, item_ids, self.neg_sample_num * candidate_num)
+            neg_candidate_ids = self._sampler.sample_by_user_ids(
+                user_ids, item_ids, self.neg_sample_num * candidate_num
+            )
             self.model.eval()
             interaction = copy.deepcopy(inter_feat).to(self.model.device)
             interaction = interaction.repeat(self.neg_sample_num * candidate_num)

@@ -47,7 +47,7 @@ class AbstractTrainer(object):
     def __init__(self, config, model):
         self.config = config
         self.model = model
-        if not config['SingleSpec']:
+        if not config['single_spec']:
             self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
             self.distributed_model = DistributedDataParallel(self.model , device_ids=[config['local_rank']])
 
@@ -202,14 +202,14 @@ class Trainer(AbstractTrainer):
             ) if show_progress else train_data
         )
         
-        if not self.config['SingleSpec'] and train_data.shuffle:
+        if not self.config['single_spec'] and train_data.shuffle:
             train_data.sampler.set_epoch(epoch_idx)
 
         for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             sync_loss = 0
-            if not self.config['SingleSpec']:
+            if not self.config['single_spec']:
                 self.set_reduce_hook()
                 sync_loss = self.sync_grad_loss()
             losses = loss_func(interaction)
@@ -251,7 +251,7 @@ class Trainer(AbstractTrainer):
             epoch (int): the current epoch id
 
         """
-        if not self.config['SingleSpec'] and self.config['local_rank'] != 0:
+        if not self.config['single_spec'] and self.config['local_rank'] != 0:
             return
         saved_model_file = kwargs.pop('saved_model_file', self.saved_model_file)
         state = {
@@ -518,7 +518,7 @@ class Trainer(AbstractTrainer):
         self.eval_collector.model_collect(self.model)
         struct = self.eval_collector.get_data_struct()
         result = self.evaluator.evaluate(struct)
-        if not self.config['SingleSpec']:
+        if not self.config['single_spec']:
             result = self._map_reduce(result , num_sample)
         self.wandblogger.log_eval_metrics(result, head='eval')
         return result
@@ -1219,14 +1219,14 @@ class NCLTrainer(Trainer):
             ) if show_progress else train_data
         )
 
-        if not self.config['SingleSpec'] and train_data.shuffle:
+        if not self.config['single_spec'] and train_data.shuffle:
             train_data.sampler.set_epoch(epoch_idx)
         
         for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
             sync_loss = 0
-            if not self.config['SingleSpec']:
+            if not self.config['single_spec']:
                 self.set_reduce_hook()
                 sync_loss = self.sync_grad_loss()
             losses = loss_func(interaction)

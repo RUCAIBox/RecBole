@@ -17,6 +17,7 @@ from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader
 from recbole.data.interaction import Interaction
 import numpy as np
 
+
 class UserDataLoader(AbstractDataLoader):
     """:class:`UserDataLoader` will return a batch of data which only contains user-id when it is iterated.
 
