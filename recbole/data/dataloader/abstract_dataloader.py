@@ -49,6 +49,8 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
         self._batch_size = self.step = self.model = None
         self._init_batch_size_and_step()
         index_sampler = None
+        self.generator = torch.Generator()
+        self.generator.manual_seed(config['seed'])
         if not config['single_spec']:
             index_sampler = torch.utils.data.distributed.DistributedSampler(
                 list(range(self.sample_size)), shuffle=shuffle, drop_last=False
@@ -61,7 +63,8 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
             collate_fn=self.collate_fn,
             num_workers=config['worker'],
             shuffle=shuffle,
-            sampler=index_sampler
+            sampler=index_sampler,
+            generator = self.generator
         )
 
     def _init_batch_size_and_step(self):
