@@ -37,7 +37,7 @@ class NFM(ContextRecommender):
         self.mlp_layers = MLPLayers(size_list, self.dropout_prob, activation='sigmoid', bn=True)
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1, bias=False)
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -55,7 +55,6 @@ class NFM(ContextRecommender):
         bn_nfm_all_embeddings = self.bn(self.fm(nfm_all_embeddings))
 
         output = self.predict_layer(self.mlp_layers(bn_nfm_all_embeddings)) + self.first_order_linear(interaction)
-        output = self.sigmoid(output)
         return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
@@ -64,4 +63,4 @@ class NFM(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))

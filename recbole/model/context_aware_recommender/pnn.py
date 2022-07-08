@@ -56,7 +56,7 @@ class PNN(ContextRecommender):
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -98,7 +98,6 @@ class PNN(ContextRecommender):
         output = torch.cat(output, dim=1)  # [batch_size,d]
 
         output = self.predict_layer(self.mlp_layers(output))  # [batch_size,1]
-        output = self.sigmoid(output)
         return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
@@ -108,7 +107,7 @@ class PNN(ContextRecommender):
         return self.loss(output, label) + self.reg_loss()
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))
 
 
 class InnerProductLayer(nn.Module):

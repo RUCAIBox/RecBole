@@ -56,7 +56,7 @@ class AutoInt(ContextRecommender):
 
         self.dropout_layer = nn.Dropout(p=self.dropout_probs[2])
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -97,7 +97,7 @@ class AutoInt(ContextRecommender):
     def forward(self, interaction):
         autoint_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
         output = self.first_order_linear(interaction) + self.autoint_layer(autoint_all_embeddings)
-        return self.sigmoid(output.squeeze(1))
+        return output.squeeze(1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]
@@ -105,4 +105,4 @@ class AutoInt(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))
