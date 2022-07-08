@@ -32,7 +32,7 @@ Label for Point-wise DataLoader
 - ``LABEL_FIELD (str)`` : Expected field name of the generated labels. Defaults to ``label``.
 - ``threshold (dict)`` : The format is ``{k (str): v (float)}``. 0/1 labels will be generated according to the value of ``inter_feat[k]`` and ``v``. The rows with ``inter_feat[k] >= v`` will be labeled as positive, otherwise the label is negative. Note that at most one pair of ``k`` and ``v`` can exist in ``threshold``. Defaults to ``None``.
 
-NegSample Prefix for Pair-wise DataLoader
+Negative Sampling Prefix for Pair-wise DataLoader
 ''''''''''''''''''''''''''''''''''''''''''''''''''
 
 - ``NEG_PREFIX (str)`` : Prefix of field names which are generated as negative cases. E.g. if we have positive item ID named ``item_id``, then those item ID in negative samples will be called ``NEG_PREFIX + item_id``. Defaults to ``neg_``.
@@ -58,7 +58,7 @@ Selectively Loading
 
 - ``load_col (dict)`` : Keys are the suffix of loaded atomic files, values are the list of field names to be loaded. If a suffix doesn't exist in ``load_col``, the corresponding atomic file will not be loaded. Note that if ``load_col`` is ``None``, then all the existed atomic files will be loaded. Defaults to ``{inter: [user_id, item_id]}``.
 - ``unload_col (dict)`` : Keys are suffix of loaded atomic files, values are list of field names NOT to be loaded. Note that ``load_col`` and ``unload_col`` can not be set at the same time. Defaults to ``None``.
-- ``unused_col (dict)`` : Keys are suffix of loaded atomic files, values are list of field names which is loaded for data processing but will not be used in model. E.g. the ``time_field`` may be used for time ordering but model does not use this field. Defaults to ``None``.
+- ``unused_col (dict)`` : Keys are suffix of loaded atomic files, values are list of field names which are loaded for data processing but will not be used in model. E.g. the ``time_field`` may be used for time ordering but model does not use this field. Defaults to ``None``.
 - ``additional_feat_suffix (list)``: Control loading additional atomic files. E.g. if you want to load features from ``ml-100k.hello``, just set this arg as ``additional_feat_suffix: [hello]``. Features of additional features will be stored in ``Dataset.feat_list``. Defaults to ``None``.
 
 Filtering
@@ -67,7 +67,7 @@ Filtering
 Remove duplicated user-item interactions
 ''''''''''''''''''''''''''''''''''''''''
 
-- ``rm_dup_inter (str)`` : Whether to remove duplicated user-item interactions. If ``time_field`` exists, ``inter_feat`` will be sorted by ``time_field`` in ascending order. Otherwise it will remain unchanged. After that, if ``rm_dup_inter ==  first``, we will keep the first user-item interaction in duplicates; if ``rm_dup_inter == last``, we will keep the last user-item interaction in duplicates. Defaults to ``None``.
+- ``rm_dup_inter (str)`` : Whether to remove duplicated user-item interactions. If ``time_field`` exists, ``inter_feat`` will be sorted by ``time_field`` in ascending order. Otherwise it will remain unchanged. After that, if ``rm_dup_inter=first``, we will keep the first user-item interaction in duplicates; if ``rm_dup_inter=last``, we will keep the last user-item interaction in duplicates. Defaults to ``None``.
 
 Filter by value
 ''''''''''''''''''

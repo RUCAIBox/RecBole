@@ -24,7 +24,7 @@ Quick Start with RecBole
 - ``embedding_size (int)`` : The embedding size of features. Defaults to ``10``.
 - ``attention_size (int)`` : The vector size in attention mechanism. Defaults to ``25``.
 - ``dropout_prob (float)`` : The dropout rate. Defaults to ``0.3``.
-- ``weight_decay (float)`` : The L2 regularization weight. Defaults to ``2``.
+- ``reg_weight (float)`` : The L2 regularization weight. Defaults to ``2.0``.
 
 **A Running Example:**
 
