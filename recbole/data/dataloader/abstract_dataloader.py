@@ -64,7 +64,7 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
             num_workers=config['worker'],
             shuffle=shuffle,
             sampler=index_sampler,
-            generator = self.generator
+            generator=self.generator
         )
 
     def _init_batch_size_and_step(self):
