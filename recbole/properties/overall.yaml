@@ -1,43 +1,48 @@
-# Environment Settings
-gpu_id: 0                       # (int or str) The id of GPU device.
-use_gpu: True                   # (bool) Whether or not to use GPU.
-seed: 2020                      # (int) Random seed.
-state: INFO                     # (str) Logging level.
-reproducibility: True           # (bool) Whether or not to make results reproducible.
-data_path: 'dataset/'           # (str) The path of input dataset.
-checkpoint_dir: 'saved'         # (str) The path to save checkpoint file.
-show_progress: True             # (bool) Whether or not to show the progress bar of every epoch. 
-save_dataset: False             # (bool) Whether or not to save filtered dataset.
-dataset_save_path: ~            # (str) The path of saved dataset.
-save_dataloaders: False         # (bool) Whether or not save split dataloaders.
-dataloaders_save_path: ~        # (str) The path of saved dataloaders.
-log_wandb: False                # (bool) Whether or not to use Weights & Biases(W&B).
-wandb_project: 'recbole'        # (str) The project to conduct experiments in W&B.
+# general
+gpu_id: '0'
+worker: 0
+use_gpu: True
+seed: 2020
+state: INFO
+reproducibility: True
+data_path: 'dataset/'
+checkpoint_dir: 'saved'
+show_progress: True
+save_dataset: False
+dataset_save_path: ~
+save_dataloaders: False
+dataloaders_save_path: ~
+log_wandb: False
+wandb_project: 'recbole'
 
-# Training Settings
-epochs: 300                     # (int) The number of training epochs.
-train_batch_size: 2048          # (int) The training batch size.
-learner: adam                   # (str) The name of used optimizer.
-learning_rate: 0.001            # (float) Learning rate.
-neg_sampling:                   # (dict) Negative sampling configuration for model training.
-  uniform: 1                    # (str: int) The distribution and sampled num of negative items.
-eval_step: 1                    # (int) The number of training epochs before an evaluation on the valid dataset.
-stopping_step: 10               # (int) The threshold for validation-based early stopping.
-clip_grad_norm: ~               # (dict) The args of clip_grad_norm_ which will clip gradient norm of model. 
-weight_decay: 0.0               # (float) The weight decay value (L2 penalty) for optimizers.
-loss_decimal_place: 4           # (int) The decimal place of training loss.
-require_pow: False              # (bool) Whether or not to perform power operation in EmbLoss.
+# training settings
+epochs: 300
+train_batch_size: 2048
+learner: adam
+learning_rate: 0.001
+neg_sampling:
+  uniform: 1
+eval_step: 1
+stopping_step: 10
+clip_grad_norm: ~
+# clip_grad_norm:  {'max_norm': 5, 'norm_type': 2}
+weight_decay: 0.0
+loss_decimal_place: 4
+require_pow: False
+enable_amp: False
+enable_scaler: False
+shuffle: True
 
-# Evaluation Settings
-eval_args:                      # (dict) 4 keys: group_by, order, split, and mode
-  split: {'RS':[0.8,0.1,0.1]}   # (dict) The splitting strategy ranging in ['RS','LS'].
-  group_by: user                # (str) The grouping strategy ranging in ['user', 'none'].
-  order: RO                     # (str) The ordering strategy ranging in ['RO', 'TO'].
-  mode: full                    # (str) The evaluation mode ranging in ['full','unixxx','popxxx','labeled'].
-repeatable: False               # (bool) Whether to evaluate results with a repeatable recommendation scene. 
-metrics: ["Recall","MRR","NDCG","Hit","Precision"]  # (list or str) Evaluation metrics.
-topk: [10]                      # (list or int or None) The value of k for topk evaluation metrics.
-valid_metric: MRR@10            # (str) The evaluation metric for early stopping. 
-valid_metric_bigger: True       # (bool) Whether to take a bigger valid metric value as a better result.
-eval_batch_size: 4096           # (int) The evaluation batch size.
-metric_decimal_place: 4         # (int) The decimal place of metric scores.
+# evaluation settings
+eval_args: 
+  split: {'RS':[0.8,0.1,0.1]}
+  group_by: user
+  order: RO
+  mode: full
+repeatable: False
+metrics: ["Recall","MRR","NDCG","Hit","Precision"]
+topk: [10]
+valid_metric: MRR@10
+valid_metric_bigger: True
+eval_batch_size: 4096
+metric_decimal_place: 4
