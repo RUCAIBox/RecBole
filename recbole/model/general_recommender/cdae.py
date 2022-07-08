@@ -75,7 +75,7 @@ class CDAE(GeneralRecommender):
         h = torch.add(h_u, h_i)
         h = self.h_act(h)
         out = self.out_layer(h)
-        return self.o_act(out)
+        return out
 
     def get_rating_matrix(self, user):
         r"""Get a batch of user's feature with the user's id and history interaction matrix.
@@ -100,12 +100,12 @@ class CDAE(GeneralRecommender):
         predict = self.forward(x_items, x_users)
 
         if self.loss_type == 'MSE':
+            predict=self.o_act(predict)
             loss_func = nn.MSELoss(reduction='sum')
         elif self.loss_type == 'BCE':
-            loss_func = nn.BCELoss(reduction='sum')
+            loss_func = nn.BCEWithLogitsLoss(reduction='sum')
         else:
             raise ValueError('Invalid loss_type, loss_type must in [MSE, BCE]')
-
         loss = loss_func(predict, x_items)
         # l1-regularization
         loss += self.reg_weight_1 * (self.h_user.weight.norm(p=1) + self.h_item.weight.norm(p=1))
@@ -120,7 +120,7 @@ class CDAE(GeneralRecommender):
 
         items = self.get_rating_matrix(users)
         scores = self.forward(items, users)
-
+        scores=self.o_act(scores)
         return scores[[torch.arange(len(predict_items)).to(self.device), predict_items]]
 
     def full_sort_predict(self, interaction):
@@ -128,4 +128,5 @@ class CDAE(GeneralRecommender):
 
         items = self.get_rating_matrix(users)
         predict = self.forward(items, users)
+        predict=self.o_act(predict)
         return predict.view(-1)

@@ -42,7 +42,7 @@ class DeepFM(ContextRecommender):
         self.mlp_layers = MLPLayers(size_list, self.dropout_prob)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)  # Linear product to the final score
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -61,7 +61,7 @@ class DeepFM(ContextRecommender):
         y_fm = self.first_order_linear(interaction) + self.fm(deepfm_all_embeddings)
 
         y_deep = self.deep_predict_layer(self.mlp_layers(deepfm_all_embeddings.view(batch_size, -1)))
-        y = self.sigmoid(y_fm + y_deep)
+        y = y_fm + y_deep
         return y.squeeze(-1)
 
     def calculate_loss(self, interaction):
@@ -70,4 +70,4 @@ class DeepFM(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))
