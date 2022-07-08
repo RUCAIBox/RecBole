@@ -26,12 +26,14 @@ import torch
 import torch.optim as optim
 from torch.nn.utils.clip_grad import clip_grad_norm_
 from tqdm import tqdm
+import torch.cuda.amp as amp 
 
 from recbole.data.interaction import Interaction
 from recbole.data.dataloader import FullSortEvalDataLoader
 from recbole.evaluator import Evaluator, Collector
 from recbole.utils import ensure_dir, get_local_time, early_stopping, calculate_valid_score, dict2str, \
     EvaluatorType, KGDataLoaderState, get_tensorboard, set_color, get_gpu_usage, WandbLogger
+
 
 
 class AbstractTrainer(object):
@@ -91,6 +93,8 @@ class Trainer(AbstractTrainer):
         self.gpu_available = torch.cuda.is_available() and config['use_gpu']
         self.device = config['device']
         self.checkpoint_dir = config['checkpoint_dir']
+        self.enable_amp=config['enable_amp']
+        self.enable_scaler=config['enable_scaler']
         ensure_dir(self.checkpoint_dir)
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
@@ -175,10 +179,12 @@ class Trainer(AbstractTrainer):
                 desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
             ) if show_progress else train_data
         )
+        scaler = amp.GradScaler(enabled=self.enable_scaler)
         for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
-            losses = loss_func(interaction)
+            with amp.autocast(enabled=self.enable_amp):
+                losses = loss_func(interaction)
             if isinstance(losses, tuple):
                 loss = sum(losses)
                 loss_tuple = tuple(per_loss.item() for per_loss in losses)
@@ -187,10 +193,11 @@ class Trainer(AbstractTrainer):
                 loss = losses
                 total_loss = losses.item() if total_loss is None else total_loss + losses.item()
             self._check_nan(loss)
-            loss.backward()
+            scaler.scale(loss).backward()
             if self.clip_grad_norm:
                 clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
-            self.optimizer.step()
+            scaler.step(self.optimizer)
+            scaler.update()
             if self.gpu_available and show_progress:
                 iter_data.set_postfix_str(set_color('GPU RAM: ' + get_gpu_usage(self.device), 'yellow'))
         return total_loss
@@ -1164,10 +1171,12 @@ class NCLTrainer(Trainer):
                 desc=set_color(f"Train {epoch_idx:>5}", 'pink'),
             ) if show_progress else train_data
         )
+        scaler = amp.GradScaler(enabled=self.enable_scaler)
         for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
-            losses = loss_func(interaction)
+            with amp.autocast(enabled=self.enable_amp):
+                losses = loss_func(interaction)
             if isinstance(losses, tuple):
                 if epoch_idx < self.config['warm_up_step']:
                     losses = losses[:-1]
@@ -1178,10 +1187,11 @@ class NCLTrainer(Trainer):
                 loss = losses
                 total_loss = losses.item() if total_loss is None else total_loss + losses.item()
             self._check_nan(loss)
-            loss.backward()
+            scaler.scale(loss).backward()
             if self.clip_grad_norm:
                 clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
-            self.optimizer.step()
+            scaler.step(self.optimizer)
+            scaler.update()
             if self.gpu_available and show_progress:
                 iter_data.set_postfix_str(set_color('GPU RAM: ' + get_gpu_usage(self.device), 'yellow'))
         return total_loss

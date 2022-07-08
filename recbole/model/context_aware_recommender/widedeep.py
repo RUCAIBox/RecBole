@@ -39,7 +39,7 @@ class WideDeep(ContextRecommender):
         self.mlp_layers = MLPLayers(size_list, self.dropout_prob)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -58,7 +58,7 @@ class WideDeep(ContextRecommender):
         fm_output = self.first_order_linear(interaction)
 
         deep_output = self.deep_predict_layer(self.mlp_layers(widedeep_all_embeddings.view(batch_size, -1)))
-        output = self.sigmoid(fm_output + deep_output)
+        output = fm_output + deep_output
         return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
@@ -67,4 +67,4 @@ class WideDeep(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))
