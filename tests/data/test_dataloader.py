@@ -73,6 +73,7 @@ class TestGeneralDataloader:
             'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'full'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
+            'shuffle': False
         }
         train_data, valid_data, test_data = new_dataloader(config_dict=config_dict)
 
@@ -100,6 +101,7 @@ class TestGeneralDataloader:
             'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'full'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
+            'shuffle': False
         }
         train_data, valid_data, test_data = new_dataloader(config_dict=config_dict)
 
