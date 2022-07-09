@@ -47,6 +47,7 @@ HEAD_ENTITY_ID_FIELD: head_id   # (str) Field name of the head entity ID feature
 TAIL_ENTITY_ID_FIELD: tail_id   # (str) Field name of the tail entity ID feature.
 RELATION_ID_FIELD: relation_id  # (str) Field name of the relation ID feature.
 ENTITY_ID_FIELD: entity_id      # (str) Field name of the entity ID.
+kg_reverse_r: False             # (bool) Whether to reverse relations of triples for bidirectional edges.
 
 # Benchmark .inter file
 benchmark_filename: ~           # (list) List of pre-split user-item interaction suffix.

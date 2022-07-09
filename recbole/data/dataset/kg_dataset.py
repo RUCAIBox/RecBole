@@ -16,6 +16,7 @@ import os
 from collections import Counter
 
 import numpy as np
+import pandas as pd
 import torch
 from scipy.sparse import coo_matrix
 
@@ -73,6 +74,7 @@ class KnowledgeBasedDataset(Dataset):
         self.tail_entity_field = self.config['TAIL_ENTITY_ID_FIELD']
         self.relation_field = self.config['RELATION_ID_FIELD']
         self.entity_field = self.config['ENTITY_ID_FIELD']
+        self.kg_reverse_r = self.config['kg_reverse_r']
         self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
         self.set_field_property(self.entity_field, FeatureType.TOKEN, FeatureSource.KG, 1)
 
@@ -259,11 +261,46 @@ class KnowledgeBasedDataset(Dataset):
         self.field2id_token[self.entity_field] = new_entity_id2token
         self.field2token_id[self.entity_field] = new_entity_token2id
 
+    def _add_auxiliary_relation(self):
+        """Add auxiliary relations in ``self.relation_field``.
+        """
+        if self.kg_reverse_r:
+            # '0' is used for padding, so the number needs to be reduced by one
+            original_rel_num = len(self.field2id_token[self.relation_field]) - 1
+            original_hids = self.kg_feat[self.head_entity_field]
+            original_tids = self.kg_feat[self.tail_entity_field]
+            original_rels = self.kg_feat[self.relation_field]
+
+            # Internal id gap of a relation and its reverse edge is original relation num
+            reverse_rels = original_rels + original_rel_num
+
+            # Add mapping for internal and external ID of relations
+            for i in range(1, original_rel_num + 1):
+                original_token = self.field2id_token[self.relation_field][i]
+                reverse_token = original_token + '_r'
+                self.field2token_id[self.relation_field][reverse_token] = i + original_rel_num
+                self.field2id_token[self.relation_field] = np.append(
+                        self.field2id_token[self.relation_field], reverse_token)
+
+            # Update knowledge graph triples with reverse relations
+            reverse_kg_data = {
+                self.head_entity_field: original_tids,
+                self.relation_field: reverse_rels,
+                self.head_entity_field: original_hids
+            }
+            reverse_kg_feat = pd.DataFrame(reverse_kg_data)
+            self.kg_feat = pd.concat([self.kg_feat, reverse_kg_feat])
+
+        # Add UI-relation pairs in the relation field
+        kg_rel_num = len(self.field2id_token[self.relation_field])
+        self.field2token_id[self.relation_field]['[UI-Relation]'] = kg_rel_num
+        self.field2id_token[self.relation_field] = np.append(
+                self.field2id_token[self.relation_field], '[UI-Relation]')
+
     def _remap_ID_all(self):
         super()._remap_ID_all()
         self._merge_item_and_entity()
-        self.field2token_id[self.relation_field]['[UI-Relation]'] = len(self.field2id_token[self.relation_field])
-        self.field2id_token[self.relation_field] = np.append(self.field2id_token[self.relation_field], '[UI-Relation]')
+        self._add_auxiliary_relation()
 
     @property
     def relation_num(self):

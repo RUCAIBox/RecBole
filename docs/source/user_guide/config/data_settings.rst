@@ -52,6 +52,7 @@ Knowledge-based Model Needed
 - ``TAIL_ENTITY_ID_FIELD (str)`` : Field name of the tail entity ID feature. Defaults to ``tail_id``.
 - ``RELATION_ID_FIELD (str)`` : Field name of the relation ID feature. Defaults to ``relation_id``.
 - ``ENTITY_ID_FIELD (str)`` : Field name of the entity ID. Note that it's only a symbol of entities, not real feature of one of the ``xxx_feat``. Defaults to ``entity_id``.
+- ``kg_reverse_r (bool)`` : Whether or not to reverse relations of triples for bidirectional edges. Defaults to ``False``.
 
 Selectively Loading
 ------------------------------
