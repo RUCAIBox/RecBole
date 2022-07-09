@@ -8,7 +8,7 @@ recbole.quick_start
 """
 import logging
 from logging import getLogger
-
+import sys
 import torch
 import pickle
 
@@ -34,7 +34,7 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     # logger initialization
     init_logger(config)
     logger = getLogger()
-
+    logger.info(sys.argv)
     logger.info(config)
 
     # dataset filtering
@@ -85,6 +85,10 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
 
     config = Config(config_dict=config_dict, config_file_list=config_file_list)
     init_seed(config['seed'], config['reproducibility'])
+    logger = getLogger()
+    for hdlr in logger.handlers[:]:  # remove all old handlers
+        logger.removeHandler(hdlr)
+    init_logger(config)
     logging.basicConfig(level=logging.ERROR)
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)
