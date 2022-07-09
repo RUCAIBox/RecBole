@@ -325,7 +325,7 @@ class Trainer(AbstractTrainer):
             self._save_checkpoint(-1, verbose=verbose)
 
         self.eval_collector.data_collect(train_data)
-        if self.config['train_neg_sample_args'].get('dynamic', 'none') != 'none':
+        if self.config['train_neg_sample_args']['dynamic']:
             train_data.get_model(self.model)
         valid_step = 0
 

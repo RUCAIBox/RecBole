@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/10/22, 2020/9/23
-# @Author : Yupeng Hou, Yushuo Chen
-# @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/10/22, 2020/9/23, 2022/7/6
+# @Author : Yupeng Hou, Yushuo Chen, Gaowei Zhang
+# @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, zgw15630559577@163.com
 
 """
 recbole.data.dataloader.abstract_dataloader
@@ -128,8 +128,8 @@ class NegSampleDataLoader(AbstractDataLoader):
         self.dl_format = dl_format
         self.neg_sample_args = neg_sample_args
         self.times = 1
-        if self.neg_sample_args['strategy'] == 'by':
-            self.neg_sample_num = self.neg_sample_args['by']
+        if self.neg_sample_args['distribution'] == 'uniform' or 'popularity' and self.neg_sample_args['sample_num'] != 'none':
+            self.neg_sample_num = self.neg_sample_args['sample_num']
 
             if self.dl_format == InputType.POINTWISE:
                 self.times = 1 + self.neg_sample_num
@@ -151,12 +151,12 @@ class NegSampleDataLoader(AbstractDataLoader):
             else:
                 raise ValueError(f'`neg sampling by` with dl_format [{self.dl_format}] not been implemented.')
 
-        elif self.neg_sample_args['strategy'] != 'none':
-            raise ValueError(f'`neg_sample_args` [{self.neg_sample_args["strategy"]}] is not supported!')
+        elif self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
+            raise ValueError(f'`neg_sample_args` [{self.neg_sample_args["distribution"]}] is not supported!')
 
     def _neg_sampling(self, inter_feat):
-        if 'dynamic' in self.neg_sample_args.keys() and self.neg_sample_args['dynamic'] != 'none':
-            candidate_num = self.neg_sample_args['dynamic']
+        if self.neg_sample_args['dynamic']:
+            candidate_num = self.neg_sample_args['candidate_num']
             user_ids = inter_feat[self.uid_field].numpy()
             item_ids = inter_feat[self.iid_field].numpy()
             neg_candidate_ids = self.sampler.sample_by_user_ids(user_ids, item_ids, self.neg_sample_num * candidate_num)
@@ -171,7 +171,7 @@ class NegSampleDataLoader(AbstractDataLoader):
             neg_item_ids = neg_candidate_ids[indices, [i for i in range(neg_candidate_ids.shape[1])]].view(-1)
             self.model.train()
             return self.sampling_func(inter_feat, neg_item_ids)
-        elif self.neg_sample_args['strategy'] == 'by':
+        elif self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
             user_ids = inter_feat[self.uid_field].numpy()
             item_ids = inter_feat[self.iid_field].numpy()
             neg_item_ids = self.sampler.sample_by_user_ids(user_ids, item_ids, self.neg_sample_num)

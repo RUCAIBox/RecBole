@@ -19,8 +19,11 @@ epochs: 300
 train_batch_size: 2048
 learner: adam
 learning_rate: 0.001
-neg_sampling:
-  uniform: 1
+train_neg_sample_args:
+  distribution: uniform
+  sample_num: 1
+  dynamic: False
+  candidate_num: 0
 eval_step: 1
 stopping_step: 10
 clip_grad_norm: ~
