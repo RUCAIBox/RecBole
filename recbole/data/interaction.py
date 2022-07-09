@@ -114,7 +114,7 @@ class Interaction(object):
             raise ValueError(f'[{type(interaction)}] is not supported for initialize `Interaction`!')
         self.length = -1
         for k in self.interaction:
-            self.length = max(self.length, self.interaction[k].shape[0])
+            self.length = max(self.length, self.interaction[k].unsqueeze(-1).shape[0])
 
     def __iter__(self):
         return self.interaction.__iter__()
@@ -134,6 +134,16 @@ class Interaction(object):
             for k in self.interaction:
                 ret[k] = self.interaction[k][index]
             return Interaction(ret)
+
+    def __setitem__(self, key, value):
+        if not isinstance(key, str):
+            raise KeyError(f'{type(key)} object does not support item assigment')
+        self.interaction[key] = value
+
+    def __delitem__(self, key):
+        if key not in self.interaction:
+            raise KeyError(f'{type(key)} object does not in this interaction')
+        del self.interaction[key]
 
     def __contains__(self, item):
         return item in self.interaction

@@ -1,0 +1,15 @@
+embedding_size: 64
+inner_size: 256
+n_layers: 2
+n_heads: 2
+hidden_dropout_prob: 0.5
+attn_dropout_prob: 0.5
+hidden_act: gelu
+layer_norm_eps: 1e-12
+initializer_range: 0.02
+loss_type: CE
+dnn_type: trm   # trm / ave
+
+sess_dropout: 0.2
+item_dropout: 0.2
+temperature: 0.07

@@ -8,8 +8,10 @@ recbole.quick_start
 """
 import logging
 from logging import getLogger
+
 import sys
 import torch
+
 import pickle
 
 from recbole.config import Config
@@ -39,17 +41,14 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
 
     # dataset filtering
     dataset = create_dataset(config)
-    if config['save_dataset']:
-        dataset.save()
     logger.info(dataset)
 
     # dataset splitting
     train_data, valid_data, test_data = data_preparation(config, dataset)
-    if config['save_dataloaders']:
-        save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))
 
     # model loading and initialization
-    model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
+    init_seed(config['seed'] + config['local_rank'], config['reproducibility'])
+    model = get_model(config['model'])(config, train_data._dataset).to(config['device'])
     logger.info(model)
 
     # trainer loading and initialization
@@ -74,6 +73,20 @@ def run_recbole(model=None, dataset=None, config_file_list=None, config_dict=Non
     }
 
 
+def run_recboles(rank, *args):
+    ip, port, world_size, nproc = args[3:]
+    args = args[:3]
+    run_recbole(
+        *args, config_dict={
+            'local_rank': rank,
+            'world_size': world_size,
+            'ip': ip,
+            'port': port,
+            'nproc': nproc
+        }
+    )
+
+
 def objective_function(config_dict=None, config_file_list=None, saved=True):
     r""" The default objective_function used in HyperTuning
 
@@ -92,7 +105,8 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     logging.basicConfig(level=logging.ERROR)
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)
-    model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
+    init_seed(config['seed'], config['reproducibility'])
+    model = get_model(config['model'])(config, train_data._dataset).to(config['device'])
     trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
     best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False, saved=saved)
     test_result = trainer.evaluate(test_data, load_best_model=saved)
@@ -105,25 +119,11 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     }
 
 
-def load_data_and_model(model_file, dataset_file=None, dataloader_file=None):
+def load_data_and_model(model_file):
     r"""Load filtered dataset, split dataloaders and saved model.
 
     Args:
         model_file (str): The path of saved model file.
-        dataset_file (str, optional): The path of filtered dataset. Defaults to ``None``.
-        dataloader_file (str, optional): The path of split dataloaders. Defaults to ``None``.
-
-    Note:
-        The :attr:`dataset` will be loaded or created according to the following strategy:
-        If :attr:`dataset_file` is not ``None``, the :attr:`dataset` will be loaded from :attr:`dataset_file`.
-        If :attr:`dataset_file` is ``None`` and :attr:`dataloader_file` is ``None``,
-        the :attr:`dataset` will be created according to :attr:`config`.
-        If :attr:`dataset_file` is ``None`` and :attr:`dataloader_file` is not ``None``,
-        the :attr:`dataset` will neither be loaded or created.
-
-        The :attr:`dataloader` will be loaded or created according to the following strategy:
-        If :attr:`dataloader_file` is not ``None``, the :attr:`dataloader` will be loaded from :attr:`dataloader_file`.
-        If :attr:`dataloader_file` is ``None``, the :attr:`dataloader` will be created according to :attr:`config`.
 
     Returns:
         tuple:
@@ -134,23 +134,20 @@ def load_data_and_model(model_file, dataset_file=None, dataloader_file=None):
             - valid_data (AbstractDataLoader): The dataloader for validation.
             - test_data (AbstractDataLoader): The dataloader for testing.
     """
+    import torch
     checkpoint = torch.load(model_file)
     config = checkpoint['config']
+    init_seed(config['seed'], config['reproducibility'])
     init_logger(config)
+    logger = getLogger()
+    logger.info(config)
 
-    dataset = None
-    if dataset_file:
-        with open(dataset_file, 'rb') as f:
-            dataset = pickle.load(f)
+    dataset = create_dataset(config)
+    logger.info(dataset)
+    train_data, valid_data, test_data = data_preparation(config, dataset)
 
-    if dataloader_file:
-        train_data, valid_data, test_data = load_split_dataloaders(dataloader_file)
-    else:
-        if dataset is None:
-            dataset = create_dataset(config)
-        train_data, valid_data, test_data = data_preparation(config, dataset)
-
-    model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
+    init_seed(config['seed'], config['reproducibility'])
+    model = get_model(config['model'])(config, train_data._dataset).to(config['device'])
     model.load_state_dict(checkpoint['state_dict'])
     model.load_other_parameter(checkpoint.get('other_parameter'))
 

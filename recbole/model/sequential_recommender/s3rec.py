@@ -95,7 +95,7 @@ class S3Rec(SequentialRecommender):
         self.mip_norm = nn.Linear(self.hidden_size, self.hidden_size)
         self.map_norm = nn.Linear(self.hidden_size, self.hidden_size)
         self.sp_norm = nn.Linear(self.hidden_size, self.hidden_size)
-        self.loss_fct = nn.BCELoss(reduction='none')
+        self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
 
         # modules for finetune
         if self.loss_type == 'BPR' and self.train_stage == 'finetune':
@@ -132,7 +132,7 @@ class S3Rec(SequentialRecommender):
         sequence_output = sequence_output.view([-1, sequence_output.size(-1), 1])  # [B*L H 1]
         # [feature_num H] [B*L H 1] -> [B*L feature_num 1]
         score = torch.matmul(feature_embedding, sequence_output)
-        return torch.sigmoid(score.squeeze(-1))  # [B*L feature_num]
+        return score.squeeze(-1)  # [B*L feature_num]
 
     def _masked_item_prediction(self, sequence_output, target_item_emb):
         sequence_output = self.mip_norm(sequence_output.view([-1, sequence_output.size(-1)]))  # [B*L H]
@@ -145,31 +145,12 @@ class S3Rec(SequentialRecommender):
         sequence_output = sequence_output.view([-1, sequence_output.size(-1), 1])  # [B*L H 1]
         # [feature_num H] [B*L H 1] -> [B*L feature_num 1]
         score = torch.matmul(feature_embedding, sequence_output)
-        return torch.sigmoid(score.squeeze(-1))  # [B*L feature_num]
+        return score.squeeze(-1)  # [B*L feature_num]
 
     def _segment_prediction(self, context, segment_emb):
         context = self.sp_norm(context)
         score = torch.mul(context, segment_emb)  # [B H]
         return torch.sigmoid(torch.sum(score, dim=-1))  # [B]
-
-    def get_attention_mask(self, sequence, bidirectional=True):
-        """
-        In the pre-training stage, we generate bidirectional attention mask for multi-head attention.
-
-        In the fine-tuning stage, we generate left-to-right uni-directional attention mask for multi-head attention.
-        """
-        attention_mask = (sequence > 0).long()
-        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
-        if not bidirectional:
-            max_len = attention_mask.size(-1)
-            attn_shape = (1, max_len, max_len)
-            subsequent_mask = torch.triu(torch.ones(attn_shape), diagonal=1)  # torch.uint8
-            subsequent_mask = (subsequent_mask == 0).unsqueeze(1)
-            subsequent_mask = subsequent_mask.long().to(sequence.device)
-            extended_attention_mask = extended_attention_mask * subsequent_mask
-        extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
-        return extended_attention_mask
 
     def forward(self, item_seq, bidirectional=True):
         position_ids = torch.arange(item_seq.size(1), dtype=torch.long, device=item_seq.device)
@@ -215,7 +196,7 @@ class S3Rec(SequentialRecommender):
         neg_item_embs = self.item_embedding(neg_items)
         pos_score = self._masked_item_prediction(sequence_output, pos_item_embs)
         neg_score = self._masked_item_prediction(sequence_output, neg_item_embs)
-        mip_distance = torch.sigmoid(pos_score - neg_score)
+        mip_distance =pos_score - neg_score
         mip_loss = self.loss_fct(mip_distance, torch.ones_like(mip_distance, dtype=torch.float32))
         mip_mask = (masked_item_sequence == self.mask_token).float()
         mip_loss = torch.sum(mip_loss * mip_mask.flatten())
@@ -234,7 +215,7 @@ class S3Rec(SequentialRecommender):
         neg_segment_emb = self.forward(neg_segment)[:, -1, :]  # [B H]
         pos_segment_score = self._segment_prediction(segment_context, pos_segment_emb)
         neg_segment_score = self._segment_prediction(segment_context, neg_segment_emb)
-        sp_distance = torch.sigmoid(pos_segment_score - neg_segment_score)
+        sp_distance = pos_segment_score - neg_segment_score
         sp_loss = torch.sum(self.loss_fct(sp_distance, torch.ones_like(sp_distance, dtype=torch.float32)))
 
         pretrain_loss = self.aap_weight * aap_loss \

@@ -156,7 +156,6 @@ class HRM(SequentialRecommender):
         test_item = interaction[self.ITEM_ID]
         user = interaction[self.USER_ID]
         seq_output = self.forward(item_seq, user, seq_item_len)
-        seq_output = seq_output.repeat(1, self.embedding_size)
         test_item_emb = self.item_embedding(test_item)
         scores = torch.mul(seq_output, test_item_emb).sum(dim=1)
 

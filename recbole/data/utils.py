@@ -20,10 +20,14 @@ import pickle
 from recbole.data.dataloader import *
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
 from recbole.utils import ModelType, ensure_dir, get_local_time, set_color
+from recbole.utils.argument_list import dataset_arguments
 
 
 def create_dataset(config):
     """Create dataset according to :attr:`config['model']` and :attr:`config['MODEL_TYPE']`.
+    If :attr:`config['dataset_save_path']` file exists and
+    its :attr:`config` of dataset is equal to current :attr:`config` of dataset.
+    It will return the saved dataset in :attr:`config['dataset_save_path']`.
 
     Args:
         config (Config): An instance object of Config, used to record parameter information.
@@ -33,21 +37,38 @@ def create_dataset(config):
     """
     dataset_module = importlib.import_module('recbole.data.dataset')
     if hasattr(dataset_module, config['model'] + 'Dataset'):
-        return getattr(dataset_module, config['model'] + 'Dataset')(config)
+        dataset_class = getattr(dataset_module, config['model'] + 'Dataset')
     else:
         model_type = config['MODEL_TYPE']
-        if model_type == ModelType.SEQUENTIAL:
-            from .dataset import SequentialDataset
-            return SequentialDataset(config)
-        elif model_type == ModelType.KNOWLEDGE:
-            from .dataset import KnowledgeBasedDataset
-            return KnowledgeBasedDataset(config)
-        elif model_type == ModelType.DECISIONTREE:
-            from .dataset import DecisionTreeDataset
-            return DecisionTreeDataset(config)
-        else:
-            from .dataset import Dataset
-            return Dataset(config)
+        type2class = {
+            ModelType.GENERAL: 'Dataset',
+            ModelType.SEQUENTIAL: 'SequentialDataset',
+            ModelType.CONTEXT: 'Dataset',
+            ModelType.KNOWLEDGE: 'KnowledgeBasedDataset',
+            ModelType.TRADITIONAL: 'Dataset',
+            ModelType.DECISIONTREE: 'Dataset',
+        }
+        dataset_class = getattr(dataset_module, type2class[model_type])
+
+    default_file = os.path.join(config['checkpoint_dir'], f'{config["dataset"]}-{dataset_class.__name__}.pth')
+    file = config['dataset_save_path'] or default_file
+    if os.path.exists(file):
+        with open(file, 'rb') as f:
+            dataset = pickle.load(f)
+        dataset_args_unchanged = True
+        for arg in dataset_arguments + ['seed', 'repeatable']:
+            if config[arg] != dataset.config[arg]:
+                dataset_args_unchanged = False
+                break
+        if dataset_args_unchanged:
+            logger = getLogger()
+            logger.info(set_color('Load filtered dataset from', 'pink') + f': [{file}]')
+            return dataset
+
+    dataset = dataset_class(config)
+    if config['save_dataset']:
+        dataset.save()
+    return dataset
 
 
 def save_split_dataloaders(config, dataloaders):
@@ -57,37 +78,53 @@ def save_split_dataloaders(config, dataloaders):
         config (Config): An instance object of Config, used to record parameter information.
         dataloaders (tuple of AbstractDataLoader): The split dataloaders.
     """
+    ensure_dir(config['checkpoint_dir'])
     save_path = config['checkpoint_dir']
     saved_dataloaders_file = f'{config["dataset"]}-for-{config["model"]}-dataloader.pth'
     file_path = os.path.join(save_path, saved_dataloaders_file)
     logger = getLogger()
-    logger.info(set_color('Saved split dataloaders', 'blue') + f': {file_path}')
+    logger.info(set_color('Saving split dataloaders into', 'pink') + f': [{file_path}]')
     with open(file_path, 'wb') as f:
         pickle.dump(dataloaders, f)
 
 
-def load_split_dataloaders(saved_dataloaders_file):
-    """Load split dataloaders.
+def load_split_dataloaders(config):
+    """Load split dataloaders if saved dataloaders exist and
+    their :attr:`config` of dataset are the same as current :attr:`config` of dataset.
 
     Args:
-        saved_dataloaders_file (str): The path of split dataloaders.
+        config (Config): An instance object of Config, used to record parameter information.
 
     Returns:
-        dataloaders (tuple of AbstractDataLoader): The split dataloaders.
+        dataloaders (tuple of AbstractDataLoader or None): The split dataloaders.
     """
-    with open(saved_dataloaders_file, 'rb') as f:
-        dataloaders = pickle.load(f)
-    return dataloaders
+
+    default_file = os.path.join(config['checkpoint_dir'], f'{config["dataset"]}-for-{config["model"]}-dataloader.pth')
+    dataloaders_save_path = config['dataloaders_save_path'] or default_file
+    if not os.path.exists(dataloaders_save_path):
+        return None
+    with open(dataloaders_save_path, 'rb') as f:
+        train_data, valid_data, test_data = pickle.load(f)
+    for arg in dataset_arguments + ['seed', 'repeatable', 'eval_args']:
+        if config[arg] != train_data.config[arg]:
+            return None
+    train_data.update_config(config)
+    valid_data.update_config(config)
+    test_data.update_config(config)
+    logger = getLogger()
+    logger.info(set_color('Load split dataloaders from', 'pink') + f': [{dataloaders_save_path}]')
+    return train_data, valid_data, test_data
 
 
-def data_preparation(config, dataset, save=False):
+def data_preparation(config, dataset):
     """Split the dataset by :attr:`config['eval_args']` and create training, validation and test dataloader.
+
+    Note:
+        If we can load split dataloaders by :meth:`load_split_dataloaders`, we will not create new split dataloaders.
 
     Args:
         config (Config): An instance object of Config, used to record parameter information.
         dataset (Dataset): An instance object of Dataset, which contains all interaction records.
-        save (bool, optional): If ``True``, it will call :func:`save_datasets` to save split dataset.
-            Defaults to ``False``.
 
     Returns:
         tuple:
@@ -95,21 +132,28 @@ def data_preparation(config, dataset, save=False):
             - valid_data (AbstractDataLoader): The dataloader for validation.
             - test_data (AbstractDataLoader): The dataloader for testing.
     """
-    model_type = config['MODEL_TYPE']
-    built_datasets = dataset.build()
-    logger = getLogger()
-
-    train_dataset, valid_dataset, test_dataset = built_datasets
-    train_sampler, valid_sampler, test_sampler = create_samplers(config, dataset, built_datasets)
-
-    if model_type != ModelType.KNOWLEDGE:
-        train_data = get_dataloader(config, 'train')(config, train_dataset, train_sampler, shuffle=True)
+    dataloaders = load_split_dataloaders(config)
+    if dataloaders is not None:
+        train_data, valid_data, test_data = dataloaders
     else:
-        kg_sampler = KGSampler(dataset, config['train_neg_sample_args']['distribution'])
-        train_data = get_dataloader(config, 'train')(config, train_dataset, train_sampler, kg_sampler, shuffle=True)
+        model_type = config['MODEL_TYPE']
+        built_datasets = dataset.build()
 
-    valid_data = get_dataloader(config, 'evaluation')(config, valid_dataset, valid_sampler, shuffle=False)
-    test_data = get_dataloader(config, 'evaluation')(config, test_dataset, test_sampler, shuffle=False)
+        train_dataset, valid_dataset, test_dataset = built_datasets
+        train_sampler, valid_sampler, test_sampler = create_samplers(config, dataset, built_datasets)
+
+        if model_type != ModelType.KNOWLEDGE:
+            train_data = get_dataloader(config, 'train')(config, train_dataset, train_sampler, shuffle=config['shuffle'])
+        else:
+            kg_sampler = KGSampler(dataset, config['train_neg_sample_args']['distribution'])
+            train_data = get_dataloader(config, 'train')(config, train_dataset, train_sampler, kg_sampler, shuffle=True)
+
+        valid_data = get_dataloader(config, 'evaluation')(config, valid_dataset, valid_sampler, shuffle=False)
+        test_data = get_dataloader(config, 'evaluation')(config, test_dataset, test_sampler, shuffle=False)
+        if config['save_dataloaders']:
+            save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))
+
+    logger = getLogger()
     logger.info(
         set_color('[Training]: ', 'pink') + set_color('train_batch_size', 'cyan') + ' = ' +
         set_color(f'[{config["train_batch_size"]}]', 'yellow') + set_color(' negative sampling', 'cyan') + ': ' +
@@ -120,9 +164,6 @@ def data_preparation(config, dataset, save=False):
         set_color(f'[{config["eval_batch_size"]}]', 'yellow') + set_color(' eval_args', 'cyan') + ': ' +
         set_color(f'[{config["eval_args"]}]', 'yellow')
     )
-    if save:
-        save_split_dataloaders(config, dataloaders=(train_data, valid_data, test_data))
-
     return train_data, valid_data, test_data
 
 

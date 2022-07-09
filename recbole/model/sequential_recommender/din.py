@@ -26,7 +26,7 @@ from torch.nn.init import xavier_normal_, constant_
 
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.layers import MLPLayers, SequenceAttLayer, ContextSeqEmbLayer
-from recbole.utils import InputType
+from recbole.utils import InputType, FeatureType
 
 
 class DIN(SequentialRecommender):
@@ -60,7 +60,10 @@ class DIN(SequentialRecommender):
         # init MLP layers
         # self.dnn_list = [(3 * self.num_feature_field['item'] + self.num_feature_field['user'])
         #                  * self.embedding_size] + self.mlp_hidden_size
-        num_item_feature = len(self.item_feat.interaction.keys())
+        num_item_feature = sum(
+            1 if dataset.field2type[field] != FeatureType.FLOAT_SEQ else dataset.num(field)
+            for field in self.item_feat.interaction.keys()
+        )
         self.dnn_list = [3 * num_item_feature * self.embedding_size] + self.mlp_hidden_size
         self.att_list = [4 * num_item_feature * self.embedding_size] + self.mlp_hidden_size
 
@@ -73,7 +76,7 @@ class DIN(SequentialRecommender):
         self.embedding_layer = ContextSeqEmbLayer(dataset, self.embedding_size, self.pooling_mode, self.device)
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -119,7 +122,6 @@ class DIN(SequentialRecommender):
         din_in = torch.cat([user_emb, target_item_feat_emb, user_emb * target_item_feat_emb], dim=-1)
         din_out = self.dnn_mlp_layers(din_in)
         preds = self.dnn_predict_layers(din_out)
-        preds = self.sigmoid(preds)
 
         return preds.squeeze(1)
 
@@ -138,5 +140,5 @@ class DIN(SequentialRecommender):
         user = interaction[self.USER_ID]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         next_items = interaction[self.POS_ITEM_ID]
-        scores = self.forward(user, item_seq, item_seq_len, next_items)
+        scores = self.sigmoid(self.forward(user, item_seq, item_seq_len, next_items))
         return scores

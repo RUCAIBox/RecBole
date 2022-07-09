@@ -41,7 +41,7 @@ class DSSM(ContextRecommender):
         self.user_mlp_layers = MLPLayers(user_size_list, self.dropout_prob, activation='tanh', bn=True)
         self.item_mlp_layers = MLPLayers(item_size_list, self.dropout_prob, activation='tanh', bn=True)
 
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
         self.sigmoid = nn.Sigmoid()
 
         # parameters initialization
@@ -84,9 +84,7 @@ class DSSM(ContextRecommender):
         user_dnn_out = self.user_mlp_layers(embed_user.view(batch_size, -1))
         item_dnn_out = self.item_mlp_layers(embed_item.view(batch_size, -1))
         score = torch.cosine_similarity(user_dnn_out, item_dnn_out, dim=1)
-
-        sig_score = self.sigmoid(score)
-        return sig_score.squeeze(-1)
+        return score.squeeze(-1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]
@@ -94,4 +92,4 @@ class DSSM(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))

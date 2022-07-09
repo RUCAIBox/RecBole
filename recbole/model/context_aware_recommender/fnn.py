@@ -44,7 +44,7 @@ class FNN(ContextRecommender):
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1, bias=True)
 
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -62,7 +62,6 @@ class FNN(ContextRecommender):
         batch_size = fnn_all_embeddings.shape[0]
 
         output = self.predict_layer(self.mlp_layers(fnn_all_embeddings.view(batch_size, -1)))
-        output = self.sigmoid(output)
         return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
@@ -72,4 +71,4 @@ class FNN(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))

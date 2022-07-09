@@ -69,10 +69,10 @@ class NNCF(GeneralRecommender):
             [2 * pooled_size * self.num_conv_kernel + self.ui_embedding_size] + self.mlp_hidden_size,
             config['dropout']
         )
-        self.out_layer = nn.Sequential(nn.Linear(self.mlp_hidden_size[-1], 1), nn.Sigmoid())
+        self.out_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.dropout_layer = torch.nn.Dropout(p=config['dropout'])
-        self.loss = nn.BCELoss()
-
+        self.loss = nn.BCEWithLogitsLoss()
+        
         # choose the method to use neighborhood information
         if self.neigh_info_method == "random":
             self.u_neigh, self.i_neigh = self.get_neigh_random()
@@ -353,10 +353,10 @@ class NNCF(GeneralRecommender):
         item = interaction[self.ITEM_ID]
         label = interaction[self.LABEL]
 
-        output = self.forward(user, item)
-        return self.loss(output, label)
+        output = self.forward(user, item)               
+        return self.loss(output, label) 
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        return self.forward(user, item)
+        return torch.sigmoid(self.forward(user, item))

@@ -1,17 +1,17 @@
 .. RecBole documentation master file.
-.. title:: RecBole v1.0.0
+.. title:: RecBole v1.0.1
 .. image:: asset/logo.png
 
 =========================================================
 
-`HomePage <https://recbole.io/>`_ | `Docs <https://recbole.io/docs/>`_ | `GitHub <https://github.com/RUCAIBox/RecBole>`_ | `Datasets <https://github.com/RUCAIBox/RecDatasets>`_ | `v0.1.2 </docs/v0.1.2/>`_ | `v0.2.0 </docs/v0.2.0/>`_
+`HomePage <https://recbole.io/>`_ | `Docs <https://recbole.io/docs/>`_ | `GitHub <https://github.com/RUCAIBox/RecBole>`_ | `Datasets <https://github.com/RUCAIBox/RecDatasets>`_ | `v0.1.2 </docs/v0.1.2/>`_ | `v0.2.0 </docs/v0.2.0/>`_ | `v1.0.0 </docs/v1.0.0/>`_
 
 Introduction
 -------------------------
 RecBole is a unified, comprehensive and efficient framework developed based on PyTorch.
 It aims to help the researchers to reproduce and develop recommendation models.
 
-In the lastest release, our library includes 73 recommendation algorithms `[Model List]`_, covering four major categories:
+In the lastest release, our library includes 77 recommendation algorithms `[Model List]`_, covering four major categories:
 
 - General Recommendation
 - Sequential Recommendation
@@ -29,7 +29,7 @@ Features:
 - General and extensible data structure
     We deign general and extensible data structures to unify the formatting and usage of various recommendation datasets.
 - Comprehensive benchmark models and datasets
-    We implement 73 commonly used recommendation algorithms, and provide the formatted copies of 28 recommendation datasets.
+    We implement 77 commonly used recommendation algorithms, and provide the formatted copies of 28 recommendation datasets.
 - Efficient GPU-accelerated execution
     We design many tailored strategies in the GPU environment to enhance the efficiency of our library.
 - Extensive and standard evaluation protocols

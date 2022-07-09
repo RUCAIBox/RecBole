@@ -58,8 +58,14 @@ class DIEN(SequentialRecommender):
         self.user_feat = dataset.get_user_feature()
         self.item_feat = dataset.get_item_feature()
 
-        num_item_feature = len(self.item_feat.interaction)
-        num_user_feature = len(self.user_feat.interaction)
+        num_item_feature = sum(
+            1 if dataset.field2type[field] != FeatureType.FLOAT_SEQ else dataset.num(field)
+            for field in self.item_feat.interaction.keys()
+        )
+        num_user_feature = sum(
+            1 if dataset.field2type[field] != FeatureType.FLOAT_SEQ else dataset.num(field)
+            for field in self.user_feat.interaction.keys()
+        )
         item_feat_dim = num_item_feature * self.embedding_size
         mask_mat = torch.arange(self.max_seq_length).to(self.device).view(1, -1)  # init mask
 
@@ -77,7 +83,7 @@ class DIEN(SequentialRecommender):
         self.dnn_mlp_layers = MLPLayers(self.dnn_mlp_list, activation='Dice', dropout=self.dropout_prob, bn=True)
         self.dnn_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         self.apply(self._init_weights)
         self.other_parameter_name = ['embedding_layer']
@@ -124,8 +130,6 @@ class DIEN(SequentialRecommender):
         # input the DNN to get the prediction score
         dien_out = self.dnn_mlp_layers(dien_in)
         preds = self.dnn_predict_layer(dien_out)
-        preds = self.sigmoid(preds)
-
         return preds.squeeze(1), aux_loss
 
     def calculate_loss(self, interaction):
@@ -146,7 +150,7 @@ class DIEN(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         next_items = interaction[self.POS_ITEM_ID]
         scores, _ = self.forward(user, item_seq, neg_item_seq, item_seq_len, next_items)
-        return scores
+        return self.sigmoid(scores)
 
 
 class InterestExtractorNetwork(nn.Module):
@@ -158,7 +162,7 @@ class InterestExtractorNetwork(nn.Module):
     def __init__(self, input_size, hidden_size, mlp_size):
         super(InterestExtractorNetwork, self).__init__()
         self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size, batch_first=True)
-        self.auxiliary_net = MLPLayers(layers=mlp_size, activation='Sigmoid')
+        self.auxiliary_net = MLPLayers(layers=mlp_size, activation='none')
 
     def forward(self, keys, keys_length, neg_keys=None):
         batch_size, hist_len, embedding_size = keys.shape
@@ -202,7 +206,7 @@ class InterestExtractorNetwork(nn.Module):
         # non-click label
         noclick_target = torch.zeros(noclick_prop.shape, device=noclick_input.device)
 
-        loss = F.binary_cross_entropy(
+        loss = F.binary_cross_entropy_with_logits(
             torch.cat([click_prop, noclick_prop], dim=0), torch.cat([click_target, noclick_target], dim=0)
         )
 
@@ -418,5 +422,5 @@ class DynamicRNN(nn.Module):
             outputs[begin:begin + batch] = new_hx
             hidden_output = new_hx
             begin += batch
-
+            
         return PackedSequence(outputs, batch_sizes, sorted_indices, unsorted_indices)
