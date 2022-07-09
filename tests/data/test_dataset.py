@@ -745,6 +745,93 @@ class TestKGDataset:
         assert (dataset.kg_feat['head_id'] == [2, 3, 4, 5]).all()
         assert (dataset.kg_feat['tail_id'] == [6, 2, 3, 4]).all()
 
+    def test_kg_reverse_r(self):
+        config_dict = {
+            'model': 'KGAT',
+            'dataset': 'kg_reverse_r',
+            'kg_reverse_r': True,
+            'data_path': current_path,
+            'load_col': None,
+        }
+        dataset = new_dataset(config_dict=config_dict)
+        relation_list = dataset.token2id('relation_id', ['ra', 'rb', 'ra_r', 'rb_r'])
+        assert (relation_list == [1, 2, 5, 6]).all()
+        assert dataset.relation_num == 10
+
+    def test_kg_filter_by_triple_num_in_min_entity_kg_num(self):
+        config_dict = {
+            'model': 'KGAT',
+            'dataset': 'kg_filter_by_triple_num',
+            'data_path': current_path,
+            'load_col': None,
+            'entity_kg_num_interval': "[2,inf)",
+        }
+        dataset = new_dataset(config_dict=config_dict)
+        assert dataset.entity_num == 6
+        assert dataset.relation_num == 6
+
+    def test_kg_filter_by_triple_num_in_min_relation_kg_num(self):
+        config_dict = {
+            'model': 'KGAT',
+            'dataset': 'kg_filter_by_triple_num',
+            'data_path': current_path,
+            'load_col': None,
+            'relation_kg_num_interval': "[2,inf)",
+        }
+        dataset = new_dataset(config_dict=config_dict)
+        assert dataset.entity_num == 7
+        assert dataset.relation_num == 5
+
+    def test_kg_filter_by_triple_num_in_max_entity_kg_num(self):
+        config_dict = {
+            'model': 'KGAT',
+            'dataset': 'kg_filter_by_triple_num',
+            'data_path': current_path,
+            'load_col': None,
+            'entity_kg_num_interval': "(-inf,3]",
+        }
+        dataset = new_dataset(config_dict=config_dict)
+        assert dataset.entity_num == 3
+        assert dataset.relation_num == 3
+
+    def test_kg_filter_by_triple_num_in_max_relation_kg_num(self):
+        config_dict = {
+            'model': 'KGAT',
+            'dataset': 'kg_filter_by_triple_num',
+            'data_path': current_path,
+            'load_col': None,
+            'relation_kg_num_interval': "(-inf,2]",
+        }
+        dataset = new_dataset(config_dict=config_dict)
+        assert dataset.entity_num == 6
+        assert dataset.relation_num == 5
+
+    def test_kg_filter_by_triple_num_in_min_kg_num(self):
+        config_dict = {
+            'model': 'KGAT',
+            'dataset': 'kg_filter_by_triple_num',
+            'data_path': current_path,
+            'load_col': None,
+            'entity_kg_num_interval': "[1,inf)",
+            'relation_kg_num_interval': "[2,inf)",
+        }
+        dataset = new_dataset(config_dict=config_dict)
+        assert dataset.entity_num == 7
+        assert dataset.relation_num == 5
+
+    def test_kg_filter_by_triple_num_in_complex_way(self):
+        config_dict = {
+            'model': 'KGAT',
+            'dataset': 'kg_filter_by_triple_num',
+            'data_path': current_path,
+            'load_col': None,
+            'entity_kg_num_interval': "[1,4]",
+            'relation_kg_num_interval': "[2,inf)",
+        }
+        dataset = new_dataset(config_dict=config_dict)
+        assert dataset.entity_num == 7
+        assert dataset.relation_num == 5
+
 
 if __name__ == "__main__":
     pytest.main()

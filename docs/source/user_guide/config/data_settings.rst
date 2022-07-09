@@ -53,6 +53,8 @@ Knowledge-based Model Needed
 - ``RELATION_ID_FIELD (str)`` : Field name of the relation ID feature. Defaults to ``relation_id``.
 - ``ENTITY_ID_FIELD (str)`` : Field name of the entity ID. Note that it's only a symbol of entities, not real feature of one of the ``xxx_feat``. Defaults to ``entity_id``.
 - ``kg_reverse_r (bool)`` : Whether or not to reverse relations of triples for bidirectional edges. Defaults to ``False``.
+- ``entity_kg_num_interval (str)`` : Has the interval format, such as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``,  where ``A`` and ``B`` are the endpoints of the interval and ``A <= B``. Entities (including head entities and tail entities) whose number of triples is in the interval will be retained. Defaults to ``[0,inf)``.
+- ``relation_kg_num_interval (str)`` : Has the interval format, such as ``[A,B]`` / ``[A,B)`` / ``(A,B)`` / ``(A,B]``,  where ``A`` and ``B`` are the endpoints of the interval and ``A <= B``. Relations whose number of triples is in the interval will be retained. Defaults to ``[0,inf)``.
 
 Selectively Loading
 ------------------------------

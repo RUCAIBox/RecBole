@@ -24,6 +24,8 @@ TAIL_ENTITY_ID_FIELD: tail_id   # (str) Field name of the tail entity ID feature
 RELATION_ID_FIELD: relation_id  # (str) Field name of the relation ID feature.
 ENTITY_ID_FIELD: entity_id      # (str) Field name of the entity ID.
 kg_reverse_r: False             # (bool) Whether to reverse relations of triples for bidirectional edges.
+entity_kg_num_interval: ~       # (str) Entity interval for filtering kg, such as [A,B] / [A,B) / (A,B) / (A,B].
+relation_kg_num_interval: ~     # (str) Relation interval for filtering kg, such as [A,B] / [A,B) / (A,B) / (A,B].
 
 # Selectively Loading
 load_col:                       # (dict) The suffix of atomic files: (list) field names to be loaded.

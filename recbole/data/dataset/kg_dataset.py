@@ -75,6 +75,8 @@ class KnowledgeBasedDataset(Dataset):
         self.relation_field = self.config['RELATION_ID_FIELD']
         self.entity_field = self.config['ENTITY_ID_FIELD']
         self.kg_reverse_r = self.config['kg_reverse_r']
+        self.entity_kg_num_interval = self.config['entity_kg_num_interval']
+        self.relation_kg_num_interval = self.config['relation_kg_num_interval']
         self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
         self.set_field_property(self.entity_field, FeatureType.TOKEN, FeatureSource.KG, 1)
 
@@ -83,7 +85,71 @@ class KnowledgeBasedDataset(Dataset):
 
     def _data_filtering(self):
         super()._data_filtering()
+        self._filter_kg_by_triple_num()
         self._filter_link()
+
+    def _filter_kg_by_triple_num(self):
+        """Filter by number of triples.
+
+        The interval of the number of triples can be set, and only entities/relations 
+        whose number of triples is in the specified interval can be retained.
+        See :doc:`../user_guide/data/data_args` for detail arg setting.
+
+        Note:
+            Lower bound of the interval is also called k-core filtering, which means this method 
+            will filter loops until all the entities and relations has at least k triples.
+        """
+        entity_kg_num_interval = self._parse_intervals_str(self.config['entity_kg_num_interval'])
+        relation_kg_num_interval = self._parse_intervals_str(self.config['relation_kg_num_interval'])
+
+        if entity_kg_num_interval is None and relation_kg_num_interval is None:
+            return
+
+        entity_kg_num = Counter()
+        if entity_kg_num_interval:
+            head_entity_kg_num = Counter(self.kg_feat[self.head_entity_field].values)
+            tail_entity_kg_num = Counter(self.kg_feat[self.tail_entity_field].values)
+            entity_kg_num = head_entity_kg_num + tail_entity_kg_num
+        relation_kg_num = Counter(self.kg_feat[self.relation_field].values) if relation_kg_num_interval else Counter()
+
+        while True:
+            ban_head_entities = self._get_illegal_ids_by_inter_num(
+                field=self.head_entity_field,
+                feat=None,
+                inter_num=entity_kg_num,
+                inter_interval=entity_kg_num_interval
+            )
+            ban_tail_entities = self._get_illegal_ids_by_inter_num(
+                field=self.tail_entity_field,
+                feat=None,
+                inter_num=entity_kg_num,
+                inter_interval=entity_kg_num_interval
+            )
+            ban_entities = ban_head_entities | ban_tail_entities
+            ban_relations = self._get_illegal_ids_by_inter_num(
+                field=self.relation_field,
+                feat=None,
+                inter_num=relation_kg_num,
+                inter_interval=relation_kg_num_interval
+            )
+            if len(ban_entities) == 0 and len(ban_relations) == 0:
+                break
+
+            dropped_kg = pd.Series(False, index=self.kg_feat.index)
+            head_entity_kg = self.kg_feat[self.head_entity_field]
+            tail_entity_kg = self.kg_feat[self.tail_entity_field]
+            relation_kg = self.kg_feat[self.relation_field]
+            dropped_kg |= head_entity_kg.isin(ban_entities)
+            dropped_kg |= tail_entity_kg.isin(ban_entities)
+            dropped_kg |= relation_kg.isin(ban_relations)
+
+            entity_kg_num -= Counter(head_entity_kg[dropped_kg].values)
+            entity_kg_num -= Counter(tail_entity_kg[dropped_kg].values)
+            relation_kg_num -= Counter(relation_kg[dropped_kg].values)
+
+            dropped_index = self.kg_feat.index[dropped_kg]
+            self.logger.debug(f'[{len(dropped_index)}] dropped triples.')
+            self.kg_feat.drop(dropped_index, inplace=True)
 
     def _filter_link(self):
         """Filter rows of :attr:`item2entity` and :attr:`entity2item`,
@@ -103,6 +169,9 @@ class KnowledgeBasedDataset(Dataset):
             del self.item2entity[item]
         for ent in illegal_ent:
             del self.entity2item[ent]
+        remained_inter = pd.Series(True, index=self.inter_feat.index)
+        remained_inter &= self.inter_feat[self.iid_field].isin(self.item2entity.keys())
+        self.inter_feat.drop(self.inter_feat.index[~remained_inter], inplace=True)
 
     def _download(self):
         super()._download()
