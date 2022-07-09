@@ -2,8 +2,9 @@
 # 1. if you set inter_matrix_type='rating', you must set `unused_col: ~` in your data config files.
 # 2. The dimensions of the last layer of users and items must be the same
 
-inter_matrix_type: '01'
-user_embedding_size: 64
-item_embedding_size: 64
-user_hidden_size_list: [64, 64]
-item_hidden_size_list: [64, 64]
+inter_matrix_type: '01'         # (str) Type of interaction matrix. Range in ['01', 'rating'].
+user_embedding_size: 64         # (int) The initial embedding size of users.
+item_embedding_size: 64         # (int) The initial embedding size of items.
+user_hidden_size_list: [64, 64] # (list of int) The hidden size of each layer in MLP for users.
+item_hidden_size_list: [64, 64] # (list of int) The hidden size of each layer in MLP for items.
+embedding_size: 10              # (int) The embedding size of features.

@@ -27,7 +27,7 @@ Running with RecBole
 - ``hidden_size_list (list)`` : The hidden size of each layer in GCN layers, the length of list is equal to the number of layers. Defaults to ``[64,64,64]``.
 - ``node_dropout (float)`` : The dropout rate of node in each GNN layer. Defaults to ``0.0``.
 - ``message_dropout (float)`` : The dropout rate of edge in each GNN layer. Defaults to ``0.1``.
-- ``reg_weight (list)`` : The L2 regularization weight. Defaults to ``1e-5``.
+- ``reg_weight (float)`` : The L2 regularization weight. Defaults to ``1e-5``.
 
 
 **A Running Example:**

@@ -26,6 +26,7 @@ Running with RecBole
 - ``embedding_size (int)`` : The embedding size of features. Defaults to ``10``.
 - ``mlp_hidden_size (list of int)`` : The hidden size of MLP layers. Defaults to ``[256, 256, 256]``.
 - ``dropout_prob (float)`` : The dropout rate of edge in the linear predict layer. Defaults to ``0.3``.
+- ``double_tower (bool)`` : Whether or not to use the double-tower mode. Defaults to ``True``.
 
 
 **A Running Example:**

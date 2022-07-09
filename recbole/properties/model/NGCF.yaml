@@ -1,5 +1,5 @@
-embedding_size: 64
-hidden_size_list: [64,64,64]
-node_dropout: 0.0
-message_dropout: 0.1
-reg_weight: 1e-5
+embedding_size: 64              # (int) The embedding size of users and items.
+hidden_size_list: [64,64,64]    # (list of int) The hidden size of each layer in GCN layers.
+node_dropout: 0.0               # (float) The dropout rate of node in each GNN layer.
+message_dropout: 0.1            # (float) The dropout rate of edge in each GNN layer.
+reg_weight: 1e-5                # (float) The L2 regularization weight.

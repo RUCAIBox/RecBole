@@ -1,5 +1,5 @@
-embedding_size: 64
-loss_type: "CE"
-reg_weight: 0.00
-order_len: 3
-alpha: 0.6
+embedding_size: 64              # (int) The embedding size of users and items.
+loss_type: 'CE'                 # (str) The type of loss function. Range in ['BPR', 'CE'].
+reg_weight: 0.0                 # (float) The L2 regularization weight.
+order_len: 3                    # (int) The last N items.
+alpha: 0.6                      # (float) Weight parameter to calculate the similarity.

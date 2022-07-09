@@ -1,3 +1,3 @@
-beta: 1.0
-rank: 450
-reg_weight: 1e2
+beta: 1.0                       # (float) The popularity sensitivity.
+rank: 450                       # (int) The latent dimension of latent representations. 
+reg_weight: 1e2                 # (float) The regularization weight.

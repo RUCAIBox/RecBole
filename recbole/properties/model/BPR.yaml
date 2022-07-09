@@ -1,1 +1,1 @@
-embedding_size: 64              # (int) 
+embedding_size: 64              # (int) The embedding size of users and items.

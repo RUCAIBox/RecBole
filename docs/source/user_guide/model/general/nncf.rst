@@ -29,10 +29,8 @@ Running with RecBole
 - ``mlp_hidden_size (list)``: The hidden size of each layer in MLP, the length of list is equal to the number of layers. Defaults to ``[128,64,32,16]``.
 - ``neigh_num (int)``: The number of neighbors we choose. Defaults to ``20``.
 - ``dropout (float)``: The dropout rate in MLP layers. Defaults to ``0.5``.
+- ``neigh_info_method (str)``: The method to use neighborhood information, you can choose random, knn or louvain algorithm. Range in ``['random', 'knn', 'louvain']``. Defaults to ``random``.
 - ``resolution (float)``: The parameter in louvain algorithm, which decides the size of the community. Defaults to ``1.0``.
-- ``use_random (bool)``: Whether to use random method to train neighborhood embedding. Defaults to ``True``.
-- ``use_knn (bool)``: Whether to use knn method to train neighborhood embedding. Defaults to ``False``.
-- ``use_louvain (bool)``: Whether to use louvain method to train neighborhood embedding. Defaults to ``False``.
 
 
 **A Running Example:**

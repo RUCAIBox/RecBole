@@ -1,7 +1,6 @@
-embedding_size: 64
-n_iter: 1
-aggregator: "sum"
-reg_weight: 1e-7
-neighbor_sample_size: 4
-
-ls_weight: 0.5
+embedding_size: 64              # (int) The initial embedding size of users, relations and entities.
+n_iter: 1                       # (int) The number of iterations when computing entity representation.
+aggregator: 'sum'               # (str) The aggregator for GNN ranging in ['sum', 'neighbor', 'concat'].
+reg_weight: 1e-7                # (float) The L2 regularization weight.
+neighbor_sample_size: 4         # (int) The number of neighbors to be sampled.
+ls_weight: 0.5                  # (float) The label smoothness regularization weight. 

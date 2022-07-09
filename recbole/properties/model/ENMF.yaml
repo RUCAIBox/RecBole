@@ -1,4 +1,4 @@
-embedding_size: 64
-dropout_prob: 0.7
-reg_weight: 0.0
-negative_weight: 0.5
+embedding_size: 64              # (int) The embedding size of user. 
+dropout_prob: 0.7               # (float) The dropout ratio of the embedding.
+reg_weight: 0.0                 # (float) L2-regularization weight.
+negative_weight: 0.5            # (float) The weight of non-observed data.

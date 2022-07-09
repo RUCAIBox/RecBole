@@ -23,7 +23,7 @@ Quick Start with RecBole
 
 - ``embedding_size (int)`` : The embedding size of features. Defaults to ``10``.
 - ``dropout_prob (float)`` : The dropout rate. Defaults to ``0.0``.
-- ``fields (dict)`` : This parameter defines the mapping from fields to features, key is field's id, value is a list of features in this field. For example, in ml-100k dataset, it can be set as ``{0: ['user_id','age'], 1: ['item_id', 'class']}``. If it is set to ``None``, the features and the fields are corresponding one-to-one. Defaults to ``None``.
+- ``fields (dict) or None`` : This parameter defines the mapping from fields to features, key is field's id, value is a list of features in this field. For example, in ml-100k dataset, it can be set as ``{0: ['user_id','age'], 1: ['item_id', 'class']}``. If it is set to ``None``, the features and the fields are corresponding one-to-one. Defaults to ``None``.
 
 **A Running Example:**
 

@@ -1,5 +1,5 @@
-embedding_size: 10
-mlp_hidden_size: [256, 256, 256]
-cross_layer_num: 6
-reg_weight: 2
-dropout_prob: 0.2
+embedding_size: 10                # (int) The embedding size of features. 
+mlp_hidden_size: [256, 256, 256]  # (list of int) The hidden size of MLP layers.
+cross_layer_num: 6                # (int) The number of cross layers. 
+reg_weight: 2                     # (int) The L2 regularization weight.
+dropout_prob: 0.2                 # (float) The dropout rate.

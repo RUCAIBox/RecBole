@@ -42,9 +42,10 @@ Running with RecBole
 - ``weight_size (int)`` : The vector that projects the hidden layer into an output attention weight. Defaults to ``64``.
 - ``algorithm (str)`` : The attention method. Defaults to ``'prod'``. Range in ``['prod', 'concat']``.
 - ``split_to (int)`` : This is a parameter used to reduce the GPU memory usage during the evaluation. The larger the value, the less the memory usage and the slower the evaluation speed. Defaults to ``0``.
-- ``alpha (float)`` : It is a hyper-parameter controlling the normalization effect of the number of user history interactions when calculating the similarity. Defaults to ``0``.
+- ``alpha (float)`` : It is a hyper-parameter controlling the normalization effect of the number of user history interactions when calculating the similarity. Defaults to ``0.0``.
 - ``beta (float)`` : It is the smoothing exponent controlling the denominator of softmax, it will be set in the range of ``[0, 1]``. Obviously, when beta is set to ``1``,it rcovers the softmax function; when ``beta`` is smaller than ``1``,the value of denominator will be suppressed, as a result, the attention weights will not be overly punished for active users. Defaults to ``0.5``.
 - ``reg_weights (list)`` : The L2 regularization weights. Defaults to ``[1e-7, 1e-7, 1e-5]``.
+- ``pretrain_path (str or None)`` : The path of pre-trained model for initialization. Defaults to ``None``.
 
 
 **A Running Example:**

@@ -1,7 +1,7 @@
-embedding_size: 64
-kernel_size: 3
-block_num: 5
-dilations: [1,4]
-reg_weight: 1e-5
-loss_type: 'CE'
+embedding_size: 64              # (int) The embedding size of users and items.
+kernel_size: 3                  # (int) The width of convolutional filter.
+block_num: 5                    # (int) The number of residual blocks.
+dilations: [1,4]                # (list of int) Control the spacing between the kernel points.
+reg_weight: 1e-5                # (float) The L2 regularization weight. 
+loss_type: 'CE'                 # (str)  The type of loss function. Range in ['BPR', 'CE'].
 

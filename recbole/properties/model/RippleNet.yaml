@@ -1,5 +1,5 @@
-embedding_size: 64
-n_hop: 2
-n_memory: 16
-kg_weight: 0.01
-reg_weight: 1e-7
+embedding_size: 64              # (int) The embedding size of users, items and entities.
+n_hop: 2                        # (int) The number of hop reasoning for knowledge base.
+n_memory: 16                    # (int) The number of memory size of every hop.
+kg_weight: 0.01                 # (float) The L2 regularization weight.
+reg_weight: 1e-7                # (float) The kg loss weight.
