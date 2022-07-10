@@ -120,19 +120,10 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
         self._set_neg_sample_args(config, self.dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
         super().update_config(config)
 
-    @property
-    def pr_end(self):
+    def collate_fn(self, index):
+        index = np.array(index)
         if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
-            return len(self.uid_list)
-        else:
-            return len(self.dataset)
-
-    def _shuffle(self):
-        self.logger.warnning('NegSampleEvalDataLoader can\'t shuffle')
-
-    def _next_batch_data(self):
-        if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
-            uid_list = self.uid_list[self.pr:self.pr + self.step]
+            uid_list = self.uid_list[index]
             data_list = []
             idx_list = []
             positive_u = []
@@ -140,21 +131,19 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
 
             for idx, uid in enumerate(uid_list):
                 index = self.uid2index[uid]
-                data_list.append(self._neg_sampling(self.dataset[index]))
+                data_list.append(self._neg_sampling(self._dataset[index]))
                 idx_list += [idx for i in range(self.uid2items_num[uid] * self.times)]
                 positive_u += [idx for i in range(self.uid2items_num[uid])]
-                positive_i = torch.cat((positive_i, self.dataset[index][self.iid_field]), 0)
+                positive_i = torch.cat((positive_i, self._dataset[index][self.iid_field]), 0)
 
             cur_data = cat_interactions(data_list)
-            idx_list = torch.from_numpy(np.array(idx_list))
-            positive_u = torch.from_numpy(np.array(positive_u))
-
-            self.pr += self.step
+            idx_list = torch.from_numpy(np.array(idx_list)).long()
+            positive_u = torch.from_numpy(np.array(positive_u)).long()
 
             return cur_data, idx_list, positive_u, positive_i
         else:
-            cur_data = self._neg_sampling(self.dataset[self.pr:self.pr + self.step])
-            self.pr += self.step
+            data = self._dataset[index]
+            cur_data = self._neg_sampling(data)
             return cur_data, None, None, None
 
 
