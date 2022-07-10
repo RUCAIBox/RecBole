@@ -8,6 +8,11 @@
 # @Author : Jiawei Guan
 # @Email  : guanjw@ruc.edu.cn
 
+# UPDATE:
+# @Time   : 2022/07/10
+# @Author : Junjie Zhang
+# @Email  : zjj001128@163.com
+
 """
 recbole.utils.logger
 ###############################
