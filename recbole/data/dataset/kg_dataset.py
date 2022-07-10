@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/16, 2020/9/15, 2020/10/25
-# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/10/16, 2020/9/15, 2020/10/25, 2022/7/10
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen, Lanling Xu
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn, xulanling_sherry@163.com
 
 """
 recbole.data.kg_dataset

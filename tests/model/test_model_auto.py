@@ -4,9 +4,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE
-# @Time    :   2020/11/17
-# @Author  :   Xingyu Pan
-# @email   :   panxy@ruc.edu.cn
+# @Time    :   2020/11/17, 2022/7/10
+# @Author  :   Xingyu Pan, Lanling Xu
+# @email   :   panxy@ruc.edu.cn, xulanling_sherry@163.com
 
 import os
 import unittest
