@@ -1,6 +1,6 @@
-# @Time   : 2020/10/6
-# @Author : Shanlei Mu
-# @Email  : slmu@ruc.edu.cn
+# @Time   : 2020/10/6, 2022/7/10
+# @Author : Shanlei Mu, Junjie Zhang
+# @Email  : slmu@ruc.edu.cn, zjj001128@163.com
 
 """
 recbole.quick_start
