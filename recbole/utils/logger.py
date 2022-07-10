@@ -8,6 +8,11 @@
 # @Author : Jiawei Guan
 # @Email  : guanjw@ruc.edu.cn
 
+# UPDATE:
+# @Time   : 2022/07/10
+# @Author : Junjie Zhang
+# @Email  : zjj001128@163.com
+
 """
 recbole.utils.logger
 ###############################
@@ -17,7 +22,7 @@ import logging
 import os
 import colorlog
 import re
-
+import hashlib
 from recbole.utils.utils import get_local_time, ensure_dir
 from colorama import init
 
@@ -73,7 +78,9 @@ def init_logger(config):
     ensure_dir(dir_name)
     model_name = os.path.join(dir_name, config['model'])
     ensure_dir(model_name)
-    logfilename = '{}/{}.log'.format(config['model'], get_local_time())
+    config_str = ''.join([str(key) for key in config.final_config_dict.values()])
+    md5 = hashlib.md5(config_str.encode(encoding='utf-8')).hexdigest()[:6]
+    logfilename = '{}/{}-{}.log'.format(config['model'], get_local_time(), md5)
 
     logfilepath = os.path.join(LOGROOT, logfilename)
 
