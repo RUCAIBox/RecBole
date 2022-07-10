@@ -76,7 +76,7 @@ class xDeepFM(ContextRecommender):
 
         self.cin_linear = nn.Linear(self.final_len, 1)
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
         self.apply(self._init_weights)
 
     def _init_weights(self, module):
@@ -180,9 +180,9 @@ class xDeepFM(ContextRecommender):
 
         # Get predicted score.
         y_p = self.first_order_linear(interaction) + cin_output + dnn_output
-        y = self.sigmoid(y_p)
 
-        return y.squeeze(1)
+
+        return y_p.squeeze(1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]
@@ -191,4 +191,4 @@ class xDeepFM(ContextRecommender):
         return self.loss(output, label) + self.reg_weight * l2_reg
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))

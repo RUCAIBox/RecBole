@@ -16,7 +16,6 @@ import re
 import os
 import sys
 import yaml
-import torch
 from logging import getLogger
 
 from recbole.evaluator import metric_types, smaller_metrics
@@ -355,10 +354,29 @@ class Config(object):
             raise NotImplementedError('Full sort evaluation do not match value-based metrics!')
 
     def _init_device(self):
-        use_gpu = self.final_config_dict['use_gpu']
-        if use_gpu:
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(self.final_config_dict['gpu_id'])
-        self.final_config_dict['device'] = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
+        gpu_id = self.final_config_dict['gpu_id']
+        os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
+        import torch
+
+        if 'local_rank' not in self.final_config_dict:
+            self.final_config_dict['single_spec'] = True
+            self.final_config_dict['local_rank'] = 0
+            self.final_config_dict['device'] = torch.device("cpu") if len(gpu_id) == 0 or not torch.cuda.is_available() else torch.device("cuda")
+        else:
+            assert len(gpu_id.split(',')) >= self.final_config_dict['nproc']
+            torch.distributed.init_process_group(
+                backend='nccl',
+                rank=self.final_config_dict['local_rank'],
+                world_size=self.final_config_dict['world_size'],
+                init_method='tcp://' + self.final_config_dict['ip'] + ':' + str(self.final_config_dict['port'])
+            )
+            self.final_config_dict['device'] = torch.device("cuda", self.final_config_dict['local_rank'])
+            self.final_config_dict['single_spec'] = False
+            torch.cuda.set_device(self.final_config_dict['local_rank'])
+            if self.final_config_dict['local_rank'] != 0:
+                self.final_config_dict['state'] = 'error'
+                self.final_config_dict['show_progress'] = False
+                self.final_config_dict['verbose'] = False
 
     def _set_train_neg_sample_args(self):
         train_neg_sample_args = self.final_config_dict['train_neg_sample_args']

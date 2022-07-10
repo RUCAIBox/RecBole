@@ -14,7 +14,7 @@ recbole.data.dataloader.general_dataloader
 
 import numpy as np
 import torch
-
+from logging import getLogger
 from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader, NegSampleDataLoader
 from recbole.data.interaction import Interaction, cat_interactions
 from recbole.utils import InputType, ModelType
@@ -34,7 +34,9 @@ class TrainDataLoader(NegSampleDataLoader):
     """
 
     def __init__(self, config, dataset, sampler, shuffle=False):
+        self.logger = getLogger()
         self._set_neg_sample_args(config, dataset, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
+        self.sample_size = len(dataset)
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _init_batch_size_and_step(self):
@@ -49,20 +51,13 @@ class TrainDataLoader(NegSampleDataLoader):
             self.set_batch_size(batch_size)
 
     def update_config(self, config):
-        self._set_neg_sample_args(config, self.dataset, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
+        self._set_neg_sample_args(config, self._dataset, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
         super().update_config(config)
 
-    @property
-    def pr_end(self):
-        return len(self.dataset)
-
-    def _shuffle(self):
-        self.dataset.shuffle()
-
-    def _next_batch_data(self):
-        cur_data = self._neg_sampling(self.dataset[self.pr:self.pr + self.step])
-        self.pr += self.step
-        return cur_data
+    def collate_fn(self, index):
+        index = np.array(index)
+        data = self._dataset[index]
+        return self._neg_sampling(data)
 
 
 class NegSampleEvalDataLoader(NegSampleDataLoader):
@@ -79,6 +74,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
     """
 
     def __init__(self, config, dataset, sampler, shuffle=False):
+        self.logger = getLogger()
         self._set_neg_sample_args(config, dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
         if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
             user_num = dataset.user_num
@@ -96,7 +92,12 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
                 self.uid2index[uid] = slice(start[uid], end[uid] + 1)
                 self.uid2items_num[uid] = end[uid] - start[uid] + 1
             self.uid_list = np.array(self.uid_list)
-
+            self.sample_size = len(self.uid_list)
+        else:
+            self.sample_size = len(dataset)
+        if shuffle:
+            self.logger.warnning('NegSampleEvalDataLoader can\'t shuffle')
+            shuffle = False
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _init_batch_size_and_step(self):
@@ -117,7 +118,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
             self.set_batch_size(batch_size)
 
     def update_config(self, config):
-        self._set_neg_sample_args(config, self.dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
+        self._set_neg_sample_args(config, self._dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
         super().update_config(config)
 
     def collate_fn(self, index):
@@ -160,6 +161,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
     """
 
     def __init__(self, config, dataset, sampler, shuffle=False):
+        self.logger = getLogger()
         self.uid_field = dataset.uid_field
         self.iid_field = dataset.iid_field
         self.is_sequential = config['MODEL_TYPE'] == ModelType.SEQUENTIAL
@@ -185,6 +187,10 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             self.uid_list = torch.tensor(self.uid_list, dtype=torch.int64)
             self.user_df = dataset.join(Interaction({self.uid_field: self.uid_list}))
 
+        self.sample_size = len(self.user_df) if not self.is_sequential else len(dataset)
+        if shuffle:
+            self.logger.warnning('FullSortEvalDataLoader can\'t shuffle')
+            shuffle = False
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _set_user_property(self, uid, used_item, positive_item):
@@ -198,27 +204,18 @@ class FullSortEvalDataLoader(AbstractDataLoader):
     def _init_batch_size_and_step(self):
         batch_size = self.config['eval_batch_size']
         if not self.is_sequential:
-            batch_num = max(batch_size // self.dataset.item_num, 1)
-            new_batch_size = batch_num * self.dataset.item_num
+            batch_num = max(batch_size // self._dataset.item_num, 1)
+            new_batch_size = batch_num * self._dataset.item_num
             self.step = batch_num
             self.set_batch_size(new_batch_size)
         else:
             self.step = batch_size
             self.set_batch_size(batch_size)
 
-    @property
-    def pr_end(self):
+    def collate_fn(self, index):
+        index = np.array(index)
         if not self.is_sequential:
-            return len(self.uid_list)
-        else:
-            return len(self.dataset)
-
-    def _shuffle(self):
-        self.logger.warnning('FullSortEvalDataLoader can\'t shuffle')
-
-    def _next_batch_data(self):
-        if not self.is_sequential:
-            user_df = self.user_df[self.pr:self.pr + self.step]
+            user_df = self.user_df[index]
             uid_list = list(user_df[self.uid_field])
 
             history_item = self.uid2history_item[uid_list]
@@ -230,13 +227,11 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             positive_u = torch.cat([torch.full_like(pos_iid, i) for i, pos_iid in enumerate(positive_item)])
             positive_i = torch.cat(list(positive_item))
 
-            self.pr += self.step
             return user_df, (history_u, history_i), positive_u, positive_i
         else:
-            interaction = self.dataset[self.pr:self.pr + self.step]
+            interaction = self._dataset[index]
             inter_num = len(interaction)
             positive_u = torch.arange(inter_num)
             positive_i = interaction[self.iid_field]
 
-            self.pr += self.step
             return interaction, None, positive_u, positive_i

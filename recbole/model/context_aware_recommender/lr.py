@@ -32,7 +32,7 @@ class LR(ContextRecommender):
         super(LR, self).__init__(config, dataset)
 
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -42,7 +42,7 @@ class LR(ContextRecommender):
             xavier_normal_(module.weight.data)
 
     def forward(self, interaction):
-        output = self.sigmoid(self.first_order_linear(interaction))
+        output = self.first_order_linear(interaction)
         return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
@@ -52,4 +52,4 @@ class LR(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))
