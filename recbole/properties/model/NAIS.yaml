@@ -1,8 +1,8 @@
-algorithm: prod
-embedding_size: 64
-weight_size: 64
-split_to: 0
-reg_weights: [1e-7, 1e-7, 1e-5]
-alpha: 0
-beta: 0.5
-pretrain_path: ~
+algorithm: 'prod'               # (str) The attention method. Range in ['prod', 'concat'].
+embedding_size: 64              # (int) The embedding size of users and items.
+weight_size: 64                 # (int) The hidden layer size of an output attention weight.
+split_to: 0                     # (int) Used to reduce the GPU memory usage during the evaluation.
+reg_weights: [1e-7, 1e-7, 1e-5] # (list of float) The L2 regularization weights.
+alpha: 0.0                      # (float) Control the normalization effect when calculating the similarity.
+beta: 0.5                       # (float) The smoothing exponent controlling the denominator of softmax.
+pretrain_path: ~                # (str or None) The path of pre-trained model for initialization.

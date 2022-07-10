@@ -1,3 +1,3 @@
-mlp_hidden_size: [600]
-latent_dimension: 64
-dropout_prob: 0.5
+mlp_hidden_size: [600]          # (list of int) The MLP hidden layer.
+latent_dimension: 64            # (int) The latent dimension of auto-encoder.
+dropout_prob: 0.5               # (float) The drop out probability of input.

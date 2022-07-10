@@ -1,6 +1,6 @@
-embedding_size: 10
-attention_size: 16
-n_layers: 3
-num_heads: 2
-dropout_probs: [0.2,0.2,0.2]
-mlp_hidden_size: [128,128]
+embedding_size: 10              # (int) The embedding size of features.
+attention_size: 16              # (int) The vector size in attention mechanism. 
+n_layers: 3                     # (int) The number of attention layers.
+num_heads: 2                    # (int) The number of attention heads.
+dropout_probs: [0.2,0.2,0.2]    # (list of float) The dropout rate of dropout layer.
+mlp_hidden_size: [128,128]      # (list of int) The hidden size of MLP layers.

@@ -31,8 +31,8 @@ Evaluation settings are designed to set parameters about model evaluation.
 
 - ``topk (list or int or None)``: The value of k for topk evaluation metrics.
   Defaults to ``10``.
-- ``valid_metric (str)``: The evaluation metrics for early stopping. 
+- ``valid_metric (str)``: The evaluation metric for early stopping. 
   It must be one of used ``metrics``. Defaults to ``'MRR@10'``.
 - ``eval_batch_size (int)``: The evaluation batch size. Defaults to ``4096``.
-- ``metric_decimal_place(int)``: The decimal place of metric score. Defaults to ``4``.
+- ``metric_decimal_place(int)``: The decimal place of metric scores. Defaults to ``4``.
 

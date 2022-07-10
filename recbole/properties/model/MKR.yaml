@@ -1,8 +1,8 @@
-embedding_size: 64
-kg_embedding_size: 64
-low_layers_num: 1
-high_layers_num: 1
-reg_weight: 1e-6
-use_inner_product: True
-kge_interval: 3
-dropout_prob: 0.0
+embedding_size: 64              # (int) The embedding size of users and items.
+kg_embedding_size: 64           # (int) The embedding size of entities, relations.
+low_layers_num: 1               # (int) The number of low layers.
+high_layers_num: 1              # (int) The number of high layers.
+reg_weight: 1e-6                # (float) The L2 regularization weight.
+use_inner_product: True         # (bool) Whether to use inner product to calculate scores.
+kge_interval: 3                 # (int) The number of steps for knowledge related task.
+dropout_prob: 0.0               # (float) The dropout rate.

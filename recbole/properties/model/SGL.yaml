@@ -1,7 +1,7 @@
-type: "ED"
-n_layers: 3
-ssl_tau: 0.5
-reg_weight: 1e-5
-ssl_weight: 0.05
-drop_ratio: 0.1
-embedding_size: 64
+type: 'ED'                      # (str) The type to generate views. Range in ['ED', 'ND', 'RW'].
+n_layers: 3                     # (int) The number of layers in SGL. 
+ssl_tau: 0.5                    # (float) The temperature in softmax.
+reg_weight: 1e-5                # (float) The L2 regularization weight.
+ssl_weight: 0.05                # (float) The hyperparameter to control the strengths of SSL.
+drop_ratio: 0.1                 # (float) The dropout ratio.
+embedding_size: 64              # (int) The embedding size of users and items.

@@ -1,6 +1,6 @@
-embedding_size: 64
-cnn_channels: [1, 32, 32, 32, 32]
-cnn_kernels: [4, 4, 2, 2]
-cnn_strides: [4, 4, 2, 2]
-dropout_prob: 0.2
-reg_weights: [0.1, 0.1]
+embedding_size: 64                  # (int) The embedding size of users and items.
+cnn_channels: [1, 32, 32, 32, 32]   # (list of int) The number of channels in CNN layers.
+cnn_kernels: [4, 4, 2, 2]           # (list of int) The size of convolutional kernel in CNN layers.
+cnn_strides: [4, 4, 2, 2]           # (list of int) The strides of convolution in CNN layers.
+dropout_prob: 0.2                   # (float) The dropout rate in the linear predict layer.
+reg_weights: [0.1, 0.1]             # (list of float) The L2 regularization weights.

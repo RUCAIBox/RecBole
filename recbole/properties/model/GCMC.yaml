@@ -1,7 +1,7 @@
-accum: "stack"
-gcn_output_dim: 500
-embedding_size: 64
-dropout_prob: 0.3
-sparse_feature: True
-class_num: 2
-num_basis_functions: 2
+accum: 'stack'                  # (str) The accumulation function in the GCN layers. Range in ['sum', 'stack'].
+gcn_output_dim: 500             # (int) The output dimension of GCN layer in GCN encoder. 
+embedding_size: 64              # (int) The embedding size of user and item. 
+dropout_prob: 0.3               # (float) The dropout rate.
+sparse_feature: True            # (bool) Whether to use sparse tensor to represent features.
+class_num: 2                    # (int) Number of rating types.
+num_basis_functions: 2          # (int) Number of basis functions for BiDecoder.

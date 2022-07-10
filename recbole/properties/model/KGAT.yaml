@@ -1,6 +1,6 @@
-embedding_size: 64
-kg_embedding_size: 64
-layers: [64]
-mess_dropout: 0.1
-reg_weight: 1e-5
-aggregator_type: 'bi'
+embedding_size: 64              # (int) The embedding size of users, items and entities.
+kg_embedding_size: 64           # (int) The embedding size of relations in knowledge graph.
+layers: [64]                    # (list of int) The hidden size in GNN layers.
+mess_dropout: 0.1               # (float) The message dropout rate in GNN layer.
+reg_weight: 1e-5                # (float) The L2 regularization weight.
+aggregator_type: 'bi'           # (str) The aggregator type used in GNN. Range in ['gcn', 'graphsage', 'bi'].

@@ -1,1 +1,1 @@
-embedding_size: 64
+embedding_size: 64              # (int) The embedding size of items.

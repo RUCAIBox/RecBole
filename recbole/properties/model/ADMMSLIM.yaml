@@ -1,7 +1,7 @@
-lambda1: 3
-lambda2: 200
-alpha: 0.50
-rho: 4000
-k: 100
-positive_only: True
-center_columns: False 
+lambda1: 3.0                    # (float) L1-norm regularization parameter.
+lambda2: 200.0                  # (float) L2-norm regularization parameter.
+alpha: 0.50                     # (float) The exponents to control the power-law in the regularization terms.
+rho: 4000.0                     # (float) The penalty applies to the squared difference between primal variables.
+k: 100                          # (int) The number of running iterations. 
+positive_only: True             # (bool) Whether or not to preserve all positive values only.
+center_columns: False           # (bool) Whether or not to use additional item-bias terms.

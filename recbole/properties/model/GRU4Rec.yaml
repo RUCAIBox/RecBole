@@ -1,5 +1,5 @@
-embedding_size: 64
-hidden_size: 128
-num_layers: 1
-dropout_prob: 0.3
-loss_type: 'CE'
+embedding_size: 64              # (int) The embedding size of items.
+hidden_size: 128                # (int) The number of features in the hidden state. 
+num_layers: 1                   # (int) The number of layers in GRU.
+dropout_prob: 0.3               # (float) The dropout rate.
+loss_type: 'CE'                 # (str) The type of loss function. Range in ['BPR', 'CE'].

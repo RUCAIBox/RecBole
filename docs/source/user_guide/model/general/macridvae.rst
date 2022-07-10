@@ -40,16 +40,16 @@ Running with RecBole
 
 **Model Hyper-Parameters:**
 
-- ``embedding_size (int)`` : The latent dimension of auto-encoder. Defaults to ``128``.
+- ``embedding_size (int)`` : The latent dimension of auto-encoder. Defaults to ``64``.
 - ``dropout_prob (float)`` : The drop out probability of input. Defaults to ``0.5``.
 - ``kfac (int)`` : Number of facets (macro concepts). ``10``.
 - ``nogb (boolean)`` : Disable Gumbel-Softmax sampling. ``False``.
-- ``std (float)`` : Standard deviation of the Gaussian prior. ``False``.
+- ``std (float)`` : Standard deviation of the Gaussian prior. ``0.01``.
 - ``encoder_hidden_size (list)`` : The MLP hidden layer. Defaults to ``[600]``.
-- ``tau (float)`` : Temperature of sigmoid/softmax, in (0,oo). ``False``.
-- ``anneal_cap (float)`` : The super parameter of the weight of KL loss. Defaults to ``0.2``.
+- ``tau (float)`` : Temperature of sigmoid/softmax, in (0,oo). Defaults to ``0.1``.
+- ``anneal_cap (float)`` : The hyper parameter of the weight of KL loss. Defaults to ``0.2``.
 - ``total_anneal_steps (int)`` : The maximum steps of anneal update. Defaults to ``200000``.
-- ``reg_weights (list)`` : L2 regularization. Defaults to ``[0.0,0.0]``.
+- ``reg_weights (list)`` : List of L2 regularization weights. Defaults to ``[0.0,0.0]``.
 
 
 **A Running Example:**

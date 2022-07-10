@@ -4,9 +4,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE
-# @Time    :   2020/11/17
-# @Author  :   Xingyu Pan
-# @email   :   panxy@ruc.edu.cn
+# @Time    :   2020/11/17, 2022/7/10
+# @Author  :   Xingyu Pan, Lanling Xu
+# @email   :   panxy@ruc.edu.cn, xulanling_sherry@163.com
 
 import os
 import unittest
@@ -660,14 +660,14 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_hgn(self):
         config_dict = {
             'model': 'HGN',
+            'neg_sampling': None
         }
         quick_test(config_dict)
 
-    def test_hgn_with_CE_loss(self):
+    def test_hgn_with_BPR_loss(self):
         config_dict = {
             'model': 'HGN',
-            'loss_type': 'CE',
-            'neg_sampling': None
+            'loss_type': 'BPR',
         }
         quick_test(config_dict)
 
