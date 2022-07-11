@@ -276,8 +276,8 @@ class Config(object):
         elif 'loss_type' in self.final_config_dict:
             if self.final_config_dict['loss_type'] in ['CE']:
                 if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and \
-                   self.final_config_dict['neg_sampling'] is not None:
-                    raise ValueError(f"neg_sampling [{self.final_config_dict['neg_sampling']}] should be None "
+                   self.final_config_dict['train_neg_sample_args'] is not None:
+                    raise ValueError(f"train_neg_sample_args [{self.final_config_dict['train_neg_sample_args']}] should be None "
                                      f"when the loss_type is CE.")
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.POINTWISE
             elif self.final_config_dict['loss_type'] in ['BPR']:
@@ -331,11 +331,13 @@ class Config(object):
             'dynamic': False,
             'candidate_num': 0
         }
-        if not isinstance(self.final_config_dict['train_neg_sample_args'], dict):
-            raise ValueError(f"train_neg_sample_args:[{self.final_config_dict['train_neg_sample_args']}] should be a dict.")
-        for op_args in default_train_neg_sample_args:
-            if op_args not in self.final_config_dict['train_neg_sample_args']:
-                self.final_config_dict['train_neg_sample_args'][op_args] = default_train_neg_sample_args[op_args]
+
+        if self.final_config_dict['train_neg_sample_args'] is not None:
+            if not isinstance(self.final_config_dict['train_neg_sample_args'], dict):
+                raise ValueError(f"train_neg_sample_args:[{self.final_config_dict['train_neg_sample_args']}] should be a dict.")
+            for op_args in default_train_neg_sample_args:
+                if op_args not in self.final_config_dict['train_neg_sample_args']:
+                    self.final_config_dict['train_neg_sample_args'][op_args] = default_train_neg_sample_args[op_args]
 
         # eval_args checking
         default_eval_args = {
@@ -363,14 +365,16 @@ class Config(object):
     def _set_train_neg_sample_args(self):
         train_neg_sample_args = self.final_config_dict['train_neg_sample_args']
         if train_neg_sample_args is None or train_neg_sample_args == 'None':
-            self.final_config_dict['train_neg_sample_args'] = {'distribution': 'none'}
+            self.final_config_dict['train_neg_sample_args'] = {'distribution': 'none', 'sample_num': 'none',
+                                                               'dynamic': False, 'candidate_num': 0}
         else:
             if not isinstance(train_neg_sample_args, dict):
                 raise ValueError(f"train_neg_sample_args:[{train_neg_sample_args}] should be a dict.")
 
             distribution = train_neg_sample_args['distribution']
             if distribution is None or distribution == 'None':
-                self.final_config_dict['train_neg_sample_args'] = {'distribution': 'none'}
+                self.final_config_dict['train_neg_sample_args'] = {'distribution': 'none', 'sample_num': 'none',
+                                                                   'dynamic': False, 'candidate_num': 0}
             elif distribution not in ['uniform', 'popularity']:
                 raise ValueError(f"The distribution [{distribution}] of train_neg_sample_args "
                                  f"should in ['uniform', 'popularity']")

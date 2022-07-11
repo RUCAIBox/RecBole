@@ -146,6 +146,43 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
             cur_data = self._neg_sampling(data)
             return cur_data, None, None, None
 
+    @property
+    def pr_end(self):
+        if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
+            return len(self.uid_list)
+        else:
+            return len(self.dataset)
+
+    def _shuffle(self):
+        self.logger.warnning('NegSampleEvalDataLoader can\'t shuffle')
+
+    def _next_batch_data(self):
+        if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
+            uid_list = self.uid_list[self.pr:self.pr + self.step]
+            data_list = []
+            idx_list = []
+            positive_u = []
+            positive_i = torch.tensor([], dtype=torch.int64)
+
+            for idx, uid in enumerate(uid_list):
+                index = self.uid2index[uid]
+                data_list.append(self._neg_sampling(self.dataset[index]))
+                idx_list += [idx for i in range(self.uid2items_num[uid] * self.times)]
+                positive_u += [idx for i in range(self.uid2items_num[uid])]
+                positive_i = torch.cat((positive_i, self.dataset[index][self.iid_field]), 0)
+
+            cur_data = cat_interactions(data_list)
+            idx_list = torch.from_numpy(np.array(idx_list))
+            positive_u = torch.from_numpy(np.array(positive_u))
+
+            self.pr += self.step
+
+            return cur_data, idx_list, positive_u, positive_i
+        else:
+            cur_data = self._neg_sampling(self.dataset[self.pr:self.pr + self.step])
+            self.pr += self.step
+            return cur_data, None, None, None
+
 
 class FullSortEvalDataLoader(AbstractDataLoader):
     """:class:`FullSortEvalDataLoader` is a dataloader for full-sort evaluation. In order to speed up calculation,
