@@ -218,7 +218,7 @@ class Trainer(AbstractTrainer):
                 self.set_reduce_hook()
                 sync_loss = self.sync_grad_loss()
                 
-            with torch.autocast(device_type=self.device.type,enabled=self.enable_amp):
+            with torch.autocast(device_type=self.device.type, enabled=self.enable_amp):
                 losses = loss_func(interaction)
 
             if isinstance(losses, tuple):
