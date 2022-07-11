@@ -1,5 +1,6 @@
 # general
-gpu_id: 0
+gpu_id: '0'
+worker: 0
 use_gpu: True
 seed: 2020
 state: INFO
@@ -31,6 +32,9 @@ clip_grad_norm: ~
 weight_decay: 0.0
 loss_decimal_place: 4
 require_pow: False
+enable_amp: False
+enable_scaler: False
+shuffle: True
 
 # evaluation settings
 eval_args: 

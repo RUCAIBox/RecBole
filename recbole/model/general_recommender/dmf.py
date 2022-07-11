@@ -79,7 +79,7 @@ class DMF(GeneralRecommender):
         self.user_fc_layers = MLPLayers([self.user_embedding_size] + self.user_hidden_size_list)
         self.item_fc_layers = MLPLayers([self.item_embedding_size] + self.item_hidden_size_list)
         self.sigmoid = nn.Sigmoid()
-        self.bce_loss = nn.BCELoss()
+        self.bce_loss = nn.BCEWithLogitsLoss()
 
         # Save the item embedding before dot product layer to speed up evaluation
         self.i_embedding = None
@@ -114,7 +114,6 @@ class DMF(GeneralRecommender):
 
         # cosine distance is replaced by dot product according the result of our experiments.
         vector = torch.mul(user, item).sum(dim=1)
-        vector = self.sigmoid(vector)
 
         return vector
 
@@ -130,7 +129,7 @@ class DMF(GeneralRecommender):
         elif self.inter_matrix_type == 'rating':
             label = interaction[self.RATING] * interaction[self.LABEL]
         output = self.forward(user, item)
-
+        
         label = label / self.max_rating  # normalize the label to calculate BCE loss.
         loss = self.bce_loss(output, label)
         return loss
@@ -138,7 +137,8 @@ class DMF(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        return self.forward(user, item)
+        predict=self.sigmoid(self.forward(user, item))
+        return predict
 
     def get_user_embedding(self, user):
         r"""Get a batch of user's embedding with the user's id and history interaction matrix.

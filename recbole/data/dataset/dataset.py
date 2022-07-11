@@ -24,13 +24,12 @@ import pandas as pd
 import torch
 import torch.nn.utils.rnn as rnn_utils
 from scipy.sparse import coo_matrix
-
 from recbole.data.interaction import Interaction
 from recbole.utils import FeatureSource, FeatureType, get_local_time, set_color, ensure_dir
 from recbole.utils.url import decide_download, download_url, extract_zip, makedirs, rename_atomic_files
 
 
-class Dataset:
+class Dataset(torch.utils.data.Dataset):
     """:class:`Dataset` stores the original dataset in memory.
     It provides many useful functions for data preprocessing, such as k-core data filtering and missing value
     imputation. Features are stored as :class:`pandas.DataFrame` inside :class:`~recbole.data.dataset.dataset.Dataset`.
@@ -90,6 +89,7 @@ class Dataset:
     """
 
     def __init__(self, config):
+        super().__init__()
         self.config = config
         self.dataset_name = config['dataset']
         self.logger = getLogger()
@@ -215,22 +215,26 @@ class Dataset:
             )
 
     def _download(self):
-        url = self._get_download_url('url')
-        self.logger.info(f'Prepare to download dataset [{self.dataset_name}] from [{url}].')
+        if self.config['local_rank'] == 0:
+            url = self._get_download_url('url')
+            self.logger.info(f'Prepare to download dataset [{self.dataset_name}] from [{url}].')
 
-        if decide_download(url):
-            makedirs(self.dataset_path)
-            path = download_url(url, self.dataset_path)
-            extract_zip(path, self.dataset_path)
-            os.unlink(path)
+            if decide_download(url):
+                makedirs(self.dataset_path)
+                path = download_url(url, self.dataset_path)
+                extract_zip(path, self.dataset_path)
+                os.unlink(path)
 
-            basename = os.path.splitext(os.path.basename(path))[0]
-            rename_atomic_files(self.dataset_path, basename, self.dataset_name)
+                basename = os.path.splitext(os.path.basename(path))[0]
+                rename_atomic_files(self.dataset_path, basename, self.dataset_name)
 
-            self.logger.info('Downloading done.')
+                self.logger.info('Downloading done.')
+            else:
+                self.logger.info('Stop download.')
+                exit(-1)
+            torch.distributed.barrier()
         else:
-            self.logger.info('Stop download.')
-            exit(-1)
+            torch.distributed.barrier()
 
     def _load_data(self, token, dataset_path):
         """Load features.

@@ -39,7 +39,7 @@ class AFM(ContextRecommender):
         self.p = nn.Parameter(torch.randn(self.embedding_size), requires_grad=True)
         self.dropout_layer = nn.Dropout(p=self.dropout_prob)
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -101,7 +101,7 @@ class AFM(ContextRecommender):
     def forward(self, interaction):
         afm_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
 
-        output = self.sigmoid(self.first_order_linear(interaction) + self.afm_layer(afm_all_embeddings))
+        output = self.first_order_linear(interaction) + self.afm_layer(afm_all_embeddings)
         return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
@@ -112,4 +112,4 @@ class AFM(ContextRecommender):
         return self.loss(output, label) + l2_loss
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))

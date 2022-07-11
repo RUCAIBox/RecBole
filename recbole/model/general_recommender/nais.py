@@ -80,7 +80,7 @@ class NAIS(GeneralRecommender):
         else:
             raise ValueError("NAIS just support attention type in ['concat', 'prod'] but get {}".format(self.algorithm))
         self.weight_layer = nn.Parameter(torch.ones(self.weight_size, 1))
-        self.bceloss = nn.BCELoss()
+        self.bceloss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         if self.pretrain_path is not None:
@@ -194,7 +194,7 @@ class NAIS(GeneralRecommender):
         weights = torch.div(exp_logits, exp_sum)
 
         coeff = torch.pow(item_num.squeeze(1), -self.alpha)
-        output = torch.sigmoid(coeff.float() * torch.sum(weights * similarity, dim=1) + bias)
+        output =coeff.float() * torch.sum(weights * similarity, dim=1) + bias
 
         return output
 
@@ -297,5 +297,5 @@ class NAIS(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        output = self.forward(user, item)
+        output = torch.sigmoid(self.forward(user, item))
         return output
