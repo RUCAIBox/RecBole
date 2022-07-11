@@ -128,7 +128,6 @@ class TestOverallConfig(unittest.TestCase):
         self.assertTrue(run_parms({'enable_scaler':[True,False]}))    
  
 
-
 if __name__ == '__main__':
     # suite = unittest.TestSuite()
     # suite.addTest(TestOverallConfig('test_split_ratio'))
