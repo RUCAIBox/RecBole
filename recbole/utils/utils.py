@@ -21,6 +21,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
+from fvcore.nn import FlopCountAnalysis
 
 from recbole.utils.enum_type import ModelType
 
@@ -230,3 +231,92 @@ def get_gpu_usage(device=None):
     total = torch.cuda.get_device_properties(device).total_memory / 1024 ** 3
 
     return '{:.2f} G/{:.2f} G'.format(reserved, total)
+
+def get_flops(model,dataset,device,uncalled_warnings=False,unsupported_warnings=False):
+    r""" Given a model and dataset to the model, compute the per-operator flops
+    of the given model.
+    Args:
+        model: the model to compute flop counts.
+        dataset: dataset that are passed to `model` to count flops.
+        device: cuda.device. It is the device that the model run on.
+        uncalled_warnings: whether to print warnings for uncalled modules.
+        unsupported_warnings: whether to print warnings for unsupported operations.
+
+    Returns:
+        total_flops: the number of flops for each operation.
+    """
+
+    def get_shape(val):
+        r"""
+        Get the shapes from a jit value object.
+        Args:
+            val: jit value object.
+
+        Returns:
+            list: return a list of ints.
+        """
+
+        if val.isCompleteTensor():
+            return val.type().sizes()
+        else:
+            return None
+
+    def binary_ops_jit(inputs,outputs):
+        r"""
+        Count flops for binary operator such as addition, subtraction, multiplication 
+        and division.
+        """
+
+        input_shapes = [get_shape(v) for v in inputs]
+        assert input_shapes[0] == input_shapes[1]
+        flop = np.prod(input_shapes[0])
+        return flop
+
+    def sum_ops_jit(inputs,outputs):
+        r"""
+        Count flops for sum.
+        """
+
+        input_shapes = [get_shape(v) for v in inputs]
+        assert input_shapes[0]
+        flop = np.prod(input_shapes[0])-1
+        return flop
+
+    def sigmoid_ops_jit(inputs,outputs):
+        r"""
+        Count flops for sigmoid.
+        """
+
+        input_shapes = [get_shape(v) for v in inputs]
+        assert input_shapes[0]
+        flop = np.prod(input_shapes)*4
+        return flop
+
+    custom_ops = {
+    "aten::add": binary_ops_jit,
+    "aten::sub": binary_ops_jit,
+    "aten::mul": binary_ops_jit,
+    "aten::div": binary_ops_jit,
+    "aten::sum": sum_ops_jit,
+    "aten::sigmoid": sigmoid_ops_jit,
+    }
+    inter = dataset[torch.tensor([1])].to(device)
+
+    class TracingAdapter(torch.nn.Module):
+
+        def __init__(self, rec_model):
+            super().__init__()
+            self.model = rec_model
+
+        def forward(self,interaction):
+            return self.model.predict(interaction)
+
+    wrapper = TracingAdapter(model)
+    flop_counter = FlopCountAnalysis(wrapper, (inter.interaction,)).set_op_handle(**custom_ops)
+    flop_counter.unsupported_ops_warnings(unsupported_warnings)
+    flop_counter.uncalled_modules_warnings(uncalled_warnings)
+    flop_counter.tracer_warnings("none")
+    total_flops = 0
+    for op, flop in flop_counter.by_operator().items():
+        total_flops += flop
+    return total_flops
