@@ -120,7 +120,7 @@ class Trainer(AbstractTrainer):
         self.device = config['device']
         self.checkpoint_dir = config['checkpoint_dir']
         self.enable_amp=config['enable_amp']
-        self.enable_scaler=config['enable_scaler']
+        self.enable_scaler=torch.cuda.is_available() and config['enable_scaler']
         ensure_dir(self.checkpoint_dir)
         saved_model_file = '{}-{}.pth'.format(self.config['model'], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
@@ -208,6 +208,7 @@ class Trainer(AbstractTrainer):
         
         if not self.config['single_spec'] and train_data.shuffle:
             train_data.sampler.set_epoch(epoch_idx)
+
         scaler = amp.GradScaler(enabled=self.enable_scaler)
         for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
@@ -217,7 +218,7 @@ class Trainer(AbstractTrainer):
                 self.set_reduce_hook()
                 sync_loss = self.sync_grad_loss()
                 
-            with amp.autocast(enabled=self.enable_amp):
+            with torch.autocast(device_type=self.device.type, enabled=self.enable_amp):
                 losses = loss_func(interaction)
 
             if isinstance(losses, tuple):

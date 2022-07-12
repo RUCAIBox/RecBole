@@ -1,6 +1,6 @@
-embedding_size: 10
-mlp_hidden_size: [256,256,256]
-dropout_prob: 0
-pooling_mode: 'mean'
-gru_type: 'AUGRU'
-alpha: 1
+embedding_size: 10              # (int) The embedding size of features.
+mlp_hidden_size: [256,256,256]  # (list of int) The hidden size of MLP layers. 
+dropout_prob: 0.0               # (float) The dropout rate.
+pooling_mode: 'mean'            # (str) Pooling mode of sequence data.
+gru_type: 'AUGRU'               # (str) GRU type of Interest Evolving Layer. 
+alpha: 1.0                      # (float) Weight to balance the interest representation and CTR prediction.

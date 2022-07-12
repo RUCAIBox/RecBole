@@ -1,3 +1,3 @@
-embedding_size: 64
-loss_function: 'inner_product'
-margin: 1.0
+embedding_size: 64              # (int) The embedding size of users, items, entities and relations.
+loss_function: 'inner_product'  # (str) The optimization loss function. Range in ['inner_product', 'transe'].
+margin: 1.0                     # (float) The margin in margin loss, only used in 'transe'.

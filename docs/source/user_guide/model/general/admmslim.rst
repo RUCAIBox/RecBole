@@ -42,19 +42,19 @@ Running with RecBole
 
 **Model Hyper-Parameters:**
 
-- ``lambda1 (float)`` : L1-norm regularization parameter. Defaults to ``3``.
+- ``lambda1 (float)`` : L1-norm regularization parameter. Defaults to ``3.0``.
 
-- ``lambda2 (float)`` : L2-norm regularization parameter. Defaults to ``200``.
+- ``lambda2 (float)`` : L2-norm regularization parameter. Defaults to ``200.0``.
 
 - ``alpha (float)`` : The exponents to control the power-law in the regularization terms. Defaults to ``0.5``.
 
-- ``rho (float)`` : The penalty parameter that applies to the squared difference between primal variables. Defaults to ``4000``.
+- ``rho (float)`` : The penalty parameter that applies to the squared difference between primal variables. Defaults to ``4000.0``.
 
 - ``k (int)`` : The number of running iterations. Defaults to ``100``.
 
-- ``positive_only (bool)`` : Whether only preserves all positive values. Defaults to ``True``.
+- ``positive_only (bool)`` : Whether or not to preserve all positive values only. Defaults to ``True``.
 
-- ``center_columns (bool)`` : Whether to use additional item-bias terms.. Defaults to ``False``.
+- ``center_columns (bool)`` : Whether or not to use additional item-bias terms. Defaults to ``False``.
 
 
 **A Running Example:**

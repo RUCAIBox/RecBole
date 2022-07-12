@@ -41,7 +41,7 @@ class MacridVAE(GeneralRecommender):
 
         self.layers = config['encoder_hidden_size']
         self.embedding_size = config['embedding_size']
-        self.drop_out = config['drop_out']
+        self.drop_out = config['dropout_prob']
         self.kfac = config['kfac']
         self.tau = config['tau']
         self.nogb = config['nogb']

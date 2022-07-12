@@ -41,7 +41,7 @@ Running with RecBole
 
 - ``rank (int)`` : The latent dimension of latent representations. Defaults to ``450``.
 - ``beta (float)`` : The popularity sensitivity. Defaults to ``1.0``.
-- ``reg_weight (float)`` : The regularization weight. Defaults to ``1e-02``.
+- ``reg_weight (float)`` : The regularization weight. Defaults to ``1e2``.
 
 
 **A Running Example:**

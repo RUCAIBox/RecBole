@@ -30,9 +30,9 @@ Running with RecBole
 - ``hidden_dropout_prob (float)`` : The probability of an element to be zeroed. Defaults to ``0.5``.
 - ``attn_dropout_prob (float)`` : The probability of an attention score to be zeroed. Defaults to ``0.5``.
 - ``hidden_act (str)`` : The activation function in feed-forward layer. Defaults to ``'gelu'``. Range in ``['gelu', 'relu', 'swish', 'tanh', 'sigmoid']``.
-- ``layer_norm_eps (float)`` : A value added to the denominator for numerical stability, Defaults to ``1e-12``.
+- ``layer_norm_eps (float)`` : A value added to the denominator for numerical stability. Defaults to ``1e-12``.
 - ``initializer_range (float)`` : The standard deviation for normal initialization. Defaults to 0.02``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it is set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it is set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between the positive item and the negative one. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 - ``dnn_type (str)`` : The type of DNN. If it set to ``'trm'``, CORE will leverage a Transformer encoder to learn weights. If it set to ``ave``, CORE will simply use mean pooling for session encoding. Defaults to ``'trm'``. Range in ``['trm', 'ave']``.
 - ``sess_dropout (float)`` : The probability of an element of item embeddings in a session to be zeroed. Defaults to ``0.2``.
 - ``item_dropout (float)`` : The probability of an element of candidate item embeddings to be zeroed. Defaults to ``0.2``.

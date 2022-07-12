@@ -45,7 +45,7 @@ Running with RecBole
 - ``interest_size (int)`` : The number of intentions. Defaults to ``3``.
 - ``tau_ratio (float)``: The tau value for temperature tuning. Defaults to ``0.1``.
 - ``reg_loss_ratio (float)``: The L2 regularization weight. Defaults to ``0.5``.
-- ``loss_type (str)`` : The type of loss function. If ``loss_type='CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If ``loss_type='BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it is set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it is set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between the positive item and the negative one. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 
 **A Running Example:**

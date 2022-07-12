@@ -32,17 +32,17 @@ Running with RecBole
 
 **Model Hyper-Parameters:**
 
-- ``embedding_size (int)`` : The embedding size of users, items. Defaults to ``64``.
+- ``embedding_size (int)`` : The embedding size of users and items. Defaults to ``64``.
 - ``margin (float)`` : The margin to filter negative samples in CCL loss. Range
   in ``[-1, 1]``. Defaults to ``0.9``.
 - ``negative_weight (int)`` : Control the relative weights of positive-sample loss and negative-sample 
   loss in CCL loss. Defaults to ``10``.
-- ``gamma (float)`` : The weights for fusion of user representations and historically interacted
+- ``gamma (float)`` : The weight for fusion of user representations and historically interacted
   items representations. Range in ``[0, 1]``. Defaults to ``0.5``.
-- ``aggregator (str)`` : The ways to aggregate historically interacted items representations. Range
+- ``aggregator (str)`` : The way to aggregate historically interacted items representations. Range
   in ``['mean', 'user_attention', 'self_attention']``. Defaults to ``'mean'``.
 - ``history_len (int)`` : The length of the user's historical interaction items. Defaults to ``50``.
-- ``reg_weight (float)`` : The L2 regularization weights. Defaults to ``1e-05``.
+- ``reg_weight (float)`` : The L2 regularization weight. Defaults to ``1e-05``.
 
 
 **A Running Example:**

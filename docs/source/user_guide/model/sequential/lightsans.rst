@@ -33,7 +33,7 @@ Running with RecBole
 
 **Model Hyper-Parameters:**
 
-- ``num_layers (int)`` : The number of transformer layers in transformer encoder. Default to ``2``.
+- ``n_layers (int)`` : The number of transformer layers in transformer encoder. Default to ``2``.
 - ``n_heads (int)`` : The number of attention heads for multi-head attention layer. Defaults to ``2``.
 - ``k_interests (int)`` : The number of latent interests dimension in item-to-interest aggregation. Defaults to ``5``. We recommend setting `k_interests=0.1*MAX_ITEM_LIST_LENGTH` to ensure the compression effect.
 - ``hidden_size (int)`` : The input and output hidden size. Defaults to ``64``.
@@ -43,7 +43,7 @@ Running with RecBole
 - ``hidden_act (str)`` : The activation function in feed-forward layer. Defaults to ``'gelu'``. Range in ``['gelu', 'relu', 'swish', 'tanh', 'sigmoid']``.
 - ``layer_norm_eps (float)``: The value added to the denominator for numerical stability. Defaults to ``1e-12``.
 - ``initializer_range (float)``: The range of weights initialization. Defaults to ``0.02``.
-- ``loss_type (str)`` : The type of loss function. If ``loss_type='CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If ``loss_type='BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it is set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it is set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between the positive item and the negative one. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 
 **A Running Example:**

@@ -32,8 +32,8 @@ Running with RecBole
 - ``mf_train (bool)`` : Whether to train the MF part of the model. Defaults to ``True``.
 - ``mlp_train (bool)`` : Whether to train the MLP part of the model. Defaults to ``True``.
 - ``use_pretrain (bool)`` : Whether to use the pre-trained parameters for MF and MLP part. Defaults to ``False``.
-- ``mf_pretrain_path`` : The path of pre-trained MF part model. If ``use_pretrain`` is set to False, it will be ignored. Defaults to ``None``.
-- ``mlp_pretrain_path`` : The path of pre-trained MLP part model. If ``use_pretrain`` is set to False, it will be ignored. Defaults to ``None``.
+- ``mf_pretrain_path (str or None)`` : The path of pre-trained MF part model. If ``use_pretrain`` is set to False, it will be ignored. Defaults to ``None``.
+- ``mlp_pretrain_path (str or None)`` : The path of pre-trained MLP part model. If ``use_pretrain`` is set to False, it will be ignored. Defaults to ``None``.
 
 **A Running Example:**
 

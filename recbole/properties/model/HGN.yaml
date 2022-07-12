@@ -1,4 +1,4 @@
-embedding_size: 64
-loss_type: 'BPR'
-pooling_type: "average"
-reg_weight: [0.00,0.00]
+embedding_size: 64              # (int) The embedding size of users and items.
+loss_type: 'CE'                 # (str) The type of loss function. Range in ['BPR', 'CE'].
+pooling_type: "average"         # (str) The type of pooling include average pooling and max pooling.
+reg_weight: [0.00,0.00]         # (list of float) The L2 regularization weight.
