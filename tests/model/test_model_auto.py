@@ -662,7 +662,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_hgn(self):
         config_dict = {
             'model': 'HGN',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
