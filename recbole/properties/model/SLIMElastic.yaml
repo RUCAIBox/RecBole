@@ -1,4 +1,7 @@
+# alpha and l1_ratio are both float-type values to control the balance between L1 and L2 norm.
+# The weight of L1-norm used in ElasticNet is equal to alpha * l1_ratio. 
+# The weight of L2-norm used in ElasticNet is 1/2 * alpha * (1 - l1_ratio).
 alpha: 0.2
-l1_ratio: 0.02
-positive_only: True
-hide_item: True
+l1_ratio: 0.02 
+positive_only: True             # (bool) Whether to add the non-negativity constraint. 
+hide_item: True                 # (bool) Whether to ignore the influence of the item itself.

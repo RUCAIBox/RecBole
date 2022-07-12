@@ -10,18 +10,20 @@ Introduction
 
 **Authors:** Qiao Liu, Yifu Zeng, Refuoe Mokhosi, Haibin Zhang
 
-**Abstract:**  Predicting users’ actions based on anonymous sessions is a challenging problem in web-based behavioral modeling research, mainly
+**Abstract:**  Predicting users' actions based on anonymous sessions is a 
+hallenging problem in web-based behavioral modeling research, mainly
 due to the uncertainty of user behavior and the limited information.
 Recent advances in recurrent neural networks have led to promising
 approaches to solving this problem, with long short-term memory
-model proving effective in capturing users’ general interests from
+model proving effective in capturing users' general interests from
 previous clicks. However, none of the existing approaches explicitly
-take the effects of users’ current actions on their next moves into
+take the effects of users' current actions on their next moves into
 account. In this study, we argue that a long-term memory model
 may be insufficient for modeling long sessions that usually contain
 user interests drift caused by unintended clicks. A novel short-term
 attention/memory priority model is proposed as a remedy, which is
-capable of capturing users’ general interests from the long-term memory of a session context, whilst taking into account users’ current
+capable of capturing users' general interests from the long-term memory 
+of a session context, whilst taking into account users' current
 interests from the short-term memory of the last-clicks. The validity
 and efficacy of the proposed attention mechanism is extensively
 evaluated on three benchmark data sets from the RecSys Challenge
@@ -38,7 +40,7 @@ Running with RecBole
 **Model Hyper-Parameters:**
 
 - ``embedding_size (int)`` : The embedding size of items. Defaults to ``64``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it is set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it is set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between the positive item and the negative one. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 **A Running Example:**
 

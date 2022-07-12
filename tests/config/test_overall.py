@@ -122,6 +122,12 @@ class TestOverallConfig(unittest.TestCase):
     def test_group_by_user(self):
         self.assertTrue(run_parms({'eval_args': [{'group_by': 'user'}, {'group_by': 'None'}]}))
 
+    def test_use_mixed_precision(self):
+        self.assertTrue(run_parms({'enable_amp': [True, False]}))   
+
+    def test_use_grad_scaler(self):
+        self.assertTrue(run_parms({'enable_scaler': [True, False]}))    
+ 
 
 if __name__ == '__main__':
     # suite = unittest.TestSuite()

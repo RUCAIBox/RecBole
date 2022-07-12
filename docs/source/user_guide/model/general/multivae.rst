@@ -24,7 +24,7 @@ Running with RecBole
 - ``latent_dimendion (int)`` : The latent dimension of auto-encoder. Defaults to ``128``.
 - ``mlp_hidden_size (list)`` : The MLP hidden layer. Defaults to ``[600]``.
 - ``dropout_prob (float)`` : The drop out probability of input. Defaults to ``0.5``.
-- ``anneal_cap (float)`` : The super parameter of the weight of KL loss. Defaults to ``0.2``.
+- ``anneal_cap (float)`` : The hyper parameter of the weight of KL loss. Defaults to ``0.2``.
 - ``total_anneal_steps (int)`` : The maximum steps of anneal update. Defaults to ``200000``.
 
 

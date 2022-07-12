@@ -1,13 +1,15 @@
-n_layers: 1
-n_heads: 1
-hidden_size: 64
-inner_size: 256
-hidden_dropout_prob: 0.2
-attn_dropout_prob: 0.2
-hidden_act: 'gelu'
-layer_norm_eps: 1e-12
-initializer_range: 0.02
-step: 1
+# weight (float): The weight to control the contribution of self-attention representation and 
+# the last-clicked action, 0.4 to 0.8 is suggested in the original paper.
 weight: 0.6
-reg_weight: 5e-5
-loss_type: 'CE'
+n_layers: 1                     # (int) The number of transformer layers in transformer encoder.
+n_heads: 1                      # (int) The number of attention heads for multi-head attention layer.
+hidden_size: 64                 # (int) The number of features in the hidden state.
+inner_size: 256                 # (int) The inner hidden size in feed-forward layer. 
+hidden_dropout_prob: 0.2        # (float) The probability of an element to be zeroed.
+attn_dropout_prob: 0.2          # (float) The probability of an attention score to be zeroed. 
+hidden_act: 'gelu'              # (str) The activation function in feed-forward layer.
+layer_norm_eps: 1e-12           # (float) A value added to the denominator for numerical stability.
+initializer_range: 0.02         # (float) The standard deviation for normal initialization.
+step: 1                         # (int) The number of layers in GNN.
+reg_weight: 5e-5                # (float) The L2 regularization weight. 
+loss_type: 'CE'                 # (str) The type of loss function. Range in ['BPR', 'CE'].

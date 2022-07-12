@@ -2,3 +2,8 @@ load_col:
     inter: ['user_id', 'item_id', 'rating', 'timestamp']
     kg: ['head_id', 'relation_id', 'tail_id']
     link: ['item_id', 'entity_id']
+
+# Data preprocessing for knowledge graph triples
+kg_reverse_r: False                     # (bool) Whether to reverse relations of triples for bidirectional edges.
+entity_kg_num_interval: "[0,inf)"       # (str) Entity interval for filtering kg.
+relation_kg_num_interval: "[0,inf)"     # (str) Relation interval for filtering kg.

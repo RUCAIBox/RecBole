@@ -1,6 +1,6 @@
-embedding_size: 10
-mlp_hidden_size: [128, 256, 128]
-dropout_prob: 0.0
-reg_weight: 0
-use_inner: True
-use_outer: False
+embedding_size: 10                # (int) The embedding size of features.
+mlp_hidden_size: [128, 256, 128]  # (list of int) The hidden size of MLP layers.
+dropout_prob: 0.0                 # (float) The dropout rate.
+use_inner: True                   # (bool) Whether to use the inner product in the model.
+use_outer: False                  # (bool) Whether to use the outer product in the model.
+reg_weight: 0.0                   # (float) The L2 regularization weight.

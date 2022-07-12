@@ -1,15 +1,16 @@
-embedding_size: 64
-n_layers: 3
-reg_weight: 1e-4
+# Graph Collaborative Filtering BackBone
+embedding_size: 64              # (int) The embedding size of users and items.
+n_layers: 3                     # (int) The number of GNN layers.
+reg_weight: 1e-4                # (float) The L2 regularization weight.
 
-ssl_temp: 0.1
-ssl_reg: 1e-7
-hyper_layers: 1
+# Contrastive Learning with Structural Neighbors
+ssl_temp: 0.1                   # (float) Temperature for contrastive loss.
+ssl_reg: 1e-7                   # (float) The structure-contrastive loss weight.
+hyper_layers: 1                 # (int) Control the contrasted range for structural-contrastive loss.
+alpha: 1.0                      # (float) The weight to balance self-supervised loss for users and items.
 
-alpha: 1
-
-proto_reg: 8e-8
-num_clusters: 1000
-
-m_step: 1
-warm_up_step: 20
+# Contrastive Learning with Semantic Neighbors
+proto_reg: 8e-8                 # (float) The prototype-contrastive weight.
+num_clusters: 1000              # (int) Number of prototypes.
+m_step: 1                       # (int) Number of M-steps for each E-step.
+warm_up_step: 20                # (int) Number of warm up steps.

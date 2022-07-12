@@ -1,7 +1,7 @@
-embedding_size: 64
-hidden_size: 128
-num_layers: 1
-dropout_prob: 0.1
-loss_type: 'CE'
-freeze_kg: False
-gamma: 10
+embedding_size: 64              # (int) The embedding size of items and the KG feature.
+hidden_size: 128                # (int) The number of features in the hidden state.
+num_layers: 1                   # (int) The number of layers in GRU.
+dropout_prob: 0.1               # (float) The dropout rate.
+loss_type: 'CE'                 # (str) The type of loss function. Range in ['BPR', 'CE'].
+freeze_kg: False                # (bool) Whether to freeze the pre-trained knowledge embedding feature.
+gamma: 10.0                     # (float) The scaling factor when calculating the attention weights.

@@ -23,7 +23,7 @@ Running with RecBole
 
 - ``embedding_size (int)`` : The embedding size of users and items. Defaults to ``64``.
 - ``order (int)`` : The order of proximity of the model. Defaults to ``2``.
-- ``second_order_loss_weight (float)`` : The super parameter of the loss of second proximity loss. Defaults to ``1``.
+- ``second_order_loss_weight (float)`` : The hyper parameter of the loss of second proximity loss. Defaults to ``1.0``.
 
 
 **A Running Example:**

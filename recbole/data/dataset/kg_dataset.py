@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/16, 2020/9/15, 2020/10/25
-# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen
-# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn
+# @Time   : 2020/10/16, 2020/9/15, 2020/10/25, 2022/7/10
+# @Author : Yupeng Hou, Xingyu Pan, Yushuo Chen, Lanling Xu
+# @Email  : houyupeng@ruc.edu.cn, panxy@ruc.edu.cn, chenyushuo@ruc.edu.cn, xulanling_sherry@163.com
 
 """
 recbole.data.kg_dataset
@@ -16,6 +16,7 @@ import os
 from collections import Counter
 
 import numpy as np
+import pandas as pd
 import torch
 from scipy.sparse import coo_matrix
 
@@ -73,6 +74,9 @@ class KnowledgeBasedDataset(Dataset):
         self.tail_entity_field = self.config['TAIL_ENTITY_ID_FIELD']
         self.relation_field = self.config['RELATION_ID_FIELD']
         self.entity_field = self.config['ENTITY_ID_FIELD']
+        self.kg_reverse_r = self.config['kg_reverse_r']
+        self.entity_kg_num_interval = self.config['entity_kg_num_interval']
+        self.relation_kg_num_interval = self.config['relation_kg_num_interval']
         self._check_field('head_entity_field', 'tail_entity_field', 'relation_field', 'entity_field')
         self.set_field_property(self.entity_field, FeatureType.TOKEN, FeatureSource.KG, 1)
 
@@ -81,7 +85,71 @@ class KnowledgeBasedDataset(Dataset):
 
     def _data_filtering(self):
         super()._data_filtering()
+        self._filter_kg_by_triple_num()
         self._filter_link()
+
+    def _filter_kg_by_triple_num(self):
+        """Filter by number of triples.
+
+        The interval of the number of triples can be set, and only entities/relations 
+        whose number of triples is in the specified interval can be retained.
+        See :doc:`../user_guide/data/data_args` for detail arg setting.
+
+        Note:
+            Lower bound of the interval is also called k-core filtering, which means this method 
+            will filter loops until all the entities and relations has at least k triples.
+        """
+        entity_kg_num_interval = self._parse_intervals_str(self.config['entity_kg_num_interval'])
+        relation_kg_num_interval = self._parse_intervals_str(self.config['relation_kg_num_interval'])
+
+        if entity_kg_num_interval is None and relation_kg_num_interval is None:
+            return
+
+        entity_kg_num = Counter()
+        if entity_kg_num_interval:
+            head_entity_kg_num = Counter(self.kg_feat[self.head_entity_field].values)
+            tail_entity_kg_num = Counter(self.kg_feat[self.tail_entity_field].values)
+            entity_kg_num = head_entity_kg_num + tail_entity_kg_num
+        relation_kg_num = Counter(self.kg_feat[self.relation_field].values) if relation_kg_num_interval else Counter()
+
+        while True:
+            ban_head_entities = self._get_illegal_ids_by_inter_num(
+                field=self.head_entity_field,
+                feat=None,
+                inter_num=entity_kg_num,
+                inter_interval=entity_kg_num_interval
+            )
+            ban_tail_entities = self._get_illegal_ids_by_inter_num(
+                field=self.tail_entity_field,
+                feat=None,
+                inter_num=entity_kg_num,
+                inter_interval=entity_kg_num_interval
+            )
+            ban_entities = ban_head_entities | ban_tail_entities
+            ban_relations = self._get_illegal_ids_by_inter_num(
+                field=self.relation_field,
+                feat=None,
+                inter_num=relation_kg_num,
+                inter_interval=relation_kg_num_interval
+            )
+            if len(ban_entities) == 0 and len(ban_relations) == 0:
+                break
+
+            dropped_kg = pd.Series(False, index=self.kg_feat.index)
+            head_entity_kg = self.kg_feat[self.head_entity_field]
+            tail_entity_kg = self.kg_feat[self.tail_entity_field]
+            relation_kg = self.kg_feat[self.relation_field]
+            dropped_kg |= head_entity_kg.isin(ban_entities)
+            dropped_kg |= tail_entity_kg.isin(ban_entities)
+            dropped_kg |= relation_kg.isin(ban_relations)
+
+            entity_kg_num -= Counter(head_entity_kg[dropped_kg].values)
+            entity_kg_num -= Counter(tail_entity_kg[dropped_kg].values)
+            relation_kg_num -= Counter(relation_kg[dropped_kg].values)
+
+            dropped_index = self.kg_feat.index[dropped_kg]
+            self.logger.debug(f'[{len(dropped_index)}] dropped triples.')
+            self.kg_feat.drop(dropped_index, inplace=True)
 
     def _filter_link(self):
         """Filter rows of :attr:`item2entity` and :attr:`entity2item`,
@@ -101,6 +169,9 @@ class KnowledgeBasedDataset(Dataset):
             del self.item2entity[item]
         for ent in illegal_ent:
             del self.entity2item[ent]
+        remained_inter = pd.Series(True, index=self.inter_feat.index)
+        remained_inter &= self.inter_feat[self.iid_field].isin(self.item2entity.keys())
+        self.inter_feat.drop(self.inter_feat.index[~remained_inter], inplace=True)
 
     def _download(self):
         super()._download()
@@ -259,11 +330,46 @@ class KnowledgeBasedDataset(Dataset):
         self.field2id_token[self.entity_field] = new_entity_id2token
         self.field2token_id[self.entity_field] = new_entity_token2id
 
+    def _add_auxiliary_relation(self):
+        """Add auxiliary relations in ``self.relation_field``.
+        """
+        if self.kg_reverse_r:
+            # '0' is used for padding, so the number needs to be reduced by one
+            original_rel_num = len(self.field2id_token[self.relation_field]) - 1
+            original_hids = self.kg_feat[self.head_entity_field]
+            original_tids = self.kg_feat[self.tail_entity_field]
+            original_rels = self.kg_feat[self.relation_field]
+
+            # Internal id gap of a relation and its reverse edge is original relation num
+            reverse_rels = original_rels + original_rel_num
+
+            # Add mapping for internal and external ID of relations
+            for i in range(1, original_rel_num + 1):
+                original_token = self.field2id_token[self.relation_field][i]
+                reverse_token = original_token + '_r'
+                self.field2token_id[self.relation_field][reverse_token] = i + original_rel_num
+                self.field2id_token[self.relation_field] = np.append(
+                        self.field2id_token[self.relation_field], reverse_token)
+
+            # Update knowledge graph triples with reverse relations
+            reverse_kg_data = {
+                self.head_entity_field: original_tids,
+                self.relation_field: reverse_rels,
+                self.head_entity_field: original_hids
+            }
+            reverse_kg_feat = pd.DataFrame(reverse_kg_data)
+            self.kg_feat = pd.concat([self.kg_feat, reverse_kg_feat])
+
+        # Add UI-relation pairs in the relation field
+        kg_rel_num = len(self.field2id_token[self.relation_field])
+        self.field2token_id[self.relation_field]['[UI-Relation]'] = kg_rel_num
+        self.field2id_token[self.relation_field] = np.append(
+                self.field2id_token[self.relation_field], '[UI-Relation]')
+
     def _remap_ID_all(self):
         super()._remap_ID_all()
         self._merge_item_and_entity()
-        self.field2token_id[self.relation_field]['[UI-Relation]'] = len(self.field2id_token[self.relation_field])
-        self.field2id_token[self.relation_field] = np.append(self.field2id_token[self.relation_field], '[UI-Relation]')
+        self._add_auxiliary_relation()
 
     @property
     def relation_num(self):
