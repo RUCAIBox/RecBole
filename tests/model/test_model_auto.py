@@ -202,7 +202,7 @@ class TestGeneralRecommender(unittest.TestCase):
     def test_RecVAE(self):
         config_dict = {
             'model': 'RecVAE',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 

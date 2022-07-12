@@ -69,7 +69,7 @@ class TestGeneralDataloader:
             'dataset': 'general_dataloader',
             'data_path': current_path,
             'load_col': None,
-            'neg_sampling': {'uniform': 1},
+            'train_neg_sample_args': {'distribution': 'uniform', 'sample_num': 1},
             'eval_args': {'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'TO', 'mode': 'full'},
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
