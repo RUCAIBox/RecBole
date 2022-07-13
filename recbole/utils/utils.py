@@ -232,8 +232,8 @@ def get_gpu_usage(device=None):
 
     return '{:.2f} G/{:.2f} G'.format(reserved, total)
 
-def get_flops(model,dataset,device,uncalled_warnings=False,unsupported_warnings=False):
-    r""" Given a model and dataset to the model, compute the per-operator flops
+def get_flops(model, dataset, device, uncalled_warnings=False, unsupported_warnings=False):
+    r"""Given a model and dataset to the model, compute the per-operator flops
     of the given model.
     Args:
         model: the model to compute flop counts.
@@ -255,7 +255,6 @@ def get_flops(model,dataset,device,uncalled_warnings=False,unsupported_warnings=
         Returns:
             list: return a list of ints.
         """
-
         if val.isCompleteTensor():
             return val.type().sizes()
         else:
@@ -266,7 +265,6 @@ def get_flops(model,dataset,device,uncalled_warnings=False,unsupported_warnings=
         Count flops for binary operator such as addition, subtraction, multiplication 
         and division.
         """
-
         input_shapes = [get_shape(v) for v in inputs]
         assert input_shapes[0] == input_shapes[1]
         flop = np.prod(input_shapes[0])
@@ -276,7 +274,6 @@ def get_flops(model,dataset,device,uncalled_warnings=False,unsupported_warnings=
         r"""
         Count flops for sum.
         """
-
         input_shapes = [get_shape(v) for v in inputs]
         assert input_shapes[0]
         flop = np.prod(input_shapes[0])-1
@@ -286,19 +283,18 @@ def get_flops(model,dataset,device,uncalled_warnings=False,unsupported_warnings=
         r"""
         Count flops for sigmoid.
         """
-
         input_shapes = [get_shape(v) for v in inputs]
         assert input_shapes[0]
         flop = np.prod(input_shapes)*4
         return flop
 
     custom_ops = {
-    "aten::add": binary_ops_jit,
-    "aten::sub": binary_ops_jit,
-    "aten::mul": binary_ops_jit,
-    "aten::div": binary_ops_jit,
-    "aten::sum": sum_ops_jit,
-    "aten::sigmoid": sigmoid_ops_jit,
+        "aten::add": binary_ops_jit,
+        "aten::sub": binary_ops_jit,
+        "aten::mul": binary_ops_jit,
+        "aten::div": binary_ops_jit,
+        "aten::sum": sum_ops_jit,
+        "aten::sigmoid": sigmoid_ops_jit,
     }
     inter = dataset[torch.tensor([1])].to(device)
 
