@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2021/7/9, 2020/9/17, 2020/8/31, 2021/2/20, 2021/3/1
-# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li, Haoran Cheng, Jiawei Guan
-# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com, chenghaoran29@foxmail.com, guanjw@ruc.edu.cn
+# @Time   : 2021/7/9, 2020/9/17, 2020/8/31, 2021/2/20, 2021/3/1, 2022/7/6
+# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li, Haoran Cheng, Jiawei Guan, Gaowei Zhang
+# @Email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com, chenghaoran29@foxmail.com, guanjw@ruc.edu.cn, zgw15630559577@163.com
 
 """
 recbole.data.utils
@@ -156,8 +156,8 @@ def data_preparation(config, dataset):
     logger = getLogger()
     logger.info(
         set_color('[Training]: ', 'pink') + set_color('train_batch_size', 'cyan') + ' = ' +
-        set_color(f'[{config["train_batch_size"]}]', 'yellow') + set_color(' negative sampling', 'cyan') + ': ' +
-        set_color(f'[{config["neg_sampling"]}]', 'yellow')
+        set_color(f'[{config["train_batch_size"]}]', 'yellow') + set_color(' train_neg_sample_args', 'cyan') + ': ' +
+        set_color(f'[{config["train_neg_sample_args"]}]', 'yellow')
     )
     logger.info(
         set_color('[Evaluation]: ', 'pink') + set_color('eval_batch_size', 'cyan') + ' = ' +
@@ -197,11 +197,11 @@ def get_dataloader(config, phase):
         else:
             return KnowledgeBasedDataLoader
     else:
-        eval_strategy = config['eval_neg_sample_args']['strategy']
-        if eval_strategy in {'none', 'by'}:
-            return NegSampleEvalDataLoader
-        elif eval_strategy == 'full':
+        eval_mode = config['eval_args']['mode']
+        if eval_mode == 'full':
             return FullSortEvalDataLoader
+        else:
+            return NegSampleEvalDataLoader
 
 
 def _get_AE_dataloader(config, phase):
@@ -217,11 +217,11 @@ def _get_AE_dataloader(config, phase):
     if phase == 'train':
         return UserDataLoader
     else:
-        eval_strategy = config['eval_neg_sample_args']['strategy']
-        if eval_strategy in {'none', 'by'}:
-            return NegSampleEvalDataLoader
-        elif eval_strategy == 'full':
+        eval_mode = config['eval_args']['mode']
+        if eval_mode == 'full':
             return FullSortEvalDataLoader
+        else:
+            return NegSampleEvalDataLoader
 
 
 def create_samplers(config, dataset, built_datasets):
@@ -245,14 +245,14 @@ def create_samplers(config, dataset, built_datasets):
     sampler = None
     train_sampler, valid_sampler, test_sampler = None, None, None
 
-    if train_neg_sample_args['strategy'] != 'none':
+    if train_neg_sample_args['distribution'] != 'none':
         if not config['repeatable']:
             sampler = Sampler(phases, built_datasets, train_neg_sample_args['distribution'])
         else:
             sampler = RepeatableSampler(phases, dataset, train_neg_sample_args['distribution'])
         train_sampler = sampler.set_phase('train')
 
-    if eval_neg_sample_args['strategy'] != 'none':
+    if eval_neg_sample_args['distribution'] != 'none':
         if sampler is None:
             if not config['repeatable']:
                 sampler = Sampler(phases, built_datasets, eval_neg_sample_args['distribution'])

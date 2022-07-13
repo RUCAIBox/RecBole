@@ -3,9 +3,9 @@
 # @Email  : linzihan.super@foxmail.com
 
 # UPDATE
-# @Time   : 2020/10/04, 2021/3/2, 2021/2/17, 2021/6/30
-# @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan, Xingyu Pan
-# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn, xy_pan@foxmail.com
+# @Time   : 2020/10/04, 2021/3/2, 2021/2/17, 2021/6/30, 2022/7/6
+# @Author : Shanlei Mu, Yupeng Hou, Jiawei Guan, Xingyu Pan, Gaowei Zhang
+# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn, Guanjw@ruc.edu.cn, xy_pan@foxmail.com, zgw15630559577@163.com
 
 """
 recbole.config.configurator
@@ -275,8 +275,8 @@ class Config(object):
         elif 'loss_type' in self.final_config_dict:
             if self.final_config_dict['loss_type'] in ['CE']:
                 if self.final_config_dict['MODEL_TYPE'] == ModelType.SEQUENTIAL and \
-                   self.final_config_dict['neg_sampling'] is not None:
-                    raise ValueError(f"neg_sampling [{self.final_config_dict['neg_sampling']}] should be None "
+                   self.final_config_dict['train_neg_sample_args'] is not None:
+                    raise ValueError(f"train_neg_sample_args [{self.final_config_dict['train_neg_sample_args']}] should be None "
                                      f"when the loss_type is CE.")
                 self.final_config_dict['MODEL_INPUT_TYPE'] = InputType.POINTWISE
             elif self.final_config_dict['loss_type'] in ['BPR']:
@@ -323,6 +323,21 @@ class Config(object):
             if isinstance(ad_suf, str):
                 self.final_config_dict['additional_feat_suffix'] = [ad_suf]
 
+        # train_neg_sample_args checking
+        default_train_neg_sample_args = {
+            'distribution': 'uniform',
+            'sample_num': 1,
+            'dynamic': False,
+            'candidate_num': 0
+        }
+
+        if self.final_config_dict['train_neg_sample_args'] is not None:
+            if not isinstance(self.final_config_dict['train_neg_sample_args'], dict):
+                raise ValueError(f"train_neg_sample_args:[{self.final_config_dict['train_neg_sample_args']}] should be a dict.")
+            for op_args in default_train_neg_sample_args:
+                if op_args not in self.final_config_dict['train_neg_sample_args']:
+                    self.final_config_dict['train_neg_sample_args'][op_args] = default_train_neg_sample_args[op_args]
+
         # eval_args checking
         default_eval_args = {
             'split': {'RS': [0.8, 0.1, 0.1]},
@@ -366,44 +381,36 @@ class Config(object):
                 self.final_config_dict['verbose'] = False
 
     def _set_train_neg_sample_args(self):
-        neg_sampling = self.final_config_dict['neg_sampling']
-        if neg_sampling is None or neg_sampling == 'None':
-            self.final_config_dict['train_neg_sample_args'] = {'strategy': 'none'}
+        train_neg_sample_args = self.final_config_dict['train_neg_sample_args']
+        if train_neg_sample_args is None or train_neg_sample_args == 'None':
+            self.final_config_dict['train_neg_sample_args'] = {'distribution': 'none', 'sample_num': 'none',
+                                                               'dynamic': False, 'candidate_num': 0}
         else:
-            if not isinstance(neg_sampling, dict):
-                raise ValueError(f"neg_sampling:[{neg_sampling}] should be a dict.")
+            if not isinstance(train_neg_sample_args, dict):
+                raise ValueError(f"train_neg_sample_args:[{train_neg_sample_args}] should be a dict.")
 
-            distribution = list(neg_sampling.keys())[0]
-            sample_num = neg_sampling[distribution]
-            if distribution not in ['uniform', 'popularity']:
-                raise ValueError(f"The distribution [{distribution}] of neg_sampling "
+            distribution = train_neg_sample_args['distribution']
+            if distribution is None or distribution == 'None':
+                self.final_config_dict['train_neg_sample_args'] = {'distribution': 'none', 'sample_num': 'none',
+                                                                   'dynamic': False, 'candidate_num': 0}
+            elif distribution not in ['uniform', 'popularity']:
+                raise ValueError(f"The distribution [{distribution}] of train_neg_sample_args "
                                  f"should in ['uniform', 'popularity']")
-
-            dynamic = 'none'
-            if 'dynamic' in neg_sampling.keys():
-                dynamic = neg_sampling['dynamic']
-
-            self.final_config_dict['train_neg_sample_args'] = {
-                'strategy': 'by',
-                'by': sample_num,
-                'distribution': distribution,
-                'dynamic': dynamic
-            }
 
     def _set_eval_neg_sample_args(self):
         eval_mode = self.final_config_dict['eval_args']['mode']
         if not isinstance(eval_mode, str):
             raise ValueError(f"mode [{eval_mode}] in eval_args should be a str.")
         if eval_mode == 'labeled':
-            eval_neg_sample_args = {'strategy': 'none', 'distribution': 'none'}
+            eval_neg_sample_args = {'distribution': 'none', 'sample_num': 'none'}
         elif eval_mode == 'full':
-            eval_neg_sample_args = {'strategy': 'full', 'distribution': 'uniform'}
+            eval_neg_sample_args = {'distribution': 'uniform', 'sample_num': 'none'}
         elif eval_mode[0:3] == 'uni':
-            sample_by = int(eval_mode[3:])
-            eval_neg_sample_args = {'strategy': 'by', 'by': sample_by, 'distribution': 'uniform'}
+            sample_num = int(eval_mode[3:])
+            eval_neg_sample_args = {'distribution': 'uniform', 'sample_num': sample_num}
         elif eval_mode[0:3] == 'pop':
-            sample_by = int(eval_mode[3:])
-            eval_neg_sample_args = {'strategy': 'by', 'by': sample_by, 'distribution': 'popularity'}
+            sample_num = int(eval_mode[3:])
+            eval_neg_sample_args = {'distribution': 'popularity', 'sample_num': sample_num}
         else:
             raise ValueError(f'the mode [{eval_mode}] in eval_args is not supported.')
         self.final_config_dict['eval_neg_sample_args'] = eval_neg_sample_args

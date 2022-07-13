@@ -42,7 +42,7 @@ class TestConfigClass(unittest.TestCase):
         self.assertIsInstance(config['train_batch_size'], int)
         self.assertIsInstance(config['learner'], str)
         self.assertIsInstance(config['learning_rate'], float)
-        self.assertIsInstance(config['neg_sampling'], dict)
+        self.assertIsInstance(config['train_neg_sample_args'], dict)
         self.assertIsInstance(config['eval_step'], int)
         self.assertIsInstance(config['stopping_step'], int)
         self.assertIsInstance(config['checkpoint_dir'], str)
@@ -63,11 +63,12 @@ class TestConfigClass(unittest.TestCase):
 
         self.assertEqual(config['metrics'], ['AUC', 'LogLoss'])
         self.assertEqual(config['valid_metric'], 'AUC')
-        self.assertEqual(config['neg_sampling'], None)
+        self.assertEqual(config['train_neg_sample_args'], {'distribution': 'none', 'sample_num': 'none',
+                                                               'dynamic': False, 'candidate_num': 0})
 
     def test_default_sequential_settings(self):
         para_dict = {
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         config = Config(model='SASRec', dataset='ml-100k', config_dict=para_dict)
         self.assertEqual(config['eval_args']['split'], {'LS': 'valid_and_test'})

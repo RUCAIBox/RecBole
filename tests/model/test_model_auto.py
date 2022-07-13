@@ -44,9 +44,11 @@ class TestGeneralRecommender(unittest.TestCase):
     def test_bpr_with_dns(self):
         config_dict = {
             'model': 'BPR',
-            'neg_sampling': {
-                'uniform': 1,
-                'dynamic': 2
+            'train_neg_sample_args': {
+                'distribution': 'uniform',
+                'sample_num': 1,
+                'dynamic': True,
+                'candidate_num': 2
             }
         }
         quick_test(config_dict)
@@ -159,35 +161,35 @@ class TestGeneralRecommender(unittest.TestCase):
     def test_MultiDAE(self):
         config_dict = {
             'model': 'MultiDAE',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
     def test_MultiVAE(self):
         config_dict = {
             'model': 'MultiVAE',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
     def test_enmf(self):
         config_dict = {
             'model': 'ENMF',
-            'neg_sampling': None,
+            'train_neg_sample_args': None,
         }
         quick_test(config_dict)
 
     def test_MacridVAE(self):
         config_dict = {
             'model': 'MacridVAE',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
     def test_CDAE(self):
         config_dict = {
             'model': 'CDAE',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -200,7 +202,7 @@ class TestGeneralRecommender(unittest.TestCase):
     def test_RecVAE(self):
         config_dict = {
             'model': 'RecVAE',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -434,7 +436,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_gru4rec(self):
         config_dict = {
             'model': 'GRU4Rec',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -448,7 +450,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_narm(self):
         config_dict = {
             'model': 'NARM',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -462,7 +464,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_stamp(self):
         config_dict = {
             'model': 'STAMP',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -478,7 +480,7 @@ class TestSequentialRecommender(unittest.TestCase):
             'model': 'Caser',
             'MAX_ITEM_LIST_LENGTH': 10,
             'reproducibility': False,
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -495,7 +497,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'NextItNet',
             'reproducibility': False,
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -516,7 +518,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_sasrec(self):
         config_dict = {
             'model': 'SASRec',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -540,7 +542,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'SRGNN',
             'MAX_ITEM_LIST_LENGTH': 3,
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -556,7 +558,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'GCSAN',
             'MAX_ITEM_LIST_LENGTH': 3,
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -572,7 +574,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_gru4recf(self):
         config_dict = {
             'model': 'GRU4RecF',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -580,7 +582,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'GRU4RecF',
             'pooling_mode': 'max',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -588,14 +590,14 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'GRU4RecF',
             'pooling_mode': 'sum',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
     def test_sasrecf(self):
         config_dict = {
             'model': 'SASRecF',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -603,7 +605,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'SASRecF',
             'pooling_mode': 'max',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -611,14 +613,14 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'SASRecF',
             'pooling_mode': 'sum',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
     def test_hrm(self):
         config_dict = {
             'model': 'HRM',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -632,7 +634,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_npe(self):
         config_dict = {
             'model': 'NPE',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -646,7 +648,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_shan(self):
         config_dict = {
             'model': 'SHAN',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -660,7 +662,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_hgn(self):
         config_dict = {
             'model': 'HGN',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -674,7 +676,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_fossil(self):
         config_dict = {
             'model': 'FOSSIL',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -687,7 +689,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_fdsa(self):
         config_dict = {
             'model': 'FDSA',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -695,7 +697,7 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'FDSA',
             'pooling_mode': 'max',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -703,14 +705,14 @@ class TestSequentialRecommender(unittest.TestCase):
         config_dict = {
             'model': 'FDSA',
             'pooling_mode': 'sum',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
     def test_bert4rec(self):
         config_dict = {
             'model': 'BERT4Rec',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -725,7 +727,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_lightsans(self):
         config_dict = {
             'model': 'LightSANs',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -739,7 +741,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_sine(self):
         config_dict = {
             'model': 'SINE',
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         quick_test(config_dict)
 
@@ -753,7 +755,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_sine_with_NLL_loss(self):
         config_dict = {
             'model': 'SINE',
-            'neg_sampling': None,
+            'train_neg_sample_args': None,
             'loss_type': 'NLL',
         }
         quick_test(config_dict)
@@ -761,7 +763,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_core_trm(self):
         config_dict = {
             'model': 'CORE',
-            'neg_sampling': None,
+            'train_neg_sample_args': None,
             'dnn_type': 'trm'
         }
         quick_test(config_dict)
@@ -769,7 +771,7 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_core_ave(self):
         config_dict = {
             'model': 'CORE',
-            'neg_sampling': None,
+            'train_neg_sample_args': None,
             'dnn_type': 'ave'
         }
         quick_test(config_dict)

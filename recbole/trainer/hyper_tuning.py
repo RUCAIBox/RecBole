@@ -4,6 +4,11 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : hyper_tuning.py
 
+# UPDATE:
+# @Time   : 2022/7/7
+# @Author : Gaowei Zhang
+# @Email  : zgw15630559577@163.com
+
 """
 recbole.trainer.hyper_tuning
 ############################
@@ -152,6 +157,8 @@ class HyperTuning(object):
         self.best_params = None
         self.best_test_result = None
         self.params2result = {}
+        self.params_list = []
+        self.score_list = []
 
         self.objective_function = objective_function
         self.max_evals = max_evals
@@ -276,10 +283,12 @@ class HyperTuning(object):
         import hyperopt
         config_dict = params.copy()
         params_str = self.params2str(params)
+        self.params_list.append(params_str)
         print('running parameters:', config_dict)
         result_dict = self.objective_function(config_dict, self.fixed_config_file_list)
         self.params2result[params_str] = result_dict
         score, bigger = result_dict['best_valid_score'], result_dict['valid_score_bigger']
+        self.score_list.append(score)
 
         if not self.best_score:
             self.best_score = score
@@ -301,9 +310,40 @@ class HyperTuning(object):
             score = -score
         return {'loss': score, 'status': hyperopt.STATUS_OK}
 
+    def plot_hyper(self):
+        import plotly.graph_objs as go
+        from plotly.offline import plot
+        import pandas as pd
+        data_dict = {'valid_score': self.score_list, 'params': self.params_list}
+        trial_df = pd.DataFrame(data_dict)
+        trial_df['trial_number'] = trial_df.index + 1
+        trial_df['trial_number'] = trial_df['trial_number'].astype(dtype=np.str)
+
+        trace = go.Scatter(
+                x=trial_df['trial_number'],
+                y=trial_df['valid_score'],
+                text=trial_df['params'],
+                mode='lines+markers',
+                marker=dict(
+                    color='green'
+                ),
+                showlegend=True,
+                textposition='top center',
+                name='tuning process'
+            )
+
+        data = [trace]
+        layout = go.Layout(title='hyperparams_tuning',
+                           xaxis=dict(title='trials'),
+                           yaxis=dict(title='valid_score'))
+        fig = go.Figure(data=data, layout=layout)
+
+        plot(fig, filename='hyperparams_tuning.html')
+
     def run(self):
         r""" begin to search the best parameters
 
         """
         from hyperopt import fmin
         fmin(self.trial, self.space, algo=self.algo, max_evals=self.max_evals)
+        self.plot_hyper()

@@ -33,6 +33,7 @@ def run_parms(parm_dict, extra_dict=None):
             try:
                 run_recbole(model='BPR', dataset='ml-100k', config_dict=config_dict)
             except Exception as e:
+                print(f'\ntest `{name}`={parm} ... fail.\n')
                 logging.critical(f'\ntest `{name}`={parm} ... fail.\n')
                 return False
     return True
@@ -71,7 +72,7 @@ class TestOverallConfig(unittest.TestCase):
         self.assertTrue(run_parms({'learning_rate': [0, 0.001, 1e-5]}))
 
     def test_training_neg_sampling(self):
-        self.assertTrue(run_parms({'neg_sampling': [{'uniform': 1}, {'uniform': 2}, {'uniform': 3}]}))
+        self.assertTrue(run_parms({'train_neg_sample_args': [{'distribution': 'uniform', 'sample_num': 1}, {'distribution': 'uniform', 'sample_num': 2}, {'distribution': 'uniform', 'sample_num': 3}]}))
 
     def test_eval_step(self):
         settings = {

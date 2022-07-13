@@ -588,7 +588,7 @@ class TestSeqDataset:
             'dataset': 'seq_dataset',
             'data_path': current_path,
             'load_col': None,
-            'neg_sampling': None
+            'train_neg_sample_args': None
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(config_dict=config_dict)
         assert (train_dataset.inter_feat[train_dataset.uid_field].numpy() == [1, 1, 1, 1, 1, 4, 2, 2, 3]).all()
@@ -649,7 +649,7 @@ class TestSeqDataset:
             'dataset': 'seq_dataset',
             'data_path': current_path,
             'load_col': None,
-            'neg_sampling': None,
+            'train_neg_sample_args': None,
             'eval_args': {
                 'split': {'RS': [0.3, 0.3, 0.4]},
                 'order': 'TO'
@@ -691,7 +691,7 @@ class TestSeqDataset:
             'dataset': 'seq_benchmark',
             'data_path': current_path,
             'load_col': None,
-            'neg_sampling': None,
+            'train_neg_sample_args': None,
             'benchmark_filename': ['train', 'valid', 'test'],
             'alias_of_item_id': ['item_id_list']
         }

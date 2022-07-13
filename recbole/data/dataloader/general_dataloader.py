@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/9, 2020/9/29, 2021/7/15
-# @Author : Yupeng Hou, Yushuo Chen, Xingyu Pan
-# @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, xy_pan@foxmail.com
+# @Time   : 2020/9/9, 2020/9/29, 2021/7/15, 2022/7/6
+# @Author : Yupeng Hou, Yushuo Chen, Xingyu Pan, Gaowei Zhang
+# @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, xy_pan@foxmail.com, zgw15630559577@163.com
 
 """
 recbole.data.dataloader.general_dataloader
@@ -41,7 +41,7 @@ class TrainDataLoader(NegSampleDataLoader):
 
     def _init_batch_size_and_step(self):
         batch_size = self.config['train_batch_size']
-        if self.neg_sample_args['strategy'] == 'by':
+        if self.neg_sample_args['distribution'] != 'none':
             batch_num = max(batch_size // self.times, 1)
             new_batch_size = batch_num * self.times
             self.step = batch_num
@@ -76,7 +76,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
     def __init__(self, config, dataset, sampler, shuffle=False):
         self.logger = getLogger()
         self._set_neg_sample_args(config, dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
-        if self.neg_sample_args['strategy'] == 'by':
+        if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
             user_num = dataset.user_num
             dataset.sort(by=dataset.uid_field, ascending=True)
             self.uid_list = []
@@ -102,7 +102,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
 
     def _init_batch_size_and_step(self):
         batch_size = self.config['eval_batch_size']
-        if self.neg_sample_args['strategy'] == 'by':
+        if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
             inters_num = sorted(self.uid2items_num * self.times, reverse=True)
             batch_num = 1
             new_batch_size = inters_num[0]
@@ -123,7 +123,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
 
     def collate_fn(self, index):
         index = np.array(index)
-        if self.neg_sample_args['strategy'] == 'by':
+        if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
             uid_list = self.uid_list[index]
             data_list = []
             idx_list = []

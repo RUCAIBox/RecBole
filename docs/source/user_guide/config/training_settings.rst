@@ -8,16 +8,14 @@ Training settings are designed to set parameters about model training.
 - ``learner (str)`` : The name of used optimizer. Defaults to ``'adam'``.
   Range in ``['adam', 'sgd', 'adagrad', 'rmsprop', 'sparse_adam']``.
 - ``learning_rate (float)`` : Learning rate. Defaults to ``0.001``.
-- ``neg_sampling(dict)``: This parameter controls the negative sampling for model training.
-  The key range is ``['uniform', 'popularity']``, which decides the distribution of negative items in sampling pools. In addition, we also support dynamic negative sampling ``['dynamic']``.
-  ``uniform`` means uniformly select negative items while ``popularity`` means select negative items based on 
-  their popularity (Counter(item) in `.inter` file). The value k (int) of this parameter means sample k negative items for each positive item.
-  Note that if your data is labeled, you need to set this parameter as ``None``.
-  The default value of this parameter is ``{'uniform': 1}``, which means uniformly sample one negative item for each positive item.
-  When dynamic negative sampling, ``dynamic`` decides the number of candidate negative items.
-  For example, ``{'uniform': 1, 'dynamic': 2}`` means sampling 2 items for each positive item uniformly,
-  and dynamically choosing the item with the higher score as the selected negative item.
-  In particular, ``'uniform': 1`` means that a positive item pairs with one negative item, and ``'dynamic': 2`` means dynamically selecting each negative item from two candidates.
+- ``train_neg_sample_args (dict)`` : This parameter have 4 keys: ``distribution``, ``sample_num``, ``dynamic``, and ``candidate_num``.   
+  - ``distribution (str)`` : decides the distribution of negative items in sampling pools. Now we support two kinds of distribution: ``['uniform', 'popularity']``. ``uniform`` means uniformly select negative items while ``popularity`` means select negative items based on their popularity (Counter(item) in `.inter` file). The default value is ``uniform``.   
+
+  - ``sample_num (int)`` : decides the number of negative samples we intend to take. The default value is ``1``.
+  
+  - ``dynamic (bool)`` : decides whether we adopt dynamic negative sampling. The default value is ``False``.
+  
+  - ``candidate_num (int)`` : decides the number of candidate negative items when dynamic negative sampling. The default value is ``0``.
 - ``eval_step (int)`` : The number of training epochs before an evaluation
   on the valid dataset. If it is less than 1, the model will not be
   evaluated on the valid dataset. Defaults to ``1``.

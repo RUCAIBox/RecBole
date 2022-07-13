@@ -49,7 +49,7 @@ class SimpleX(GeneralRecommender):
         self.margin = config['margin']
         self.negative_weight = config['negative_weight']
         self.gamma = config['gamma']
-        self.neg_seq_len = list(config['neg_sampling'].values())[0]
+        self.neg_seq_len = config['train_neg_sample_args']['sample_num']
         self.reg_weight = config['reg_weight']
         self.aggregator = config['aggregator']
         if self.aggregator not in ['mean', 'user_attention', 'self_attention']:
