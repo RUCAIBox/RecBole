@@ -43,44 +43,59 @@ class Caser(SequentialRecommender):
         super(Caser, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.loss_type = config['loss_type']
-        self.n_h = config['nh']
-        self.n_v = config['nv']
-        self.dropout_prob = config['dropout_prob']
-        self.reg_weight = config['reg_weight']
+        self.embedding_size = config["embedding_size"]
+        self.loss_type = config["loss_type"]
+        self.n_h = config["nh"]
+        self.n_v = config["nv"]
+        self.dropout_prob = config["dropout_prob"]
+        self.reg_weight = config["reg_weight"]
 
         # load dataset info
         self.n_users = dataset.user_num
 
         # define layers and loss
-        self.user_embedding = nn.Embedding(self.n_users, self.embedding_size, padding_idx=0)
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.user_embedding = nn.Embedding(
+            self.n_users, self.embedding_size, padding_idx=0
+        )
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
 
         # vertical conv layer
-        self.conv_v = nn.Conv2d(in_channels=1, out_channels=self.n_v, kernel_size=(self.max_seq_length, 1))
+        self.conv_v = nn.Conv2d(
+            in_channels=1, out_channels=self.n_v, kernel_size=(self.max_seq_length, 1)
+        )
 
         # horizontal conv layer
         lengths = [i + 1 for i in range(self.max_seq_length)]
-        self.conv_h = nn.ModuleList([
-            nn.Conv2d(in_channels=1, out_channels=self.n_h, kernel_size=(i, self.embedding_size)) for i in lengths
-        ])
+        self.conv_h = nn.ModuleList(
+            [
+                nn.Conv2d(
+                    in_channels=1,
+                    out_channels=self.n_h,
+                    kernel_size=(i, self.embedding_size),
+                )
+                for i in lengths
+            ]
+        )
 
         # fully-connected layer
         self.fc1_dim_v = self.n_v * self.embedding_size
         self.fc1_dim_h = self.n_h * len(lengths)
         fc1_dim_in = self.fc1_dim_v + self.fc1_dim_h
         self.fc1 = nn.Linear(fc1_dim_in, self.embedding_size)
-        self.fc2 = nn.Linear(self.embedding_size + self.embedding_size, self.embedding_size)
+        self.fc2 = nn.Linear(
+            self.embedding_size + self.embedding_size, self.embedding_size
+        )
 
         self.dropout = nn.Dropout(self.dropout_prob)
         self.ac_conv = nn.ReLU()
         self.ac_fc = nn.ReLU()
         self.reg_loss = RegLoss()
 
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
@@ -135,7 +150,7 @@ class Caser(SequentialRecommender):
         """
         loss_conv_h = 0
         for name, parm in self.conv_h.named_parameters():
-            if name.endswith('weight'):
+            if name.endswith("weight"):
                 loss_conv_h = loss_conv_h + loss_conv_h * parm.norm(2)
         return self.reg_weight * loss_conv_h
 
@@ -144,7 +159,7 @@ class Caser(SequentialRecommender):
         user = interaction[self.USER_ID]
         seq_output = self.forward(user, item_seq)
         pos_items = interaction[self.POS_ITEM_ID]
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             pos_items_emb = self.item_embedding(pos_items)
             neg_items_emb = self.item_embedding(neg_items)
@@ -157,9 +172,15 @@ class Caser(SequentialRecommender):
             logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
             loss = self.loss_fct(logits, pos_items)
 
-        reg_loss = self.reg_loss([
-            self.user_embedding.weight, self.item_embedding.weight, self.conv_v.weight, self.fc1.weight, self.fc2.weight
-        ])
+        reg_loss = self.reg_loss(
+            [
+                self.user_embedding.weight,
+                self.item_embedding.weight,
+                self.conv_v.weight,
+                self.fc1.weight,
+                self.fc2.weight,
+            ]
+        )
         loss = loss + self.reg_weight * reg_loss + self.reg_loss_conv_h()
         return loss
 
@@ -177,5 +198,7 @@ class Caser(SequentialRecommender):
         user = interaction[self.USER_ID]
         seq_output = self.forward(user, item_seq)
         test_items_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
+        scores = torch.matmul(
+            seq_output, test_items_emb.transpose(0, 1)
+        )  # [B, n_items]
         return scores

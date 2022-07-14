@@ -25,12 +25,12 @@ class EASE(GeneralRecommender):
         super().__init__(config, dataset)
 
         # load parameters info
-        reg_weight = config['reg_weight']
+        reg_weight = config["reg_weight"]
 
         # need at least one param
         self.dummy_param = torch.nn.Parameter(torch.zeros(1))
 
-        X = dataset.inter_matrix(form='csr').astype(np.float32)
+        X = dataset.inter_matrix(form="csr").astype(np.float32)
         # just directly calculate the entire score matrix in init
         # (can't be done incrementally)
 
@@ -47,7 +47,7 @@ class EASE(GeneralRecommender):
         P = np.linalg.inv(G)
         B = P / (-np.diag(P))
         # zero out diag
-        np.fill_diagonal(B, 0.)
+        np.fill_diagonal(B, 0.0)
 
         # instead of computing and storing the entire score matrix,
         # just store B and compute the scores on demand
@@ -61,7 +61,7 @@ class EASE(GeneralRecommender):
         # so will do everything with np/scipy
         self.item_similarity = B
         self.interaction_matrix = X
-        self.other_parameter_name = ['interaction_matrix', 'item_similarity']
+        self.other_parameter_name = ["interaction_matrix", "item_similarity"]
 
     def forward(self):
         pass
@@ -74,7 +74,9 @@ class EASE(GeneralRecommender):
         item = interaction[self.ITEM_ID].cpu().numpy()
 
         return torch.from_numpy(
-            (self.interaction_matrix[user, :].multiply(self.item_similarity[:, item].T)).sum(axis=1).getA1()
+            (self.interaction_matrix[user, :].multiply(self.item_similarity[:, item].T))
+            .sum(axis=1)
+            .getA1()
         )
 
     def full_sort_predict(self, interaction):

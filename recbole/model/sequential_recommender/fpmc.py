@@ -42,7 +42,7 @@ class FPMC(SequentialRecommender):
         super(FPMC, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
+        self.embedding_size = config["embedding_size"]
 
         # load dataset info
         self.n_users = dataset.user_num
@@ -67,7 +67,9 @@ class FPMC(SequentialRecommender):
 
     def forward(self, user, item_seq, item_seq_len, next_item):
         item_last_click_index = item_seq_len - 1
-        item_last_click = torch.gather(item_seq, dim=1, index=item_last_click_index.unsqueeze(1))
+        item_last_click = torch.gather(
+            item_seq, dim=1, index=item_last_click_index.unsqueeze(1)
+        )
         item_seq_emb = self.LI_emb(item_last_click)  # [b,1,emb]
 
         user_emb = self.UI_emb(user)
@@ -122,7 +124,9 @@ class FPMC(SequentialRecommender):
         all_il_emb = self.IL_emb.weight
 
         item_last_click_index = item_seq_len - 1
-        item_last_click = torch.gather(item_seq, dim=1, index=item_last_click_index.unsqueeze(1))
+        item_last_click = torch.gather(
+            item_seq, dim=1, index=item_last_click_index.unsqueeze(1)
+        )
         item_seq_emb = self.LI_emb(item_last_click)  # [b,1,emb]
         fmc = torch.matmul(item_seq_emb, all_il_emb.transpose(0, 1))
         fmc = torch.squeeze(fmc, dim=1)

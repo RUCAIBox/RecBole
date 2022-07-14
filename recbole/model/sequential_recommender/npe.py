@@ -26,8 +26,8 @@ from recbole.model.loss import BPRLoss
 
 class NPE(SequentialRecommender):
     r"""
-        models a user’s click to an item in two terms: the personal preference of the user for the item,
-        and the relationships between this item and other items clicked by the user
+    models a user’s click to an item in two terms: the personal preference of the user for the item,
+    and the relationships between this item and other items clicked by the user
 
     """
 
@@ -45,14 +45,16 @@ class NPE(SequentialRecommender):
         # define layers and loss type
         self.user_embedding = nn.Embedding(self.n_user, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
-        self.embedding_seq_item = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.embedding_seq_item = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(self.dropout_prob)
 
-        self.loss_type = config['loss_type']
-        if self.loss_type == 'BPR':
+        self.loss_type = config["loss_type"]
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
@@ -81,7 +83,7 @@ class NPE(SequentialRecommender):
         seq_output = self.forward(seq_item, user)
         pos_items = interaction[self.POS_ITEM_ID]
         pos_items_embs = self.item_embedding(pos_items)
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             neg_items_emb = self.relu(self.item_embedding(neg_items))
             pos_items_emb = self.relu(pos_items_embs)

@@ -23,7 +23,7 @@ from recbole.model.abstract_recommender import GeneralRecommender
 class SLIMElastic(GeneralRecommender):
     r"""SLIMElastic is a sparse linear method for top-K recommendation, which learns
     a sparse aggregation coefficient matrix by solving an L1-norm and L2-norm
-    regularized optimization problem. 
+    regularized optimization problem.
 
     """
     input_type = InputType.POINTWISE
@@ -33,15 +33,15 @@ class SLIMElastic(GeneralRecommender):
         super().__init__(config, dataset)
 
         # load parameters info
-        self.hide_item = config['hide_item']
-        self.alpha = config['alpha']
-        self.l1_ratio = config['l1_ratio']
-        self.positive_only = config['positive_only']
+        self.hide_item = config["hide_item"]
+        self.alpha = config["alpha"]
+        self.l1_ratio = config["l1_ratio"]
+        self.positive_only = config["positive_only"]
 
         # need at least one param
         self.dummy_param = torch.nn.Parameter(torch.zeros(1))
 
-        X = dataset.inter_matrix(form='csr').astype(np.float32)
+        X = dataset.inter_matrix(form="csr").astype(np.float32)
         X = X.tolil()
         self.interaction_matrix = X
 
@@ -52,9 +52,9 @@ class SLIMElastic(GeneralRecommender):
             fit_intercept=False,
             copy_X=False,
             precompute=True,
-            selection='random',
+            selection="random",
             max_iter=100,
-            tol=1e-4
+            tol=1e-4,
         )
         item_coeffs = []
 
@@ -83,7 +83,7 @@ class SLIMElastic(GeneralRecommender):
                     X[:, j] = r
 
         self.item_similarity = sp.vstack(item_coeffs).T
-        self.other_parameter_name = ['interaction_matrix', 'item_similarity']
+        self.other_parameter_name = ["interaction_matrix", "item_similarity"]
 
     def forward(self):
         pass
@@ -96,7 +96,9 @@ class SLIMElastic(GeneralRecommender):
         item = interaction[self.ITEM_ID].cpu().numpy()
 
         r = torch.from_numpy(
-            (self.interaction_matrix[user, :].multiply(self.item_similarity[:, item].T)).sum(axis=1).getA1()
+            (self.interaction_matrix[user, :].multiply(self.item_similarity[:, item].T))
+            .sum(axis=1)
+            .getA1()
         )
 
         return r

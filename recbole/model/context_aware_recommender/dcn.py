@@ -37,26 +37,38 @@ class DCN(ContextRecommender):
         super(DCN, self).__init__(config, dataset)
 
         # load parameters info
-        self.mlp_hidden_size = config['mlp_hidden_size']
-        self.cross_layer_num = config['cross_layer_num']
-        self.reg_weight = config['reg_weight']
-        self.dropout_prob = config['dropout_prob']
+        self.mlp_hidden_size = config["mlp_hidden_size"]
+        self.cross_layer_num = config["cross_layer_num"]
+        self.reg_weight = config["reg_weight"]
+        self.dropout_prob = config["dropout_prob"]
 
         # define layers and loss
         # init weight and bias of each cross layer
         self.cross_layer_w = nn.ParameterList(
-            nn.Parameter(torch.randn(self.num_feature_field * self.embedding_size).to(self.device))
+            nn.Parameter(
+                torch.randn(self.num_feature_field * self.embedding_size).to(
+                    self.device
+                )
+            )
             for _ in range(self.cross_layer_num)
         )
         self.cross_layer_b = nn.ParameterList(
-            nn.Parameter(torch.zeros(self.num_feature_field * self.embedding_size).to(self.device))
+            nn.Parameter(
+                torch.zeros(self.num_feature_field * self.embedding_size).to(
+                    self.device
+                )
+            )
             for _ in range(self.cross_layer_num)
         )
 
         # size of mlp hidden layer
-        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
+        size_list = [
+            self.embedding_size * self.num_feature_field
+        ] + self.mlp_hidden_size
         # size of cross network output
-        in_feature_num = self.embedding_size * self.num_feature_field + self.mlp_hidden_size[-1]
+        in_feature_num = (
+            self.embedding_size * self.num_feature_field + self.mlp_hidden_size[-1]
+        )
 
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout_prob, bn=True)
         self.predict_layer = nn.Linear(in_feature_num, 1)
@@ -99,7 +111,9 @@ class DCN(ContextRecommender):
         return x_l
 
     def forward(self, interaction):
-        dcn_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
+        dcn_all_embeddings = self.concat_embed_input_fields(
+            interaction
+        )  # [batch_size, num_field, embed_dim]
         batch_size = dcn_all_embeddings.shape[0]
         dcn_all_embeddings = dcn_all_embeddings.view(batch_size, -1)
 

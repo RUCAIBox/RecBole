@@ -26,10 +26,10 @@ from recbole.utils import InputType
 class SimpleX(GeneralRecommender):
     r"""SimpleX is a simple, unified collaborative filtering model.
 
-    SimpleX presents a simple and easy-to-understand model. Its advantage lies 
-    in its loss function, which uses a larger number of negative samples and 
-    sets a threshold to filter out less informative samples, it also uses 
-    relative weights to control the balance of positive-sample loss 
+    SimpleX presents a simple and easy-to-understand model. Its advantage lies
+    in its loss function, which uses a larger number of negative samples and
+    sets a threshold to filter out less informative samples, it also uses
+    relative weights to control the balance of positive-sample loss
     and negative-sample loss.
 
     We implement the model following the original author with a pairwise training mode.
@@ -45,33 +45,34 @@ class SimpleX(GeneralRecommender):
         self.history_item_len = self.history_item_len.to(self.device)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.margin = config['margin']
-        self.negative_weight = config['negative_weight']
-        self.gamma = config['gamma']
-        self.neg_seq_len = config['train_neg_sample_args']['sample_num']
-        self.reg_weight = config['reg_weight']
-        self.aggregator = config['aggregator']
-        if self.aggregator not in ['mean', 'user_attention', 'self_attention']:
-            raise ValueError('aggregator must be mean, user_attention or self_attention')
-        self.history_len=min(config['history_len'],self.history_item_len.shape[0])
-        
+        self.embedding_size = config["embedding_size"]
+        self.margin = config["margin"]
+        self.negative_weight = config["negative_weight"]
+        self.gamma = config["gamma"]
+        self.neg_seq_len = config["train_neg_sample_args"]["sample_num"]
+        self.reg_weight = config["reg_weight"]
+        self.aggregator = config["aggregator"]
+        if self.aggregator not in ["mean", "user_attention", "self_attention"]:
+            raise ValueError(
+                "aggregator must be mean, user_attention or self_attention"
+            )
+        self.history_len = min(config["history_len"], self.history_item_len.shape[0])
+
         # user embedding matrix
         self.user_emb = nn.Embedding(self.n_users, self.embedding_size)
         # item embedding matrix
-        self.item_emb = nn.Embedding(
-            self.n_items, self.embedding_size, padding_idx=0)
+        self.item_emb = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         # feature space mapping matrix of user and item
-        self.UI_map = nn.Linear(self.embedding_size,
-                                self.embedding_size, bias=False)
-        if self.aggregator in ['user_attention', 'self_attention']:
-            self.W_k = nn.Sequential(nn.Linear(self.embedding_size, self.embedding_size),
-                                     nn.Tanh())
-            if self.aggregator == 'self_attention':
+        self.UI_map = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
+        if self.aggregator in ["user_attention", "self_attention"]:
+            self.W_k = nn.Sequential(
+                nn.Linear(self.embedding_size, self.embedding_size), nn.Tanh()
+            )
+            if self.aggregator == "self_attention":
                 self.W_q = nn.Linear(self.embedding_size, 1, bias=False)
         # dropout
         self.dropout = nn.Dropout(0.1)
-        self.require_pow = config['require_pow']
+        self.require_pow = config["require_pow"]
         # l2 regularization loss
         self.reg_loss = EmbLoss()
 
@@ -79,51 +80,53 @@ class SimpleX(GeneralRecommender):
         self.apply(xavier_normal_initialization)
         # get the mask
         self.item_emb.weight.data[0, :] = 0
-            
+
     def get_UI_aggregation(self, user_e, history_item_e, history_len):
         r"""Get the combined vector of user and historically interacted items
 
         Args:
             user_e (torch.Tensor): User's feature vector, shape: [user_num, embedding_size]
-            history_item_e (torch.Tensor): History item's feature vector, 
+            history_item_e (torch.Tensor): History item's feature vector,
                 shape: [user_num, max_history_len, embedding_size]
             history_len (torch.Tensor): User's history length, shape: [user_num]
 
         Returns:
             torch.Tensor: Combined vector of user and item sequences, shape: [user_num, embedding_size]
         """
-        if self.aggregator == 'mean':
+        if self.aggregator == "mean":
             pos_item_sum = history_item_e.sum(dim=1)
             # [user_num, embedding_size]
-            out = pos_item_sum / (history_len + 1.e-10).unsqueeze(1)
-        elif self.aggregator in ['user_attention', 'self_attention']:
+            out = pos_item_sum / (history_len + 1.0e-10).unsqueeze(1)
+        elif self.aggregator in ["user_attention", "self_attention"]:
             # [user_num, max_history_len, embedding_size]
             key = self.W_k(history_item_e)
-            if self.aggregator == 'user_attention':
+            if self.aggregator == "user_attention":
                 # [user_num, max_history_len]
                 attention = torch.matmul(key, user_e.unsqueeze(2)).squeeze(2)
-            elif self.aggregator == 'self_attention':
+            elif self.aggregator == "self_attention":
                 # [user_num, max_history_len]
                 attention = self.W_q(key).squeeze(2)
             e_attention = torch.exp(attention)
             mask = (history_item_e.sum(dim=-1) != 0).int()
-            e_attention = e_attention*mask
+            e_attention = e_attention * mask
             # [user_num, max_history_len]
-            attention_weight = e_attention / (e_attention.sum(dim=1, keepdim=True)+1.e-10)
+            attention_weight = e_attention / (
+                e_attention.sum(dim=1, keepdim=True) + 1.0e-10
+            )
             # [user_num, embedding_size]
             out = torch.matmul(attention_weight.unsqueeze(1), history_item_e).squeeze(1)
         # Combined vector of user and item sequences
         out = self.UI_map(out)
         g = self.gamma
-        UI_aggregation_e = g*user_e+(1-g)*out
+        UI_aggregation_e = g * user_e + (1 - g) * out
         return UI_aggregation_e
 
     def get_cos(self, user_e, item_e):
         r"""Get the cosine similarity between user and item
 
-        Args: 
+        Args:
             user_e (torch.Tensor): User's feature vector, shape: [user_num, embedding_size]
-            item_e (torch.Tensor): Item's feature vector, 
+            item_e (torch.Tensor): Item's feature vector,
                 shape: [user_num, item_num, embedding_size]
 
         Returns:
@@ -166,24 +169,29 @@ class SimpleX(GeneralRecommender):
         neg_cos = self.get_cos(UI_aggregation_e, neg_item_seq_e)
 
         # CCL loss
-        pos_loss = torch.relu(1-pos_cos)
-        neg_loss = torch.relu(neg_cos-self.margin)
-        neg_loss = neg_loss.mean(1, keepdim=True)*self.negative_weight
-        CCL_loss = (pos_loss+neg_loss).mean()
+        pos_loss = torch.relu(1 - pos_cos)
+        neg_loss = torch.relu(neg_cos - self.margin)
+        neg_loss = neg_loss.mean(1, keepdim=True) * self.negative_weight
+        CCL_loss = (pos_loss + neg_loss).mean()
 
         # l2 regularization loss
         reg_loss = self.reg_loss(
-            user_e, pos_item_e, history_item_e, neg_item_seq_e, require_pow=self.require_pow)
+            user_e,
+            pos_item_e,
+            history_item_e,
+            neg_item_seq_e,
+            require_pow=self.require_pow,
+        )
 
-        loss = CCL_loss+self.reg_weight*reg_loss.sum()
+        loss = CCL_loss + self.reg_weight * reg_loss.sum()
         return loss
 
     def calculate_loss(self, interaction):
         r"""Data processing and call function forward(), return loss
 
-        To use SimpleX, a user must have a historical transaction record, 
-        a pos item and a sequence of neg items. Based on the RecBole 
-        framework, the data in the interaction object is ordered, so 
+        To use SimpleX, a user must have a historical transaction record,
+        a pos item and a sequence of neg items. Based on the RecBole
+        framework, the data in the interaction object is ordered, so
         we can get the data quickly.
         """
         user = interaction[self.USER_ID]
@@ -193,18 +201,19 @@ class SimpleX(GeneralRecommender):
         # get the sequence of neg items
         neg_item_seq = neg_item.reshape((self.neg_seq_len, -1))
         neg_item_seq = neg_item_seq.T
-        user_number = int(len(user)/self.neg_seq_len)
+        user_number = int(len(user) / self.neg_seq_len)
         # user's id
         user = user[0:user_number]
         # historical transaction record
         history_item = self.history_item_id[user]
-        history_item = history_item[:, :self.history_len]
+        history_item = history_item[:, : self.history_len]
         # positive item's id
         pos_item = pos_item[0:user_number]
         # history_len
         history_len = self.history_item_len[user]
         history_len = torch.minimum(
-            history_len, torch.zeros(1, device=self.device)+self.history_len)
+            history_len, torch.zeros(1, device=self.device) + self.history_len
+        )
 
         loss = self.forward(user, pos_item, history_item, history_len, neg_item_seq)
         return loss
@@ -212,10 +221,11 @@ class SimpleX(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         history_item = self.history_item_id[user]
-        history_item = history_item[:, :self.history_len]
+        history_item = history_item[:, : self.history_len]
         history_len = self.history_item_len[user]
-        history_len = torch.minimum(history_len, torch.zeros(
-            1, device=self.device)+self.history_len)
+        history_len = torch.minimum(
+            history_len, torch.zeros(1, device=self.device) + self.history_len
+        )
         test_item = interaction[self.ITEM_ID]
 
         # [user_num, embedding_size]
@@ -234,10 +244,11 @@ class SimpleX(GeneralRecommender):
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
         history_item = self.history_item_id[user]
-        history_item = history_item[:, :self.history_len]
+        history_item = history_item[:, : self.history_len]
         history_len = self.history_item_len[user]
         history_len = torch.minimum(
-            history_len, torch.zeros(1, device=self.device)+self.history_len)
+            history_len, torch.zeros(1, device=self.device) + self.history_len
+        )
 
         # [user_num, embedding_size]
         user_e = self.user_emb(user)

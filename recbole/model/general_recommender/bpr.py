@@ -25,16 +25,14 @@ from recbole.utils import InputType
 
 
 class BPR(GeneralRecommender):
-    r"""BPR is a basic matrix factorization model that be trained in the pairwise way.
-
-    """
+    r"""BPR is a basic matrix factorization model that be trained in the pairwise way."""
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(BPR, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
+        self.embedding_size = config["embedding_size"]
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
@@ -45,7 +43,7 @@ class BPR(GeneralRecommender):
         self.apply(xavier_normal_initialization)
 
     def get_user_embedding(self, user):
-        r""" Get a batch of user embedding tensor according to input user's id.
+        r"""Get a batch of user embedding tensor according to input user's id.
 
         Args:
             user (torch.LongTensor): The input tensor that contains user's id, shape: [batch_size, ]
@@ -56,7 +54,7 @@ class BPR(GeneralRecommender):
         return self.user_embedding(user)
 
     def get_item_embedding(self, item):
-        r""" Get a batch of item embedding tensor according to input item's id.
+        r"""Get a batch of item embedding tensor according to input item's id.
 
         Args:
             item (torch.LongTensor): The input tensor that contains item's id, shape: [batch_size, ]
@@ -78,7 +76,9 @@ class BPR(GeneralRecommender):
 
         user_e, pos_e = self.forward(user, pos_item)
         neg_e = self.get_item_embedding(neg_item)
-        pos_item_score, neg_item_score = torch.mul(user_e, pos_e).sum(dim=1), torch.mul(user_e, neg_e).sum(dim=1)
+        pos_item_score, neg_item_score = torch.mul(user_e, pos_e).sum(dim=1), torch.mul(
+            user_e, neg_e
+        ).sum(dim=1)
         loss = self.loss(pos_item_score, neg_item_score)
         return loss
 

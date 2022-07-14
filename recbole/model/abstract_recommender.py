@@ -23,8 +23,7 @@ from recbole.utils import ModelType, InputType, FeatureSource, FeatureType, set_
 
 
 class AbstractRecommender(nn.Module):
-    r"""Base class for all models
-    """
+    r"""Base class for all models"""
 
     def __init__(self):
         self.logger = getLogger()
@@ -66,7 +65,7 @@ class AbstractRecommender(nn.Module):
         raise NotImplementedError
 
     def other_parameter(self):
-        if hasattr(self, 'other_parameter_name'):
+        if hasattr(self, "other_parameter_name"):
             return {key: getattr(self, key) for key in self.other_parameter_name}
         return dict()
 
@@ -82,50 +81,56 @@ class AbstractRecommender(nn.Module):
         """
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
-        return super().__str__() + set_color('\nTrainable parameters', 'blue') + f': {params}'
+        return (
+            super().__str__()
+            + set_color("\nTrainable parameters", "blue")
+            + f": {params}"
+        )
 
 
 class GeneralRecommender(AbstractRecommender):
     """This is a abstract general recommender. All the general model should implement this class.
     The base general recommender class provide the basic dataset and parameters information.
     """
+
     type = ModelType.GENERAL
 
     def __init__(self, config, dataset):
         super(GeneralRecommender, self).__init__()
 
         # load dataset info
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
+        self.USER_ID = config["USER_ID_FIELD"]
+        self.ITEM_ID = config["ITEM_ID_FIELD"]
+        self.NEG_ITEM_ID = config["NEG_PREFIX"] + self.ITEM_ID
         self.n_users = dataset.num(self.USER_ID)
         self.n_items = dataset.num(self.ITEM_ID)
 
         # load parameters info
-        self.device = config['device']
+        self.device = config["device"]
 
 
 class SequentialRecommender(AbstractRecommender):
     """
     This is a abstract sequential recommender. All the sequential model should implement This class.
     """
+
     type = ModelType.SEQUENTIAL
 
     def __init__(self, config, dataset):
         super(SequentialRecommender, self).__init__()
 
         # load dataset info
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.ITEM_SEQ = self.ITEM_ID + config['LIST_SUFFIX']
-        self.ITEM_SEQ_LEN = config['ITEM_LIST_LENGTH_FIELD']
+        self.USER_ID = config["USER_ID_FIELD"]
+        self.ITEM_ID = config["ITEM_ID_FIELD"]
+        self.ITEM_SEQ = self.ITEM_ID + config["LIST_SUFFIX"]
+        self.ITEM_SEQ_LEN = config["ITEM_LIST_LENGTH_FIELD"]
         self.POS_ITEM_ID = self.ITEM_ID
-        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
-        self.max_seq_length = config['MAX_ITEM_LIST_LENGTH']
+        self.NEG_ITEM_ID = config["NEG_PREFIX"] + self.ITEM_ID
+        self.max_seq_length = config["MAX_ITEM_LIST_LENGTH"]
         self.n_items = dataset.num(self.ITEM_ID)
 
         # load parameters info
-        self.device = config['device']
+        self.device = config["device"]
 
     def gather_indexes(self, output, gather_index):
         """Gathers the vectors at the specific positions over a minibatch"""
@@ -135,11 +140,13 @@ class SequentialRecommender(AbstractRecommender):
 
     def get_attention_mask(self, item_seq, bidirectional=False):
         """Generate left-to-right uni-directional or bidirectional attention mask for multi-head attention."""
-        attention_mask = (item_seq != 0)
+        attention_mask = item_seq != 0
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.bool
         if not bidirectional:
-            extended_attention_mask = torch.tril(extended_attention_mask.expand((-1, -1, item_seq.size(-1), -1)))
-        extended_attention_mask = torch.where(extended_attention_mask, 0., -10000.)
+            extended_attention_mask = torch.tril(
+                extended_attention_mask.expand((-1, -1, item_seq.size(-1), -1))
+            )
+        extended_attention_mask = torch.where(extended_attention_mask, 0.0, -10000.0)
         return extended_attention_mask
 
 
@@ -147,27 +154,28 @@ class KnowledgeRecommender(AbstractRecommender):
     """This is a abstract knowledge-based recommender. All the knowledge-based model should implement this class.
     The base knowledge-based recommender class provide the basic dataset and parameters information.
     """
+
     type = ModelType.KNOWLEDGE
 
     def __init__(self, config, dataset):
         super(KnowledgeRecommender, self).__init__()
 
         # load dataset info
-        self.USER_ID = config['USER_ID_FIELD']
-        self.ITEM_ID = config['ITEM_ID_FIELD']
-        self.NEG_ITEM_ID = config['NEG_PREFIX'] + self.ITEM_ID
-        self.ENTITY_ID = config['ENTITY_ID_FIELD']
-        self.RELATION_ID = config['RELATION_ID_FIELD']
-        self.HEAD_ENTITY_ID = config['HEAD_ENTITY_ID_FIELD']
-        self.TAIL_ENTITY_ID = config['TAIL_ENTITY_ID_FIELD']
-        self.NEG_TAIL_ENTITY_ID = config['NEG_PREFIX'] + self.TAIL_ENTITY_ID
+        self.USER_ID = config["USER_ID_FIELD"]
+        self.ITEM_ID = config["ITEM_ID_FIELD"]
+        self.NEG_ITEM_ID = config["NEG_PREFIX"] + self.ITEM_ID
+        self.ENTITY_ID = config["ENTITY_ID_FIELD"]
+        self.RELATION_ID = config["RELATION_ID_FIELD"]
+        self.HEAD_ENTITY_ID = config["HEAD_ENTITY_ID_FIELD"]
+        self.TAIL_ENTITY_ID = config["TAIL_ENTITY_ID_FIELD"]
+        self.NEG_TAIL_ENTITY_ID = config["NEG_PREFIX"] + self.TAIL_ENTITY_ID
         self.n_users = dataset.num(self.USER_ID)
         self.n_items = dataset.num(self.ITEM_ID)
         self.n_entities = dataset.num(self.ENTITY_ID)
         self.n_relations = dataset.num(self.RELATION_ID)
 
         # load parameters info
-        self.device = config['device']
+        self.device = config["device"]
 
 
 class ContextRecommender(AbstractRecommender):
@@ -175,6 +183,7 @@ class ContextRecommender(AbstractRecommender):
     The base context-aware recommender class provide the basic embedding function of feature fields which also
     contains a first-order part of feature fields.
     """
+
     type = ModelType.CONTEXT
     input_type = InputType.POINTWISE
 
@@ -190,10 +199,10 @@ class ContextRecommender(AbstractRecommender):
                 FeatureSource.ITEM_ID,
             ]
         )
-        self.LABEL = config['LABEL_FIELD']
-        self.embedding_size = config['embedding_size']
-        self.device = config['device']
-        self.double_tower = config['double_tower']
+        self.LABEL = config["LABEL_FIELD"]
+        self.embedding_size = config["embedding_size"]
+        self.device = config["device"]
+        self.double_tower = config["double_tower"]
         if self.double_tower is None:
             self.double_tower = False
         self.token_field_names = []
@@ -205,8 +214,12 @@ class ContextRecommender(AbstractRecommender):
         self.num_feature_field = 0
 
         if self.double_tower:
-            self.user_field_names = dataset.fields(source=[FeatureSource.USER, FeatureSource.USER_ID])
-            self.item_field_names = dataset.fields(source=[FeatureSource.ITEM, FeatureSource.ITEM_ID])
+            self.user_field_names = dataset.fields(
+                source=[FeatureSource.USER, FeatureSource.USER_ID]
+            )
+            self.item_field_names = dataset.fields(
+                source=[FeatureSource.ITEM, FeatureSource.ITEM_ID]
+            )
             self.field_names = self.user_field_names + self.item_field_names
             self.user_token_field_num = 0
             self.user_float_field_num = 0
@@ -243,7 +256,9 @@ class ContextRecommender(AbstractRecommender):
                 self.float_field_dims.append(dataset.num(field_name))
             self.num_feature_field += 1
         if len(self.token_field_dims) > 0:
-            self.token_field_offsets = np.array((0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long)
+            self.token_field_offsets = np.array(
+                (0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long
+            )
             self.token_embedding_table = FMEmbedding(
                 self.token_field_dims, self.token_field_offsets, self.embedding_size
             )
@@ -254,7 +269,9 @@ class ContextRecommender(AbstractRecommender):
         if len(self.token_seq_field_dims) > 0:
             self.token_seq_embedding_table = nn.ModuleList()
             for token_seq_field_dim in self.token_seq_field_dims:
-                self.token_seq_embedding_table.append(nn.Embedding(token_seq_field_dim, self.embedding_size))
+                self.token_seq_embedding_table.append(
+                    nn.Embedding(token_seq_field_dim, self.embedding_size)
+                )
 
         self.first_order_linear = FMFirstOrderLinear(config, dataset)
 
@@ -274,7 +291,13 @@ class ContextRecommender(AbstractRecommender):
 
         num_float_field = float_fields.shape[1]
         # [batch_size, num_float_field]
-        index = torch.arange(0, num_float_field).unsqueeze(0).expand_as(float_fields).long().to(self.device)
+        index = (
+            torch.arange(0, num_float_field)
+            .unsqueeze(0)
+            .expand_as(float_fields)
+            .long()
+            .to(self.device)
+        )
 
         # [batch_size, num_float_field, embed_dim]
         float_embedding = self.float_embedding_table(index)
@@ -299,7 +322,7 @@ class ContextRecommender(AbstractRecommender):
 
         return token_embedding
 
-    def embed_token_seq_fields(self, token_seq_fields, mode='mean'):
+    def embed_token_seq_fields(self, token_seq_fields, mode="mean"):
         """Embed the token feature columns
 
         Args:
@@ -317,18 +340,30 @@ class ContextRecommender(AbstractRecommender):
             mask = mask.float()
             value_cnt = torch.sum(mask, dim=1, keepdim=True)  # [batch_size, 1]
 
-            token_seq_embedding = embedding_table(token_seq_field)  # [batch_size, seq_len, embed_dim]
+            token_seq_embedding = embedding_table(
+                token_seq_field
+            )  # [batch_size, seq_len, embed_dim]
 
-            mask = mask.unsqueeze(2).expand_as(token_seq_embedding)  # [batch_size, seq_len, embed_dim]
-            if mode == 'max':
-                masked_token_seq_embedding = token_seq_embedding - (1 - mask) * 1e9  # [batch_size, seq_len, embed_dim]
-                result = torch.max(masked_token_seq_embedding, dim=1, keepdim=True)  # [batch_size, 1, embed_dim]
-            elif mode == 'sum':
+            mask = mask.unsqueeze(2).expand_as(
+                token_seq_embedding
+            )  # [batch_size, seq_len, embed_dim]
+            if mode == "max":
+                masked_token_seq_embedding = (
+                    token_seq_embedding - (1 - mask) * 1e9
+                )  # [batch_size, seq_len, embed_dim]
+                result = torch.max(
+                    masked_token_seq_embedding, dim=1, keepdim=True
+                )  # [batch_size, 1, embed_dim]
+            elif mode == "sum":
                 masked_token_seq_embedding = token_seq_embedding * mask.float()
-                result = torch.sum(masked_token_seq_embedding, dim=1, keepdim=True)  # [batch_size, 1, embed_dim]
+                result = torch.sum(
+                    masked_token_seq_embedding, dim=1, keepdim=True
+                )  # [batch_size, 1, embed_dim]
             else:
                 masked_token_seq_embedding = token_seq_embedding * mask.float()
-                result = torch.sum(masked_token_seq_embedding, dim=1)  # [batch_size, embed_dim]
+                result = torch.sum(
+                    masked_token_seq_embedding, dim=1
+                )  # [batch_size, embed_dim]
                 eps = torch.FloatTensor([1e-8]).to(self.device)
                 result = torch.div(result, value_cnt + eps)  # [batch_size, embed_dim]
                 result = result.unsqueeze(1)  # [batch_size, 1, embed_dim]
@@ -336,7 +371,9 @@ class ContextRecommender(AbstractRecommender):
         if len(fields_result) == 0:
             return None
         else:
-            return torch.cat(fields_result, dim=1)  # [batch_size, num_token_seq_field, embed_dim]
+            return torch.cat(
+                fields_result, dim=1
+            )  # [batch_size, num_token_seq_field, embed_dim]
 
     def double_tower_embed_input_fields(self, interaction):
         """Embed the whole feature columns in a double tower way.
@@ -352,27 +389,47 @@ class ContextRecommender(AbstractRecommender):
 
         """
         if not self.double_tower:
-            raise RuntimeError('Please check your model hyper parameters and set \'double tower\' as True')
+            raise RuntimeError(
+                "Please check your model hyper parameters and set 'double tower' as True"
+            )
         sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
         if dense_embedding is not None:
-            first_dense_embedding, second_dense_embedding = \
-                torch.split(dense_embedding, [self.user_float_field_num, self.item_float_field_num], dim=1)
+            first_dense_embedding, second_dense_embedding = torch.split(
+                dense_embedding,
+                [self.user_float_field_num, self.item_float_field_num],
+                dim=1,
+            )
         else:
             first_dense_embedding, second_dense_embedding = None, None
 
         if sparse_embedding is not None:
             sizes = [
-                self.user_token_seq_field_num, self.item_token_seq_field_num, self.user_token_field_num,
-                self.item_token_field_num
+                self.user_token_seq_field_num,
+                self.item_token_seq_field_num,
+                self.user_token_field_num,
+                self.item_token_field_num,
             ]
-            first_token_seq_embedding, second_token_seq_embedding, first_token_embedding, second_token_embedding = \
-                torch.split(sparse_embedding, sizes, dim=1)
-            first_sparse_embedding = torch.cat([first_token_seq_embedding, first_token_embedding], dim=1)
-            second_sparse_embedding = torch.cat([second_token_seq_embedding, second_token_embedding], dim=1)
+            (
+                first_token_seq_embedding,
+                second_token_seq_embedding,
+                first_token_embedding,
+                second_token_embedding,
+            ) = torch.split(sparse_embedding, sizes, dim=1)
+            first_sparse_embedding = torch.cat(
+                [first_token_seq_embedding, first_token_embedding], dim=1
+            )
+            second_sparse_embedding = torch.cat(
+                [second_token_seq_embedding, second_token_embedding], dim=1
+            )
         else:
             first_sparse_embedding, second_sparse_embedding = None, None
 
-        return first_sparse_embedding, first_dense_embedding, second_sparse_embedding, second_dense_embedding
+        return (
+            first_sparse_embedding,
+            first_dense_embedding,
+            second_sparse_embedding,
+            second_dense_embedding,
+        )
 
     def concat_embed_input_fields(self, interaction):
         sparse_embedding, dense_embedding = self.embed_input_fields(interaction)
@@ -400,7 +457,9 @@ class ContextRecommender(AbstractRecommender):
             else:
                 float_fields.append(interaction[field_name].unsqueeze(1))
         if len(float_fields) > 0:
-            float_fields = torch.cat(float_fields, dim=1)  # [batch_size, num_float_field]
+            float_fields = torch.cat(
+                float_fields, dim=1
+            )  # [batch_size, num_float_field]
         else:
             float_fields = None
         # [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
@@ -410,7 +469,9 @@ class ContextRecommender(AbstractRecommender):
         for field_name in self.token_field_names:
             token_fields.append(interaction[field_name].unsqueeze(1))
         if len(token_fields) > 0:
-            token_fields = torch.cat(token_fields, dim=1)  # [batch_size, num_token_field]
+            token_fields = torch.cat(
+                token_fields, dim=1
+            )  # [batch_size, num_token_field]
         else:
             token_fields = None
         # [batch_size, num_token_field, embed_dim] or None
@@ -428,7 +489,9 @@ class ContextRecommender(AbstractRecommender):
             if token_seq_fields_embedding is None:
                 sparse_embedding = token_fields_embedding
             else:
-                sparse_embedding = torch.cat([token_seq_fields_embedding, token_fields_embedding], dim=1)
+                sparse_embedding = torch.cat(
+                    [token_seq_fields_embedding, token_fields_embedding], dim=1
+                )
 
         dense_embedding = float_fields_embedding
 

@@ -66,7 +66,9 @@ def trunc(scores, method):
     try:
         cut_method = getattr(np, method)
     except NotImplementedError:
-        raise NotImplementedError("module 'numpy' has no function named '{}'".format(method))
+        raise NotImplementedError(
+            "module 'numpy' has no function named '{}'".format(method)
+        )
     scores = cut_method(scores)
     return scores
 
@@ -102,7 +104,7 @@ def _binary_clf_curve(trues, preds):
         in SkLearn and made some optimizations.
 
     """
-    trues = (trues == 1)
+    trues = trues == 1
 
     desc_idxs = np.argsort(preds)[::-1]
     preds = preds[desc_idxs]

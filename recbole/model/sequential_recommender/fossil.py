@@ -34,24 +34,28 @@ class FOSSIL(SequentialRecommender):
 
         # load the dataset information
         self.n_users = dataset.num(self.USER_ID)
-        self.device = config['device']
+        self.device = config["device"]
 
         # load the parameters
         self.embedding_size = config["embedding_size"]
         self.order_len = config["order_len"]
-        assert self.order_len <= self.max_seq_length, "order_len can't longer than the max_seq_length"
+        assert (
+            self.order_len <= self.max_seq_length
+        ), "order_len can't longer than the max_seq_length"
         self.reg_weight = config["reg_weight"]
         self.alpha = config["alpha"]
 
         # define the layers and loss type
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
         self.user_lambda = nn.Embedding(self.n_users, self.order_len)
         self.lambda_ = nn.Parameter(torch.zeros(self.order_len)).to(self.device)
 
-        self.loss_type = config['loss_type']
-        if self.loss_type == 'BPR':
+        self.loss_type = config["loss_type"]
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
@@ -78,7 +82,8 @@ class FOSSIL(SequentialRecommender):
         embedding_list = list()
         for i in range(self.order_len):
             embedding = self.gather_indexes(
-                item_embedding_zeros, self.max_seq_length + seq_item_len - self.order_len + i
+                item_embedding_zeros,
+                self.max_seq_length + seq_item_len - self.order_len + i,
             )
             embedding_list.append(embedding.unsqueeze(1))
         short_item_embedding = torch.cat(embedding_list, dim=1)
@@ -89,9 +94,11 @@ class FOSSIL(SequentialRecommender):
     def reg_loss(self, user_embedding, item_embedding, seq_output):
 
         reg_1 = self.reg_weight
-        loss_1 = reg_1 * torch.norm(user_embedding, p=2) \
-                 + reg_1 * torch.norm(item_embedding, p=2) \
-                 + reg_1 * torch.norm(seq_output, p=2)
+        loss_1 = (
+            reg_1 * torch.norm(user_embedding, p=2)
+            + reg_1 * torch.norm(item_embedding, p=2)
+            + reg_1 * torch.norm(seq_output, p=2)
+        )
 
         return loss_1
 
@@ -104,7 +111,9 @@ class FOSSIL(SequentialRecommender):
 
         seq_item_embedding = self.item_embedding(seq_item)
 
-        high_order_seq_item_embedding = self.inverse_seq_item_embedding(seq_item_embedding, seq_item_len)
+        high_order_seq_item_embedding = self.inverse_seq_item_embedding(
+            seq_item_embedding, seq_item_len
+        )
         # batch_size * order_len * embedding
 
         high_order = self.get_high_order_Markov(high_order_seq_item_embedding, user)
@@ -153,7 +162,7 @@ class FOSSIL(SequentialRecommender):
 
         user_lambda = self.user_lambda(user)
         pos_items_embedding = self.item_embedding(pos_items)
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             neg_items_emb = self.item_embedding(neg_items)
             pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)

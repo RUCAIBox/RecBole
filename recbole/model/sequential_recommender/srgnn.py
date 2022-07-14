@@ -44,8 +44,12 @@ class GNN(nn.Module):
         self.b_iah = Parameter(torch.Tensor(self.embedding_size))
         self.b_ioh = Parameter(torch.Tensor(self.embedding_size))
 
-        self.linear_edge_in = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
-        self.linear_edge_out = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
+        self.linear_edge_in = nn.Linear(
+            self.embedding_size, self.embedding_size, bias=True
+        )
+        self.linear_edge_out = nn.Linear(
+            self.embedding_size, self.embedding_size, bias=True
+        )
 
     def GNNCell(self, A, hidden):
         r"""Obtain latent vectors of nodes via graph neural networks.
@@ -61,8 +65,15 @@ class GNN(nn.Module):
 
         """
 
-        input_in = torch.matmul(A[:, :, :A.size(1)], self.linear_edge_in(hidden)) + self.b_iah
-        input_out = torch.matmul(A[:, :, A.size(1):2 * A.size(1)], self.linear_edge_out(hidden)) + self.b_ioh
+        input_in = (
+            torch.matmul(A[:, :, : A.size(1)], self.linear_edge_in(hidden)) + self.b_iah
+        )
+        input_out = (
+            torch.matmul(
+                A[:, :, A.size(1) : 2 * A.size(1)], self.linear_edge_out(hidden)
+            )
+            + self.b_ioh
+        )
         # [batch_size, max_session_len, embedding_size * 2]
         inputs = torch.cat([input_in, input_out], 2)
 
@@ -116,23 +127,27 @@ class SRGNN(SequentialRecommender):
         super(SRGNN, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.step = config['step']
-        self.device = config['device']
-        self.loss_type = config['loss_type']
+        self.embedding_size = config["embedding_size"]
+        self.step = config["step"]
+        self.device = config["device"]
+        self.loss_type = config["loss_type"]
 
         # define layers and loss
         # item embedding
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
         # define layers and loss
         self.gnn = GNN(self.embedding_size, self.step)
         self.linear_one = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.linear_two = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.linear_three = nn.Linear(self.embedding_size, 1, bias=False)
-        self.linear_transform = nn.Linear(self.embedding_size * 2, self.embedding_size, bias=True)
-        if self.loss_type == 'BPR':
+        self.linear_transform = nn.Linear(
+            self.embedding_size * 2, self.embedding_size, bias=True
+        )
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
@@ -188,7 +203,9 @@ class SRGNN(SequentialRecommender):
         alias_inputs, A, items, mask = self._get_slice(item_seq)
         hidden = self.item_embedding(items)
         hidden = self.gnn(A, hidden)
-        alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(-1, -1, self.embedding_size)
+        alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(
+            -1, -1, self.embedding_size
+        )
         seq_hidden = torch.gather(hidden, dim=1, index=alias_inputs)
         # fetch the last hidden state of last timestamp
         ht = self.gather_indexes(seq_hidden, item_seq_len - 1)
@@ -205,7 +222,7 @@ class SRGNN(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
         pos_items = interaction[self.POS_ITEM_ID]
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             pos_items_emb = self.item_embedding(pos_items)
             neg_items_emb = self.item_embedding(neg_items)
@@ -233,5 +250,7 @@ class SRGNN(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
         test_items_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
+        scores = torch.matmul(
+            seq_output, test_items_emb.transpose(0, 1)
+        )  # [B, n_items]
         return scores

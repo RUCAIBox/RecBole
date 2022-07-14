@@ -38,26 +38,28 @@ class xDeepFM(ContextRecommender):
         super(xDeepFM, self).__init__(config, dataset)
 
         # load parameters info
-        self.mlp_hidden_size = config['mlp_hidden_size']
-        self.reg_weight = config['reg_weight']
-        self.dropout_prob = config['dropout_prob']
-        self.direct = config['direct']
-        self.cin_layer_size = temp_cin_size = list(config['cin_layer_size'])
+        self.mlp_hidden_size = config["mlp_hidden_size"]
+        self.reg_weight = config["reg_weight"]
+        self.dropout_prob = config["dropout_prob"]
+        self.direct = config["direct"]
+        self.cin_layer_size = temp_cin_size = list(config["cin_layer_size"])
 
         # Check whether the size of the CIN layer is legal.
         if not self.direct:
             self.cin_layer_size = list(map(lambda x: int(x // 2 * 2), temp_cin_size))
             if self.cin_layer_size[:-1] != temp_cin_size[:-1]:
                 self.logger.warning(
-                    'Layer size of CIN should be even except for the last layer when direct is True.'
-                    'It is changed to {}'.format(self.cin_layer_size)
+                    "Layer size of CIN should be even except for the last layer when direct is True."
+                    "It is changed to {}".format(self.cin_layer_size)
                 )
 
         # Create a convolutional layer for each CIN layer
         self.conv1d_list = nn.ModuleList()
         self.field_nums = [self.num_feature_field]
         for i, layer_size in enumerate(self.cin_layer_size):
-            conv1d = nn.Conv1d(self.field_nums[-1] * self.field_nums[0], layer_size, 1).to(self.device)
+            conv1d = nn.Conv1d(
+                self.field_nums[-1] * self.field_nums[0], layer_size, 1
+            ).to(self.device)
             self.conv1d_list.append(conv1d)
             if self.direct:
                 self.field_nums.append(layer_size)
@@ -65,14 +67,18 @@ class xDeepFM(ContextRecommender):
                 self.field_nums.append(layer_size // 2)
 
         # Create MLP layer
-        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size + [1]
+        size_list = (
+            [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size + [1]
+        )
         self.mlp_layers = MLPLayers(size_list, dropout=self.dropout_prob)
 
         # Get the output size of CIN
         if self.direct:
             self.final_len = sum(self.cin_layer_size)
         else:
-            self.final_len = sum(self.cin_layer_size[:-1]) // 2 + self.cin_layer_size[-1]
+            self.final_len = (
+                sum(self.cin_layer_size[:-1]) // 2 + self.cin_layer_size[-1]
+            )
 
         self.cin_linear = nn.Linear(self.final_len, 1)
         self.sigmoid = nn.Sigmoid()
@@ -95,7 +101,7 @@ class xDeepFM(ContextRecommender):
         """
         reg_loss = 0
         for name, parm in parameters:
-            if name.endswith('weight'):
+            if name.endswith("weight"):
                 reg_loss = reg_loss + parm.norm(2)
         return reg_loss
 
@@ -113,7 +119,7 @@ class xDeepFM(ContextRecommender):
             l2_reg += self.reg_loss(conv1d.named_parameters())
         return l2_reg
 
-    def compressed_interaction_network(self, input_features, activation='ReLU'):
+    def compressed_interaction_network(self, input_features, activation="ReLU"):
         r"""For k-th CIN layer, the output :math:`X_k` is calculated via
 
         .. math::
@@ -137,12 +143,16 @@ class xDeepFM(ContextRecommender):
         hidden_nn_layers = [input_features]
         final_result = []
         for i, layer_size in enumerate(self.cin_layer_size):
-            z_i = torch.einsum('bhd,bmd->bhmd', hidden_nn_layers[-1], hidden_nn_layers[0])
-            z_i = z_i.view(batch_size, self.field_nums[0] * self.field_nums[i], embedding_size)
+            z_i = torch.einsum(
+                "bhd,bmd->bhmd", hidden_nn_layers[-1], hidden_nn_layers[0]
+            )
+            z_i = z_i.view(
+                batch_size, self.field_nums[0] * self.field_nums[i], embedding_size
+            )
             z_i = self.conv1d_list[i](z_i)
 
             # Pass the CIN intermediate result through the activation function.
-            if activation.lower() == 'identity':
+            if activation.lower() == "identity":
                 output = z_i
             else:
                 activate_func = activation_layer(activation)
@@ -157,7 +167,9 @@ class xDeepFM(ContextRecommender):
                 next_hidden = output
             else:
                 if i != len(self.cin_layer_size) - 1:
-                    next_hidden, direct_connect = torch.split(output, 2 * [layer_size // 2], 1)
+                    next_hidden, direct_connect = torch.split(
+                        output, 2 * [layer_size // 2], 1
+                    )
                 else:
                     direct_connect = output
                     next_hidden = 0
@@ -170,7 +182,9 @@ class xDeepFM(ContextRecommender):
 
     def forward(self, interaction):
         # Get the output of CIN.
-        xdeepfm_input = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
+        xdeepfm_input = self.concat_embed_input_fields(
+            interaction
+        )  # [batch_size, num_field, embed_dim]
         cin_output = self.compressed_interaction_network(xdeepfm_input)
         cin_output = self.cin_linear(cin_output)
 
@@ -180,7 +194,6 @@ class xDeepFM(ContextRecommender):
 
         # Get predicted score.
         y_p = self.first_order_linear(interaction) + cin_output + dnn_output
-
 
         return y_p.squeeze(1)
 

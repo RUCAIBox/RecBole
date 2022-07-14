@@ -34,14 +34,14 @@ from recbole.utils import InputType
 class GCMC(GeneralRecommender):
     r"""GCMC is a model that incorporate graph autoencoders for recommendation.
 
-    Graph autoencoders are comprised of: 
+    Graph autoencoders are comprised of:
 
-    1) a graph encoder model :math:`Z = f(X; A)`, which take as input an :math:`N \times D` feature matrix X and 
+    1) a graph encoder model :math:`Z = f(X; A)`, which take as input an :math:`N \times D` feature matrix X and
     a graph adjacency matrix A, and produce an :math:`N \times E` node embedding matrix
     :math:`Z = [z_1^T,..., z_N^T ]^T`;
 
-    2) a pairwise decoder model :math:`\hat A = g(Z)`, which takes pairs of node embeddings :math:`(z_i, z_j)` and 
-    predicts respective entries :math:`\hat A_{ij}` in the adjacency matrix. 
+    2) a pairwise decoder model :math:`\hat A = g(Z)`, which takes pairs of node embeddings :math:`(z_i, z_j)` and
+    predicts respective entries :math:`\hat A_{ij}` in the adjacency matrix.
 
     Note that :math:`N` denotes the number of nodes, :math:`D` the number of input features,
     and :math:`E` the embedding size.
@@ -55,15 +55,17 @@ class GCMC(GeneralRecommender):
 
         # load dataset info
         self.num_all = self.n_users + self.n_items
-        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)  # csr
+        self.interaction_matrix = dataset.inter_matrix(form="coo").astype(
+            np.float32
+        )  # csr
 
         # load parameters info
-        self.dropout_prob = config['dropout_prob']
-        self.sparse_feature = config['sparse_feature']
-        self.gcn_output_dim = config['gcn_output_dim']
-        self.dense_output_dim = config['embedding_size']
-        self.n_class = config['class_num']
-        self.num_basis_functions = config['num_basis_functions']
+        self.dropout_prob = config["dropout_prob"]
+        self.sparse_feature = config["sparse_feature"]
+        self.gcn_output_dim = config["gcn_output_dim"]
+        self.dense_output_dim = config["embedding_size"]
+        self.n_class = config["class_num"]
+        self.num_basis_functions = config["num_basis_functions"]
 
         # generate node feature
         if self.sparse_feature:
@@ -71,16 +73,20 @@ class GCMC(GeneralRecommender):
             i = features._indices()
             v = features._values()
             self.user_features = torch.sparse.FloatTensor(
-                i[:, :self.n_users], v[:self.n_users], torch.Size([self.n_users, self.num_all])
+                i[:, : self.n_users],
+                v[: self.n_users],
+                torch.Size([self.n_users, self.num_all]),
             ).to(self.device)
-            item_i = i[:, self.n_users:]
+            item_i = i[:, self.n_users :]
             item_i[0, :] = item_i[0, :] - self.n_users
             self.item_features = torch.sparse.FloatTensor(
-                item_i, v[self.n_users:], torch.Size([self.n_items, self.num_all])
+                item_i, v[self.n_users :], torch.Size([self.n_items, self.num_all])
             ).to(self.device)
         else:
             features = torch.eye(self.num_all).to(self.device)
-            self.user_features, self.item_features = torch.split(features, [self.n_users, self.n_items])
+            self.user_features, self.item_features = torch.split(
+                features, [self.n_users, self.n_items]
+            )
         self.input_dim = self.user_features.shape[1]
 
         # adj matrices for each relation are stored in self.support
@@ -88,13 +94,13 @@ class GCMC(GeneralRecommender):
         self.support = [self.Graph]
 
         # accumulation operation
-        self.accum = config['accum']
-        if self.accum == 'stack':
+        self.accum = config["accum"]
+        if self.accum == "stack":
             div = self.gcn_output_dim // len(self.support)
             if self.gcn_output_dim % len(self.support) != 0:
                 self.logger.warning(
-                    "HIDDEN[0] (=%d) of stack layer is adjusted to %d (in %d splits)." %
-                    (self.gcn_output_dim, len(self.support) * div, len(self.support))
+                    "HIDDEN[0] (=%d) of stack layer is adjusted to %d (in %d splits)."
+                    % (self.gcn_output_dim, len(self.support) * div, len(self.support))
                 )
             self.gcn_output_dim = len(self.support) * div
 
@@ -109,14 +115,14 @@ class GCMC(GeneralRecommender):
             dense_output_dim=self.dense_output_dim,
             drop_prob=self.dropout_prob,
             device=self.device,
-            sparse_feature=self.sparse_feature
+            sparse_feature=self.sparse_feature,
         ).to(self.device)
         self.BiDecoder = BiDecoder(
             input_dim=self.dense_output_dim,
             output_dim=self.n_class,
-            drop_prob=0.,
+            drop_prob=0.0,
             device=self.device,
-            num_weights=self.num_basis_functions
+            num_weights=self.num_basis_functions,
         ).to(self.device)
         self.loss_function = nn.CrossEntropyLoss()
 
@@ -148,11 +154,22 @@ class GCMC(GeneralRecommender):
             Sparse tensor of the normalized interaction matrix.
         """
         # build adj matrix
-        A = sp.dok_matrix((self.n_users + self.n_items, self.n_users + self.n_items), dtype=np.float32)
+        A = sp.dok_matrix(
+            (self.n_users + self.n_items, self.n_users + self.n_items), dtype=np.float32
+        )
         inter_M = self.interaction_matrix
         inter_M_t = self.interaction_matrix.transpose()
-        data_dict = dict(zip(zip(inter_M.row, inter_M.col + self.n_users), [1] * inter_M.nnz))
-        data_dict.update(dict(zip(zip(inter_M_t.row + self.n_users, inter_M_t.col), [1] * inter_M_t.nnz)))
+        data_dict = dict(
+            zip(zip(inter_M.row, inter_M.col + self.n_users), [1] * inter_M.nnz)
+        )
+        data_dict.update(
+            dict(
+                zip(
+                    zip(inter_M_t.row + self.n_users, inter_M_t.col),
+                    [1] * inter_M_t.nnz,
+                )
+            )
+        )
         A._update(data_dict)
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)
@@ -187,7 +204,7 @@ class GCMC(GeneralRecommender):
         user_X, item_X = self.user_features, self.item_features
         predict = self.forward(user_X, item_X, users, items)
         target = torch.zeros(len(user) * 2, dtype=torch.long).to(self.device)
-        target[:len(user)] = 1
+        target[: len(user)] = 1
 
         loss = self.loss_function(predict, target)
         return loss
@@ -234,7 +251,7 @@ class GcEncoder(nn.Module):
         sparse_feature=True,
         act_dense=lambda x: x,
         share_user_item_weights=True,
-        bias=False
+        bias=False,
     ):
         super(GcEncoder, self).__init__()
         self.num_users = num_user
@@ -262,56 +279,90 @@ class GcEncoder(nn.Module):
         self.num_support = len(support)
 
         # gcn layer
-        if self.accum == 'sum':
-            self.weights_u = nn.ParameterList([
-                nn.Parameter(
-                    torch.FloatTensor(self.input_dim, self.gcn_output_dim).to(self.device), requires_grad=True
-                ) for _ in range(self.num_support)
-            ])
+        if self.accum == "sum":
+            self.weights_u = nn.ParameterList(
+                [
+                    nn.Parameter(
+                        torch.FloatTensor(self.input_dim, self.gcn_output_dim).to(
+                            self.device
+                        ),
+                        requires_grad=True,
+                    )
+                    for _ in range(self.num_support)
+                ]
+            )
             if share_user_item_weights:
                 self.weights_v = self.weights_u
             else:
-                self.weights_v = nn.ParameterList([
-                    nn.Parameter(
-                        torch.FloatTensor(self.input_dim, self.gcn_output_dim).to(self.device), requires_grad=True
-                    ) for _ in range(self.num_support)
-                ])
+                self.weights_v = nn.ParameterList(
+                    [
+                        nn.Parameter(
+                            torch.FloatTensor(self.input_dim, self.gcn_output_dim).to(
+                                self.device
+                            ),
+                            requires_grad=True,
+                        )
+                        for _ in range(self.num_support)
+                    ]
+                )
         else:
-            assert self.gcn_output_dim % self.num_support == 0, 'output_dim must be multiple of num_support for stackGC'
+            assert (
+                self.gcn_output_dim % self.num_support == 0
+            ), "output_dim must be multiple of num_support for stackGC"
             self.sub_hidden_dim = self.gcn_output_dim // self.num_support
 
-            self.weights_u = nn.ParameterList([
-                nn.Parameter(
-                    torch.FloatTensor(self.input_dim, self.sub_hidden_dim).to(self.device), requires_grad=True
-                ) for _ in range(self.num_support)
-            ])
+            self.weights_u = nn.ParameterList(
+                [
+                    nn.Parameter(
+                        torch.FloatTensor(self.input_dim, self.sub_hidden_dim).to(
+                            self.device
+                        ),
+                        requires_grad=True,
+                    )
+                    for _ in range(self.num_support)
+                ]
+            )
             if share_user_item_weights:
                 self.weights_v = self.weights_u
             else:
-                self.weights_v = nn.ParameterList([
-                    nn.Parameter(
-                        torch.FloatTensor(self.input_dim, self.sub_hidden_dim).to(self.device), requires_grad=True
-                    ) for _ in range(self.num_support)
-                ])
+                self.weights_v = nn.ParameterList(
+                    [
+                        nn.Parameter(
+                            torch.FloatTensor(self.input_dim, self.sub_hidden_dim).to(
+                                self.device
+                            ),
+                            requires_grad=True,
+                        )
+                        for _ in range(self.num_support)
+                    ]
+                )
 
         # dense layer
-        self.dense_layer_u = nn.Linear(self.gcn_output_dim, self.dense_output_dim, bias=self.bias)
+        self.dense_layer_u = nn.Linear(
+            self.gcn_output_dim, self.dense_output_dim, bias=self.bias
+        )
         if share_user_item_weights:
             self.dense_layer_v = self.dense_layer_u
         else:
-            self.dense_layer_v = nn.Linear(self.gcn_output_dim, self.dense_output_dim, bias=self.bias)
+            self.dense_layer_v = nn.Linear(
+                self.gcn_output_dim, self.dense_output_dim, bias=self.bias
+            )
 
         self._init_weights()
 
     def _init_weights(self):
-        init_range = math.sqrt((self.num_support + 1) / (self.input_dim + self.gcn_output_dim))
+        init_range = math.sqrt(
+            (self.num_support + 1) / (self.input_dim + self.gcn_output_dim)
+        )
         for w in range(self.num_support):
             self.weights_u[w].data.uniform_(-init_range, init_range)
         if not self.share_weights:
             for w in range(self.num_support):
                 self.weights_v[w].data.uniform_(-init_range, init_range)
 
-        dense_init_range = math.sqrt((self.num_support + 1) / (self.dense_output_dim + self.gcn_output_dim))
+        dense_init_range = math.sqrt(
+            (self.num_support + 1) / (self.dense_output_dim + self.gcn_output_dim)
+        )
         self.dense_layer_u.weight.data.uniform_(-dense_init_range, dense_init_range)
         if not self.share_weights:
             self.dense_layer_v.weight.data.uniform_(-dense_init_range, dense_init_range)
@@ -328,9 +379,9 @@ class GcEncoder(nn.Module):
         item_X = self.sparse_dropout(item_X)
 
         embeddings = []
-        if self.accum == 'sum':
-            wu = 0.
-            wv = 0.
+        if self.accum == "sum":
+            wu = 0.0
+            wv = 0.0
             for i in range(self.num_support):
                 # weight sharing
                 wu = self.weights_u[i] + wu
@@ -394,7 +445,9 @@ class BiDecoder(nn.Module):
     BiDecoder takes pairs of node embeddings and predicts respective entries in the adjacency matrix.
     """
 
-    def __init__(self, input_dim, output_dim, drop_prob, device, num_weights=3, act=lambda x: x):
+    def __init__(
+        self, input_dim, output_dim, drop_prob, device, num_weights=3, act=lambda x: x
+    ):
         super(BiDecoder, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -405,14 +458,21 @@ class BiDecoder(nn.Module):
         self.dropout_prob = drop_prob
         self.dropout = nn.Dropout(p=self.dropout_prob)
 
-        self.weights = nn.ParameterList([
-            nn.Parameter(orthogonal([self.input_dim, self.input_dim]).to(self.device)) for _ in range(self.num_weights)
-        ])
+        self.weights = nn.ParameterList(
+            [
+                nn.Parameter(
+                    orthogonal([self.input_dim, self.input_dim]).to(self.device)
+                )
+                for _ in range(self.num_weights)
+            ]
+        )
         self.dense_layer = nn.Linear(self.num_weights, self.output_dim, bias=False)
         self._init_weights()
 
     def _init_weights(self):
-        dense_init_range = math.sqrt(self.output_dim / (self.num_weights + self.output_dim))
+        dense_init_range = math.sqrt(
+            self.output_dim / (self.num_weights + self.output_dim)
+        )
         self.dense_layer.weight.data.uniform_(-dense_init_range, dense_init_range)
 
     def forward(self, u_inputs, i_inputs, users, items=None):
@@ -458,4 +518,4 @@ def orthogonal(shape, scale=1.1):
     # pick the one with the correct shape
     q = u if u.shape == flat_shape else v
     q = q.reshape(shape)
-    return torch.tensor(scale * q[:shape[0], :shape[1]], dtype=torch.float32)
+    return torch.tensor(scale * q[: shape[0], : shape[1]], dtype=torch.float32)

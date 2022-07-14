@@ -32,9 +32,9 @@ class RaCT(GeneralRecommender):
         super(RaCT, self).__init__(config, dataset)
 
         self.layers = config["mlp_hidden_size"]
-        self.lat_dim = config['latent_dimension']
-        self.drop_out = config['dropout_prob']
-        self.anneal_cap = config['anneal_cap']
+        self.lat_dim = config["latent_dimension"]
+        self.drop_out = config["dropout_prob"]
+        self.anneal_cap = config["anneal_cap"]
         self.total_anneal_steps = config["total_anneal_steps"]
 
         self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
@@ -44,7 +44,9 @@ class RaCT(GeneralRecommender):
         self.update = 0
 
         self.encode_layer_dims = [self.n_items] + self.layers + [self.lat_dim]
-        self.decode_layer_dims = [int(self.lat_dim / 2)] + self.encode_layer_dims[::-1][1:]
+        self.decode_layer_dims = [int(self.lat_dim / 2)] + self.encode_layer_dims[::-1][
+            1:
+        ]
 
         self.encoder = self.mlp_layers(self.encode_layer_dims)
         self.decoder = self.mlp_layers(self.decode_layer_dims)
@@ -60,20 +62,20 @@ class RaCT(GeneralRecommender):
         self.true_matrix = None
         self.critic_net = self.construct_critic_layers(self.critic_layer_dims)
 
-        self.train_stage = config['train_stage']
-        self.pre_model_path = config['pre_model_path']
+        self.train_stage = config["train_stage"]
+        self.pre_model_path = config["pre_model_path"]
 
         # parameters initialization
-        assert self.train_stage in ['actor_pretrain', 'critic_pretrain', 'finetune']
-        if self.train_stage == 'actor_pretrain':
+        assert self.train_stage in ["actor_pretrain", "critic_pretrain", "finetune"]
+        if self.train_stage == "actor_pretrain":
             self.apply(xavier_normal_initialization)
             for p in self.critic_net.parameters():
                 p.requires_grad = False
-        elif self.train_stage == 'critic_pretrain':
+        elif self.train_stage == "critic_pretrain":
             # load pretrained model for finetune
             pretrained = torch.load(self.pre_model_path)
-            self.logger.info('Load pretrained model from', self.pre_model_path)
-            self.load_state_dict(pretrained['state_dict'])
+            self.logger.info("Load pretrained model from", self.pre_model_path)
+            self.load_state_dict(pretrained["state_dict"])
             for p in self.encoder.parameters():
                 p.requires_grad = False
             for p in self.decoder.parameters():
@@ -81,8 +83,8 @@ class RaCT(GeneralRecommender):
         else:
             # load pretrained model for finetune
             pretrained = torch.load(self.pre_model_path)
-            self.logger.info('Load pretrained model from', self.pre_model_path)
-            self.load_state_dict(pretrained['state_dict'])
+            self.logger.info("Load pretrained model from", self.pre_model_path)
+            self.load_state_dict(pretrained["state_dict"])
             for p in self.critic_net.parameters():
                 p.requires_grad = False
 
@@ -97,10 +99,17 @@ class RaCT(GeneralRecommender):
         """
         # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
         col_indices = self.history_item_id[user].flatten()
-        row_indices = torch.arange(user.shape[0]).to(self.device) \
+        row_indices = (
+            torch.arange(user.shape[0])
+            .to(self.device)
             .repeat_interleave(self.history_item_id.shape[1], dim=0)
-        rating_matrix = torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
-        rating_matrix.index_put_((row_indices, col_indices), self.history_item_value[user].flatten())
+        )
+        rating_matrix = (
+            torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
+        )
+        rating_matrix.index_put_(
+            (row_indices, col_indices), self.history_item_value[user].flatten()
+        )
         return rating_matrix
 
     def mlp_layers(self, layer_dims):
@@ -129,12 +138,14 @@ class RaCT(GeneralRecommender):
 
         mask = (h > 0) * (t > 0)
         self.true_matrix = t * ~mask
-        self.number_of_unseen_items = (self.true_matrix != 0).sum(dim=1)  # remaining input
+        self.number_of_unseen_items = (self.true_matrix != 0).sum(
+            dim=1
+        )  # remaining input
 
         h = self.encoder(h)
 
-        mu = h[:, :int(self.lat_dim / 2)]
-        logvar = h[:, int(self.lat_dim / 2):]
+        mu = h[:, : int(self.lat_dim / 2)]
+        logvar = h[:, int(self.lat_dim / 2) :]
 
         z = self.reparameterize(mu, logvar)
         z = self.decoder(z)
@@ -148,14 +159,16 @@ class RaCT(GeneralRecommender):
 
         self.update += 1
         if self.total_anneal_steps > 0:
-            anneal = min(self.anneal_cap, 1. * self.update / self.total_anneal_steps)
+            anneal = min(self.anneal_cap, 1.0 * self.update / self.total_anneal_steps)
         else:
             anneal = self.anneal_cap
 
         z, mu, logvar = self.forward(rating_matrix)
 
         # KL loss
-        kl_loss = -0.5 * (torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)) * anneal
+        kl_loss = (
+            -0.5 * (torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)) * anneal
+        )
 
         # CE loss
         ce_loss = -(F.log_softmax(z, 1) * rating_matrix).sum(1)
@@ -185,13 +198,19 @@ class RaCT(GeneralRecommender):
         predict_matrix[input_matrix.nonzero(as_tuple=True)] = -np.inf
         _, idx_sorted = torch.sort(predict_matrix, dim=1, descending=True)
 
-        topk_result = true_matrix[np.arange(users_num)[:, np.newaxis], idx_sorted[:, :k]]
+        topk_result = true_matrix[
+            np.arange(users_num)[:, np.newaxis], idx_sorted[:, :k]
+        ]
 
         number_non_zero = ((true_matrix > 0) * 1).sum(dim=1)
 
-        tp = 1. / torch.log2(torch.arange(2, k + 2).type(torch.FloatTensor)).to(topk_result.device)
+        tp = 1.0 / torch.log2(torch.arange(2, k + 2).type(torch.FloatTensor)).to(
+            topk_result.device
+        )
         DCG = (topk_result * tp).sum(dim=1)
-        IDCG = torch.Tensor([(tp[:min(n, k)]).sum() for n in number_non_zero]).to(topk_result.device)
+        IDCG = torch.Tensor([(tp[: min(n, k)]).sum() for n in number_non_zero]).to(
+            topk_result.device
+        )
         IDCG = torch.maximum(0.1 * torch.ones_like(IDCG).to(IDCG.device), IDCG)
 
         return DCG / IDCG
@@ -205,7 +224,9 @@ class RaCT(GeneralRecommender):
     def calculate_critic_loss(self, interaction):
         actor_loss = self.calculate_actor_loss(interaction)
         y = self.critic_forward(actor_loss)
-        score = self.calculate_ndcg(self.predict_matrix, self.true_matrix, self.input_matrix, self.metrics_k)
+        score = self.calculate_ndcg(
+            self.predict_matrix, self.true_matrix, self.input_matrix, self.metrics_k
+        )
 
         mse_loss = (y - score) ** 2
         return mse_loss
@@ -218,10 +239,10 @@ class RaCT(GeneralRecommender):
     def calculate_loss(self, interaction):
 
         # actor_pretrain
-        if self.train_stage == 'actor_pretrain':
+        if self.train_stage == "actor_pretrain":
             return self.calculate_actor_loss(interaction).mean()
         # critic_pretrain
-        elif self.train_stage == 'critic_pretrain':
+        elif self.train_stage == "critic_pretrain":
             return self.calculate_critic_loss(interaction).mean()
         # finetune
         else:

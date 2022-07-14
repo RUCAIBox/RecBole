@@ -36,15 +36,15 @@ class RippleNet(KnowledgeRecommender):
         super(RippleNet, self).__init__(config, dataset)
 
         # load dataset info
-        self.LABEL = config['LABEL_FIELD']
+        self.LABEL = config["LABEL_FIELD"]
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.kg_weight = config['kg_weight']
-        self.reg_weight = config['reg_weight']
-        self.n_hop = config['n_hop']
-        self.n_memory = config['n_memory']
-        self.interaction_matrix = dataset.inter_matrix(form='coo').astype(np.float32)
+        self.embedding_size = config["embedding_size"]
+        self.kg_weight = config["kg_weight"]
+        self.reg_weight = config["reg_weight"]
+        self.n_hop = config["n_hop"]
+        self.n_memory = config["n_memory"]
+        self.interaction_matrix = dataset.inter_matrix(form="coo").astype(np.float32)
         head_entities = dataset.head_entities.tolist()
         tail_entities = dataset.tail_entities.tolist()
         relations = dataset.relations.tolist()
@@ -69,8 +69,12 @@ class RippleNet(KnowledgeRecommender):
 
         # define layers and loss
         self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
-        self.relation_embedding = nn.Embedding(self.n_relations, self.embedding_size * self.embedding_size)
-        self.transform_matrix = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
+        self.relation_embedding = nn.Embedding(
+            self.n_relations, self.embedding_size * self.embedding_size
+        )
+        self.transform_matrix = nn.Linear(
+            self.embedding_size, self.embedding_size, bias=False
+        )
         self.softmax = torch.nn.Softmax(dim=1)
         self.sigmoid = torch.nn.Sigmoid()
         self.rec_loss = BPRLoss()
@@ -79,7 +83,7 @@ class RippleNet(KnowledgeRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
-        self.other_parameter_name = ['ripple_set']
+        self.other_parameter_name = ["ripple_set"]
 
     def _build_ripple_set(self):
         r"""Get the normalized interaction matrix of users and items according to A_values.
@@ -128,7 +132,9 @@ class RippleNet(KnowledgeRecommender):
                 else:
                     # sample a fixed-size 1-hop memory for each user
                     replace = len(memories_h) < self.n_memory
-                    indices = np.random.choice(len(memories_h), size=self.n_memory, replace=replace)
+                    indices = np.random.choice(
+                        len(memories_h), size=self.n_memory, replace=replace
+                    )
                     memories_h = [memories_h[i] for i in indices]
                     memories_r = [memories_r[i] for i in indices]
                     memories_t = [memories_t[i] for i in indices]
@@ -136,7 +142,9 @@ class RippleNet(KnowledgeRecommender):
                     memories_r = torch.LongTensor(memories_r).to(self.device)
                     memories_t = torch.LongTensor(memories_t).to(self.device)
                     ripple_set[user].append((memories_h, memories_r, memories_t))
-        self.logger.info("{} among {} users are padded".format(n_padding, len(self.user_dict)))
+        self.logger.info(
+            "{} among {} users are padded".format(n_padding, len(self.user_dict))
+        )
         return ripple_set
 
     def forward(self, interaction):
@@ -192,7 +200,9 @@ class RippleNet(KnowledgeRecommender):
             h_emb = self.h_emb_list[hop].unsqueeze(2)
 
             # [batch_size * n_memory, dim, dim]
-            r_mat = self.r_emb_list[hop].view(-1, self.embedding_size, self.embedding_size)
+            r_mat = self.r_emb_list[hop].view(
+                -1, self.embedding_size, self.embedding_size
+            )
             # [batch_size, n_memory, dim]
             Rh = torch.bmm(r_mat, h_emb).view(-1, self.n_memory, self.embedding_size)
 
@@ -230,7 +240,9 @@ class RippleNet(KnowledgeRecommender):
             # (batch_size * n_memory, dim)
             t_expanded = self.t_emb_list[hop]
             # (batch_size * n_memory, dim, dim)
-            r_mat = self.r_emb_list[hop].view(-1, self.embedding_size, self.embedding_size)
+            r_mat = self.r_emb_list[hop].view(
+                -1, self.embedding_size, self.embedding_size
+            )
             # (N, 1, dim) (N, dim, dim) -> (N, 1, dim)
             hR = torch.bmm(h_expanded, r_mat).squeeze(1)
             # (N, dim) (N, dim)
@@ -242,7 +254,9 @@ class RippleNet(KnowledgeRecommender):
 
         reg_loss = None
         for hop in range(self.n_hop):
-            tp_loss = self.l2_loss(self.h_emb_list[hop], self.t_emb_list[hop], self.r_emb_list[hop])
+            tp_loss = self.l2_loss(
+                self.h_emb_list[hop], self.t_emb_list[hop], self.r_emb_list[hop]
+            )
             if reg_loss is None:
                 reg_loss = tp_loss
             else:
@@ -269,7 +283,9 @@ class RippleNet(KnowledgeRecommender):
             h_emb = self.h_emb_list[hop].unsqueeze(2)
 
             # [batch_size * n_memory, dim, dim]
-            r_mat = self.r_emb_list[hop].view(-1, self.embedding_size, self.embedding_size)
+            r_mat = self.r_emb_list[hop].view(
+                -1, self.embedding_size, self.embedding_size
+            )
             # [batch_size, n_memory, dim]
             Rh = torch.bmm(r_mat, h_emb).view(-1, self.n_memory, self.embedding_size)
 
@@ -323,7 +339,7 @@ class RippleNet(KnowledgeRecommender):
                 memories_t[hop].append(self.ripple_set[user][hop][2])
         # memories_h, memories_r, memories_t = self.ripple_set[user]
         # item = interaction[self.ITEM_ID]
-        self.item_embeddings = self.entity_embedding.weight[:self.n_items]
+        self.item_embeddings = self.entity_embedding.weight[: self.n_items]
         # self.item_embeddings = self.entity_embedding(item)
 
         self.h_emb_list = []

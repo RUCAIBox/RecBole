@@ -26,11 +26,11 @@ import torch.nn.functional as F
 class SGL(GeneralRecommender):
     r"""SGL is a GCN-based recommender model.
 
-    SGL supplements the classical supervised task of recommendation with an auxiliary 
+    SGL supplements the classical supervised task of recommendation with an auxiliary
     self supervised task, which reinforces node representation learning via self-
     discrimination.Specifically,SGL generates multiple views of a node, maximizing the
     agreement between different views of the same node compared to that of other nodes.
-    SGL devises three operators to generate the views — node dropout, edge dropout, and 
+    SGL devises three operators to generate the views — node dropout, edge dropout, and
     random walk — that change the graph structure in different manners.
 
     We implement the model following the original author with a pairwise training mode.
@@ -55,12 +55,10 @@ class SGL(GeneralRecommender):
         self.restore_user_e = None
         self.restore_item_e = None
         self.apply(xavier_uniform_initialization)
-        self.other_parameter_name = ['restore_user_e', 'restore_item_e']
+        self.other_parameter_name = ["restore_user_e", "restore_item_e"]
 
     def graph_construction(self):
-        r"""Devise three operators to generate the views — node dropout, edge dropout, and random walk of a node.
-
-        """
+        r"""Devise three operators to generate the views — node dropout, edge dropout, and random walk of a node."""
         self.sub_graph1 = []
         if self.type == "ND" or self.type == "ED":
             self.sub_graph1 = self.csr2tensor(self.create_adjust_matrix(is_sub=True))
@@ -108,36 +106,58 @@ class SGL(GeneralRecommender):
         matrix = None
         if not is_sub:
             ratings = np.ones_like(self._user, dtype=np.float32)
-            matrix = sp.csr_matrix((ratings, (self._user, self._item + self.n_users)),
-                                   shape=(self.n_users + self.n_items, self.n_users + self.n_items))
+            matrix = sp.csr_matrix(
+                (ratings, (self._user, self._item + self.n_users)),
+                shape=(self.n_users + self.n_items, self.n_users + self.n_items),
+            )
         else:
             if self.type == "ND":
-                drop_user = self.rand_sample(self.n_users, size=int(self.n_users * self.drop_ratio), replace=False)
-                drop_item = self.rand_sample(self.n_items, size=int(self.n_items * self.drop_ratio), replace=False)
+                drop_user = self.rand_sample(
+                    self.n_users,
+                    size=int(self.n_users * self.drop_ratio),
+                    replace=False,
+                )
+                drop_item = self.rand_sample(
+                    self.n_items,
+                    size=int(self.n_items * self.drop_ratio),
+                    replace=False,
+                )
                 R_user = np.ones(self.n_users, dtype=np.float32)
-                R_user[drop_user] = 0.
+                R_user[drop_user] = 0.0
                 R_item = np.ones(self.n_items, dtype=np.float32)
-                R_item[drop_item] = 0.
+                R_item[drop_item] = 0.0
                 R_user = sp.diags(R_user)
                 R_item = sp.diags(R_item)
-                R_G = sp.csr_matrix((np.ones_like(self._user, dtype=np.float32), (self._user, self._item)),
-                                    shape=(self.n_users, self.n_items))
+                R_G = sp.csr_matrix(
+                    (
+                        np.ones_like(self._user, dtype=np.float32),
+                        (self._user, self._item),
+                    ),
+                    shape=(self.n_users, self.n_items),
+                )
                 res = R_user.dot(R_G)
                 res = res.dot(R_item)
 
                 user, item = res.nonzero()
                 ratings = res.data
-                matrix = sp.csr_matrix((ratings, (user, item + self.n_users)), shape=(self.n_users + self.n_items, self.n_users + self.n_items))
+                matrix = sp.csr_matrix(
+                    (ratings, (user, item + self.n_users)),
+                    shape=(self.n_users + self.n_items, self.n_users + self.n_items),
+                )
 
             elif self.type == "ED" or self.type == "RW":
                 keep_item = self.rand_sample(
-                    len(self._user), size=int(len(self._user) * (1 - self.drop_ratio)), replace=False
+                    len(self._user),
+                    size=int(len(self._user) * (1 - self.drop_ratio)),
+                    replace=False,
                 )
                 user = self._user[keep_item]
                 item = self._item[keep_item]
 
-                matrix = sp.csr_matrix((np.ones_like(user), (user, item + self.n_users)),
-                                       shape=(self.n_users + self.n_items, self.n_users + self.n_items))
+                matrix = sp.csr_matrix(
+                    (np.ones_like(user), (user, item + self.n_users)),
+                    shape=(self.n_users + self.n_items, self.n_users + self.n_items),
+                )
 
         matrix = matrix + matrix.T
         D = np.array(matrix.sum(axis=1)) + 1e-7
@@ -157,7 +177,8 @@ class SGL(GeneralRecommender):
         matrix = matrix.tocoo()
         x = torch.sparse.FloatTensor(
             torch.LongTensor(np.array([matrix.row, matrix.col])),
-            torch.FloatTensor(matrix.data.astype(np.float32)), matrix.shape
+            torch.FloatTensor(matrix.data.astype(np.float32)),
+            matrix.shape,
         ).to(self.device)
         return x
 
@@ -181,18 +202,23 @@ class SGL(GeneralRecommender):
     def calculate_loss(self, interaction):
         if self.restore_user_e is not None or self.restore_item_e is not None:
             self.restore_user_e, self.restore_item_e = None, None
-        
+
         user_list = interaction[self.USER_ID]
         pos_item_list = interaction[self.ITEM_ID]
         neg_item_list = interaction[self.NEG_ITEM_ID]
         user_emd, item_emd = self.forward(self.train_graph)
         user_sub1, item_sub1 = self.forward(self.sub_graph1)
         user_sub2, item_sub2 = self.forward(self.sub_graph2)
-        total_loss = self.calc_bpr_loss(user_emd,item_emd,user_list,pos_item_list,neg_item_list) + \
-            self.calc_ssl_loss(user_list,pos_item_list,user_sub1,user_sub2,item_sub1,item_sub2)
+        total_loss = self.calc_bpr_loss(
+            user_emd, item_emd, user_list, pos_item_list, neg_item_list
+        ) + self.calc_ssl_loss(
+            user_list, pos_item_list, user_sub1, user_sub2, item_sub1, item_sub2
+        )
         return total_loss
 
-    def calc_bpr_loss(self, user_emd, item_emd, user_list, pos_item_list, neg_item_list):
+    def calc_bpr_loss(
+        self, user_emd, item_emd, user_list, pos_item_list, neg_item_list
+    ):
         r"""Calculate the the pairwise Bayesian Personalized Ranking (BPR) loss and parameter regularization loss.
 
         Args:
@@ -221,7 +247,9 @@ class SGL(GeneralRecommender):
 
         return l1 + l2 * self.reg_weight
 
-    def calc_ssl_loss(self, user_list, pos_item_list, user_sub1, user_sub2, item_sub1, item_sub2):
+    def calc_ssl_loss(
+        self, user_list, pos_item_list, user_sub1, user_sub2, item_sub1, item_sub2
+    ):
         r"""Calculate the loss of self-supervised tasks.
 
         Args:
@@ -238,7 +266,7 @@ class SGL(GeneralRecommender):
 
         u_emd1 = F.normalize(user_sub1[user_list], dim=1)
         u_emd2 = F.normalize(user_sub2[user_list], dim=1)
-        all_user2 = F.normalize(user_sub2,dim=1)
+        all_user2 = F.normalize(user_sub2, dim=1)
         v1 = torch.sum(u_emd1 * u_emd2, dim=1)
         v2 = u_emd1.matmul(all_user2.T)
         v1 = torch.exp(v1 / self.ssl_tau)
@@ -247,7 +275,7 @@ class SGL(GeneralRecommender):
 
         i_emd1 = F.normalize(item_sub1[pos_item_list], dim=1)
         i_emd2 = F.normalize(item_sub2[pos_item_list], dim=1)
-        all_item2 = F.normalize(item_sub2,dim=1)
+        all_item2 = F.normalize(item_sub2, dim=1)
         v3 = torch.sum(i_emd1 * i_emd2, dim=1)
         v4 = i_emd1.matmul(all_item2.T)
         v3 = torch.exp(v3 / self.ssl_tau)
@@ -267,14 +295,12 @@ class SGL(GeneralRecommender):
     def full_sort_predict(self, interaction):
         if self.restore_user_e is None or self.restore_item_e is None:
             self.restore_user_e, self.restore_item_e = self.forward(self.train_graph)
-        
+
         user = self.restore_user_e[interaction[self.USER_ID]]
         return user.matmul(self.restore_item_e.T)
 
     def train(self, mode: bool = True):
-        r"""Override train method of base class.The subgraph is reconstructed each time it is called.
-
-        """
+        r"""Override train method of base class.The subgraph is reconstructed each time it is called."""
         T = super().train(mode=mode)
         if mode:
             self.graph_construction()

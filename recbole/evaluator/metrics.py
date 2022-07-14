@@ -56,7 +56,7 @@ class Hit(TopkMetric):
     def calculate_metric(self, dataobject):
         pos_index, _ = self.used_info(dataobject)
         result = self.metric_info(pos_index)
-        metric_dict = self.topk_result('hit', result)
+        metric_dict = self.topk_result("hit", result)
         return metric_dict
 
     def metric_info(self, pos_index):
@@ -82,7 +82,7 @@ class MRR(TopkMetric):
     def calculate_metric(self, dataobject):
         pos_index, _ = self.used_info(dataobject)
         result = self.metric_info(pos_index)
-        metric_dict = self.topk_result('mrr', result)
+        metric_dict = self.topk_result("mrr", result)
         return metric_dict
 
     def metric_info(self, pos_index):
@@ -120,7 +120,7 @@ class MAP(TopkMetric):
     def calculate_metric(self, dataobject):
         pos_index, pos_len = self.used_info(dataobject)
         result = self.metric_info(pos_index, pos_len)
-        metric_dict = self.topk_result('map', result)
+        metric_dict = self.topk_result("map", result)
         return metric_dict
 
     def metric_info(self, pos_index, pos_len):
@@ -153,7 +153,7 @@ class Recall(TopkMetric):
     def calculate_metric(self, dataobject):
         pos_index, pos_len = self.used_info(dataobject)
         result = self.metric_info(pos_index, pos_len)
-        metric_dict = self.topk_result('recall', result)
+        metric_dict = self.topk_result("recall", result)
         return metric_dict
 
     def metric_info(self, pos_index, pos_len):
@@ -180,7 +180,7 @@ class NDCG(TopkMetric):
     def calculate_metric(self, dataobject):
         pos_index, pos_len = self.used_info(dataobject)
         result = self.metric_info(pos_index, pos_len)
-        metric_dict = self.topk_result('ndcg', result)
+        metric_dict = self.topk_result("ndcg", result)
         return metric_dict
 
     def metric_info(self, pos_index, pos_len):
@@ -220,7 +220,7 @@ class Precision(TopkMetric):
     def calculate_metric(self, dataobject):
         pos_index, _ = self.used_info(dataobject)
         result = self.metric_info(pos_index)
-        metric_dict = self.topk_result('precision', result)
+        metric_dict = self.topk_result("precision", result)
         return metric_dict
 
     def metric_info(self, pos_index):
@@ -254,17 +254,19 @@ class GAUC(AbstractMetric):
     :math:`rank_i` is the descending rank of the i-th items in :math:`R(u)`.
     """
     metric_type = EvaluatorType.RANKING
-    metric_need = ['rec.meanrank']
+    metric_need = ["rec.meanrank"]
 
     def __init__(self, config):
         super().__init__(config)
 
     def calculate_metric(self, dataobject):
-        mean_rank = dataobject.get('rec.meanrank').numpy()
+        mean_rank = dataobject.get("rec.meanrank").numpy()
         pos_rank_sum, user_len_list, pos_len_list = np.split(mean_rank, 3, axis=1)
-        user_len_list, pos_len_list = user_len_list.squeeze(-1), pos_len_list.squeeze(-1)
+        user_len_list, pos_len_list = user_len_list.squeeze(-1), pos_len_list.squeeze(
+            -1
+        )
         result = self.metric_info(pos_rank_sum, user_len_list, pos_len_list)
-        return {'gauc': round(result, self.decimal_place)}
+        return {"gauc": round(result, self.decimal_place)}
 
     def metric_info(self, pos_rank_sum, user_len_list, pos_len_list):
         """Get the value of GAUC metric.
@@ -289,7 +291,7 @@ class GAUC(AbstractMetric):
                 "true positive value should be meaningless, "
                 "these users have been removed from GAUC calculation"
             )
-            non_zero_idx *= (pos_len_list != 0)
+            non_zero_idx *= pos_len_list != 0
         if any_without_neg:
             logger = getLogger()
             logger.warning(
@@ -297,12 +299,18 @@ class GAUC(AbstractMetric):
                 "false positive value should be meaningless, "
                 "these users have been removed from GAUC calculation"
             )
-            non_zero_idx *= (neg_len_list != 0)
+            non_zero_idx *= neg_len_list != 0
         if any_without_pos or any_without_neg:
             item_list = user_len_list, neg_len_list, pos_len_list, pos_rank_sum
-            user_len_list, neg_len_list, pos_len_list, pos_rank_sum = map(lambda x: x[non_zero_idx], item_list)
+            user_len_list, neg_len_list, pos_len_list, pos_rank_sum = map(
+                lambda x: x[non_zero_idx], item_list
+            )
 
-        pair_num = (user_len_list + 1) * pos_len_list - pos_len_list * (pos_len_list + 1) / 2 - np.squeeze(pos_rank_sum)
+        pair_num = (
+            (user_len_list + 1) * pos_len_list
+            - pos_len_list * (pos_len_list + 1) / 2
+            - np.squeeze(pos_rank_sum)
+        )
         user_auc = pair_num / (neg_len_list * pos_len_list)
         result = (user_auc * pos_len_list).sum() / pos_len_list.sum()
         return result
@@ -333,12 +341,14 @@ class AUC(LossMetric):
         super().__init__(config)
 
     def calculate_metric(self, dataobject):
-        return self.output_metric('auc', dataobject)
+        return self.output_metric("auc", dataobject)
 
     def metric_info(self, preds, trues):
         fps, tps = _binary_clf_curve(trues, preds)
         if len(fps) > 2:
-            optimal_idxs = np.where(np.r_[True, np.logical_or(np.diff(fps, 2), np.diff(tps, 2)), True])[0]
+            optimal_idxs = np.where(
+                np.r_[True, np.logical_or(np.diff(fps, 2), np.diff(tps, 2)), True]
+            )[0]
             fps = fps[optimal_idxs]
             tps = tps[optimal_idxs]
 
@@ -347,14 +357,20 @@ class AUC(LossMetric):
 
         if fps[-1] <= 0:
             logger = getLogger()
-            logger.warning("No negative samples in y_true, " "false positive value should be meaningless")
+            logger.warning(
+                "No negative samples in y_true, "
+                "false positive value should be meaningless"
+            )
             fpr = np.repeat(np.nan, fps.shape)
         else:
             fpr = fps / fps[-1]
 
         if tps[-1] <= 0:
             logger = getLogger()
-            logger.warning("No positive samples in y_true, " "true positive value should be meaningless")
+            logger.warning(
+                "No positive samples in y_true, "
+                "true positive value should be meaningless"
+            )
             tpr = np.repeat(np.nan, tps.shape)
         else:
             tpr = tps / tps[-1]
@@ -383,7 +399,7 @@ class MAE(LossMetric):
         super().__init__(config)
 
     def calculate_metric(self, dataobject):
-        return self.output_metric('mae', dataobject)
+        return self.output_metric("mae", dataobject)
 
     def metric_info(self, preds, trues):
         return mean_absolute_error(trues, preds)
@@ -403,7 +419,7 @@ class RMSE(LossMetric):
         super().__init__(config)
 
     def calculate_metric(self, dataobject):
-        return self.output_metric('rmse', dataobject)
+        return self.output_metric("rmse", dataobject)
 
     def metric_info(self, preds, trues):
         return np.sqrt(mean_squared_error(trues, preds))
@@ -424,7 +440,7 @@ class LogLoss(LossMetric):
         super().__init__(config)
 
     def calculate_metric(self, dataobject):
-        return self.output_metric('logloss', dataobject)
+        return self.output_metric("logloss", dataobject)
 
     def metric_info(self, preds, trues):
         eps = 1e-15
@@ -446,24 +462,26 @@ class ItemCoverage(AbstractMetric):
        \mathrm{Coverage@K}=\frac{\left| \bigcup_{u \in U} \hat{R}(u) \right|}{|I|}
     """
     metric_type = EvaluatorType.RANKING
-    metric_need = ['rec.items', 'data.num_items']
+    metric_need = ["rec.items", "data.num_items"]
 
     def __init__(self, config):
         super().__init__(config)
-        self.topk = config['topk']
+        self.topk = config["topk"]
 
     def used_info(self, dataobject):
         """Get the matrix of recommendation items and number of items in total item set"""
-        item_matrix = dataobject.get('rec.items')
-        num_items = dataobject.get('data.num_items')
+        item_matrix = dataobject.get("rec.items")
+        num_items = dataobject.get("data.num_items")
         return item_matrix.numpy(), num_items
 
     def calculate_metric(self, dataobject):
         item_matrix, num_items = self.used_info(dataobject)
         metric_dict = {}
         for k in self.topk:
-            key = '{}@{}'.format('itemcoverage', k)
-            metric_dict[key] = round(self.get_coverage(item_matrix[:, :k], num_items), self.decimal_place)
+            key = "{}@{}".format("itemcoverage", k)
+            metric_dict[key] = round(
+                self.get_coverage(item_matrix[:, :k], num_items), self.decimal_place
+            )
         return metric_dict
 
     def get_coverage(self, item_matrix, num_items):
@@ -493,22 +511,22 @@ class AveragePopularity(AbstractMetric):
     """
     metric_type = EvaluatorType.RANKING
     smaller = True
-    metric_need = ['rec.items', 'data.count_items']
+    metric_need = ["rec.items", "data.count_items"]
 
     def __init__(self, config):
         super().__init__(config)
-        self.topk = config['topk']
+        self.topk = config["topk"]
 
     def used_info(self, dataobject):
         """Get the matrix of recommendation items and the popularity of items in training data"""
-        item_counter = dataobject.get('data.count_items')
-        item_matrix = dataobject.get('rec.items')
+        item_counter = dataobject.get("data.count_items")
+        item_matrix = dataobject.get("rec.items")
         return item_matrix.numpy(), dict(item_counter)
 
     def calculate_metric(self, dataobject):
         item_matrix, item_count = self.used_info(dataobject)
         result = self.metric_info(self.get_pop(item_matrix, item_count))
-        metric_dict = self.topk_result('averagepopularity', result)
+        metric_dict = self.topk_result("averagepopularity", result)
         return metric_dict
 
     def get_pop(self, item_matrix, item_count):
@@ -544,7 +562,7 @@ class AveragePopularity(AbstractMetric):
         metric_dict = {}
         avg_result = value.mean(axis=0)
         for k in self.topk:
-            key = '{}@{}'.format(metric, k)
+            key = "{}@{}".format(metric, k)
             metric_dict[key] = round(avg_result[k - 1], self.decimal_place)
         return metric_dict
 
@@ -565,24 +583,25 @@ class ShannonEntropy(AbstractMetric):
     which is the number of item i in recommended list over all items.
     """
     metric_type = EvaluatorType.RANKING
-    metric_need = ['rec.items']
+    metric_need = ["rec.items"]
 
     def __init__(self, config):
         super().__init__(config)
-        self.topk = config['topk']
+        self.topk = config["topk"]
 
     def used_info(self, dataobject):
-        """Get the matrix of recommendation items.
-        """
-        item_matrix = dataobject.get('rec.items')
+        """Get the matrix of recommendation items."""
+        item_matrix = dataobject.get("rec.items")
         return item_matrix.numpy()
 
     def calculate_metric(self, dataobject):
         item_matrix = self.used_info(dataobject)
         metric_dict = {}
         for k in self.topk:
-            key = '{}@{}'.format('shannonentropy', k)
-            metric_dict[key] = round(self.get_entropy(item_matrix[:, :k]), self.decimal_place)
+            key = "{}@{}".format("shannonentropy", k)
+            metric_dict[key] = round(
+                self.get_entropy(item_matrix[:, :k]), self.decimal_place
+            )
         return metric_dict
 
     def get_entropy(self, item_matrix):
@@ -620,24 +639,26 @@ class GiniIndex(AbstractMetric):
     """
     metric_type = EvaluatorType.RANKING
     smaller = True
-    metric_need = ['rec.items', 'data.num_items']
+    metric_need = ["rec.items", "data.num_items"]
 
     def __init__(self, config):
         super().__init__(config)
-        self.topk = config['topk']
+        self.topk = config["topk"]
 
     def used_info(self, dataobject):
         """Get the matrix of recommendation items and number of items in total item set"""
-        item_matrix = dataobject.get('rec.items')
-        num_items = dataobject.get('data.num_items')
+        item_matrix = dataobject.get("rec.items")
+        num_items = dataobject.get("data.num_items")
         return item_matrix.numpy(), num_items
 
     def calculate_metric(self, dataobject):
         item_matrix, num_items = self.used_info(dataobject)
         metric_dict = {}
         for k in self.topk:
-            key = '{}@{}'.format('giniindex', k)
-            metric_dict[key] = round(self.get_gini(item_matrix[:, :k], num_items), self.decimal_place)
+            key = "{}@{}".format("giniindex", k)
+            metric_dict[key] = round(
+                self.get_gini(item_matrix[:, :k], num_items), self.decimal_place
+            )
         return metric_dict
 
     def get_gini(self, item_matrix, num_items):
@@ -679,19 +700,19 @@ class TailPercentage(AbstractMetric):
         which can be an integer or a float in (0,1]. Otherwise it will default to 0.1.
     """
     metric_type = EvaluatorType.RANKING
-    metric_need = ['rec.items', 'data.count_items']
+    metric_need = ["rec.items", "data.count_items"]
 
     def __init__(self, config):
         super().__init__(config)
-        self.topk = config['topk']
-        self.tail = config['tail_ratio']
+        self.topk = config["topk"]
+        self.tail = config["tail_ratio"]
         if self.tail is None or self.tail <= 0:
             self.tail = 0.1
 
     def used_info(self, dataobject):
         """Get the matrix of recommendation items and number of items in total item set."""
-        item_matrix = dataobject.get('rec.items')
-        count_items = dataobject.get('data.count_items')
+        item_matrix = dataobject.get("rec.items")
+        count_items = dataobject.get("data.count_items")
         return item_matrix.numpy(), dict(count_items)
 
     def get_tail(self, item_matrix, count_items):
@@ -721,7 +742,7 @@ class TailPercentage(AbstractMetric):
     def calculate_metric(self, dataobject):
         item_matrix, count_items = self.used_info(dataobject)
         result = self.metric_info(self.get_tail(item_matrix, count_items))
-        metric_dict = self.topk_result('tailpercentage', result)
+        metric_dict = self.topk_result("tailpercentage", result)
         return metric_dict
 
     def metric_info(self, values):
@@ -740,6 +761,6 @@ class TailPercentage(AbstractMetric):
         metric_dict = {}
         avg_result = value.mean(axis=0)
         for k in self.topk:
-            key = '{}@{}'.format(metric, k)
+            key = "{}@{}".format(metric, k)
             metric_dict[key] = round(avg_result[k - 1], self.decimal_place)
         return metric_dict
