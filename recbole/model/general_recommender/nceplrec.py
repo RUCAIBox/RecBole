@@ -21,6 +21,7 @@ from sklearn.utils.extmath import randomized_svd
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.utils import InputType
 
+
 class NCEPLRec(GeneralRecommender):
     input_type = InputType.POINTWISE
 
@@ -30,13 +31,12 @@ class NCEPLRec(GeneralRecommender):
         # need at least one param
         self.dummy_param = torch.nn.Parameter(torch.zeros(1))
 
-        R = dataset.inter_matrix(
-            form='csr').astype(np.float32)
+        R = dataset.inter_matrix(form="csr").astype(np.float32)
 
-        beta = config['beta']
-        rank = int(config['rank'])
-        reg_weight = config['reg_weight']
-        seed = config['seed']
+        beta = config["beta"]
+        rank = int(config["rank"])
+        reg_weight = config["reg_weight"]
+        seed = config["seed"]
 
         # just directly calculate the entire score matrix in init
         # (can't be done incrementally)
@@ -51,21 +51,26 @@ class NCEPLRec(GeneralRecommender):
                 values = item_popularities[:, col_index].getA1()
                 # note this is a slight variation of what's in the paper, for convenience
                 # see https://github.com/wuga214/NCE_Projected_LRec/issues/38
-                values = np.maximum(
-                    np.log(num_users/np.power(values, beta)), 0)
-                D_rows.append(sp.coo_matrix(
-                    (values, (row_index, col_index)), shape=(1, num_items)))
+                values = np.maximum(np.log(num_users / np.power(values, beta)), 0)
+                D_rows.append(
+                    sp.coo_matrix(
+                        (values, (row_index, col_index)), shape=(1, num_items)
+                    )
+                )
             else:
                 D_rows.append(sp.coo_matrix((1, num_items)))
 
         D = sp.vstack(D_rows)
 
-        _, sigma, Vt = randomized_svd(D, n_components=rank,
-                                      n_iter='auto',
-                                      power_iteration_normalizer='QR',
-                                      random_state=seed)
+        _, sigma, Vt = randomized_svd(
+            D,
+            n_components=rank,
+            n_iter="auto",
+            power_iteration_normalizer="QR",
+            random_state=seed,
+        )
 
-        sqrt_Sigma = np.diag(np.power(sigma, 1/2))
+        sqrt_Sigma = np.diag(np.power(sigma, 1 / 2))
 
         V_star = Vt.T @ sqrt_Sigma
 
@@ -87,7 +92,9 @@ class NCEPLRec(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        result = (self.user_embeddings[user, :] * self.item_embeddings[:, item].T).sum(axis=1)
+        result = (self.user_embeddings[user, :] * self.item_embeddings[:, item].T).sum(
+            axis=1
+        )
         return result.float()
 
     def full_sort_predict(self, interaction):

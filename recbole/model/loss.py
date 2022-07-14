@@ -19,7 +19,7 @@ import torch.nn as nn
 
 
 class BPRLoss(nn.Module):
-    """ BPRLoss, based on Bayesian Personalized Ranking
+    """BPRLoss, based on Bayesian Personalized Ranking
 
     Args:
         - gamma(float): Small value to avoid division by zero
@@ -48,9 +48,7 @@ class BPRLoss(nn.Module):
 
 
 class RegLoss(nn.Module):
-    """ RegLoss, L2 regularization on model parameters
-
-    """
+    """RegLoss, L2 regularization on model parameters"""
 
     def __init__(self):
         super(RegLoss, self).__init__()
@@ -66,9 +64,7 @@ class RegLoss(nn.Module):
 
 
 class EmbLoss(nn.Module):
-    """ EmbLoss, regularization on embeddings
-
-    """
+    """EmbLoss, regularization on embeddings"""
 
     def __init__(self, norm=2):
         super(EmbLoss, self).__init__()
@@ -78,7 +74,9 @@ class EmbLoss(nn.Module):
         if require_pow:
             emb_loss = torch.zeros(1).to(embeddings[-1].device)
             for embedding in embeddings:
-                emb_loss += torch.pow(input=torch.norm(embedding, p=self.norm), exponent=self.norm)
+                emb_loss += torch.pow(
+                    input=torch.norm(embedding, p=self.norm), exponent=self.norm
+                )
             emb_loss /= embeddings[-1].shape[0]
             emb_loss /= self.norm
             return emb_loss
@@ -91,8 +89,7 @@ class EmbLoss(nn.Module):
 
 
 class EmbMarginLoss(nn.Module):
-    """ EmbMarginLoss, regularization on embeddings
-    """
+    """EmbMarginLoss, regularization on embeddings"""
 
     def __init__(self, power=2):
         super(EmbMarginLoss, self).__init__()
@@ -102,8 +99,8 @@ class EmbMarginLoss(nn.Module):
         dev = embeddings[-1].device
         cache_one = torch.tensor(1.0).to(dev)
         cache_zero = torch.tensor(0.0).to(dev)
-        emb_loss = torch.tensor(0.).to(dev)
+        emb_loss = torch.tensor(0.0).to(dev)
         for embedding in embeddings:
-            norm_e = torch.sum(embedding ** self.power, dim=1, keepdim=True)
+            norm_e = torch.sum(embedding**self.power, dim=1, keepdim=True)
             emb_loss += torch.sum(torch.max(norm_e - cache_one, cache_zero))
         return emb_loss

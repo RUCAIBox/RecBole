@@ -22,7 +22,7 @@ from recbole.utils import InputType
 
 
 class CDAE(GeneralRecommender):
-    r"""Collaborative Denoising Auto-Encoder (CDAE) is a recommendation model 
+    r"""Collaborative Denoising Auto-Encoder (CDAE) is a recommendation model
     for top-N recommendation that utilizes the idea of Denoising Auto-Encoders.
     We implement the the CDAE model with only user dataloader.
     """
@@ -31,33 +31,33 @@ class CDAE(GeneralRecommender):
     def __init__(self, config, dataset):
         super(CDAE, self).__init__(config, dataset)
 
-        self.reg_weight_1 = config['reg_weight_1']
-        self.reg_weight_2 = config['reg_weight_2']
-        self.loss_type = config['loss_type']
-        self.hid_activation = config['hid_activation']
-        self.out_activation = config['out_activation']
-        self.embedding_size = config['embedding_size']
-        self.corruption_ratio = config['corruption_ratio']
+        self.reg_weight_1 = config["reg_weight_1"]
+        self.reg_weight_2 = config["reg_weight_2"]
+        self.loss_type = config["loss_type"]
+        self.hid_activation = config["hid_activation"]
+        self.out_activation = config["out_activation"]
+        self.embedding_size = config["embedding_size"]
+        self.corruption_ratio = config["corruption_ratio"]
 
         self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
         self.history_item_id = self.history_item_id.to(self.device)
         self.history_item_value = self.history_item_value.to(self.device)
 
-        if self.hid_activation == 'sigmoid':
+        if self.hid_activation == "sigmoid":
             self.h_act = nn.Sigmoid()
-        elif self.hid_activation == 'relu':
+        elif self.hid_activation == "relu":
             self.h_act = nn.ReLU()
-        elif self.hid_activation == 'tanh':
+        elif self.hid_activation == "tanh":
             self.h_act = nn.Tanh()
         else:
-            raise ValueError('Invalid hidden layer activation function')
+            raise ValueError("Invalid hidden layer activation function")
 
-        if self.out_activation == 'sigmoid':
+        if self.out_activation == "sigmoid":
             self.o_act = nn.Sigmoid()
-        elif self.out_activation == 'relu':
+        elif self.out_activation == "relu":
             self.o_act = nn.ReLU()
         else:
-            raise ValueError('Invalid output layer activation function')
+            raise ValueError("Invalid output layer activation function")
 
         self.dropout = nn.Dropout(p=self.corruption_ratio)
 
@@ -88,10 +88,17 @@ class CDAE(GeneralRecommender):
         """
         # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
         col_indices = self.history_item_id[user].flatten()
-        row_indices = torch.arange(user.shape[0]).to(self.device) \
+        row_indices = (
+            torch.arange(user.shape[0])
+            .to(self.device)
             .repeat_interleave(self.history_item_id.shape[1], dim=0)
-        rating_matrix = torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
-        rating_matrix.index_put_((row_indices, col_indices), self.history_item_value[user].flatten())
+        )
+        rating_matrix = (
+            torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
+        )
+        rating_matrix.index_put_(
+            (row_indices, col_indices), self.history_item_value[user].flatten()
+        )
         return rating_matrix
 
     def calculate_loss(self, interaction):
@@ -99,18 +106,22 @@ class CDAE(GeneralRecommender):
         x_items = self.get_rating_matrix(x_users)
         predict = self.forward(x_items, x_users)
 
-        if self.loss_type == 'MSE':
-            predict=self.o_act(predict)
-            loss_func = nn.MSELoss(reduction='sum')
-        elif self.loss_type == 'BCE':
-            loss_func = nn.BCEWithLogitsLoss(reduction='sum')
+        if self.loss_type == "MSE":
+            predict = self.o_act(predict)
+            loss_func = nn.MSELoss(reduction="sum")
+        elif self.loss_type == "BCE":
+            loss_func = nn.BCEWithLogitsLoss(reduction="sum")
         else:
-            raise ValueError('Invalid loss_type, loss_type must in [MSE, BCE]')
+            raise ValueError("Invalid loss_type, loss_type must in [MSE, BCE]")
         loss = loss_func(predict, x_items)
         # l1-regularization
-        loss += self.reg_weight_1 * (self.h_user.weight.norm(p=1) + self.h_item.weight.norm(p=1))
+        loss += self.reg_weight_1 * (
+            self.h_user.weight.norm(p=1) + self.h_item.weight.norm(p=1)
+        )
         # l2-regularization
-        loss += self.reg_weight_2 * (self.h_user.weight.norm() + self.h_item.weight.norm())
+        loss += self.reg_weight_2 * (
+            self.h_user.weight.norm() + self.h_item.weight.norm()
+        )
 
         return loss
 
@@ -120,7 +131,7 @@ class CDAE(GeneralRecommender):
 
         items = self.get_rating_matrix(users)
         scores = self.forward(items, users)
-        scores=self.o_act(scores)
+        scores = self.o_act(scores)
         return scores[[torch.arange(len(predict_items)).to(self.device), predict_items]]
 
     def full_sort_predict(self, interaction):
@@ -128,5 +139,5 @@ class CDAE(GeneralRecommender):
 
         items = self.get_rating_matrix(users)
         predict = self.forward(items, users)
-        predict=self.o_act(predict)
+        predict = self.o_act(predict)
         return predict.view(-1)

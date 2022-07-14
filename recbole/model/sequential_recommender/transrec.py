@@ -34,15 +34,21 @@ class TransRec(SequentialRecommender):
         super(TransRec, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
+        self.embedding_size = config["embedding_size"]
 
         # load dataset info
         self.n_users = dataset.user_num
 
-        self.user_embedding = nn.Embedding(self.n_users, self.embedding_size, padding_idx=0)
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.user_embedding = nn.Embedding(
+            self.n_users, self.embedding_size, padding_idx=0
+        )
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
         self.bias = nn.Embedding(self.n_items, 1, padding_idx=0)  # Beta popularity bias
-        self.T = nn.Parameter(torch.zeros(self.embedding_size))  # average user representation 'global'
+        self.T = nn.Parameter(
+            torch.zeros(self.embedding_size)
+        )  # average user representation 'global'
 
         self.bpr_loss = BPRLoss()
         self.emb_loss = EmbLoss()
@@ -118,12 +124,18 @@ class TransRec(SequentialRecommender):
         seq_output = self.forward(user, item_seq, item_seq_len)  # [B H]
 
         test_items_emb = self.item_embedding.weight  # [item_num H]
-        test_items_emb = test_items_emb.repeat(seq_output.size(0), 1, 1)  # [user_num item_num H]
+        test_items_emb = test_items_emb.repeat(
+            seq_output.size(0), 1, 1
+        )  # [user_num item_num H]
 
-        user_hidden = seq_output.unsqueeze(1).expand_as(test_items_emb)  # [user_num item_num H]
+        user_hidden = seq_output.unsqueeze(1).expand_as(
+            test_items_emb
+        )  # [user_num item_num H]
         test_bias = self.bias.weight  # [item_num 1]
         test_bias = test_bias.repeat(user_hidden.size(0), 1, 1)  # [user_num item_num 1]
 
-        scores = test_bias - self._l2_distance(user_hidden, test_items_emb)  # [user_num item_num 1]
+        scores = test_bias - self._l2_distance(
+            user_hidden, test_items_emb
+        )  # [user_num item_num 1]
         scores = scores.squeeze(-1)  # [B n_items]
         return scores

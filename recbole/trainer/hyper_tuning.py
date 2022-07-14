@@ -21,8 +21,9 @@ import numpy as np
 from recbole.utils.utils import dict2str
 
 
-def _recursiveFindNodes(root, node_type='switch'):
+def _recursiveFindNodes(root, node_type="switch"):
     from hyperopt.pyll.base import Apply
+
     nodes = []
     if isinstance(root, (list, tuple)):
         for node in root:
@@ -48,10 +49,10 @@ def _parameters(space):
     parameters = {}
     if isinstance(space, dict):
         space = list(space.values())
-    for node in _recursiveFindNodes(space, 'switch'):
+    for node in _recursiveFindNodes(space, "switch"):
         # Find the name of this parameter
         paramNode = node.pos_args[0]
-        assert paramNode.name == 'hyperopt_param'
+        assert paramNode.name == "hyperopt_param"
         paramName = paramNode.pos_args[0].obj
 
         # Find all possible choices for this parameter
@@ -67,38 +68,50 @@ def _spacesize(space):
 
 
 class ExhaustiveSearchError(Exception):
-    r""" ExhaustiveSearchError
-
-    """
+    r"""ExhaustiveSearchError"""
     pass
 
 
 def _validate_space_exhaustive_search(space):
     from hyperopt.pyll.base import dfs, as_apply
     from hyperopt.pyll.stochastic import implicit_stochastic_symbols
-    supported_stochastic_symbols = ['randint', 'quniform', 'qloguniform', 'qnormal', 'qlognormal', 'categorical']
+
+    supported_stochastic_symbols = [
+        "randint",
+        "quniform",
+        "qloguniform",
+        "qnormal",
+        "qlognormal",
+        "categorical",
+    ]
     for node in dfs(as_apply(space)):
         if node.name in implicit_stochastic_symbols:
             if node.name not in supported_stochastic_symbols:
                 raise ExhaustiveSearchError(
-                    'Exhaustive search is only possible with the following stochastic symbols: '
-                    '' + ', '.join(supported_stochastic_symbols)
+                    "Exhaustive search is only possible with the following stochastic symbols: "
+                    "" + ", ".join(supported_stochastic_symbols)
                 )
 
 
 def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000):
-    r""" This is for exhaustive search in HyperTuning.
-
-    """
+    r"""This is for exhaustive search in HyperTuning."""
     from hyperopt import pyll
     from hyperopt.base import miscs_update_idxs_vals
+
     # Build a hash set for previous trials
-    hashset = set([
-        hash(
-            frozenset([(key, value[0]) if len(value) > 0 else ((key, None))
-                       for key, value in trial['misc']['vals'].items()])
-        ) for trial in trials.trials
-    ])
+    hashset = set(
+        [
+            hash(
+                frozenset(
+                    [
+                        (key, value[0]) if len(value) > 0 else ((key, None))
+                        for key, value in trial["misc"]["vals"].items()
+                    ]
+                )
+            )
+            for trial in trials.trials
+        ]
+    )
 
     rng = np.random.RandomState(seed)
     rval = []
@@ -107,16 +120,26 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
         nbSucessiveFailures = 0
         while not newSample:
             # -- sample new specs, idxs, vals
-            idxs, vals = pyll.rec_eval(domain.s_idxs_vals, memo={
-                domain.s_new_ids: [new_id],
-                domain.s_rng: rng,
-            })
+            idxs, vals = pyll.rec_eval(
+                domain.s_idxs_vals,
+                memo={
+                    domain.s_new_ids: [new_id],
+                    domain.s_rng: rng,
+                },
+            )
             new_result = domain.new_result()
             new_misc = dict(tid=new_id, cmd=domain.cmd, workdir=domain.workdir)
             miscs_update_idxs_vals([new_misc], idxs, vals)
 
             # Compare with previous hashes
-            h = hash(frozenset([(key, value[0]) if len(value) > 0 else ((key, None)) for key, value in vals.items()]))
+            h = hash(
+                frozenset(
+                    [
+                        (key, value[0]) if len(value) > 0 else ((key, None))
+                        for key, value in vals.items()
+                    ]
+                )
+            )
             if h not in hashset:
                 newSample = True
             else:
@@ -150,8 +173,8 @@ class HyperTuning(object):
         params_file=None,
         params_dict=None,
         fixed_config_file_list=None,
-        algo='exhaustive',
-        max_evals=100
+        algo="exhaustive",
+        max_evals=100,
     ):
         self.best_score = None
         self.best_params = None
@@ -170,109 +193,129 @@ class HyperTuning(object):
         elif params_dict:
             self.space = self._build_space_from_dict(params_dict)
         else:
-            raise ValueError('at least one of `space`, `params_file` and `params_dict` is provided')
+            raise ValueError(
+                "at least one of `space`, `params_file` and `params_dict` is provided"
+            )
         if isinstance(algo, str):
-            if algo == 'exhaustive':
+            if algo == "exhaustive":
                 self.algo = partial(exhaustive_search, nbMaxSucessiveFailures=1000)
                 self.max_evals = _spacesize(self.space)
             else:
-                raise ValueError('Illegal algo [{}]'.format(algo))
+                raise ValueError("Illegal algo [{}]".format(algo))
         else:
             self.algo = algo
 
     @staticmethod
     def _build_space_from_file(file):
         from hyperopt import hp
+
         space = {}
-        with open(file, 'r') as fp:
+        with open(file, "r") as fp:
             for line in fp:
-                para_list = line.strip().split(' ')
+                para_list = line.strip().split(" ")
                 if len(para_list) < 3:
                     continue
-                para_name, para_type, para_value = para_list[0], para_list[1], "".join(para_list[2:])
-                if para_type == 'choice':
+                para_name, para_type, para_value = (
+                    para_list[0],
+                    para_list[1],
+                    "".join(para_list[2:]),
+                )
+                if para_type == "choice":
                     para_value = eval(para_value)
                     space[para_name] = hp.choice(para_name, para_value)
-                elif para_type == 'uniform':
-                    low, high = para_value.strip().split(',')
+                elif para_type == "uniform":
+                    low, high = para_value.strip().split(",")
                     space[para_name] = hp.uniform(para_name, float(low), float(high))
-                elif para_type == 'quniform':
-                    low, high, q = para_value.strip().split(',')
-                    space[para_name] = hp.quniform(para_name, float(low), float(high), float(q))
-                elif para_type == 'loguniform':
-                    low, high = para_value.strip().split(',')
+                elif para_type == "quniform":
+                    low, high, q = para_value.strip().split(",")
+                    space[para_name] = hp.quniform(
+                        para_name, float(low), float(high), float(q)
+                    )
+                elif para_type == "loguniform":
+                    low, high = para_value.strip().split(",")
                     space[para_name] = hp.loguniform(para_name, float(low), float(high))
                 else:
-                    raise ValueError('Illegal param type [{}]'.format(para_type))
+                    raise ValueError("Illegal param type [{}]".format(para_type))
         return space
 
     @staticmethod
     def _build_space_from_dict(config_dict):
         from hyperopt import hp
+
         space = {}
         for para_type in config_dict:
-            if para_type == 'choice':
-                for para_name in config_dict['choice']:
-                    para_value = config_dict['choice'][para_name]
+            if para_type == "choice":
+                for para_name in config_dict["choice"]:
+                    para_value = config_dict["choice"][para_name]
                     space[para_name] = hp.choice(para_name, para_value)
-            elif para_type == 'uniform':
-                for para_name in config_dict['uniform']:
-                    para_value = config_dict['uniform'][para_name]
+            elif para_type == "uniform":
+                for para_name in config_dict["uniform"]:
+                    para_value = config_dict["uniform"][para_name]
                     low = para_value[0]
                     high = para_value[1]
                     space[para_name] = hp.uniform(para_name, float(low), float(high))
-            elif para_type == 'quniform':
-                for para_name in config_dict['quniform']:
-                    para_value = config_dict['quniform'][para_name]
+            elif para_type == "quniform":
+                for para_name in config_dict["quniform"]:
+                    para_value = config_dict["quniform"][para_name]
                     low = para_value[0]
                     high = para_value[1]
                     q = para_value[2]
-                    space[para_name] = hp.quniform(para_name, float(low), float(high), float(q))
-            elif para_type == 'loguniform':
-                for para_name in config_dict['loguniform']:
-                    para_value = config_dict['loguniform'][para_name]
+                    space[para_name] = hp.quniform(
+                        para_name, float(low), float(high), float(q)
+                    )
+            elif para_type == "loguniform":
+                for para_name in config_dict["loguniform"]:
+                    para_value = config_dict["loguniform"][para_name]
                     low = para_value[0]
                     high = para_value[1]
                     space[para_name] = hp.loguniform(para_name, float(low), float(high))
             else:
-                raise ValueError('Illegal param type [{}]'.format(para_type))
+                raise ValueError("Illegal param type [{}]".format(para_type))
         return space
 
     @staticmethod
     def params2str(params):
-        r""" convert dict to str
+        r"""convert dict to str
 
         Args:
             params (dict): parameters dict
         Returns:
             str: parameters string
         """
-        params_str = ''
+        params_str = ""
         for param_name in params:
-            params_str += param_name + ':' + str(params[param_name]) + ', '
+            params_str += param_name + ":" + str(params[param_name]) + ", "
         return params_str[:-2]
 
     @staticmethod
     def _print_result(result_dict: dict):
-        print('current best valid score: %.4f' % result_dict['best_valid_score'])
-        print('current best valid result:')
-        print(result_dict['best_valid_result'])
-        print('current test result:')
-        print(result_dict['test_result'])
+        print("current best valid score: %.4f" % result_dict["best_valid_score"])
+        print("current best valid result:")
+        print(result_dict["best_valid_result"])
+        print("current test result:")
+        print(result_dict["test_result"])
         print()
 
     def export_result(self, output_file=None):
-        r""" Write the searched parameters and corresponding results to the file
+        r"""Write the searched parameters and corresponding results to the file
 
         Args:
             output_file (str): the output file
 
         """
-        with open(output_file, 'w') as fp:
+        with open(output_file, "w") as fp:
             for params in self.params2result:
-                fp.write(params + '\n')
-                fp.write('Valid result:\n' + dict2str(self.params2result[params]['best_valid_result']) + '\n')
-                fp.write('Test result:\n' + dict2str(self.params2result[params]['test_result']) + '\n\n')
+                fp.write(params + "\n")
+                fp.write(
+                    "Valid result:\n"
+                    + dict2str(self.params2result[params]["best_valid_result"])
+                    + "\n"
+                )
+                fp.write(
+                    "Test result:\n"
+                    + dict2str(self.params2result[params]["test_result"])
+                    + "\n\n"
+                )
 
     def trial(self, params):
         r"""Given a set of parameters, return results and optimization status
@@ -281,13 +324,17 @@ class HyperTuning(object):
             params (dict): the parameter dictionary
         """
         import hyperopt
+
         config_dict = params.copy()
         params_str = self.params2str(params)
         self.params_list.append(params_str)
-        print('running parameters:', config_dict)
+        print("running parameters:", config_dict)
         result_dict = self.objective_function(config_dict, self.fixed_config_file_list)
         self.params2result[params_str] = result_dict
-        score, bigger = result_dict['best_valid_score'], result_dict['valid_score_bigger']
+        score, bigger = (
+            result_dict["best_valid_score"],
+            result_dict["valid_score_bigger"],
+        )
         self.score_list.append(score)
 
         if not self.best_score:
@@ -308,42 +355,42 @@ class HyperTuning(object):
 
         if bigger:
             score = -score
-        return {'loss': score, 'status': hyperopt.STATUS_OK}
+        return {"loss": score, "status": hyperopt.STATUS_OK}
 
     def plot_hyper(self):
         import plotly.graph_objs as go
         from plotly.offline import plot
         import pandas as pd
-        data_dict = {'valid_score': self.score_list, 'params': self.params_list}
+
+        data_dict = {"valid_score": self.score_list, "params": self.params_list}
         trial_df = pd.DataFrame(data_dict)
-        trial_df['trial_number'] = trial_df.index + 1
-        trial_df['trial_number'] = trial_df['trial_number'].astype(dtype=np.str)
+        trial_df["trial_number"] = trial_df.index + 1
+        trial_df["trial_number"] = trial_df["trial_number"].astype(dtype=np.str)
 
         trace = go.Scatter(
-                x=trial_df['trial_number'],
-                y=trial_df['valid_score'],
-                text=trial_df['params'],
-                mode='lines+markers',
-                marker=dict(
-                    color='green'
-                ),
-                showlegend=True,
-                textposition='top center',
-                name='tuning process'
-            )
+            x=trial_df["trial_number"],
+            y=trial_df["valid_score"],
+            text=trial_df["params"],
+            mode="lines+markers",
+            marker=dict(color="green"),
+            showlegend=True,
+            textposition="top center",
+            name="tuning process",
+        )
 
         data = [trace]
-        layout = go.Layout(title='hyperparams_tuning',
-                           xaxis=dict(title='trials'),
-                           yaxis=dict(title='valid_score'))
+        layout = go.Layout(
+            title="hyperparams_tuning",
+            xaxis=dict(title="trials"),
+            yaxis=dict(title="valid_score"),
+        )
         fig = go.Figure(data=data, layout=layout)
 
-        plot(fig, filename='hyperparams_tuning.html')
+        plot(fig, filename="hyperparams_tuning.html")
 
     def run(self):
-        r""" begin to search the best parameters
-
-        """
+        r"""begin to search the best parameters"""
         from hyperopt import fmin
+
         fmin(self.trial, self.space, algo=self.algo, max_evals=self.max_evals)
         self.plot_hyper()

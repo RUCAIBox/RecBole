@@ -26,13 +26,11 @@ from recbole.utils.enum_type import FeatureType
 
 
 class GRU4RecKGDataset(KGSeqDataset):
-
     def __init__(self, config):
         super().__init__(config)
 
 
 class KSRDataset(KGSeqDataset):
-
     def __init__(self, config):
         super().__init__(config)
 
@@ -56,11 +54,13 @@ class DIENDataset(SequentialDataset):
     def __init__(self, config):
         super().__init__(config)
 
-        list_suffix = config['LIST_SUFFIX']
-        neg_prefix = config['NEG_PREFIX']
+        list_suffix = config["LIST_SUFFIX"]
+        neg_prefix = config["NEG_PREFIX"]
         self.seq_sampler = SeqSampler(self)
         self.neg_item_list_field = neg_prefix + self.iid_field + list_suffix
-        self.neg_item_list = self.seq_sampler.sample_neg_sequence(self.inter_feat[self.iid_field])
+        self.neg_item_list = self.seq_sampler.sample_neg_sequence(
+            self.inter_feat[self.iid_field]
+        )
 
     def data_augmentation(self):
         """Augmentation processing for sequential dataset.
@@ -79,12 +79,12 @@ class DIENDataset(SequentialDataset):
 
         ``u1, <i1, i2, i3> | i4``
         """
-        self.logger.debug('data_augmentation')
+        self.logger.debug("data_augmentation")
 
         self._aug_presets()
 
-        self._check_field('uid_field', 'time_field')
-        max_item_list_len = self.config['MAX_ITEM_LIST_LENGTH']
+        self._check_field("uid_field", "time_field")
+        max_item_list_len = self.config["MAX_ITEM_LIST_LENGTH"]
         self.sort(by=[self.uid_field, self.time_field], ascending=True)
         last_uid = None
         uid_list, item_list_index, target_index, item_list_length = [], [], [], []
@@ -114,22 +114,36 @@ class DIENDataset(SequentialDataset):
 
         for field in self.inter_feat:
             if field != self.uid_field:
-                list_field = getattr(self, f'{field}_list_field')
+                list_field = getattr(self, f"{field}_list_field")
                 list_len = self.field2seqlen[list_field]
-                shape = (new_length, list_len) if isinstance(list_len, int) else (new_length,) + list_len
+                shape = (
+                    (new_length, list_len)
+                    if isinstance(list_len, int)
+                    else (new_length,) + list_len
+                )
                 list_ftype = self.field2type[list_field]
-                dtype = torch.int64 if list_ftype in [FeatureType.TOKEN, FeatureType.TOKEN_SEQ] else torch.float64
+                dtype = (
+                    torch.int64
+                    if list_ftype in [FeatureType.TOKEN, FeatureType.TOKEN_SEQ]
+                    else torch.float64
+                )
                 new_dict[list_field] = torch.zeros(shape, dtype=dtype)
 
                 value = self.inter_feat[field]
-                for i, (index, length) in enumerate(zip(item_list_index, item_list_length)):
+                for i, (index, length) in enumerate(
+                    zip(item_list_index, item_list_length)
+                ):
                     new_dict[list_field][i][:length] = value[index]
 
                 # DIEN
                 if field == self.iid_field:
                     new_dict[self.neg_item_list_field] = torch.zeros(shape, dtype=dtype)
-                    for i, (index, length) in enumerate(zip(item_list_index, item_list_length)):
-                        new_dict[self.neg_item_list_field][i][:length] = self.neg_item_list[index]
+                    for i, (index, length) in enumerate(
+                        zip(item_list_index, item_list_length)
+                    ):
+                        new_dict[self.neg_item_list_field][i][
+                            :length
+                        ] = self.neg_item_list[index]
 
         new_data.update(Interaction(new_dict))
         self.inter_feat = new_data

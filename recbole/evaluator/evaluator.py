@@ -14,12 +14,11 @@ from collections import OrderedDict
 
 
 class Evaluator(object):
-    """Evaluator is used to check parameter correctness, and summarize the results of all metrics.
-    """
+    """Evaluator is used to check parameter correctness, and summarize the results of all metrics."""
 
     def __init__(self, config):
         self.config = config
-        self.metrics = [metric.lower() for metric in self.config['metrics']]
+        self.metrics = [metric.lower() for metric in self.config["metrics"]]
         self.metric_class = {}
 
         for metric in self.metrics:

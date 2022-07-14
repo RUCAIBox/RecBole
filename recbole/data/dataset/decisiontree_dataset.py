@@ -13,7 +13,7 @@ from recbole.utils import FeatureType
 
 class DecisionTreeDataset(Dataset):
     """:class:`DecisionTreeDataset` is based on :class:`~recbole.data.dataset.dataset.Dataset`,
-    and 
+    and
 
     Attributes:
 
@@ -30,7 +30,10 @@ class DecisionTreeDataset(Dataset):
                 continue
             if self.field2type[col_name] == FeatureType.TOKEN:
                 col_list.append(col_name)
-            elif self.field2type[col_name] in {FeatureType.TOKEN_SEQ, FeatureType.FLOAT_SEQ}:
+            elif self.field2type[col_name] in {
+                FeatureType.TOKEN_SEQ,
+                FeatureType.FLOAT_SEQ,
+            }:
                 feat = feat.drop([col_name], axis=1, inplace=False)
 
         # get hash map
@@ -46,7 +49,7 @@ class DecisionTreeDataset(Dataset):
                     if value not in self.hash_map[col]:
                         self.hash_map[col][value] = self.hash_count[col]
                         self.hash_count[col] = self.hash_count[col] + 1
-                        if self.hash_count[col] > self.config['token_num_threshold']:
+                        if self.hash_count[col] > self.config["token_num_threshold"]:
                             del_col.append(col)
                             break
 
@@ -64,14 +67,12 @@ class DecisionTreeDataset(Dataset):
         return feat
 
     def _convert_token_to_hash(self):
-        """Convert the data of token type to hash form
-        
-        """
+        """Convert the data of token type to hash form"""
         self.hash_map = {}
         self.hash_count = {}
         self.convert_col_list = []
-        if self.config['convert_token_to_onehot']:
-            for feat_name in ['inter_feat', 'user_feat', 'item_feat']:
+        if self.config["convert_token_to_onehot"]:
+            for feat_name in ["inter_feat", "user_feat", "item_feat"]:
                 feat = getattr(self, feat_name)
                 if feat is not None:
                     feat = self._judge_token_and_convert(feat)

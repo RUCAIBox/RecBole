@@ -36,7 +36,7 @@ class UserDataLoader(AbstractDataLoader):
         self.logger = getLogger()
         if shuffle is False:
             shuffle = True
-            self.logger.warning('UserDataLoader must shuffle the data.')
+            self.logger.warning("UserDataLoader must shuffle the data.")
 
         self.uid_field = dataset.uid_field
         self.user_list = Interaction({self.uid_field: torch.arange(dataset.user_num)})
@@ -44,7 +44,7 @@ class UserDataLoader(AbstractDataLoader):
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _init_batch_size_and_step(self):
-        batch_size = self.config['train_batch_size']
+        batch_size = self.config["train_batch_size"]
         self.step = batch_size
         self.set_batch_size(batch_size)
 

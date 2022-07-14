@@ -40,20 +40,21 @@ class DIN(SequentialRecommender):
         Besides, in order to compare with other models, we use AUC instead of GAUC to evaluate the model.
 
     """
+
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
         super(DIN, self).__init__(config, dataset)
 
         # get field names and parameter value from config
-        self.LABEL_FIELD = config['LABEL_FIELD']
-        self.embedding_size = config['embedding_size']
-        self.mlp_hidden_size = config['mlp_hidden_size']
-        self.device = config['device']
-        self.pooling_mode = config['pooling_mode']
-        self.dropout_prob = config['dropout_prob']
+        self.LABEL_FIELD = config["LABEL_FIELD"]
+        self.embedding_size = config["embedding_size"]
+        self.mlp_hidden_size = config["mlp_hidden_size"]
+        self.device = config["device"]
+        self.pooling_mode = config["pooling_mode"]
+        self.dropout_prob = config["dropout_prob"]
 
-        self.types = ['user', 'item']
+        self.types = ["user", "item"]
         self.user_feat = dataset.get_user_feature()
         self.item_feat = dataset.get_item_feature()
 
@@ -61,26 +62,42 @@ class DIN(SequentialRecommender):
         # self.dnn_list = [(3 * self.num_feature_field['item'] + self.num_feature_field['user'])
         #                  * self.embedding_size] + self.mlp_hidden_size
         num_item_feature = sum(
-            1 if dataset.field2type[field] != FeatureType.FLOAT_SEQ else dataset.num(field)
+            1
+            if dataset.field2type[field] != FeatureType.FLOAT_SEQ
+            else dataset.num(field)
             for field in self.item_feat.interaction.keys()
         )
-        self.dnn_list = [3 * num_item_feature * self.embedding_size] + self.mlp_hidden_size
-        self.att_list = [4 * num_item_feature * self.embedding_size] + self.mlp_hidden_size
+        self.dnn_list = [
+            3 * num_item_feature * self.embedding_size
+        ] + self.mlp_hidden_size
+        self.att_list = [
+            4 * num_item_feature * self.embedding_size
+        ] + self.mlp_hidden_size
 
-        mask_mat = torch.arange(self.max_seq_length).to(self.device).view(1, -1)  # init mask
+        mask_mat = (
+            torch.arange(self.max_seq_length).to(self.device).view(1, -1)
+        )  # init mask
         self.attention = SequenceAttLayer(
-            mask_mat, self.att_list, activation='Sigmoid', softmax_stag=False, return_seq_weight=False
+            mask_mat,
+            self.att_list,
+            activation="Sigmoid",
+            softmax_stag=False,
+            return_seq_weight=False,
         )
-        self.dnn_mlp_layers = MLPLayers(self.dnn_list, activation='Dice', dropout=self.dropout_prob, bn=True)
+        self.dnn_mlp_layers = MLPLayers(
+            self.dnn_list, activation="Dice", dropout=self.dropout_prob, bn=True
+        )
 
-        self.embedding_layer = ContextSeqEmbLayer(dataset, self.embedding_size, self.pooling_mode, self.device)
+        self.embedding_layer = ContextSeqEmbLayer(
+            dataset, self.embedding_size, self.pooling_mode, self.device
+        )
         self.dnn_predict_layers = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
-        self.other_parameter_name = ['embedding_layer']
+        self.other_parameter_name = ["embedding_layer"]
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
@@ -95,7 +112,9 @@ class DIN(SequentialRecommender):
         max_length = item_seq.shape[1]
         # concatenate the history item seq with the target item to get embedding together
         item_seq_next_item = torch.cat((item_seq, next_items.unsqueeze(1)), dim=-1)
-        sparse_embedding, dense_embedding = self.embedding_layer(user, item_seq_next_item)
+        sparse_embedding, dense_embedding = self.embedding_layer(
+            user, item_seq_next_item
+        )
         # concat the sparse embedding and float embedding
         feature_table = {}
         for type in self.types:
@@ -108,10 +127,14 @@ class DIN(SequentialRecommender):
             feature_table[type] = torch.cat(feature_table[type], dim=-2)
             table_shape = feature_table[type].shape
             feat_num, embedding_size = table_shape[-2], table_shape[-1]
-            feature_table[type] = feature_table[type].view(table_shape[:-2] + (feat_num * embedding_size,))
+            feature_table[type] = feature_table[type].view(
+                table_shape[:-2] + (feat_num * embedding_size,)
+            )
 
-        user_feat_list = feature_table['user']
-        item_feat_list, target_item_feat_emb = feature_table['item'].split([max_length, 1], dim=1)
+        user_feat_list = feature_table["user"]
+        item_feat_list, target_item_feat_emb = feature_table["item"].split(
+            [max_length, 1], dim=1
+        )
         target_item_feat_emb = target_item_feat_emb.squeeze(1)
 
         # attention
@@ -119,7 +142,9 @@ class DIN(SequentialRecommender):
         user_emb = user_emb.squeeze(1)
 
         # input the DNN to get the prediction score
-        din_in = torch.cat([user_emb, target_item_feat_emb, user_emb * target_item_feat_emb], dim=-1)
+        din_in = torch.cat(
+            [user_emb, target_item_feat_emb, user_emb * target_item_feat_emb], dim=-1
+        )
         din_out = self.dnn_mlp_layers(din_in)
         preds = self.dnn_predict_layers(din_out)
 
