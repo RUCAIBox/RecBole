@@ -38,11 +38,11 @@ class KGDataLoader(AbstractDataLoader):
         self.logger = getLogger()
         if shuffle is False:
             shuffle = True
-            self.logger.warning('kg based dataloader must shuffle the data')
+            self.logger.warning("kg based dataloader must shuffle the data")
 
         self.neg_sample_num = 1
 
-        self.neg_prefix = config['NEG_PREFIX']
+        self.neg_prefix = config["NEG_PREFIX"]
         self.hid_field = dataset.head_entity_field
         self.tid_field = dataset.tail_entity_field
 
@@ -54,7 +54,7 @@ class KGDataLoader(AbstractDataLoader):
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _init_batch_size_and_step(self):
-        batch_size = self.config['train_batch_size']
+        batch_size = self.config["train_batch_size"]
         self.step = batch_size
         self.set_batch_size(batch_size)
 
@@ -67,7 +67,7 @@ class KGDataLoader(AbstractDataLoader):
         return cur_data
 
 
-class KnowledgeBasedDataLoader():
+class KnowledgeBasedDataLoader:
     """:class:`KnowledgeBasedDataLoader` is used for knowledge based model.
     It has three states, which is saved in :attr:`state`.
     In different states, :meth:`~_next_batch_data` will return different :class:`~recbole.data.interaction.Interaction`.
@@ -94,7 +94,9 @@ class KnowledgeBasedDataLoader():
     def __init__(self, config, dataset, sampler, kg_sampler, shuffle=False):
         self.logger = getLogger()
         # using sampler
-        self.general_dataloader = TrainDataLoader(config, dataset, sampler, shuffle=shuffle)
+        self.general_dataloader = TrainDataLoader(
+            config, dataset, sampler, shuffle=shuffle
+        )
 
         # using kg_sampler
         self.kg_dataloader = KGDataLoader(config, dataset, kg_sampler, shuffle=True)
@@ -111,8 +113,8 @@ class KnowledgeBasedDataLoader():
     def __iter__(self):
         if self.state is None:
             raise ValueError(
-                'The dataloader\'s state must be set when using the kg based dataloader, '
-                'you should call set_mode() before __iter__()'
+                "The dataloader's state must be set when using the kg based dataloader, "
+                "you should call set_mode() before __iter__()"
             )
         if self.state == KGDataLoaderState.KG:
             return self.kg_dataloader.__iter__()
@@ -149,17 +151,18 @@ class KnowledgeBasedDataLoader():
             state (KGDataLoaderState): the state of :class:`KnowledgeBasedDataLoader`.
         """
         if state not in set(KGDataLoaderState):
-            raise NotImplementedError(f'Kg data loader has no state named [{self.state}].')
+            raise NotImplementedError(
+                f"Kg data loader has no state named [{self.state}]."
+            )
         self.state = state
 
     def get_model(self, model):
-        """Let the general_dataloader get the model, used for dynamic sampling.
-        """
+        """Let the general_dataloader get the model, used for dynamic sampling."""
         self.general_dataloader.get_model(model)
-    
+
     def knowledge_shuffle(self, epoch_seed):
         """Reset the seed to ensure that each subprocess generates the same index squence."""
         self.kg_dataloader.sampler.set_epoch(epoch_seed)
-        
+
         if self.general_dataloader.shuffle:
             self.general_dataloader.sampler.set_epoch(epoch_seed)

@@ -36,16 +36,18 @@ class CKE(KnowledgeRecommender):
         super(CKE, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.kg_embedding_size = config['kg_embedding_size']
-        self.reg_weights = config['reg_weights']
+        self.embedding_size = config["embedding_size"]
+        self.kg_embedding_size = config["kg_embedding_size"]
+        self.reg_weights = config["reg_weights"]
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
         self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
         self.relation_embedding = nn.Embedding(self.n_relations, self.kg_embedding_size)
-        self.trans_w = nn.Embedding(self.n_relations, self.embedding_size * self.kg_embedding_size)
+        self.trans_w = nn.Embedding(
+            self.n_relations, self.embedding_size * self.kg_embedding_size
+        )
         self.rec_loss = BPRLoss()
         self.kg_loss = BPRLoss()
         self.reg_loss = EmbLoss()
@@ -58,7 +60,9 @@ class CKE(KnowledgeRecommender):
         pos_t_e = self.entity_embedding(pos_t).unsqueeze(1)
         neg_t_e = self.entity_embedding(neg_t).unsqueeze(1)
         r_e = self.relation_embedding(r)
-        r_trans_w = self.trans_w(r).view(r.size(0), self.embedding_size, self.kg_embedding_size)
+        r_trans_w = self.trans_w(r).view(
+            r.size(0), self.embedding_size, self.kg_embedding_size
+        )
 
         h_e = torch.bmm(h_e, r_trans_w).squeeze(1)
         pos_t_e = torch.bmm(pos_t_e, r_trans_w).squeeze(1)
@@ -108,11 +112,14 @@ class CKE(KnowledgeRecommender):
 
         rec_loss = self._get_rec_loss(user_e, pos_item_final_e, neg_item_final_e)
 
-        h_e, r_e, pos_t_e, neg_t_e, r_trans_w = self._get_kg_embedding(h, r, pos_t, neg_t)
+        h_e, r_e, pos_t_e, neg_t_e, r_trans_w = self._get_kg_embedding(
+            h, r, pos_t, neg_t
+        )
         kg_loss = self._get_kg_loss(h_e, r_e, pos_t_e, neg_t_e)
 
-        reg_loss = self.reg_weights[0] * self.reg_loss(user_e, pos_item_final_e, neg_item_final_e) + \
-                   self.reg_weights[1] * self.reg_loss(h_e, r_e, pos_t_e, neg_t_e)
+        reg_loss = self.reg_weights[0] * self.reg_loss(
+            user_e, pos_item_final_e, neg_item_final_e
+        ) + self.reg_weights[1] * self.reg_loss(h_e, r_e, pos_t_e, neg_t_e)
 
         return rec_loss, kg_loss, reg_loss
 
@@ -124,6 +131,8 @@ class CKE(KnowledgeRecommender):
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
         user_e = self.user_embedding(user)
-        all_item_e = self.item_embedding.weight + self.entity_embedding.weight[:self.n_items]
+        all_item_e = (
+            self.item_embedding.weight + self.entity_embedding.weight[: self.n_items]
+        )
         score = torch.matmul(user_e, all_item_e.transpose(0, 1))
         return score.view(-1)

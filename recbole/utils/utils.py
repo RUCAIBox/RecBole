@@ -32,7 +32,7 @@ def get_local_time():
         str: current time
     """
     cur = datetime.datetime.now()
-    cur = cur.strftime('%b-%d-%Y_%H-%M-%S')
+    cur = cur.strftime("%b-%d-%Y_%H-%M-%S")
 
     return cur
 
@@ -58,20 +58,25 @@ def get_model(model_name):
         Recommender: model class
     """
     model_submodule = [
-        'general_recommender', 'context_aware_recommender', 'sequential_recommender', 'knowledge_aware_recommender',
-        'exlib_recommender'
+        "general_recommender",
+        "context_aware_recommender",
+        "sequential_recommender",
+        "knowledge_aware_recommender",
+        "exlib_recommender",
     ]
 
     model_file_name = model_name.lower()
     model_module = None
     for submodule in model_submodule:
-        module_path = '.'.join(['recbole.model', submodule, model_file_name])
+        module_path = ".".join(["recbole.model", submodule, model_file_name])
         if importlib.util.find_spec(module_path, __name__):
             model_module = importlib.import_module(module_path, __name__)
             break
 
     if model_module is None:
-        raise ValueError('`model_name` [{}] is not the name of an existing model.'.format(model_name))
+        raise ValueError(
+            "`model_name` [{}] is not the name of an existing model.".format(model_name)
+        )
     model_class = getattr(model_module, model_name)
     return model_class
 
@@ -87,18 +92,22 @@ def get_trainer(model_type, model_name):
         Trainer: trainer class
     """
     try:
-        return getattr(importlib.import_module('recbole.trainer'), model_name + 'Trainer')
+        return getattr(
+            importlib.import_module("recbole.trainer"), model_name + "Trainer"
+        )
     except AttributeError:
         if model_type == ModelType.KNOWLEDGE:
-            return getattr(importlib.import_module('recbole.trainer'), 'KGTrainer')
+            return getattr(importlib.import_module("recbole.trainer"), "KGTrainer")
         elif model_type == ModelType.TRADITIONAL:
-            return getattr(importlib.import_module('recbole.trainer'), 'TraditionalTrainer')
+            return getattr(
+                importlib.import_module("recbole.trainer"), "TraditionalTrainer"
+            )
         else:
-            return getattr(importlib.import_module('recbole.trainer'), 'Trainer')
+            return getattr(importlib.import_module("recbole.trainer"), "Trainer")
 
 
 def early_stopping(value, best, cur_step, max_step, bigger=True):
-    r""" validation-based early stopping
+    r"""validation-based early stopping
 
     Args:
         value (float): current result
@@ -142,7 +151,7 @@ def early_stopping(value, best, cur_step, max_step, bigger=True):
 
 
 def calculate_valid_score(valid_result, valid_metric=None):
-    r""" return valid score from valid result
+    r"""return valid score from valid result
 
     Args:
         valid_result (dict): valid result
@@ -154,11 +163,11 @@ def calculate_valid_score(valid_result, valid_metric=None):
     if valid_metric:
         return valid_result[valid_metric]
     else:
-        return valid_result['Recall@10']
+        return valid_result["Recall@10"]
 
 
 def dict2str(result_dict):
-    r""" convert result dict to str
+    r"""convert result dict to str
 
     Args:
         result_dict (dict): result dict
@@ -167,11 +176,13 @@ def dict2str(result_dict):
         str: result str
     """
 
-    return '    '.join([str(metric) + ' : ' + str(value) for metric, value in result_dict.items()])
+    return "    ".join(
+        [str(metric) + " : " + str(value) for metric, value in result_dict.items()]
+    )
 
 
 def init_seed(seed, reproducibility):
-    r""" init random seed for random functions in numpy, torch, cuda and cudnn
+    r"""init random seed for random functions in numpy, torch, cuda and cudnn
 
     Args:
         seed (int): random seed
@@ -191,7 +202,7 @@ def init_seed(seed, reproducibility):
 
 
 def get_tensorboard(logger):
-    r""" Creates a SummaryWriter of Tensorboard that can log PyTorch models and metrics into a directory for 
+    r"""Creates a SummaryWriter of Tensorboard that can log PyTorch models and metrics into a directory for
     visualization within the TensorBoard UI.
     For the convenience of the user, the naming rule of the SummaryWriter's log_dir is the same as the logger.
 
@@ -202,15 +213,15 @@ def get_tensorboard(logger):
     Returns:
         SummaryWriter: it will write out events and summaries to the event file.
     """
-    base_path = 'log_tensorboard'
+    base_path = "log_tensorboard"
 
     dir_name = None
     for handler in logger.handlers:
         if hasattr(handler, "baseFilename"):
-            dir_name = os.path.basename(getattr(handler, 'baseFilename')).split('.')[0]
+            dir_name = os.path.basename(getattr(handler, "baseFilename")).split(".")[0]
             break
     if dir_name is None:
-        dir_name = '{}-{}'.format('model', get_local_time())
+        dir_name = "{}-{}".format("model", get_local_time())
 
     dir_path = os.path.join(base_path, dir_name)
     writer = SummaryWriter(dir_path)
@@ -218,7 +229,7 @@ def get_tensorboard(logger):
 
 
 def get_gpu_usage(device=None):
-    r""" Return the reserved memory and total memory of given device in a string.
+    r"""Return the reserved memory and total memory of given device in a string.
     Args:
         device: cuda.device. It is the device that the model run on.
 
@@ -226,7 +237,7 @@ def get_gpu_usage(device=None):
         str: it contains the info about reserved memory and total memory of given device.
     """
 
-    reserved = torch.cuda.max_memory_reserved(device) / 1024 ** 3
-    total = torch.cuda.get_device_properties(device).total_memory / 1024 ** 3
+    reserved = torch.cuda.max_memory_reserved(device) / 1024**3
+    total = torch.cuda.get_device_properties(device).total_memory / 1024**3
 
-    return '{:.2f} G/{:.2f} G'.format(reserved, total)
+    return "{:.2f} G/{:.2f} G".format(reserved, total)

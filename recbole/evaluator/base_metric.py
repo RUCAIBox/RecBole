@@ -23,10 +23,11 @@ class AbstractMetric(object):
     Args:
         config (Config): the config of evaluator.
     """
+
     smaller = False
 
     def __init__(self, config):
-        self.decimal_place = config['metric_decimal_place']
+        self.decimal_place = config["metric_decimal_place"]
 
     def calculate_metric(self, dataobject):
         """Get the dictionary of a metric.
@@ -37,7 +38,7 @@ class AbstractMetric(object):
         Returns:
             dict: such as ``{'metric@10': 3153, 'metric@20': 0.3824}``
         """
-        raise NotImplementedError('Method [calculate_metric] should be implemented.')
+        raise NotImplementedError("Method [calculate_metric] should be implemented.")
 
 
 class TopkMetric(AbstractMetric):
@@ -47,18 +48,19 @@ class TopkMetric(AbstractMetric):
     Args:
         config (Config): The config of evaluator.
     """
+
     metric_type = EvaluatorType.RANKING
-    metric_need = ['rec.topk']
+    metric_need = ["rec.topk"]
 
     def __init__(self, config):
         super().__init__(config)
-        self.topk = config['topk']
+        self.topk = config["topk"]
 
     def used_info(self, dataobject):
         """Get the bool matrix indicating whether the corresponding item is positive
         and number of positive items for each user.
         """
-        rec_mat = dataobject.get('rec.topk')
+        rec_mat = dataobject.get("rec.topk")
         topk_idx, pos_len_list = torch.split(rec_mat, [max(self.topk), 1], dim=1)
         return topk_idx.to(torch.bool).numpy(), pos_len_list.squeeze(-1).numpy()
 
@@ -75,7 +77,7 @@ class TopkMetric(AbstractMetric):
         metric_dict = {}
         avg_result = value.mean(axis=0)
         for k in self.topk:
-            key = '{}@{}'.format(metric, k)
+            key = "{}@{}".format(metric, k)
             metric_dict[key] = round(avg_result[k - 1], self.decimal_place)
         return metric_dict
 
@@ -90,7 +92,9 @@ class TopkMetric(AbstractMetric):
         Returns:
             numpy.ndarray: metrics for each user, including values from `metric@1` to `metric@max(self.topk)`.
         """
-        raise NotImplementedError('Method [metric_info] of top-k metric should be implemented.')
+        raise NotImplementedError(
+            "Method [metric_info] of top-k metric should be implemented."
+        )
 
 
 class LossMetric(AbstractMetric):
@@ -100,16 +104,17 @@ class LossMetric(AbstractMetric):
     Args:
         config (Config): The config of evaluator.
     """
+
     metric_type = EvaluatorType.VALUE
-    metric_need = ['rec.score', 'data.label']
+    metric_need = ["rec.score", "data.label"]
 
     def __init__(self, config):
         super().__init__(config)
 
     def used_info(self, dataobject):
         """Get scores that model predicted and the ground truth."""
-        preds = dataobject.get('rec.score')
-        trues = dataobject.get('data.label')
+        preds = dataobject.get("rec.score")
+        trues = dataobject.get("data.label")
 
         return preds.squeeze(-1).numpy(), trues.squeeze(-1).numpy()
 
@@ -128,4 +133,6 @@ class LossMetric(AbstractMetric):
         Returns:
             float: The value of the metric.
         """
-        raise NotImplementedError('Method [metric_info] of loss-based metric should be implemented.')
+        raise NotImplementedError(
+            "Method [metric_info] of loss-based metric should be implemented."
+        )

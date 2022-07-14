@@ -15,7 +15,10 @@ recbole.data.dataloader.general_dataloader
 import numpy as np
 import torch
 from logging import getLogger
-from recbole.data.dataloader.abstract_dataloader import AbstractDataLoader, NegSampleDataLoader
+from recbole.data.dataloader.abstract_dataloader import (
+    AbstractDataLoader,
+    NegSampleDataLoader,
+)
 from recbole.data.interaction import Interaction, cat_interactions
 from recbole.utils import InputType, ModelType
 
@@ -35,13 +38,15 @@ class TrainDataLoader(NegSampleDataLoader):
 
     def __init__(self, config, dataset, sampler, shuffle=False):
         self.logger = getLogger()
-        self._set_neg_sample_args(config, dataset, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
+        self._set_neg_sample_args(
+            config, dataset, config["MODEL_INPUT_TYPE"], config["train_neg_sample_args"]
+        )
         self.sample_size = len(dataset)
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _init_batch_size_and_step(self):
-        batch_size = self.config['train_batch_size']
-        if self.neg_sample_args['distribution'] != 'none':
+        batch_size = self.config["train_batch_size"]
+        if self.neg_sample_args["distribution"] != "none":
             batch_num = max(batch_size // self.times, 1)
             new_batch_size = batch_num * self.times
             self.step = batch_num
@@ -51,7 +56,12 @@ class TrainDataLoader(NegSampleDataLoader):
             self.set_batch_size(batch_size)
 
     def update_config(self, config):
-        self._set_neg_sample_args(config, self._dataset, config['MODEL_INPUT_TYPE'], config['train_neg_sample_args'])
+        self._set_neg_sample_args(
+            config,
+            self._dataset,
+            config["MODEL_INPUT_TYPE"],
+            config["train_neg_sample_args"],
+        )
         super().update_config(config)
 
     def collate_fn(self, index):
@@ -75,8 +85,13 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
 
     def __init__(self, config, dataset, sampler, shuffle=False):
         self.logger = getLogger()
-        self._set_neg_sample_args(config, dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
-        if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
+        self._set_neg_sample_args(
+            config, dataset, InputType.POINTWISE, config["eval_neg_sample_args"]
+        )
+        if (
+            self.neg_sample_args["distribution"] != "none"
+            and self.neg_sample_args["sample_num"] != "none"
+        ):
             user_num = dataset.user_num
             dataset.sort(by=dataset.uid_field, ascending=True)
             self.uid_list = []
@@ -96,13 +111,16 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
         else:
             self.sample_size = len(dataset)
         if shuffle:
-            self.logger.warnning('NegSampleEvalDataLoader can\'t shuffle')
+            self.logger.warnning("NegSampleEvalDataLoader can't shuffle")
             shuffle = False
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _init_batch_size_and_step(self):
-        batch_size = self.config['eval_batch_size']
-        if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
+        batch_size = self.config["eval_batch_size"]
+        if (
+            self.neg_sample_args["distribution"] != "none"
+            and self.neg_sample_args["sample_num"] != "none"
+        ):
             inters_num = sorted(self.uid2items_num * self.times, reverse=True)
             batch_num = 1
             new_batch_size = inters_num[0]
@@ -118,12 +136,17 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
             self.set_batch_size(batch_size)
 
     def update_config(self, config):
-        self._set_neg_sample_args(config, self._dataset, InputType.POINTWISE, config['eval_neg_sample_args'])
+        self._set_neg_sample_args(
+            config, self._dataset, InputType.POINTWISE, config["eval_neg_sample_args"]
+        )
         super().update_config(config)
 
     def collate_fn(self, index):
         index = np.array(index)
-        if self.neg_sample_args['distribution'] != 'none' and self.neg_sample_args['sample_num'] != 'none':
+        if (
+            self.neg_sample_args["distribution"] != "none"
+            and self.neg_sample_args["sample_num"] != "none"
+        ):
             uid_list = self.uid_list[index]
             data_list = []
             idx_list = []
@@ -135,7 +158,9 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
                 data_list.append(self._neg_sampling(self._dataset[index]))
                 idx_list += [idx for i in range(self.uid2items_num[uid] * self.times)]
                 positive_u += [idx for i in range(self.uid2items_num[uid])]
-                positive_i = torch.cat((positive_i, self._dataset[index][self.iid_field]), 0)
+                positive_i = torch.cat(
+                    (positive_i, self._dataset[index][self.iid_field]), 0
+                )
 
             cur_data = cat_interactions(data_list)
             idx_list = torch.from_numpy(np.array(idx_list)).long()
@@ -164,7 +189,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         self.logger = getLogger()
         self.uid_field = dataset.uid_field
         self.iid_field = dataset.iid_field
-        self.is_sequential = config['MODEL_TYPE'] == ModelType.SEQUENTIAL
+        self.is_sequential = config["MODEL_TYPE"] == ModelType.SEQUENTIAL
         if not self.is_sequential:
             user_num = dataset.user_num
             self.uid_list = []
@@ -176,9 +201,14 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             last_uid = None
             positive_item = set()
             uid2used_item = sampler.used_ids
-            for uid, iid in zip(dataset.inter_feat[self.uid_field].numpy(), dataset.inter_feat[self.iid_field].numpy()):
+            for uid, iid in zip(
+                dataset.inter_feat[self.uid_field].numpy(),
+                dataset.inter_feat[self.iid_field].numpy(),
+            ):
                 if uid != last_uid:
-                    self._set_user_property(last_uid, uid2used_item[last_uid], positive_item)
+                    self._set_user_property(
+                        last_uid, uid2used_item[last_uid], positive_item
+                    )
                     last_uid = uid
                     self.uid_list.append(uid)
                     positive_item = set()
@@ -189,7 +219,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
 
         self.sample_size = len(self.user_df) if not self.is_sequential else len(dataset)
         if shuffle:
-            self.logger.warnning('FullSortEvalDataLoader can\'t shuffle')
+            self.logger.warnning("FullSortEvalDataLoader can't shuffle")
             shuffle = False
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
@@ -197,12 +227,14 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         if uid is None:
             return
         history_item = used_item - positive_item
-        self.uid2positive_item[uid] = torch.tensor(list(positive_item), dtype=torch.int64)
+        self.uid2positive_item[uid] = torch.tensor(
+            list(positive_item), dtype=torch.int64
+        )
         self.uid2items_num[uid] = len(positive_item)
         self.uid2history_item[uid] = torch.tensor(list(history_item), dtype=torch.int64)
 
     def _init_batch_size_and_step(self):
-        batch_size = self.config['eval_batch_size']
+        batch_size = self.config["eval_batch_size"]
         if not self.is_sequential:
             batch_num = max(batch_size // self._dataset.item_num, 1)
             new_batch_size = batch_num * self._dataset.item_num
@@ -221,10 +253,17 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             history_item = self.uid2history_item[uid_list]
             positive_item = self.uid2positive_item[uid_list]
 
-            history_u = torch.cat([torch.full_like(hist_iid, i) for i, hist_iid in enumerate(history_item)])
+            history_u = torch.cat(
+                [
+                    torch.full_like(hist_iid, i)
+                    for i, hist_iid in enumerate(history_item)
+                ]
+            )
             history_i = torch.cat(list(history_item))
 
-            positive_u = torch.cat([torch.full_like(pos_iid, i) for i, pos_iid in enumerate(positive_item)])
+            positive_u = torch.cat(
+                [torch.full_like(pos_iid, i) for i, pos_iid in enumerate(positive_item)]
+            )
             positive_i = torch.cat(list(positive_item))
 
             return user_df, (history_u, history_i), positive_u, positive_i

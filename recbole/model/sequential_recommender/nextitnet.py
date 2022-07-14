@@ -42,31 +42,37 @@ class NextItNet(SequentialRecommender):
         super(NextItNet, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.residual_channels = config['embedding_size']
-        self.block_num = config['block_num']
-        self.dilations = config['dilations'] * self.block_num
-        self.kernel_size = config['kernel_size']
-        self.reg_weight = config['reg_weight']
-        self.loss_type = config['loss_type']
+        self.embedding_size = config["embedding_size"]
+        self.residual_channels = config["embedding_size"]
+        self.block_num = config["block_num"]
+        self.dilations = config["dilations"] * self.block_num
+        self.kernel_size = config["kernel_size"]
+        self.reg_weight = config["reg_weight"]
+        self.loss_type = config["loss_type"]
 
         # define layers and loss
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
 
         # residual blocks    dilations in blocks:[1,2,4,8,1,2,4,8,...]
         rb = [
             ResidualBlock_b(
-                self.residual_channels, self.residual_channels, kernel_size=self.kernel_size, dilation=dilation
-            ) for dilation in self.dilations
+                self.residual_channels,
+                self.residual_channels,
+                kernel_size=self.kernel_size,
+                dilation=dilation,
+            )
+            for dilation in self.dilations
         ]
         self.residual_blocks = nn.Sequential(*rb)
 
         # fully-connected layer
         self.final_layer = nn.Linear(self.residual_channels, self.embedding_size)
 
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
@@ -77,7 +83,7 @@ class NextItNet(SequentialRecommender):
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
-            stdv = np.sqrt(1. / self.n_items)
+            stdv = np.sqrt(1.0 / self.n_items)
             uniform_(module.weight.data, -stdv, stdv)
         elif isinstance(module, nn.Linear):
             xavier_normal_(module.weight.data)
@@ -85,10 +91,14 @@ class NextItNet(SequentialRecommender):
                 constant_(module.bias.data, 0.1)
 
     def forward(self, item_seq):
-        item_seq_emb = self.item_embedding(item_seq)  # [batch_size, seq_len, embed_size]
+        item_seq_emb = self.item_embedding(
+            item_seq
+        )  # [batch_size, seq_len, embed_size]
         # Residual locks
         dilate_outputs = self.residual_blocks(item_seq_emb)
-        hidden = dilate_outputs[:, -1, :].view(-1, self.residual_channels)  # [batch_size, embed_size]
+        hidden = dilate_outputs[:, -1, :].view(
+            -1, self.residual_channels
+        )  # [batch_size, embed_size]
         seq_output = self.final_layer(hidden)  # [batch_size, embedding_size]
         return seq_output
 
@@ -99,7 +109,7 @@ class NextItNet(SequentialRecommender):
         loss_rb = 0
         if self.reg_weight > 0.0:
             for name, parm in self.residual_blocks.named_parameters():
-                if name.endswith('weight'):
+                if name.endswith("weight"):
                     loss_rb += torch.norm(parm, 2)
         return self.reg_weight * loss_rb
 
@@ -108,7 +118,7 @@ class NextItNet(SequentialRecommender):
         # item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq)
         pos_items = interaction[self.POS_ITEM_ID]
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             pos_items_emb = self.item_embedding(pos_items)
             neg_items_emb = self.item_embedding(neg_items)
@@ -136,7 +146,9 @@ class NextItNet(SequentialRecommender):
         # item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq)
         test_items_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, item_num]
+        scores = torch.matmul(
+            seq_output, test_items_emb.transpose(0, 1)
+        )  # [B, item_num]
         return scores
 
 
@@ -153,7 +165,13 @@ class ResidualBlock_a(nn.Module):
         self.conv1 = nn.Conv2d(in_channel, half_channel, kernel_size=(1, 1), padding=0)
 
         self.ln2 = nn.LayerNorm(half_channel, eps=1e-8)
-        self.conv2 = nn.Conv2d(half_channel, half_channel, kernel_size=(1, kernel_size), padding=0, dilation=dilation)
+        self.conv2 = nn.Conv2d(
+            half_channel,
+            half_channel,
+            kernel_size=(1, kernel_size),
+            padding=0,
+            dilation=dilation,
+        )
 
         self.ln3 = nn.LayerNorm(half_channel, eps=1e-8)
         self.conv3 = nn.Conv2d(half_channel, out_channel, kernel_size=(1, 1), padding=0)
@@ -177,7 +195,7 @@ class ResidualBlock_a(nn.Module):
         return out3 + x
 
     def conv_pad(self, x, dilation):  # x: [batch_size, seq_len, embed_size]
-        r""" Dropout-mask: To avoid the future information leakage problem, this paper proposed a masking-based dropout
+        r"""Dropout-mask: To avoid the future information leakage problem, this paper proposed a masking-based dropout
         trick for the 1D dilated convolution to prevent the network from seeing the future items.
         Also the One-dimensional transformation is completed in this function.
         """
@@ -185,7 +203,9 @@ class ResidualBlock_a(nn.Module):
         inputs_pad = inputs_pad.unsqueeze(2)  # [batch_size, embed_size, 1, seq_len]
         pad = nn.ZeroPad2d(((self.kernel_size - 1) * dilation, 0, 0, 0))
         # padding operation  args：(left,right,top,bottom)
-        inputs_pad = pad(inputs_pad)  # [batch_size, embed_size, 1, seq_len+(self.kernel_size-1)*dilations]
+        inputs_pad = pad(
+            inputs_pad
+        )  # [batch_size, embed_size, 1, seq_len+(self.kernel_size-1)*dilations]
         return inputs_pad
 
 
@@ -197,16 +217,30 @@ class ResidualBlock_b(nn.Module):
     def __init__(self, in_channel, out_channel, kernel_size=3, dilation=None):
         super(ResidualBlock_b, self).__init__()
 
-        self.conv1 = nn.Conv2d(in_channel, out_channel, kernel_size=(1, kernel_size), padding=0, dilation=dilation)
+        self.conv1 = nn.Conv2d(
+            in_channel,
+            out_channel,
+            kernel_size=(1, kernel_size),
+            padding=0,
+            dilation=dilation,
+        )
         self.ln1 = nn.LayerNorm(out_channel, eps=1e-8)
-        self.conv2 = nn.Conv2d(out_channel, out_channel, kernel_size=(1, kernel_size), padding=0, dilation=dilation * 2)
+        self.conv2 = nn.Conv2d(
+            out_channel,
+            out_channel,
+            kernel_size=(1, kernel_size),
+            padding=0,
+            dilation=dilation * 2,
+        )
         self.ln2 = nn.LayerNorm(out_channel, eps=1e-8)
 
         self.dilation = dilation
         self.kernel_size = kernel_size
 
     def forward(self, x):  # x: [batch_size, seq_len, embed_size]
-        x_pad = self.conv_pad(x, self.dilation)  # [batch_size, embed_size, 1, seq_len+(self.kernel_size-1)*dilations]
+        x_pad = self.conv_pad(
+            x, self.dilation
+        )  # [batch_size, embed_size, 1, seq_len+(self.kernel_size-1)*dilations]
         out = self.conv1(x_pad).squeeze(2).permute(0, 2, 1)
         # [batch_size, seq_len+(self.kernel_size-1)*dilations-kernel_size+1, embed_size]
         out = F.relu(self.ln1(out))
@@ -216,7 +250,7 @@ class ResidualBlock_b(nn.Module):
         return out2 + x
 
     def conv_pad(self, x, dilation):
-        r""" Dropout-mask: To avoid the future information leakage problem, this paper proposed a masking-based dropout
+        r"""Dropout-mask: To avoid the future information leakage problem, this paper proposed a masking-based dropout
         trick for the 1D dilated convolution to prevent the network from seeing the future items.
         Also the One-dimensional transformation is completed in this function.
         """

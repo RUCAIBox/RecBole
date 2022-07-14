@@ -40,16 +40,17 @@ def cluster_info(module_name):
     smaller_m = []
     m_dict, m_info, m_types = {}, {}, {}
     metric_class = inspect.getmembers(
-        sys.modules[module_name], lambda x: inspect.isclass(x) and x.__module__ == module_name
+        sys.modules[module_name],
+        lambda x: inspect.isclass(x) and x.__module__ == module_name,
     )
     for name, metric_cls in metric_class:
         name = name.lower()
         m_dict[name] = metric_cls
-        if hasattr(metric_cls, 'metric_need'):
+        if hasattr(metric_cls, "metric_need"):
             m_info[name] = metric_cls.metric_need
         else:
             raise AttributeError(f"Metric '{name}' has no attribute [metric_need].")
-        if hasattr(metric_cls, 'metric_type'):
+        if hasattr(metric_cls, "metric_type"):
             m_types[name] = metric_cls.metric_type
         else:
             raise AttributeError(f"Metric '{name}' has no attribute [metric_type].")
@@ -58,20 +59,22 @@ def cluster_info(module_name):
     return smaller_m, m_info, m_types, m_dict
 
 
-metric_module_name = 'recbole.evaluator.metrics'
-smaller_metrics, metric_information, metric_types, metrics_dict = cluster_info(metric_module_name)
+metric_module_name = "recbole.evaluator.metrics"
+smaller_metrics, metric_information, metric_types, metrics_dict = cluster_info(
+    metric_module_name
+)
 
 
 class Register(object):
-    """ Register module load the registry according to the metrics in config.
-        It is a member of DataCollector.
-        The DataCollector collect the resource that need for Evaluator under the guidance of Register
+    """Register module load the registry according to the metrics in config.
+    It is a member of DataCollector.
+    The DataCollector collect the resource that need for Evaluator under the guidance of Register
     """
 
     def __init__(self, config):
 
         self.config = config
-        self.metrics = [metric.lower() for metric in self.config['metrics']]
+        self.metrics = [metric.lower() for metric in self.config["metrics"]]
         self._build_register()
 
     def _build_register(self):

@@ -34,7 +34,7 @@ class AbstractSampler(object):
     """
 
     def __init__(self, distribution):
-        self.distribution = ''
+        self.distribution = ""
         self.set_distribution(distribution)
         self.used_ids = self.get_used_ids()
 
@@ -45,7 +45,7 @@ class AbstractSampler(object):
             distribution (str): Distribution of the negative items.
         """
         self.distribution = distribution
-        if distribution == 'popularity':
+        if distribution == "popularity":
             self._build_alias_table()
 
     def _uni_sampling(self, sample_num):
@@ -53,11 +53,11 @@ class AbstractSampler(object):
 
         Args:
             sample_num (int): the number of samples.
-        
+
         Returns:
-            sample_list (np.array): a list of samples. 
+            sample_list (np.array): a list of samples.
         """
-        raise NotImplementedError('Method [_uni_sampling] should be implemented')
+        raise NotImplementedError("Method [_uni_sampling] should be implemented")
 
     def _get_candidates_list(self):
         """Get sample candidates list for _pop_sampling()
@@ -65,11 +65,10 @@ class AbstractSampler(object):
         Returns:
             candidates_list (list): a list of candidates id.
         """
-        raise NotImplementedError('Method [_get_candidates_list] should be implemented')
+        raise NotImplementedError("Method [_get_candidates_list] should be implemented")
 
     def _build_alias_table(self):
-        """Build alias table for popularity_biased sampling.
-        """
+        """Build alias table for popularity_biased sampling."""
         candidates_list = self._get_candidates_list()
         self.prob = dict(Counter(candidates_list))
         self.alias = self.prob.copy()
@@ -99,9 +98,9 @@ class AbstractSampler(object):
 
         Args:
             sample_num (int): the number of samples.
-        
+
         Returns:
-            sample_list (np.array): a list of samples. 
+            sample_list (np.array): a list of samples.
         """
 
         keys = list(self.prob.keys())
@@ -119,26 +118,28 @@ class AbstractSampler(object):
 
     def sampling(self, sample_num):
         """Sampling [sample_num] item_ids.
-        
+
         Args:
             sample_num (int): the number of samples.
-        
+
         Returns:
             sample_list (np.array): a list of samples and the len is [sample_num].
         """
-        if self.distribution == 'uniform':
+        if self.distribution == "uniform":
             return self._uni_sampling(sample_num)
-        elif self.distribution == 'popularity':
+        elif self.distribution == "popularity":
             return self._pop_sampling(sample_num)
         else:
-            raise NotImplementedError(f'The sampling distribution [{self.distribution}] is not implemented.')
+            raise NotImplementedError(
+                f"The sampling distribution [{self.distribution}] is not implemented."
+            )
 
     def get_used_ids(self):
         """
         Returns:
             numpy.ndarray: Used ids. Index is key_id, and element is a set of value_ids.
         """
-        raise NotImplementedError('Method [get_used_ids] should be implemented')
+        raise NotImplementedError("Method [get_used_ids] should be implemented")
 
     def sample_by_key_ids(self, key_ids, num):
         """Sampling by key_ids.
@@ -172,10 +173,17 @@ class AbstractSampler(object):
             key_ids = np.tile(key_ids, num)
             while len(check_list) > 0:
                 value_ids[check_list] = self.sampling(len(check_list))
-                check_list = np.array([
-                    i for i, used, v in zip(check_list, self.used_ids[key_ids[check_list]], value_ids[check_list])
-                    if v in used
-                ])
+                check_list = np.array(
+                    [
+                        i
+                        for i, used, v in zip(
+                            check_list,
+                            self.used_ids[key_ids[check_list]],
+                            value_ids[check_list],
+                        )
+                        if v in used
+                    ]
+                )
         return torch.tensor(value_ids)
 
 
@@ -194,13 +202,15 @@ class Sampler(AbstractSampler):
         phase (str): the phase of sampler. It will not be set until :meth:`set_phase` is called.
     """
 
-    def __init__(self, phases, datasets, distribution='uniform'):
+    def __init__(self, phases, datasets, distribution="uniform"):
         if not isinstance(phases, list):
             phases = [phases]
         if not isinstance(datasets, list):
             datasets = [datasets]
         if len(phases) != len(datasets):
-            raise ValueError(f'Phases {phases} and datasets {datasets} should have the same length.')
+            raise ValueError(
+                f"Phases {phases} and datasets {datasets} should have the same length."
+            )
 
         self.phases = phases
         self.datasets = datasets
@@ -232,16 +242,19 @@ class Sampler(AbstractSampler):
         last = [set() for _ in range(self.user_num)]
         for phase, dataset in zip(self.phases, self.datasets):
             cur = np.array([set(s) for s in last])
-            for uid, iid in zip(dataset.inter_feat[self.uid_field].numpy(), dataset.inter_feat[self.iid_field].numpy()):
+            for uid, iid in zip(
+                dataset.inter_feat[self.uid_field].numpy(),
+                dataset.inter_feat[self.iid_field].numpy(),
+            ):
                 cur[uid].add(iid)
             last = used_item_id[phase] = cur
 
         for used_item_set in used_item_id[self.phases[-1]]:
             if len(used_item_set) + 1 == self.item_num:  # [pad] is a item.
                 raise ValueError(
-                    'Some users have interacted with all items, '
-                    'which we can not sample negative items for them. '
-                    'Please set `user_inter_num_interval` to filter those users.'
+                    "Some users have interacted with all items, "
+                    "which we can not sample negative items for them. "
+                    "Please set `user_inter_num_interval` to filter those users."
                 )
         return used_item_id
 
@@ -256,7 +269,7 @@ class Sampler(AbstractSampler):
             is set to the value of corresponding phase.
         """
         if phase not in self.phases:
-            raise ValueError(f'Phase [{phase}] not exist.')
+            raise ValueError(f"Phase [{phase}] not exist.")
         new_sampler = copy.copy(self)
         new_sampler.phase = phase
         new_sampler.used_ids = new_sampler.used_ids[phase]
@@ -282,7 +295,7 @@ class Sampler(AbstractSampler):
         except IndexError:
             for user_id in user_ids:
                 if user_id < 0 or user_id >= self.user_num:
-                    raise ValueError(f'user_id [{user_id}] not exist.')
+                    raise ValueError(f"user_id [{user_id}] not exist.")
 
 
 class KGSampler(AbstractSampler):
@@ -293,7 +306,7 @@ class KGSampler(AbstractSampler):
         distribution (str, optional): Distribution of the negative entities. Defaults to 'uniform'.
     """
 
-    def __init__(self, dataset, distribution='uniform'):
+    def __init__(self, dataset, distribution="uniform"):
         self.dataset = dataset
 
         self.hid_field = dataset.head_entity_field
@@ -325,8 +338,8 @@ class KGSampler(AbstractSampler):
         for used_tail_set in used_tail_entity_id:
             if len(used_tail_set) + 1 == self.entity_num:  # [pad] is a entity.
                 raise ValueError(
-                    'Some head entities have relation with all entities, '
-                    'which we can not sample negative entities for them.'
+                    "Some head entities have relation with all entities, "
+                    "which we can not sample negative entities for them."
                 )
         return used_tail_entity_id
 
@@ -349,7 +362,7 @@ class KGSampler(AbstractSampler):
         except IndexError:
             for head_entity_id in head_entity_ids:
                 if head_entity_id not in self.head_entities:
-                    raise ValueError(f'head_entity_id [{head_entity_id}] not exist.')
+                    raise ValueError(f"head_entity_id [{head_entity_id}] not exist.")
 
 
 class RepeatableSampler(AbstractSampler):
@@ -365,7 +378,7 @@ class RepeatableSampler(AbstractSampler):
         phase (str): the phase of sampler. It will not be set until :meth:`set_phase` is called.
     """
 
-    def __init__(self, phases, dataset, distribution='uniform'):
+    def __init__(self, phases, dataset, distribution="uniform"):
         if not isinstance(phases, list):
             phases = [phases]
         self.phases = phases
@@ -412,7 +425,7 @@ class RepeatableSampler(AbstractSampler):
         except IndexError:
             for user_id in user_ids:
                 if user_id < 0 or user_id >= self.user_num:
-                    raise ValueError(f'user_id [{user_id}] not exist.')
+                    raise ValueError(f"user_id [{user_id}] not exist.")
 
     def set_phase(self, phase):
         """Get the sampler of corresponding phase.
@@ -424,7 +437,7 @@ class RepeatableSampler(AbstractSampler):
             Sampler: the copy of this sampler, and :attr:`phase` is set the same as input phase.
         """
         if phase not in self.phases:
-            raise ValueError(f'Phase [{phase}] not exist.')
+            raise ValueError(f"Phase [{phase}] not exist.")
         new_sampler = copy.copy(self)
         new_sampler.phase = phase
         return new_sampler
@@ -433,12 +446,12 @@ class RepeatableSampler(AbstractSampler):
 class SeqSampler(AbstractSampler):
     """:class:`SeqSampler` is used to sample negative item sequence.
 
-        Args:
-            datasets (Dataset or list of Dataset): All the dataset for each phase.
-            distribution (str, optional): Distribution of the negative items. Defaults to 'uniform'.
+    Args:
+        datasets (Dataset or list of Dataset): All the dataset for each phase.
+        distribution (str, optional): Distribution of the negative items. Defaults to 'uniform'.
     """
 
-    def __init__(self, dataset, distribution='uniform'):
+    def __init__(self, dataset, distribution="uniform"):
         self.dataset = dataset
 
         self.iid_field = dataset.iid_field

@@ -41,10 +41,12 @@ class STAMP(SequentialRecommender):
         super(STAMP, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
+        self.embedding_size = config["embedding_size"]
 
         # define layers and loss
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
         self.w1 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         self.w2 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
         self.w3 = nn.Linear(self.embedding_size, self.embedding_size, bias=False)
@@ -54,10 +56,10 @@ class STAMP(SequentialRecommender):
         self.mlp_b = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        self.loss_type = config['loss_type']
-        if self.loss_type == 'BPR':
+        self.loss_type = config["loss_type"]
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
@@ -98,8 +100,12 @@ class STAMP(SequentialRecommender):
             torch.Tensor:attention weights, shape of [batch_size, time_steps]
         """
         timesteps = context.size(1)
-        aspect_3dim = aspect.repeat(1, timesteps).view(-1, timesteps, self.embedding_size)
-        output_3dim = output.repeat(1, timesteps).view(-1, timesteps, self.embedding_size)
+        aspect_3dim = aspect.repeat(1, timesteps).view(
+            -1, timesteps, self.embedding_size
+        )
+        output_3dim = output.repeat(1, timesteps).view(
+            -1, timesteps, self.embedding_size
+        )
         res_ctx = self.w1(context)
         res_asp = self.w2(aspect_3dim)
         res_output = self.w3(output_3dim)
@@ -113,7 +119,7 @@ class STAMP(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
         pos_items = interaction[self.POS_ITEM_ID]
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             pos_items_emb = self.item_embedding(pos_items)
             neg_items_emb = self.item_embedding(neg_items)

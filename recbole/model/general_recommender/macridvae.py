@@ -39,23 +39,25 @@ class MacridVAE(GeneralRecommender):
     def __init__(self, config, dataset):
         super(MacridVAE, self).__init__(config, dataset)
 
-        self.layers = config['encoder_hidden_size']
-        self.embedding_size = config['embedding_size']
-        self.drop_out = config['dropout_prob']
-        self.kfac = config['kfac']
-        self.tau = config['tau']
-        self.nogb = config['nogb']
-        self.anneal_cap = config['anneal_cap']
-        self.total_anneal_steps = config['total_anneal_steps']
-        self.regs = config['reg_weights']
-        self.std = config['std']
+        self.layers = config["encoder_hidden_size"]
+        self.embedding_size = config["embedding_size"]
+        self.drop_out = config["dropout_prob"]
+        self.kfac = config["kfac"]
+        self.tau = config["tau"]
+        self.nogb = config["nogb"]
+        self.anneal_cap = config["anneal_cap"]
+        self.total_anneal_steps = config["total_anneal_steps"]
+        self.regs = config["reg_weights"]
+        self.std = config["std"]
 
         self.update = 0
 
         self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
         self.history_item_id = self.history_item_id.to(self.device)
         self.history_item_value = self.history_item_value.to(self.device)
-        self.encode_layer_dims = [self.n_items] + self.layers + [self.embedding_size * 2]
+        self.encode_layer_dims = (
+            [self.n_items] + self.layers + [self.embedding_size * 2]
+        )
 
         self.encoder = self.mlp_layers(self.encode_layer_dims)
 
@@ -77,10 +79,17 @@ class MacridVAE(GeneralRecommender):
         """
         # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
         col_indices = self.history_item_id[user].flatten()
-        row_indices = torch.arange(user.shape[0]).to(self.device) \
+        row_indices = (
+            torch.arange(user.shape[0])
+            .to(self.device)
             .repeat_interleave(self.history_item_id.shape[1], dim=0)
-        rating_matrix = torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
-        rating_matrix.index_put_((row_indices, col_indices), self.history_item_value[user].flatten())
+        )
+        rating_matrix = (
+            torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
+        )
+        rating_matrix.index_put_(
+            (row_indices, col_indices), self.history_item_value[user].flatten()
+        )
         return rating_matrix
 
     def mlp_layers(self, layer_dims):
@@ -114,7 +123,7 @@ class MacridVAE(GeneralRecommender):
         else:
             cates_sample = F.gumbel_softmax(cates_logits, tau=1, hard=False, dim=-1)
             cates_mode = torch.softmax(cates_logits, dim=-1)
-            cates = (self.training * cates_sample + (1 - self.training) * cates_mode)
+            cates = self.training * cates_sample + (1 - self.training) * cates_mode
 
         probs = None
         mulist = []
@@ -124,9 +133,9 @@ class MacridVAE(GeneralRecommender):
             # encoder
             x_k = rating_matrix * cates_k
             h = self.encoder(x_k)
-            mu = h[:, :self.embedding_size]
+            mu = h[:, : self.embedding_size]
             mu = F.normalize(mu, dim=1)
-            logvar = h[:, self.embedding_size:]
+            logvar = h[:, self.embedding_size :]
 
             mulist.append(mu)
             logvarlist.append(logvar)
@@ -138,7 +147,7 @@ class MacridVAE(GeneralRecommender):
             logits_k = torch.matmul(z_k, items.transpose(0, 1)) / self.tau
             probs_k = torch.exp(logits_k)
             probs_k = probs_k * cates_k
-            probs = (probs_k if (probs is None) else (probs + probs_k))
+            probs = probs_k if (probs is None) else (probs + probs_k)
 
         logits = torch.log(probs)
 
@@ -152,7 +161,7 @@ class MacridVAE(GeneralRecommender):
 
         self.update += 1
         if self.total_anneal_steps > 0:
-            anneal = min(self.anneal_cap, 1. * self.update / self.total_anneal_steps)
+            anneal = min(self.anneal_cap, 1.0 * self.update / self.total_anneal_steps)
         else:
             anneal = self.anneal_cap
 
@@ -160,7 +169,7 @@ class MacridVAE(GeneralRecommender):
         kl_loss = None
         for i in range(self.kfac):
             kl_ = -0.5 * torch.mean(torch.sum(1 + logvar[i] - logvar[i].exp(), dim=1))
-            kl_loss = (kl_ if (kl_loss is None) else (kl_loss + kl_))
+            kl_loss = kl_ if (kl_loss is None) else (kl_loss + kl_)
 
         # CE loss
         ce_loss = -(F.log_softmax(z, 1) * rating_matrix).sum(1).mean()
@@ -182,7 +191,7 @@ class MacridVAE(GeneralRecommender):
         loss_2 = reg_1 * self.k_embedding.weight.norm(2)
         loss_3 = 0
         for name, parm in self.encoder.named_parameters():
-            if name.endswith('weight'):
+            if name.endswith("weight"):
                 loss_3 = loss_3 + reg_2 * parm.norm(2)
         return loss_1 + loss_2 + loss_3
 

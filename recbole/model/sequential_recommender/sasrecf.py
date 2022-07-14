@@ -26,31 +26,41 @@ class SASRecF(SequentialRecommender):
         super(SASRecF, self).__init__(config, dataset)
 
         # load parameters info
-        self.n_layers = config['n_layers']
-        self.n_heads = config['n_heads']
-        self.hidden_size = config['hidden_size']  # same as embedding_size
-        self.inner_size = config['inner_size']  # the dimensionality in feed-forward layer
-        self.hidden_dropout_prob = config['hidden_dropout_prob']
-        self.attn_dropout_prob = config['attn_dropout_prob']
-        self.hidden_act = config['hidden_act']
-        self.layer_norm_eps = config['layer_norm_eps']
+        self.n_layers = config["n_layers"]
+        self.n_heads = config["n_heads"]
+        self.hidden_size = config["hidden_size"]  # same as embedding_size
+        self.inner_size = config[
+            "inner_size"
+        ]  # the dimensionality in feed-forward layer
+        self.hidden_dropout_prob = config["hidden_dropout_prob"]
+        self.attn_dropout_prob = config["attn_dropout_prob"]
+        self.hidden_act = config["hidden_act"]
+        self.layer_norm_eps = config["layer_norm_eps"]
 
-        self.selected_features = config['selected_features']
-        self.pooling_mode = config['pooling_mode']
-        self.device = config['device']
+        self.selected_features = config["selected_features"]
+        self.pooling_mode = config["pooling_mode"]
+        self.device = config["device"]
         self.num_feature_field = sum(
-            1 if dataset.field2type[field] != FeatureType.FLOAT_SEQ else dataset.num(field)
-            for field in config['selected_features']
+            1
+            if dataset.field2type[field] != FeatureType.FLOAT_SEQ
+            else dataset.num(field)
+            for field in config["selected_features"]
         )
 
-        self.initializer_range = config['initializer_range']
-        self.loss_type = config['loss_type']
+        self.initializer_range = config["initializer_range"]
+        self.loss_type = config["loss_type"]
 
         # define layers and loss
-        self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.hidden_size, padding_idx=0
+        )
         self.position_embedding = nn.Embedding(self.max_seq_length, self.hidden_size)
         self.feature_embed_layer = FeatureSeqEmbLayer(
-            dataset, self.hidden_size, self.selected_features, self.pooling_mode, self.device
+            dataset,
+            self.hidden_size,
+            self.selected_features,
+            self.pooling_mode,
+            self.device,
         )
 
         self.trm_encoder = TransformerEncoder(
@@ -61,27 +71,29 @@ class SASRecF(SequentialRecommender):
             hidden_dropout_prob=self.hidden_dropout_prob,
             attn_dropout_prob=self.attn_dropout_prob,
             hidden_act=self.hidden_act,
-            layer_norm_eps=self.layer_norm_eps
+            layer_norm_eps=self.layer_norm_eps,
         )
 
-        self.concat_layer = nn.Linear(self.hidden_size * (1 + self.num_feature_field), self.hidden_size)
+        self.concat_layer = nn.Linear(
+            self.hidden_size * (1 + self.num_feature_field), self.hidden_size
+        )
 
         self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
         self.dropout = nn.Dropout(self.hidden_dropout_prob)
 
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
         self.apply(self._init_weights)
-        self.other_parameter_name = ['feature_embed_layer']
+        self.other_parameter_name = ["feature_embed_layer"]
 
     def _init_weights(self, module):
-        """ Initialize the weights """
+        """Initialize the weights"""
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization
             # cf https://github.com/pytorch/pytorch/pull/5617
@@ -96,13 +108,15 @@ class SASRecF(SequentialRecommender):
         item_emb = self.item_embedding(item_seq)
 
         # position embedding
-        position_ids = torch.arange(item_seq.size(1), dtype=torch.long, device=item_seq.device)
+        position_ids = torch.arange(
+            item_seq.size(1), dtype=torch.long, device=item_seq.device
+        )
         position_ids = position_ids.unsqueeze(0).expand_as(item_seq)
         position_embedding = self.position_embedding(position_ids)
 
         sparse_embedding, dense_embedding = self.feature_embed_layer(None, item_seq)
-        sparse_embedding = sparse_embedding['item']
-        dense_embedding = dense_embedding['item']
+        sparse_embedding = sparse_embedding["item"]
+        dense_embedding = dense_embedding["item"]
         # concat the sparse embedding and float embedding
         feature_table = []
         if sparse_embedding is not None:
@@ -113,7 +127,9 @@ class SASRecF(SequentialRecommender):
         feature_table = torch.cat(feature_table, dim=-2)
         table_shape = feature_table.shape
         feat_num, embedding_size = table_shape[-2], table_shape[-1]
-        feature_emb = feature_table.view(table_shape[:-2] + (feat_num * embedding_size,))
+        feature_emb = feature_table.view(
+            table_shape[:-2] + (feat_num * embedding_size,)
+        )
         input_concat = torch.cat((item_emb, feature_emb), -1)  # [B 1+field_num*H]
 
         input_emb = self.concat_layer(input_concat)
@@ -122,7 +138,9 @@ class SASRecF(SequentialRecommender):
         input_emb = self.dropout(input_emb)
 
         extended_attention_mask = self.get_attention_mask(item_seq)
-        trm_output = self.trm_encoder(input_emb, extended_attention_mask, output_all_encoded_layers=True)
+        trm_output = self.trm_encoder(
+            input_emb, extended_attention_mask, output_all_encoded_layers=True
+        )
         output = trm_output[-1]
         seq_output = self.gather_indexes(output, item_seq_len - 1)
         return seq_output  # [B H]
@@ -132,7 +150,7 @@ class SASRecF(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
         pos_items = interaction[self.POS_ITEM_ID]
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             pos_items_emb = self.item_embedding(pos_items)
             neg_items_emb = self.item_embedding(neg_items)
@@ -160,5 +178,7 @@ class SASRecF(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
         test_items_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, item_num]
+        scores = torch.matmul(
+            seq_output, test_items_emb.transpose(0, 1)
+        )  # [B, item_num]
         return scores

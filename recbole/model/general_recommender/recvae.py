@@ -39,7 +39,6 @@ def log_norm_pdf(x, mu, logvar):
 
 
 class CompositePrior(nn.Module):
-
     def __init__(self, hidden_dim, latent_dim, input_dim, mixture_weights):
         super(CompositePrior, self).__init__()
 
@@ -48,10 +47,14 @@ class CompositePrior(nn.Module):
         self.mu_prior = nn.Parameter(torch.Tensor(1, latent_dim), requires_grad=False)
         self.mu_prior.data.fill_(0)
 
-        self.logvar_prior = nn.Parameter(torch.Tensor(1, latent_dim), requires_grad=False)
+        self.logvar_prior = nn.Parameter(
+            torch.Tensor(1, latent_dim), requires_grad=False
+        )
         self.logvar_prior.data.fill_(0)
 
-        self.logvar_uniform_prior = nn.Parameter(torch.Tensor(1, latent_dim), requires_grad=False)
+        self.logvar_uniform_prior = nn.Parameter(
+            torch.Tensor(1, latent_dim), requires_grad=False
+        )
         self.logvar_uniform_prior.data.fill_(10)
 
         self.encoder_old = Encoder(hidden_dim, latent_dim, input_dim)
@@ -73,7 +76,6 @@ class CompositePrior(nn.Module):
 
 
 class Encoder(nn.Module):
-
     def __init__(self, hidden_dim, latent_dim, input_dim, eps=1e-1):
         super(Encoder, self).__init__()
 
@@ -114,18 +116,20 @@ class RecVAE(GeneralRecommender):
         super(RecVAE, self).__init__(config, dataset)
 
         self.hidden_dim = config["hidden_dimension"]
-        self.latent_dim = config['latent_dimension']
-        self.dropout_prob = config['dropout_prob']
-        self.beta = config['beta']
-        self.mixture_weights = config['mixture_weights']
-        self.gamma = config['gamma']
+        self.latent_dim = config["latent_dimension"]
+        self.dropout_prob = config["dropout_prob"]
+        self.beta = config["beta"]
+        self.mixture_weights = config["mixture_weights"]
+        self.gamma = config["gamma"]
 
         self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
         self.history_item_id = self.history_item_id.to(self.device)
         self.history_item_value = self.history_item_value.to(self.device)
 
         self.encoder = Encoder(self.hidden_dim, self.latent_dim, self.n_items)
-        self.prior = CompositePrior(self.hidden_dim, self.latent_dim, self.n_items, self.mixture_weights)
+        self.prior = CompositePrior(
+            self.hidden_dim, self.latent_dim, self.n_items, self.mixture_weights
+        )
         self.decoder = nn.Linear(self.latent_dim, self.n_items)
 
         # parameters initialization
@@ -142,10 +146,17 @@ class RecVAE(GeneralRecommender):
         """
         # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
         col_indices = self.history_item_id[user].flatten()
-        row_indices = torch.arange(user.shape[0]).to(self.device) \
+        row_indices = (
+            torch.arange(user.shape[0])
+            .to(self.device)
             .repeat_interleave(self.history_item_id.shape[1], dim=0)
-        rating_matrix = torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
-        rating_matrix.index_put_((row_indices, col_indices), self.history_item_value[user].flatten())
+        )
+        rating_matrix = (
+            torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
+        )
+        rating_matrix.index_put_(
+            (row_indices, col_indices), self.history_item_value[user].flatten()
+        )
         return rating_matrix
 
     def reparameterize(self, mu, logvar):
@@ -178,7 +189,12 @@ class RecVAE(GeneralRecommender):
             kl_weight = self.beta
 
         mll = (F.log_softmax(x_pred, dim=-1) * rating_matrix).sum(dim=-1).mean()
-        kld = (log_norm_pdf(z, mu, logvar) - self.prior(rating_matrix, z)).sum(dim=-1).mul(kl_weight).mean()
+        kld = (
+            (log_norm_pdf(z, mu, logvar) - self.prior(rating_matrix, z))
+            .sum(dim=-1)
+            .mul(kl_weight)
+            .mean()
+        )
         negative_elbo = -(mll - kld)
 
         return negative_elbo
