@@ -241,9 +241,12 @@ def get_gpu_usage(device=None):
     reserved = torch.cuda.max_memory_reserved(device) / 1024**3
     total = torch.cuda.get_device_properties(device).total_memory / 1024**3
 
-    return '{:.2f} G/{:.2f} G'.format(reserved, total)
+    return "{:.2f} G/{:.2f} G".format(reserved, total)
 
-def get_flops(model, dataset, device, uncalled_warnings=False, unsupported_warnings=False):
+
+def get_flops(
+    model, dataset, device, uncalled_warnings=False, unsupported_warnings=False
+):
     r"""Given a model and dataset to the model, compute the per-operator flops
     of the given model.
     Args:
@@ -271,9 +274,9 @@ def get_flops(model, dataset, device, uncalled_warnings=False, unsupported_warni
         else:
             return None
 
-    def binary_ops_jit(inputs,outputs):
+    def binary_ops_jit(inputs, outputs):
         r"""
-        Count flops for binary operator such as addition, subtraction, multiplication 
+        Count flops for binary operator such as addition, subtraction, multiplication
         and division.
         """
         input_shapes = [get_shape(v) for v in inputs]
@@ -281,22 +284,22 @@ def get_flops(model, dataset, device, uncalled_warnings=False, unsupported_warni
         flop = np.prod(input_shapes[0])
         return flop
 
-    def sum_ops_jit(inputs,outputs):
+    def sum_ops_jit(inputs, outputs):
         r"""
         Count flops for sum.
         """
         input_shapes = [get_shape(v) for v in inputs]
         assert input_shapes[0]
-        flop = np.prod(input_shapes[0])-1
+        flop = np.prod(input_shapes[0]) - 1
         return flop
 
-    def sigmoid_ops_jit(inputs,outputs):
+    def sigmoid_ops_jit(inputs, outputs):
         r"""
         Count flops for sigmoid.
         """
         input_shapes = [get_shape(v) for v in inputs]
         assert input_shapes[0]
-        flop = np.prod(input_shapes)*4
+        flop = np.prod(input_shapes) * 4
         return flop
 
     custom_ops = {
@@ -310,16 +313,17 @@ def get_flops(model, dataset, device, uncalled_warnings=False, unsupported_warni
     inter = dataset[torch.tensor([1])].to(device)
 
     class TracingAdapter(torch.nn.Module):
-
         def __init__(self, rec_model):
             super().__init__()
             self.model = rec_model
 
-        def forward(self,interaction):
+        def forward(self, interaction):
             return self.model.predict(interaction)
 
     wrapper = TracingAdapter(model)
-    flop_counter = FlopCountAnalysis(wrapper, (inter.interaction,)).set_op_handle(**custom_ops)
+    flop_counter = FlopCountAnalysis(wrapper, (inter.interaction,)).set_op_handle(
+        **custom_ops
+    )
     flop_counter.unsupported_ops_warnings(unsupported_warnings)
     flop_counter.uncalled_modules_warnings(uncalled_warnings)
     flop_counter.tracer_warnings("none")
