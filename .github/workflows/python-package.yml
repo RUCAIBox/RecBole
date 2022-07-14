@@ -69,7 +69,6 @@ jobs:
   # Use black to test code format
   # Reference code:
   #     https://black.readthedocs.io/en/stable/integrations/github_actions.html
-  #     https://github.com/marketplace/actions/run-black-formatter
   lint:
     runs-on: ubuntu-latest
     steps:
