@@ -66,4 +66,23 @@ jobs:
         python -m pytest -v tests/config/test_config.py
         export PYTHONPATH=.
         python tests/config/test_command_line.py --use_gpu=False --valid_metric=Recall@10 --split_ratio=[0.7,0.2,0.1] --metrics='["Recall"]' --topk=[10] --epochs=200 --eval_setting='LO_RS' --learning_rate=0.3
-
+  # Use black to test code format
+  # Reference code:
+  #     https://black.readthedocs.io/en/stable/integrations/github_actions.html
+  #     https://github.com/marketplace/actions/run-black-formatter
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          pip install black[jupyter]
+      - name: Test code format
+        uses: psf/black@stable
+        id: action-black
+        with:
+          options: "."
+      - name: Apply code-format changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Format Python code according to PEP8
