@@ -10,6 +10,7 @@ from recbole.utils.utils import (
     init_seed,
     get_tensorboard,
     get_gpu_usage,
+    get_flops,
 )
 from recbole.utils.enum_type import *
 from recbole.utils.argument_list import *
@@ -39,5 +40,6 @@ __all__ = [
     "get_tensorboard",
     "set_color",
     "get_gpu_usage",
+    "get_flops",
     "WandbLogger",
 ]
