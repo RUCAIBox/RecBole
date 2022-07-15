@@ -156,7 +156,8 @@ A simple example is to search the :attr:`learning_rate` and :attr:`embedding_siz
         'test_result': {'recall@10': 0.2368, 'mrr@10': 0.4519, 'ndcg@10': 0.2768, 'hit@10': 0.7614, 'precision@10': 0.1901}
     }
 
-After running, we will also generate an HTML file, which contains a line chart to show the process of hyper parameter search:
+After running, we will also generate an HTML file, which contains a line chart to show the process of hyper parameter search.
+
 .. image:: ../../asset/hyper_tuning.png
     :width: 500
     :align: center
