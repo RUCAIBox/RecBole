@@ -4,9 +4,9 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : run_hyper.py
 # UPDATE:
-# @Time   : 2020/8/20 21:17, 2020/8/29
-# @Author : Zihan Lin, Yupeng Hou
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
+# @Time   : 2020/8/20 21:17, 2020/8/29, 2022/7/13
+# @Author : Zihan Lin, Yupeng Hou, Gaowei Zhang
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, zgw15630559577@163.com
 
 import argparse
 
@@ -26,12 +26,14 @@ def main():
     args, _ = parser.parse_known_args()
 
     # plz set algo='exhaustive' to use exhaustive search, in this case, max_evals is auto set
+    # in other case, max_evals needs to be set manually
     config_file_list = (
         args.config_files.strip().split(" ") if args.config_files else None
     )
     hp = HyperTuning(
         objective_function,
         algo="exhaustive",
+        early_stop=10,
         params_file=args.params_file,
         fixed_config_file_list=config_file_list,
     )
