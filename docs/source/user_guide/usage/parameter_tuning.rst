@@ -15,7 +15,7 @@ instance in the running python file (e.g., `run.py`):
     from recbole.trainer import HyperTuning
     from recbole.quick_start import objective_function
 
-    hp = HyperTuning(objective_function=objective_function, algo='exhaustive',
+    hp = HyperTuning(objective_function=objective_function, algo='exhaustive', early_stop=10,
                     params_file='model.hyper', fixed_config_file_list=['example.yaml'])
 
 :attr:`objective_function` is the optimization objective,
@@ -32,30 +32,39 @@ The user can also use an encapsulated :attr:`objective_function`, that is:
         init_seed(config['seed'])
         dataset = create_dataset(config)
         train_data, valid_data, test_data = data_preparation(config, dataset)
-        model = get_model(config['model'])(config, train_data).to(config['device'])
+        model_name = config['model']
+        model = get_model(model_name)(config, train_data).to(config['device'])
         trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
         best_valid_score, best_valid_result = trainer.fit(train_data, valid_data, verbose=False)
         test_result = trainer.evaluate(test_data)
 
         return {
+            'model': model_name,
             'best_valid_score': best_valid_score,
             'valid_score_bigger': config['valid_metric_bigger'],
             'best_valid_result': best_valid_result,
             'test_result': test_result
         }
 
-:attr:`algo` is the optimization algorithm. RecBole realizes this module based
-on hyperopt_. In addition, we also support grid search tunning method.
+:attr:`algo` is the optimization algorithm. RecBole support three tunning methods:
+'exhaustive': grid search, in this case, 'max_evals' is auto set;
+'random': random search, in this case, 'max_evals' needs to be set manually;
+'bayes': Bayesian HyperOpt, in this case, 'max_evals' needs to be set manually.
+In addition, we also support user-defined tunning method.
 
 .. code:: python
 
-    from hyperopt import tpe
-
-    # hyperopt 自带的优化算法
-    hp1 = HyperTuning(algo=tpe.suggest)
-
     # Grid Search
-    hp2 = HyperTuning(algo='exhaustive')
+    hp1 = HyperTuning(algo='exhaustive')
+
+    # Random Search
+    hp2 = HyperTuning(algo='random')
+
+    # Bayesian HyperOpt
+    hp3 = HyperTuning(algo='bayes')
+
+    # User-Defined Search
+    hp4 = HyperTuning(algo=your_function)
 
 :attr:`params_file` is the ranges of the parameters, which is exampled as
 (e.g., `model.hyper`):
@@ -99,7 +108,7 @@ Calling method of HyperTuning like:
     from recbole.trainer import HyperTuning
     from recbole.quick_start import objective_function
 
-    hp = HyperTuning(objective_function=objective_function, algo='exhaustive',
+    hp = HyperTuning(objective_function=objective_function, algo='exhaustive', early_stop=10,
                     params_file='model.hyper', fixed_config_file_list=['example.yaml'])
 
     # run
@@ -146,3 +155,8 @@ A simple example is to search the :attr:`learning_rate` and :attr:`embedding_siz
         'best_valid_result': {'recall@10': 0.2169, 'mrr@10': 0.4005, 'ndcg@10': 0.235, 'hit@10': 0.7582, 'precision@10': 0.1598}
         'test_result': {'recall@10': 0.2368, 'mrr@10': 0.4519, 'ndcg@10': 0.2768, 'hit@10': 0.7614, 'precision@10': 0.1901}
     }
+
+After running, we will also generate an HTML file, which contains a line chart to show the process of hyper parameter search:
+.. image:: ../../asset/hyper_tuning.png
+    :width: 500
+    :align: center
