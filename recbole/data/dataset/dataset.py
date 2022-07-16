@@ -747,7 +747,7 @@ class Dataset(torch.utils.data.Dataset):
                     if "bucket" in info:
                         bucket = info["bucket"]
                     else:
-                        bucket = self.config["bucket"]
+                        raise ValueError(f"The number of buckets must be set when apply equal discretization.")
 
                 for feat in self.field2feats(field):
 
@@ -1914,12 +1914,12 @@ class Dataset(torch.utils.data.Dataset):
                 if isinstance(value_field, str):
                     value_field = {value_field}
                 for k in value_field:
-                    graph.edata[k] = tensor_feat[k]
+                    graph.edata[k] = tensor_feat[k] if self.field2type[k] != FeatureType.FLOAT else tensor_feat[k][...,0]
             return graph
         elif form == "pyg":
             from torch_geometric.data import Data
 
-            edge_attr = tensor_feat[value_field] if value_field else None
+            edge_attr = (tensor_feat[value_field] if self.field2type[value_field] != FeatureType.FLOAT else tensor_feat[value_field][...,0]) if value_field else None
             graph = Data(edge_index=torch.stack([src, tgt]), edge_attr=edge_attr)
             return graph
         else:
@@ -1987,7 +1987,7 @@ class Dataset(torch.utils.data.Dataset):
                 raise ValueError(
                     f"Value_field [{value_field}] should be one of `inter_feat`'s features."
                 )
-            values = self.inter_feat[value_field][..., 0].numpy()
+            values = (self.inter_feat[value_field] if self.field2type[value_field] != FeatureType.FLOAT else self.inter_feat[value_field][...,0]).numpy()
 
         if row == "user":
             row_num, max_col_num = self.user_num, self.item_num

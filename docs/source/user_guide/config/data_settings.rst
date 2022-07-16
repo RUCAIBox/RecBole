@@ -98,6 +98,12 @@ Preprocessing
 - ``preload_weight (dict)`` : Has the format ``{k (str): v (float)}, ...``. ``k`` is a token field, representing the IDs of each row of preloaded weight matrix. ``v`` is a float-like field. Each pair of ``k`` and ``v`` should be from the same atomic file. This arg can be used to load pretrained vectors. Defaults to ``None``.
 - ``normalize_field (list)`` : List of filed names to be normalized. Note that only float-like fields can be normalized. Defaults to ``None``.
 - ``normalize_all (bool)`` : Normalize all the float like fields if ``True``. Defaults to ``None``.
+- ``discretization (dict)`` : Has the format ``{k (str): v (dict)}, ...``. ``k`` is a float field, representing the fields to be discretized. ``v`` is a config dict which have 2 keys: ``method`` and ``bucket``, which respectively control the discretization strategy.
+  
+  - ``method (str)``: decides how we discretize the float data. Now we support two kinds of discretization strategies: ``['ED', 'LD']``. If the value of ``method`` is ``ED``, the data will be discretized in equal distance. If the value is ``LD``, the data will be discretized in logarithm. The default value is ``ED``.   
+
+  - ``bucket (int)``: the number of buckets that contains equal number of features when the discretization method is 'ED'.
+  
 
 Benchmark file
 -------------------
