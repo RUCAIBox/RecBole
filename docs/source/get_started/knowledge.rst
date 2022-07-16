@@ -1,4 +1,4 @@
-Quick Start
+Quick Start: Knowledge-based Recommendation
 ===============
 For Knowledge-based Recommendation, we choose **CKE** model to show you how
 to train and test it on the **ml-100k** dataset from both **API** and
