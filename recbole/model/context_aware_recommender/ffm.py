@@ -4,6 +4,11 @@
 # @Email  : xinyan.fan@ruc.edu.cn
 # @File   : ffm.py
 
+# UPDATE:
+# @Time   : 2022/7/16
+# @Author : Zhen Tian
+# @Email  : chenyuwuxinn@gmail.com
+
 r"""
 FFM
 #####################################################

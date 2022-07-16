@@ -1859,7 +1859,7 @@ class Dataset(torch.utils.data.Dataset):
                 raise ValueError(
                     f"Value_field [{value_field}] should be one of `df_feat`'s features."
                 )
-            data = df_feat[value_field][...,0]
+            data = df_feat[value_field][...,0] if self.field2type[value_field] == FeatureType.FLOAT else df_feat[value_field]
         mat = coo_matrix(
             (data, (src, tgt)), shape=(self.num(source_field), self.num(target_field))
         )

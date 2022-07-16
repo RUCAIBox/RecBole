@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/10/22, 2020/9/23, 2022/7/6
-# @Author : Yupeng Hou, Yushuo Chen, Gaowei Zhang
-# @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, zgw15630559577@163.com
+# @Time   : 2022/7/8, 2020/10/22, 2020/9/23, 2022/7/6
+# @Author : Zhen Tian, Yupeng Hou, Yushuo Chen, Gaowei Zhang
+# @email  : chenyuwuxinn@gmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, zgw15630559577@163.com
 
 """
 recbole.data.dataloader.abstract_dataloader

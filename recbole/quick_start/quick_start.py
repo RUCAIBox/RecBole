@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2022/07/10, 2022/07/13
-# @Author : Junjie Zhang, Gaowei Zhang
-# @Email  : zjj001128@163.com, zgw15630559577@163.com
+# @Time   : 2022/7/8, 2022/07/10, 2022/07/13
+# @Author : Zhen Tian, Junjie Zhang, Gaowei Zhang
+# @Email  : chenyuwuxinn@gmail.com, zjj001128@163.com, zgw15630559577@163.com
 
 """
 recbole.quick_start
