@@ -398,10 +398,14 @@ class TestDataset:
         assert dataset.inter_feat["rating"].apply(lambda x: x[0])[3] == 1.0
         assert dataset.user_feat["age"].apply(lambda x: x[0])[4] == 1.5
         assert dataset.item_feat["price"].apply(lambda x: x[0])[4] == 1.5
-        assert (dataset.inter_feat["time_list"].apply(lambda x: x[0])[0] == [1.0, 2.0, 3.0]).all()
+        assert (
+            dataset.inter_feat["time_list"].apply(lambda x: x[0])[0] == [1.0, 2.0, 3.0]
+        ).all()
         assert (dataset.inter_feat["time_list"].apply(lambda x: x[0])[1] == [2.0]).all()
         assert (dataset.inter_feat["time_list"].apply(lambda x: x[0])[2] == []).all()
-        assert (dataset.inter_feat["time_list"].apply(lambda x: x[0])[3] == [5, 4]).all()
+        assert (
+            dataset.inter_feat["time_list"].apply(lambda x: x[0])[3] == [5, 4]
+        ).all()
         assert (dataset.user_feat["profile"][0] == []).all()
         assert (dataset.user_feat["profile"][1] == [1, 2, 3]).all()
         assert (dataset.user_feat["profile"][2] == []).all()

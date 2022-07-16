@@ -91,10 +91,10 @@ class TestGeneralDataloader:
         for batch_data in train_data:
             batch_item_list = train_item_list[pr : pr + train_batch_size]
             assert (batch_data["item_id"].numpy() == batch_item_list).all()
-            assert (batch_data["item_id"] == batch_data["price"][...,0]).all()
+            assert (batch_data["item_id"] == batch_data["price"][..., 0]).all()
             assert (40 < batch_data["neg_item_id"]).all()
             assert (batch_data["neg_item_id"] <= 100).all()
-            assert (batch_data["neg_item_id"] == batch_data["neg_price"][...,0]).all()
+            assert (batch_data["neg_item_id"] == batch_data["neg_price"][..., 0]).all()
             pr += train_batch_size
 
     def test_general_neg_sample_dataloader_in_point_wise(self):
@@ -126,7 +126,7 @@ class TestGeneralDataloader:
             assert (batch_data["item_id"][:step].numpy() == batch_item_list).all()
             assert (40 < batch_data["item_id"][step:]).all()
             assert (batch_data["item_id"][step:] <= 100).all()
-            assert (batch_data["item_id"] == batch_data["price"][...,0]).all()
+            assert (batch_data["item_id"] == batch_data["price"][..., 0]).all()
             pr += step
 
     def test_general_full_dataloader(self):
