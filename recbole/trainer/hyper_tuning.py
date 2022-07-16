@@ -99,12 +99,19 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
     from hyperopt.base import miscs_update_idxs_vals
 
     # Build a hash set for previous trials
-    hashset = set([
-        hash(
-            frozenset([(key, value[0]) if len(value) > 0 else ((key, None))
-                       for key, value in trial["misc"]["vals"].items()])
-        ) for trial in trials.trials
-    ])
+    hashset = set(
+        [
+            hash(
+                frozenset(
+                    [
+                        (key, value[0]) if len(value) > 0 else ((key, None))
+                        for key, value in trial["misc"]["vals"].items()
+                    ]
+                )
+            )
+            for trial in trials.trials
+        ]
+    )
 
     rng = np.random.RandomState(seed)
     rval = []
@@ -125,7 +132,14 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
             miscs_update_idxs_vals([new_misc], idxs, vals)
 
             # Compare with previous hashes
-            h = hash(frozenset([(key, value[0]) if len(value) > 0 else ((key, None)) for key, value in vals.items()]))
+            h = hash(
+                frozenset(
+                    [
+                        (key, value[0]) if len(value) > 0 else ((key, None))
+                        for key, value in vals.items()
+                    ]
+                )
+            )
             if h not in hashset:
                 newSample = True
             else:
@@ -161,7 +175,7 @@ class HyperTuning(object):
         fixed_config_file_list=None,
         algo="exhaustive",
         max_evals=100,
-        early_stop=10
+        early_stop=10,
     ):
         self.best_score = None
         self.best_params = None
@@ -180,22 +194,27 @@ class HyperTuning(object):
         elif params_dict:
             self.space = self._build_space_from_dict(params_dict)
         else:
-            raise ValueError("at least one of `space`, `params_file` and `params_dict` is provided")
+            raise ValueError(
+                "at least one of `space`, `params_file` and `params_dict` is provided"
+            )
         if isinstance(algo, str):
             if algo == "exhaustive":
                 self.algo = partial(exhaustive_search, nbMaxSucessiveFailures=1000)
                 self.max_evals = _spacesize(self.space)
             elif algo == "random":
                 from hyperopt import rand
+
                 self.algo = rand.suggest
             elif algo == "bayes":
                 from hyperopt import tpe
+
                 self.algo = tpe.suggest
             else:
                 raise ValueError("Illegal algo [{}]".format(algo))
         else:
             self.algo = algo
         from hyperopt.early_stop import no_progress_loss
+
         self.early_stop_fn = no_progress_loss(early_stop)
 
     @staticmethod
@@ -221,7 +240,9 @@ class HyperTuning(object):
                     space[para_name] = hp.uniform(para_name, float(low), float(high))
                 elif para_type == "quniform":
                     low, high, q = para_value.strip().split(",")
-                    space[para_name] = hp.quniform(para_name, float(low), float(high), float(q))
+                    space[para_name] = hp.quniform(
+                        para_name, float(low), float(high), float(q)
+                    )
                 elif para_type == "loguniform":
                     low, high = para_value.strip().split(",")
                     space[para_name] = hp.loguniform(para_name, float(low), float(high))
@@ -251,7 +272,9 @@ class HyperTuning(object):
                     low = para_value[0]
                     high = para_value[1]
                     q = para_value[2]
-                    space[para_name] = hp.quniform(para_name, float(low), float(high), float(q))
+                    space[para_name] = hp.quniform(
+                        para_name, float(low), float(high), float(q)
+                    )
             elif para_type == "loguniform":
                 for para_name in config_dict["loguniform"]:
                     para_value = config_dict["loguniform"][para_name]
@@ -295,8 +318,16 @@ class HyperTuning(object):
         with open(output_file, "w") as fp:
             for params in self.params2result:
                 fp.write(params + "\n")
-                fp.write("Valid result:\n" + dict2str(self.params2result[params]["best_valid_result"]) + "\n")
-                fp.write("Test result:\n" + dict2str(self.params2result[params]["test_result"]) + "\n\n")
+                fp.write(
+                    "Valid result:\n"
+                    + dict2str(self.params2result[params]["best_valid_result"])
+                    + "\n"
+                )
+                fp.write(
+                    "Test result:\n"
+                    + dict2str(self.params2result[params]["test_result"])
+                    + "\n\n"
+                )
 
     def trial(self, params):
         r"""Given a set of parameters, return results and optimization status
@@ -375,5 +406,11 @@ class HyperTuning(object):
         r"""begin to search the best parameters"""
         from hyperopt import fmin
 
-        fmin(self.trial, self.space, algo=self.algo, max_evals=self.max_evals, early_stop_fn=self.early_stop_fn)
+        fmin(
+            self.trial,
+            self.space,
+            algo=self.algo,
+            max_evals=self.max_evals,
+            early_stop_fn=self.early_stop_fn,
+        )
         self.plot_hyper()
