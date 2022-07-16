@@ -175,6 +175,7 @@ class HyperTuning(object):
         fixed_config_file_list=None,
         algo="exhaustive",
         max_evals=100,
+        early_stop=10,
     ):
         self.best_score = None
         self.best_params = None
@@ -200,10 +201,21 @@ class HyperTuning(object):
             if algo == "exhaustive":
                 self.algo = partial(exhaustive_search, nbMaxSucessiveFailures=1000)
                 self.max_evals = _spacesize(self.space)
+            elif algo == "random":
+                from hyperopt import rand
+
+                self.algo = rand.suggest
+            elif algo == "bayes":
+                from hyperopt import tpe
+
+                self.algo = tpe.suggest
             else:
                 raise ValueError("Illegal algo [{}]".format(algo))
         else:
             self.algo = algo
+        from hyperopt.early_stop import no_progress_loss
+
+        self.early_stop_fn = no_progress_loss(early_stop)
 
     @staticmethod
     def _build_space_from_file(file):
@@ -331,10 +343,12 @@ class HyperTuning(object):
         print("running parameters:", config_dict)
         result_dict = self.objective_function(config_dict, self.fixed_config_file_list)
         self.params2result[params_str] = result_dict
-        score, bigger = (
+        model, score, bigger = (
+            result_dict["model"],
             result_dict["best_valid_score"],
             result_dict["valid_score_bigger"],
         )
+        self.model = model
         self.score_list.append(score)
 
         if not self.best_score:
@@ -375,7 +389,7 @@ class HyperTuning(object):
             marker=dict(color="green"),
             showlegend=True,
             textposition="top center",
-            name="tuning process",
+            name=self.model + " tuning process",
         )
 
         data = [trace]
@@ -392,5 +406,11 @@ class HyperTuning(object):
         r"""begin to search the best parameters"""
         from hyperopt import fmin
 
-        fmin(self.trial, self.space, algo=self.algo, max_evals=self.max_evals)
+        fmin(
+            self.trial,
+            self.space,
+            algo=self.algo,
+            max_evals=self.max_evals,
+            early_stop_fn=self.early_stop_fn,
+        )
         self.plot_hyper()

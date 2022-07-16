@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2022/07/10
-# @Author : Junjie Zhang
-# @Email  : zjj001128@163.com
+# @Time   : 2022/07/10, 2022/07/13
+# @Author : Junjie Zhang, Gaowei Zhang
+# @Email  : zjj001128@163.com, zgw15630559577@163.com
 
 """
 recbole.quick_start
@@ -136,7 +136,8 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     dataset = create_dataset(config)
     train_data, valid_data, test_data = data_preparation(config, dataset)
     init_seed(config["seed"], config["reproducibility"])
-    model = get_model(config["model"])(config, train_data._dataset).to(config["device"])
+    model_name = config["model"]
+    model = get_model(model_name)(config, train_data._dataset).to(config["device"])
     trainer = get_trainer(config["MODEL_TYPE"], config["model"])(config, model)
     best_valid_score, best_valid_result = trainer.fit(
         train_data, valid_data, verbose=False, saved=saved
@@ -144,6 +145,7 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     test_result = trainer.evaluate(test_data, load_best_model=saved)
 
     return {
+        "model": model_name,
         "best_valid_score": best_valid_score,
         "valid_score_bigger": config["valid_metric_bigger"],
         "best_valid_result": best_valid_result,
