@@ -341,8 +341,8 @@ class Interaction(object):
             if len(self.interaction[b].shape) == 1:
                 key = self.interaction[b]
             else:
-                key = self.interaction[b][...,0]
-            index = np.argsort(key, kind='stable')
+                key = self.interaction[b][..., 0]
+            index = np.argsort(key, kind="stable")
             if not a:
                 index = index[::-1]
             self._reindex(index)

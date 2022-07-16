@@ -473,7 +473,7 @@ class Dataset(torch.utils.data.Dataset):
                 self.field2type[field] = ftype
                 if not ftype.value.endswith("seq"):
                     self.field2seqlen[field] = 1
-                if 'float' in ftype.value:
+                if "float" in ftype.value:
                     self.field2bucketnum[field] = 2
             columns.append(field)
             usecols.append(field_type)
@@ -704,86 +704,106 @@ class Dataset(torch.utils.data.Dataset):
                         norm(feat[field].agg(np.concatenate)), split_point
                     )
 
-
     def _discretization(self):
         """Discretization if ``config['normalize_field']`` or ``config['normalize_all']`` is set.
         See :doc:`../user_guide/data/data_args` for detail arg setting.
 
-        Note: 
+        Note:
             Only float-like fields can be discretized.
         """
 
         dis_info = {}
 
-        if self.config['discretization']:
+        if self.config["discretization"]:
 
-            dis_info = self.config['discretization']
+            dis_info = self.config["discretization"]
 
             for field in dis_info.keys():
                 if field not in self.field2type:
-                    raise ValueError(f'Field [{field}] does not exist.')
+                    raise ValueError(f"Field [{field}] does not exist.")
                 ftype = self.field2type[field]
                 if ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
-                    self.logger.warning(f'{field} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized.')
+                    self.logger.warning(
+                        f"{field} is not a FLOAT/FLOAT_SEQ feat, which will not be normalized."
+                    )
                     del dis_info[field]
 
-            self.logger.debug(set_color('Normalized fields', 'blue') + f': {dis_info.keys()}')
+            self.logger.debug(
+                set_color("Normalized fields", "blue") + f": {dis_info.keys()}"
+            )
 
-        float_like_fields = self.fields(ftype = [FeatureType.FLOAT, FeatureType.FLOAT_SEQ])
+        float_like_fields = self.fields(
+            ftype=[FeatureType.FLOAT, FeatureType.FLOAT_SEQ]
+        )
 
         for field in float_like_fields:
             if field == self.label_field:
                 continue
             if field in dis_info:
                 info = dis_info[field]
-                method = info['method']
+                method = info["method"]
                 bucket = None
-                if method == 'ED':
-                    if 'bucket' in info:
-                        bucket = info['bucket']
+                if method == "ED":
+                    if "bucket" in info:
+                        bucket = info["bucket"]
                     else:
-                        bucket = self.config['bucket']
-                        
+                        bucket = self.config["bucket"]
+
                 for feat in self.field2feats(field):
+
                     def disc(arr, method, bucket):
-                        if method == 'ED': # Equal Distance/Frequency Discretization.
-                            lower , upper = min(arr), max(arr) + 1e-9
-                            if upper != lower: 
-                                arr = np.floor((arr - lower) * bucket / (upper - lower) + 1)
+                        if method == "ED":  # Equal Distance/Frequency Discretization.
+                            lower, upper = min(arr), max(arr) + 1e-9
+                            if upper != lower:
+                                arr = np.floor(
+                                    (arr - lower) * bucket / (upper - lower) + 1
+                                )
                             else:
-                                self.logger.warning(f'All the same value in [{field}] from [{feat}_feat].')
+                                self.logger.warning(
+                                    f"All the same value in [{field}] from [{feat}_feat]."
+                                )
                                 arr = np.ones_like(arr) * bucket
 
-                        elif method == 'LD': # Logarithm Discretization
+                        elif method == "LD":  # Logarithm Discretization
                             arr = np.floor(np.log(arr) ** 2 + 1)
 
                         else:
-                            raise ValueError(f'Method [{method}] does not exist.')
+                            raise ValueError(f"Method [{method}] does not exist.")
 
                         return arr, int(max(arr) + 1)
 
                     ftype = self.field2type[field]
                     if ftype == FeatureType.FLOAT:
-                        res, self.field2bucketnum[field] = disc(feat[field].values, method, bucket)
+                        res, self.field2bucketnum[field] = disc(
+                            feat[field].values, method, bucket
+                        )
                         ret = np.ones_like(res)
-                        feat[field] = np.stack([ret, res], axis = -1).tolist()
+                        feat[field] = np.stack([ret, res], axis=-1).tolist()
                     elif ftype == FeatureType.FLOAT_SEQ:
                         split_point = np.cumsum(feat[field].agg(len))[:-1]
-                        res, self.field2bucketnum[field] = disc(feat[field].agg(np.concatenate), method, bucket)
+                        res, self.field2bucketnum[field] = disc(
+                            feat[field].agg(np.concatenate), method, bucket
+                        )
                         ret = np.ones_like(res)
-                        res, ret = np.split(res, split_point), np.split(ret, split_point)
-                        feat[field] = list(zip(ret,res))
+                        res, ret = np.split(res, split_point), np.split(
+                            ret, split_point
+                        )
+                        feat[field] = list(zip(ret, res))
             else:
                 for feat in self.field2feats(field):
                     ftype = self.field2type[field]
                     if ftype == FeatureType.FLOAT:
-                        feat[field] = np.stack([feat[field], np.ones_like(feat[field])], axis = -1).tolist()
+                        feat[field] = np.stack(
+                            [feat[field], np.ones_like(feat[field])], axis=-1
+                        ).tolist()
                     else:
                         split_point = np.cumsum(feat[field].agg(len))[:-1]
                         res = ret = feat[field].agg(np.concatenate)
                         res = np.ones_like(ret)
-                        res, ret = np.split(res, split_point), np.split(ret, split_point)
-                        feat[field] = list(zip(ret,res))
+                        res, ret = np.split(res, split_point), np.split(
+                            ret, split_point
+                        )
+                        feat[field] = list(zip(ret, res))
 
     def _filter_nan_user_or_item(self):
         """Filter NaN user_id and item_id"""
@@ -1205,8 +1225,8 @@ class Dataset(torch.utils.data.Dataset):
             int: The number of different tokens (``1`` if ``field`` is a float-like field).
         """
         if field not in self.field2type:
-            raise ValueError(f'Field [{field}] not defined in dataset.')
-        
+            raise ValueError(f"Field [{field}] not defined in dataset.")
+
         if self.field2type[field] in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
             return self.field2bucketnum[field]
         elif self.field2type[field] not in {FeatureType.TOKEN, FeatureType.TOKEN_SEQ}:
@@ -2081,12 +2101,12 @@ class Dataset(torch.utils.data.Dataset):
             elif ftype == FeatureType.FLOAT:
                 new_data[k] = torch.FloatTensor(value.tolist())
             elif ftype == FeatureType.TOKEN_SEQ:
-                seq_data = [torch.LongTensor(d[:self.field2seqlen[k]]) for d in value]
+                seq_data = [torch.LongTensor(d[: self.field2seqlen[k]]) for d in value]
                 new_data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == FeatureType.FLOAT_SEQ:
-                base = [torch.FloatTensor(d[0][:self.field2seqlen[k]]) for d in value]
+                base = [torch.FloatTensor(d[0][: self.field2seqlen[k]]) for d in value]
                 base = rnn_utils.pad_sequence(base, batch_first=True)
-                index = [torch.FloatTensor(d[1][:self.field2seqlen[k]]) for d in value]
+                index = [torch.FloatTensor(d[1][: self.field2seqlen[k]]) for d in value]
                 index = rnn_utils.pad_sequence(index, batch_first=True)
-                new_data[k] = torch.stack([base, index], dim = -1)
+                new_data[k] = torch.stack([base, index], dim=-1)
         return Interaction(new_data)
