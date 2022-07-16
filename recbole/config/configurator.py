@@ -465,7 +465,7 @@ class Config(object):
             assert len(gpu_id.split(",")) >= self.final_config_dict["nproc"]
             torch.distributed.init_process_group(
                 backend="nccl",
-                rank=self.final_config_dict["local_rank"],
+                rank=self.final_config_dict["local_rank"] + self.final_config_dict["offset"],
                 world_size=self.final_config_dict["world_size"],
                 init_method="tcp://"
                 + self.final_config_dict["ip"]

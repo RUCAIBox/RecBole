@@ -150,6 +150,33 @@ class FMEmbedding(nn.Module):
         return output
 
 
+class FLEmbedding(nn.Module):
+    r""" Embedding for float fields.
+
+    Args:
+        field_dims: list, the number of float in each float fields
+        offsets: list, the dimension offset of each float field
+        embed_dim: int, the dimension of output embedding vectors
+
+    Input:
+        input_x: tensor, A 3D tensor with shape:``(batch_size,field_size,2)``.
+
+    Return:
+        output: tensor,  A 3D tensor with shape: ``(batch_size,field_size,embed_dim)``.
+    """
+
+    def __init__(self, field_dims, offsets, embed_dim):
+        super(FLEmbedding, self).__init__()
+        self.embedding = nn.Embedding(sum(field_dims), embed_dim)
+        self.offsets = offsets
+
+    def forward(self, input_x):
+        base, index = torch.split(input_x, [1,1], dim= -1)
+        index = index.squeeze(-1).long()
+        index = index + index.new_tensor(self.offsets).unsqueeze(0)
+        output = base * self.embedding(index)
+        return output
+
 class BaseFactorizationMachine(nn.Module):
     r"""Calculate FM result over the embeddings
 
@@ -839,9 +866,11 @@ class ContextSeqEmbAbstractLayer(nn.Module):
     def __init__(self):
         super(ContextSeqEmbAbstractLayer, self).__init__()
         self.token_field_offsets = {}
+        self.float_field_offsets = {}
         self.token_embedding_table = nn.ModuleDict()
         self.float_embedding_table = nn.ModuleDict()
         self.token_seq_embedding_table = nn.ModuleDict()
+        self.float_seq_embedding_table = nn.ModuleDict()
 
         self.token_field_names = None
         self.token_field_dims = None
@@ -849,6 +878,8 @@ class ContextSeqEmbAbstractLayer(nn.Module):
         self.float_field_dims = None
         self.token_seq_field_names = None
         self.token_seq_field_dims = None
+        self.float_seq_field_names = None
+        self.float_seq_field_dims = None
         self.num_feature_field = None
 
     def get_fields_name_dim(self):
@@ -860,6 +891,8 @@ class ContextSeqEmbAbstractLayer(nn.Module):
         self.token_seq_field_names = {type: [] for type in self.types}
         self.token_seq_field_dims = {type: [] for type in self.types}
         self.num_feature_field = {type: 0 for type in self.types}
+        self.float_seq_field_names = {type: [] for type in self.types}
+        self.float_seq_field_dims = {type: [] for type in self.types}
 
         for type in self.types:
             for field_name in self.field_names[type]:
@@ -869,37 +902,42 @@ class ContextSeqEmbAbstractLayer(nn.Module):
                 elif self.dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                     self.token_seq_field_names[type].append(field_name)
                     self.token_seq_field_dims[type].append(self.dataset.num(field_name))
-                else:
+                elif self.dataset.field2type[field_name] == FeatureType.FLOAT:
                     self.float_field_names[type].append(field_name)
                     self.float_field_dims[type].append(self.dataset.num(field_name))
+                else:
+                    self.float_seq_field_names[type].append(field_name)
+                    self.float_seq_field_dims[type].append(self.dataset.num(field_name))
                 self.num_feature_field[type] += 1
 
     def get_embedding(self):
         """get embedding of all features."""
         for type in self.types:
             if len(self.token_field_dims[type]) > 0:
-                self.token_field_offsets[type] = np.array(
-                    (0, *np.cumsum(self.token_field_dims[type])[:-1]), dtype=np.long
-                )
+                self.token_field_offsets[type] = np.array((0, *np.cumsum(self.token_field_dims[type])[:-1]),
+                                                          dtype=np.long)
                 self.token_embedding_table[type] = FMEmbedding(
-                    self.token_field_dims[type],
-                    self.token_field_offsets[type],
-                    self.embedding_size,
+                    self.token_field_dims[type], self.token_field_offsets[type], self.embedding_size
                 ).to(self.device)
             if len(self.float_field_dims[type]) > 0:
-                self.float_embedding_table[type] = nn.Embedding(
-                    np.sum(self.float_field_dims[type], dtype=np.int32),
-                    self.embedding_size,
+                self.float_field_offsets[type] = np.array((0, *np.cumsum(self.float_field_dims[type])[:-1]),
+                                                         dtype=np.long)
+                self.float_embedding_table[type] = FLEmbedding(
+                    self.float_field_dims[type], self.float_field_offsets[type], self.embedding_size
                 ).to(self.device)
             if len(self.token_seq_field_dims) > 0:
                 self.token_seq_embedding_table[type] = nn.ModuleList()
                 for token_seq_field_dim in self.token_seq_field_dims[type]:
                     self.token_seq_embedding_table[type].append(
-                        nn.Embedding(token_seq_field_dim, self.embedding_size).to(
-                            self.device
-                        )
+                        nn.Embedding(token_seq_field_dim, self.embedding_size).to(self.device)
                     )
-
+            if len(self.float_seq_field_dims) > 0:
+                self.float_seq_embedding_table[type] = nn.ModuleList()
+                for float_seq_field_dim in self.float_seq_field_dims[type]:
+                    self.float_seq_embedding_table[type].append(
+                        nn.Embedding(float_seq_field_dim, self.embedding_size).to(self.device)
+                    )
+    
     def embed_float_fields(self, float_fields, type, embed=True):
         """Get the embedding of float fields.
         In the following three functions("embed_float_fields" "embed_token_fields" "embed_token_seq_fields")
@@ -914,22 +952,16 @@ class ContextSeqEmbAbstractLayer(nn.Module):
             torch.Tensor: float fields embedding. [batch_size, max_item_length, num_float_field, embed_dim]
 
         """
-        if not embed or float_fields is None:
-            return float_fields
-
-        num_float_field = float_fields.shape[-1]
-        # [batch_size, max_item_length, num_float_field]
-        index = (
-            torch.arange(0, num_float_field)
-            .unsqueeze(0)
-            .expand_as(float_fields)
-            .long()
-            .to(self.device)
-        )
-
-        # [batch_size, max_item_length, num_float_field, embed_dim]
-        float_embedding = self.float_embedding_table[type](index)
-        float_embedding = torch.mul(float_embedding, float_fields.unsqueeze(-1))
+        if float_fields is None:
+            return None
+        
+        if type == 'item':
+            embedding_shape = float_fields.shape[:-1] + (-1,)
+            float_fields = float_fields.reshape(-1, float_fields.shape[-2], float_fields.shape[-1])
+            float_embedding = self.float_embedding_table[type](float_fields)
+            float_embedding = float_embedding.view(embedding_shape)
+        else:
+            float_embedding = self.float_embedding_table[type](float_fields)
 
         return float_embedding
 
@@ -956,6 +988,50 @@ class ContextSeqEmbAbstractLayer(nn.Module):
             token_embedding = self.token_embedding_table[type](token_fields)
         return token_embedding
 
+    def embed_float_seq_fields(self, float_seq_fields, type):
+        """Embed the float sequence feature columns
+
+        Args:
+            float_seq_fields (torch.FloatTensor): The input tensor. shape of [batch_size, seq_len, 2]
+            mode (str): How to aggregate the embedding of feature in this field. default=mean
+
+        Returns:
+            torch.FloatTensor: The result embedding tensor of float sequence columns.
+        """
+        fields_result = []
+        for i, float_seq_field in enumerate(float_seq_fields):
+            embedding_table = self.float_seq_embedding_table[type][i]
+            base, index = torch.split(float_seq_field, [1,1], dim = -1)
+            index = index.squeeze(-1)
+            mask = index != 0
+            mask = mask.float()
+            value_cnt = torch.sum(mask, dim=-1, keepdim=True)
+            float_seq_embedding = base * embedding_table(index.long())
+            mask = mask.unsqueeze(-1).expand_as(float_seq_embedding)
+            if self.pooling_mode == 'max':
+                masked_float_seq_embedding = float_seq_embedding - (1 - mask) * 1e9
+                result = torch.max(
+                    masked_float_seq_embedding, dim=-2, keepdim=True
+                )
+                result = result.values
+            elif self.pooling_mode == 'sum':
+                masked_float_seq_embedding = float_seq_embedding * mask.float()
+                result = torch.sum(
+                    masked_float_seq_embedding, dim=-2, keepdim=True
+                )
+            else:
+                masked_float_seq_embedding = float_seq_embedding * mask.float()
+                result = torch.sum(masked_float_seq_embedding, dim=-2)
+                eps = torch.FloatTensor([1e-8]).to(self.device)
+                result = torch.div(result, value_cnt + eps)
+                result = result.unsqueeze(-2)
+
+            fields_result.append(result)
+        if len(fields_result) == 0:
+            return None
+        else:
+            return torch.cat(fields_result, dim=-2)
+
     def embed_token_seq_fields(self, token_seq_fields, type):
         """Get the embedding of token_seq fields.
 
@@ -973,44 +1049,32 @@ class ContextSeqEmbAbstractLayer(nn.Module):
             embedding_table = self.token_seq_embedding_table[type][i]
             mask = token_seq_field != 0  # [batch_size, max_item_length, seq_len]
             mask = mask.float()
-            value_cnt = torch.sum(
-                mask, dim=-1, keepdim=True
-            )  # [batch_size, max_item_length, 1]
-            token_seq_embedding = embedding_table(
-                token_seq_field
-            )  # [batch_size, max_item_length, seq_len, embed_dim]
+            value_cnt = torch.sum(mask, dim=-1, keepdim=True)  # [batch_size, max_item_length, 1]
+            token_seq_embedding = embedding_table(token_seq_field)  # [batch_size, max_item_length, seq_len, embed_dim]
             mask = mask.unsqueeze(-1).expand_as(token_seq_embedding)
-            if self.pooling_mode == "max":
+            if self.pooling_mode == 'max':
                 masked_token_seq_embedding = token_seq_embedding - (1 - mask) * 1e9
                 result = torch.max(
                     masked_token_seq_embedding, dim=-2, keepdim=True
                 )  # [batch_size, max_item_length, 1, embed_dim]
                 result = result.values
-            elif self.pooling_mode == "sum":
+            elif self.pooling_mode == 'sum':
                 masked_token_seq_embedding = token_seq_embedding * mask.float()
                 result = torch.sum(
                     masked_token_seq_embedding, dim=-2, keepdim=True
                 )  # [batch_size, max_item_length, 1, embed_dim]
             else:
                 masked_token_seq_embedding = token_seq_embedding * mask.float()
-                result = torch.sum(
-                    masked_token_seq_embedding, dim=-2
-                )  # [batch_size, max_item_length, embed_dim]
+                result = torch.sum(masked_token_seq_embedding, dim=-2)  # [batch_size, max_item_length, embed_dim]
                 eps = torch.FloatTensor([1e-8]).to(self.device)
-                result = torch.div(
-                    result, value_cnt + eps
-                )  # [batch_size, max_item_length, embed_dim]
-                result = result.unsqueeze(
-                    -2
-                )  # [batch_size, max_item_length, 1, embed_dim]
+                result = torch.div(result, value_cnt + eps)  # [batch_size, max_item_length, embed_dim]
+                result = result.unsqueeze(-2)  # [batch_size, max_item_length, 1, embed_dim]
 
             fields_result.append(result)
         if len(fields_result) == 0:
             return None
         else:
-            return torch.cat(
-                fields_result, dim=-2
-            )  # [batch_size, max_item_length, num_token_seq_field, embed_dim]
+            return torch.cat(fields_result, dim=-2)  # [batch_size, max_item_length, num_token_seq_field, embed_dim]
 
     def embed_input_fields(self, user_idx, item_idx):
         """Get the embedding of user_idx and item_idx
@@ -1023,9 +1087,10 @@ class ContextSeqEmbAbstractLayer(nn.Module):
             dict: embedding of user feature and item feature
 
         """
-        user_item_feat = {"user": self.user_feat, "item": self.item_feat}
-        user_item_idx = {"user": user_idx, "item": item_idx}
+        user_item_feat = {'user': self.user_feat, 'item': self.item_feat}
+        user_item_idx = {'user': user_idx, 'item': item_idx}
         float_fields_embedding = {}
+        float_seq_fields_embedding = {}
         token_fields_embedding = {}
         token_seq_fields_embedding = {}
         sparse_embedding = {}
@@ -1035,29 +1100,35 @@ class ContextSeqEmbAbstractLayer(nn.Module):
             float_fields = []
             for field_name in self.float_field_names[type]:
                 feature = user_item_feat[type][field_name][user_item_idx[type]]
-                float_fields.append(
-                    feature
-                    if len(feature.shape) == (2 + (type == "item"))
-                    else feature.unsqueeze(-1)
-                )
+                float_fields.append(feature if len(feature.shape) == (3 + (type == 'item')) else feature.unsqueeze(-2))
             if len(float_fields) > 0:
-                float_fields = torch.cat(
-                    float_fields, dim=-1
-                )  # [batch_size, max_item_length, num_float_field]
+                float_fields = torch.cat(float_fields, dim=-1)  # [batch_size, max_item_length, num_float_field]
             else:
                 float_fields = None
-            # [batch_size, max_item_length, num_float_field]
-            # or [batch_size, max_item_length, num_float_field, embed_dim] or None
             float_fields_embedding[type] = self.embed_float_fields(float_fields, type)
+
+            float_seq_fields = []
+            for field_name in self.float_seq_field_names[type]:
+                feature = user_item_feat[type][field_name][user_item_idx[type]]
+                float_seq_fields.append(feature)
+            # [batch_size, max_item_length, num_token_seq_field, embed_dim] or None
+            float_seq_fields_embedding[type] = self.embed_float_seq_fields(float_seq_fields, type)
+
+            if float_fields_embedding[type] is None:
+                dense_embedding[type] = float_seq_fields_embedding[type]
+            else:
+                if float_seq_fields_embedding[type] is None:
+                    dense_embedding[type] = float_fields_embedding[type]
+                else:
+                    dense_embedding[type] = torch.cat([float_fields_embedding[type], float_seq_fields_embedding[type]],
+                                                       dim=-2)
 
             token_fields = []
             for field_name in self.token_field_names[type]:
                 feature = user_item_feat[type][field_name][user_item_idx[type]]
                 token_fields.append(feature.unsqueeze(-1))
             if len(token_fields) > 0:
-                token_fields = torch.cat(
-                    token_fields, dim=-1
-                )  # [batch_size, max_item_length, num_token_field]
+                token_fields = torch.cat(token_fields, dim=-1)  # [batch_size, max_item_length, num_token_field]
             else:
                 token_fields = None
             # [batch_size, max_item_length, num_token_field, embed_dim] or None
@@ -1068,9 +1139,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
                 feature = user_item_feat[type][field_name][user_item_idx[type]]
                 token_seq_fields.append(feature)
             # [batch_size, max_item_length, num_token_seq_field, embed_dim] or None
-            token_seq_fields_embedding[type] = self.embed_token_seq_fields(
-                token_seq_fields, type
-            )
+            token_seq_fields_embedding[type] = self.embed_token_seq_fields(token_seq_fields, type)
 
             if token_fields_embedding[type] is None:
                 sparse_embedding[type] = token_seq_fields_embedding[type]
@@ -1078,14 +1147,8 @@ class ContextSeqEmbAbstractLayer(nn.Module):
                 if token_seq_fields_embedding[type] is None:
                     sparse_embedding[type] = token_fields_embedding[type]
                 else:
-                    sparse_embedding[type] = torch.cat(
-                        [
-                            token_fields_embedding[type],
-                            token_seq_fields_embedding[type],
-                        ],
-                        dim=-2,
-                    )
-            dense_embedding[type] = float_fields_embedding[type]
+                    sparse_embedding[type] = torch.cat([token_fields_embedding[type], token_seq_fields_embedding[type]],
+                                                       dim=-2)
 
         # sparse_embedding[type]
         # shape: [batch_size, max_item_length, num_token_seq_field+num_token_field, embed_dim] or None
@@ -1259,6 +1322,9 @@ class FMFirstOrderLinear(nn.Module):
         self.float_field_dims = []
         self.token_seq_field_names = []
         self.token_seq_field_dims = []
+        self.float_seq_field_names = []
+        self.float_seq_field_dims = []
+
         for field_name in self.field_names:
             if field_name == self.LABEL:
                 continue
@@ -1268,61 +1334,94 @@ class FMFirstOrderLinear(nn.Module):
             elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                 self.token_seq_field_names.append(field_name)
                 self.token_seq_field_dims.append(dataset.num(field_name))
-            else:
+            elif dataset.field2type[field_name] == FeatureType.FLOAT:
                 self.float_field_names.append(field_name)
                 self.float_field_dims.append(dataset.num(field_name))
+            else:
+                self.float_seq_field_names.append(field_name)
+                self.float_seq_field_dims.append(dataset.num(field_name))
+
         if len(self.token_field_dims) > 0:
-            self.token_field_offsets = np.array(
-                (0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long
-            )
+            self.token_field_offsets = np.array((0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long)
             self.token_embedding_table = FMEmbedding(
                 self.token_field_dims, self.token_field_offsets, output_dim
             )
         if len(self.float_field_dims) > 0:
-            self.float_embedding_table = nn.Embedding(
-                np.sum(self.float_field_dims, dtype=np.int32), output_dim
+            self.float_field_offsets = np.array((0, *np.cumsum(self.float_field_dims)[:-1]), dtype=np.long)
+            self.float_embedding_table = FLEmbedding(
+                self.float_field_dims, self.float_field_offsets, output_dim
             )
         if len(self.token_seq_field_dims) > 0:
             self.token_seq_embedding_table = nn.ModuleList()
             for token_seq_field_dim in self.token_seq_field_dims:
-                self.token_seq_embedding_table.append(
-                    nn.Embedding(token_seq_field_dim, output_dim)
-                )
+                self.token_seq_embedding_table.append(nn.Embedding(token_seq_field_dim, output_dim))
+        if len(self.float_seq_field_dims) > 0:
+            self.float_seq_embedding_table = nn.ModuleList()
+            for float_seq_field_dim in self.float_seq_field_dims:
+                self.float_seq_embedding_table.append(nn.Embedding(float_seq_field_dim, output_dim))
 
         self.bias = nn.Parameter(torch.zeros((output_dim,)), requires_grad=True)
 
-    def embed_float_fields(self, float_fields, embed=True):
-        """Calculate the first order score of float feature columns
+    def embed_float_fields(self, float_fields):
+        """Embed the float feature columns
 
         Args:
-            float_fields (torch.FloatTensor): The input tensor. shape of [batch_size, num_float_field]
+            float_fields (torch.FloatTensor): The input dense tensor. shape of [batch_size, num_float_field, 2]
             embed (bool): Return the embedding of columns or just the columns itself. Defaults to ``True``.
 
         Returns:
-            torch.FloatTensor: The first order score of float feature columns
+            torch.FloatTensor: The result embedding tensor of float columns.
         """
         # input Tensor shape : [batch_size, num_float_field]
-        if not embed or float_fields is None:
-            return float_fields
-
-        num_float_field = float_fields.shape[1]
-        # [batch_size, num_float_field]
-        index = (
-            torch.arange(0, num_float_field)
-            .unsqueeze(0)
-            .expand_as(float_fields)
-            .long()
-            .to(self.device)
-        )
-
-        # [batch_size, num_float_field, output_dim]
-        float_embedding = self.float_embedding_table(index)
-        float_embedding = torch.mul(float_embedding, float_fields.unsqueeze(2))
+        if float_fields is None:
+            return None
+        # [batch_size, num_float_field, embed_dim]
+        float_embedding = self.float_embedding_table(float_fields)
 
         # [batch_size, 1, output_dim]
         float_embedding = torch.sum(float_embedding, dim=1, keepdim=True)
-
         return float_embedding
+
+    def embed_float_seq_fields(self, float_seq_fields, mode='mean'):
+        """Embed the float sequence feature columns
+
+        Args:
+            float_seq_fields (torch.LongTensor): The input tensor. shape of [batch_size, seq_len, 2]
+            mode (str): How to aggregate the embedding of feature in this field. default=mean
+
+        Returns:
+            torch.FloatTensor: The result embedding tensor of float sequence columns.
+        """
+        # input is a list of Tensor shape of [batch_size, seq_len]
+        fields_result = []
+        for i, float_seq_field in enumerate(float_seq_fields):
+            embedding_table = self.float_seq_embedding_table[i]
+            base, index = torch.split(float_seq_field, [1,1], dim = -1)
+            index = index.squeeze(-1)
+            mask = index != 0  # [batch_size, seq_len]
+            mask = mask.float()
+            value_cnt = torch.sum(mask, dim=1, keepdim=True)  # [batch_size, 1]
+
+            float_seq_embedding = base * embedding_table(index.long())  # [batch_size, seq_len, embed_dim]
+
+            mask = mask.unsqueeze(2).expand_as(float_seq_embedding)  # [batch_size, seq_len, embed_dim]
+            if mode == 'max':
+                masked_float_seq_embedding = float_seq_embedding - (1 - mask) * 1e9  # [batch_size, seq_len, embed_dim]
+                result = torch.max(masked_float_seq_embedding, dim=1, keepdim=True)  # [batch_size, 1, embed_dim]
+            elif mode == 'sum':
+                masked_float_seq_embedding = float_seq_embedding * mask.float()
+                result = torch.sum(masked_float_seq_embedding, dim=1, keepdim=True)  # [batch_size, 1, embed_dim]
+            else:
+                masked_float_seq_embedding = float_seq_embedding * mask.float()
+                result = torch.sum(masked_float_seq_embedding, dim=1)  # [batch_size, embed_dim]
+                eps = torch.FloatTensor([1e-8]).to(self.device)
+                result = torch.div(result, value_cnt + eps)  # [batch_size, embed_dim]
+                result = result.unsqueeze(1)  # [batch_size, 1, embed_dim]
+            fields_result.append(result)
+        if len(fields_result) == 0:
+            return None
+        else:
+            return torch.sum(torch.cat(fields_result, dim=1), dim=1, keepdim=True)  # [batch_size, num_token_seq_field, embed_dim]
 
     def embed_token_fields(self, token_fields):
         """Calculate the first order score of token feature columns
@@ -1384,31 +1483,36 @@ class FMFirstOrderLinear(nn.Module):
         total_fields_embedding = []
         float_fields = []
         for field_name in self.float_field_names:
-            if len(interaction[field_name].shape) == 2:
+            if len(interaction[field_name].shape) == 3:
                 float_fields.append(interaction[field_name])
             else:
                 float_fields.append(interaction[field_name].unsqueeze(1))
 
         if len(float_fields) > 0:
-            float_fields = torch.cat(
-                float_fields, dim=1
-            )  # [batch_size, num_float_field]
+            float_fields = torch.cat(float_fields, dim=1) 
         else:
             float_fields = None
 
-        # [batch_size, 1, output_dim] or None
-        float_fields_embedding = self.embed_float_fields(float_fields, embed=True)
+        
+        float_fields_embedding = self.embed_float_fields(float_fields)
 
         if float_fields_embedding is not None:
             total_fields_embedding.append(float_fields_embedding)
+
+        float_seq_fields = []
+        for field_name in self.float_seq_field_names:
+            float_seq_fields.append(interaction[field_name])
+        
+        float_seq_fields_embedding = self.embed_float_seq_fields(float_seq_fields)
+        
+        if float_seq_fields_embedding is not None:
+            total_fields_embedding.append(float_seq_fields_embedding)
 
         token_fields = []
         for field_name in self.token_field_names:
             token_fields.append(interaction[field_name].unsqueeze(1))
         if len(token_fields) > 0:
-            token_fields = torch.cat(
-                token_fields, dim=1
-            )  # [batch_size, num_token_field]
+            token_fields = torch.cat(token_fields, dim=1)  # [batch_size, num_token_field]
         else:
             token_fields = None
         # [batch_size, 1, output_dim] or None
@@ -1424,10 +1528,7 @@ class FMFirstOrderLinear(nn.Module):
         if token_seq_fields_embedding is not None:
             total_fields_embedding.append(token_seq_fields_embedding)
 
-        return (
-            torch.sum(torch.cat(total_fields_embedding, dim=1), dim=1) + self.bias
-        )  # [batch_size, output_dim]
-
+        return torch.sum(torch.cat(total_fields_embedding, dim=1), dim=1) + self.bias  # [batch_size, output_dim]
 
 class SparseDropout(nn.Module):
     """

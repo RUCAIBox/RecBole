@@ -121,6 +121,8 @@ class DIENDataset(SequentialDataset):
                     if isinstance(list_len, int)
                     else (new_length,) + list_len
                 )
+                if self.field2type[field] in [FeatureType.FLOAT, FeatureType.FLOAT_SEQ]:
+                    shape += (2,)
                 list_ftype = self.field2type[list_field]
                 dtype = (
                     torch.int64
