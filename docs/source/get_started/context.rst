@@ -1,6 +1,6 @@
 Quick Start: Context-aware Recommendation
 ===============
-For context-aware recommendation, we choose LR model to show you how to
+For context-aware recommendation, we choose **LR** model to show you how to
 train and test it on the **ml-100k** dataset from both **API** and
 **source code**.
 
