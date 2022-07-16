@@ -433,8 +433,8 @@ class TestDataset:
             "normalize_all": True,
         }
         dataset = new_dataset(config_dict=config_dict)
-        assert (dataset.inter_feat["rating"] == [0.0, 0.25, 1.0, 0.75, 0.5]).all()
-        assert (dataset.inter_feat["star"] == [1.0, 0.5, 0.0, 0.25, 0.75]).all()
+        assert (dataset.inter_feat["rating"].apply(lambda x: x[0]) == [0.0, 0.25, 1.0, 0.75, 0.5]).all()
+        assert (dataset.inter_feat["star"].apply(lambda x: x[0]) == [1.0, 0.5, 0.0, 0.25, 0.75]).all()
 
     def test_normalize_field(self):
         config_dict = {
@@ -446,8 +446,8 @@ class TestDataset:
             "normalize_all": False,
         }
         dataset = new_dataset(config_dict=config_dict)
-        assert (dataset.inter_feat["rating"] == [0.0, 0.25, 1.0, 0.75, 0.5]).all()
-        assert (dataset.inter_feat["star"] == [4.0, 2.0, 0.0, 1.0, 3.0]).all()
+        assert (dataset.inter_feat["rating"].apply(lambda x: x[0]) == [0.0, 0.25, 1.0, 0.75, 0.5]).all()
+        assert (dataset.inter_feat["star"].apply(lambda x: x[0]) == [4.0, 2.0, 0.0, 1.0, 3.0]).all()
 
     def test_TO_RS_811(self):
         config_dict = {
