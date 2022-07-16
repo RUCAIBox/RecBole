@@ -54,7 +54,7 @@ class TestDataset:
             "rm_dup_inter": "first",
         }
         dataset = new_dataset(config_dict=config_dict)
-        assert dataset.inter_feat[dataset.time_field][0] == 0
+        assert dataset.inter_feat[dataset.time_field].apply(lambda x: x[0])[0] == 0
 
     def test_remove_duplication_by_last(self):
         config_dict = {
@@ -65,7 +65,7 @@ class TestDataset:
             "rm_dup_inter": "last",
         }
         dataset = new_dataset(config_dict=config_dict)
-        assert dataset.inter_feat[dataset.time_field][0] == 2
+        assert dataset.inter_feat[dataset.time_field].apply(lambda x: x[0])[0] == 2
 
     def test_filter_by_field_value_with_lowest_val(self):
         config_dict = {
@@ -395,13 +395,13 @@ class TestDataset:
         item_token_list = dataset.id2token("item_id", dataset.item_feat["item_id"])
         assert (user_token_list == ["[PAD]", "ua", "ub", "uc", "ud", "ue"]).all()
         assert (item_token_list == ["[PAD]", "ia", "ib", "ic", "id", "ie"]).all()
-        assert dataset.inter_feat["rating"][3] == 1.0
-        assert dataset.user_feat["age"][4] == 1.5
-        assert dataset.item_feat["price"][4] == 1.5
-        assert (dataset.inter_feat["time_list"][0] == [1.0, 2.0, 3.0]).all()
-        assert (dataset.inter_feat["time_list"][1] == [2.0]).all()
-        assert (dataset.inter_feat["time_list"][2] == []).all()
-        assert (dataset.inter_feat["time_list"][3] == [5, 4]).all()
+        assert dataset.inter_feat["rating"].apply(lambda x: x[0])[3] == 1.0
+        assert dataset.user_feat["age"].apply(lambda x: x[0])[4] == 1.5
+        assert dataset.item_feat["price"].apply(lambda x: x[0])[4] == 1.5
+        assert (dataset.inter_feat["time_list"].apply(lambda x: x[0])[0] == [1.0, 2.0, 3.0]).all()
+        assert (dataset.inter_feat["time_list"].apply(lambda x: x[0])[1] == [2.0]).all()
+        assert (dataset.inter_feat["time_list"].apply(lambda x: x[0])[2] == []).all()
+        assert (dataset.inter_feat["time_list"].apply(lambda x: x[0])[3] == [5, 4]).all()
         assert (dataset.user_feat["profile"][0] == []).all()
         assert (dataset.user_feat["profile"][1] == [1, 2, 3]).all()
         assert (dataset.user_feat["profile"][2] == []).all()
