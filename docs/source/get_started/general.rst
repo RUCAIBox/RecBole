@@ -170,50 +170,49 @@ can read other docs for depth usage.
 
 Quick-start From Source
 --------------------------
-
-Besides using API, you can also directly run the source code of
-`RecBole <https://github.com/RUCAIBox/RecBole>`__. The whole process is
-similar to Quick-start From API. You can create a yaml file called
-test.yaml and set all the config as follow:
+Besides using API, you can also directly run the source code of `RecBole <https://github.com/RUCAIBox/RecBole>`_. 
+The whole process is similar to Quick-start From API. 
+You can create a `yaml` file called `test.yaml` and set all the config as follow:
 
 .. code:: yaml
-   # dataset config
-   USER_ID_FIELD: user_id
-   ITEM_ID_FIELD: item_id
-   load_col:
-       inter: [user_id, item_id]
 
-   # model config
-   embedding_size: 64
-   
-   # Training and evaluation config
-   epochs: 500
-   train_batch_size: 4096
-   eval_batch_size: 4096
-   neg_sampling:
-       uniform: 1
-   eval_args:
-       group_by: user
-       order: RO
-       split: {'RS': [0.8,0.1,0.1]}
-       mode: full
-   metrics: ['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']
-   topk: 10
-   valid_metric: MRR@10
-   metric_decimal_place: 4
+    # dataset config : General Recommendation
+    USER_ID_FIELD: user_id
+    ITEM_ID_FIELD: item_id
+    load_col:
+        inter: [user_id, item_id]
+    
+    # model config
+    embedding_size: 64
+
+    # Training and evaluation config
+    epochs: 500
+    train_batch_size: 4096
+    eval_batch_size: 4096
+    neg_sampling:
+        uniform: 1
+    eval_args:
+        group_by: user
+        order: RO
+        split: {'RS': [0.8,0.1,0.1]}
+        mode: full
+    metrics: ['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']
+    topk: 10 
+    valid_metric: MRR@10
+    metric_decimal_place: 4
 
 Then run the following command:
 
-.. code:: python
+.. code:: bash
 
-   python run_recbole.py --model=BPR --dataset=ml-100k --config_files=test.yaml
+    python run_recbole.py --model=BPR --dataset=ml-100k --config_files=test.yaml
 
-And you will get the output of running the BPR model on the ml-100k
-dataset.
+And you will get the output of running the BPR model on the ml-100k dataset.
 
-If you want to change the parameters, such as ``embedding_size``, just
-set the additional command parameters as you need:
+If you want to change the parameters, such as ``embedding_size``,
+just set the additional command parameters as you need:
 
-.. code:: python
+.. code:: bash
 
-   python run_recbole.py --model=BPR --dataset=ml-100k --config_files=test.yaml --embedding_size=100
+    python run_recbole.py --model=BPR --dataset=ml-100k --config_files=test.yaml --embedding_size=100 
+
