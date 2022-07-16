@@ -1860,6 +1860,7 @@ class Dataset(torch.utils.data.Dataset):
                     f"Value_field [{value_field}] should be one of `df_feat`'s features."
                 )
             data = df_feat[value_field][...,0] if self.field2type[value_field] == FeatureType.FLOAT else df_feat[value_field]
+
         mat = coo_matrix(
             (data, (src, tgt)), shape=(self.num(source_field), self.num(target_field))
         )
@@ -1986,7 +1987,7 @@ class Dataset(torch.utils.data.Dataset):
                 raise ValueError(
                     f"Value_field [{value_field}] should be one of `inter_feat`'s features."
                 )
-            values = self.inter_feat[value_field][...,0].numpy()
+            values = self.inter_feat[value_field][..., 0].numpy()
 
         if row == "user":
             row_num, max_col_num = self.user_num, self.item_num
