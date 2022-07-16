@@ -48,13 +48,13 @@ class FFM(ContextRecommender):
             self.token_field_names,
             self.float_field_names,
             self.token_seq_field_names,
-            self.float_seq_field_names
+            self.float_seq_field_names,
         )
         self.feature_dims = (
             self.token_field_dims,
             self.float_field_dims,
             self.token_seq_field_dims,
-            self.float_seq_field_dims
+            self.float_seq_field_dims,
         )
         self._get_feature2field()
         self.num_fields = len(set(self.feature2field.values()))  # the number of fields
@@ -130,7 +130,12 @@ class FFM(ContextRecommender):
             for tsn in self.float_seq_field_names:
                 float_seq_ffm_input.append(interaction[tsn])  # a list
 
-        return token_ffm_input, float_ffm_input, token_seq_ffm_input, float_seq_ffm_input
+        return (
+            token_ffm_input,
+            float_ffm_input,
+            token_seq_ffm_input,
+            float_seq_ffm_input,
+        )
 
     def forward(self, interaction):
         ffm_input = self.get_ffm_input(interaction)
@@ -262,7 +267,7 @@ class FieldAwareFactorizationMachine(nn.Module):
             input_x[0],
             input_x[1],
             input_x[2],
-            input_x[3]
+            input_x[3],
         )
 
         token_input_x_emb = self._emb_token_ffm_input(token_ffm_input)
@@ -271,7 +276,10 @@ class FieldAwareFactorizationMachine(nn.Module):
         float_seq_input_x_emb = self._emb_float_seq_ffm_input(float_seq_ffm_input)
 
         input_x_emb = self._get_input_x_emb(
-            token_input_x_emb, float_input_x_emb, token_seq_input_x_emb, float_seq_input_x_emb
+            token_input_x_emb,
+            float_input_x_emb,
+            token_seq_input_x_emb,
+            float_seq_input_x_emb,
         )
 
         output = list()
@@ -286,7 +294,11 @@ class FieldAwareFactorizationMachine(nn.Module):
         return output
 
     def _get_input_x_emb(
-        self, token_input_x_emb, float_input_x_emb, token_seq_input_x_emb, float_seq_input_x_emb
+        self,
+        token_input_x_emb,
+        float_input_x_emb,
+        token_seq_input_x_emb,
+        float_seq_input_x_emb,
     ):
         # merge different types of field-aware embeddings
         input_x_emb = []  # [num_fields: [batch_size, num_fields, emb_dim]]

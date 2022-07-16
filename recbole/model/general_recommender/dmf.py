@@ -164,7 +164,7 @@ class DMF(GeneralRecommender):
         if self.inter_matrix_type == "01":
             label = interaction[self.LABEL]
         elif self.inter_matrix_type == "rating":
-            label = interaction[self.RATING][...,0] * interaction[self.LABEL]
+            label = interaction[self.RATING][..., 0] * interaction[self.LABEL]
         output = self.forward(user, item)
 
         label = label / self.max_rating  # normalize the label to calculate BCE loss.
