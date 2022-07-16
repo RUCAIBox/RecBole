@@ -44,6 +44,7 @@ Running with RecBole
 Write the following code to a python file, such as `run.py`
 
 .. code:: python
+
    from recbole.quick_start import run_recbole
 
    parameter_dict = {
@@ -63,6 +64,7 @@ Tuning Hyper Parameters
 If you want to use ``HyperTuning`` to tune hyper parameters of this model, you can copy the following settings and name it as ``hyper.test``.
 
 .. code:: bash
+  
    learning_rate choice [0.001, 0.0001]
    n_layers choice [1, 2]
    hidden_dropout_prob choice [0.2, 0.5]
@@ -73,7 +75,9 @@ Note that we just provide these hyper parameter ranges for reference only, and w
 Then, with the source code of RecBole (you can download it from GitHub), you can run the ``run_hyper.py`` to tuning:
 
 .. code:: bash
+
 	python run_hyper.py --model=[model_name] --dataset=[dataset_name] --config_files=[config_files_path] --params_file=hyper.test
+
 For more details about Parameter Tuning, refer to :doc:`../../../user_guide/usage/parameter_tuning`.
 
 

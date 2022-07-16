@@ -34,11 +34,11 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
 
     Attributes:
-        dataset (Dataset): The dataset of this dataloader.
+        _dataset (Dataset): The dataset of this dataloader.
         shuffle (bool): If ``True``, dataloader will shuffle before every epoch.
         pr (int): Pointer of dataloader.
         step (int): The increment of :attr:`pr` for each batch.
-        batch_size (int): The max interaction number for all batch.
+        _batch_size (int): The max interaction number for all batch.
     """
 
     def __init__(self, config, dataset, sampler, shuffle=False):
