@@ -32,7 +32,10 @@ if __name__ == "__main__":
         "--world_size", type=int, default=-1, help="total number of jobs"
     )
     parser.add_argument(
-        "--group_offset", type=int, default=0, help="the global rank offset of this group"
+        "--group_offset",
+        type=int,
+        default=0,
+        help="the global rank offset of this group",
     )
 
     args, _ = parser.parse_known_args()
@@ -60,7 +63,7 @@ if __name__ == "__main__":
                 args.port,
                 args.world_size,
                 args.nproc,
-                args.group_offset
+                args.group_offset,
             ),
             nprocs=args.nproc,
         )

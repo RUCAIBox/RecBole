@@ -112,7 +112,7 @@ def run_recboles(rank, *args):
             "ip": ip,
             "port": port,
             "nproc": nproc,
-            "offset": offset
+            "offset": offset,
         },
     )
 
