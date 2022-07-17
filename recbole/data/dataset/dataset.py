@@ -705,7 +705,7 @@ class Dataset(torch.utils.data.Dataset):
                     )
 
     def _discretization(self):
-        """Discretization if ``config['normalize_field']`` or ``config['normalize_all']`` is set.
+        """Discretization if ``config['discretization']`` is set.
         See :doc:`../user_guide/data/data_args` for detail arg setting.
 
         Note:
@@ -721,6 +721,8 @@ class Dataset(torch.utils.data.Dataset):
             for field in dis_info.keys():
                 if field not in self.field2type:
                     raise ValueError(f"Field [{field}] does not exist.")
+                if field not in self.config['numerical_features']:
+                    raise ValueError(f"Field [{field}] must be a numerical feature")
                 ftype = self.field2type[field]
                 if ftype != FeatureType.FLOAT and ftype != FeatureType.FLOAT_SEQ:
                     self.logger.warning(
@@ -732,13 +734,8 @@ class Dataset(torch.utils.data.Dataset):
                 set_color("Normalized fields", "blue") + f": {dis_info.keys()}"
             )
 
-        float_like_fields = self.fields(
-            ftype=[FeatureType.FLOAT, FeatureType.FLOAT_SEQ]
-        )
 
-        for field in float_like_fields:
-            if field == self.label_field:
-                continue
+        for field in self.config['numerical_features']:
             if field in dis_info:
                 info = dis_info[field]
                 method = info["method"]
@@ -1227,7 +1224,7 @@ class Dataset(torch.utils.data.Dataset):
         if field not in self.field2type:
             raise ValueError(f"Field [{field}] not defined in dataset.")
 
-        if self.field2type[field] in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ}:
+        if self.field2type[field] in {FeatureType.FLOAT, FeatureType.FLOAT_SEQ} and field in self.config["numerical_features"]:
             return self.field2bucketnum[field]
         elif self.field2type[field] not in {FeatureType.TOKEN, FeatureType.TOKEN_SEQ}:
             return self.field2seqlen[field]
@@ -1859,11 +1856,7 @@ class Dataset(torch.utils.data.Dataset):
                 raise ValueError(
                     f"Value_field [{value_field}] should be one of `df_feat`'s features."
                 )
-            data = (
-                df_feat[value_field][..., 0]
-                if self.field2type[value_field] == FeatureType.FLOAT
-                else df_feat[value_field]
-            )
+            data = df_feat[value_field]
 
         mat = coo_matrix(
             (data, (src, tgt)), shape=(self.num(source_field), self.num(target_field))
@@ -1918,12 +1911,12 @@ class Dataset(torch.utils.data.Dataset):
                 if isinstance(value_field, str):
                     value_field = {value_field}
                 for k in value_field:
-                    graph.edata[k] = tensor_feat[k] if self.field2type[k] != FeatureType.FLOAT else tensor_feat[k][...,0]
+                    graph.edata[k] = tensor_feat[k]
             return graph
         elif form == "pyg":
             from torch_geometric.data import Data
 
-            edge_attr = (tensor_feat[value_field] if self.field2type[value_field] != FeatureType.FLOAT else tensor_feat[value_field][...,0]) if value_field else None
+            edge_attr = tensor_feat[value_field] if value_field else None
             graph = Data(edge_index=torch.stack([src, tgt]), edge_attr=edge_attr)
             return graph
         else:
@@ -1991,7 +1984,7 @@ class Dataset(torch.utils.data.Dataset):
                 raise ValueError(
                     f"Value_field [{value_field}] should be one of `inter_feat`'s features."
                 )
-            values = (self.inter_feat[value_field] if self.field2type[value_field] != FeatureType.FLOAT else self.inter_feat[value_field][...,0]).numpy()
+            values = self.inter_feat[value_field].numpy()
 
         if row == "user":
             row_num, max_col_num = self.user_num, self.item_num
@@ -2104,14 +2097,21 @@ class Dataset(torch.utils.data.Dataset):
             if ftype == FeatureType.TOKEN:
                 new_data[k] = torch.LongTensor(value)
             elif ftype == FeatureType.FLOAT:
-                new_data[k] = torch.FloatTensor(value.tolist())
+                if k in self.config['numerical_features']:
+                    new_data[k] = torch.FloatTensor(value.tolist())
+                else:
+                    new_data[k] = torch.FloatTensor(value)
             elif ftype == FeatureType.TOKEN_SEQ:
                 seq_data = [torch.LongTensor(d[: self.field2seqlen[k]]) for d in value]
                 new_data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
             elif ftype == FeatureType.FLOAT_SEQ:
-                base = [torch.FloatTensor(d[0][: self.field2seqlen[k]]) for d in value]
-                base = rnn_utils.pad_sequence(base, batch_first=True)
-                index = [torch.FloatTensor(d[1][: self.field2seqlen[k]]) for d in value]
-                index = rnn_utils.pad_sequence(index, batch_first=True)
-                new_data[k] = torch.stack([base, index], dim=-1)
+                if k in self.config['numerical_features']:
+                    base = [torch.FloatTensor(d[0][: self.field2seqlen[k]]) for d in value]
+                    base = rnn_utils.pad_sequence(base, batch_first=True)
+                    index = [torch.FloatTensor(d[1][: self.field2seqlen[k]]) for d in value]
+                    index = rnn_utils.pad_sequence(index, batch_first=True)
+                    new_data[k] = torch.stack([base, index], dim=-1)
+                else:
+                    seq_data = [torch.FloatTensor(d[:self.field2seqlen[k]]) for d in value]
+                    new_data[k] = rnn_utils.pad_sequence(seq_data, batch_first=True)
         return Interaction(new_data)

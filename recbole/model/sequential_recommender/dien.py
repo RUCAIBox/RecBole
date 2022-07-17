@@ -64,8 +64,14 @@ class DIEN(SequentialRecommender):
         self.user_feat = dataset.get_user_feature()
         self.item_feat = dataset.get_item_feature()
 
-        num_item_feature = len(self.item_feat.interaction.keys())
-        num_user_feature = len(self.user_feat.interaction.keys())
+        num_item_feature = sum(
+            1 if dataset.field2type[field] not in  [FeatureType.FLOAT_SEQ, FeatureType.FLOAT] or field in config["numerical_features"] else 0
+            for field in self.item_feat.interaction.keys()
+        )
+        num_user_feature = sum(
+            1 if dataset.field2type[field] not in  [FeatureType.FLOAT_SEQ, FeatureType.FLOAT] or field in config["numerical_features"] else 0
+            for field in self.user_feat.interaction.keys()
+        )
         item_feat_dim = num_item_feature * self.embedding_size
         mask_mat = (
             torch.arange(self.max_seq_length).to(self.device).view(1, -1)

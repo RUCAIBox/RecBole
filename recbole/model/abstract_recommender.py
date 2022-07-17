@@ -203,6 +203,7 @@ class ContextRecommender(AbstractRecommender):
         self.embedding_size = config["embedding_size"]
         self.device = config["device"]
         self.double_tower = config["double_tower"]
+        self.numerical_features = config["numerical_features"]
         if self.double_tower is None:
             self.double_tower = False
         self.token_field_names = []
@@ -253,12 +254,14 @@ class ContextRecommender(AbstractRecommender):
             elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                 self.token_seq_field_names.append(field_name)
                 self.token_seq_field_dims.append(dataset.num(field_name))
-            elif dataset.field2type[field_name] == FeatureType.FLOAT:
+            elif dataset.field2type[field_name] == FeatureType.FLOAT and field_name in self.numerical_features:
                 self.float_field_names.append(field_name)
                 self.float_field_dims.append(dataset.num(field_name))
-            else:
+            elif dataset.field2type[field_name] == FeatureType.FLOAT_SEQ and field_name in self.numerical_features:
                 self.float_seq_field_names.append(field_name)
                 self.float_seq_field_dims.append(dataset.num(field_name))
+            else:
+                continue
 
             self.num_feature_field += 1
         if len(self.token_field_dims) > 0:
