@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/8/6, 2020/8/25
-# @Author : Shanlei Mu, Yupeng Hou
-# @Email  : slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
+# @Time   : 2022/7/16, 2020/8/6, 2020/8/25
+# @Author : Zhen Tian, Shanlei Mu, Yupeng Hou
+# @Email  : chenyuwuxinn@gmail.com, slmu@ruc.edu.cn, houyupeng@ruc.edu.cn
 
 """
 recbole.model.abstract_recommender
@@ -18,7 +18,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from recbole.model.layers import FMEmbedding, FMFirstOrderLinear
+from recbole.model.layers import FMEmbedding, FMFirstOrderLinear, FLEmbedding
 from recbole.utils import ModelType, InputType, FeatureSource, FeatureType, set_color
 
 
@@ -203,6 +203,7 @@ class ContextRecommender(AbstractRecommender):
         self.embedding_size = config["embedding_size"]
         self.device = config["device"]
         self.double_tower = config["double_tower"]
+        self.numerical_features = config["numerical_features"]
         if self.double_tower is None:
             self.double_tower = False
         self.token_field_names = []
@@ -211,6 +212,8 @@ class ContextRecommender(AbstractRecommender):
         self.float_field_dims = []
         self.token_seq_field_names = []
         self.token_seq_field_dims = []
+        self.float_seq_field_names = []
+        self.float_seq_field_dims = []
         self.num_feature_field = 0
 
         if self.double_tower:
@@ -251,9 +254,21 @@ class ContextRecommender(AbstractRecommender):
             elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                 self.token_seq_field_names.append(field_name)
                 self.token_seq_field_dims.append(dataset.num(field_name))
-            else:
+            elif (
+                dataset.field2type[field_name] == FeatureType.FLOAT
+                and field_name in self.numerical_features
+            ):
                 self.float_field_names.append(field_name)
                 self.float_field_dims.append(dataset.num(field_name))
+            elif (
+                dataset.field2type[field_name] == FeatureType.FLOAT_SEQ
+                and field_name in self.numerical_features
+            ):
+                self.float_seq_field_names.append(field_name)
+                self.float_seq_field_dims.append(dataset.num(field_name))
+            else:
+                continue
+
             self.num_feature_field += 1
         if len(self.token_field_dims) > 0:
             self.token_field_offsets = np.array(
@@ -263,8 +278,11 @@ class ContextRecommender(AbstractRecommender):
                 self.token_field_dims, self.token_field_offsets, self.embedding_size
             )
         if len(self.float_field_dims) > 0:
-            self.float_embedding_table = nn.Embedding(
-                np.sum(self.float_field_dims, dtype=np.int32), self.embedding_size
+            self.float_field_offsets = np.array(
+                (0, *np.cumsum(self.float_field_dims)[:-1]), dtype=np.long
+            )
+            self.float_embedding_table = FLEmbedding(
+                self.float_field_dims, self.float_field_offsets, self.embedding_size
             )
         if len(self.token_seq_field_dims) > 0:
             self.token_seq_embedding_table = nn.ModuleList()
@@ -272,10 +290,16 @@ class ContextRecommender(AbstractRecommender):
                 self.token_seq_embedding_table.append(
                     nn.Embedding(token_seq_field_dim, self.embedding_size)
                 )
+        if len(self.float_seq_field_dims) > 0:
+            self.float_seq_embedding_table = nn.ModuleList()
+            for float_seq_field_dim in self.float_seq_field_dims:
+                self.float_seq_embedding_table.append(
+                    nn.Embedding(float_seq_field_dim, self.embedding_size)
+                )
 
         self.first_order_linear = FMFirstOrderLinear(config, dataset)
 
-    def embed_float_fields(self, float_fields, embed=True):
+    def embed_float_fields(self, float_fields):
         """Embed the float feature columns
 
         Args:
@@ -286,24 +310,67 @@ class ContextRecommender(AbstractRecommender):
             torch.FloatTensor: The result embedding tensor of float columns.
         """
         # input Tensor shape : [batch_size, num_float_field]
-        if not embed or float_fields is None:
-            return float_fields
-
-        num_float_field = float_fields.shape[1]
-        # [batch_size, num_float_field]
-        index = (
-            torch.arange(0, num_float_field)
-            .unsqueeze(0)
-            .expand_as(float_fields)
-            .long()
-            .to(self.device)
-        )
-
+        if float_fields is None:
+            return None
         # [batch_size, num_float_field, embed_dim]
-        float_embedding = self.float_embedding_table(index)
-        float_embedding = torch.mul(float_embedding, float_fields.unsqueeze(2))
+        float_embedding = self.float_embedding_table(float_fields)
 
         return float_embedding
+
+    def embed_float_seq_fields(self, float_seq_fields, mode="mean"):
+        """Embed the float feature columns
+
+        Args:
+            float_seq_fields (torch.LongTensor): The input tensor. shape of [batch_size, seq_len]
+            mode (str): How to aggregate the embedding of feature in this field. default=mean
+
+        Returns:
+            torch.FloatTensor: The result embedding tensor of token sequence columns.
+        """
+        # input is a list of Tensor shape of [batch_size, seq_len, 2]
+        fields_result = []
+        for i, float_seq_field in enumerate(float_seq_fields):
+            embedding_table = self.float_seq_embedding_table[i]
+            base, index = torch.split(float_seq_field, [1, 1], dim=-1)
+            index = index.squeeze(-1)
+            mask = index != 0  # [batch_size, seq_len]
+            mask = mask.float()
+            value_cnt = torch.sum(mask, dim=1, keepdim=True)  # [batch_size, 1]
+
+            float_seq_embedding = base * embedding_table(
+                index.long()
+            )  # [batch_size, seq_len, embed_dim]
+
+            mask = mask.unsqueeze(2).expand_as(
+                float_seq_embedding
+            )  # [batch_size, seq_len, embed_dim]
+            if mode == "max":
+                masked_float_seq_embedding = (
+                    float_seq_embedding - (1 - mask) * 1e9
+                )  # [batch_size, seq_len, embed_dim]
+                result = torch.max(
+                    masked_float_seq_embedding, dim=1, keepdim=True
+                )  # [batch_size, 1, embed_dim]
+            elif mode == "sum":
+                masked_float_seq_embedding = float_seq_embedding * mask.float()
+                result = torch.sum(
+                    masked_float_seq_embedding, dim=1, keepdim=True
+                )  # [batch_size, 1, embed_dim]
+            else:
+                masked_float_seq_embedding = float_seq_embedding * mask.float()
+                result = torch.sum(
+                    masked_float_seq_embedding, dim=1
+                )  # [batch_size, embed_dim]
+                eps = torch.FloatTensor([1e-8]).to(self.device)
+                result = torch.div(result, value_cnt + eps)  # [batch_size, embed_dim]
+                result = result.unsqueeze(1)  # [batch_size, 1, embed_dim]
+            fields_result.append(result)
+        if len(fields_result) == 0:
+            return None
+        else:
+            return torch.cat(
+                fields_result, dim=1
+            )  # [batch_size, num_token_seq_field, embed_dim]
 
     def embed_token_fields(self, token_fields):
         """Embed the token feature columns
@@ -452,18 +519,34 @@ class ContextRecommender(AbstractRecommender):
         """
         float_fields = []
         for field_name in self.float_field_names:
-            if len(interaction[field_name].shape) == 2:
+            if len(interaction[field_name].shape) == 3:
                 float_fields.append(interaction[field_name])
             else:
                 float_fields.append(interaction[field_name].unsqueeze(1))
         if len(float_fields) > 0:
             float_fields = torch.cat(
                 float_fields, dim=1
-            )  # [batch_size, num_float_field]
+            )  # [batch_size, num_float_field, 2]
         else:
             float_fields = None
         # [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
         float_fields_embedding = self.embed_float_fields(float_fields)
+
+        float_seq_fields = []
+        for field_name in self.float_seq_field_names:
+            float_seq_fields.append(interaction[field_name])
+
+        float_seq_fields_embedding = self.embed_float_seq_fields(float_seq_fields)
+
+        if float_fields_embedding is None:
+            dense_embedding = float_seq_fields_embedding
+        else:
+            if float_seq_fields_embedding is None:
+                dense_embedding = float_fields_embedding
+            else:
+                dense_embedding = torch.cat(
+                    [float_seq_fields_embedding, float_fields_embedding], dim=1
+                )
 
         token_fields = []
         for field_name in self.token_field_names:
@@ -471,7 +554,7 @@ class ContextRecommender(AbstractRecommender):
         if len(token_fields) > 0:
             token_fields = torch.cat(
                 token_fields, dim=1
-            )  # [batch_size, num_token_field]
+            )  # [batch_size, num_token_field, 2]
         else:
             token_fields = None
         # [batch_size, num_token_field, embed_dim] or None
@@ -493,8 +576,6 @@ class ContextRecommender(AbstractRecommender):
                     [token_seq_fields_embedding, token_fields_embedding], dim=1
                 )
 
-        dense_embedding = float_fields_embedding
-
         # sparse_embedding shape: [batch_size, num_token_seq_field+num_token_field, embed_dim] or None
-        # dense_embedding shape: [batch_size, num_float_field] or [batch_size, num_float_field, embed_dim] or None
+        # dense_embedding shape: [batch_size, num_float_field, 2] or [batch_size, num_float_field, embed_dim] or None
         return sparse_embedding, dense_embedding

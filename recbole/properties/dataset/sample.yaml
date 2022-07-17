@@ -11,6 +11,7 @@ seq_len: ~                      # (dict) Field name of sequence feature: maximum
 LABEL_FIELD: label              # (str) Expected field name of the generated labels for point-wise dataLoaders. 
 threshold: ~                    # (dict) 0/1 labels will be generated according to the pairs.
 NEG_PREFIX: neg_                # (str) Negative sampling prefix for pair-wise dataLoaders.
+numerical_features: []          # (list) Float feature fields to be embedded
 
 # Selectively Loading
 load_col:                       # (dict) The suffix of atomic files: (list) field names to be loaded.
@@ -35,6 +36,7 @@ alias_of_relation_id: ~         # (list) Fields' names remapped into the same in
 preload_weight: ~               # (dict) Preloaded weight in {IDs (token): pretrained vectors (float-like)}.
 normalize_field: ~              # (list) List of filed names to be normalized.
 normalize_all: ~                # (bool) Whether or not to normalize all the float like fields.
+discretization: ~               # (dict) The discretization settings.
 
 # Sequential Model Needed
 ITEM_LIST_LENGTH_FIELD: item_length   # (str) Field name of the feature representing item sequences' length. 

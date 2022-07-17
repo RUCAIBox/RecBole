@@ -63,8 +63,10 @@ class DIN(SequentialRecommender):
         #                  * self.embedding_size] + self.mlp_hidden_size
         num_item_feature = sum(
             1
-            if dataset.field2type[field] != FeatureType.FLOAT_SEQ
-            else dataset.num(field)
+            if dataset.field2type[field]
+            not in [FeatureType.FLOAT_SEQ, FeatureType.FLOAT]
+            or field in config["numerical_features"]
+            else 0
             for field in self.item_feat.interaction.keys()
         )
         self.dnn_list = [

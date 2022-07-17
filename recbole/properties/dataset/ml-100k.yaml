@@ -47,4 +47,4 @@ alias_of_entity_id: ~           # (list) Fields' names remapped into the same in
 alias_of_relation_id: ~         # (list) Fields' names remapped into the same index system with RELATION_ID_FIELD.
 preload_weight: ~               # (dict) Preloaded weight in {IDs (token): pretrained vectors (float-like)}.
 normalize_field: ~              # (list) List of filed names to be normalized.
-normalize_all: True             # (bool) Whether or not to normalize all the float like fields.
+normalize_all: True            # (bool) Whether or not to normalize all the float like fields.

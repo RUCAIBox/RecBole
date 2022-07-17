@@ -3,9 +3,9 @@
 # @Email  : chenyushuo@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/23, 2020/12/28
-# @Author : Yushuo Chen, Xingyu Pan
-# @email  : chenyushuo@ruc.edu.cn, panxy@ruc.edu.cn
+# @Time   : 2022/7/8, 2020/9/23, 2020/12/28
+# @Author : Zhen Tian, Yushuo Chen, Xingyu Pan
+# @email  : chenyuwuxinn@gmail.com, chenyushuo@ruc.edu.cn, panxy@ruc.edu.cn
 
 """
 recbole.data.dataloader.user_dataloader
