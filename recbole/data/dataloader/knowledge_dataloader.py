@@ -72,18 +72,21 @@ class KnowledgeBasedDataLoader:
     It has three states, which is saved in :attr:`state`.
     In different states, :meth:`~_next_batch_data` will return different :class:`~recbole.data.interaction.Interaction`.
     Detailed, please see :attr:`~state`.
+
     Args:
         config (Config): The config of dataloader.
         dataset (Dataset): The dataset of dataloader.
         sampler (Sampler): The sampler of dataloader.
         kg_sampler (KGSampler): The knowledge graph sampler of dataloader.
         shuffle (bool, optional): Whether the dataloader will be shuffle after a round. Defaults to ``False``.
+
     Attributes:
         state (KGDataLoaderState):
             This dataloader has three states:
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RS`
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.KG`
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RSKG`
+
             In the first state, this dataloader would only return the triplets with negative
             examples in a knowledge graph.
             In the second state, this dataloader would only return the user-item interaction.
@@ -146,7 +149,9 @@ class KnowledgeBasedDataLoader:
             - KGDataLoaderState.RS
             - KGDataLoaderState.KG
             - KGDataLoaderState.RSKG
+
         The state of :class:`KnowledgeBasedDataLoader` would affect the result of _next_batch_data().
+
         Args:
             state (KGDataLoaderState): the state of :class:`KnowledgeBasedDataLoader`.
         """
