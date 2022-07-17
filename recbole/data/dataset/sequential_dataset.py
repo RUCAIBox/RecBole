@@ -133,7 +133,10 @@ class SequentialDataset(Dataset):
                     if isinstance(list_len, int)
                     else (new_length,) + list_len
                 )
-                if self.field2type[field] in [FeatureType.FLOAT, FeatureType.FLOAT_SEQ] and field in self.config['numerical_features']:
+                if (
+                    self.field2type[field] in [FeatureType.FLOAT, FeatureType.FLOAT_SEQ]
+                    and field in self.config["numerical_features"]
+                ):
                     shape += (2,)
                 new_dict[list_field] = torch.zeros(
                     shape, dtype=self.inter_feat[field].dtype
