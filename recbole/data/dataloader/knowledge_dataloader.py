@@ -86,7 +86,7 @@ class KnowledgeBasedDataLoader:
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RS`
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.KG`
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RSKG`
-                
+
             In the first state, this dataloader would only return the triplets with negative
             examples in a knowledge graph.
             In the second state, this dataloader would only return the user-item interaction.
@@ -151,7 +151,7 @@ class KnowledgeBasedDataLoader:
             - KGDataLoaderState.RSKG
 
         The state of :class:`KnowledgeBasedDataLoader` would affect the result of _next_batch_data().
-        
+
         Args:
             state (KGDataLoaderState): the state of :class:`KnowledgeBasedDataLoader`.
         """
