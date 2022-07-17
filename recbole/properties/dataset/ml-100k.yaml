@@ -47,8 +47,4 @@ alias_of_entity_id: ~           # (list) Fields' names remapped into the same in
 alias_of_relation_id: ~         # (list) Fields' names remapped into the same index system with RELATION_ID_FIELD.
 preload_weight: ~               # (dict) Preloaded weight in {IDs (token): pretrained vectors (float-like)}.
 normalize_field: ~              # (list) List of filed names to be normalized.
-normalize_all: False            # (bool) Whether or not to normalize all the float like fields.
-discretization:                 # (dict) The discretization settings.
-    timestamp:                  # (str) The float-like fields to be discretized.
-        method: 'ED'            # (str) The discretization method, 'ED' for Equal Distance/Frequency Discretization and 'LD' for Logarithm Discretization.
-        bucket: 15              # (int) The number of buckets for equal distance discretization.
+normalize_all: True            # (bool) Whether or not to normalize all the float like fields.
