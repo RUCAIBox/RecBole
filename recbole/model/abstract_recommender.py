@@ -254,10 +254,16 @@ class ContextRecommender(AbstractRecommender):
             elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                 self.token_seq_field_names.append(field_name)
                 self.token_seq_field_dims.append(dataset.num(field_name))
-            elif dataset.field2type[field_name] == FeatureType.FLOAT and field_name in self.numerical_features:
+            elif (
+                dataset.field2type[field_name] == FeatureType.FLOAT
+                and field_name in self.numerical_features
+            ):
                 self.float_field_names.append(field_name)
                 self.float_field_dims.append(dataset.num(field_name))
-            elif dataset.field2type[field_name] == FeatureType.FLOAT_SEQ and field_name in self.numerical_features:
+            elif (
+                dataset.field2type[field_name] == FeatureType.FLOAT_SEQ
+                and field_name in self.numerical_features
+            ):
                 self.float_seq_field_names.append(field_name)
                 self.float_seq_field_dims.append(dataset.num(field_name))
             else:

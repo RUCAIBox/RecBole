@@ -65,11 +65,19 @@ class DIEN(SequentialRecommender):
         self.item_feat = dataset.get_item_feature()
 
         num_item_feature = sum(
-            1 if dataset.field2type[field] not in  [FeatureType.FLOAT_SEQ, FeatureType.FLOAT] or field in config["numerical_features"] else 0
+            1
+            if dataset.field2type[field]
+            not in [FeatureType.FLOAT_SEQ, FeatureType.FLOAT]
+            or field in config["numerical_features"]
+            else 0
             for field in self.item_feat.interaction.keys()
         )
         num_user_feature = sum(
-            1 if dataset.field2type[field] not in  [FeatureType.FLOAT_SEQ, FeatureType.FLOAT] or field in config["numerical_features"] else 0
+            1
+            if dataset.field2type[field]
+            not in [FeatureType.FLOAT_SEQ, FeatureType.FLOAT]
+            or field in config["numerical_features"]
+            else 0
             for field in self.user_feat.interaction.keys()
         )
         item_feat_dim = num_item_feature * self.embedding_size

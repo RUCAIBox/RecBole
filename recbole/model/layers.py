@@ -903,10 +903,16 @@ class ContextSeqEmbAbstractLayer(nn.Module):
                 elif self.dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                     self.token_seq_field_names[type].append(field_name)
                     self.token_seq_field_dims[type].append(self.dataset.num(field_name))
-                elif self.dataset.field2type[field_name] == FeatureType.FLOAT and field_name in self.dataset.config['numerical_features']:
+                elif (
+                    self.dataset.field2type[field_name] == FeatureType.FLOAT
+                    and field_name in self.dataset.config["numerical_features"]
+                ):
                     self.float_field_names[type].append(field_name)
                     self.float_field_dims[type].append(self.dataset.num(field_name))
-                elif self.dataset.field2type[field_name] == FeatureType.FLOAT_SEQ and field_name in self.dataset.config['numerical_features']:
+                elif (
+                    self.dataset.field2type[field_name] == FeatureType.FLOAT_SEQ
+                    and field_name in self.dataset.config["numerical_features"]
+                ):
                     self.float_seq_field_names[type].append(field_name)
                     self.float_seq_field_dims[type].append(self.dataset.num(field_name))
                 else:
@@ -1380,10 +1386,16 @@ class FMFirstOrderLinear(nn.Module):
             elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                 self.token_seq_field_names.append(field_name)
                 self.token_seq_field_dims.append(dataset.num(field_name))
-            elif dataset.field2type[field_name] == FeatureType.FLOAT and field_name in self.numerical_features:
+            elif (
+                dataset.field2type[field_name] == FeatureType.FLOAT
+                and field_name in self.numerical_features
+            ):
                 self.float_field_names.append(field_name)
                 self.float_field_dims.append(dataset.num(field_name))
-            elif dataset.field2type[field_name] == FeatureType.FLOAT_SEQ and field_name in self.numerical_features:
+            elif (
+                dataset.field2type[field_name] == FeatureType.FLOAT_SEQ
+                and field_name in self.numerical_features
+            ):
                 self.float_seq_field_names.append(field_name)
                 self.float_seq_field_dims.append(dataset.num(field_name))
 
