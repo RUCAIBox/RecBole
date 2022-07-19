@@ -3,9 +3,9 @@
 # @Email  : chenyushuo@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/9/16, 2021/7/1, 2021/7/11
-# @Author : Yushuo Chen, Xingyu Pan, Yupeng Hou
-# @Email  : chenyushuo@ruc.edu.cn, xy_pan@foxmail.com, houyupeng@ruc.edu.cn
+# @Time   : 2022/7/8, 2020/9/16, 2021/7/1, 2021/7/11
+# @Author : Zhen Tian, Yushuo Chen, Xingyu Pan, Yupeng Hou
+# @Email  : chenyuwuxinn@gmail.com, chenyushuo@ruc.edu.cn, xy_pan@foxmail.com, houyupeng@ruc.edu.cn
 
 """
 recbole.data.sequential_dataset
@@ -133,6 +133,11 @@ class SequentialDataset(Dataset):
                     if isinstance(list_len, int)
                     else (new_length,) + list_len
                 )
+                if (
+                    self.field2type[field] in [FeatureType.FLOAT, FeatureType.FLOAT_SEQ]
+                    and field in self.config["numerical_features"]
+                ):
+                    shape += (2,)
                 new_dict[list_field] = torch.zeros(
                     shape, dtype=self.inter_feat[field].dtype
                 )

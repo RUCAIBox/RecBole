@@ -3,9 +3,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/10/3, 2020/10/1
-# @Author : Yupeng Hou, Zihan Lin
-# @Email  : houyupeng@ruc.edu.cn, zhlin@ruc.edu.cn
+# @Time   : 2022/7/8, 2020/10/3, 2020/10/1
+# @Author : Zhen Tian, Yupeng Hou, Zihan Lin
+# @Email  : chenyuwuxinn@gmail.com, houyupeng@ruc.edu.cn, zhlin@ruc.edu.cn
 
 import argparse
 from ast import arg
@@ -31,6 +31,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--world_size", type=int, default=-1, help="total number of jobs"
     )
+    parser.add_argument(
+        "--group_offset",
+        type=int,
+        default=0,
+        help="the global rank offset of this group",
+    )
 
     args, _ = parser.parse_known_args()
 
@@ -38,7 +44,7 @@ if __name__ == "__main__":
         args.config_files.strip().split(" ") if args.config_files else None
     )
 
-    if args.nproc == 1:
+    if args.nproc == 1 and args.world_size <= 0:
         run_recbole(
             model=args.model, dataset=args.dataset, config_file_list=config_file_list
         )
@@ -57,6 +63,7 @@ if __name__ == "__main__":
                 args.port,
                 args.world_size,
                 args.nproc,
+                args.group_offset,
             ),
             nprocs=args.nproc,
         )

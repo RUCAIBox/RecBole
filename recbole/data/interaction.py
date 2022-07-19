@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time    : 2020/9/15, 2020/9/16, 2020/8/12
-# @Author  : Yupeng Hou, Yushuo Chen, Xingyu Pan
-# @email   : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, panxy@ruc.edu.cn
+# @Time    : 2022/7/8, 2020/9/15, 2020/9/16, 2020/8/12
+# @Author  : Zhen Tian, Yupeng Hou, Yushuo Chen, Xingyu Pan
+# @email   : chenyuwuxinn@gmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, panxy@ruc.edu.cn
 
 """
 recbole.data.interaction
@@ -338,7 +338,11 @@ class Interaction(object):
                 )
 
         for b, a in zip(by[::-1], ascending[::-1]):
-            index = np.argsort(self.interaction[b], kind="stable")
+            if len(self.interaction[b].shape) == 1:
+                key = self.interaction[b]
+            else:
+                key = self.interaction[b][..., 0]
+            index = np.argsort(key, kind="stable")
             if not a:
                 index = index[::-1]
             self._reindex(index)

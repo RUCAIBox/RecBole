@@ -3,9 +3,9 @@
 # @Email  : houyupeng@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2020/9/18, 2020/9/21, 2020/8/31
-# @Author : Yupeng Hou, Yushuo Chen, Kaiyuan Li
-# @email  : houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
+# @Time   : 2022/7/8, 2020/9/18, 2020/9/21, 2020/8/31
+# @Author : Zhen Tian, Yupeng Hou, Yushuo Chen, Kaiyuan Li
+# @email  : chenyuwuxinn@gmail.com, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, tsotfsk@outlook.com
 
 """
 recbole.data.dataloader.knowledge_dataloader
@@ -86,7 +86,7 @@ class KnowledgeBasedDataLoader:
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RS`
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.KG`
                 - :obj:`~recbole.utils.enum_type.KGDataLoaderState.RSKG`
-                
+
             In the first state, this dataloader would only return the triplets with negative
             examples in a knowledge graph.
             In the second state, this dataloader would only return the user-item interaction.
@@ -151,7 +151,7 @@ class KnowledgeBasedDataLoader:
             - KGDataLoaderState.RSKG
 
         The state of :class:`KnowledgeBasedDataLoader` would affect the result of _next_batch_data().
-        
+
         Args:
             state (KGDataLoaderState): the state of :class:`KnowledgeBasedDataLoader`.
         """
