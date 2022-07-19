@@ -1144,11 +1144,11 @@ class XGBoostTrainer(DecisionTreeTrainer):
         return result
 
 
-class lightgbmTrainer(DecisionTreeTrainer):
-    """lightgbmTrainer is designed for lightgbm."""
+class LightGBMTrainer(DecisionTreeTrainer):
+    """LightGBMTrainer is designed for LightGBM."""
 
     def __init__(self, config, model):
-        super(lightgbmTrainer, self).__init__(config, model)
+        super(LightGBMTrainer, self).__init__(config, model)
 
         self.lgb = __import__("lightgbm")
         self.boost_model = config["lgb_model"]
