@@ -1065,11 +1065,11 @@ class DecisionTreeTrainer(AbstractTrainer):
         raise NotImplementedError
 
 
-class xgboostTrainer(DecisionTreeTrainer):
-    """xgboostTrainer is designed for XGBOOST."""
+class XGBoostTrainer(DecisionTreeTrainer):
+    """XGBoostTrainer is designed for XGBOOST."""
 
     def __init__(self, config, model):
-        super(xgboostTrainer, self).__init__(config, model)
+        super(XGBoostTrainer, self).__init__(config, model)
 
         self.xgb = __import__("xgboost")
         self.boost_model = config["xgb_model"]

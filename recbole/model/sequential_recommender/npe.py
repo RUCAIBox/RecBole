@@ -9,7 +9,7 @@ NPE
 ################################################
 
 Reference:
-    ThaiBinh Nguyen, et al. "NPE: Neural Personalized Embedding for Collaborative Filtering" in ijcai2018
+    ThaiBinh Nguyen, et al. "NPE: Neural Personalized Embedding for Collaborative Filtering" in IJCAI 2018.
 
 Reference code:
     https://github.com/wubinzzu/NeuRec

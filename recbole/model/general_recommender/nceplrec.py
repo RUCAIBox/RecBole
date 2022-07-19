@@ -8,7 +8,7 @@
 NCE-PLRec
 ######################################
 Reference:
-    Ga Wu, et al. "Noise Contrastive Estimation for One-Class Collaborative Filtering" in Sigir 2019.
+    Ga Wu, et al. "Noise Contrastive Estimation for One-Class Collaborative Filtering" in SIGIR 2019.
 Reference code:
     https://github.com/wuga214/NCE_Projected_LRec
 """
