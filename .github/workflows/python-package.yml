@@ -45,6 +45,7 @@ jobs:
         conda list
         conda install -c conda-forge faiss-cpu
         pip install setuptools==59.5.0
+        pip install plotly
     # Use "python -m pytest" instead of "pytest" to fix imports
     - name: Test Overall
       run: |
