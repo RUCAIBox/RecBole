@@ -4,25 +4,26 @@
 # @Email  : slmu@ruc.edu.cn
 # @File   : run_hyper.py
 # UPDATE:
-# @Time   : 2020/8/20 21:17, 2020/8/29
-# @Author : Zihan Lin, Yupeng Hou
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn
+# @Time   : 2020/8/20 21:17, 2020/8/29, 2022/7/18
+# @Author : Zihan Lin, Yupeng Hou, Lei Wang
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, zxcptss@gmail.com
 
 import argparse
+import os
+import numpy as np
 
 from recbole.trainer import HyperTuning
 from recbole.quick_start import objective_function
+import ray
+from ray import tune
+from ray.tune.schedulers import ASHAScheduler
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config_files', type=str, default=None, help='fixed config files')
-    parser.add_argument('--params_file', type=str, default=None, help='parameters file')
-    parser.add_argument('--output_file', type=str, default='hyper_example.result', help='output file')
-    args, _ = parser.parse_known_args()
+def hyperopt_tune(args):
 
     # plz set algo='exhaustive' to use exhaustive search, in this case, max_evals is auto set
-    config_file_list = args.config_files.strip().split(' ') if args.config_files else None
+    config_file_list = args.config_files.strip().split(
+        ' ') if args.config_files else None
     hp = HyperTuning(objective_function, algo='exhaustive',
                      params_file=args.params_file, fixed_config_file_list=config_file_list)
     hp.run()
@@ -32,5 +33,57 @@ def main():
     print(hp.params2result[hp.params2str(hp.best_params)])
 
 
+def ray_tune(args):
+
+    config_file_list = args.config_files.strip().split(
+        ' ') if args.config_files else None
+    config_file_list = [os.path.join(
+        os.getcwd(), file) for file in config_file_list]if args.config_files else None
+
+    ray.init()
+    tune.register_trainable("train_func", objective_function)
+    config = {
+        "embedding_size": tune.sample_from(lambda _: 2 ** np.random.randint(3, 4)),
+        "learning_rate": tune.loguniform(1e-4, 1e-1),
+    }
+    # choose different schedulers to use different tuning optimization algorithms
+    scheduler = ASHAScheduler(
+        metric="recall@10",
+        mode="max",
+        max_t=10,
+        grace_period=1,
+        reduction_factor=2)
+
+    local_dir = './ray_log'
+    result = tune.run(
+        tune.with_parameters(objective_function,
+                             config_file_list=config_file_list),
+        config=config,
+        num_samples=5,
+        log_to_file=args.output_file,
+        scheduler=scheduler,
+        local_dir=local_dir)
+
+    best_trial = result.get_best_trial("recall@10", "max", "last")
+    print("best params: ",best_trial.config)
+    print("best result: ",best_trial.last_result)
+
+
 if __name__ == '__main__':
-    main()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_files', type=str,
+                        default=None, help='fixed config files')
+    parser.add_argument('--params_file', type=str,
+                        default=None, help='parameters file')
+    parser.add_argument('--output_file', type=str,
+                        default='hyper_example.result', help='output file')
+    parser.add_argument('--tool', type=str,
+                        default='hyperopt', help='tuning tool')
+    args, _ = parser.parse_known_args()
+    if args.tool=='Hyperopt':
+        hyperopt_tune(args)
+    elif args.tool=='Ray':
+        ray_tune(args)
+    else:
+        raise ValueError(f"The tool [{args.tool}] should in ['Hyperopt', 'Ray']")
