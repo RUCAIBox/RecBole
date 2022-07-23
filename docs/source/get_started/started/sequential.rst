@@ -41,6 +41,29 @@ models utilize the historical interaction sequences to predict the next
 item, so it needs to specify and load the user, item and time columns of
 the dataset. And you should set the maximum length of the sequence.
 
+For sequential dataset, RecBole supports Augmentation processing. For example,  suppose ``u1`` interacts with ``i1,i2,i3,i4,i5`` in time and ``MAX_ITEM_LIST_LENGTH = 3``
+
+.. code:: python
+
+   user_id:token	item_id_list:token_seq	item_id:token
+
+   0	0 1 2 3 4 	5
+
+After augmentation, sequential dataset will generate these cases.
+
+.. code:: python
+
+   user_id:token	item_id_list:token_seq	item_id:token
+
+   0	1 0 0	2
+
+   0	1 2 0	3
+     
+   0	1 2 3	4
+   
+   0	2 3 4	5
+
+
 For more details of data config, please refer to `Data
 settings <https://recbole.io/docs/user_guide/config/data_settings.html>`__.
 
