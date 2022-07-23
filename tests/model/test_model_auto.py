@@ -362,7 +362,7 @@ class TestContextRecommender(unittest.TestCase):
 
     def test_xgboost(self):
         config_dict = {
-            "model": "xgboost",
+            "model": "XGBoost",
             "threshold": {"rating": 4},
             "xgb_params": {
                 "booster": "gbtree",
@@ -375,7 +375,7 @@ class TestContextRecommender(unittest.TestCase):
 
     def test_lightgbm(self):
         config_dict = {
-            "model": "lightgbm",
+            "model": "LightGBM",
             "threshold": {"rating": 4},
             "lgb_params": {
                 "boosting": "gbdt",
