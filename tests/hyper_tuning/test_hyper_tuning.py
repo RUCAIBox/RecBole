@@ -25,15 +25,14 @@ def quick_test(algo):
 
 
 class TestHyperTuning(unittest.TestCase):
-
     def test_exhaustive(self):
-        quick_test(algo='exhaustive')
+        quick_test(algo="exhaustive")
 
     def test_random(self):
-        quick_test(algo='random')
+        quick_test(algo="random")
 
     def test_bayes(self):
-        quick_test(algo='bayes')
+        quick_test(algo="bayes")
 
 
 if __name__ == "__main__":
