@@ -16,7 +16,7 @@ instance in the running python file (e.g., `run.py`):
     from recbole.quick_start import objective_function
 
     hp = HyperTuning(objective_function=objective_function, algo='exhaustive', early_stop=10,
-                    params_file='model.hyper', fixed_config_file_list=['example.yaml'])
+                    max_evals=100, params_file='model.hyper', fixed_config_file_list=['example.yaml'])
 
 :attr:`objective_function` is the optimization objective,
 the input of :attr:`objective_function` is the parameter,
@@ -109,7 +109,7 @@ Calling method of HyperTuning like:
     from recbole.quick_start import objective_function
 
     hp = HyperTuning(objective_function=objective_function, algo='exhaustive', early_stop=10,
-                    params_file='model.hyper', fixed_config_file_list=['example.yaml'])
+                    max_evals=100, params_file='model.hyper', fixed_config_file_list=['example.yaml'])
 
     # run
     hp.run()
