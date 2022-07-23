@@ -24,7 +24,7 @@ def hyperopt_tune(args):
     # plz set algo='exhaustive' to use exhaustive search, in this case, max_evals is auto set
     config_file_list = args.config_files.strip().split(
         ' ') if args.config_files else None
-    hp = HyperTuning(objective_function, algo='exhaustive',early_stop=10,
+    hp = HyperTuning(objective_function, algo='exhaustive', early_stop=10,
                      params_file=args.params_file, fixed_config_file_list=config_file_list)
     hp.run()
     hp.export_result(output_file=args.output_file)
@@ -66,8 +66,8 @@ def ray_tune(args):
         local_dir=local_dir)
 
     best_trial = result.get_best_trial("recall@10", "max", "last")
-    print("best params: ",best_trial.config)
-    print("best result: ",best_trial.last_result)
+    print("best params: ", best_trial.config)
+    print("best result: ", best_trial.last_result)
 
 
 if __name__ == '__main__':
@@ -82,9 +82,10 @@ if __name__ == '__main__':
     parser.add_argument('--tool', type=str,
                         default='hyperopt', help='tuning tool')
     args, _ = parser.parse_known_args()
-    if args.tool=='Hyperopt':
+    if args.tool == 'Hyperopt':
         hyperopt_tune(args)
-    elif args.tool=='Ray':
+    elif args.tool == 'Ray':
         ray_tune(args)
     else:
-        raise ValueError(f"The tool [{args.tool}] should in ['Hyperopt', 'Ray']")
+        raise ValueError(
+            f"The tool [{args.tool}] should in ['Hyperopt', 'Ray']")
