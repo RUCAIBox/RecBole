@@ -59,7 +59,7 @@ You can get the kg triplets by calling ``dataset.kg_feat``, it looks like:
    91629  m.0b_zqd8                      film.film.actor   m.07xv9s
    91630   m.0cr7n8                      film.film.actor  m.0g99qg5
 
-RecBole also offer ``entity2id` and ``id2entity``, which map ``item_id`` and ``entity``
+RecBole also offer ``entity2id`` and ``id2entity``, which map ``item_id`` and ``entity``
 
 
 .. _header-n159:
