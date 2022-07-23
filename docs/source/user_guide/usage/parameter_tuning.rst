@@ -227,3 +227,11 @@ A simple example is to search the :attr:`learning_rate` and :attr:`embedding_siz
     best params:  {'embedding_size': 8, 'learning_rate': 0.004562228847261371}
     best result:  {'recall@10': 0.2148, 'mrr@10': 0.4161, 'ndcg@10': 0.2489, 'hit@10': 0.7444, 'precision@10': 0.1761, 'time_this_iter_s': 227.5052626132965, 'done': True, 'timesteps_total': None, 'episodes_total': None, 'training_iteration': 1, 'trial_id': '16400_00003', 'experiment_id': '3864900644e743d5b75c67a2e904183a', 'date': '2022-07-23_22-34-59', 'timestamp': 1658586899, 'time_total_s': 227.5052626132965, 'pid': 21448, 'hostname': 'aibox-94', 'node_ip': '183.174.228.94', 'config': {'embedding_size': 8, 'learning_rate': 0.004562228847261371}, 'time_since_restore': 227.5052626132965, 'timesteps_since_restore': 0, 'iterations_since_restore': 1, 'warmup_time': 0.004939079284667969, 'experiment_tag': '3_embedding_size=8,learning_rate=0.0046'}
 
+Users can use ray distributed tuning by changing :attr:`ray.init` as follows:
+.. code:: python
+
+    import ray
+
+    ray.init(address='auto')
+
+For details, please refer to Ray's official website.
