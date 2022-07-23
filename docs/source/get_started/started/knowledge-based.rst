@@ -40,7 +40,27 @@ yaml file called test.yaml and write the following settings:
 
 Knowledge-based recommendation models utilize KG information to make
 recommendations, so it needs to specify and load the kg information of
-the dataset.
+the dataset. 
+
+You can get the kg triplets by calling ``dataset.kg_feat``, it looks like:
+
+.. code:: 
+
+            head_id                          relation_id    tail_id
+   0      m.04ctbw8                   film.producer.film    m.0bln8
+   1       m.0c3wmn                      film.film.actor  m.02vxxgs
+   2        m.04t36  film.film_genre.films_in_this_genre   m.05sbv3
+   3       m.08jl3y                      film.film.actor  m.0v187kf
+   4      m.0513fcb                      film.film.actor  m.0glmggf
+   ...          ...                                  ...        ...
+   91626  m.09v46zg                    film.film.prequel  m.02862zk
+   91627    m.0jyx6           film.film.award_nomination    m.0gr51
+   91628  m.043qq5y             film.film.cinematography  m.0bnth9_
+   91629  m.0b_zqd8                      film.film.actor   m.07xv9s
+   91630   m.0cr7n8                      film.film.actor  m.0g99qg5
+
+RecBole also offer ``entity2id` and ``id2entity``, which map ``item_id`` and ``entity``
+
 
 .. _header-n159:
 
