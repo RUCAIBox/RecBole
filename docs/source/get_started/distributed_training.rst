@@ -33,6 +33,7 @@ It is recommended that you create a configuration file shared by different proce
 In above example, you can create a `yaml` file called `test.yaml` and write the following settings:
 
 .. code:: yaml
+
     gpu_id: '0,1,2,3'
     # dataset config
     USER_ID_FIELD: user_id
