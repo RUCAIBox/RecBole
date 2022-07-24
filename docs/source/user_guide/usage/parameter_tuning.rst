@@ -249,4 +249,4 @@ Users can use ray distributed tuning by changing :attr:`ray.init` as follows:
 
     ray.init(address='auto')
 
-For details, please refer to Ray's official website.
+For details, please refer to Ray's official website https://docs.ray.io .

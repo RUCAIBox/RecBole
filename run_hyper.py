@@ -58,7 +58,7 @@ def ray_tune(args):
         "learning_rate": tune.loguniform(1e-4, 1e-1),
     }
     # choose different schedulers to use different tuning optimization algorithms
-
+    # For details, please refer to Ray's official website https://docs.ray.io
     scheduler = ASHAScheduler(
         metric="recall@10", mode="max", max_t=10, grace_period=1, reduction_factor=2
     )
