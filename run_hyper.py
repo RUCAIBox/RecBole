@@ -5,8 +5,8 @@
 # @File   : run_hyper.py
 # UPDATE:
 # @Time   : 2020/8/20 21:17, 2020/8/29, 2022/7/13, 2022/7/18
-# @Author : Zihan Lin, Yupeng Hou, Gaowei Zhang, Lei Wang, zxcptss@gmail.com
-# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, zgw15630559577@163.com
+# @Author : Zihan Lin, Yupeng Hou, Gaowei Zhang, Lei Wang
+# @Email  : linzihan.super@foxmail.com, houyupeng@ruc.edu.cn, zgw15630559577@163.com, zxcptss@gmail.com
 
 import argparse
 import os
@@ -22,6 +22,7 @@ from ray.tune.schedulers import ASHAScheduler
 def hyperopt_tune(args):
 
     # plz set algo='exhaustive' to use exhaustive search, in this case, max_evals is auto set
+    # in other case, max_evals needs to be set manually
     config_file_list = (
         args.config_files.strip().split(" ") if args.config_files else None
     )
@@ -57,7 +58,7 @@ def ray_tune(args):
         "learning_rate": tune.loguniform(1e-4, 1e-1),
     }
     # choose different schedulers to use different tuning optimization algorithms
-    # in other case, max_evals needs to be set manually
+
     scheduler = ASHAScheduler(
         metric="recall@10", mode="max", max_t=10, grace_period=1, reduction_factor=2
     )
