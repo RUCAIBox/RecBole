@@ -48,6 +48,7 @@ Features:
 
    get_started/install
    get_started/quick_start
+   get_started/distributed_training
 
 .. toctree::
    :maxdepth: 1
