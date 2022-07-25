@@ -1,6 +1,6 @@
-# @Time   : 2020/10/6
-# @Author : Shanlei Mu
-# @Email  : slmu@ruc.edu.cn
+# @Time   : 2020/10/6, 2022/7/18
+# @Author : Shanlei Mu, Lei Wang
+# @Email  : slmu@ruc.edu.cn, zxcptss@gmail.com
 
 # UPDATE:
 # @Time   : 2022/7/8, 2022/07/10, 2022/07/13
@@ -18,6 +18,7 @@ import sys
 
 
 import pickle
+from ray import tune
 
 from recbole.config import Config
 from recbole.data import (
@@ -144,6 +145,7 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     )
     test_result = trainer.evaluate(test_data, load_best_model=saved)
 
+    tune.report(**test_result)
     return {
         "model": model_name,
         "best_valid_score": best_valid_score,

@@ -1,14 +1,15 @@
 Parameter Tuning
 =====================
 RecBole is featured in the capability of automatic parameter
-(or hyper-parameter) tuning. One can readily optimize
+(or hyper-parameter) tuning. RecBole introduces Hyperopt and Ray for parameter tuning. One can readily optimize
 a given model according to the provided hyper-parameter spaces.
 
-The general steps are given as follows:
+ The general steps are given as follows:
 
-To begin with, the user has to claim a
+To begin with Hyperopt, the user has to claim a
 :class:`~recbole.trainer.hyper_tuning.HyperTuning`
-instance in the running python file (e.g., `run.py`):
+instance in the running python file (e.g., `run_hyper.py`):
+
 
 .. code:: python
 
@@ -125,9 +126,10 @@ Run like:
 
 .. code:: bash
 
-    python run.py --dataset=[dataset_name] --model=[model_name]
+    python run_hyper.py --config_files=[config_files] --params_file=[params_file] --output_file=[output_file] --tool=Hyperopt
 
-:attr:`dataset_name` is the dataset name, :attr:`model_name` is the model name, which can be controlled by the command line or the yaml configuration files.
+:attr:`config_files` is the config files containing fixed parameters, :attr:`params_file` is the file containing fixed parameters,:attr:`output_file` is the output file containing the results,
+:attr:`tool` decides whether to use H or R should be selected in :attr:`['Hyperopt','Ray']` ,which can be controlled by the command line or the yaml configuration files.
 
 For example:
 
@@ -161,3 +163,90 @@ After running, we will also generate an HTML file, which contains a line chart t
 .. image:: ../../asset/hyper_tuning.png
     :width: 700
     :align: center
+
+To begin with ray, the user has to  initialize ray in the running pyhton file(e.g., `run_hyper.py`):
+.. code:: python
+
+   import ray
+
+   ray.init()
+
+Similar to Hyperopt, ray also requires :attr:`objective_function` as optimization target.
+For the details of the :attr:`objective_function`, please refer to the introduction in Hyperopt above.
+
+:attr:`Schedulers` is optimization algorithms which can early terminate bad trials, pause trials, clone trials, and alter hyperparameters of a running trial.
+All Trial Schedulers take in a metric, which is a value returned in the result dict of your Trainable and is maximized or minimized according to mode.
+
+.. code:: python
+
+    from ray.tune.schedulers import ASHAScheduler
+
+    scheduler = ASHAScheduler(
+        metric="recall@10",
+        mode="max",
+        max_t=100,
+        grace_period=1,
+        reduction_factor=2)
+    tune.run( ... , scheduler=asha_scheduler)
+
+Calling :attr:`tune.run` for analyzing result like:
+
+.. code:: python
+
+    from ray import tune
+
+    result = tune.run(
+        tune.with_parameters(objective_function,
+                             config_file_list=config_file_list),
+        config=config,
+        num_samples=5,
+        log_to_file=args.output_file,
+        scheduler=scheduler,
+        local_dir=local_dir)
+
+    best_trial = result.get_best_trial("recall@10", "max", "last")
+    print("best params: ",best_trial.config)
+    print("best result: ",best_trial.last_result)
+
+Run like:
+
+.. code:: bash
+
+    python run_hyper.py --config_files=[config_files] --output_file=[output_file] --tool=Ray
+
+A simple example is to search the :attr:`learning_rate` and :attr:`embedding_size` in BPR, that is,
+
+.. code:: bash
+
+   == Status ==
+    Current time: 2022-07-23 22:33:19 (running for 00:02:12.90)
+    Memory usage on this node: 19.5/125.8 GiB
+    Using AsyncHyperBand: num_stopped=0
+    Bracket: Iter 8.000: None | Iter 4.000: None | Iter 2.000: None | Iter 1.000: None
+    Resources requested: 5.0/40 CPUs, 0/2 GPUs, 0.0/77.29 GiB heap, 0.0/37.12 GiB objects (0.0/1.0 accelerator_type:K40)
+    Result logdir: /home/wangzhenlei/wanglei/dev-bole/RecBole/ray_log/objective_function_2022-07-23_22-31-06
+    Number of trials: 5/5 (5 RUNNING)
+    +--------------------------------+----------+----------------------+------------------+-----------------+
+    | Trial name                     | status   | loc                  |   embedding_size |   learning_rate |
+    |--------------------------------+----------+----------------------+------------------+-----------------|
+    | objective_function_16400_00000 | RUNNING  | ***.***.***.**:21392 |                8 |     0.0542264   |
+    | objective_function_16400_00001 | RUNNING  | ***.***.***.**:21443 |                8 |     0.00055313  |
+    | objective_function_16400_00002 | RUNNING  | ***.***.***.**:21446 |                8 |     0.000639818 |
+    | objective_function_16400_00003 | RUNNING  | ***.***.***.**:21448 |                8 |     0.00456223  |
+    | objective_function_16400_00004 | RUNNING  | ***.***.***.**:21449 |                8 |     0.00265045  |
+    +--------------------------------+----------+----------------------+------------------+-----------------+
+
+    ...
+
+    2022-07-23 22:35:22,868 INFO tune.py:748 -- Total run time: 256.58 seconds (256.42 seconds for the tuning loop).
+    best params:  {'embedding_size': 8, 'learning_rate': 0.004562228847261371}
+    best result:  {'recall@10': 0.2148, 'mrr@10': 0.4161, 'ndcg@10': 0.2489, 'hit@10': 0.7444, 'precision@10': 0.1761, 'time_this_iter_s': 227.5052626132965, 'done': True, 'timesteps_total': None, 'episodes_total': None, 'training_iteration': 1, 'trial_id': '16400_00003', 'experiment_id': '3864900644e743d5b75c67a2e904183a', 'date': '2022-07-23_22-34-59', 'timestamp': 1658586899, 'time_total_s': 227.5052626132965, 'pid': 21448, 'hostname': 'aibox-94', 'node_ip': '183.174.228.94', 'config': {'embedding_size': 8, 'learning_rate': 0.004562228847261371}, 'time_since_restore': 227.5052626132965, 'timesteps_since_restore': 0, 'iterations_since_restore': 1, 'warmup_time': 0.004939079284667969, 'experiment_tag': '3_embedding_size=8,learning_rate=0.0046'}
+
+Users can use ray distributed tuning by changing :attr:`ray.init` as follows:
+.. code:: python
+
+    import ray
+
+    ray.init(address='auto')
+
+For details, please refer to Ray's official website https://docs.ray.io .

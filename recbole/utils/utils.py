@@ -4,9 +4,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2021/3/8
-# @Author : Jiawei Guan
-# @Email  : guanjw@ruc.edu.cn
+# @Time   : 2021/3/8, 2022/7/12
+# @Author : Jiawei Guan, Lei Wang
+# @Email  : guanjw@ruc.edu.cn, zxcptss@gmail.com
 
 """
 recbole.utils.utils
