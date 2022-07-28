@@ -412,6 +412,12 @@ class Config(object):
             "candidate_num": 0,
         }
 
+        if self.final_config_dict["neg_sampling"] is not None:
+            logger = getLogger()
+            logger.warning(
+                "Warning: Parameter 'neg_sampling' has been deprecated in the new version. Please use 'train_neg_sample_args' instead and check the documentation."
+            )
+
         if self.final_config_dict["train_neg_sample_args"] is not None:
             if not isinstance(self.final_config_dict["train_neg_sample_args"], dict):
                 raise ValueError(
