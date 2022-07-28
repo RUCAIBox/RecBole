@@ -264,26 +264,28 @@ We thank the insightful suggestions from [@tszumowski](https://github.com/tszumo
 
 We thank the nice contributions through PRs from [@rowedenny](https://github.com/rowedenny)，[@deklanw](https://github.com/deklanw) et.al.
 
+
 ## Cite
 If you find RecBole useful for your research or development, please cite the following papers: [RecBole](https://arxiv.org/abs/2011.01731) and [RecBole2.0](https://arxiv.org/pdf/2206.07351).
 
 ```bibtex
-@inproceedings{recbole1.0,
-  title={Recbole: Towards a unified, comprehensive and efficient framework for recommendation algorithms},
-  author={Zhao, Wayne Xin and Mu, Shanlei and Hou, Yupeng and Lin, Zihan and Chen, Yushuo and Pan, Xingyu and Li, Kaiyuan and Lu, Yujie and Wang, Hui and Tian, Changxin and others},
-  booktitle={Proceedings of the 30th ACM International Conference on Information \& Knowledge Management},
-  year={2021}
+@inproceedings{recbole,
+  author    = {Wayne Xin Zhao and Shanlei Mu and Yupeng Hou and Zihan Lin and Yushuo Chen and Xingyu Pan and Kaiyuan Li and Yujie Lu and Hui Wang and Changxin Tian and Yingqian Min and Zhichao Feng and Xinyan Fan and Xu Chen and Pengfei Wang and Wendi Ji and Yaliang Li and Xiaoling Wang and Ji{-}Rong Wen},
+  title     = {RecBole: Towards a Unified, Comprehensive and Efficient Framework for Recommendation Algorithms},
+  booktitle = {{CIKM}},
+  pages     = {4653--4664},
+  publisher = {{ACM}},
+  year      = {2021}
+}
+
+@article{recbole2.0,
+  author    = {Wayne Xin Zhao and Yupeng Hou and Xingyu Pan and Chen Yang and Zeyu Zhang and Zihan Lin and Jingsen Zhang and Shuqing Bian and Jiakai Tang and Wenqi Sun and Yushuo Chen and Lanling Xu and Gaowei Zhang and Zhen Tian and Changxin Tian and Shanlei Mu and Xinyan Fan and Xu Chen and Ji{-}Rong Wen},
+  title     = {RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
+  journal   = {arXiv preprint arXiv:2206.07351},
+  year      = {2022}
 }
 ```
 
-```bibtex
-@article{recbole2.0,
-  title={RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
-  author={Zhao, Wayne Xin and Hou, Yupeng and Pan, Xingyu and Yang, Chen and Zhang, Zeyu and Lin, Zihan and Zhang, Jingsen and Bian, Shuqing and Tang, Jiakai and Sun, Wenqi and others},
-  journal={arXiv preprint arXiv:2206.07351},
-  year={2022}
-}
-```
 
 ## The Team
 
