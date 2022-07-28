@@ -257,14 +257,23 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 
 
 ## 引用
-如果你觉得RecBole对你的科研工作有帮助，请引用我们的[论文](https://arxiv.org/abs/2011.01731):
+如果你觉得 RecBole 对你的科研工作有帮助，请引用我们的论文：[RecBole](https://arxiv.org/abs/2011.01731) 和 [RecBole2.0](https://arxiv.org/pdf/2206.07351)。
 
 ```
-@article{recbole,
-    title={RecBole: Towards a Unified, Comprehensive and Efficient Framework for Recommendation Algorithms},
-    author={Wayne Xin Zhao and Shanlei Mu and Yupeng Hou and Zihan Lin and Kaiyuan Li and Yushuo Chen and Yujie Lu and Hui Wang and Changxin Tian and Xingyu Pan and Yingqian Min and Zhichao Feng and Xinyan Fan and Xu Chen and Pengfei Wang and Wendi Ji and Yaliang Li and Xiaoling Wang and Ji-Rong Wen},
-    year={2020},
-    journal={arXiv preprint arXiv:2011.01731}
+@inproceedings{recbole1.0,
+  title={Recbole: Towards a unified, comprehensive and efficient framework for recommendation algorithms},
+  author={Zhao, Wayne Xin and Mu, Shanlei and Hou, Yupeng and Lin, Zihan and Chen, Yushuo and Pan, Xingyu and Li, Kaiyuan and Lu, Yujie and Wang, Hui and Tian, Changxin and others},
+  booktitle={Proceedings of the 30th ACM International Conference on Information \& Knowledge Management},
+  year={2021}
+}
+```
+
+```
+@article{recbole2.0,
+  title={RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
+  author={Zhao, Wayne Xin and Hou, Yupeng and Pan, Xingyu and Yang, Chen and Zhang, Zeyu and Lin, Zihan and Zhang, Jingsen and Bian, Shuqing and Tang, Jiakai and Sun, Wenqi and others},
+  journal={arXiv preprint arXiv:2206.07351},
+  year={2022}
 }
 ```
 
