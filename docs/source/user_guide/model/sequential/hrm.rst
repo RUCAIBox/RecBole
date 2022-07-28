@@ -57,7 +57,7 @@ Write the following code to a python file, such as `run.py`
    from recbole.quick_start import run_recbole
 
    parameter_dict = {
-      'neg_sampling': None,
+      'train_neg_sample_args': None,
    }
    run_recbole(model='HRM', dataset='ml-100k', config_dict=parameter_dict)
 

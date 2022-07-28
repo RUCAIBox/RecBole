@@ -328,6 +328,6 @@ def get_flops(
     flop_counter.uncalled_modules_warnings(uncalled_warnings)
     flop_counter.tracer_warnings("none")
     total_flops = 0
-    for op, flop in flop_counter.by_operator().items():
+    for _, flop in flop_counter.by_operator().items():
         total_flops += flop
     return total_flops
