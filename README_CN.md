@@ -259,7 +259,7 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 ## 引用
 如果你觉得 RecBole 对你的科研工作有帮助，请引用我们的论文：[RecBole](https://arxiv.org/abs/2011.01731) 和 [RecBole2.0](https://arxiv.org/pdf/2206.07351)。
 
-```
+```bibtex
 @inproceedings{recbole1.0,
   title={Recbole: Towards a unified, comprehensive and efficient framework for recommendation algorithms},
   author={Zhao, Wayne Xin and Mu, Shanlei and Hou, Yupeng and Lin, Zihan and Chen, Yushuo and Pan, Xingyu and Li, Kaiyuan and Lu, Yujie and Wang, Hui and Tian, Changxin and others},
@@ -268,7 +268,7 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 }
 ```
 
-```
+```bibtex
 @article{recbole2.0,
   title={RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
   author={Zhao, Wayne Xin and Hou, Yupeng and Pan, Xingyu and Yang, Chen and Zhang, Zeyu and Lin, Zihan and Zhang, Jingsen and Bian, Shuqing and Tang, Jiakai and Sun, Wenqi and others},

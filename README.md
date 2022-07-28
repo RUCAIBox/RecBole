@@ -265,9 +265,9 @@ We thank the insightful suggestions from [@tszumowski](https://github.com/tszumo
 We thank the nice contributions through PRs from [@rowedenny](https://github.com/rowedenny)，[@deklanw](https://github.com/deklanw) et.al.
 
 ## Cite
-If you find RecBole useful for your research or development, please cite the following papers: [RecBole](https://arxiv.org/abs/2011.01731) and [RecBole2.0](https://arxiv.org/pdf/2206.07351)
+If you find RecBole useful for your research or development, please cite the following papers: [RecBole](https://arxiv.org/abs/2011.01731) and [RecBole2.0](https://arxiv.org/pdf/2206.07351).
 
-```
+```bibtex
 @inproceedings{recbole1.0,
   title={Recbole: Towards a unified, comprehensive and efficient framework for recommendation algorithms},
   author={Zhao, Wayne Xin and Mu, Shanlei and Hou, Yupeng and Lin, Zihan and Chen, Yushuo and Pan, Xingyu and Li, Kaiyuan and Lu, Yujie and Wang, Hui and Tian, Changxin and others},
@@ -276,7 +276,7 @@ If you find RecBole useful for your research or development, please cite the fol
 }
 ```
 
-```
+```bibtex
 @article{recbole2.0,
   title={RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
   author={Zhao, Wayne Xin and Hou, Yupeng and Pan, Xingyu and Yang, Chen and Zhang, Zeyu and Lin, Zihan and Zhang, Jingsen and Bian, Shuqing and Tang, Jiakai and Sun, Wenqi and others},
