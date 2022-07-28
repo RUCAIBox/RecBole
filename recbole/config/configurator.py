@@ -456,6 +456,7 @@ class Config(object):
             )
 
     def _init_device(self):
+        self.final_config_dict["gpu_id"] = str(self.final_config_dict["gpu_id"])
         gpu_id = self.final_config_dict["gpu_id"]
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
         import torch
