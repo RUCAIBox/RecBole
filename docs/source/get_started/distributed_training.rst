@@ -1,5 +1,5 @@
 Distributed Training
-===============
+=======================
 Now we support distributed training and evaluation. Here is a distributed training example for using RecBole. 
 We will show you how to train and test **BPR** model on the **ml-100k** dataset in the distributed environment.
 
