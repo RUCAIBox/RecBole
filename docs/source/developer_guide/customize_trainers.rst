@@ -20,7 +20,7 @@ and revise :meth:`~recbole.trainer.trainer.Trainer.evaluate` or :meth:`~recbole.
 Example
 ----------------
 1. Alternative Optimization
->>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Here we present a simple Trainer example, which is used for alternative optimization.
 We revise the :meth:`~recbole.trainer.trainer.Trainer._train_epoch` method.
 To begin with, we need to create a new class for
@@ -105,7 +105,7 @@ Complete Code
             return total_loss
 
 2. Mixed precision training
->>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Here we present a simple Trainer example, which is used for mixed
 precision training. Mixed precision training offers significant
 computational speedup by performing operations in half-precision
@@ -164,7 +164,7 @@ Complete Code
             scaler.update()        
 
 3. Layer-specific learning rate
->>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 Here we present a simple Trainer example, which is used for setting
 layer-specific learning rate. For pretrained model, layers closer to
 the input layer are more likely to have learned more general

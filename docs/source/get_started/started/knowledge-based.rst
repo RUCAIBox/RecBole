@@ -1,5 +1,5 @@
 Quick Start: Knowledge-based Recommendation
-===============
+=============================================
 For Knowledge-based Recommendation, we choose **CKE** model to show you how
 to train and test it on the **ml-100k** dataset from both **API** and
 **source code**.
@@ -90,7 +90,7 @@ for more information.
 .. _header-n164:
 
 3. Set training and evaluation config:
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 In RecBole, we support multiple training and evaluation methods. You can
 choose how to train and test model by simply setting the config.
@@ -123,7 +123,7 @@ Settings <https://recbole.io/docs/user_guide/config/evaluation_settings.html>`__
 .. _header-n269:
 
 4. Run the model and collect the result
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 Now you have finished all the preparations, it’s time to run the model!
 

@@ -1,15 +1,11 @@
 Quick Start: General Recommendation
-===============
+=====================================
 For general recommendation, we choose **BPR** model to show you how to train
 and test it on the **ml-100k** dataset from both **API** and **source
 code**.
 
-.. _header-n3:
-
 Quick-start From API
 --------------------------
-
-.. _header-n4:
 
 1. Prepare your data:
 >>>>>>>>>>>>>>>>>>>>>>>>>
@@ -36,8 +32,6 @@ General recommendation models utilize the historical interactions
 between users and items to make recommendations, so it needs to specify
 and load the user and item columns of the dataset.
 
-.. _header-n9:
-
 2. Choose a model:
 >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -59,10 +53,8 @@ If you want to run different models, you can read `Running Different
 Models <https://recbole.io/docs/user_guide/usage/running_different_models.html>`__
 for more information.
 
-.. _header-n14:
-
 3. Set training and evaluation config:
->>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 In RecBole, we support multiple training and evaluation methods. You can
 choose how to train and test model by simply setting the config.
@@ -101,7 +93,7 @@ Settings <https://recbole.io/docs/user_guide/config/evaluation_settings.html>`__
 .. _header-n40:
 
 4. Run the model and collect the result
->>>>>>>>>>>>>>>>>>>>>>>>>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 Now you have finished all the preparations, it’s time to run the model!
 
