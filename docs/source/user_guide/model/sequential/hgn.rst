@@ -52,7 +52,10 @@ Write the following code to a python file, such as `run.py`
 
    from recbole.quick_start import run_recbole
 
-   run_recbole(model='HGN', dataset='ml-100k')
+   parameter_dict = {
+      'train_neg_sample_args': None,
+   }
+   run_recbole(model='HGN', dataset='ml-100k', config_dict=parameter_dict)
 
 And then:
 

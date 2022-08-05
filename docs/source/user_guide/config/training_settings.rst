@@ -9,6 +9,7 @@ Training settings are designed to set parameters about model training.
   Range in ``['adam', 'sgd', 'adagrad', 'rmsprop', 'sparse_adam']``.
 - ``learning_rate (float)`` : Learning rate. Defaults to ``0.001``.
 - ``train_neg_sample_args (dict)`` : This parameter have 4 keys: ``distribution``, ``sample_num``, ``dynamic``, and ``candidate_num``.   
+
   - ``distribution (str)`` : decides the distribution of negative items in sampling pools. Now we support two kinds of distribution: ``['uniform', 'popularity']``. ``uniform`` means uniformly select negative items while ``popularity`` means select negative items based on their popularity (Counter(item) in `.inter` file). The default value is ``uniform``.   
 
   - ``sample_num (int)`` : decides the number of negative samples we intend to take. The default value is ``1``.

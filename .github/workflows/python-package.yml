@@ -34,6 +34,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install protobuf==3.19.0
+        pip install hyperopt==0.2.5
         pip install pytest
         pip install dgl
         pip install xgboost
@@ -45,6 +46,7 @@ jobs:
         conda list
         conda install -c conda-forge faiss-cpu
         pip install setuptools==59.5.0
+        pip install plotly
     # Use "python -m pytest" instead of "pytest" to fix imports
     - name: Test Overall
       run: |
@@ -66,6 +68,9 @@ jobs:
         python -m pytest -v tests/config/test_config.py
         export PYTHONPATH=.
         python tests/config/test_command_line.py --use_gpu=False --valid_metric=Recall@10 --split_ratio=[0.7,0.2,0.1] --metrics='["Recall"]' --topk=[10] --epochs=200 --eval_setting='LO_RS' --learning_rate=0.3
+    - name: Test hyper_tuning
+      run: |
+        python -m pytest -v tests/hyper_tuning/test_hyper_tuning.py
   # Use black to test code format
   # Reference code:
   #     https://black.readthedocs.io/en/stable/integrations/github_actions.html
