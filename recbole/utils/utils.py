@@ -273,12 +273,10 @@ def get_flops(model, dataset, device, logger, verbose=False):
         hiddensize = y.shape[-1]
         m.total_ops += nelements * hiddensize
 
-    import copy
-
     class TracingAdapter(torch.nn.Module):
         def __init__(self, rec_model):
             super().__init__()
-            self.model = copy.copy(rec_model)
+            self.model = rec_model
 
         def forward(self, interaction):
             return self.model.predict(interaction)
