@@ -43,6 +43,11 @@ class BERT4Rec(SequentialRecommender):
 
         self.mask_ratio = config["mask_ratio"]
 
+        self.MASK_ITEM_SEQ = config["MASK_ITEM_SEQ"]
+        self.POS_ITEMS = config["POS_ITEMS"]
+        self.NEG_ITEMS = config["NEG_ITEMS"]
+        self.MASK_INDEX = config["MASK_INDEX"]
+
         self.loss_type = config["loss_type"]
         self.initializer_range = config["initializer_range"]
 
@@ -91,75 +96,6 @@ class BERT4Rec(SequentialRecommender):
             module.weight.data.fill_(1.0)
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
-
-    def _neg_sample(self, item_set):
-        item = random.randint(1, self.n_items - 1)
-        while item in item_set:
-            item = random.randint(1, self.n_items - 1)
-        return item
-
-    def _padding_sequence(self, sequence, max_length):
-        pad_len = max_length - len(sequence)
-        sequence = [0] * pad_len + sequence
-        sequence = sequence[-max_length:]  # truncate according to the max_length
-        return sequence
-
-    def reconstruct_train_data(self, item_seq):
-        """
-        Mask item sequence for training.
-        """
-        device = item_seq.device
-        batch_size = item_seq.size(0)
-
-        sequence_instances = item_seq.cpu().numpy().tolist()
-
-        # Masked Item Prediction
-        # [B * Len]
-        masked_item_sequence = []
-        pos_items = []
-        neg_items = []
-        masked_index = []
-        for instance in sequence_instances:
-            # WE MUST USE 'copy()' HERE!
-            masked_sequence = instance.copy()
-            pos_item = []
-            neg_item = []
-            index_ids = []
-            for index_id, item in enumerate(instance):
-                # padding is 0, the sequence is end
-                if item == 0:
-                    break
-                prob = random.random()
-                if prob < self.mask_ratio:
-                    pos_item.append(item)
-                    neg_item.append(self._neg_sample(instance))
-                    masked_sequence[index_id] = self.mask_token
-                    index_ids.append(index_id)
-
-            masked_item_sequence.append(masked_sequence)
-            pos_items.append(self._padding_sequence(pos_item, self.mask_item_length))
-            neg_items.append(self._padding_sequence(neg_item, self.mask_item_length))
-            masked_index.append(
-                self._padding_sequence(index_ids, self.mask_item_length)
-            )
-
-        # [B Len]
-        masked_item_sequence = torch.tensor(
-            masked_item_sequence, dtype=torch.long, device=device
-        ).view(batch_size, -1)
-        # [B mask_len]
-        pos_items = torch.tensor(pos_items, dtype=torch.long, device=device).view(
-            batch_size, -1
-        )
-        # [B mask_len]
-        neg_items = torch.tensor(neg_items, dtype=torch.long, device=device).view(
-            batch_size, -1
-        )
-        # [B mask_len]
-        masked_index = torch.tensor(masked_index, dtype=torch.long, device=device).view(
-            batch_size, -1
-        )
-        return masked_item_sequence, pos_items, neg_items, masked_index
 
     def reconstruct_test_data(self, item_seq, item_seq_len):
         """
@@ -215,13 +151,10 @@ class BERT4Rec(SequentialRecommender):
         return multi_hot
 
     def calculate_loss(self, interaction):
-        item_seq = interaction[self.ITEM_SEQ]
-        (
-            masked_item_seq,
-            pos_items,
-            neg_items,
-            masked_index,
-        ) = self.reconstruct_train_data(item_seq)
+        masked_item_seq = interaction[self.MASK_ITEM_SEQ]
+        pos_items = interaction[self.POS_ITEMS]
+        neg_items = interaction[self.NEG_ITEMS]
+        masked_index = interaction[self.MASK_INDEX]
 
         seq_output = self.forward(masked_item_seq)
         pred_index_map = self.multi_hot_embed(

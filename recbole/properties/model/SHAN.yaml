@@ -2,3 +2,4 @@ embedding_size: 64              # (int) The embedding size of users and items.
 short_item_length: 2            # (int) The last N items.
 loss_type: 'CE'                 # (str) The type of loss function. Range in ``['BPR', 'CE']``.
 reg_weight: [0.01,0.0001]       # (list of float) The L2 regularization weights.
+transform: inverse_itemseq      # (str) The transform operation for batch data process.
