@@ -199,15 +199,19 @@ class CropItemSequence:
             crop_begin = random.randint(0, length - crop_len)
             crop_item_seq = np.zeros(seq.shape[0])
             if crop_begin + crop_len < seq.shape[0]:
-                crop_item_seq[:crop_len] = seq[crop_begin:crop_begin+crop_len]
+                crop_item_seq[:crop_len] = seq[crop_begin : crop_begin + crop_len]
             else:
                 crop_item_seq[:crop_len] = seq[crop_begin:]
-            crop_item_seq_list.append(torch.tensor(crop_item_seq, dtype=torch.long, device=device))
-            crop_item_seqlen_list.append(torch.tensor(crop_len, dtype=torch.long, device=device))
+            crop_item_seq_list.append(
+                torch.tensor(crop_item_seq, dtype=torch.long, device=device)
+            )
+            crop_item_seqlen_list.append(
+                torch.tensor(crop_len, dtype=torch.long, device=device)
+            )
         new_dict = {
             self.CROP_ITEM_SEQ: torch.stack(crop_item_seq_list),
-            self.CROP_ITEM_SEQ_LEN: torch.stack(crop_item_seqlen_list)
-            }
+            self.CROP_ITEM_SEQ_LEN: torch.stack(crop_item_seqlen_list),
+        }
         interaction.update(Interaction(new_dict))
         return interaction
 
@@ -239,12 +243,14 @@ class ReorderItemSequence:
 
             shuffle_index = list(range(reorder_begin, reorder_begin + reorder_len))
             random.shuffle(shuffle_index)
-            reorder_item_seq[reorder_begin:reorder_begin + reorder_len] = reorder_item_seq[shuffle_index]
+            reorder_item_seq[
+                reorder_begin : reorder_begin + reorder_len
+            ] = reorder_item_seq[shuffle_index]
 
-            reorder_seq_list.append(torch.tensor(reorder_item_seq, dtype=torch.long, device=device))
-        new_dict = {
-            self.REORDER_ITEM_SEQ: torch.stack(reorder_seq_list)
-            }
+            reorder_seq_list.append(
+                torch.tensor(reorder_item_seq, dtype=torch.long, device=device)
+            )
+        new_dict = {self.REORDER_ITEM_SEQ: torch.stack(reorder_seq_list)}
         interaction.update(Interaction(new_dict))
         return interaction
 

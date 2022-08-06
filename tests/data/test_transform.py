@@ -146,31 +146,34 @@ class TestTransform:
         transform = new_transform(config_dict=config_dict)
 
         train_transform_interaction = transform(train_dataset, train_dataset.inter_feat)
-        for crop_seq, length in zip(train_transform_interaction[transform.CROP_ITEM_SEQ], train_transform_interaction[transform.ITEM_SEQ_LEN]):
+        for crop_seq, length in zip(
+            train_transform_interaction[transform.CROP_ITEM_SEQ],
+            train_transform_interaction[transform.ITEM_SEQ_LEN],
+        ):
             crop_len = math.floor(length * eta)
             last_seq = np.zeros(length - crop_len)
 
-            assert (
-                crop_seq[crop_len:length].numpy() == last_seq
-            ).all()
+            assert (crop_seq[crop_len:length].numpy() == last_seq).all()
 
         valid_transform_interaction = transform(valid_dataset, valid_dataset.inter_feat)
-        for crop_seq, length in zip(valid_transform_interaction[transform.CROP_ITEM_SEQ], valid_transform_interaction[transform.ITEM_SEQ_LEN]):
+        for crop_seq, length in zip(
+            valid_transform_interaction[transform.CROP_ITEM_SEQ],
+            valid_transform_interaction[transform.ITEM_SEQ_LEN],
+        ):
             crop_len = math.floor(length * eta)
             last_seq = np.zeros(length - crop_len)
 
-            assert (
-                crop_seq[crop_len:length].numpy() == last_seq
-            ).all()
+            assert (crop_seq[crop_len:length].numpy() == last_seq).all()
 
         test_transform_interaction = transform(test_dataset, test_dataset.inter_feat)
-        for crop_seq, length in zip(test_transform_interaction[transform.CROP_ITEM_SEQ], test_transform_interaction[transform.ITEM_SEQ_LEN]):
+        for crop_seq, length in zip(
+            test_transform_interaction[transform.CROP_ITEM_SEQ],
+            test_transform_interaction[transform.ITEM_SEQ_LEN],
+        ):
             crop_len = math.floor(length * eta)
             last_seq = np.zeros(length - crop_len)
 
-            assert (
-                crop_seq[crop_len:length].numpy() == last_seq
-            ).all()
+            assert (crop_seq[crop_len:length].numpy() == last_seq).all()
 
     def test_reorder_itemseq(self):
         beta = 0.9
@@ -192,23 +195,17 @@ class TestTransform:
         train_transform_interaction = transform(train_dataset, train_dataset.inter_feat)
         reorder_item_seq = train_transform_interaction[transform.REORDER_ITEM_SEQ]
         item_seq = train_dataset.inter_feat[train_dataset.item_id_list_field]
-        assert (
-                reorder_item_seq.numpy() != item_seq.numpy()
-        ).any()
+        assert (reorder_item_seq.numpy() != item_seq.numpy()).any()
 
         valid_transform_interaction = transform(valid_dataset, valid_dataset.inter_feat)
         reorder_item_seq = valid_transform_interaction[transform.REORDER_ITEM_SEQ]
         item_seq = valid_dataset.inter_feat[valid_dataset.item_id_list_field]
-        assert (
-                reorder_item_seq.numpy() != item_seq.numpy()
-        ).any()
+        assert (reorder_item_seq.numpy() != item_seq.numpy()).any()
 
         test_transform_interaction = transform(test_dataset, test_dataset.inter_feat)
         reorder_item_seq = test_transform_interaction[transform.REORDER_ITEM_SEQ]
         item_seq = test_dataset.inter_feat[test_dataset.item_id_list_field]
-        assert (
-                reorder_item_seq.numpy() != item_seq.numpy()
-        ).any()
+        assert (reorder_item_seq.numpy() != item_seq.numpy()).any()
 
 
 if __name__ == "__main__":
