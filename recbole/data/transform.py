@@ -50,15 +50,18 @@ class MaskItemSequence:
         self.logger = getLogger()
         self.logger.info("Mask Item Sequence Transform in DataLoader.")
         self.ITEM_SEQ = config["ITEM_ID_FIELD"] + config["LIST_SUFFIX"]
+        self.ITEM_ID = config["ITEM_ID_FIELD"]
         self.MASK_ITEM_SEQ = "Mask_" + self.ITEM_SEQ
-        self.POS_ITEM_ID = config["ITEM_ID_FIELD"]
-        self.NEG_ITEM_ID = config["NEG_PREFIX"] + config["ITEM_ID_FIELD"]
+        self.POS_ITEMS = "Pos_" + config["ITEM_ID_FIELD"]
+        self.NEG_ITEMS = "Neg_" + config["ITEM_ID_FIELD"]
         self.max_seq_length = config["MAX_ITEM_LIST_LENGTH"]
         self.mask_ratio = config["mask_ratio"]
         self.mask_item_length = int(self.mask_ratio * self.max_seq_length)
         self.MASK_INDEX = "MASK_INDEX"
         config["MASK_INDEX"] = "MASK_INDEX"
         config["MASK_ITEM_SEQ"] = self.MASK_ITEM_SEQ
+        config["POS_ITEMS"] = self.POS_ITEMS
+        config["NEG_ITEMS"] = self.NEG_ITEMS
 
     def _neg_sample(self, item_set, n_items):
         item = random.randint(1, n_items - 1)
@@ -76,7 +79,7 @@ class MaskItemSequence:
         item_seq = interaction[self.ITEM_SEQ]
         device = item_seq.device
         batch_size = item_seq.size(0)
-        n_items = dataset.num(self.POS_ITEM_ID)
+        n_items = dataset.num(self.ITEM_ID)
 
         sequence_instances = item_seq.cpu().numpy().tolist()
 
@@ -129,8 +132,8 @@ class MaskItemSequence:
 
         new_dict = {
             self.MASK_ITEM_SEQ: masked_item_sequence,
-            self.POS_ITEM_ID: pos_items,
-            self.NEG_ITEM_ID: neg_items,
+            self.POS_ITEMS: pos_items,
+            self.NEG_ITEMS: neg_items,
             self.MASK_INDEX: masked_index,
         }
         interaction.update(Interaction(new_dict))

@@ -273,8 +273,8 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         else:
             interaction = self._dataset[index]
             transformed_interaction = self.transform(self._dataset, interaction)
-            inter_num = len(interaction)
+            inter_num = len(transformed_interaction)
             positive_u = torch.arange(inter_num)
-            positive_i = interaction[self.iid_field]
+            positive_i = transformed_interaction[self.iid_field]
 
             return transformed_interaction, None, positive_u, positive_i

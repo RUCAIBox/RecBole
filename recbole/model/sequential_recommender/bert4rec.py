@@ -43,8 +43,10 @@ class BERT4Rec(SequentialRecommender):
 
         self.mask_ratio = config["mask_ratio"]
 
-        self.MASK_INDEX = config["MASK_INDEX"]
         self.MASK_ITEM_SEQ = config["MASK_ITEM_SEQ"]
+        self.POS_ITEMS = config["POS_ITEMS"]
+        self.NEG_ITEMS = config["NEG_ITEMS"]
+        self.MASK_INDEX = config["MASK_INDEX"]
 
         self.loss_type = config["loss_type"]
         self.initializer_range = config["initializer_range"]
@@ -150,8 +152,8 @@ class BERT4Rec(SequentialRecommender):
 
     def calculate_loss(self, interaction):
         masked_item_seq = interaction[self.MASK_ITEM_SEQ]
-        pos_items = interaction[self.POS_ITEM_ID]
-        neg_items = interaction[self.NEG_ITEM_ID]
+        pos_items = interaction[self.POS_ITEMS]
+        neg_items = interaction[self.NEG_ITEMS]
         masked_index = interaction[self.MASK_INDEX]
 
         seq_output = self.forward(masked_item_seq)
