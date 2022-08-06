@@ -75,7 +75,7 @@ def run_recbole(
     init_seed(config["seed"] + config["local_rank"], config["reproducibility"])
     model = get_model(config["model"])(config, train_data._dataset).to(config["device"])
     logger.info(model)
-    flops = get_flops(model, dataset, config["device"])
+    flops = get_flops(model, dataset, config["device"], logger)
     logger.info(set_color("FLOPs", "blue") + f": {flops}")
 
     # trainer loading and initialization
