@@ -80,6 +80,9 @@ class TestOverallConfig(unittest.TestCase):
             )
         )
 
+    def test_transform(self):
+        self.assertTrue(run_parms({"transform": None}))
+
     def test_eval_step(self):
         settings = {"epochs": 5}
         self.assertTrue(run_parms({"eval_step": [1, 2]}))
