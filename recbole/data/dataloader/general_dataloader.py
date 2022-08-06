@@ -67,7 +67,8 @@ class TrainDataLoader(NegSampleDataLoader):
     def collate_fn(self, index):
         index = np.array(index)
         data = self._dataset[index]
-        return self._neg_sampling(data)
+        transformed_data = self.transform(self._dataset, data)
+        return self._neg_sampling(transformed_data)
 
 
 class NegSampleEvalDataLoader(NegSampleDataLoader):
@@ -155,7 +156,8 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
 
             for idx, uid in enumerate(uid_list):
                 index = self.uid2index[uid]
-                data_list.append(self._neg_sampling(self._dataset[index]))
+                transformed_data = self.transform(self._dataset, self._dataset[index])
+                data_list.append(self._neg_sampling(transformed_data))
                 idx_list += [idx for i in range(self.uid2items_num[uid] * self.times)]
                 positive_u += [idx for i in range(self.uid2items_num[uid])]
                 positive_i = torch.cat(
@@ -169,7 +171,8 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
             return cur_data, idx_list, positive_u, positive_i
         else:
             data = self._dataset[index]
-            cur_data = self._neg_sampling(data)
+            transformed_data = self.transform(self._dataset, data)
+            cur_data = self._neg_sampling(transformed_data)
             return cur_data, None, None, None
 
 
@@ -269,8 +272,9 @@ class FullSortEvalDataLoader(AbstractDataLoader):
             return user_df, (history_u, history_i), positive_u, positive_i
         else:
             interaction = self._dataset[index]
+            transformed_interaction = self.transform(self._dataset, interaction)
             inter_num = len(interaction)
             positive_u = torch.arange(inter_num)
             positive_i = interaction[self.iid_field]
 
-            return interaction, None, positive_u, positive_i
+            return transformed_interaction, None, positive_u, positive_i

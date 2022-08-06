@@ -51,6 +51,7 @@ class TestConfigClass(unittest.TestCase):
         self.assertIsInstance(config["topk"], list)
         self.assertIsInstance(config["valid_metric"], str)
         self.assertIsInstance(config["eval_batch_size"], int)
+        self.assertIsInstance(config["transform"], str)
 
     def test_default_context_settings(self):
         config = Config(model="FM", dataset="ml-100k")

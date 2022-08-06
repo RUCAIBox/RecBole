@@ -20,6 +20,7 @@ import torch
 
 from recbole.data.interaction import Interaction
 from recbole.utils import InputType, FeatureType, FeatureSource
+from recbole.data.transform import construct_transform
 
 
 class AbstractDataLoader(torch.utils.data.DataLoader):
@@ -51,6 +52,7 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
         index_sampler = None
         self.generator = torch.Generator()
         self.generator.manual_seed(config["seed"])
+        self.transform = construct_transform(config)
         if not config["single_spec"]:
             index_sampler = torch.utils.data.distributed.DistributedSampler(
                 list(range(self.sample_size)), shuffle=shuffle, drop_last=False
