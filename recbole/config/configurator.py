@@ -412,6 +412,16 @@ class Config(object):
             "candidate_num": 0,
         }
 
+        if (
+            self.final_config_dict.get("neg_sampling", None) is not None
+            or self.final_config_dict.get("training_neg_sample_num", None) is not None
+        ):
+            logger = getLogger()
+            logger.warning(
+                "Warning: Parameter 'neg_sampling' or 'training_neg_sample_num' has been deprecated in the new version, "
+                "please use 'train_neg_sample_args' instead and check the API documentation for proper usage."
+            )
+
         if self.final_config_dict["train_neg_sample_args"] is not None:
             if not isinstance(self.final_config_dict["train_neg_sample_args"], dict):
                 raise ValueError(
@@ -449,6 +459,7 @@ class Config(object):
             )
 
     def _init_device(self):
+        self.final_config_dict["gpu_id"] = str(self.final_config_dict["gpu_id"])
         gpu_id = self.final_config_dict["gpu_id"]
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
         import torch

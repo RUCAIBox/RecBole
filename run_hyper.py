@@ -30,6 +30,7 @@ def hyperopt_tune(args):
         objective_function,
         algo="exhaustive",
         early_stop=10,
+        max_evals=100,
         params_file=args.params_file,
         fixed_config_file_list=config_file_list,
     )
