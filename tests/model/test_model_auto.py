@@ -587,7 +587,11 @@ class TestSequentialRecommender(unittest.TestCase):
         quick_test(config_dict)
 
     def test_shan(self):
-        config_dict = {"model": "SHAN", "train_neg_sample_args": None, "transform": "inverse_itemseq"}
+        config_dict = {
+            "model": "SHAN",
+            "train_neg_sample_args": None,
+            "transform": "inverse_itemseq",
+        }
         quick_test(config_dict)
 
     def test_shan_with_BPR_loss(self):
@@ -640,11 +644,20 @@ class TestSequentialRecommender(unittest.TestCase):
         quick_test(config_dict)
 
     def test_bert4rec(self):
-        config_dict = {"model": "BERT4Rec", "train_neg_sample_args": None, "transform": "mask_itemseq"}
+        config_dict = {
+            "model": "BERT4Rec",
+            "train_neg_sample_args": None,
+            "transform": "mask_itemseq",
+        }
         quick_test(config_dict)
 
     def test_bert4rec_with_BPR_loss_and_swish(self):
-        config_dict = {"model": "BERT4Rec", "loss_type": "BPR", "hidden_act": "swish", "transform": "mask_itemseq"}
+        config_dict = {
+            "model": "BERT4Rec",
+            "loss_type": "BPR",
+            "hidden_act": "swish",
+            "transform": "mask_itemseq",
+        }
         quick_test(config_dict)
 
     def test_lightsans(self):
