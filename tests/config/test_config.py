@@ -67,6 +67,7 @@ class TestConfigClass(unittest.TestCase):
             {
                 "distribution": "none",
                 "sample_num": "none",
+                "alpha": "none",
                 "dynamic": False,
                 "candidate_num": 0,
             },
