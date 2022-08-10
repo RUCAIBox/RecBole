@@ -24,6 +24,7 @@ learning_rate: 0.001            # (float) Learning rate.
 train_neg_sample_args:          # (dict) Negative sampling configuration for model training.
   distribution: uniform         # (str) The distribution of negative items.
   sample_num: 1                 # (int) The sampled num of negative items.
+  alpha: 1.0                    # (float) The power of sampling probability for popularity distribution.
   dynamic: False                # (bool) Whether to use dynamic negative sampling.
   candidate_num: 0              # (int) The number of candidate negative items when dynamic negative sampling.
 eval_step: 1                    # (int) The number of training epochs before an evaluation on the valid dataset.

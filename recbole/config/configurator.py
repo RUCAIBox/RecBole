@@ -408,6 +408,7 @@ class Config(object):
         default_train_neg_sample_args = {
             "distribution": "uniform",
             "sample_num": 1,
+            "alpha": 1.0,
             "dynamic": False,
             "candidate_num": 0,
         }
@@ -500,6 +501,7 @@ class Config(object):
             self.final_config_dict["train_neg_sample_args"] = {
                 "distribution": "none",
                 "sample_num": "none",
+                "alpha": "none",
                 "dynamic": False,
                 "candidate_num": 0,
             }
@@ -514,6 +516,7 @@ class Config(object):
                 self.final_config_dict["train_neg_sample_args"] = {
                     "distribution": "none",
                     "sample_num": "none",
+                    "alpha": "none",
                     "dynamic": False,
                     "candidate_num": 0,
                 }

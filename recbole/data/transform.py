@@ -218,7 +218,7 @@ class CropItemSequence:
 
 class ReorderItemSequence:
     """
-    Random crop for item sequence.
+    Reorder operation for item sequence.
     """
 
     def __init__(self, config):
