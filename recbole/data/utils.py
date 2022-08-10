@@ -158,7 +158,9 @@ def data_preparation(config, dataset):
             )
         else:
             kg_sampler = KGSampler(
-                dataset, config["train_neg_sample_args"]["distribution"], config["train_neg_sample_args"]["alpha"]
+                dataset,
+                config["train_neg_sample_args"]["distribution"],
+                config["train_neg_sample_args"]["alpha"],
             )
             train_data = get_dataloader(config, "train")(
                 config, train_dataset, train_sampler, kg_sampler, shuffle=True
@@ -278,11 +280,17 @@ def create_samplers(config, dataset, built_datasets):
     if train_neg_sample_args["distribution"] != "none":
         if not config["repeatable"]:
             sampler = Sampler(
-                phases, built_datasets, train_neg_sample_args["distribution"], train_neg_sample_args["alpha"]
+                phases,
+                built_datasets,
+                train_neg_sample_args["distribution"],
+                train_neg_sample_args["alpha"],
             )
         else:
             sampler = RepeatableSampler(
-                phases, dataset, train_neg_sample_args["distribution"], train_neg_sample_args["alpha"]
+                phases,
+                dataset,
+                train_neg_sample_args["distribution"],
+                train_neg_sample_args["alpha"],
             )
         train_sampler = sampler.set_phase("train")
 
@@ -290,11 +298,17 @@ def create_samplers(config, dataset, built_datasets):
         if sampler is None:
             if not config["repeatable"]:
                 sampler = Sampler(
-                    phases, built_datasets, eval_neg_sample_args["distribution"], train_neg_sample_args["alpha"]
+                    phases,
+                    built_datasets,
+                    eval_neg_sample_args["distribution"],
+                    train_neg_sample_args["alpha"],
                 )
             else:
                 sampler = RepeatableSampler(
-                    phases, dataset, eval_neg_sample_args["distribution"], train_neg_sample_args["alpha"]
+                    phases,
+                    dataset,
+                    eval_neg_sample_args["distribution"],
+                    train_neg_sample_args["alpha"],
                 )
         else:
             sampler.set_distribution(eval_neg_sample_args["distribution"])
