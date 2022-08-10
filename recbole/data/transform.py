@@ -12,8 +12,10 @@ from logging import getLogger
 from recbole.data.interaction import Interaction
 
 
-# 对batch数据的转换
 def construct_transform(config):
+    """
+    Transformation for batch data.
+    """
     if config["transform"] is None:
         logger = getLogger()
         logger.warning("Equal transform")

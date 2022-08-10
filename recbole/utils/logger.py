@@ -79,7 +79,9 @@ def init_logger(config):
     ensure_dir(model_name)
     config_str = "".join([str(key) for key in config.final_config_dict.values()])
     md5 = hashlib.md5(config_str.encode(encoding="utf-8")).hexdigest()[:6]
-    logfilename = "{}/{}-{}.log".format(config["model"], get_local_time(), md5)
+    logfilename = "{}/{}-{}-{}-{}.log".format(
+        config["model"], config["model"], config["dataset"], get_local_time(), md5
+    )
 
     logfilepath = os.path.join(LOGROOT, logfilename)
 
