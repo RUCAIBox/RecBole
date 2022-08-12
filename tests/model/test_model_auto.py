@@ -48,6 +48,7 @@ class TestGeneralRecommender(unittest.TestCase):
             "train_neg_sample_args": {
                 "distribution": "uniform",
                 "sample_num": 1,
+                "alpha": 1.0,
                 "dynamic": True,
                 "candidate_num": 2,
             },

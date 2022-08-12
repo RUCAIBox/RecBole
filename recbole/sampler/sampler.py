@@ -33,8 +33,9 @@ class AbstractSampler(object):
         used_ids (numpy.ndarray): The result of :meth:`get_used_ids`.
     """
 
-    def __init__(self, distribution):
+    def __init__(self, distribution, alpha):
         self.distribution = ""
+        self.alpha = alpha
         self.set_distribution(distribution)
         self.used_ids = self.get_used_ids()
 
@@ -74,15 +75,17 @@ class AbstractSampler(object):
         self.alias = self.prob.copy()
         large_q = []
         small_q = []
-
         for i in self.prob:
             self.alias[i] = -1
-            self.prob[i] = self.prob[i] / len(candidates_list) * len(self.prob)
+            self.prob[i] = self.prob[i] / len(candidates_list)
+            self.prob[i] = pow(self.prob[i], self.alpha)
+        normalize_count = sum(self.prob.values())
+        for i in self.prob:
+            self.prob[i] = self.prob[i] / normalize_count * len(self.prob)
             if self.prob[i] > 1:
                 large_q.append(i)
             elif self.prob[i] < 1:
                 small_q.append(i)
-
         while len(large_q) != 0 and len(small_q) != 0:
             l = large_q.pop(0)
             s = small_q.pop(0)
@@ -202,7 +205,7 @@ class Sampler(AbstractSampler):
         phase (str): the phase of sampler. It will not be set until :meth:`set_phase` is called.
     """
 
-    def __init__(self, phases, datasets, distribution="uniform"):
+    def __init__(self, phases, datasets, distribution="uniform", alpha=1.0):
         if not isinstance(phases, list):
             phases = [phases]
         if not isinstance(datasets, list):
@@ -221,7 +224,7 @@ class Sampler(AbstractSampler):
         self.user_num = datasets[0].user_num
         self.item_num = datasets[0].item_num
 
-        super().__init__(distribution=distribution)
+        super().__init__(distribution=distribution, alpha=alpha)
 
     def _get_candidates_list(self):
         candidates_list = []
@@ -306,7 +309,7 @@ class KGSampler(AbstractSampler):
         distribution (str, optional): Distribution of the negative entities. Defaults to 'uniform'.
     """
 
-    def __init__(self, dataset, distribution="uniform"):
+    def __init__(self, dataset, distribution="uniform", alpha=1.0):
         self.dataset = dataset
 
         self.hid_field = dataset.head_entity_field
@@ -317,7 +320,7 @@ class KGSampler(AbstractSampler):
         self.head_entities = set(dataset.head_entities)
         self.entity_num = dataset.entity_num
 
-        super().__init__(distribution=distribution)
+        super().__init__(distribution=distribution, alpha=alpha)
 
     def _uni_sampling(self, sample_num):
         return np.random.randint(1, self.entity_num, sample_num)
@@ -378,7 +381,7 @@ class RepeatableSampler(AbstractSampler):
         phase (str): the phase of sampler. It will not be set until :meth:`set_phase` is called.
     """
 
-    def __init__(self, phases, dataset, distribution="uniform"):
+    def __init__(self, phases, dataset, distribution="uniform", alpha=1.0):
         if not isinstance(phases, list):
             phases = [phases]
         self.phases = phases
@@ -388,7 +391,7 @@ class RepeatableSampler(AbstractSampler):
         self.user_num = dataset.user_num
         self.item_num = dataset.item_num
 
-        super().__init__(distribution=distribution)
+        super().__init__(distribution=distribution, alpha=alpha)
 
     def _uni_sampling(self, sample_num):
         return np.random.randint(1, self.item_num, sample_num)
@@ -451,14 +454,14 @@ class SeqSampler(AbstractSampler):
         distribution (str, optional): Distribution of the negative items. Defaults to 'uniform'.
     """
 
-    def __init__(self, dataset, distribution="uniform"):
+    def __init__(self, dataset, distribution="uniform", alpha=1.0):
         self.dataset = dataset
 
         self.iid_field = dataset.iid_field
         self.user_num = dataset.user_num
         self.item_num = dataset.item_num
 
-        super().__init__(distribution=distribution)
+        super().__init__(distribution=distribution, alpha=alpha)
 
     def _uni_sampling(self, sample_num):
         return np.random.randint(1, self.item_num, sample_num)
