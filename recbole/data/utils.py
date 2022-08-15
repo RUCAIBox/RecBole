@@ -86,8 +86,15 @@ def save_split_dataloaders(config, dataloaders):
     file_path = os.path.join(save_path, saved_dataloaders_file)
     logger = getLogger()
     logger.info(set_color("Saving split dataloaders into", "pink") + f": [{file_path}]")
+    Serialization_dataloaders = []
+    for dataloader in dataloaders:
+        generator_state = dataloader.generator.get_state()
+        dataloader.generator = None
+        dataloader.sampler.generator = None
+        Serialization_dataloaders += [(dataloader, generator_state)]
+        
     with open(file_path, "wb") as f:
-        pickle.dump(dataloaders, f)
+        pickle.dump(Serialization_dataloaders, f)
 
 
 def load_split_dataloaders(config):
@@ -109,7 +116,15 @@ def load_split_dataloaders(config):
     if not os.path.exists(dataloaders_save_path):
         return None
     with open(dataloaders_save_path, "rb") as f:
-        train_data, valid_data, test_data = pickle.load(f)
+        dataloaders = []
+        for data_loader, generator_state in pickle.load(f):
+            generator = torch.Generator()
+            generator.set_state(generator_state)
+            data_loader.generator = generator
+            data_loader.sampler.generator = generator
+            dataloaders.append(data_loader)    
+        
+        train_data, valid_data, test_data = dataloaders
     for arg in dataset_arguments + ["seed", "repeatable", "eval_args"]:
         if config[arg] != train_data.config[arg]:
             return None
