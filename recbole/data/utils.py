@@ -92,7 +92,7 @@ def save_split_dataloaders(config, dataloaders):
         dataloader.generator = None
         dataloader.sampler.generator = None
         Serialization_dataloaders += [(dataloader, generator_state)]
-        
+
     with open(file_path, "wb") as f:
         pickle.dump(Serialization_dataloaders, f)
 
@@ -122,8 +122,8 @@ def load_split_dataloaders(config):
             generator.set_state(generator_state)
             data_loader.generator = generator
             data_loader.sampler.generator = generator
-            dataloaders.append(data_loader)    
-        
+            dataloaders.append(data_loader)
+
         train_data, valid_data, test_data = dataloaders
     for arg in dataset_arguments + ["seed", "repeatable", "eval_args"]:
         if config[arg] != train_data.config[arg]:
