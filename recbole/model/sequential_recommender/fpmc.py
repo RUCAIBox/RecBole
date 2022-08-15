@@ -60,8 +60,10 @@ class FPMC(SequentialRecommender):
 
         if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
+        elif self.loss_type == "CE":
+            self.loss_fct = nn.CrossEntropyLoss()
         else:
-            raise NotImplementedError("Make sure 'loss_type' in ['BPR']!")
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
         self.apply(self._init_weights)
