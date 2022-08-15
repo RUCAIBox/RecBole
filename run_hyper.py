@@ -33,6 +33,7 @@ def hyperopt_tune(args):
         max_evals=100,
         params_file=args.params_file,
         fixed_config_file_list=config_file_list,
+        display_file=args.display_file
     )
     hp.run()
     hp.export_result(output_file=args.output_file)

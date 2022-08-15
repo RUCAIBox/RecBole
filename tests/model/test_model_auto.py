@@ -402,9 +402,7 @@ class TestSequentialRecommender(unittest.TestCase):
         quick_test(config_dict)
 
     def test_fpmc(self):
-        config_dict = {
-            "model": "FPMC",
-        }
+        config_dict = {"model": "FPMC"}
         quick_test(config_dict)
 
     def test_gru4rec(self):
