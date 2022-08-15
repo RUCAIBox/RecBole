@@ -402,8 +402,13 @@ class TestSequentialRecommender(unittest.TestCase):
         quick_test(config_dict)
 
     def test_fpmc(self):
+        config_dict = {"model": "FPMC", "train_neg_sample_args": None}
+        quick_test(config_dict)
+
+    def test_fpmc_with_BPR_loss(self):
         config_dict = {
             "model": "FPMC",
+            "loss_type": "BPR",
         }
         quick_test(config_dict)
 
