@@ -33,7 +33,7 @@ def hyperopt_tune(args):
         max_evals=100,
         params_file=args.params_file,
         fixed_config_file_list=config_file_list,
-        display_file=args.display_file
+        display_file=args.display_file,
     )
     hp.run()
     hp.export_result(output_file=args.output_file)
@@ -90,7 +90,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_file", type=str, default="hyper_example.result", help="output file"
     )
-    parser.add_argument("--display_file", type=str, default=None, help="visualization file")
+    parser.add_argument(
+        "--display_file", type=str, default=None, help="visualization file"
+    )
     parser.add_argument("--tool", type=str, default="Hyperopt", help="tuning tool")
     args, _ = parser.parse_known_args()
     if args.tool == "Hyperopt":
