@@ -7,7 +7,6 @@ import math
 import numpy as np
 import random
 import torch
-from logging import getLogger
 
 from recbole.data.interaction import Interaction
 
@@ -17,8 +16,6 @@ def construct_transform(config):
     Transformation for batch data.
     """
     if config["transform"] is None:
-        logger = getLogger()
-        logger.warning("Equal transform")
         return Equal(config)
     else:
         str2transform = {
@@ -32,6 +29,7 @@ def construct_transform(config):
             raise NotImplementedError(
                 f"There is no transform named '{config['transform']}'"
             )
+
         return str2transform[config["transform"]](config)
 
 
@@ -49,8 +47,6 @@ class MaskItemSequence:
     """
 
     def __init__(self, config):
-        self.logger = getLogger()
-        self.logger.info("Mask Item Sequence Transform in DataLoader.")
         self.ITEM_SEQ = config["ITEM_ID_FIELD"] + config["LIST_SUFFIX"]
         self.ITEM_ID = config["ITEM_ID_FIELD"]
         self.MASK_ITEM_SEQ = "Mask_" + self.ITEM_SEQ
@@ -149,8 +145,6 @@ class InverseItemSequence:
     """
 
     def __init__(self, config):
-        self.logger = getLogger()
-        self.logger.info("Inverse Item Sequence Transform in DataLoader.")
         self.ITEM_SEQ = config["ITEM_ID_FIELD"] + config["LIST_SUFFIX"]
         self.ITEM_SEQ_LEN = config["ITEM_LIST_LENGTH_FIELD"]
         self.INVERSE_ITEM_SEQ = "Inverse_" + self.ITEM_SEQ
@@ -180,8 +174,6 @@ class CropItemSequence:
     """
 
     def __init__(self, config):
-        self.logger = getLogger()
-        self.logger.info("Crop Item Sequence Transform in DataLoader.")
         self.ITEM_SEQ = config["ITEM_ID_FIELD"] + config["LIST_SUFFIX"]
         self.CROP_ITEM_SEQ = "Crop_" + self.ITEM_SEQ
         self.ITEM_SEQ_LEN = config["ITEM_LIST_LENGTH_FIELD"]
@@ -224,8 +216,6 @@ class ReorderItemSequence:
     """
 
     def __init__(self, config):
-        self.logger = getLogger()
-        self.logger.info("Reorder Item Sequence Transform in DataLoader.")
         self.ITEM_SEQ = config["ITEM_ID_FIELD"] + config["LIST_SUFFIX"]
         self.REORDER_ITEM_SEQ = "Reorder_" + self.ITEM_SEQ
         self.ITEM_SEQ_LEN = config["ITEM_LIST_LENGTH_FIELD"]
@@ -259,8 +249,7 @@ class ReorderItemSequence:
 
 class UserDefinedTransform:
     def __init__(self, config):
-        self.logger = getLogger()
-        self.logger.info("User-Defined Transform in DataLoader.")
+        pass
 
     def __call__(self, dataset, interaction):
         pass
