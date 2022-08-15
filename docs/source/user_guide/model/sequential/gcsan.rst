@@ -33,10 +33,10 @@ Running with RecBole
 
 - ``hidden_size (int)`` : The number of features in the hidden state. It is also the initial embedding size of item. Defaults to ``64``.
 - ``inner_size (int)`` : The inner hidden size in feed-forward layer. Defaults to ``256``.
-- ``n_layers (int)`` : The number of transformer layers in transformer encoder. Defaults to ``1``.
-- ``n_heads (int)`` : The number of attention heads for multi-head attention layer. Defaults to ``1``.
-- ``hidden_dropout_prob (float)`` : The probability of an element to be zeroed. Defaults to ``0.2``.
-- ``attn_dropout_prob (float)`` : The probability of an attention score to be zeroed. Defaults to ``0.2``.
+- ``n_layers (int)`` : The number of transformer layers in transformer encoder. Defaults to ``2``.
+- ``n_heads (int)`` : The number of attention heads for multi-head attention layer. Defaults to ``2``.
+- ``hidden_dropout_prob (float)`` : The probability of an element to be zeroed. Defaults to ``0.5``.
+- ``attn_dropout_prob (float)`` : The probability of an attention score to be zeroed. Defaults to ``0.5``.
 - ``hidden_act (str)`` : The activation function in feed-forward layer. Defaults to ``'gelu'``. Range in ``['gelu', 'relu', 'swish', 'tanh', 'sigmoid']``.
 - ``layer_norm_eps (float)`` : A value added to the denominator for numerical stability. Defaults to ``1e-12``.
 - ``initializer_range (float)`` : The standard deviation for normal initialization. Defaults to ``0.02``.
