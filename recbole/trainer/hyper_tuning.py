@@ -173,6 +173,7 @@ class HyperTuning(object):
         params_file=None,
         params_dict=None,
         fixed_config_file_list=None,
+        display_file=None,
         algo="exhaustive",
         max_evals=100,
         early_stop=10,
@@ -187,6 +188,7 @@ class HyperTuning(object):
         self.objective_function = objective_function
         self.max_evals = max_evals
         self.fixed_config_file_list = fixed_config_file_list
+        self.display_file = display_file
         if space:
             self.space = space
         elif params_file:
@@ -400,7 +402,7 @@ class HyperTuning(object):
         )
         fig = go.Figure(data=data, layout=layout)
 
-        plot(fig, filename="hyperparams_tuning.html")
+        plot(fig, filename=self.display_file)
 
     def run(self):
         r"""begin to search the best parameters"""
@@ -413,4 +415,5 @@ class HyperTuning(object):
             max_evals=self.max_evals,
             early_stop_fn=self.early_stop_fn,
         )
-        self.plot_hyper()
+        if self.display_file is not None:
+            self.plot_hyper()
