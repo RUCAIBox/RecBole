@@ -43,6 +43,7 @@ class FPMC(SequentialRecommender):
 
         # load parameters info
         self.embedding_size = config["embedding_size"]
+        self.loss_type = config["loss_type"]
 
         # load dataset info
         self.n_users = dataset.user_num
@@ -56,7 +57,11 @@ class FPMC(SequentialRecommender):
         self.LI_emb = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         # label embedding matrix
         self.IL_emb = nn.Embedding(self.n_items, self.embedding_size)
-        self.loss_fct = BPRLoss()
+
+        if self.loss_type == "BPR":
+            self.loss_fct = BPRLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR']!")
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -94,16 +99,23 @@ class FPMC(SequentialRecommender):
         return score
 
     def calculate_loss(self, interaction):
-        user = interaction[self.USER_ID]
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        seq_output = self.forward(item_seq, item_seq_len)
         pos_items = interaction[self.POS_ITEM_ID]
-        neg_items = interaction[self.NEG_ITEM_ID]
-
-        pos_score = self.forward(user, item_seq, item_seq_len, pos_items)
-        neg_score = self.forward(user, item_seq, item_seq_len, neg_items)
-        loss = self.loss_fct(pos_score, neg_score)
-        return loss
+        if self.loss_type == "BPR":
+            neg_items = interaction[self.NEG_ITEM_ID]
+            pos_items_emb = self.item_embedding(pos_items)
+            neg_items_emb = self.item_embedding(neg_items)
+            pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)  # [B]
+            neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)  # [B]
+            loss = self.loss_fct(pos_score, neg_score)
+            return loss
+        else:  # self.loss_type = 'CE'
+            test_item_emb = self.item_embedding.weight
+            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
+            loss = self.loss_fct(logits, pos_items)
+            return loss
 
     def predict(self, interaction):
         user = interaction[self.USER_ID]
