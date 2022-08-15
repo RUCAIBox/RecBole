@@ -89,7 +89,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output_file", type=str, default="hyper_example.result", help="output file"
     )
-    parser.add_argument("--tool", type=str, default="hyperopt", help="tuning tool")
+    parser.add_argument("--tool", type=str, default="Hyperopt", help="tuning tool")
     args, _ = parser.parse_known_args()
     if args.tool == "Hyperopt":
         hyperopt_tune(args)
