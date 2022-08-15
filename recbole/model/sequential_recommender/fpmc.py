@@ -43,6 +43,7 @@ class FPMC(SequentialRecommender):
 
         # load parameters info
         self.embedding_size = config["embedding_size"]
+        self.loss_type = config["loss_type"]
 
         # load dataset info
         self.n_users = dataset.user_num
@@ -56,7 +57,11 @@ class FPMC(SequentialRecommender):
         self.LI_emb = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         # label embedding matrix
         self.IL_emb = nn.Embedding(self.n_items, self.embedding_size)
-        self.loss_fct = BPRLoss()
+
+        if self.loss_type == "BPR":
+            self.loss_fct = BPRLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR']!")
 
         # parameters initialization
         self.apply(self._init_weights)
