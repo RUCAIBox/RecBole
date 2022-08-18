@@ -27,6 +27,7 @@ from recbole.data import (
     save_split_dataloaders,
     load_split_dataloaders,
 )
+from recbole.data.transform import construct_transform
 from recbole.utils import (
     init_logger,
     get_model,
@@ -75,7 +76,9 @@ def run_recbole(
     init_seed(config["seed"] + config["local_rank"], config["reproducibility"])
     model = get_model(config["model"])(config, train_data._dataset).to(config["device"])
     logger.info(model)
-    flops = get_flops(model, dataset, config["device"], logger)
+
+    transform = construct_transform(config)
+    flops = get_flops(model, dataset, config["device"], logger, transform)
     logger.info(set_color("FLOPs", "blue") + f": {flops}")
 
     # trainer loading and initialization
