@@ -245,7 +245,7 @@ def get_gpu_usage(device=None):
     return "{:.2f} G/{:.2f} G".format(reserved, total)
 
 
-def get_flops(model, dataset, device, logger, verbose=False):
+def get_flops(model, dataset, device, logger, transform, verbose=False):
     r"""Given a model and dataset to the model, compute the per-operator flops
     of the given model.
     Args:
@@ -287,6 +287,7 @@ def get_flops(model, dataset, device, logger, verbose=False):
     }
     wrapper = TracingAdapter(model)
     inter = dataset[torch.tensor([1])].to(device)
+    inter = transform(dataset, inter)
     inputs = (inter,)
     from thop.profile import register_hooks
     from thop.vision.basic_hooks import count_parameters
