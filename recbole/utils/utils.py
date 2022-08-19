@@ -262,6 +262,10 @@ def get_flops(model, dataset, device, logger, transform, verbose=False):
     if model.__class__.__name__ == "Pop":
         return 1
 
+    import copy
+
+    model = copy.deepcopy(model)
+
     def count_normalization(m, x, y):
         x = x[0]
         flops = torch.DoubleTensor([2 * x.numel()])
