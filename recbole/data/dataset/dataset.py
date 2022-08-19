@@ -763,8 +763,10 @@ class Dataset(torch.utils.data.Dataset):
                                 arr = np.ones_like(arr) * bucket
 
                         elif method == "LD":  # Logarithm Discretization
-                            arr = np.floor(np.log(arr) ** 2 + 1)
-
+                            mask = arr > 2
+                            x = np.floor(np.log(arr * mask + 1e-9) ** 2 + 1)
+                            x = np.where(mask, x, arr)
+                            _, arr = np.unique(x, return_inverse=True)
                         else:
                             raise ValueError(f"Method [{method}] does not exist.")
 
