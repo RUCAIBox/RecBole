@@ -460,7 +460,10 @@ class Config(object):
             )
 
     def _init_device(self):
-        self.final_config_dict["gpu_id"] = str(self.final_config_dict["gpu_id"])
+        if isinstance(self.final_config_dict["gpu_id"], tuple):
+            self.final_config_dict["gpu_id"] = ','.join(map(str,list(self.final_config_dict["gpu_id"])))
+        else:
+            self.final_config_dict["gpu_id"] = str(self.final_config_dict["gpu_id"])
         gpu_id = self.final_config_dict["gpu_id"]
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
         import torch
@@ -494,7 +497,6 @@ class Config(object):
                 self.final_config_dict["state"] = "error"
                 self.final_config_dict["show_progress"] = False
                 self.final_config_dict["verbose"] = False
-
     def _set_train_neg_sample_args(self):
         train_neg_sample_args = self.final_config_dict["train_neg_sample_args"]
         if train_neg_sample_args is None or train_neg_sample_args == "None":
