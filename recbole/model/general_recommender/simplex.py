@@ -39,7 +39,7 @@ class SimpleX(GeneralRecommender):
     def __init__(self, config, dataset):
         super(SimpleX, self).__init__(config, dataset)
 
-        # Get user transaction history
+        # Get user history interacted items
         self.history_item_id, _, self.history_item_len = dataset.history_item_matrix(max_history_len=config["history_len"])
         self.history_item_id = self.history_item_id.to(self.device)
         self.history_item_len = self.history_item_len.to(self.device)
