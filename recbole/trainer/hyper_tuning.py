@@ -114,6 +114,7 @@ def exhaustive_search(new_ids, domain, trials, seed, nbMaxSucessiveFailures=1000
     )
 
     rng = np.random.RandomState(seed)
+    # rng = np.random.default_rng(seed)
     rval = []
     for _, new_id in enumerate(new_ids):
         newSample = False
