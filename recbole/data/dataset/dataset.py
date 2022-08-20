@@ -1954,7 +1954,7 @@ class Dataset(torch.utils.data.Dataset):
             self.inter_feat, self.uid_field, self.iid_field, form, value_field
         )
 
-    def _history_matrix(self, row, value_field=None ,max_history_len=None):
+    def _history_matrix(self, row, value_field=None, max_history_len=None):
         """Get dense matrix describe user/item's history interaction records.
 
         ``history_matrix[i]`` represents ``i``'s history interacted item_id.
@@ -1981,7 +1981,7 @@ class Dataset(torch.utils.data.Dataset):
         """
         self._check_field("uid_field", "iid_field")
 
-        inter_feat= copy.deepcopy(self.inter_feat)
+        inter_feat = copy.deepcopy(self.inter_feat)
         inter_feat.shuffle()
         user_ids, item_ids = (
             inter_feat[self.uid_field].numpy(),
@@ -2007,9 +2007,9 @@ class Dataset(torch.utils.data.Dataset):
         for row_id in row_ids:
             history_len[row_id] += 1
 
-        max_inter_num=np.max(history_len)
+        max_inter_num = np.max(history_len)
         if max_history_len is not None:
-            col_num= min(max_history_len, max_inter_num)
+            col_num = min(max_history_len, max_inter_num)
         else:
             col_num = max_inter_num
 
@@ -2060,7 +2060,9 @@ class Dataset(torch.utils.data.Dataset):
                 - History values matrix (torch.Tensor): ``history_value`` described above.
                 - History length matrix (torch.Tensor): ``history_len`` described above.
         """
-        return self._history_matrix(row="user", value_field=value_field, max_history_len=max_history_len)
+        return self._history_matrix(
+            row="user", value_field=value_field, max_history_len=max_history_len
+        )
 
     def history_user_matrix(self, value_field=None, max_history_len=None):
         """Get dense matrix describe item's history interaction records.
@@ -2087,7 +2089,9 @@ class Dataset(torch.utils.data.Dataset):
                 - History values matrix (torch.Tensor): ``history_value`` described above.
                 - History length matrix (torch.Tensor): ``history_len`` described above.
         """
-        return self._history_matrix(row="item", value_field=value_field, max_history_len=max_history_len)
+        return self._history_matrix(
+            row="item", value_field=value_field, max_history_len=max_history_len
+        )
 
     def get_preload_weight(self, field):
         """Get preloaded weight matrix, whose rows are sorted by token ids.

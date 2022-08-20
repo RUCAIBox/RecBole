@@ -40,10 +40,11 @@ class SimpleX(GeneralRecommender):
         super(SimpleX, self).__init__(config, dataset)
 
         # Get user history interacted items
-        self.history_item_id, _, self.history_item_len = dataset.history_item_matrix(max_history_len=config["history_len"])
+        self.history_item_id, _, self.history_item_len = dataset.history_item_matrix(
+            max_history_len=config["history_len"]
+        )
         self.history_item_id = self.history_item_id.to(self.device)
         self.history_item_len = self.history_item_len.to(self.device)
-
 
         # load parameters info
         self.embedding_size = config["embedding_size"]
@@ -57,7 +58,7 @@ class SimpleX(GeneralRecommender):
             raise ValueError(
                 "aggregator must be mean, user_attention or self_attention"
             )
-        self.history_len = torch.max(self.history_item_len,dim=0)
+        self.history_len = torch.max(self.history_item_len, dim=0)
 
         # user embedding matrix
         self.user_emb = nn.Embedding(self.n_users, self.embedding_size)
