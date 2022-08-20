@@ -39,10 +39,11 @@ class SimpleX(GeneralRecommender):
     def __init__(self, config, dataset):
         super(SimpleX, self).__init__(config, dataset)
 
-        # Get user transaction history
-        self.history_item_id, _, self.history_item_len = dataset.history_item_matrix()
+        # Get user history interacted items
+        self.history_item_id, _, self.history_item_len = dataset.history_item_matrix(max_history_len=config["history_len"])
         self.history_item_id = self.history_item_id.to(self.device)
         self.history_item_len = self.history_item_len.to(self.device)
+
 
         # load parameters info
         self.embedding_size = config["embedding_size"]
@@ -56,7 +57,7 @@ class SimpleX(GeneralRecommender):
             raise ValueError(
                 "aggregator must be mean, user_attention or self_attention"
             )
-        self.history_len = min(config["history_len"], self.history_item_len.shape[0])
+        self.history_len = torch.max(self.history_item_len,dim=0)
 
         # user embedding matrix
         self.user_emb = nn.Embedding(self.n_users, self.embedding_size)
@@ -206,14 +207,10 @@ class SimpleX(GeneralRecommender):
         user = user[0:user_number]
         # historical transaction record
         history_item = self.history_item_id[user]
-        history_item = history_item[:, : self.history_len]
         # positive item's id
         pos_item = pos_item[0:user_number]
         # history_len
         history_len = self.history_item_len[user]
-        history_len = torch.minimum(
-            history_len, torch.zeros(1, device=self.device) + self.history_len
-        )
 
         loss = self.forward(user, pos_item, history_item, history_len, neg_item_seq)
         return loss
@@ -221,11 +218,7 @@ class SimpleX(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         history_item = self.history_item_id[user]
-        history_item = history_item[:, : self.history_len]
         history_len = self.history_item_len[user]
-        history_len = torch.minimum(
-            history_len, torch.zeros(1, device=self.device) + self.history_len
-        )
         test_item = interaction[self.ITEM_ID]
 
         # [user_num, embedding_size]
@@ -244,11 +237,7 @@ class SimpleX(GeneralRecommender):
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
         history_item = self.history_item_id[user]
-        history_item = history_item[:, : self.history_len]
         history_len = self.history_item_len[user]
-        history_len = torch.minimum(
-            history_len, torch.zeros(1, device=self.device) + self.history_len
-        )
 
         # [user_num, embedding_size]
         user_e = self.user_emb(user)
