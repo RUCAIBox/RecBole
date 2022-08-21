@@ -111,7 +111,7 @@ precision training. Mixed precision training offers significant
 computational speedup by performing operations in half-precision
 format, while storing minimal information in single-precision to
 retain as much information as possible in critical parts of the
-network. Let's give an example based on torch ``torch.cuda.amp``. To
+network. Let's give an example based on torch ``torch.autocast``. To
 begin with, we need to create a new class for ``NewTrainer`` based on
 ``Trainer``.
 
@@ -133,7 +133,7 @@ Then we revise ``_train_epoch()``.
       for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
-            with amp.autocast(enabled=self.enable_amp):
+            with torch.autocast(device_type=self.device.type, enabled=self.enable_amp):
                 losses = loss_func(interaction)
             total_loss = losses.item() if total_loss is None else total_loss + losses.item()
             scaler.scale(loss).backward()
@@ -156,12 +156,19 @@ Complete Code
       for batch_idx, interaction in enumerate(iter_data):
             interaction = interaction.to(self.device)
             self.optimizer.zero_grad()
-            with amp.autocast(enabled=self.enable_amp):
+            with torch.autocast(device_type=self.device.type, enabled=self.enable_amp):
                 losses = loss_func(interaction)
             total_loss = losses.item() if total_loss is None else total_loss + losses.item()
             scaler.scale(loss).backward()
             scaler.step(self.optimizer)
             scaler.update()        
+
+There are two points to note: 
+1. ``GradScaler`` can only be used on GPU, while ``torch.autocast`` can be used both on CPU and GPU. 
+2. Some models whose loss value is too large will cause overflow (e.g., Caser, CDAE,DIEN), 
+and these models are not suitable for mixed precision training. 
+If you see errors like "RuntimeError: Function 'xxx' returned nan values", 
+please disable mixed precision training by setting ``enable_amp`` and ``enable_scaler`` to False.
 
 3. Layer-specific learning rate
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
