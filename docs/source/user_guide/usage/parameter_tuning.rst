@@ -214,6 +214,16 @@ Run like:
 
     python run_hyper.py --config_files=[config_files] --output_file=[output_file] --tool=Ray
 
+Note that when using Ray to tune parameters, the working directory will become the ``local_dir`` which is set in ``run_hyper.py``, 
+so you need to set the absolute path of the dataset in the config file.
+For example:
+
+.. code:: yaml
+
+    dataset: ml-100k
+    model: BPR
+    data_path: /home/user/RecBole/dataset
+    
 A simple example is to search the :attr:`learning_rate` and :attr:`embedding_size` in BPR, that is,
 
 .. code:: bash
