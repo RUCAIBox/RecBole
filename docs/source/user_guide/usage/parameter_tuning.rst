@@ -165,10 +165,10 @@ After running, we will also generate an HTML file, which contains a line chart t
     :align: center
 
 To begin with ray, the user has to  initialize ray in the running pyhton file(e.g., `run_hyper.py`):
+
 .. code:: python
 
    import ray
-
    ray.init()
 
 Similar to Hyperopt, ray also requires :attr:`objective_function` as optimization target.
@@ -196,17 +196,22 @@ Calling :attr:`tune.run` for analyzing result like:
     from ray import tune
 
     result = tune.run(
-        tune.with_parameters(objective_function,
-                             config_file_list=config_file_list),
+        tune.with_parameters(objective_function, config_file_list=config_file_list),
         config=config,
         num_samples=5,
         log_to_file=args.output_file,
         scheduler=scheduler,
-        local_dir=local_dir)
-
+        local_dir=local_dir,
+        resources_per_trial={
+            "gpu": 1
+        }
+    )
     best_trial = result.get_best_trial("recall@10", "max", "last")
     print("best params: ",best_trial.config)
     print("best result: ",best_trial.last_result)
+
+To leverage GPUs, you must set :attr:`gpu` in :attr:`resources_per_trial`. 
+This will automatically set :attr:`CUDA_VISIBLE_DEVICES` for each trial. 
 
 Run like:
 
@@ -253,10 +258,10 @@ A simple example is to search the :attr:`learning_rate` and :attr:`embedding_siz
     best result:  {'recall@10': 0.2148, 'mrr@10': 0.4161, 'ndcg@10': 0.2489, 'hit@10': 0.7444, 'precision@10': 0.1761, 'time_this_iter_s': 227.5052626132965, 'done': True, 'timesteps_total': None, 'episodes_total': None, 'training_iteration': 1, 'trial_id': '16400_00003', 'experiment_id': '3864900644e743d5b75c67a2e904183a', 'date': '2022-07-23_22-34-59', 'timestamp': 1658586899, 'time_total_s': 227.5052626132965, 'pid': 21448, 'hostname': 'aibox-94', 'node_ip': '183.174.228.94', 'config': {'embedding_size': 8, 'learning_rate': 0.004562228847261371}, 'time_since_restore': 227.5052626132965, 'timesteps_since_restore': 0, 'iterations_since_restore': 1, 'warmup_time': 0.004939079284667969, 'experiment_tag': '3_embedding_size=8,learning_rate=0.0046'}
 
 Users can use ray distributed tuning by changing :attr:`ray.init` as follows:
+
 .. code:: python
 
     import ray
-
     ray.init(address='auto')
 
 For details, please refer to Ray's official website https://docs.ray.io .
