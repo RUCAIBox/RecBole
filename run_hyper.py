@@ -17,6 +17,7 @@ from recbole.quick_start import objective_function
 import ray
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
+import math
 
 
 def hyperopt_tune(args):
@@ -52,13 +53,38 @@ def ray_tune(args):
         if args.config_files
         else None
     )
-
+    params_file = (
+        os.path.join(os.getcwd(), args.params_file) if args.params_file else None
+    )
     ray.init()
     tune.register_trainable("train_func", objective_function)
-    config = {
-        "embedding_size": tune.sample_from(lambda _: 2 ** np.random.randint(3, 4)),
-        "learning_rate": tune.loguniform(1e-4, 1e-1),
-    }
+    config = {}
+    with open(params_file, "r") as fp:
+        for line in fp:
+            para_list = line.strip().split(" ")
+            if len(para_list) < 3:
+                continue
+            para_name, para_type, para_value = (
+                para_list[0],
+                para_list[1],
+                "".join(para_list[2:]),
+            )
+            if para_type == "choice":
+                para_value = eval(para_value)
+                config[para_name] = tune.choice(para_value)
+            elif para_type == "uniform":
+                low, high = para_value.strip().split(",")
+                config[para_name] = tune.uniform(float(low), float(high))
+            elif para_type == "quniform":
+                low, high, q = para_value.strip().split(",")
+                config[para_name] = tune.quniform(float(low), float(high), float(q))
+            elif para_type == "loguniform":
+                low, high = para_value.strip().split(",")
+                config[para_name] = tune.loguniform(
+                    math.exp(float(low)), math.exp(float(high))
+                )
+            else:
+                raise ValueError("Illegal param type [{}]".format(para_type))
     # choose different schedulers to use different tuning optimization algorithms
     # For details, please refer to Ray's official website https://docs.ray.io
     scheduler = ASHAScheduler(
@@ -73,6 +99,7 @@ def ray_tune(args):
         log_to_file=args.output_file,
         scheduler=scheduler,
         local_dir=local_dir,
+        resources_per_trial={"gpu": 1},
     )
 
     best_trial = result.get_best_trial("recall@10", "max", "last")
