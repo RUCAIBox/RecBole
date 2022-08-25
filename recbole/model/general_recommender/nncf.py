@@ -330,8 +330,8 @@ class NNCF(GeneralRecommender):
                 mask = np.random.randint(0, len(neigh_list), size=self.neigh_num)
                 i_neigh.append(neigh_list[mask])
 
-        u_neigh = torch.tensor(u_neigh, device=self.device)
-        i_neigh = torch.tensor(i_neigh, device=self.device)
+        u_neigh = torch.tensor(np.array(u_neigh), device=self.device)
+        i_neigh = torch.tensor(np.array(i_neigh), device=self.device)
         return u_neigh, i_neigh
 
     # Get neighborhood embeddings
