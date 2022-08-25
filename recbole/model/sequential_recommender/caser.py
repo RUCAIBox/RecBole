@@ -151,7 +151,7 @@ class Caser(SequentialRecommender):
         loss_conv_h = 0
         for name, parm in self.conv_h.named_parameters():
             if name.endswith("weight"):
-                loss_conv_h = loss_conv_h + loss_conv_h * parm.norm(2)
+                loss_conv_h = loss_conv_h + parm.norm(2)
         return self.reg_weight * loss_conv_h
 
     def calculate_loss(self, interaction):
