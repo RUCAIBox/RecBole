@@ -56,7 +56,7 @@ class AutoInt(ContextRecommender):
         self.attn_fc = torch.nn.Linear(self.atten_output_dim, 1)
         self.deep_predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         if self.has_residual:
-            self.v_res_res_embedding = torch.nn.Linear(
+            self.v_res_embedding = torch.nn.Linear(
                 self.embedding_size, self.attention_size
             )
 
