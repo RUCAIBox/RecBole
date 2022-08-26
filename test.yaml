@@ -1,2 +1,0 @@
-load_col:
-  inter: ['user_id','item_id','rating',"timestamp"]
