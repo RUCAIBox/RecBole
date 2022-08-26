@@ -165,7 +165,7 @@ class FieldAwareFactorizationMachine(nn.Module):
         # init float field-aware embeddings if there is float type of features.
         if len(self.float_feature_names) > 0:
             self.num_float_features = len(self.float_feature_names)
-            self.float_embeddings = nn.Embedding(np.sum(self.token_feature_dims, dtype=np.int32), self.embed_dim)
+            # self.float_embeddings = nn.Embedding(np.sum(self.token_feature_dims, dtype=np.int32), self.embed_dim)
             self.float_embeddings = torch.nn.ModuleList([
                 nn.Embedding(self.num_float_features, self.embed_dim) for _ in range(self.num_fields)
             ])
