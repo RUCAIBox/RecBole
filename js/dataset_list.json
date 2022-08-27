@@ -1,0 +1,28 @@
+{
+  "data": [
+      {
+          "sn": "1",
+          "dataset": "MovieLens",
+          "dataset_link": "https://github.com/RUCAIBox/RecDatasets/tree/master/dataset_info/MovieLens",
+          "user_num": "-",
+          "item_num": "-",
+          "inter_num": "-",
+          "sparsity": "-",
+          "type": "Rating",
+          "link_name": "scipt",
+          "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/MovieLens.md"
+      },
+      {
+          "sn": "2",
+          "dataset": "Anime",
+          "dataset_link": "",
+          "user_num": "73,515",
+          "item_num": "11,200",
+          "inter_num": "7,813,737",
+          "sparsity": "99.05%",
+          "type": "Rating [-1, 1-10]",
+          "link_name": "scipt",
+          "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Anime.md"
+      }
+  ]
+}

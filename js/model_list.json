@@ -1,0 +1,31 @@
+{
+  "data": [
+      {
+          "category": "General Recommendation",
+          "year": "2020",
+          "pub": "SIGIR'20",
+          "model": "LightGCN",
+          "model_link": "/docs/user_guide/model/general/lightgcn.html",
+          "paper": "LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation",
+          "paper_link": "https://doi.org/10.1145/3397271.3401063",
+          "authors": "Xiangnan He, Kuan Deng, Xiang Wang, Yan Li, YongDong Zhang and Meng Wang",
+          "ref_code": "https://github.com/kuandeng/LightGCN",
+          "repository": "RecBole",
+          "repo_link": "https://github.com/RUCAIBox/RecBole"
+      },
+      {
+          "category": "Sequential Recommendation",
+          "cate_link": "/docs/user_guide/model_intro.html#sequential-recommendation",
+          "year": "2018",
+          "pub": "ICDM'18",
+          "model": "SASRec",
+          "model_link": "/docs/user_guide/model/sequential/sasrec.html",
+          "paper": "Self-Attentive Sequential Recommendation",
+          "paper_link": "https://doi.org/10.1109/ICDM.2018.00035",
+          "authors": "Wang-Cheng Kang and Julian McAuley",
+          "ref_code": "https://github.com/kang205/SASRec",
+          "repository": "RecBole",
+          "repo_link": "https://github.com/RUCAIBox/RecBole"
+      }
+  ]
+}
