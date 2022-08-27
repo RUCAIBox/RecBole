@@ -163,12 +163,18 @@ Complete Code
             scaler.step(self.optimizer)
             scaler.update()        
 
-There are two points to note: 
-1. ``GradScaler`` can only be used on GPU, while ``torch.autocast`` can be used both on CPU and GPU. 
-2. Some models whose loss value is too large will cause overflow (e.g., Caser, CDAE,DIEN), 
-and these models are not suitable for mixed precision training. 
-If you see errors like "RuntimeError: Function 'xxx' returned nan values", 
-please disable mixed precision training by setting ``enable_amp`` and ``enable_scaler`` to False.
+There are some points to note: 
+
+1. ``GradScaler`` can only be used on GPU, while ``torch.autocast`` can be used both on CPU and GPU.
+
+2.  Some models whose loss value is too large will cause overflow (e.g., Caser, CDAE,DIEN),
+    and these models are not suitable for mixed precision training.
+    If you see errors like "RuntimeError: Function 'xxx' returned nan values",
+    please disable mixed precision training by setting ``enable_amp`` and ``enable_scaler`` to False.
+
+3.  Because pytorch does not support single-precision sparse matrix multiplication, models using ``torch.sparse.mm``, 
+    including NGCF, DMF, GCMC, LightGCN, NCL, SGL, SpectralCF and KGAT cannot be trained with mixed precision.
+
 
 3. Layer-specific learning rate
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
