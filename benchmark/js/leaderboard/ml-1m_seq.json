@@ -7,6 +7,11 @@
           "model_link": "/docs/user_guide/model/sequential/sasrec.html",
           "ref_code": "https://github.com/kang205/SASRec",
           "hyper_md": "https://github.com/RUCAIBox/RecBole/benchmark/hyper/sequential/SASRec-ml-1m_seq.md",
+          "recall10": 0.2468,
+          "mrr10": 0.0929,
+          "ndcg10": 0.1286,
+          "hit10": 0.2468,
+          "precision10": 0.0247,
           "contributor": "Hui Wang",
           "contributor_email": "hui.wang@ruc.edu.cn"
       },
@@ -17,6 +22,11 @@
           "model_link": "https://recbole.io/docs/user_guide/model/sequential/gru4rec.html",
           "ref_code": "",
           "hyper_md": "https://github.com/RUCAIBox/RecBole/benchmark/hyper/sequential/GRU4Rec-ml-1m_seq.md",
+          "recall10": 0.2776,
+          "mrr10": 0.1171,
+          "ndcg10": 0.1545,
+          "hit10": 0.2776,
+          "precision10": 0.0278,
           "contributor": "Yujie Lu",
           "contributor_email": "yujielu1998@gmail.com"
       }
