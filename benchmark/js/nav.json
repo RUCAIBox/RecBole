@@ -1,0 +1,88 @@
+[
+  {
+      "name":"Benchmark",
+      "link":"./"
+  },
+  {
+      "name":"Homepage",
+      "link":"https://recbole.io",
+      "mode":1
+  },
+  {
+      "name":"Github Repo",
+      "link":"https://github.com/RUCAIBox/RecBole",
+      "mode":1
+  },
+  {
+      "name": "General",
+      "type": "ul",
+      "data": [
+          {
+              "name":"MovieLens-1m",
+              "link":"./general/ml-1m_gen.html"
+          },
+          {
+              "name":"Amazon-Books(2018)",
+              "link":"./general/amazon-books_gen.html"
+          },
+          {
+              "name":"Yelp2022",
+              "link":"./general/yelp2022_gen.html"
+          }
+      ]
+  },
+  {
+      "name": "Sequential",
+      "type": "ul",
+      "data": [
+          {
+              "name":"MovieLens-1m",
+              "link":"./sequential/ml-1m_seq.html"
+          },
+          {
+              "name":"Amazon-Books(2018)",
+              "link":"./sequential/amazon-books_seq.html"
+          },
+          {
+              "name":"Yelp2022",
+              "link":"./sequential/yelp2022_seq.html"
+          }
+      ]
+  },
+  {
+      "name": "Context-aware",
+      "type": "ul",
+      "data": [
+          {
+              "name":"MovieLens-1m",
+              "link":"./context/ml-1m_context.html"
+          },
+          {
+              "name":"Avazu-2m",
+              "link":"./context/avazu-2m_context.html"
+          },
+          {
+              "name":"Criteo-4m",
+              "link":"./context/criteo-4m_seq.html"
+          }
+      ]
+  },
+  {
+      "name": "Knowledge-aware",
+      "type": "ul",
+      "data": [
+          {
+              "name":"MovieLens-1m",
+              "link":"./kg/ml-1m_kg.html"
+          },
+          {
+              "name":"Amazon-Books(2018)",
+              "link":"./kg/amazon-books_kg.html"
+          },
+          {
+              "name":"Lastfm-track",
+              "link":"./kg/lastfm-track_kg.html"
+          }
+      ]
+  }
+]
