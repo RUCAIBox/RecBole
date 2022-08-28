@@ -1,0 +1,24 @@
+{
+  "data": [
+      {
+          "year": "2018",
+          "pub": "ICDM'18",
+          "model": "SASRec",
+          "model_link": "/docs/user_guide/model/sequential/sasrec.html",
+          "ref_code": "https://github.com/kang205/SASRec",
+          "hyper_md": "https://github.com/RUCAIBox/RecBole/benchmark/hyper/sequential/SASRec-ml-1m_seq.md",
+          "contributor": "Hui Wang",
+          "contributor_email": "hui.wang@ruc.edu.cn"
+      },
+      {
+          "year": "2016",
+          "pub": "DLRS'16",
+          "model": "GRU4Rec",
+          "model_link": "https://recbole.io/docs/user_guide/model/sequential/gru4rec.html",
+          "ref_code": "",
+          "hyper_md": "https://github.com/RUCAIBox/RecBole/benchmark/hyper/sequential/GRU4Rec-ml-1m_seq.md",
+          "contributor": "Yujie Lu",
+          "contributor_email": "yujielu1998@gmail.com"
+      }
+  ]
+}
