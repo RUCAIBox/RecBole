@@ -45,7 +45,7 @@ Quick Start with RecBole
 **Model Hyper-Parameters:**
 
 - ``mixed (bool)`` : The structure of cross network. Defaults to ``False``.
-- ``structure (string)`` : The combination method between cross network and deep network. Defaults to ``parallel``.
+- ``structure (string)`` : The combination method between cross network and deep network. Defaults to ``stacked``.
 - ``cross_layer_num (int)`` : The number of cross layers. Defaults to ``3``.
 - ``expert_num (int)`` : The number of experts in mixed cross network. Defaults to ``4``.
 - ``low_rank (int)`` : The embedding size of features. Defaults to ``128``.
