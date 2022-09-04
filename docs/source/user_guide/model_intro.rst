@@ -68,6 +68,7 @@ are also support for these models. And evaluation is always conducted in the way
    model/context/din
    model/context/dien
    model/context/dcn
+   model/context/dcnv2
    model/context/autoint
    model/context/xgboost
    model/context/lightgbm
