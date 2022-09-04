@@ -103,7 +103,7 @@
           "cate_link": "/docs/user_guide/model_intro.html#sequential-recommendation",
           "year": "2016",
           "pub": "ICDM'16",
-          "model": "Fossil",
+          "model": "FOSSIL",
           "model_link": "/docs/user_guide/model/sequential/fossil.html",
           "paper": "Fusing Similarity Models with Markov Chains for Sparse Sequential Recommendation",
           "paper_link": "https://ieeexplore.ieee.org/abstract/document/7837843",
