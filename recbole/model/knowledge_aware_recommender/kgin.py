@@ -35,12 +35,21 @@ class Aggregator(nn.Module):
     Relational Path-aware Convolution Network
     """
 
-    def __init__(self,):
+    def __init__(
+        self,
+    ):
         super(Aggregator, self).__init__()
 
     def forward(
-        self, entity_emb, user_emb, latent_emb, relation_emb,
-            edge_index, edge_type, interact_mat,disen_weight_att
+        self,
+        entity_emb,
+        user_emb,
+        latent_emb,
+        relation_emb,
+        edge_index,
+        edge_type,
+        interact_mat,
+        disen_weight_att,
     ):
         from torch_scatter import scatter_mean
 
@@ -49,17 +58,26 @@ class Aggregator(nn.Module):
         """KG aggregate"""
         head, tail = edge_index
         edge_relation_emb = relation_emb[edge_type]
-        neigh_relation_emb = entity_emb[tail] * edge_relation_emb  # [-1, embedding_size]
-        entity_agg = scatter_mean(src=neigh_relation_emb, index=head, dim_size=n_entities, dim=0)
+        neigh_relation_emb = (
+            entity_emb[tail] * edge_relation_emb
+        )  # [-1, embedding_size]
+        entity_agg = scatter_mean(
+            src=neigh_relation_emb, index=head, dim_size=n_entities, dim=0
+        )
 
         """cul user->latent factor attention"""
         score_ = torch.mm(user_emb, latent_emb.t())
         score = nn.Softmax(dim=1)(score_)  # [n_users, n_factors]
         """user aggregate"""
-        user_agg = torch.sparse.mm(interact_mat, entity_emb)  # [n_users, embedding_size]
-        disen_weight = torch.mm(nn.Softmax(dim=-1)(disen_weight_att),
-                                relation_emb) # [n_factors, embedding_size]
-        user_agg = (torch.mm(score, disen_weight)) * user_agg + user_agg  # [n_users, embedding_size]
+        user_agg = torch.sparse.mm(
+            interact_mat, entity_emb
+        )  # [n_users, embedding_size]
+        disen_weight = torch.mm(
+            nn.Softmax(dim=-1)(disen_weight_att), relation_emb
+        )  # [n_factors, embedding_size]
+        user_agg = (
+            torch.mm(score, disen_weight)
+        ) * user_agg + user_agg  # [n_users, embedding_size]
 
         return entity_agg, user_agg
 
@@ -83,7 +101,7 @@ class GraphConv(nn.Module):
         tmp,
         device,
         node_dropout_rate=0.5,
-        mess_dropout_rate=0.1
+        mess_dropout_rate=0.1,
     ):
         super(GraphConv, self).__init__()
 
@@ -137,11 +155,18 @@ class GraphConv(nn.Module):
 
         entity_res_emb = entity_emb  # [n_entities, embedding_size]
         user_res_emb = user_emb  # [n_users, embedding_size]
-        relation_emb = self.relation_embedding.weight # [n_relations, embedding_size]
+        relation_emb = self.relation_embedding.weight  # [n_relations, embedding_size]
         for i in range(len(self.convs)):
             entity_emb, user_emb = self.convs[i](
-                entity_emb, user_emb, latent_emb, relation_emb,
-                edge_index, edge_type, interact_mat,self.disen_weight_att)
+                entity_emb,
+                user_emb,
+                latent_emb,
+                relation_emb,
+                edge_index,
+                edge_type,
+                interact_mat,
+                self.disen_weight_att,
+            )
             """message dropout"""
             if self.mess_dropout_rate > 0.0:
                 entity_emb = self.mess_dropout(entity_emb)
@@ -152,15 +177,20 @@ class GraphConv(nn.Module):
             entity_res_emb = torch.add(entity_res_emb, entity_emb)
             user_res_emb = torch.add(user_res_emb, user_emb)
 
-        return entity_res_emb, user_res_emb, self.calculate_cor_loss(self.disen_weight_att)
+        return (
+            entity_res_emb,
+            user_res_emb,
+            self.calculate_cor_loss(self.disen_weight_att),
+        )
 
     def calculate_cor_loss(self, tensors):
-
         def CosineSimilarity(tensor_1, tensor_2):
             # tensor_1, tensor_2: [channel]
-            normalized_tensor_1 = F.normalize(tensor_1,dim=0)
-            normalized_tensor_2 = F.normalize(tensor_2,dim=0)
-            return (normalized_tensor_1 * normalized_tensor_2).sum(dim=0) ** 2  # no negative
+            normalized_tensor_1 = F.normalize(tensor_1, dim=0)
+            normalized_tensor_2 = F.normalize(tensor_2, dim=0)
+            return (normalized_tensor_1 * normalized_tensor_2).sum(
+                dim=0
+            ) ** 2  # no negative
 
         def DistanceCorrelation(tensor_1, tensor_2):
             # tensor_1, tensor_2: [channel]
@@ -170,38 +200,43 @@ class GraphConv(nn.Module):
             zero = torch.zeros(1).to(tensor_1.device)
             tensor_1, tensor_2 = tensor_1.unsqueeze(-1), tensor_2.unsqueeze(-1)
             """cul distance matrix"""
-            a_, b_ = torch.matmul(tensor_1, tensor_1.t()) * 2, \
-                     torch.matmul(tensor_2, tensor_2.t()) * 2  # [channel, channel]
-            tensor_1_square, tensor_2_square = tensor_1 ** 2, tensor_2 ** 2
-            a, b = torch.sqrt(torch.max(tensor_1_square - a_ + tensor_1_square.t(), zeros) + 1e-8), \
-                   torch.sqrt(torch.max(tensor_2_square - b_ + tensor_2_square.t(), zeros) + 1e-8)  # [channel, channel]
+            a_, b_ = (
+                torch.matmul(tensor_1, tensor_1.t()) * 2,
+                torch.matmul(tensor_2, tensor_2.t()) * 2,
+            )  # [channel, channel]
+            tensor_1_square, tensor_2_square = tensor_1**2, tensor_2**2
+            a, b = torch.sqrt(
+                torch.max(tensor_1_square - a_ + tensor_1_square.t(), zeros) + 1e-8
+            ), torch.sqrt(
+                torch.max(tensor_2_square - b_ + tensor_2_square.t(), zeros) + 1e-8
+            )  # [channel, channel]
             """cul distance correlation"""
             A = a - a.mean(dim=0, keepdim=True) - a.mean(dim=1, keepdim=True) + a.mean()
             B = b - b.mean(dim=0, keepdim=True) - b.mean(dim=1, keepdim=True) + b.mean()
-            dcov_AB = torch.sqrt(torch.max((A * B).sum() / channel ** 2, zero) + 1e-8)
-            dcov_AA = torch.sqrt(torch.max((A * A).sum() / channel ** 2, zero) + 1e-8)
-            dcov_BB = torch.sqrt(torch.max((B * B).sum() / channel ** 2, zero) + 1e-8)
+            dcov_AB = torch.sqrt(torch.max((A * B).sum() / channel**2, zero) + 1e-8)
+            dcov_AA = torch.sqrt(torch.max((A * A).sum() / channel**2, zero) + 1e-8)
+            dcov_BB = torch.sqrt(torch.max((B * B).sum() / channel**2, zero) + 1e-8)
             return dcov_AB / torch.sqrt(dcov_AA * dcov_BB + 1e-8)
 
         def MutualInformation(tensors):
             # tensors: [n_factors, dimension]
             # normalized_tensors: [n_factors, dimension]
-            normalized_tensors = F.normalize(tensors,dim=1)
-            scores=torch.mm(normalized_tensors, normalized_tensors.t())
-            scores=torch.exp(scores / self.temperature)
-            cor_loss = -torch.sum(torch.log(scores.diag()/scores.sum(1)))
+            normalized_tensors = F.normalize(tensors, dim=1)
+            scores = torch.mm(normalized_tensors, normalized_tensors.t())
+            scores = torch.exp(scores / self.temperature)
+            cor_loss = -torch.sum(torch.log(scores.diag() / scores.sum(1)))
             return cor_loss
 
         """cul similarity for each latent factor weight pairs"""
-        if self.ind == 'mi':
+        if self.ind == "mi":
             return MutualInformation(tensors)
-        elif self.ind == 'distance':
-            cor_loss = 0.
+        elif self.ind == "distance":
+            cor_loss = 0.0
             for i in range(self.n_factors):
                 for j in range(i + 1, self.n_factors):
                     cor_loss += DistanceCorrelation(tensors[i], tensors[j])
-        elif self.ind == 'cosine':
-            cor_loss = 0.
+        elif self.ind == "cosine":
+            cor_loss = 0.0
             for i in range(self.n_factors):
                 for j in range(i + 1, self.n_factors):
                     cor_loss += CosineSimilarity(tensors[i], tensors[j])
@@ -224,21 +259,25 @@ class KGIN(KnowledgeRecommender):
         super(KGIN, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.n_factors = config['n_factors']
-        self.context_hops = config['context_hops']
-        self.node_dropout_rate = config['node_dropout_rate']
-        self.mess_dropout_rate = config['mess_dropout_rate']
-        self.ind = config['ind']
-        self.sim_decay = config['sim_regularity']
-        self.reg_weight = config['reg_weight']
-        self.temperature = config['temperature']
+        self.embedding_size = config["embedding_size"]
+        self.n_factors = config["n_factors"]
+        self.context_hops = config["context_hops"]
+        self.node_dropout_rate = config["node_dropout_rate"]
+        self.mess_dropout_rate = config["mess_dropout_rate"]
+        self.ind = config["ind"]
+        self.sim_decay = config["sim_regularity"]
+        self.reg_weight = config["reg_weight"]
+        self.temperature = config["temperature"]
 
         # load dataset info
-        self.inter_matrix = dataset.inter_matrix(form="coo").astype(np.float32)  # [n_users, n_items]
+        self.inter_matrix = dataset.inter_matrix(form="coo").astype(
+            np.float32
+        )  # [n_users, n_items]
         # inter_matrix: [n_users, n_entities]; inter_graph: [n_users + n_entities, n_users + n_entities]
         self.interact_mat, _ = self.get_norm_inter_matrix(mode="si")
-        self.kg_graph = dataset.kg_graph(form="coo", value_field="relation_id")  # [n_entities, n_entities]
+        self.kg_graph = dataset.kg_graph(
+            form="coo", value_field="relation_id"
+        )  # [n_entities, n_entities]
         # edge_index: [2, -1]; edge_type: [-1,]
         self.edge_index, self.edge_type = self.get_edges(self.kg_graph)
 
@@ -260,7 +299,7 @@ class KGIN(KnowledgeRecommender):
             tmp=self.temperature,
             device=self.device,
             node_dropout_rate=self.node_dropout_rate,
-            mess_dropout_rate=self.mess_dropout_rate
+            mess_dropout_rate=self.mess_dropout_rate,
         )
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
@@ -330,7 +369,7 @@ class KGIN(KnowledgeRecommender):
         norm_graph = torch.sparse.FloatTensor(i, data, L.shape)
 
         # interaction: user->item, [n_users, n_entities]
-        L_ = L.tocsr()[: self.n_users, self.n_users:].tocoo()
+        L_ = L.tocsr()[: self.n_users, self.n_users :].tocoo()
         # covert norm_inter_matrix to tensor
         i_ = torch.LongTensor(np.array([L_.row, L_.col]))
         data_ = torch.FloatTensor(L_.data)
@@ -350,7 +389,9 @@ class KGIN(KnowledgeRecommender):
         # entity_gcn_emb: [n_entities, embedding_size]
         # user_gcn_emb: [n_users, embedding_size]
         # latent_gcn_emb: [n_factors, embedding_size]
-        entity_gcn_emb, user_gcn_emb, cor_loss= self.gcn(user_embeddings, entity_embeddings,latent_embeddings)
+        entity_gcn_emb, user_gcn_emb, cor_loss = self.gcn(
+            user_embeddings, entity_embeddings, latent_embeddings
+        )
 
         return user_gcn_emb, entity_gcn_emb, cor_loss
 
@@ -396,9 +437,9 @@ class KGIN(KnowledgeRecommender):
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID]
         if self.restore_user_e is None or self.restore_entity_e is None:
-            self.restore_user_e, self.restore_entity_e, _= self.forward()
+            self.restore_user_e, self.restore_entity_e, _ = self.forward()
         u_embeddings = self.restore_user_e[user]
-        i_embeddings = self.restore_entity_e[:self.n_items]
+        i_embeddings = self.restore_entity_e[: self.n_items]
 
         scores = torch.matmul(u_embeddings, i_embeddings.transpose(0, 1))
 
