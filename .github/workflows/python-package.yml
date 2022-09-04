@@ -45,6 +45,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         conda list
         conda install -c conda-forge faiss-cpu
+        pip install torch-scatter -f https://data.pyg.org/whl/torch-`python -c "import torch;print(torch.__version__)"`.html
         pip install setuptools==59.5.0
         pip install plotly
     # Use "python -m pytest" instead of "pytest" to fix imports

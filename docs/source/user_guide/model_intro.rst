@@ -1,6 +1,6 @@
 Model Introduction
 =====================
-We implement 81 recommendation models covering general recommendation, sequential recommendation,
+We implement 83 recommendation models covering general recommendation, sequential recommendation,
 context-aware recommendation and knowledge-based recommendation. A brief introduction to these models are as follows:
 
 
@@ -121,7 +121,9 @@ Knowledge-based recommendation introduces an external knowledge graph to enhance
    model/knowledge/cfkg
    model/knowledge/ktup
    model/knowledge/kgat
+   model/knowledge/kgin
    model/knowledge/ripplenet
+   model/knowledge/mcclk
    model/knowledge/mkr
    model/knowledge/kgcn
    model/knowledge/kgnnls
