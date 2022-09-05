@@ -7,17 +7,15 @@
 - **Hyper-parameter searching** (hyper.test):
 
   ```yaml
-  learning_rate choice [0.01,0.001]
-  reg_weight choice [0,0.0001]
-  alpha choice [0.2,0.5]
-  order_len choice [1,2]
+  learning_rate choice [0.001,0.0005,0.0001]
+  high_order choice [1,2,4]
   ```
 
 - **Best parameters**:
 
   ```yaml
-  learning_rate : [0.001,0.0005,0.0001]
-  high_order : [1,2,4]
+  high_order:1
+  learning_rate:0.0001
   ```
 
 - **Hyper-parameter logging** (hyper.result):
