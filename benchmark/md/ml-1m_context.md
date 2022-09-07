@@ -25,6 +25,8 @@ ITEM_ID_FIELD: item_id
 RATING_FIELD: rating
 NEG_PREFIX: neg_
 LABEL_FIELD: label
+threshold:
+  rating: 4
 val_interval:
   rating: "[0,3);(3,inf)"
 load_col:
