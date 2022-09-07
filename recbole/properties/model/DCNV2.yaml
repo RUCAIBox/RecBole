@@ -1,0 +1,9 @@
+mixed: False                # (bool) The structure of cross network.
+structure: 'stacked'        # (string) The combination method between cross network and deep network.
+cross_layer_num: 3          # (int) The number of cross network layers.
+expert_num: 4               # (int) The number of experts in mixed cross network.
+low_rank: 128               # (int) The size of low rank space.
+embedding_size: 16          # (int) The embedding size of features.
+mlp_hidden_size: [768, 768] # (list of int) The hidden size of deep network.
+reg_weight: 2               # (int) The L2 regularization weight.
+dropout_prob: 0.2           # (float) The dropout rate.

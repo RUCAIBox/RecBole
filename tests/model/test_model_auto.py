@@ -361,6 +361,13 @@ class TestContextRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_dcnv2(self):
+        config_dict = {
+            "model": "DCNV2",
+            "threshold": {"rating": 4},
+        }
+        quick_test(config_dict)
+
     def test_xgboost(self):
         config_dict = {
             "model": "XGBoost",
