@@ -850,6 +850,18 @@ class TestKnowledgeRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_mcclk(self):
+        config_dict = {
+            "model": "MCCLK",
+        }
+        quick_test(config_dict)
+
+    def test_kgin(self):
+        config_dict = {
+            "model": "KGIN",
+        }
+        quick_test(config_dict)
+
 
 if __name__ == "__main__":
     unittest.main()
