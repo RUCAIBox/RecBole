@@ -4,9 +4,7 @@
 
 - **Model**: [Pop](https://recbole.io/docs/user_guide/model/general/pop.html)
 
-- **Time cost**: 3.48s/trial
-
-- **Hyper-parameter searching** (hyper.test):
+- **Hyper-parameter searching** :
 
   ```yaml
 
@@ -18,7 +16,7 @@
 
   ```
 
-- **Hyper-parameter logging** (hyper.result):
+- **Hyper-parameter logging** :
 
   ```yaml
 
@@ -27,5 +25,6 @@
 - **Logging Result**:
 
   ```yaml
-
+  best valid : OrderedDict([('recall@10', 0.0676), ('mrr@10', 0.1679), ('ndcg@10', 0.0883), ('hit@10', 0.4393), ('precision@10', 0.0758)])
+  test result: OrderedDict([('recall@10', 0.0699), ('mrr@10', 0.189), ('ndcg@10', 0.1006), ('hit@10', 0.4572), ('precision@10', 0.0866)])
   ```

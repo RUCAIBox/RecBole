@@ -1,6 +1,6 @@
 # General Recommendation
 
-- **Dataset**: [MovieLens-1m](../../md/ml-1m_general.md)
+- **Dataset**: [Amazon-Books](../../md/amazon-books_general.md)
 
 - **Model**: [SGL](https://recbole.io/docs/user_guide/model/general/sgl.html)
 
