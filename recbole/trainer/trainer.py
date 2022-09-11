@@ -306,7 +306,7 @@ class Trainer(AbstractTrainer):
             "other_parameter": self.model.other_parameter(),
             "optimizer": self.optimizer.state_dict(),
         }
-        torch.save(state, saved_model_file)
+        torch.save(state, saved_model_file, pickle_protocol=4)
         if verbose:
             self.logger.info(
                 set_color("Saving current", "blue") + f": {saved_model_file}"
@@ -768,6 +768,7 @@ class PretrainTrainer(Trainer):
             "other_parameter": self.model.other_parameter(),
         }
         torch.save(state, saved_model_file)
+        self.saved_model_file = saved_model_file
 
     def pretrain(self, train_data, verbose=True, show_progress=False):
         for epoch_idx in range(self.start_epoch, self.pretrain_epochs):
