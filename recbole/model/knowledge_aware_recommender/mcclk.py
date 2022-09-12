@@ -138,11 +138,11 @@ class GraphConv(nn.Module):
         # User a separate GCN to build item-item graph
         if self.build_graph_separately:
             r"""
-            In the original author's implementation(https://github.com/CCIIPLab/MCCLK), the process of constructing 
-            k-Nearest-Neighbor item-item semantic graph(section 4.1 in paper) and encoding structural view(section 4.3.1 in paper) 
-            are combined. This implementation improves the computational efficiency, but is slightly different from the 
-            model structure described in the paper. We use the parameter `build_graph_separately` to control whether to 
-            use a separate GCN to build a item-item semantic graph. If `build_graph_separately` is set to true, the model 
+            In the original author's implementation(https://github.com/CCIIPLab/MCCLK), the process of constructing
+            k-Nearest-Neighbor item-item semantic graph(section 4.1 in paper) and encoding structural view(section 4.3.1 in paper)
+            are combined. This implementation improves the computational efficiency, but is slightly different from the
+            model structure described in the paper. We use the parameter `build_graph_separately` to control whether to
+            use a separate GCN to build a item-item semantic graph. If `build_graph_separately` is set to true, the model
             structure will be the same as that described in the paper. Otherwise, the author's code implementation will be followed.
             """
             self.bg_convs = nn.ModuleList()
