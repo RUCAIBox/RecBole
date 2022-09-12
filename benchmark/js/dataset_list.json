@@ -133,17 +133,6 @@
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Pinterest.md"
       },
       { 
-          "dataset": "Pinterest",
-          "dataset_link": "",
-          "user_num": "55,187",
-          "item_num": "9,911",
-          "inter_num": "1,445,622",
-          "sparsity": "99.74%",
-          "type": "-",
-          "link_name": "scipt",
-          "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Pinterest.md"
-      },
-      { 
           "dataset": "Gowalla",
           "dataset_link": "https://github.com/RUCAIBox/RecommenderSystems-Datasets/tree/master/dataset_info/Gowalla",
           "user_num": "107,092",
