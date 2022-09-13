@@ -787,6 +787,20 @@
       {
           "category": "Context-aware Recommendation",
           "cate_link": "/docs/user_guide/model_intro.html#context-aware-recommendation",
+          "year": "2021",
+          "pub": "WWW' 21",
+          "model": "DCNV2",
+          "model_link": "/docs/user_guide/model/context/dcnv2.html",
+          "paper": "DCN V2: Improved Deep & Cross Network and Practical Lessons\nforWeb-scale Learning to Rank Systems",
+          "paper_link": "https://dl.acm.org/doi/10.1145/3442381.3450078",
+          "authors": "Ruoxi Wang, Rakesh Shivanna, Derek Z. Cheng, Sagar Jain, Dong Lin, Lichan Hong, Ed H. Chi",
+          "ref_code": "https://github.com/shenweichen/DeepCTR-Torch",
+          "repository": "RecBole",
+          "repo_link": "https://github.com/RUCAIBox/RecBole"
+      },
+      {
+          "category": "Context-aware Recommendation",
+          "cate_link": "/docs/user_guide/model_intro.html#context-aware-recommendation",
           "year": "2017",
           "pub": "IJCAI' 17",
           "model": "DeepFM",
