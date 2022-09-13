@@ -55,24 +55,6 @@
             "contributor_email": "fzcbupt@gmail.com"
         },
         {
-            "year": "2021",
-            "pub": "WWW' 21",
-            "model": "DCNV2",
-            "model_link": "/docs/user_guide/model/context/dcnv2.html",
-            "ref_code": "https://github.com/shenweichen/DeepCTR-Torch",
-            "hyper_md": "https://github.com/RUCAIBox/RecBole/benchmark/hyper/context/DCNV2-criteo-4m_context.md",
-            "AUC": "0.7955",
-            "Log Loss": "0.4508",
-            "parameters": "71,682,126",
-            "flops": "228,208",
-            "train_time": "17.58",
-            "eval_time": "0.68",
-            "train_gpu_memory": "1.9",
-            "eval_gpu_memory": "1.9",
-            "contributor": "Yifan Li",
-            "contributor_email": "295435096@qq.com"
-        },
-        {
             "year": "2017",
             "pub": "IJCAI' 17",
             "model": "DeepFM",
