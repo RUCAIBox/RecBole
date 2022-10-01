@@ -2,7 +2,7 @@
 
 - **Dataset**: [MovieLens-1m](../../md/ml-1m_general.md)
 
-- **Model**: [NCL](https://recbole.io/docs/user_guide/model/general/ncl.html)
+- **Model**: [RecVAE](https://recbole.io/docs/user_guide/model/general/recvae.html)
 
 - **Time cost**: 143.19s/trial
 
