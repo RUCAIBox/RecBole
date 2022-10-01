@@ -300,4 +300,4 @@ Here is the list of our lead developers in each development phase. They are the 
 
 
 ## License
-RecBole uses [MIT License](./LICENSE).
+RecBole uses [MIT License](./LICENSE). All data and code in this project can only be used for academic purposes.

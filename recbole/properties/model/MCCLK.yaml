@@ -1,7 +1,7 @@
 embedding_size: 64              # (int) The embedding size of users, items, entities and relations.
 reg_weight: 1e-5                # (float) The L2 regularization weight.
 n_hops: 2                       # (int) The number of context hops in GCN layer.
-node_dropout_rate: 0.1          # (float) The node dropout rate in GCN layer.
+node_dropout_rate: 0.5          # (float) The node dropout rate in GCN layer.
 mess_dropout_rate: 0.1          # (float) The message dropout rate in GCN layer.
 lightgcn_layer: 2               # (int) The number of LightGCN layer.
 item_agg_layer: 1               # (int) The number of item aggregation layer.

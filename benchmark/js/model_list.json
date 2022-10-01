@@ -787,6 +787,20 @@
       {
           "category": "Context-aware Recommendation",
           "cate_link": "/docs/user_guide/model_intro.html#context-aware-recommendation",
+          "year": "2021",
+          "pub": "WWW' 21",
+          "model": "DCNV2",
+          "model_link": "/docs/user_guide/model/context/dcnv2.html",
+          "paper": "DCN V2: Improved Deep & Cross Network and Practical Lessons\nforWeb-scale Learning to Rank Systems",
+          "paper_link": "https://dl.acm.org/doi/10.1145/3442381.3450078",
+          "authors": "Ruoxi Wang, Rakesh Shivanna, Derek Z. Cheng, Sagar Jain, Dong Lin, Lichan Hong, Ed H. Chi",
+          "ref_code": "https://github.com/shenweichen/DeepCTR-Torch",
+          "repository": "RecBole",
+          "repo_link": "https://github.com/RUCAIBox/RecBole"
+      },
+      {
+          "category": "Context-aware Recommendation",
+          "cate_link": "/docs/user_guide/model_intro.html#context-aware-recommendation",
           "year": "2017",
           "pub": "IJCAI' 17",
           "model": "DeepFM",
@@ -2026,19 +2040,6 @@
     },
     {
         "category": "Knowledge-aware Recommendation",
-        "year": "2021",
-        "pub": "WWW'21",
-        "model": "KGIN",
-        "model_link": "/docs/user_guide/model/knowledge/kgin.html",
-        "paper": "Learning Intents behind Interactions with Knowledge Graph for Recommendation",
-        "paper_link": "https://dl.acm.org/doi/abs/10.1145/3442381.3450133",
-        "authors": "Xiang Wang, Tinglin Huang, Dingxian Wang, Yancheng Yuan, Zhenguang Liu, Xiangnan He, Tat-Seng Chua",
-        "ref_code": "https://github.com/huangtinglin/Knowledge_Graph_based_Intent_Network",
-        "repository": "RecBole",
-        "repo_link": "https://github.com/RUCAIBox/RecBole"
-    },
-    {
-        "category": "Knowledge-aware Recommendation",
         "year": "2019",
         "pub": "SIGKDD'19",
         "model": "KGNN-LS",
@@ -2060,19 +2061,6 @@
         "paper_link": "https://doi.org/10.1145/3308558.3313705",
         "authors": "Yixin Cao, Xiang Wang, Xiangnan He, Zikun hu, Tat-Seng Chua",
         "ref_code": "https://github.com/TaoMiner/joint-kg-recommender",
-        "repository": "RecBole",
-        "repo_link": "https://github.com/RUCAIBox/RecBole"
-    },
-    {
-        "category": "Knowledge-aware Recommendation",
-        "year": "2022",
-        "pub": "SIGIR'22",
-        "model": "MCCLK",
-        "model_link": "/docs/user_guide/model/knowledge/mcclk.html",
-        "paper": "Multi-level Cross-view Contrastive Learning for Knowledge-aware Recommender System",
-        "paper_link": "https://arxiv.org/abs/2204.08807",
-        "authors": "Ding Zou, Wei Wei, Xian-Ling Mao, Ziyang Wang, Minghui Qiu, Feida Zhu, Xin Cao",
-        "ref_code": "https://github.com/CCIIPLab/MCCLK",
         "repository": "RecBole",
         "repo_link": "https://github.com/RUCAIBox/RecBole"
     },
