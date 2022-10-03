@@ -59,6 +59,8 @@ for testing and comparing recommendation algorithms.
 
 
 ## RecBole News
+![new](/asset/new.gif) **10/03/2022**: We release RecBole [v1.1.0](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.0).
+
 ![new](/asset/new.gif) **06/28/2022**: We release [**RecBole2.0**](https://github.com/RUCAIBox/RecBole2.0) with **8 packages** consisting of **65 newly implement models**. 
 
 **02/25/2022**: We release RecBole [v1.0.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.0.1).
@@ -224,6 +226,7 @@ We will keep improving our implementations, and update these test results.
 ## RecBole Major Releases
 | Releases  | Date   |
 |-----------|--------|
+| v1.1.0 | 10/03/2022 |
 | v1.0.0    | 09/17/2021 |
 | v0.2.0    | 01/15/2021 |
 | v0.1.1    | 11/03/2020 |
@@ -293,10 +296,11 @@ RecBole is developed by [RUC, BUPT, ECNU](https://www.recbole.io/about.html), an
 
 Here is the list of our lead developers in each development phase. They are the souls of RecBole and have made outstanding contributions.
 
-|         Time          |        Version         |                Lead Developers                 |
-| :-------------------: | :--------------------: | :--------------------------------------------: |
-| June 2020<br> ~<br> Nov. 2020 |        v0.1.1         |  Shanlei Mu ([@ShanleiMu](https://github.com/ShanleiMu)), Yupeng Hou ([@hyp1231](https://github.com/hyp1231)),<br> Zihan Lin ([@linzihan-backforward](https://github.com/linzihan-backforward)), Kaiyuan Li ([@tsotfsk](https://github.com/tsotfsk))|
-|    Nov. 2020<br> ~ <br> now    |  v0.1.2 ~ v1.0.0 |      Yushuo Chen ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), Xingyu Pan ([@2017pxy](https://github.com/2017pxy))    |
+|         Time          |        Version         |                Lead Developers                 |                Paper            |
+| :-------------------: | :--------------------: | :--------------------------------------------: | ---------------------------------------------- |
+| June 2020<br> ~<br> Nov. 2020 |        v0.1.1         |  Shanlei Mu ([@ShanleiMu](https://github.com/ShanleiMu)), Yupeng Hou ([@hyp1231](https://github.com/hyp1231)),<br> Zihan Lin ([@linzihan-backforward](https://github.com/linzihan-backforward)), Kaiyuan Li ([@tsotfsk](https://github.com/tsotfsk))| [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) |
+|    Nov. 2020<br> ~ <br> Oct. 2022    | v0.1.2 ~ v1.0.1 |      Yushuo Chen ([@chenyushuo](https://github.com/chenyushuo)), Xingyu Pan ([@2017pxy](https://github.com/2017pxy))    | [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016)  |
+| Oct. 2022<br/> ~ <br/> now | v1.1.0 | Lanling Xu ([@Sherry-XLL](https://github.com/Sherry-XLL)), Zhen Tian ([@chenyuwuxin](https://github.com/chenyuwuxin)), Gaowei Zhang ([@Wicknight](https://github.com/Wicknight)), Lei Wang ([@Paitesanshi](https://github.com/Paitesanshi)), Junjie Zhang ([@leoleojie](https://github.com/leoleojie)) | coming soon |
 
 
 ## License
