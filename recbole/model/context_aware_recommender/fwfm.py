@@ -61,7 +61,6 @@ class FwFM(ContextRecommender):
         self.weight = torch.randn(
             self.num_fields, self.num_fields, 1, requires_grad=True, device=self.device
         )
-
         self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
