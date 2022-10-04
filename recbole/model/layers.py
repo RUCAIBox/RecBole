@@ -310,9 +310,7 @@ class SequenceAttLayer(nn.Module):
         self.softmax_stag = softmax_stag
         self.return_seq_weight = return_seq_weight
         self.mask_mat = mask_mat
-        self.att_mlp_layers = MLPLayers(
-            self.att_hidden_size, activation="Sigmoid", bn=False
-        )
+        self.att_mlp_layers = MLPLayers(self.att_hidden_size, activation=self.activation, bn=False)
         self.dense = nn.Linear(self.att_hidden_size[-1], 1)
 
     def forward(self, queries, keys, keys_length):

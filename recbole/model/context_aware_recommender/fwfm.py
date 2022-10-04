@@ -122,7 +122,7 @@ class FwFM(ContextRecommender):
         for i in range(self.num_features - 1):
             for j in range(i + 1, self.num_features):
                 Fi, Fj = self.feature2field[i], self.feature2field[j]
-                fwfm_inter.append(infeature[:, i] * infeature[:, j] * r[:, Fi, Fj])
+                fwfm_inter.append(infeature[:, i] * infeature[:, j] * weight[:, Fi, Fj])
         fwfm_inter = torch.stack(fwfm_inter, dim=1)
         fwfm_inter = torch.sum(fwfm_inter, dim=1)  # [batch_size, emb_dim]
         fwfm_inter = self.dropout_layer(fwfm_inter)
