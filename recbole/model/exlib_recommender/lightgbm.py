@@ -12,10 +12,8 @@ import lightgbm as lgb
 from recbole.utils import ModelType, InputType
 
 
-class lightgbm(lgb.Booster):
-    r"""lightgbm is inherited from lgb.Booster
-
-    """
+class LightGBM(lgb.Booster):
+    r"""LightGBM is inherited from lgb.Booster"""
     type = ModelType.DECISIONTREE
     input_type = InputType.POINTWISE
 
@@ -35,6 +33,5 @@ class lightgbm(lgb.Booster):
         self = lgb.Booster(model_file=model_file)
 
     def load_other_parameter(self, other_parameter):
-        r"""Load other parameters
-        """
+        r"""Load other parameters"""
         pass

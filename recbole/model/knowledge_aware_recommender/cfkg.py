@@ -40,17 +40,21 @@ class CFKG(KnowledgeRecommender):
         super(CFKG, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.loss_function = config['loss_function']
-        self.margin = config['margin']
-        assert self.loss_function in ['inner_product', 'transe']
+        self.embedding_size = config["embedding_size"]
+        self.loss_function = config["loss_function"]
+        self.margin = config["margin"]
+        assert self.loss_function in ["inner_product", "transe"]
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
-        self.relation_embedding = nn.Embedding(self.n_relations + 1, self.embedding_size)
-        if self.loss_function == 'transe':
-            self.rec_loss = nn.TripletMarginLoss(margin=self.margin, p=2, reduction='mean')
+        self.relation_embedding = nn.Embedding(
+            self.n_relations + 1, self.embedding_size
+        )
+        if self.loss_function == "transe":
+            self.rec_loss = nn.TripletMarginLoss(
+                margin=self.margin, p=2, reduction="mean"
+            )
         else:
             self.rec_loss = InnerProductLoss()
 
@@ -82,7 +86,7 @@ class CFKG(KnowledgeRecommender):
         return head_e, pos_tail_e, neg_tail_e, relation_e
 
     def _get_score(self, h_e, t_e, r_e):
-        if self.loss_function == 'transe':
+        if self.loss_function == "transe":
             return -torch.norm(h_e + r_e - t_e, p=2, dim=1)
         else:
             return torch.mul(h_e + r_e, t_e).sum(dim=1)
@@ -96,8 +100,12 @@ class CFKG(KnowledgeRecommender):
         pos_tail = interaction[self.TAIL_ENTITY_ID]
         neg_tail = interaction[self.NEG_TAIL_ENTITY_ID]
 
-        user_e, pos_item_e, neg_item_e, rec_r_e = self._get_rec_embedding(user, pos_item, neg_item)
-        head_e, pos_tail_e, neg_tail_e, relation_e = self._get_kg_embedding(head, pos_tail, neg_tail, relation)
+        user_e, pos_item_e, neg_item_e, rec_r_e = self._get_rec_embedding(
+            user, pos_item, neg_item
+        )
+        head_e, pos_tail_e, neg_tail_e, relation_e = self._get_kg_embedding(
+            head, pos_tail, neg_tail, relation
+        )
 
         h_e = torch.cat([user_e, head_e])
         r_e = torch.cat([rec_r_e, relation_e])
@@ -115,8 +123,7 @@ class CFKG(KnowledgeRecommender):
 
 
 class InnerProductLoss(nn.Module):
-    r"""This is the inner-product loss used in CFKG for optimization.
-    """
+    r"""This is the inner-product loss used in CFKG for optimization."""
 
     def __init__(self):
         super(InnerProductLoss, self).__init__()

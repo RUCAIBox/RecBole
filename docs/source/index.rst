@@ -1,17 +1,17 @@
 .. RecBole documentation master file.
-.. title:: RecBole v1.0.1
+.. title:: RecBole v1.1.0
 .. image:: asset/logo.png
 
 =========================================================
 
-`HomePage <https://recbole.io/>`_ | `Docs <https://recbole.io/docs/>`_ | `GitHub <https://github.com/RUCAIBox/RecBole>`_ | `Datasets <https://github.com/RUCAIBox/RecDatasets>`_ | `v0.1.2 </docs/v0.1.2/>`_ | `v0.2.0 </docs/v0.2.0/>`_ | `v1.0.0 </docs/v1.0.0/>`_
+`HomePage <https://recbole.io/>`_ | `Docs <https://recbole.io/docs/>`_ | `GitHub <https://github.com/RUCAIBox/RecBole>`_ | `Datasets <https://github.com/RUCAIBox/RecDatasets>`_ | `v0.1.2 </docs/v0.1.2/>`_ | `v0.2.0 </docs/v0.2.0/>`_ | `v1.0.0 </docs/v1.0.0/>`_ | `v1.0.1 </docs/v1.0.1/>`_
 
 Introduction
 -------------------------
 RecBole is a unified, comprehensive and efficient framework developed based on PyTorch.
 It aims to help the researchers to reproduce and develop recommendation models.
 
-In the lastest release, our library includes 77 recommendation algorithms `[Model List]`_, covering four major categories:
+In the lastest release, our library includes 83 recommendation algorithms `[Model List]`_, covering four major categories:
 
 - General Recommendation
 - Sequential Recommendation
@@ -29,7 +29,7 @@ Features:
 - General and extensible data structure
     We deign general and extensible data structures to unify the formatting and usage of various recommendation datasets.
 - Comprehensive benchmark models and datasets
-    We implement 77 commonly used recommendation algorithms, and provide the formatted copies of 28 recommendation datasets.
+    We implement 81 commonly used recommendation algorithms, and provide the formatted copies of 28 recommendation datasets.
 - Efficient GPU-accelerated execution
     We design many tailored strategies in the GPU environment to enhance the efficiency of our library.
 - Extensive and standard evaluation protocols
@@ -48,6 +48,7 @@ Features:
 
    get_started/install
    get_started/quick_start
+   get_started/distributed_training
 
 .. toctree::
    :maxdepth: 1
@@ -88,6 +89,7 @@ Features:
    recbole/recbole.utils.logger
    recbole/recbole.utils.utils
 
+
 The Team
 ------------------
 RecBole is developed and maintained by `RUC, BUPT, ECNU  <https://www.recbole.io/about.html>`_.
@@ -98,7 +100,8 @@ Here is the list of our lead developers in each development phase. They are the 
 Time                     Version 	        Lead Developers
 ======================   ===============   =============================================
 June 2020 ~ Nov. 2020    v0.1.1            `Shanlei Mu <https://github.com/ShanleiMu>`_, `Yupeng Hou <https://github.com/hyp1231>`_, `Zihan Lin <https://github.com/linzihan-backforward>`_, `Kaiyuan Li <https://github.com/tsotfsk>`_
-Nov. 2020 ~ Now          v0.1.2 ~ v1.0.0   `Yushuo Chen <https://github.com/chenyushuo>`_, `Xingyu Pan <https://github.com/2017pxy>`_
+Nov. 2020 ~ Oct. 2022    v0.1.2 ~ v1.0.1   `Yushuo Chen <https://github.com/chenyushuo>`_, `Xingyu Pan <https://github.com/2017pxy>`_
+Oct. 2022 ~ Now          v1.1.0            `Lanling Xu <https://github.com/Sherry-XLL>`_, `Zhen Tian <https://github.com/chenyuwuxin>`_, `Gaowei Zhang <https://github.com/Wicknight>`_, `Lei Wang <https://github.com/Paitesanshi>`_, `Junjie Zhang <https://github.com/leoleojie>`_
 ======================   ===============   =============================================
 
 License

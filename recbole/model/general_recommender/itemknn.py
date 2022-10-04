@@ -20,7 +20,6 @@ from recbole.utils import InputType, ModelType
 
 
 class ComputeSimilarity:
-
     def __init__(self, dataMatrix, topk=100, shrink=0, normalize=True):
         r"""Computes the cosine similarity of dataMatrix
 
@@ -51,11 +50,11 @@ class ComputeSimilarity:
         Args:
             method (str) : Caculate the similarity of users if method is 'user', otherwise, calculate the similarity of items.
             block_size (int): divide matrix to :math:`n\_rows \div block\_size` to calculate cosine_distance if method is 'user',
-                 otherwise, divide matrix to :math:`n\_columns \div block\_size`. 
+                 otherwise, divide matrix to :math:`n\_columns \div block\_size`.
 
         Returns:
 
-            list: The similar nodes, if method is 'user', the shape is [number of users, neigh_num], 
+            list: The similar nodes, if method is 'user', the shape is [number of users, neigh_num],
             else, the shape is [number of items, neigh_num].
             scipy.sparse.csr_matrix: sparse matrix W, if method is 'user', the shape is [self.n_rows, self.n_rows],
             else, the shape is [self.n_columns, self.n_columns].
@@ -69,10 +68,10 @@ class ComputeSimilarity:
         self.dataMatrix = self.dataMatrix.astype(np.float32)
 
         # Compute sum of squared values to be used in normalization
-        if method == 'user':
+        if method == "user":
             sumOfSquared = np.array(self.dataMatrix.power(2).sum(axis=1)).ravel()
             end_local = self.n_rows
-        elif method == 'item':
+        elif method == "item":
             sumOfSquared = np.array(self.dataMatrix.power(2).sum(axis=0)).ravel()
             end_local = self.n_columns
         else:
@@ -88,7 +87,7 @@ class ComputeSimilarity:
             this_block_size = end_block - start_block
 
             # All data points for a given user or item
-            if method == 'user':
+            if method == "user":
                 data = self.dataMatrix[start_block:end_block, :]
             else:
                 data = self.dataMatrix[:, start_block:end_block]
@@ -96,7 +95,7 @@ class ComputeSimilarity:
 
             # Compute similarities
 
-            if method == 'user':
+            if method == "user":
                 this_block_weights = self.dataMatrix.dot(data.T)
             else:
                 this_block_weights = self.dataMatrix.T.dot(data)
@@ -109,7 +108,9 @@ class ComputeSimilarity:
 
                 # Apply normalization and shrinkage, ensure denominator != 0
                 if self.normalize:
-                    denominator = sumOfSquared[Index] * sumOfSquared + self.shrink + 1e-6
+                    denominator = (
+                        sumOfSquared[Index] * sumOfSquared + self.shrink + 1e-6
+                    )
                     this_line_weights = np.multiply(this_line_weights, 1 / denominator)
 
                 elif self.shrink != 0:
@@ -120,8 +121,12 @@ class ComputeSimilarity:
                 # - Partition the data to extract the set of relevant users or items
                 # - Sort only the relevant users or items
                 # - Get the original index
-                relevant_partition = (-this_line_weights).argpartition(self.TopK - 1)[0:self.TopK]
-                relevant_partition_sorting = np.argsort(-this_line_weights[relevant_partition])
+                relevant_partition = (-this_line_weights).argpartition(self.TopK - 1)[
+                    0 : self.TopK
+                ]
+                relevant_partition_sorting = np.argsort(
+                    -this_line_weights[relevant_partition]
+                )
                 top_k_idx = relevant_partition[relevant_partition_sorting]
                 neigh.append(top_k_idx)
 
@@ -130,7 +135,7 @@ class ComputeSimilarity:
                 numNotZeros = np.sum(notZerosMask)
 
                 values.extend(this_line_weights[top_k_idx][notZerosMask])
-                if method == 'user':
+                if method == "user":
                     rows.extend(np.ones(numNotZeros) * Index)
                     cols.extend(top_k_idx[notZerosMask])
                 else:
@@ -140,17 +145,23 @@ class ComputeSimilarity:
             start_block += block_size
 
         # End while
-        if method == 'user':
-            W_sparse = sp.csr_matrix((values, (rows, cols)), shape=(self.n_rows, self.n_rows), dtype=np.float32)
+        if method == "user":
+            W_sparse = sp.csr_matrix(
+                (values, (rows, cols)),
+                shape=(self.n_rows, self.n_rows),
+                dtype=np.float32,
+            )
         else:
-            W_sparse = sp.csr_matrix((values, (rows, cols)), shape=(self.n_columns, self.n_columns), dtype=np.float32)
+            W_sparse = sp.csr_matrix(
+                (values, (rows, cols)),
+                shape=(self.n_columns, self.n_columns),
+                dtype=np.float32,
+            )
         return neigh, W_sparse.tocsc()
 
 
 class ItemKNN(GeneralRecommender):
-    r"""ItemKNN is a basic model that compute item similarity with the interaction matrix.
-
-    """
+    r"""ItemKNN is a basic model that compute item similarity with the interaction matrix."""
     input_type = InputType.POINTWISE
     type = ModelType.TRADITIONAL
 
@@ -158,18 +169,19 @@ class ItemKNN(GeneralRecommender):
         super(ItemKNN, self).__init__(config, dataset)
 
         # load parameters info
-        self.k = config['k']
-        self.shrink = config['shrink'] if 'shrink' in config else 0.0
+        self.k = config["k"]
+        self.shrink = config["shrink"] if "shrink" in config else 0.0
 
-        self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
+        self.interaction_matrix = dataset.inter_matrix(form="csr").astype(np.float32)
         shape = self.interaction_matrix.shape
         assert self.n_users == shape[0] and self.n_items == shape[1]
-        _, self.w = ComputeSimilarity(self.interaction_matrix, topk=self.k,
-                                      shrink=self.shrink).compute_similarity('item')
+        _, self.w = ComputeSimilarity(
+            self.interaction_matrix, topk=self.k, shrink=self.shrink
+        ).compute_similarity("item")
         self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
 
         self.fake_loss = torch.nn.Parameter(torch.zeros(1))
-        self.other_parameter_name = ['w', 'pred_mat']
+        self.other_parameter_name = ["w", "pred_mat"]
 
     def forward(self, user, item):
         pass

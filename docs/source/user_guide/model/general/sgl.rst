@@ -50,13 +50,13 @@ Running with RecBole
 
 **Model Hyper-Parameters:**
 
-- ``type (str)`` : The operators to generate the views. ``"ED"`` stands for edge dropout mode. ``"ND"`` stands for node dropout mode. ``"RW"`` stands for random walk mode. Defaults to ``"ED"``.
+- ``type (str)`` : The operators to generate the views. ``'ED'`` stands for edge dropout mode. ``'ND'`` stands for node dropout mode. ``'RW'`` stands for random walk mode. Range in ``['ED', 'ND', 'RW']``. Defaults to ``'ED'``.
 - ``n_layers (int)`` : The number of layers in SGL. Defaults to ``3``.
 - ``ssl_tau (float)`` : The temperature in softmax. Defaults to ``0.5``.
-- ``embedding_size (int)`` : the embedding size of users and items. Defaults to ``64``.
+- ``embedding_size (int)`` : The embedding size of users and items. Defaults to ``64``.
 - ``drop_ratio (float)`` The dropout ratio. Defaults to ``0.1``.
 - ``reg_weight (float)`` : The L2 regularization weight. Defaults to ``1e-05``.
-- ``ssl_weight (float)`` : The hyperparameters to control the strengths of SSL. Defaults to ``0.05``.
+- ``ssl_weight (float)`` : The hyperparameter to control the strengths of SSL. Defaults to ``0.05``.
 
 **A Running Example:**
 

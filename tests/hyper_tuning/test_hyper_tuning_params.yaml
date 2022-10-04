@@ -1,0 +1,3 @@
+learning_rate loguniform -8,0
+embedding_size choice [64,96,128]
+train_batch_size choice [1024,2048]

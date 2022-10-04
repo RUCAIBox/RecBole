@@ -55,7 +55,7 @@ Running with RecBole
 - ``ssl_temp (float)`` : Temperature for contrastive loss. Defaults to ``0.1``.
 - ``ssl_reg (float)`` : The structure-contrastive loss weight. Defaults to ``1e-7``.
 - ``hyper_layers (int)`` : Controlling the contrasted range for structural-contrastive loss, e.g., when set to 1, the GNN outputs for one user/item of layer 0 and 2 will be regarded as positive pairs. Defaults to ``1``.
-- ``alpha (float)`` : The weight to balance self-supervised loss for users and items. Defaults to ``1``.
+- ``alpha (float)`` : The weight to balance self-supervised loss for users and items. Defaults to ``1.0``.
 - ``proto_reg (float)`` : The prototype-contrastive weight. Defaults to ``8e-8``.
 - ``num_clusters (int)`` : Number of prototypes. Defaults to ``1000``.
 - ``m_step (int)`` : Number of M-steps for each E-step. Defaults to ``1``.

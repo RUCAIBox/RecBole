@@ -22,11 +22,11 @@ Running with RecBole
 **Model Hyper-Parameters:**
 
 - ``embedding_size (int)`` : The embedding size of users and items. Defaults to ``64``.
-- ``n_h (int)`` : The number of horizontal Convolutional filters. Defaults to ``16``.
-- ``n_v (int)`` : The number of vertical Convolutional filters. Defaults to ``8``.
+- ``n_v (int)`` : The number of vertical Convolutional filters. Defaults to ``4``.
+- ``n_h (int)`` : The number of horizontal Convolutional filters. Defaults to ``8``.
 - ``reg_weight (float)`` : The L2 regularization weight. Defaults to ``1e-4``.
 - ``dropout_prob (float)`` : The dropout rate. Defaults to ``0.4``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform':1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it is set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it is set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between the positive item and the negative one. In this way, negative sampling is necessary, such as setting ``--train_neg_sample_args="{'distribution': 'uniform', 'sample_num': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 **A Running Example:**
 
@@ -37,7 +37,7 @@ Write the following code to a python file, such as `run.py`
    from recbole.quick_start import run_recbole
 
    parameter_dict = {
-      'neg_sampling': None,
+      'train_neg_sample_args': None,
    }
    run_recbole(model='Caser', dataset='ml-100k', config_dict=parameter_dict)
 

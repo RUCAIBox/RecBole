@@ -37,24 +37,24 @@ class SINE(SequentialRecommender):
 
         # load parameters info
         self.device = config["device"]
-        self.embedding_size = config['embedding_size']
-        self.loss_type = config['loss_type']
-        self.layer_norm_eps = config['layer_norm_eps']
+        self.embedding_size = config["embedding_size"]
+        self.loss_type = config["loss_type"]
+        self.layer_norm_eps = config["layer_norm_eps"]
 
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
-        elif self.loss_type == 'NLL':
+        elif self.loss_type == "NLL":
             self.loss_fct = nn.NLLLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE', 'NLL']!")
 
-        self.D = config['embedding_size']
-        self.L = config['prototype_size']  # 500 for movie-len dataset
-        self.k = config['interest_size']  # 4 for movie-len dataset
-        self.tau = config['tau_ratio']  # 0.1 in paper
-        self.reg_loss_ratio = config['reg_loss_ratio']  # 0.1 in paper
+        self.D = config["embedding_size"]
+        self.L = config["prototype_size"]  # 500 for movie-len dataset
+        self.k = config["interest_size"]  # 4 for movie-len dataset
+        self.tau = config["tau_ratio"]  # 0.1 in paper
+        self.reg_loss_ratio = config["reg_loss_ratio"]  # 0.1 in paper
 
         self.initializer_range = 0.01
 
@@ -76,7 +76,9 @@ class SINE(SequentialRecommender):
 
     def _init_weight(self, shape):
         mat = np.random.normal(0, self.initializer_range, shape)
-        return torch.tensor(mat, dtype=torch.float32, requires_grad=True).to(self.device)
+        return torch.tensor(mat, dtype=torch.float32, requires_grad=True).to(
+            self.device
+        )
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
@@ -91,7 +93,7 @@ class SINE(SequentialRecommender):
         seq_output = self.forward(item_seq, item_seq_len)
         pos_items = interaction[self.POS_ITEM_ID]
 
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             pos_items_emb = self.item_embedding(pos_items)
             neg_items_emb = self.item_embedding(neg_items)
@@ -99,7 +101,7 @@ class SINE(SequentialRecommender):
             neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)  # [B]
             loss = self.loss_fct(pos_score, neg_score)
             return loss
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             test_item_emb = self.item_embedding.weight
             logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
             loss = self.loss_fct(logits, pos_items)
@@ -113,7 +115,7 @@ class SINE(SequentialRecommender):
 
     def calculate_reg_loss(self):
         C_mean = torch.mean(self.C.weight, dim=1, keepdim=True)
-        C_reg = (self.C.weight - C_mean)
+        C_reg = self.C.weight - C_mean
         C_reg = C_reg.matmul(C_reg.T) / self.D
         return (torch.norm(C_reg) ** 2 - torch.norm(torch.diag(C_reg)) ** 2) / 2
 
@@ -138,8 +140,8 @@ class SINE(SequentialRecommender):
         z_u = torch.matmul(a.unsqueeze(2).transpose(1, 2), x_u).transpose(1, 2)
         s_u = torch.matmul(self.C.weight, z_u)
         s_u = s_u.squeeze(2)
-        idx = s_u.argsort(1)[:, -self.k:]
-        s_u_idx = s_u.sort(1)[0][:, -self.k:]
+        idx = s_u.argsort(1)[:, -self.k :]
+        s_u_idx = s_u.sort(1)[0][:, -self.k :]
         c_u = self.C(idx)
         sigs = torch.sigmoid(s_u_idx.unsqueeze(2).repeat(1, 1, self.embedding_size))
         C_u = c_u.mul(sigs)
@@ -154,7 +156,12 @@ class SINE(SequentialRecommender):
 
         # attention weighting
         a_k = x_u.unsqueeze(1).repeat(1, self.k, 1, 1).matmul(self.w_k_1)
-        P_t_k = F.softmax(torch.tanh(a_k).matmul(self.w_k_2.reshape(self.k, self.embedding_size, 1)).squeeze(3), dim=2)
+        P_t_k = F.softmax(
+            torch.tanh(a_k)
+            .matmul(self.w_k_2.reshape(self.k, self.embedding_size, 1))
+            .squeeze(3),
+            dim=2,
+        )
 
         # interest embedding generation
         mul_p = P_k_t_b_t.mul(P_t_k)
@@ -181,5 +188,7 @@ class SINE(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
         test_items_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
+        scores = torch.matmul(
+            seq_output, test_items_emb.transpose(0, 1)
+        )  # [B, n_items]
         return scores

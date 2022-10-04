@@ -1,11 +1,11 @@
-mlp_hidden_size: [600]
-latent_dimension: 256
-dropout_prob: 0.5
-anneal_cap: 0.2
-total_anneal_steps: 200000
-critic_layers: [100,100,10]
-metrics_k: 100
-train_stage: 'actor_pretrain'
-pretrain_epochs: 150
-save_step: 10
-pre_model_path: ''
+mlp_hidden_size: [600]            # (list of int) The MLP hidden layer.
+latent_dimension: 256             # (int) The latent dimension of auto-encoder.
+dropout_prob: 0.5                 # (float) The drop out probability of input.
+anneal_cap: 0.2                   # (float) The super parameter of the weight of KL loss.
+total_anneal_steps: 200000        # (int) The maximum steps of anneal update.
+critic_layers: [100,100,10]       # (list of int) The layers of critic network.
+metrics_k: 100                    # (int) The parameter of NDCG for critic network training.
+train_stage: 'actor_pretrain'     # (str) Range in ['actor_pretrain', 'critic_pretrain', 'finetune'].
+pretrain_epochs: 150              # (int) The pretrain epochs of actor pre-training or critic-pretraining.
+save_step: 10                     # (int) Save pre-trained model every pre-training epochs.
+pre_model_path: ''                # (str) The path of pretrained model.

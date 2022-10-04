@@ -37,57 +37,74 @@ class NAIS(GeneralRecommender):
         mentioned in the original paper, we still train the model by a randomly sampled interactions.
 
     """
+
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
         super(NAIS, self).__init__(config, dataset)
 
         # load dataset info
-        self.LABEL = config['LABEL_FIELD']
+        self.LABEL = config["LABEL_FIELD"]
 
         # get all users' history interaction information.the history item
         # matrix is padding by the maximum number of a user's interactions
-        self.history_item_matrix, self.history_lens, self.mask_mat = self.get_history_info(dataset)
+        (
+            self.history_item_matrix,
+            self.history_lens,
+            self.mask_mat,
+        ) = self.get_history_info(dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.weight_size = config['weight_size']
-        self.algorithm = config['algorithm']
-        self.reg_weights = config['reg_weights']
-        self.alpha = config['alpha']
-        self.beta = config['beta']
-        self.split_to = config['split_to']
-        self.pretrain_path = config['pretrain_path']
+        self.embedding_size = config["embedding_size"]
+        self.weight_size = config["weight_size"]
+        self.algorithm = config["algorithm"]
+        self.reg_weights = config["reg_weights"]
+        self.alpha = config["alpha"]
+        self.beta = config["beta"]
+        self.split_to = config["split_to"]
+        self.pretrain_path = config["pretrain_path"]
 
         # split the too large dataset into the specified pieces
         if self.split_to > 0:
-            self.logger.info('split the n_items to {} pieces'.format(self.split_to))
-            self.group = torch.chunk(torch.arange(self.n_items).to(self.device), self.split_to)
+            self.logger.info("split the n_items to {} pieces".format(self.split_to))
+            self.group = torch.chunk(
+                torch.arange(self.n_items).to(self.device), self.split_to
+            )
         else:
-            self.logger.warning('Pay Attetion!! the `split_to` is set to 0. If you catch a OMM error in this case, ' + \
-                                'you need to increase it \n\t\t\tuntil the error disappears. For example, ' + \
-                                'you can append it in the command line such as `--split_to=5`')
+            self.logger.warning(
+                "Pay Attetion!! the `split_to` is set to 0. If you catch a OMM error in this case, "
+                + "you need to increase it \n\t\t\tuntil the error disappears. For example, "
+                + "you can append it in the command line such as `--split_to=5`"
+            )
 
         # define layers and loss
         # construct source and destination item embedding matrix
-        self.item_src_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.item_dst_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.item_src_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
+        self.item_dst_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
         self.bias = nn.Parameter(torch.zeros(self.n_items))
-        if self.algorithm == 'concat':
+        if self.algorithm == "concat":
             self.mlp_layers = MLPLayers([self.embedding_size * 2, self.weight_size])
-        elif self.algorithm == 'prod':
+        elif self.algorithm == "prod":
             self.mlp_layers = MLPLayers([self.embedding_size, self.weight_size])
         else:
-            raise ValueError("NAIS just support attention type in ['concat', 'prod'] but get {}".format(self.algorithm))
+            raise ValueError(
+                "NAIS just support attention type in ['concat', 'prod'] but get {}".format(
+                    self.algorithm
+                )
+            )
         self.weight_layer = nn.Parameter(torch.ones(self.weight_size, 1))
-        self.bceloss = nn.BCELoss()
+        self.bceloss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         if self.pretrain_path is not None:
-            self.logger.info('use pretrain from [{}]...'.format(self.pretrain_path))
+            self.logger.info("use pretrain from [{}]...".format(self.pretrain_path))
             self._load_pretrain()
         else:
-            self.logger.info('unused pretrain...')
+            self.logger.info("unused pretrain...")
             self.apply(self._init_weights)
 
     def _init_weights(self, module):
@@ -106,16 +123,14 @@ class NAIS(GeneralRecommender):
                 constant_(module.bias.data, 0)
 
     def _load_pretrain(self):
-        """A simple implementation of loading pretrained parameters.
-
-        """
-        fism = torch.load(self.pretrain_path)['state_dict']
-        self.item_src_embedding.weight.data.copy_(fism['item_src_embedding.weight'])
-        self.item_dst_embedding.weight.data.copy_(fism['item_dst_embedding.weight'])
+        """A simple implementation of loading pretrained parameters."""
+        fism = torch.load(self.pretrain_path)["state_dict"]
+        self.item_src_embedding.weight.data.copy_(fism["item_src_embedding.weight"])
+        self.item_dst_embedding.weight.data.copy_(fism["item_dst_embedding.weight"])
         for name, parm in self.mlp_layers.named_parameters():
-            if name.endswith('weight'):
+            if name.endswith("weight"):
                 xavier_normal_(parm.data)
-            elif name.endswith('bias'):
+            elif name.endswith("bias"):
                 constant_(parm.data, 0)
 
     def get_history_info(self, dataset):
@@ -147,7 +162,7 @@ class NAIS(GeneralRecommender):
         loss_2 = reg_2 * self.item_dst_embedding.weight.norm(2)
         loss_3 = 0
         for name, parm in self.mlp_layers.named_parameters():
-            if name.endswith('weight'):
+            if name.endswith("weight"):
                 loss_3 = loss_3 + reg_3 * parm.norm(2)
         return loss_1 + loss_2 + loss_3
 
@@ -162,14 +177,19 @@ class NAIS(GeneralRecommender):
             torch.Tensor: the result of attention
 
         """
-        if self.algorithm == 'prod':
-            mlp_input = inter * target.unsqueeze(1)  # batch_size x max_len x embedding_size
+        if self.algorithm == "prod":
+            mlp_input = inter * target.unsqueeze(
+                1
+            )  # batch_size x max_len x embedding_size
         else:
-            mlp_input = torch.cat([inter, target.unsqueeze(1).expand_as(inter)],
-                                  dim=2)  # batch_size x max_len x embedding_size*2
+            mlp_input = torch.cat(
+                [inter, target.unsqueeze(1).expand_as(inter)], dim=2
+            )  # batch_size x max_len x embedding_size*2
         mlp_output = self.mlp_layers(mlp_input)  # batch_size x max_len x weight_size
 
-        logits = torch.matmul(mlp_output, self.weight_layer).squeeze(2)  # batch_size x max_len
+        logits = torch.matmul(mlp_output, self.weight_layer).squeeze(
+            2
+        )  # batch_size x max_len
         return logits
 
     def mask_softmax(self, similarity, logits, bias, item_num, batch_mask_mat):
@@ -194,7 +214,7 @@ class NAIS(GeneralRecommender):
         weights = torch.div(exp_logits, exp_sum)
 
         coeff = torch.pow(item_num.squeeze(1), -self.alpha)
-        output = torch.sigmoid(coeff.float() * torch.sum(weights * similarity, dim=1) + bias)
+        output = coeff.float() * torch.sum(weights * similarity, dim=1) + bias
 
         return output
 
@@ -216,21 +236,25 @@ class NAIS(GeneralRecommender):
         exp_sum = torch.pow(exp_sum, self.beta)
         weights = torch.div(exp_logits, exp_sum)
         coeff = torch.pow(item_num.squeeze(1), -self.alpha)
-        output = torch.sigmoid(coeff.float() * torch.sum(weights * similarity, dim=1) + bias)
+        output = torch.sigmoid(
+            coeff.float() * torch.sum(weights * similarity, dim=1) + bias
+        )
 
         return output
 
     def inter_forward(self, user, item):
-        """forward the model by interaction
-
-        """
+        """forward the model by interaction"""
         user_inter = self.history_item_matrix[user]
         item_num = self.history_lens[user].unsqueeze(1)
         batch_mask_mat = self.mask_mat[user]
-        user_history = self.item_src_embedding(user_inter)  # batch_size x max_len x embedding_size
+        user_history = self.item_src_embedding(
+            user_inter
+        )  # batch_size x max_len x embedding_size
         target = self.item_dst_embedding(item)  # batch_size x embedding_size
         bias = self.bias[item]  # batch_size x 1
-        similarity = torch.bmm(user_history, target.unsqueeze(2)).squeeze(2)  # batch_size x max_len
+        similarity = torch.bmm(user_history, target.unsqueeze(2)).squeeze(
+            2
+        )  # batch_size x max_len
         logits = self.attention_mlp(user_history, target)
         scores = self.mask_softmax(similarity, logits, bias, item_num, batch_mask_mat)
         return scores
@@ -251,14 +275,18 @@ class NAIS(GeneralRecommender):
         """
         item_num = item_num.repeat(repeats, 1)
         user_history = self.item_src_embedding(user_input)  # inter_num x embedding_size
-        user_history = user_history.repeat(repeats, 1, 1)  # target_items x inter_num x embedding_size
+        user_history = user_history.repeat(
+            repeats, 1, 1
+        )  # target_items x inter_num x embedding_size
         if pred_slc is None:
             targets = self.item_dst_embedding.weight  # target_items x embedding_size
             bias = self.bias
         else:
             targets = self.item_dst_embedding(pred_slc)
             bias = self.bias[pred_slc]
-        similarity = torch.bmm(user_history, targets.unsqueeze(2)).squeeze(2)  # inter_num x target_items
+        similarity = torch.bmm(user_history, targets.unsqueeze(2)).squeeze(
+            2
+        )  # inter_num x target_items
         logits = self.attention_mlp(user_history, targets)
         scores = self.softmax(similarity, logits, item_num, bias)
         return scores
@@ -283,11 +311,18 @@ class NAIS(GeneralRecommender):
         # test users one by one, if the number of items is too large, we will split it to some pieces
         for user_input, item_num in zip(user_inters, item_nums.unsqueeze(1)):
             if self.split_to <= 0:
-                output = self.user_forward(user_input[:item_num], item_num, repeats=self.n_items)
+                output = self.user_forward(
+                    user_input[:item_num], item_num, repeats=self.n_items
+                )
             else:
                 output = []
                 for mask in self.group:
-                    tmp_output = self.user_forward(user_input[:item_num], item_num, repeats=len(mask), pred_slc=mask)
+                    tmp_output = self.user_forward(
+                        user_input[:item_num],
+                        item_num,
+                        repeats=len(mask),
+                        pred_slc=mask,
+                    )
                     output.append(tmp_output)
                 output = torch.cat(output, dim=0)
             scores.append(output)
@@ -297,5 +332,5 @@ class NAIS(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        output = self.forward(user, item)
+        output = torch.sigmoid(self.forward(user, item))
         return output

@@ -24,9 +24,7 @@ from recbole.model.layers import BaseFactorizationMachine
 
 
 class FM(ContextRecommender):
-    """Factorization Machine considers the second-order interaction with features to predict the final score.
-
-    """
+    """Factorization Machine considers the second-order interaction with features to predict the final score."""
 
     def __init__(self, config, dataset):
 
@@ -35,7 +33,7 @@ class FM(ContextRecommender):
         # define layers and loss
         self.fm = BaseFactorizationMachine(reduce_sum=True)
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -45,8 +43,10 @@ class FM(ContextRecommender):
             xavier_normal_(module.weight.data)
 
     def forward(self, interaction):
-        fm_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
-        y = self.sigmoid(self.first_order_linear(interaction) + self.fm(fm_all_embeddings))
+        fm_all_embeddings = self.concat_embed_input_fields(
+            interaction
+        )  # [batch_size, num_field, embed_dim]
+        y = self.first_order_linear(interaction) + self.fm(fm_all_embeddings)
         return y.squeeze(-1)
 
     def calculate_loss(self, interaction):
@@ -56,4 +56,4 @@ class FM(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))

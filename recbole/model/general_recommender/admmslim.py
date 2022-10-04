@@ -40,29 +40,30 @@ class ADMMSLIM(GeneralRecommender):
         # need at least one param
         self.dummy_param = torch.nn.Parameter(torch.zeros(1))
 
-        X = dataset.inter_matrix(form='csr').astype(np.float32)
+        X = dataset.inter_matrix(form="csr").astype(np.float32)
 
         num_users, num_items = X.shape
 
-        lambda1 = config['lambda1']
-        lambda2 = config['lambda2']
-        alpha = config['alpha']
-        rho = config['rho']
-        k = config['k']
-        positive_only = config['positive_only']
-        self.center_columns = config['center_columns']
+        lambda1 = config["lambda1"]
+        lambda2 = config["lambda2"]
+        alpha = config["alpha"]
+        rho = config["rho"]
+        k = config["k"]
+        positive_only = config["positive_only"]
+        self.center_columns = config["center_columns"]
         self.item_means = X.mean(axis=0).getA1()
 
         if self.center_columns:
             zero_mean_X = X.toarray() - self.item_means
-            G = (zero_mean_X.T @ zero_mean_X)
+            G = zero_mean_X.T @ zero_mean_X
             # large memory cost because we need to make X dense to subtract mean, delete asap
             del zero_mean_X
         else:
             G = (X.T @ X).toarray()
 
-        diag = lambda2 * np.diag(np.power(self.item_means, alpha)) + \
-            rho * np.identity(num_items)
+        diag = lambda2 * np.diag(np.power(self.item_means, alpha)) + rho * np.identity(
+            num_items
+        )
 
         P = np.linalg.inv(G + diag).astype(np.float32)
         B_aux = (P @ G).astype(np.float32)
@@ -97,10 +98,18 @@ class ADMMSLIM(GeneralRecommender):
         user_interactions = self.interaction_matrix[user, :].toarray()
 
         if self.center_columns:
-            r = (((user_interactions - self.item_means) *
-                  self.item_similarity[:, item].T).sum(axis=1)).flatten() + self.item_means[item]
+            r = (
+                (
+                    (user_interactions - self.item_means)
+                    * self.item_similarity[:, item].T
+                ).sum(axis=1)
+            ).flatten() + self.item_means[item]
         else:
-            r = (user_interactions * self.item_similarity[:, item].T).sum(axis=1).flatten()
+            r = (
+                (user_interactions * self.item_similarity[:, item].T)
+                .sum(axis=1)
+                .flatten()
+            )
 
         return add_noise(torch.from_numpy(r))
 
@@ -110,7 +119,10 @@ class ADMMSLIM(GeneralRecommender):
         user_interactions = self.interaction_matrix[user, :].toarray()
 
         if self.center_columns:
-            r = ((user_interactions - self.item_means) @ self.item_similarity + self.item_means).flatten()
+            r = (
+                (user_interactions - self.item_means) @ self.item_similarity
+                + self.item_means
+            ).flatten()
         else:
             r = (user_interactions @ self.item_similarity).flatten()
 

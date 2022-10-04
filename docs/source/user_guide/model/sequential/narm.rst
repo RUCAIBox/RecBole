@@ -43,7 +43,7 @@ Running with RecBole
 - ``n_layers (int)`` : The number of layers in GRU. Defaults to ``1``.
 - ``dropout_probs (list of float)`` : The dropout rate, there are two values,
   the former is for embedding layer and the latter is for concatenation of the vector obtained by the local encoder and the vector obtained by the global encoder. Defaults to ``[0.25,0.5]``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it is set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it is set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between the positive item and the negative one. In this way, negative sampling is necessary, such as setting ``--train_neg_sample_args="{'distribution': 'uniform', 'sample_num': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 **A Running Example:**
 
@@ -54,7 +54,7 @@ Write the following code to a python file, such as `run.py`
    from recbole.quick_start import run_recbole
 
    parameter_dict = {
-      'neg_sampling': None,
+      'train_neg_sample_args': None,
    }
    run_recbole(model='NARM', dataset='ml-100k', config_dict=parameter_dict)
 

@@ -22,8 +22,8 @@ from recbole.utils import InputType
 
 
 class ConvNCFBPRLoss(nn.Module):
-    """ ConvNCFBPRLoss, based on Bayesian Personalized Ranking,
-    
+    """ConvNCFBPRLoss, based on Bayesian Personalized Ranking,
+
     Shape:
         - Pos_score: (N)
         - Neg_score: (N), same shape as the Pos_score
@@ -49,7 +49,7 @@ class ConvNCFBPRLoss(nn.Module):
 
 class ConvNCF(GeneralRecommender):
     r"""ConvNCF is a a new neural network framework for collaborative filtering based on NCF.
-    It uses an outer product operation above the embedding layer, 
+    It uses an outer product operation above the embedding layer,
     which results in a semantic-rich interaction map that encodes pairwise correlations between embedding dimensions.
     We carefully design the data interface and use sparse tensor to train and test efficiently.
     We implement the model following the original author with a pairwise training mode.
@@ -60,21 +60,25 @@ class ConvNCF(GeneralRecommender):
         super(ConvNCF, self).__init__(config, dataset)
 
         # load dataset info
-        self.LABEL = config['LABEL_FIELD']
+        self.LABEL = config["LABEL_FIELD"]
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.cnn_channels = config['cnn_channels']
-        self.cnn_kernels = config['cnn_kernels']
-        self.cnn_strides = config['cnn_strides']
-        self.dropout_prob = config['dropout_prob']
-        self.regs = config['reg_weights']
+        self.embedding_size = config["embedding_size"]
+        self.cnn_channels = config["cnn_channels"]
+        self.cnn_kernels = config["cnn_kernels"]
+        self.cnn_strides = config["cnn_strides"]
+        self.dropout_prob = config["dropout_prob"]
+        self.regs = config["reg_weights"]
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
-        self.cnn_layers = CNNLayers(self.cnn_channels, self.cnn_kernels, self.cnn_strides, activation='relu')
-        self.predict_layers = MLPLayers([self.cnn_channels[-1], 1], self.dropout_prob, activation='none')
+        self.cnn_layers = CNNLayers(
+            self.cnn_channels, self.cnn_kernels, self.cnn_strides, activation="relu"
+        )
+        self.predict_layers = MLPLayers(
+            [self.cnn_channels[-1], 1], self.dropout_prob, activation="none"
+        )
         self.loss = ConvNCFBPRLoss()
 
     def forward(self, user, item):
@@ -104,10 +108,10 @@ class ConvNCF(GeneralRecommender):
         loss_2 = reg_1 * self.item_embedding.weight.norm(2)
         loss_3 = 0
         for name, parm in self.cnn_layers.named_parameters():
-            if name.endswith('weight'):
+            if name.endswith("weight"):
                 loss_3 = loss_3 + reg_2 * parm.norm(2)
         for name, parm in self.predict_layers.named_parameters():
-            if name.endswith('weight'):
+            if name.endswith("weight"):
                 loss_3 = loss_3 + reg_2 * parm.norm(2)
         return loss_1 + loss_2 + loss_3
 

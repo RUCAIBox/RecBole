@@ -43,29 +43,53 @@ class DMF(GeneralRecommender):
         super(DMF, self).__init__(config, dataset)
 
         # load dataset info
-        self.LABEL = config['LABEL_FIELD']
-        self.RATING = config['RATING_FIELD']
+        self.LABEL = config["LABEL_FIELD"]
+        self.RATING = config["RATING_FIELD"]
 
         # load parameters info
-        self.user_embedding_size = config['user_embedding_size']
-        self.item_embedding_size = config['item_embedding_size']
-        self.user_hidden_size_list = config['user_hidden_size_list']
-        self.item_hidden_size_list = config['item_hidden_size_list']
+        self.user_embedding_size = config["user_embedding_size"]
+        self.item_embedding_size = config["item_embedding_size"]
+        self.user_hidden_size_list = config["user_hidden_size_list"]
+        self.item_hidden_size_list = config["item_hidden_size_list"]
         # The dimensions of the last layer of users and items must be the same
         assert self.user_hidden_size_list[-1] == self.item_hidden_size_list[-1]
-        self.inter_matrix_type = config['inter_matrix_type']
+        self.inter_matrix_type = config["inter_matrix_type"]
 
         # generate intermediate data
-        if self.inter_matrix_type == '01':
-            self.history_user_id, self.history_user_value, _ = dataset.history_user_matrix()
-            self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
-            self.interaction_matrix = dataset.inter_matrix(form='csr').astype(np.float32)
-        elif self.inter_matrix_type == 'rating':
-            self.history_user_id, self.history_user_value, _ = dataset.history_user_matrix(value_field=self.RATING)
-            self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix(value_field=self.RATING)
-            self.interaction_matrix = dataset.inter_matrix(form='csr', value_field=self.RATING).astype(np.float32)
+        if self.inter_matrix_type == "01":
+            (
+                self.history_user_id,
+                self.history_user_value,
+                _,
+            ) = dataset.history_user_matrix()
+            (
+                self.history_item_id,
+                self.history_item_value,
+                _,
+            ) = dataset.history_item_matrix()
+            self.interaction_matrix = dataset.inter_matrix(form="csr").astype(
+                np.float32
+            )
+        elif self.inter_matrix_type == "rating":
+            (
+                self.history_user_id,
+                self.history_user_value,
+                _,
+            ) = dataset.history_user_matrix(value_field=self.RATING)
+            (
+                self.history_item_id,
+                self.history_item_value,
+                _,
+            ) = dataset.history_item_matrix(value_field=self.RATING)
+            self.interaction_matrix = dataset.inter_matrix(
+                form="csr", value_field=self.RATING
+            ).astype(np.float32)
         else:
-            raise ValueError("The inter_matrix_type must in ['01', 'rating'] but get {}".format(self.inter_matrix_type))
+            raise ValueError(
+                "The inter_matrix_type must in ['01', 'rating'] but get {}".format(
+                    self.inter_matrix_type
+                )
+            )
         self.max_rating = self.history_user_value.max()
         # tensor of shape [n_items, H] where H is max length of history interaction.
         self.history_user_id = self.history_user_id.to(self.device)
@@ -74,19 +98,27 @@ class DMF(GeneralRecommender):
         self.history_item_value = self.history_item_value.to(self.device)
 
         # define layers
-        self.user_linear = nn.Linear(in_features=self.n_items, out_features=self.user_embedding_size, bias=False)
-        self.item_linear = nn.Linear(in_features=self.n_users, out_features=self.item_embedding_size, bias=False)
-        self.user_fc_layers = MLPLayers([self.user_embedding_size] + self.user_hidden_size_list)
-        self.item_fc_layers = MLPLayers([self.item_embedding_size] + self.item_hidden_size_list)
+        self.user_linear = nn.Linear(
+            in_features=self.n_items, out_features=self.user_embedding_size, bias=False
+        )
+        self.item_linear = nn.Linear(
+            in_features=self.n_users, out_features=self.item_embedding_size, bias=False
+        )
+        self.user_fc_layers = MLPLayers(
+            [self.user_embedding_size] + self.user_hidden_size_list
+        )
+        self.item_fc_layers = MLPLayers(
+            [self.item_embedding_size] + self.item_hidden_size_list
+        )
         self.sigmoid = nn.Sigmoid()
-        self.bce_loss = nn.BCELoss()
+        self.bce_loss = nn.BCEWithLogitsLoss()
 
         # Save the item embedding before dot product layer to speed up evaluation
         self.i_embedding = None
 
         # parameters initialization
         self.apply(self._init_weights)
-        self.other_parameter_name = ['i_embedding']
+        self.other_parameter_name = ["i_embedding"]
 
     def _init_weights(self, module):
         # We just initialize the module with normal distribution as the paper said
@@ -103,10 +135,15 @@ class DMF(GeneralRecommender):
 
         # Following lines construct tensor of shape [B,n_users] using the tensor of shape [B,H]
         col_indices = self.history_user_id[item].flatten()
-        row_indices = torch.arange(item.shape[0]).to(self.device). \
-            repeat_interleave(self.history_user_id.shape[1], dim=0)
+        row_indices = (
+            torch.arange(item.shape[0])
+            .to(self.device)
+            .repeat_interleave(self.history_user_id.shape[1], dim=0)
+        )
         matrix_01 = torch.zeros(1).to(self.device).repeat(item.shape[0], self.n_users)
-        matrix_01.index_put_((row_indices, col_indices), self.history_user_value[item].flatten())
+        matrix_01.index_put_(
+            (row_indices, col_indices), self.history_user_value[item].flatten()
+        )
         item = self.item_linear(matrix_01)
 
         user = self.user_fc_layers(user)
@@ -114,7 +151,6 @@ class DMF(GeneralRecommender):
 
         # cosine distance is replaced by dot product according the result of our experiments.
         vector = torch.mul(user, item).sum(dim=1)
-        vector = self.sigmoid(vector)
 
         return vector
 
@@ -125,9 +161,9 @@ class DMF(GeneralRecommender):
 
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        if self.inter_matrix_type == '01':
+        if self.inter_matrix_type == "01":
             label = interaction[self.LABEL]
-        elif self.inter_matrix_type == 'rating':
+        elif self.inter_matrix_type == "rating":
             label = interaction[self.RATING] * interaction[self.LABEL]
         output = self.forward(user, item)
 
@@ -138,7 +174,8 @@ class DMF(GeneralRecommender):
     def predict(self, interaction):
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
-        return self.forward(user, item)
+        predict = self.sigmoid(self.forward(user, item))
+        return predict
 
     def get_user_embedding(self, user):
         r"""Get a batch of user's embedding with the user's id and history interaction matrix.
@@ -152,9 +189,13 @@ class DMF(GeneralRecommender):
         # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
         col_indices = self.history_item_id[user].flatten()
         row_indices = torch.arange(user.shape[0]).to(self.device)
-        row_indices = row_indices.repeat_interleave(self.history_item_id.shape[1], dim=0)
+        row_indices = row_indices.repeat_interleave(
+            self.history_item_id.shape[1], dim=0
+        )
         matrix_01 = torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
-        matrix_01.index_put_((row_indices, col_indices), self.history_item_value[user].flatten())
+        matrix_01.index_put_(
+            (row_indices, col_indices), self.history_item_value[user].flatten()
+        )
         user = self.user_linear(matrix_01)
 
         return user
@@ -172,8 +213,11 @@ class DMF(GeneralRecommender):
         col = interaction_matrix.col
         i = torch.LongTensor([row, col])
         data = torch.FloatTensor(interaction_matrix.data)
-        item_matrix = torch.sparse.FloatTensor(i, data, torch.Size(interaction_matrix.shape)).to(self.device).\
-            transpose(0, 1)
+        item_matrix = (
+            torch.sparse.FloatTensor(i, data, torch.Size(interaction_matrix.shape))
+            .to(self.device)
+            .transpose(0, 1)
+        )
         item = torch.sparse.mm(item_matrix, self.item_linear.weight.t())
 
         item = self.item_fc_layers(item)

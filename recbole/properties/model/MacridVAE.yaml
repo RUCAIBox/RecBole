@@ -1,10 +1,10 @@
-embedding_size: 64
-drop_out: 0.5
-kfac: 10
-nogb: False
-std: 0.01
-encoder_hidden_size: [600]
-tau: 0.1
-anneal_cap: 0.2
-total_anneal_steps: 200000
-reg_weights: [0, 0]
+embedding_size: 64              # (int) The latent dimension of auto-encoder.
+dropout_prob: 0.5               # (float) The drop out probability of input.
+kfac: 10                        # (int) Number of facets (macro concepts).
+nogb: False                     # (bool) Whether to disable Gumbel-Softmax sampling.
+std: 0.01                       # (float) Standard deviation of the Gaussian prior.
+encoder_hidden_size: [600]      # (list of int) The MLP hidden layer.
+tau: 0.1                        # (float) Temperature of sigmoid/softmax, in (0,oo).
+anneal_cap: 0.2                 # (float) The hyper parameter of the weight of KL loss.
+total_anneal_steps: 200000      # (int) The maximum steps of anneal update.
+reg_weights: [0.0, 0.0]         # (list of float) L2 regularization weights.  

@@ -26,8 +26,7 @@ from recbole.utils import InputType
 
 
 class Aggregator(nn.Module):
-    """ GNN Aggregator layer
-    """
+    """GNN Aggregator layer"""
 
     def __init__(self, input_dim, output_dim, dropout, aggregator_type):
         super(Aggregator, self).__init__()
@@ -38,11 +37,11 @@ class Aggregator(nn.Module):
 
         self.message_dropout = nn.Dropout(dropout)
 
-        if self.aggregator_type == 'gcn':
+        if self.aggregator_type == "gcn":
             self.W = nn.Linear(self.input_dim, self.output_dim)
-        elif self.aggregator_type == 'graphsage':
+        elif self.aggregator_type == "graphsage":
             self.W = nn.Linear(self.input_dim * 2, self.output_dim)
-        elif self.aggregator_type == 'bi':
+        elif self.aggregator_type == "bi":
             self.W1 = nn.Linear(self.input_dim, self.output_dim)
             self.W2 = nn.Linear(self.input_dim, self.output_dim)
         else:
@@ -53,11 +52,13 @@ class Aggregator(nn.Module):
     def forward(self, norm_matrix, ego_embeddings):
         side_embeddings = torch.sparse.mm(norm_matrix, ego_embeddings)
 
-        if self.aggregator_type == 'gcn':
+        if self.aggregator_type == "gcn":
             ego_embeddings = self.activation(self.W(ego_embeddings + side_embeddings))
-        elif self.aggregator_type == 'graphsage':
-            ego_embeddings = self.activation(self.W(torch.cat([ego_embeddings, side_embeddings], dim=1)))
-        elif self.aggregator_type == 'bi':
+        elif self.aggregator_type == "graphsage":
+            ego_embeddings = self.activation(
+                self.W(torch.cat([ego_embeddings, side_embeddings], dim=1))
+            )
+        elif self.aggregator_type == "bi":
             add_embeddings = ego_embeddings + side_embeddings
             sum_embeddings = self.activation(self.W1(add_embeddings))
             bi_embeddings = torch.mul(ego_embeddings, side_embeddings)
@@ -83,31 +84,49 @@ class KGAT(KnowledgeRecommender):
         super(KGAT, self).__init__(config, dataset)
 
         # load dataset info
-        self.ckg = dataset.ckg_graph(form='dgl', value_field='relation_id')
-        self.all_hs = torch.LongTensor(dataset.ckg_graph(form='coo', value_field='relation_id').row).to(self.device)
-        self.all_ts = torch.LongTensor(dataset.ckg_graph(form='coo', value_field='relation_id').col).to(self.device)
-        self.all_rs = torch.LongTensor(dataset.ckg_graph(form='coo', value_field='relation_id').data).to(self.device)
-        self.matrix_size = torch.Size([self.n_users + self.n_entities, self.n_users + self.n_entities])
+        self.ckg = dataset.ckg_graph(form="dgl", value_field="relation_id")
+        self.all_hs = torch.LongTensor(
+            dataset.ckg_graph(form="coo", value_field="relation_id").row
+        ).to(self.device)
+        self.all_ts = torch.LongTensor(
+            dataset.ckg_graph(form="coo", value_field="relation_id").col
+        ).to(self.device)
+        self.all_rs = torch.LongTensor(
+            dataset.ckg_graph(form="coo", value_field="relation_id").data
+        ).to(self.device)
+        self.matrix_size = torch.Size(
+            [self.n_users + self.n_entities, self.n_users + self.n_entities]
+        )
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.kg_embedding_size = config['kg_embedding_size']
-        self.layers = [self.embedding_size] + config['layers']
-        self.aggregator_type = config['aggregator_type']
-        self.mess_dropout = config['mess_dropout']
-        self.reg_weight = config['reg_weight']
+        self.embedding_size = config["embedding_size"]
+        self.kg_embedding_size = config["kg_embedding_size"]
+        self.layers = [self.embedding_size] + config["layers"]
+        self.aggregator_type = config["aggregator_type"]
+        self.mess_dropout = config["mess_dropout"]
+        self.reg_weight = config["reg_weight"]
 
         # generate intermediate data
-        self.A_in = self.init_graph()  # init the attention matrix by the structure of ckg
+        self.A_in = (
+            self.init_graph()
+        )  # init the attention matrix by the structure of ckg
 
         # define layers and loss
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.entity_embedding = nn.Embedding(self.n_entities, self.embedding_size)
         self.relation_embedding = nn.Embedding(self.n_relations, self.kg_embedding_size)
-        self.trans_w = nn.Embedding(self.n_relations, self.embedding_size * self.kg_embedding_size)
+        self.trans_w = nn.Embedding(
+            self.n_relations, self.embedding_size * self.kg_embedding_size
+        )
         self.aggregator_layers = nn.ModuleList()
-        for idx, (input_dim, output_dim) in enumerate(zip(self.layers[:-1], self.layers[1:])):
-            self.aggregator_layers.append(Aggregator(input_dim, output_dim, self.mess_dropout, self.aggregator_type))
+        for idx, (input_dim, output_dim) in enumerate(
+            zip(self.layers[:-1], self.layers[1:])
+        ):
+            self.aggregator_layers.append(
+                Aggregator(
+                    input_dim, output_dim, self.mess_dropout, self.aggregator_type
+                )
+            )
         self.tanh = nn.Tanh()
         self.mf_loss = BPRLoss()
         self.reg_loss = EmbLoss()
@@ -116,7 +135,7 @@ class KGAT(KnowledgeRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
-        self.other_parameter_name = ['restore_user_e', 'restore_entity_e']
+        self.other_parameter_name = ["restore_user_e", "restore_entity_e"]
 
     def init_graph(self):
         r"""Get the initial attention matrix through the collaborative knowledge graph
@@ -125,14 +144,20 @@ class KGAT(KnowledgeRecommender):
             torch.sparse.FloatTensor: Sparse tensor of the attention matrix
         """
         import dgl
+
         adj_list = []
         for rel_type in range(1, self.n_relations, 1):
-            edge_idxs = self.ckg.filter_edges(lambda edge: edge.data['relation_id'] == rel_type)
-            sub_graph = dgl.edge_subgraph(self.ckg, edge_idxs, preserve_nodes=True). \
-                adjacency_matrix(transpose=False, scipy_fmt='coo').astype('float')
+            edge_idxs = self.ckg.filter_edges(
+                lambda edge: edge.data["relation_id"] == rel_type
+            )
+            sub_graph = (
+                dgl.edge_subgraph(self.ckg, edge_idxs, preserve_nodes=True)
+                .adjacency_matrix(transpose=False, scipy_fmt="coo")
+                .astype("float")
+            )
             rowsum = np.array(sub_graph.sum(1))
             d_inv = np.power(rowsum, -1).flatten()
-            d_inv[np.isinf(d_inv)] = 0.
+            d_inv[np.isinf(d_inv)] = 0.0
             d_mat_inv = sp.diags(d_inv)
             norm_adj = d_mat_inv.dot(sub_graph).tocoo()
             adj_list.append(norm_adj)
@@ -157,7 +182,9 @@ class KGAT(KnowledgeRecommender):
             norm_embeddings = F.normalize(ego_embeddings, p=2, dim=1)
             embeddings_list.append(norm_embeddings)
         kgat_all_embeddings = torch.cat(embeddings_list, dim=1)
-        user_all_embeddings, entity_all_embeddings = torch.split(kgat_all_embeddings, [self.n_users, self.n_entities])
+        user_all_embeddings, entity_all_embeddings = torch.split(
+            kgat_all_embeddings, [self.n_users, self.n_entities]
+        )
         return user_all_embeddings, entity_all_embeddings
 
     def _get_kg_embedding(self, h, r, pos_t, neg_t):
@@ -165,7 +192,9 @@ class KGAT(KnowledgeRecommender):
         pos_t_e = self.entity_embedding(pos_t).unsqueeze(1)
         neg_t_e = self.entity_embedding(neg_t).unsqueeze(1)
         r_e = self.relation_embedding(r)
-        r_trans_w = self.trans_w(r).view(r.size(0), self.embedding_size, self.kg_embedding_size)
+        r_trans_w = self.trans_w(r).view(
+            r.size(0), self.embedding_size, self.kg_embedding_size
+        )
 
         h_e = torch.bmm(h_e, r_trans_w).squeeze(1)
         pos_t_e = torch.bmm(pos_t_e, r_trans_w).squeeze(1)
@@ -239,7 +268,9 @@ class KGAT(KnowledgeRecommender):
         h_e = all_embeddings[hs]
         t_e = all_embeddings[ts]
         r_e = self.relation_embedding.weight[r]
-        r_trans_w = self.trans_w.weight[r].view(self.embedding_size, self.kg_embedding_size)
+        r_trans_w = self.trans_w.weight[r].view(
+            self.embedding_size, self.kg_embedding_size
+        )
 
         h_e = torch.matmul(h_e, r_trans_w)
         t_e = torch.matmul(t_e, r_trans_w)
@@ -249,15 +280,15 @@ class KGAT(KnowledgeRecommender):
         return kg_score
 
     def update_attentive_A(self):
-        r"""Update the attention matrix using the updated embedding matrix
-
-        """
+        r"""Update the attention matrix using the updated embedding matrix"""
 
         kg_score_list, row_list, col_list = [], [], []
         # To reduce the GPU memory consumption, we calculate the scores of KG triples according to the type of relation
         for rel_idx in range(1, self.n_relations, 1):
             triple_index = torch.where(self.all_rs == rel_idx)
-            kg_score = self.generate_transE_score(self.all_hs[triple_index], self.all_ts[triple_index], rel_idx)
+            kg_score = self.generate_transE_score(
+                self.all_hs[triple_index], self.all_ts[triple_index], rel_idx
+            )
             row_list.append(self.all_hs[triple_index])
             col_list.append(self.all_ts[triple_index])
             kg_score_list.append(kg_score)
@@ -286,7 +317,7 @@ class KGAT(KnowledgeRecommender):
         if self.restore_user_e is None or self.restore_entity_e is None:
             self.restore_user_e, self.restore_entity_e = self.forward()
         u_embeddings = self.restore_user_e[user]
-        i_embeddings = self.restore_entity_e[:self.n_items]
+        i_embeddings = self.restore_entity_e[: self.n_items]
 
         scores = torch.matmul(u_embeddings, i_embeddings.transpose(0, 1))
 

@@ -1,6 +1,6 @@
 Model Introduction
 =====================
-We implement 77 recommendation models covering general recommendation, sequential recommendation,
+We implement 83 recommendation models covering general recommendation, sequential recommendation,
 context-aware recommendation and knowledge-based recommendation. A brief introduction to these models are as follows:
 
 
@@ -40,6 +40,7 @@ task of top-n recommendation. All the collaborative filter(CF) based models are 
    model/general/sgl
    model/general/admmslim
    model/general/nceplrec
+   model/general/simplex
    model/general/ncl
 
 
@@ -67,6 +68,7 @@ are also support for these models. And evaluation is always conducted in the way
    model/context/din
    model/context/dien
    model/context/dcn
+   model/context/dcnv2
    model/context/autoint
    model/context/xgboost
    model/context/lightgbm
@@ -120,7 +122,9 @@ Knowledge-based recommendation introduces an external knowledge graph to enhance
    model/knowledge/cfkg
    model/knowledge/ktup
    model/knowledge/kgat
+   model/knowledge/kgin
    model/knowledge/ripplenet
+   model/knowledge/mcclk
    model/knowledge/mkr
    model/knowledge/kgcn
    model/knowledge/kgnnls

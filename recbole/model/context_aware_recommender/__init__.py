@@ -1,6 +1,7 @@
 from recbole.model.context_aware_recommender.afm import AFM
 from recbole.model.context_aware_recommender.autoint import AutoInt
 from recbole.model.context_aware_recommender.dcn import DCN
+from recbole.model.context_aware_recommender.dcnv2 import DCNV2
 from recbole.model.context_aware_recommender.deepfm import DeepFM
 from recbole.model.context_aware_recommender.dssm import DSSM
 from recbole.model.context_aware_recommender.ffm import FFM

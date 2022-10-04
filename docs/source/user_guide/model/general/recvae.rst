@@ -21,7 +21,7 @@ Running with RecBole
 
 **Model Hyper-Parameters:**
 
-- ``hidden_dimendion (list)`` : The hidden dimension of auto-encoder. Defaults to ``600``.
+- ``hidden_dimendion (int)`` : The hidden dimension of auto-encoder. Defaults to ``600``.
 - ``latent_dimendion (int)`` : The latent dimension of auto-encoder. Defaults to ``200``.
 - ``dropout_prob (float)`` : The drop out probability of input. Defaults to ``0.5``.
 - ``beta (float)`` : The default hyperparameter of the weight of KL loss. Defaults to ``0.2``.

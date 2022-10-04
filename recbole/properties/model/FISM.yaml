@@ -1,4 +1,4 @@
-embedding_size: 64
-split_to: 0
-reg_weights: [1e-2, 1e-2]
-alpha: 0
+embedding_size: 64              # (int) The embedding size of users and items.
+split_to: 0                     # (int) Used to reduce the GPU memory usage during the evaluation. 
+reg_weights: [1e-2, 1e-2]       # (list of float) The L2 regularization weights.
+alpha: 0.0                      # (float) Weight to control the normalization effect of interactions.

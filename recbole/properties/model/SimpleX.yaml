@@ -1,0 +1,7 @@
+embedding_size: 64              # (int) The embedding size of users and items.
+margin: 0.5                     # (float) The margin to filter negative samples. Range in [-1, 1].
+negative_weight: 10             # (int) Weight to balance between positive-sample and negative-sample loss. 
+gamma: 0.5                      # (float) Weight for fusion of user' and interacted items' representations.
+aggregator: 'mean'              # (str) The item aggregator ranging in ['mean', 'user_attention', 'self_attention'].
+history_len: 50                 # (int) The length of the user's historical interaction items.
+reg_weight: 1e-05               # (float) The L2 regularization weights.

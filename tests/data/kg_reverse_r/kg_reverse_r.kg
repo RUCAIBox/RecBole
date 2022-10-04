@@ -1,0 +1,5 @@
+head_id:token	tail_id:token	relation_id:token
+eb	ea	ra
+ec	eb	rb
+ed	ec	rc
+ee	ed	rd

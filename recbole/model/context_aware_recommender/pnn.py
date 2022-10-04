@@ -34,11 +34,11 @@ class PNN(ContextRecommender):
         super(PNN, self).__init__(config, dataset)
 
         # load parameters info
-        self.mlp_hidden_size = config['mlp_hidden_size']
-        self.dropout_prob = config['dropout_prob']
-        self.use_inner = config['use_inner']
-        self.use_outer = config['use_outer']
-        self.reg_weight = config['reg_weight']
+        self.mlp_hidden_size = config["mlp_hidden_size"]
+        self.dropout_prob = config["dropout_prob"]
+        self.use_inner = config["use_inner"]
+        self.use_outer = config["use_outer"]
+        self.reg_weight = config["reg_weight"]
 
         self.num_pair = int(self.num_feature_field * (self.num_feature_field - 1) / 2)
 
@@ -46,17 +46,21 @@ class PNN(ContextRecommender):
         product_out_dim = self.num_feature_field * self.embedding_size
         if self.use_inner:
             product_out_dim += self.num_pair
-            self.inner_product = InnerProductLayer(self.num_feature_field, device=self.device)
+            self.inner_product = InnerProductLayer(
+                self.num_feature_field, device=self.device
+            )
 
         if self.use_outer:
             product_out_dim += self.num_pair
-            self.outer_product = OuterProductLayer(self.num_feature_field, self.embedding_size, device=self.device)
+            self.outer_product = OuterProductLayer(
+                self.num_feature_field, self.embedding_size, device=self.device
+            )
         size_list = [product_out_dim] + self.mlp_hidden_size
         self.mlp_layers = MLPLayers(size_list, self.dropout_prob, bn=False)
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -70,7 +74,7 @@ class PNN(ContextRecommender):
         """
         reg_loss = 0
         for name, parm in self.mlp_layers.named_parameters():
-            if name.endswith('weight'):
+            if name.endswith("weight"):
                 reg_loss = reg_loss + self.reg_weight * parm.norm(2)
         return reg_loss
 
@@ -83,22 +87,29 @@ class PNN(ContextRecommender):
                 constant_(module.bias.data, 0)
 
     def forward(self, interaction):
-        pnn_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
+        pnn_all_embeddings = self.concat_embed_input_fields(
+            interaction
+        )  # [batch_size, num_field, embed_dim]
         batch_size = pnn_all_embeddings.shape[0]
         # linear part
-        linear_part = pnn_all_embeddings.view(batch_size, -1)  # [batch_size,num_field*embed_dim]
+        linear_part = pnn_all_embeddings.view(
+            batch_size, -1
+        )  # [batch_size,num_field*embed_dim]
         output = [linear_part]
         # second order part
         if self.use_inner:
-            inner_product = self.inner_product(pnn_all_embeddings).view(batch_size, -1)  # [batch_size,num_pairs]
+            inner_product = self.inner_product(pnn_all_embeddings).view(
+                batch_size, -1
+            )  # [batch_size,num_pairs]
             output.append(inner_product)
         if self.use_outer:
-            outer_product = self.outer_product(pnn_all_embeddings).view(batch_size, -1)  # [batch_size,num_pairs]
+            outer_product = self.outer_product(pnn_all_embeddings).view(
+                batch_size, -1
+            )  # [batch_size,num_pairs]
             output.append(outer_product)
         output = torch.cat(output, dim=1)  # [batch_size,d]
 
         output = self.predict_layer(self.mlp_layers(output))  # [batch_size,1]
-        output = self.sigmoid(output)
         return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
@@ -108,7 +119,7 @@ class PNN(ContextRecommender):
         return self.loss(output, label) + self.reg_loss()
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))
 
 
 class InnerProductLayer(nn.Module):
@@ -168,7 +179,9 @@ class OuterProductLayer(nn.Module):
         num_pairs = int(num_feature_field * (num_feature_field - 1) / 2)
         embed_size = embedding_size
 
-        self.kernel = nn.Parameter(torch.rand(embed_size, num_pairs, embed_size), requires_grad=True)
+        self.kernel = nn.Parameter(
+            torch.rand(embed_size, num_pairs, embed_size), requires_grad=True
+        )
         nn.init.xavier_uniform_(self.kernel)
 
         self.to(device)
@@ -194,7 +207,9 @@ class OuterProductLayer(nn.Module):
 
         p.unsqueeze_(dim=1)  # [batch_size, 1, num_pairs, emb_dim]
 
-        p = torch.mul(p, self.kernel.unsqueeze(0))  # [batch_size,emb_dim,num_pairs,emb_dim]
+        p = torch.mul(
+            p, self.kernel.unsqueeze(0)
+        )  # [batch_size,emb_dim,num_pairs,emb_dim]
         p = torch.sum(p, dim=-1)  # [batch_size,emb_dim,num_pairs]
         p = torch.transpose(p, 2, 1)  # [batch_size,num_pairs,emb_dim]
 

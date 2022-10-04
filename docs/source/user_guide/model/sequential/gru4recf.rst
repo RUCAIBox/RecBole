@@ -13,8 +13,8 @@ Feature-rich Session-based Recommendations
 
 **Abstract:**  Real-life recommender systems often face the daunting task
 of providing recommendations based only on the clicks of
-a user session. Methods that rely on user profiles – such
-as matrix factorization – perform very poorly in this setting, thus item-to-item recommendations are used most of
+a user session. Methods that rely on user profiles - such
+as matrix factorization - perform very poorly in this setting, thus item-to-item recommendations are used most of
 the time. However the items typically have rich feature representations such as pictures and text descriptions that can
 be used to model the sessions. Here we investigate how these
 features can be exploited in Recurrent Neural Network based
@@ -42,7 +42,7 @@ Running with RecBole
 - ``dropout_prob (float)`` : The dropout rate. Defaults to ``0.3``.
 - ``selected_features (list)`` : The list of selected item features. Defaults to ``['class']`` for ml-100k dataset.
 - ``pooling_mode (str)`` : The intra-feature pooling mode. Defaults to ``'sum'``. Range in ``['max', 'mean', 'sum']``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it is set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it is set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between the positive item and the negative one. In this way, negative sampling is necessary, such as setting ``--train_neg_sample_args="{'distribution': 'uniform', 'sample_num': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 
 
 **A Running Example:**
@@ -54,7 +54,7 @@ Write the following code to a python file, such as `run.py`
    from recbole.quick_start import run_recbole
 
    parameter_dict = {
-      'neg_sampling': None,
+      'train_neg_sample_args': None,
    }
    run_recbole(model='GRU4RecF', dataset='ml-100k', config_dict=parameter_dict)
 

@@ -1,0 +1,14 @@
+embedding_size: 64              # (int) The embedding size of users, items, entities and relations.
+reg_weight: 1e-5                # (float) The L2 regularization weight.
+n_hops: 2                       # (int) The number of context hops in GCN layer.
+node_dropout_rate: 0.5          # (float) The node dropout rate in GCN layer.
+mess_dropout_rate: 0.1          # (float) The message dropout rate in GCN layer.
+lightgcn_layer: 2               # (int) The number of LightGCN layer.
+item_agg_layer: 1               # (int) The number of item aggregation layer.
+alpha: 0.2                      # (float) The local-level contrastive loss weight.
+beta: 0.1                       # (float) The contrastive loss weight.
+k: 10                           # (int) The topk parameter used in building a k-NN item-item semantic graph.
+lambda_coeff: 0.5               # (float) The coefficient when updating k-NN item-item semantic graph.
+temperature: 0.8                # (float) The temperature parameter used in loss calculation.
+build_graph_separately: True    # (bool) Whether user a separate GCN to build item-item graph.
+loss_type: 'BPR'                # (str, optional) The loss type used in this model.

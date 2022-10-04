@@ -2,11 +2,11 @@
 
 ### Datasets information:
 
-| Dataset    | #User   | #Item   | #Interaction | Sparsity | #Entity  | #Relation | #Triple    |
-| ---------- | ------: | ------: | -----------: | -------: | -------: | --------: | ---------: |
-| ml-1m      |  6,040  |  3,629  |     836,478  |  0.9618  |  79,388  |       51  |   385,923  |
-| ml-10m     | 69,864  | 10,599  |   8,242,124  |  0.9889  | 181,941  |       51  | 1,051,385  |
-| LFM-1b2013 | 28,150  | 64,583  |   1,907,900  |  0.9990  | 181,112  |        7  |   281,900  |
+| Dataset             |   #User |  #Item | #Interaction | Sparsity | #Entity | #Relation | #Triple |
+| ------------------- | ------: | -----: | -----------: | -------: | ------: | --------: | ------: |
+| MovieLens-1m        |   6,034 |  3,096 |      832,104 | 95.5458% |  10,234 |        54 | 206,844 |
+| Amazon-Books (2018) | 160,383 |  4,000 |      344,601 | 99.9463% |  10,302 |        22 | 152,882 |
+| Lastfm-track        |  45,987 | 38,439 |    3,118,764 | 99.8236% |  94,104 |        12 | 774,508 |
 
 ### Device information
 
@@ -19,71 +19,24 @@ GPU:                  TITAN V（12GB）
 Machine Specs:        14 CPU machine, 256GB RAM
 ```
 
-### 1) ml-1m dataset:
+### 1) MovieLens-1m dataset:
 
-#### Time and memory cost on ml-1m dataset:
+#### Time and memory cost on MovieLens-1m dataset:
 
-| Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
-| --------- | ------------------------: | --------------------------: | --------------: |
-| CKE       |                     4.88  |                       0.44  |           0.38  |
-| KTUP      |                     3.76  |                       1.70  |           0.47  |
-| RippleNet |                    35.85  |                       0.84  |           7.26  |
-| KGAT      |                     6.68  |                       0.37  |           2.10  |
-| KGNN-LS   |                     8.20  |                       1.14  |           0.57  |
-| KGCN      |                     3.56  |                       1.14  |           0.56  |
-| MKR       |                     4.36  |                       5.57  |           3.68  |
-| CFKG      |                     1.60  |                       0.57  |           0.27  |
+| Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | Training GPU Memory (GB) | Evaluation GPU Memory (GB) |
+| --------- | ------------------------- | --------------------------- | ------------------------ | -------------------------- |
+| CFKG      | 3.03                      | 0.30                        | 0.05                     | 18.15                      |
+| CKE       | 9.32                      | 0.22                        | 0.29                     | 0.58                       |
+| KGAT      | 9.39                      | 0.18                        | 0.46                     | 1.74                       |
+| KGCN      | 5.61                      | 2.07                        | 0.07                     | 0.19                       |
+| KGIN      | 53.89                     | 0.48                        | 0.35                     | 0.42                       |
+| KGNNLS    | 10.63                     | 2.2                         | 0.22                     | 0.22                       |
+| KTUP      | 6.57                      | 2.31                        | 0.16                     | 0.16                       |
+| MCCLK     | 667.11                    | 2.87                        | 3.55                     | 3.55                       |
+| MKR       | 18.07                     | 19.30                       | 0.58                     | 0.58                       |
+| RippleNet | 81.82                     | 0.69                        | 6.67                     | 34.12                      |
 
-#### Config file of ml-1m dataset:
-
-```
-# dataset config
-field_separator: "\t"
-seq_separator: " "
-USER_ID_FIELD: user_id
-ITEM_ID_FIELD: item_id
-RATING_FIELD: rating
-HEAD_ENTITY_ID_FIELD: head_id
-TAIL_ENTITY_ID_FIELD: tail_id
-RELATION_ID_FIELD: relation_id
-ENTITY_ID_FIELD: entity_id
-NEG_PREFIX: neg_
-LABEL_FIELD: label
-load_col:
-    inter: [user_id, item_id, rating]
-    kg: [head_id, relation_id, tail_id]
-    link: [item_id, entity_id]
-val_interval:
-    rating: "[3,inf)"
-
-# training and evaluation
-epochs: 500
-train_batch_size: 4096
-eval_batch_size: 102400
-valid_metric: MRR@10
-
-# model
-embedding_size: 64
-```
-
-Other parameters (including model parameters) are default value. 
-
-### 2）ml-10m dataset:
-
-#### Time and memory cost on ml-10m dataset:
-
-| Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB)    |
-| --------- | ------------------------: | --------------------------: | -----------------: |
-| CKE       |                    43.41  |                      10.72  |              0.70  |
-| KTUP      |                    33.82  |                      38.87  |              0.66  |
-| RippleNet |                   360.16  |                      23.35  |              7.38  |
-| KGAT      |                         - |                           - | CUDA out of memory |
-| KGNN-LS   |                    84.51  |                      47.31  |              0.73  |
-| KGCN      |                    20.13  |                      53.33  |              0.74  |
-| MKR       |                    31.74  |                     207.12  |              3.85  |
-| CFKG      |                    16.33  |                      16.88  |              0.46  |
-
-#### Config file of ml-10m dataset:
+#### Config file of MovieLens-1m dataset:
 
 ```
 # dataset config
@@ -102,65 +55,164 @@ load_col:
     inter: [user_id, item_id, rating]
     kg: [head_id, relation_id, tail_id]
     link: [item_id, entity_id]
+
+# data filtering for interactions
 val_interval:
-    rating: "[3,inf)"
+    rating: "[3,inf)"    
+unused_col: 
+    inter: [rating]
 
-# training and evaluation
-epochs: 500
-train_batch_size: 4096
-eval_batch_size: 102400
-valid_metric: MRR@10
-
-# model
-embedding_size: 64
-```
-
-Other parameters (including model parameters) are default value. 
-
-### 3）LFM-1b dataset:
-
-#### Time and memory cost on LFM-1b dataset:
-
-| Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | GPU Memory (GB) |
-| --------- | ------------------------: | --------------------------: | --------------: |
-| CKE       |                     8.73  |                      41.84  |           0.69  |
-| KTUP      |                     4.56  |                      87.67  |           0.48  |
-| RippleNet |                    82.53  |                      69.37  |           7.32  |
-| KGAT      |                    15.69  |                      40.75  |           4.19  |
-| KGNN-LS   |                    15.65  |                     436.84  |           0.61  |
-| KGCN      |                     8.04  |                     443.80  |           0.60  |
-| MKR       |                     9.06  |                     456.11  |           2.87  |
-| CFKG      |                     3.81  |                      50.48  |           0.45  |
-
-#### Config file of LFM-1b  dataset:
-
-```
-# dataset config
-field_separator: "\t"
-seq_separator: " "
-USER_ID_FIELD: user_id
-ITEM_ID_FIELD: item_id
-RATING_FIELD: rating
-HEAD_ENTITY_ID_FIELD: head_id
-TAIL_ENTITY_ID_FIELD: tail_id
-RELATION_ID_FIELD: relation_id
-ENTITY_ID_FIELD: entity_id
-NEG_PREFIX: neg_
-LABEL_FIELD: label
-load_col:
-    inter: [user_id, item_id, rating]
-    kg: [head_id, relation_id, tail_id]
-    link: [item_id, entity_id]
-val_interval:
-  rating: "[10,inf)"
 user_inter_num_interval: "[10,inf)"
 item_inter_num_interval: "[10,inf)"
 
+# data preprocessing for knowledge graph triples
+kg_reverse_r: True
+entity_kg_num_interval: "[5,inf)"
+relation_kg_num_interval: "[5,inf)"
+
 # training and evaluation
 epochs: 500
 train_batch_size: 4096
-eval_batch_size: 102400
-valid_metric: MRR@10
+eval_batch_size: 40960000
+valid_metric: NDCG@10
+train_neg_sample_args: 
+    distribution: uniform
+    sample_num: 1
+    dynamic: False
+
+# model
+embedding_size: 64
+```
+
+Other parameters (including model parameters) are default value. 
+
+### 2）Amazon-Books (2018) dataset:
+
+#### Time and memory cost on Amazon-Books (2018) dataset:
+
+| Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | Training GPU Memory (GB) | Evaluation GPU Memory (GB) |
+| --------- | ------------------------- | --------------------------- | ------------------------ | -------------------------- |
+| CFKG      | 66.53                     | 1.92                        | 16.79                    | 16.79                      |
+| CKE       | 64.80                     | 2.09                        | 1.1                      | 1.1                        |
+| KGAT      | 2.42                      | 0.56                        | 1.95                     | 1.95                       |
+| KGCN      | 1.43                      | 6.74                        | 0.36                     | 0.36                       |
+| KGIN      | 18.85                     | 2.24                        | 1.05                     | 1.67                       |
+| KGNNLS    | 1.89                      | 6.92                        | 0.36                     | 0.36                       |
+| KTUP      | 1.79                      | 1.33                        | 36.6                     | 36.6                       |
+| MCCLK     | 243.87                    | 7.08                        | 4.06                     | 4.37                       |
+| MKR       | 3.27                      | 15.02                       | 0.82                     | 0.82                       |
+| RippleNet | 6.36                      | 0.81                        | 25.54                    | 25.54                      |
+
+#### Config file of Amazon-Books (2018) dataset:
+
+```
+# dataset config
+field_separator: "\t"
+seq_separator: " "
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: item_id
+RATING_FIELD: rating
+HEAD_ENTITY_ID_FIELD: head_id
+TAIL_ENTITY_ID_FIELD: tail_id
+RELATION_ID_FIELD: relation_id
+ENTITY_ID_FIELD: entity_id
+NEG_PREFIX: neg_
+LABEL_FIELD: label
+load_col:
+    inter: [user_id, item_id, rating]
+    kg: [head_id, relation_id, tail_id]
+    link: [item_id, entity_id]
+
+# data filtering for interactions
+val_interval:
+    rating: "[3,inf)"    
+unused_col: 
+    inter: [rating]
+
+user_inter_num_interval: "[10,inf)"
+item_inter_num_interval: "[10,inf)"
+
+# data preprocessing for knowledge graph triples
+kg_reverse_r: True
+entity_kg_num_interval: "[5,inf)"
+relation_kg_num_interval: "[5,inf)"
+
+# training and evaluation
+epochs: 500
+train_batch_size: 4096
+eval_batch_size: 40960000
+valid_metric: NDCG@10
+train_neg_sample_args: 
+    distribution: uniform
+    sample_num: 1
+    dynamic: False
+
+# model
+embedding_size: 64
+```
+
+Other parameters (including model parameters) are default value. 
+
+### 3）Lastfm-track dataset:
+
+#### Time and memory cost on Lastfm-track dataset:
+
+| Method    | Training Time (sec/epoch) | Evaluation Time (sec/epoch) | Training GPU Memory (GB) | Evaluation GPU Memory (GB) |
+| --------- | ------------------------- | --------------------------- | ------------------------ | -------------------------- |
+| CFKG      | 48.34                     | 583.24                      | 0.25                     | 0.25                       |
+| CKE       | 68.14                     | 1.78                        | 0.48                     | 1.1                        |
+| KGAT      | 161.36                    | 2.01                        | 5.89                     | 5.89                       |
+| KGCN      | 378.91                    | 2186.54                     | 0.38                     | 0.38                       |
+| KGIN      | 660.62                    | 2.54                        | 1.53                     | 2.14                       |
+| KGNNLS    | 66.58                     | 264.76                      | 0.92                     | 0.92                       |
+| KTUP      | 120.53                    | 457.34                      | 0.32                     | 0.32                       |
+| MCCLK     | -                         | -                           | -                        | -                          |
+| MKR       | 30.93                     | 550.61                      | 0.52                     | 1.7                        |
+| RippleNet | 275.47                    | 131.51                      | 6.82                     | 6.82                       |
+
+#### Config file of Lastfm-track  dataset:
+
+```
+# dataset config
+field_separator: "\t"
+seq_separator: " "
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: item_id
+RATING_FIELD: rating
+HEAD_ENTITY_ID_FIELD: head_id
+TAIL_ENTITY_ID_FIELD: tail_id
+RELATION_ID_FIELD: relation_id
+ENTITY_ID_FIELD: entity_id
+NEG_PREFIX: neg_
+LABEL_FIELD: label
+load_col:
+    inter: [user_id, item_id, rating]
+    kg: [head_id, relation_id, tail_id]
+    link: [item_id, entity_id]
+
+# data filtering for interactions
+val_interval:
+    rating: "[3,inf)"    
+unused_col: 
+    inter: [rating]
+
+user_inter_num_interval: "[10,inf)"
+item_inter_num_interval: "[10,inf)"
+
+# data preprocessing for knowledge graph triples
+kg_reverse_r: True
+entity_kg_num_interval: "[5,inf)"
+relation_kg_num_interval: "[5,inf)"
+
+# training and evaluation
+epochs: 500
+train_batch_size: 4096
+eval_batch_size: 40960000
+valid_metric: NDCG@10
+train_neg_sample_args: 
+    distribution: uniform
+    sample_num: 1
+    dynamic: False
 
 # model
 embedding_size: 64

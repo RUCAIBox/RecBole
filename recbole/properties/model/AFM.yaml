@@ -1,4 +1,4 @@
-embedding_size: 10
-attention_size: 25
-dropout_prob: 0.3
-reg_weight: 2
+embedding_size: 10              # (int) The embedding size of features.
+attention_size: 25              # (int) The vector size in attention mechanism.
+dropout_prob: 0.3               # (float) The dropout rate.
+reg_weight: 2.0                 # (float) The L2 regularization weight.

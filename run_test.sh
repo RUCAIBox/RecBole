@@ -24,3 +24,6 @@ echo "model tests finished"
 python -m pytest -v tests/data/test_dataset.py
 python -m pytest -v tests/data/test_dataloader.py
 echo "data tests finished"
+
+python -m pytest -v tests/hyper_tuning/test_hyper_tuning.py
+echo "hyper_tuning tests finished"

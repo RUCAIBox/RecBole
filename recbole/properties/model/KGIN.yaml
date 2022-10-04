@@ -1,0 +1,9 @@
+embedding_size: 64              # (int) The embedding size of users, items, entities and relations.
+reg_weight: 1e-5                # (float) The L2 regularization weight.
+node_dropout_rate: 0.5          # (float) The node dropout rate in GCN layer.
+mess_dropout_rate: 0.0          # (float) The message dropout rate in GCN layer.
+sim_regularity: 1e-4            # (float) The intents independence loss weight.
+context_hops: 2                 # (int) The number of context hops in GCN layer.
+n_factors: 4                    # (int) The number of user intents.
+ind: 'cosine'                   # (float) The intents independence loss type.
+temperature: 0.2                # (float) The temperature parameter used in loss calculation.

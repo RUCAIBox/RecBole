@@ -23,7 +23,7 @@ general_arguments = [
 training_arguments = [
     'epochs', 'train_batch_size',
     'learner', 'learning_rate',
-    'neg_sampling',
+    'train_neg_sample_args',
     'eval_step', 'stopping_step',
     'clip_grad_norm',
     'weight_decay',

@@ -1,6 +1,6 @@
-embedding_size: 64
-n_factors: 4
-n_iterations: 2
-n_layers: 1
-reg_weight: 1e-3
-cor_weight: 0.01
+embedding_size: 64              # (int) The embedding size of users and items. 
+n_factors: 4                    # (int) The number of factors for disentanglement.
+n_iterations: 2                 # (int) The number of iterations for each layer.
+n_layers: 1                     # (int) The number of reasoning layers.
+reg_weight: 1e-3                # (float) The L2 regularization weight.
+cor_weight: 0.01                # (float) The correlation loss weight.

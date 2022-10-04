@@ -21,7 +21,7 @@ Running with RecBole
 - ``xgb_model (file name of stored xgb model or 'Booster' instance)`` :Xgb model to be loaded before training.
 - ``xgb_params (dict)`` : Booster params.
 - ``xgb_num_boost_round (int)`` : Number of boosting iterations.
-- ``xgb_early_stopping_rounds (int)`` : Activates early stopping.
+- ``xgb_early_stopping_rounds (int, optional)`` : Activates early stopping.
 - ``xgb_verbose_eval (bool or int)`` : If verbose_eval is True then the evaluation metric on the validation set is printed at each boosting stage. If verbose_eval is an integer then the evaluation metric on the validation set is printed at every given verbose_eval boosting stage.
 
 Please refer to [XGBoost Python package](https://xgboost.readthedocs.io/en/latest/python/python_api.html) for more details.
