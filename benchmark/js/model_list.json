@@ -2089,6 +2089,32 @@
         "ref_code": "",
         "repository": "RecBole",
         "repo_link": "https://github.com/RUCAIBox/RecBole"
+    },
+    {
+        "category": "Knowledge-aware Recommendation",
+        "year": "2022",
+        "pub": "WWW'21",
+        "model": "KGIN",
+        "model_link": "/docs/user_guide/model/knowledge/kgin.html",
+        "paper": "Learning Intents behind Interactions with Knowledge Graph for Recommendation",
+        "paper_link": "https://dl.acm.org/doi/10.1145/3442381.3450133",
+        "authors": "Xiang Wang, Tinglin Huang, Dingxian Wang, Yancheng Yuan, Zhenguang Liu, Xiangnan He, Tat-Seng Chua",
+        "ref_code": "",
+        "repository": "RecBole",
+        "repo_link": "https://github.com/RUCAIBox/RecBole"
+    },
+    {
+        "category": "Knowledge-aware Recommendation",
+        "year": "2022",
+        "pub": "SIGIR'22",
+        "model": "MCCLK",
+        "model_link": "/docs/user_guide/model/knowledge/mcclk.html",
+        "paper": "Collaborative Knowledge Base Embedding for Recommender Systems",
+        "paper_link": "https://dl.acm.org/doi/10.1145/3477495.3532025",
+        "authors": "Ding Zou, Wei Wei, Xian-Ling Mao, Ziyang Wang, Minghui Qiu, Feida Zhu, Xin Cao",
+        "ref_code": "",
+        "repository": "RecBole",
+        "repo_link": "https://github.com/RUCAIBox/RecBole"
     }
   ]
 }
