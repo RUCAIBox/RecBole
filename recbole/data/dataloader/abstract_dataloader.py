@@ -24,6 +24,7 @@ from recbole.data.transform import construct_transform
 
 start_iter = False
 
+
 class AbstractDataLoader(torch.utils.data.DataLoader):
     """:class:`AbstractDataLoader` is an abstract object which would return a batch of data which is loaded by
     :class:`~recbole.data.interaction.Interaction` when it is iterated.
@@ -106,8 +107,8 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
 
     def __getattribute__(self, __name: str):
         global start_iter
-        if not start_iter and __name == 'dataset':
-            __name = '_dataset'
+        if not start_iter and __name == "dataset":
+            __name = "_dataset"
         return super().__getattribute__(__name)
 
 
