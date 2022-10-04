@@ -7,9 +7,9 @@ import os
 from setuptools import setup, find_packages
 
 install_requires = [
+    "torch>=1.10.0",
     "numpy>=1.17.2",
-    "torch>=1.7.0",
-    "scipy==1.6.0",
+    "scipy>=1.6.0",
     "pandas>=1.0.5",
     "tqdm>=4.48.2",
     "colorlog==4.7.2",
@@ -17,11 +17,14 @@ install_requires = [
     "scikit_learn>=0.23.2",
     "pyyaml>=5.1.0",
     "tensorboard>=2.5.0",
+    "thop>=0.1.1.post2207130030",
+    "tabulate>=0.8.10",
+    "plotly>=4.0.0",
 ]
 
 setup_requires = []
 
-extras_require = {"hyperopt": ["hyperopt>=0.2.4"]}
+extras_require = {"hyperopt": ["hyperopt==0.2.5"], "ray": ["ray>=1.13.0"]}
 
 classifiers = ["License :: OSI Approved :: MIT License"]
 
@@ -45,7 +48,7 @@ if on_rtd:
 
 setup(
     name="recbole",
-    version="1.0.1",  # please remember to edit recbole/__init__.py in response, once updating the version
+    version="1.1.0",  # please remember to edit recbole/__init__.py in response, once updating the version
     description="A unified, comprehensive and efficient recommendation library",
     long_description=long_description,
     long_description_content_type="text/markdown",
