@@ -58,7 +58,9 @@ class FwFM(ContextRecommender):
         self._get_feature2field()
         self.num_fields = len(set(self.feature2field.values()))  # the number of fields
         self.num_pair = self.num_fields * self.num_fields
-
+        self.weight = torch.randn(
+            self.num_fields, self.num_fields, 1, requires_grad=True, device=self.device
+        )
         self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
@@ -106,17 +108,7 @@ class FwFM(ContextRecommender):
         """
         # get r(Fi, Fj)
         batch_size = infeature.shape[0]
-        para = (
-            torch.randn(self.num_fields * self.num_fields * self.embedding_size)
-            .expand(batch_size, self.num_fields * self.num_fields * self.embedding_size)
-            .to(self.device)
-        )  # [batch_size*num_pairs*emb_dim]
-        para = para.reshape(
-            batch_size, self.num_fields, self.num_fields, self.embedding_size
-        )
-        r = nn.Parameter(
-            para, requires_grad=True
-        )  # [batch_size, num_fields, num_fields, emb_dim]
+        weight = self.weight.expand(batch_size, -1, -1, -1)
 
         fwfm_inter = list()  # [batch_size, num_fields, emb_dim]
         for i in range(self.num_features - 1):
