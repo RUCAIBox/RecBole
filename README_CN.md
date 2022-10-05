@@ -54,7 +54,7 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 
 
 ## RecBole 新闻
-![new](/asset/new.gif) **10/04/2022**: 我们发布了 [v1.1.0](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.0).
+![new](/asset/new.gif) **10/05/2022**: 我们发布了 [v1.1.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.1).
 
 ![new](/asset/new.gif) **06/28/2022**: 我们发布了包括 **8 个子包**和 **65 个新实现模型**的 [**RecBole2.0**](https://github.com/RUCAIBox/RecBole2.0).
 
@@ -217,7 +217,7 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 ## RecBole 重要发布
 | Releases  | Date   |
 |-----------|--------|
-| v1.1.0 | 10/04/2022 |
+| v1.1.1 | 10/05/2022 |
 | v1.0.0    | 09/17/2021 |
 | v0.2.0    | 01/15/2021 |
 | v0.1.1    | 11/03/2020 |
@@ -290,7 +290,7 @@ RecBole由 [中国人民大学, 北京邮电大学, 华东师范大学](https://
 | :-------------------: | :--------------------: | :--------------------------------------------: | ---------------------------------------------- |
 | 2020年6月<br> ~<br> 2020年11月 |        v0.1.1         |  牟善磊 ([@ShanleiMu](https://github.com/ShanleiMu)), 侯宇蓬 ([@hyp1231](https://github.com/@hyp1231)),<br> 林子涵 ([@linzihan-backforward](https://github.com/linzihan-backforward)), 李凯元 ([@tsotfsk](https://github.com/tsotfsk))| [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) |
 |   2020年11月<br> ~ <br> 2022年10月   | v0.1.2 ~ v1.0.1 |      陈昱硕 ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), 潘星宇 ([@2017pxy](https://github.com/2017pxy))    | [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016)    |
-| 2022年10月<br/> ~ <br/> 现在 | v1.1.0 | 徐澜玲 ([@Sherry-XLL](https://github.com/Sherry-XLL)), 田震 ([@chenyuwuxin](https://github.com/chenyuwuxin)), 张高玮 ([@Wicknight](https://github.com/Wicknight)), 王磊 ([@Paitesanshi](https://github.com/Paitesanshi)), 张君杰 ([@leoleojie](https://github.com/leoleojie)) | 即将发布 |
+| 2022年10月<br/> ~ <br/> 现在 | v1.1.0 ~ v1.1.1 | 徐澜玲 ([@Sherry-XLL](https://github.com/Sherry-XLL)), 田震 ([@chenyuwuxin](https://github.com/chenyuwuxin)), 张高玮 ([@Wicknight](https://github.com/Wicknight)), 王磊 ([@Paitesanshi](https://github.com/Paitesanshi)), 张君杰 ([@leoleojie](https://github.com/leoleojie)) | 即将发布 |
 
 
 ## 免责声明
