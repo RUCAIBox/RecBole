@@ -45,7 +45,7 @@ For more details of data config, please refer to :doc:`../user_guide/config/data
 
 2. Choose a model:
 >>>>>>>>>>>>>>>>>>>>>>>>>
-In RecBole, we implement 73 recommendation models covering general recommendation, sequential recommendation,
+In RecBole, we implement more than 100 recommendation models covering general recommendation, sequential recommendation,
 context-aware recommendation and knowledge-based recommendation. You can choose a model from our :doc:`../user_guide/model_intro`.
 Here we choose BPR model to train and test. 
 
@@ -111,7 +111,7 @@ In above example, you can create a new python file (e.g., `run_a.py`) on node A,
         model = 'BPR',
         dataset = 'ml-100k',
         config_file_list = ['test.yaml'],
-        ip = '183.174.228.81',
+        ip = '123.456.789.21',
         port = '5678',
         world_size = 8,
         nproc = 4,
@@ -149,7 +149,7 @@ Similarly, you can create a new python file (e.g., `run_b.py`) on node B, and wr
         model = 'BPR',
         dataset = 'ml-100k',
         config_file_list = ['test.yaml'],
-        ip = '183.174.228.81',
+        ip = '123.456.789.22',
         port = '5678',
         world_size = 8,
         nproc = 4,
