@@ -128,7 +128,7 @@ class Dataset(torch.utils.data.Dataset):
         self.field2id_token = {}
         self.field2token_id = {}
         self.field2bucketnum = {}
-        self.field2seqlen = self.config["seq_len"] or {}
+        self.field2seqlen = {}
         self.alias = {}
         self._preloaded_weight = {}
         self.benchmark_filename_list = self.config["benchmark_filename"]
@@ -509,7 +509,17 @@ class Dataset(torch.utils.data.Dataset):
                     np.array(list(map(float, filter(None, _.split(seq_separator)))))
                     for _ in df[field].values
                 ]
-            self.field2seqlen[field] = max(map(len, df[field].values))
+            max_seq_len = max(map(len, df[field].values))
+            if self.config["seq_len"] and field in self.config["seq_len"]:
+                seq_len = self.config["seq_len"][field]
+                df[field] = [
+                    seq[:seq_len] if len(seq) > seq_len else seq
+                    for seq in df[field].values
+                ]
+                self.field2seqlen[field] = min(seq_len, max_seq_len)
+            else:
+                self.field2seqlen[field] = max_seq_len
+
         return df
 
     def _set_alias(self, alias_name, default_value):
