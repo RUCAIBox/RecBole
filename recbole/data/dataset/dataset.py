@@ -509,7 +509,17 @@ class Dataset(torch.utils.data.Dataset):
                     np.array(list(map(float, filter(None, _.split(seq_separator)))))
                     for _ in df[field].values
                 ]
-            self.field2seqlen[field] = max(map(len, df[field].values))
+            max_seq_len = max(map(len, df[field].values))
+            if field in self.field2seqlen:
+                seq_len = self.field2seqlen[field]
+                df[field] = [
+                    seq[:seq_len] if len(seq) > seq_len else seq
+                    for seq in df[field].values
+                ]
+                self.field2seqlen[field] = min(seq_len, max_seq_len)
+            else:
+                self.field2seqlen[field] = max_seq_len
+
         return df
 
     def _set_alias(self, alias_name, default_value):
