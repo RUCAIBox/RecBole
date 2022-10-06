@@ -128,7 +128,7 @@ class Dataset(torch.utils.data.Dataset):
         self.field2id_token = {}
         self.field2token_id = {}
         self.field2bucketnum = {}
-        self.field2seqlen = self.config["seq_len"] or {}
+        self.field2seqlen = {}
         self.alias = {}
         self._preloaded_weight = {}
         self.benchmark_filename_list = self.config["benchmark_filename"]
@@ -510,8 +510,8 @@ class Dataset(torch.utils.data.Dataset):
                     for _ in df[field].values
                 ]
             max_seq_len = max(map(len, df[field].values))
-            if field in self.field2seqlen:
-                seq_len = self.field2seqlen[field]
+            if self.config["seq_len"] and field in self.config["seq_len"]:
+                seq_len = self.config["seq_len"][field]
                 df[field] = [
                     seq[:seq_len] if len(seq) > seq_len else seq
                     for seq in df[field].values
