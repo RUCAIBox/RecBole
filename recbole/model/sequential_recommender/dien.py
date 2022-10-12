@@ -240,19 +240,25 @@ class InterestExtractorNetwork(nn.Module):
         click_input = torch.cat([h_states, click_seq], dim=-1)
         noclick_input = torch.cat([h_states, noclick_seq], dim=-1)
 
-        mask = (torch.arange(hist_length, device=h_states.device).repeat(
-            batch_size, 1) < keys_length.view(-1, 1)).float()
+        mask = (
+            torch.arange(hist_length, device=h_states.device).repeat(batch_size, 1)
+            < keys_length.view(-1, 1)
+        ).float()
         # click predict
-        click_prop = self.auxiliary_net(
-            click_input.view(batch_size * hist_length, -1)
-        ).view(batch_size, hist_length)[mask > 0].view(-1, 1)
+        click_prop = (
+            self.auxiliary_net(click_input.view(batch_size * hist_length, -1))
+            .view(batch_size, hist_length)[mask > 0]
+            .view(-1, 1)
+        )
         # click label
         click_target = torch.ones(click_prop.shape, device=click_input.device)
 
         # non-click predict
-        noclick_prop = self.auxiliary_net(
-            noclick_input.view(batch_size * hist_length, -1)
-        ).view(batch_size, hist_length)[mask > 0].view(-1, 1)
+        noclick_prop = (
+            self.auxiliary_net(noclick_input.view(batch_size * hist_length, -1))
+            .view(batch_size, hist_length)[mask > 0]
+            .view(-1, 1)
+        )
         # non-click label
         noclick_target = torch.zeros(noclick_prop.shape, device=noclick_input.device)
 
