@@ -52,9 +52,7 @@ class HGN(SequentialRecommender):
         # define the module feature gating need
         self.w1 = nn.Linear(self.embedding_size, self.embedding_size)
         self.w2 = nn.Linear(self.embedding_size, self.embedding_size)
-        self.b = nn.Parameter(torch.zeros(self.embedding_size), requires_grad=True).to(
-            self.device
-        )
+        self.b = nn.Parameter(torch.zeros(self.embedding_size), requires_grad=True)
 
         # define the module instance gating need
         self.w3 = nn.Linear(self.embedding_size, 1, bias=False)

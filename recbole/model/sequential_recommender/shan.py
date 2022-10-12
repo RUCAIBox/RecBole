@@ -62,7 +62,7 @@ class SHAN(SequentialRecommender):
                 b=np.sqrt(3 / self.embedding_size),
             ),
             requires_grad=True,
-        ).to(self.device)
+        )
         self.long_short_w = nn.Linear(self.embedding_size, self.embedding_size)
         self.long_short_b = nn.Parameter(
             uniform_(
@@ -71,7 +71,7 @@ class SHAN(SequentialRecommender):
                 b=np.sqrt(3 / self.embedding_size),
             ),
             requires_grad=True,
-        ).to(self.device)
+        )
 
         self.relu = nn.ReLU()
 

@@ -59,7 +59,7 @@ class xDeepFM(ContextRecommender):
         for i, layer_size in enumerate(self.cin_layer_size):
             conv1d = nn.Conv1d(
                 self.field_nums[-1] * self.field_nums[0], layer_size, 1
-            ).to(self.device)
+            )
             self.conv1d_list.append(conv1d)
             if self.direct:
                 self.field_nums.append(layer_size)

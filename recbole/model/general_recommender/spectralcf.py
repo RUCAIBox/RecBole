@@ -76,7 +76,7 @@ class SpectralCF(GeneralRecommender):
                 torch.nn.Parameter(
                     torch.normal(
                         mean=0.01, std=0.02, size=(self.emb_dim, self.emb_dim)
-                    ).to(self.device),
+                    ),
                     requires_grad=True,
                 )
                 for _ in range(self.n_layers)
