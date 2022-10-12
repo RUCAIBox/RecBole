@@ -75,10 +75,8 @@ class SINE(SequentialRecommender):
         self.apply(self._init_weights)
 
     def _init_weight(self, shape):
-        mat = np.random.normal(0, self.initializer_range, shape)
-        return torch.tensor(mat, dtype=torch.float32, requires_grad=True).to(
-            self.device
-        )
+        mat = torch.FloatTensor(np.random.normal(0, self.initializer_range, shape))
+        return nn.Parameter(mat, requires_grad=True)
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):

@@ -103,7 +103,6 @@ class DCNV2(ContextRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
-        self.to(self.device)
 
     def cross_network(self, x_0):
         r"""Cross network is composed of cross layers, with each layer having the following formula.

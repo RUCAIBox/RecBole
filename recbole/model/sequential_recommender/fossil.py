@@ -50,7 +50,7 @@ class FOSSIL(SequentialRecommender):
             self.n_items, self.embedding_size, padding_idx=0
         )
         self.user_lambda = nn.Embedding(self.n_users, self.order_len)
-        self.lambda_ = nn.Parameter(torch.zeros(self.order_len)).to(self.device)
+        self.lambda_ = nn.Parameter(torch.zeros(self.order_len))
 
         self.loss_type = config["loss_type"]
         if self.loss_type == "BPR":
