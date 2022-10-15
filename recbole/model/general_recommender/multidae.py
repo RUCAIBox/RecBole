@@ -15,13 +15,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from recbole.model.abstract_recommender import GeneralRecommender
+from recbole.model.abstract_recommender import AutoEncoderMixin, GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
 from recbole.model.layers import MLPLayers
 from recbole.utils import InputType
 
 
-class MultiDAE(GeneralRecommender):
+class MultiDAE(GeneralRecommender, AutoEncoderMixin):
     r"""MultiDAE is an item-based collaborative filtering model that simultaneously ranks all items for each user.
 
     We implement the the MultiDAE model with only user dataloader.
@@ -35,9 +35,7 @@ class MultiDAE(GeneralRecommender):
         self.lat_dim = config["latent_dimension"]
         self.drop_out = config["dropout_prob"]
 
-        self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
-        self.history_item_id = self.history_item_id.to(self.device)
-        self.history_item_value = self.history_item_value.to(self.device)
+        self.build_histroy_items(dataset)
 
         self.encode_layer_dims = [self.n_items] + self.layers + [self.lat_dim]
         self.decode_layer_dims = [self.lat_dim] + self.encode_layer_dims[::-1][1:]
@@ -47,30 +45,6 @@ class MultiDAE(GeneralRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
-
-    def get_rating_matrix(self, user):
-        r"""Get a batch of user's feature with the user's id and history interaction matrix.
-
-        Args:
-            user (torch.LongTensor): The input tensor that contains user's id, shape: [batch_size, ]
-
-        Returns:
-            torch.FloatTensor: The user's feature of a batch of user, shape: [batch_size, n_items]
-        """
-        # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
-        col_indices = self.history_item_id[user].flatten()
-        row_indices = (
-            torch.arange(user.shape[0])
-            .to(self.device)
-            .repeat_interleave(self.history_item_id.shape[1], dim=0)
-        )
-        rating_matrix = (
-            torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
-        )
-        rating_matrix.index_put_(
-            (row_indices, col_indices), self.history_item_value[user].flatten()
-        )
-        return rating_matrix
 
     def mlp_layers(self, layer_dims):
         mlp_modules = []
