@@ -38,7 +38,7 @@ class EASE(GeneralRecommender):
         G = X.T @ X
 
         # add reg to diagonal
-        G += reg_weight * sp.identity(G.shape[0])
+        G += reg_weight * sp.identity(G.shape[0]).astype(np.float32)
 
         # convert to dense because inverse will be dense
         G = G.todense()
@@ -62,6 +62,7 @@ class EASE(GeneralRecommender):
         self.item_similarity = B
         self.interaction_matrix = X
         self.other_parameter_name = ["interaction_matrix", "item_similarity"]
+        self.device = config.device
 
     def forward(self):
         pass
@@ -77,7 +78,7 @@ class EASE(GeneralRecommender):
             (self.interaction_matrix[user, :].multiply(self.item_similarity[:, item].T))
             .sum(axis=1)
             .getA1()
-        )
+        ).to(self.device)
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID].cpu().numpy()
