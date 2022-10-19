@@ -17,13 +17,10 @@ recbole.trainer.trainer
 ################################
 """
 
-from modulefinder import Module
 import os
 
 from logging import getLogger
-from pickletools import optimize
 from time import time
-from turtle import forward
 
 import numpy as np
 import torch
