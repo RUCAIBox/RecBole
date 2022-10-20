@@ -115,7 +115,7 @@ def rename_atomic_files(folder, old_name, new_name):
             continue
         if suf not in {".inter", ".user", ".item"}:
             logger = getLogger()
-            logger.warning(f'Moving downloaded file with suffix [{suf}].')
+            logger.warning(f"Moving downloaded file with suffix [{suf}].")
         os.rename(
             os.path.join(folder, f),
             os.path.join(folder, base.replace(old_name, new_name) + suf),
