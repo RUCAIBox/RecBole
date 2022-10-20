@@ -80,8 +80,8 @@ class NeuMF(GeneralRecommender):
 
     def load_pretrain(self):
         r"""A simple implementation of loading pretrained parameters."""
-        mf = torch.load(self.mf_pretrain_path,map_location="cpu")
-        mlp = torch.load(self.mlp_pretrain_path,map_location="cpu")
+        mf = torch.load(self.mf_pretrain_path, map_location="cpu")
+        mlp = torch.load(self.mlp_pretrain_path, map_location="cpu")
         mf = mf if "state_dict" not in mf else mf["state_dict"]
         mlp = mlp if "state_dict" not in mlp else mlp["state_dict"]
         self.user_mf_embedding.weight.data.copy_(mf["user_mf_embedding.weight"])
@@ -93,10 +93,14 @@ class NeuMF(GeneralRecommender):
         index = 0
         for layer in self.mlp_layers.mlp_layers:
             if isinstance(layer, nn.Linear):
-                weight_key ="mlp_layers."+ mlp_layers[index]
-                bias_key = "mlp_layers."+ mlp_layers[index+1]
-                assert layer.weight.shape == mlp[weight_key].shape, f'mlp layer parameter shape mismatch'
-                assert layer.bias.shape == mlp[bias_key].shape, f'mlp layer parameter shape mismatch'
+                weight_key = "mlp_layers." + mlp_layers[index]
+                bias_key = "mlp_layers." + mlp_layers[index + 1]
+                assert (
+                    layer.weight.shape == mlp[weight_key].shape
+                ), f"mlp layer parameter shape mismatch"
+                assert (
+                    layer.bias.shape == mlp[bias_key].shape
+                ), f"mlp layer parameter shape mismatch"
                 layer.weight.data.copy_(mlp[weight_key])
                 layer.bias.data.copy_(mlp[bias_key])
                 index += 2
