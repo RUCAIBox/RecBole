@@ -316,14 +316,12 @@ def create_samplers(config, dataset, built_datasets):
                     phases,
                     built_datasets,
                     eval_neg_sample_args["distribution"],
-                    train_neg_sample_args["alpha"],
                 )
             else:
                 sampler = RepeatableSampler(
                     phases,
                     dataset,
                     eval_neg_sample_args["distribution"],
-                    train_neg_sample_args["alpha"],
                 )
         else:
             sampler.set_distribution(eval_neg_sample_args["distribution"])
