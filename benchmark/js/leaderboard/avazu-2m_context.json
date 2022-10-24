@@ -233,6 +233,24 @@
             "eval_gpu_memory": "2.02",
             "contributor": "Zhichao Feng",
             "contributor_email": "fzcbupt@gmail.com"
+        },
+        {
+            "year": "2019",
+            "pub": "CIKM' 19",
+            "model": "FiGNN",
+            "model_link": "/docs/user_guide/model/context/fignn.html",
+            "ref_code": "https://github.com/CRIPAC-DIG/GraphCTR",
+            "hyper_md": "https://github.com/RUCAIBox/RecBole/benchmark/hyper/context/FiGNN-avazu-2m_context.md",
+            "AUC": "0.7908",
+            "Log Loss": "0.3647",
+            "parameters": "30,118,112",
+            "flops": "65,058",
+            "train_time": "20.53",
+            "eval_time": "0.49",
+            "train_gpu_memory": "1.37",
+            "eval_gpu_memory": "1.37",
+            "contributor": "Yuyan Zhang",
+            "contributor_email": "2019308160102@cau.edu.cn"
         }
     ]
 }
