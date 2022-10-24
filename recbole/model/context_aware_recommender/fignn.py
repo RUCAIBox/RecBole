@@ -36,7 +36,7 @@ class GraphLayer(nn.Module):
         self.bias_p = nn.Parameter(torch.zeros(embedding_size))
 
     def forward(self, g, h):
-        h_out = torch.matmul(self.W_out, h.unsqueeze(-1)).squeeze(-1)  
+        h_out = torch.matmul(self.W_out, h.unsqueeze(-1)).squeeze(-1)
         aggr = torch.bmm(g, h_out)
         a = torch.matmul(self.W_in, aggr.unsqueeze(-1)).squeeze(-1) + self.bias_p
         return a
@@ -66,8 +66,9 @@ class FiGNN(ContextRecommender):
         self.v_res_embedding = torch.nn.Linear(self.embedding_size, self.attention_size)
         # FiGNN
         self.src_nodes, self.dst_nodes = zip(*list(product(range(self.num_feature_field), repeat=2)))
-        self.gnn = nn.ModuleList([GraphLayer(self.num_feature_field, self.attention_size)
-                                      for _ in range(self.n_layers - 1)])
+        self.gnn = nn.ModuleList([
+            GraphLayer(self.num_feature_field, self.attention_size) for _ in range(self.n_layers - 1)
+        ])
         self.leaky_relu = nn.LeakyReLU(negative_slope=0.01)
         self.W_attn = nn.Linear(self.attention_size * 2, 1, bias=False)
         self.gru_cell = nn.GRUCell(self.attention_size, self.attention_size)
@@ -104,7 +105,7 @@ class FiGNN(ContextRecommender):
         # message passing
         if self.n_layers > 1:
             h = att_infeature
-            for i in range(self.n_layers-1):
+            for i in range(self.n_layers - 1):
                 a = self.gnn[i](self.graph, h)
             a = a.view(-1, self.attention_size)
             h = h.view(-1, self.attention_size)
