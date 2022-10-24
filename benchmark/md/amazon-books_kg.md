@@ -1,12 +1,12 @@
-# Amazon-Books(2018) Sequential
+# Amazon-Books(2018) KG
 
-**Dataset:** amazon-books_seq
+**Dataset:** amazon-books_kg
 
 **Data filtering:** delete interactive records with rating less than 3
 
 **K-core filtering:** delete inactive users or unpopular items with less than 10 interactions
 
-**Evaluation method:** chronological arrangement, leave one out split data set and full sorting
+**Evaluation method:** randomized arrangement, random split data set and full sorting
 
 **Evaluation metric:** Recall@10, NGCG@10, MRR@10, Hit@10, Precision@10
 
