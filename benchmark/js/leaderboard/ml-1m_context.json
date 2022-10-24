@@ -70,7 +70,8 @@
             "train_gpu_memory": "0.43",
             "eval_gpu_memory": "0.43",
             "contributor": "Yifan Li",
-            "contributor_email": "295435096@qq.com"
+            "contributor_email": "295435096@qq.com",
+            "tester": "Yifan Li"
         },
         {
             "year": "2017",
