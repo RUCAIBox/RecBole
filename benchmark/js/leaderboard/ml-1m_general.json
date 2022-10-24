@@ -19,7 +19,8 @@
             "train_gpu_memory": "0.31",
             "eval_gpu_memory": "0.31",
             "contributor": "Shanlei Mu",
-            "contributor_email": "slmu@ruc.edu.cn"
+            "contributor_email": "slmu@ruc.edu.cn",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2016",
@@ -40,7 +41,8 @@
             "train_gpu_memory": "1.16",
             "eval_gpu_memory": "1.16",
             "contributor": "Xingyu Pan",
-            "contributor_email": "panxy@ruc.edu.cn"
+            "contributor_email": "panxy@ruc.edu.cn",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2018",
@@ -61,7 +63,8 @@
             "train_gpu_memory": "0.67",
             "eval_gpu_memory": "0.67",
             "contributor": "Changxin Tian",
-            "contributor_email": "cx.tian@outlook.com"
+            "contributor_email": "cx.tian@outlook.com",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2013",
@@ -82,7 +85,8 @@
             "train_gpu_memory": "0",
             "eval_gpu_memory": "0.3",
             "contributor": "Zihan Lin",
-            "contributor_email": "linzihan.super@foxmail.com"
+            "contributor_email": "linzihan.super@foxmail.com",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2020",
@@ -103,7 +107,8 @@
             "train_gpu_memory": "0.44",
             "eval_gpu_memory": "0.44",
             "contributor": "Changxin Tian, Shanlei Mu, Gaowei Zhang",
-            "contributor_email": "cx.tian@outlook.com, slmu@ruc.edu.cn, 1462034631@qq.com"
+            "contributor_email": "cx.tian@outlook.com, slmu@ruc.edu.cn, 1462034631@qq.com",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2018",
@@ -124,7 +129,8 @@
             "train_gpu_memory": "0.94",
             "eval_gpu_memory": "0.94",
             "contributor": "Yihong Guo",
-            "contributor_email": "gyihong@hotmail.com"
+            "contributor_email": "gyihong@hotmail.com",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2018",
@@ -145,7 +151,8 @@
             "train_gpu_memory": "9.13",
             "eval_gpu_memory": "9.13",
             "contributor": "Kaiyuan Li",
-            "contributor_email": "tsotfsk@outlook.com"
+            "contributor_email": "tsotfsk@outlook.com",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2022",
@@ -166,7 +173,8 @@
             "train_gpu_memory": "0.61",
             "eval_gpu_memory": "0.61",
             "contributor": "Zihan Lin, Changxin Tian, Yupeng Hou",
-            "contributor_email": "linzihan.super@foxmail.com, cx.tian@outlook.com, houyupeng@ruc.edu.cn"
+            "contributor_email": "linzihan.super@foxmail.com, cx.tian@outlook.com, houyupeng@ruc.edu.cn",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2017",
@@ -187,7 +195,8 @@
             "train_gpu_memory": "0.15",
             "eval_gpu_memory": "0.15",
             "contributor": "Shanlei Mu, Zihan Lin",
-            "contributor_email": "slmu@ruc.edu.cn, linzihan.super@foxmail.com"
+            "contributor_email": "slmu@ruc.edu.cn, linzihan.super@foxmail.com",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2019",
@@ -208,7 +217,8 @@
             "train_gpu_memory": "0.47",
             "eval_gpu_memory": "0.47",
             "contributor": "Zihan Lin, Shanlei Mu",
-            "contributor_email": "linzihan.super@foxmail.com, slmu@ruc.edu.cn"
+            "contributor_email": "linzihan.super@foxmail.com, slmu@ruc.edu.cn",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2021",
@@ -229,7 +239,8 @@
             "train_gpu_memory": "0.67",
             "eval_gpu_memory": "0.67",
             "contributor": "Tian Zhen",
-            "contributor_email": "chenyuwuxinn@gmail.com"
+            "contributor_email": "chenyuwuxinn@gmail.com",
+            "tester": "Gaowei Zhang"
         },
         {
             "year": "2021",
@@ -250,7 +261,8 @@
             "train_gpu_memory": "0.6",
             "eval_gpu_memory": "0.6",
             "contributor": "HaoJun Qin",
-            "contributor_email": "18697951462@163.com"
+            "contributor_email": "18697951462@163.com",
+            "tester": "Gaowei Zhang"
         }
     ]
 }
