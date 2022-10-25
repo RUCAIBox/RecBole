@@ -393,6 +393,13 @@ class TestContextRecommender(unittest.TestCase):
             "lgb_num_boost_round": 1,
         }
         quick_test(config_dict)
+    
+    def test_fignn(self):
+        config_dict = {
+            "model": "FiGNN",
+            "threshold": {"rating": 4},
+        }
+        quick_test(config_dict)
 
 
 class TestSequentialRecommender(unittest.TestCase):
@@ -859,12 +866,6 @@ class TestKnowledgeRecommender(unittest.TestCase):
     def test_kgin(self):
         config_dict = {
             "model": "KGIN",
-        }
-        quick_test(config_dict)
-    
-    def test_bpr(self):
-        config_dict = {
-          "model": "FiGNN",
         }
         quick_test(config_dict)
 
