@@ -861,6 +861,12 @@ class TestKnowledgeRecommender(unittest.TestCase):
             "model": "KGIN",
         }
         quick_test(config_dict)
+    
+    def test_bpr(self):
+        config_dict = {
+          "model": "FiGNN",
+        }
+        quick_test(config_dict)
 
 
 if __name__ == "__main__":
