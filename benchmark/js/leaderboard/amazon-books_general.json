@@ -155,6 +155,28 @@
             "tester": "Gaowei Zhang"
         },
         {
+            "year": "2017",
+            "pub": "WWW'17",
+            "model": "NeuMF",
+            "model_link": "/docs/user_guide/model/general/neumf.html",
+            "ref_code": "",
+            "hyper_md": "https://github.com/RUCAIBox/RecBole/benchmark/hyper/general/NeuMF-amazon-books_general.md",
+            "recall10": "0.143",
+            "mrr10": "0.0957",
+            "ndcg10": "0.0909",
+            "hit10": "0.2267",
+            "precision10": "0.0273",
+            "parameters": "1,197,121",
+            "flops": "24,960.0",
+            "train_time": "3.30",
+            "eval_time": "1.49",
+            "train_gpu_memory": "0.15",
+            "eval_gpu_memory": "0.15",
+            "contributor": "Shanlei Mu, Zihan Lin",
+            "contributor_email": "slmu@ruc.edu.cn, linzihan.super@foxmail.com",
+            "tester": "Bowen Zheng"
+        },
+        {
             "year": "2021",
             "pub": "SIGIR'21",
             "model": "SGL",
