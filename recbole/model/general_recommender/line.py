@@ -28,8 +28,8 @@ class NegSamplingLoss(nn.Module):
     def __init__(self):
         super(NegSamplingLoss, self).__init__()
 
-    def forward(self, score, sign):
-        return -torch.mean(torch.sigmoid(sign * score))
+    def forward(self, sign, score):
+        return -torch.mean(torch.log(torch.sigmoid(sign * score)))
 
 
 class LINE(GeneralRecommender):

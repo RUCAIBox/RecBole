@@ -19,7 +19,8 @@
             "train_gpu_memory": "0.05",
             "eval_gpu_memory": "18.15",
             "contributor": "Shanlei Mu",
-            "contributor_email": "slmu@ruc.edu.cn"
+            "contributor_email": "slmu@ruc.edu.cn",
+            "tester": "Lei Wang"
         },
         {
             "year": "2016",
@@ -40,7 +41,8 @@
             "train_gpu_memory": "0.29",
             "eval_gpu_memory": "0.58",
             "contributor": "Shanlei Mu",
-            "contributor_email": "slmu@ruc.edu.cn"
+            "contributor_email": "slmu@ruc.edu.cn",
+            "tester": "Lei Wang"
         },
         {
             "year": "2019",
@@ -61,7 +63,8 @@
             "train_gpu_memory": "0.46",
             "eval_gpu_memory": "1.74",
             "contributor": "Shanlei Mu",
-            "contributor_email": "slmu@ruc.edu.cn"
+            "contributor_email": "slmu@ruc.edu.cn",
+            "tester": "Lei Wang"
         },
         {
             "year": "2019",
@@ -82,7 +85,8 @@
             "train_gpu_memory": "0.07",
             "eval_gpu_memory": "0.19",
             "contributor": "Changxin Tian",
-            "contributor_email": "cx.tian@outlook.com"
+            "contributor_email": "cx.tian@outlook.com",
+            "tester": "Lei Wang"
         },
         {
             "year": "2022",
@@ -103,7 +107,8 @@
             "train_gpu_memory": "0.35",
             "eval_gpu_memory": "0.42",
             "contributor": "Wenqi Sun, Bowen Zheng",
-            "contributor_email": "wenqisun@pku.edu.cn, 18735382001@163.com"
+            "contributor_email": "wenqisun@pku.edu.cn, 18735382001@163.com",
+            "tester": "Lei Wang"
         },
         {
             "year": "2019",
@@ -124,7 +129,8 @@
             "train_gpu_memory": "0.22",
             "eval_gpu_memory": "0.22",
             "contributor": "Changxin Tian",
-            "contributor_email": "cx.tian@outlook.com"
+            "contributor_email": "cx.tian@outlook.com",
+            "tester": "Lei Wang"
         },
         {
             "year": "2019",
@@ -145,7 +151,8 @@
             "train_gpu_memory": "0.16",
             "eval_gpu_memory": "0.16",
             "contributor": "Shanlei Mu",
-            "contributor_email": "slmu@ruc.edu.cn"
+            "contributor_email": "slmu@ruc.edu.cn",
+            "tester": "Lei Wang"
         },
         {
             "year": "2022",
@@ -166,7 +173,8 @@
             "train_gpu_memory": "3.55",
             "eval_gpu_memory": "3.55",
             "contributor": "Bowen Zheng",
-            "contributor_email": "18735382001@163.com"
+            "contributor_email": "18735382001@163.com",
+            "tester": "Lei Wang"
         },
         {
             "year": "2019",
@@ -187,7 +195,8 @@
             "train_gpu_memory": "0.58",
             "eval_gpu_memory": "0.58",
             "contributor": "Xinyan Fan",
-            "contributor_email": "xinyan.fan@ruc.edu.cn"
+            "contributor_email": "xinyan.fan@ruc.edu.cn",
+            "tester": "Lei Wang"
         },
         {
             "year": "2018",
@@ -208,7 +217,8 @@
             "train_gpu_memory": "6.67",
             "eval_gpu_memory": "34.12",
             "contributor": "Gaole He",
-            "contributor_email": "hegaole@ruc.edu.cn"
+            "contributor_email": "hegaole@ruc.edu.cn",
+            "tester": "Lei Wang"
         }
     ]
   }
