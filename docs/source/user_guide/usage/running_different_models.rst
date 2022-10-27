@@ -36,8 +36,12 @@ negative sampling. You can set the config like this:
 
     eval_args:
         group_by: user
-    neg_sampling:
-        uniform: 1
+    train_neg_sample_args:
+        distribution: uniform
+        sample_num: 1
+        alpha: 1.0
+        dynamic: False
+        candidate_num: 0
 
 Context-aware Recommendation
 ------------------------------------
