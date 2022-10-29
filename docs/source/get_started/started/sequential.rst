@@ -58,7 +58,7 @@ After augmentation, sequential dataset will generate these cases.
    0	1 2 0	3
      
    0	1 2 3	4
-   
+
    0	2 3 4	5
 
 
@@ -113,7 +113,7 @@ so we can add the following settings into the test.yaml.
    epochs: 500
    train_batch_size: 4096
    eval_batch_size: 4096
-   neg_sampling: ~
+   train_neg_sample_args: ~
    eval_args:
        group_by: user
        order: TO
@@ -221,7 +221,7 @@ test.yaml and set all the config as follow:
    ITEM_LIST_LENGTH_FIELD: item_length
    LIST_SUFFIX: _list
    MAX_ITEM_LIST_LENGTH: 50
-   
+
    # model config
    embedding_size: 64
    hidden_size: 128
@@ -233,7 +233,7 @@ test.yaml and set all the config as follow:
    epochs: 500
    train_batch_size: 4096
    eval_batch_size: 4096
-   neg_sampling: ~
+   train_neg_sample_args: ~
    eval_args:
        group_by: user
        order: TO

@@ -72,8 +72,12 @@ settings into the test.yaml.
    epochs: 500
    train_batch_size: 4096
    eval_batch_size: 4096
-   neg_sampling:
-       uniform: 1
+   train_neg_sample_args:
+       distribution: uniform
+       sample_num: 1
+       alpha: 1.0
+       dynamic: False
+       candidate_num: 0
    eval_args:
        group_by: user
        order: RO
@@ -176,13 +180,17 @@ You can create a `yaml` file called `test.yaml` and set all the config as follow
     
     # model config
     embedding_size: 64
-
+    
     # Training and evaluation config
     epochs: 500
     train_batch_size: 4096
     eval_batch_size: 4096
-    neg_sampling:
-        uniform: 1
+    train_neg_sample_args:
+        distribution: uniform
+        sample_num: 1
+        alpha: 1.0
+        dynamic: False
+        candidate_num: 0
     eval_args:
         group_by: user
         order: RO
