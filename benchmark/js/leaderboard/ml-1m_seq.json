@@ -1,28 +1,6 @@
 {
   "data": [
       {
-          "year": "2019",
-          "pub": "CIKM'19",
-          "model": "BERT4Rec",
-          "model_link": "/docs/user_guide/model/sequential/bert4rec.html",
-          "ref_code": "https://github.com/FeiSun/BERT4Rec",
-          "hyper_md": "https://github.com/RUCAIBox/RecBole/benchmark/hyper/sequential/BERT4Rec-ml-1m_seq.md",
-          "recall10": "0.0791",
-          "mrr10": "0.0259",
-          "ndcg10": "0.0381",
-          "hit10": "0.0791",
-          "precision10": "0.0079",
-          "parameters": "303,360",
-          "flops": "5,083,744",
-          "train_time": "77.75",
-          "eval_time": "1.35",
-          "train_gpu_memory": "4.81",
-          "eval_gpu_memory": "5.10",
-          "contributor": "Hui Wang",
-          "contributor_email": "hui.wang@ruc.edu.cn",
-          "tester": "Lanling Xu"
-      },
-      {
           "year": "2018",
           "pub": "WSDM'18",
           "model": "Caser",
