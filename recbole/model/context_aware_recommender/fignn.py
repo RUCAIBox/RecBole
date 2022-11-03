@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time   : 2022/10/23
+# @Time   : 2022/10/27
 # @Author : Yuyan Zhang
 # @Email  : 2019308160102@cau.edu.cn
 # @File   : fignn.py
@@ -26,13 +26,16 @@ from recbole.model.abstract_recommender import ContextRecommender
 
 
 class GraphLayer(nn.Module):
+    """
+    The implementations of the GraphLayer part and the Attentional Edge Weights part are adapted from https://github.com/xue-pai/FuxiCTR.
+    """
 
     def __init__(self, num_fields, embedding_size):
         super(GraphLayer, self).__init__()
-        self.W_in = torch.nn.Parameter(torch.Tensor(num_fields, embedding_size, embedding_size))
-        self.W_out = torch.nn.Parameter(torch.Tensor(num_fields, embedding_size, embedding_size))
-        nn.init.xavier_normal_(self.W_in)
-        nn.init.xavier_normal_(self.W_out)
+        self.W_in = nn.Parameter(torch.Tensor(num_fields, embedding_size, embedding_size))
+        self.W_out = nn.Parameter(torch.Tensor(num_fields, embedding_size, embedding_size))
+        xavier_normal_(self.W_in)
+        xavier_normal_(self.W_out)
         self.bias_p = nn.Parameter(torch.zeros(embedding_size))
 
     def forward(self, g, h):
@@ -43,7 +46,7 @@ class GraphLayer(nn.Module):
 
 
 class FiGNN(ContextRecommender):
-    """ FiGNN is a novel CTR prediction model based on GGNN,
+    """ FiGNN is a pointwise CTR prediction model based on GGNN,
     which can model sophisticated interactions among feature fields on the graph-structured features.
     """
 
@@ -54,14 +57,15 @@ class FiGNN(ContextRecommender):
         self.attention_size = config['attention_size']
         self.n_layers = config['n_layers']
         self.num_heads = config['num_heads']
-        self.dropout_probs = config['dropout_probs']
+        self.hidden_dropout_prob = config['hidden_dropout_prob']
+        self.attn_dropout_prob = config['attn_dropout_prob']
 
         # define layers and loss
-        self.dropout_layer = nn.Dropout(p=self.dropout_probs[1])
+        self.dropout_layer = nn.Dropout(p=self.hidden_dropout_prob)
         self.att_embedding = nn.Linear(self.embedding_size, self.attention_size)
         # multi-head self-attention network
         self.self_attn = nn.MultiheadAttention(
-            self.attention_size, self.num_heads, dropout=self.dropout_probs[0], batch_first=True
+            self.attention_size, self.num_heads, dropout=self.attn_dropout_prob, batch_first=True
         )
         self.v_res_embedding = torch.nn.Linear(self.embedding_size, self.attention_size)
         # FiGNN
@@ -74,28 +78,27 @@ class FiGNN(ContextRecommender):
         self.gru_cell = nn.GRUCell(self.attention_size, self.attention_size)
         # Attentional Scoring Layer
         self.mlp1 = nn.Linear(self.attention_size, 1, bias=False)
-        self.mlp2 = nn.Sequential(
-            nn.Linear(self.num_feature_field * self.attention_size, self.num_feature_field, bias=False)
-        )
+        self.mlp2 = nn.Linear(self.num_feature_field * self.attention_size, self.num_feature_field, bias=False)
+
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
         # parameters initialization
         self.apply(self._init_weights)
 
-    def fignn_layer(self, infeature):
+    def fignn_layer(self, in_feature):
 
-        emb_infeature = self.att_embedding(infeature)
-        emb_infeature = self.dropout_layer(emb_infeature)
+        emb_feature = self.att_embedding(in_feature)
+        emb_feature = self.dropout_layer(emb_feature)
         # multi-head self-attention network
-        att_infeature, _ = self.self_attn(emb_infeature, emb_infeature, emb_infeature)
+        att_feature, _ = self.self_attn(emb_feature, emb_feature, emb_feature)  # [batch_size, num_field, att_dim]
         # Residual connection
-        v_res = self.v_res_embedding(infeature)
-        att_infeature += v_res
-        att_infeature = F.relu(att_infeature).contiguous()
+        v_res = self.v_res_embedding(in_feature)
+        att_feature += v_res
+        att_feature = F.relu(att_feature).contiguous()
 
         # init graph
-        src_emb = att_infeature[:, self.src_nodes, :]
-        dst_emb = att_infeature[:, self.dst_nodes, :]
+        src_emb = att_feature[:, self.src_nodes, :]
+        dst_emb = att_feature[:, self.dst_nodes, :]
         concat_emb = torch.cat([src_emb, dst_emb], dim=-1)
         alpha = self.leaky_relu(self.W_attn(concat_emb))
         alpha = alpha.view(-1, self.num_feature_field, self.num_feature_field)
@@ -104,16 +107,16 @@ class FiGNN(ContextRecommender):
         self.graph = F.softmax(alpha, dim=-1)
         # message passing
         if self.n_layers > 1:
-            h = att_infeature
+            h = att_feature
             for i in range(self.n_layers - 1):
                 a = self.gnn[i](self.graph, h)
-            a = a.view(-1, self.attention_size)
-            h = h.view(-1, self.attention_size)
-            h = self.gru_cell(a, h)
-            h = h.view(-1, self.num_feature_field, self.attention_size)
-            h += att_infeature
+                a = a.view(-1, self.attention_size)
+                h = h.view(-1, self.attention_size)
+                h = self.gru_cell(a, h)
+                h = h.view(-1, self.num_feature_field, self.attention_size)
+                h += att_feature
         else:
-            h = att_infeature
+            h = att_feature
         # Attentional Scoring Layer
         score = self.mlp1(h).squeeze(-1)
         weight = self.mlp2(h.flatten(start_dim=1))
@@ -134,7 +137,7 @@ class FiGNN(ContextRecommender):
     def forward(self, interaction):
         fignn_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
         output = self.fignn_layer(fignn_all_embeddings)
-        return self.sigmoid(output.squeeze(1))
+        return output.squeeze(1)
 
     def calculate_loss(self, interaction):
         label = interaction[self.LABEL]
@@ -142,4 +145,4 @@ class FiGNN(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))
