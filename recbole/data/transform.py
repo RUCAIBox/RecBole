@@ -102,7 +102,7 @@ class MaskItemSequence:
                 prob = random.random()
                 if prob < self.mask_ratio:
                     pos_item.append(item)
-                    neg_item.append(self._neg_sample(instance, n_items))
+                    neg_item.append(self._neg_sample(instance + [last_item], n_items))
                     masked_sequence[index_id] = n_items
                     index_ids.append(index_id)
 
