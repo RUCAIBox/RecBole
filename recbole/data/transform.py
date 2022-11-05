@@ -52,9 +52,10 @@ class MaskItemSequence:
         self.MASK_ITEM_SEQ = "Mask_" + self.ITEM_SEQ
         self.POS_ITEMS = "Pos_" + config["ITEM_ID_FIELD"]
         self.NEG_ITEMS = "Neg_" + config["ITEM_ID_FIELD"]
+        self.ITEM_ID = config["ITEM_ID_FIELD"]
         self.max_seq_length = config["MAX_ITEM_LIST_LENGTH"]
         self.mask_ratio = config["mask_ratio"]
-        self.mask_item_length = int(self.mask_ratio * self.max_seq_length)
+        self.mask_item_length = int(self.mask_ratio * self.max_seq_length) + 1
         self.MASK_INDEX = "MASK_INDEX"
         config["MASK_INDEX"] = "MASK_INDEX"
         config["MASK_ITEM_SEQ"] = self.MASK_ITEM_SEQ
@@ -75,6 +76,7 @@ class MaskItemSequence:
 
     def __call__(self, dataset, interaction):
         item_seq = interaction[self.ITEM_SEQ]
+        last_item = interaction[self.ITEM_ID].cpu().numpy().tolist()
         device = item_seq.device
         batch_size = item_seq.size(0)
         n_items = dataset.num(self.ITEM_ID)
@@ -87,9 +89,9 @@ class MaskItemSequence:
         pos_items = []
         neg_items = []
         masked_index = []
-        for instance in sequence_instances:
+        for instance, last_item in zip(sequence_instances, last_item):
             # WE MUST USE 'copy()' HERE!
-            masked_sequence = instance.copy()
+            masked_sequence = instance.copy() + [0]
             pos_item = []
             neg_item = []
             index_ids = []
@@ -103,6 +105,11 @@ class MaskItemSequence:
                     neg_item.append(self._neg_sample(instance, n_items))
                     masked_sequence[index_id] = n_items
                     index_ids.append(index_id)
+
+            pos_item.append(last_item)
+            neg_item.append(self._neg_sample(instance + [last_item], n_items))
+            masked_sequence[len(instance)] = n_items
+            index_ids.append(len(instance))
 
             masked_item_sequence.append(masked_sequence)
             pos_items.append(self._padding_sequence(pos_item, self.mask_item_length))
