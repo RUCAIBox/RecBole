@@ -214,4 +214,4 @@ class TestTransform:
 
 
 if __name__ == "__main__":
-    TestTransform().test_mask_itemseq()
+    pytest.main()
