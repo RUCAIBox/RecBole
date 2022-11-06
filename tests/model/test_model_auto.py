@@ -18,11 +18,12 @@ config_file_list = [os.path.join(current_path, "test_model.yaml")]
 
 
 def quick_test(config_dict):
-    objective_function(config_dict=config_dict, config_file_list=config_file_list, saved=False)
+    objective_function(
+        config_dict=config_dict, config_file_list=config_file_list, saved=False
+    )
 
 
 class TestGeneralRecommender(unittest.TestCase):
-
     def test_pop(self):
         config_dict = {
             "model": "Pop",
@@ -239,54 +240,42 @@ class TestContextRecommender(unittest.TestCase):
     def test_lr(self):
         config_dict = {
             "model": "LR",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_fm(self):
         config_dict = {
             "model": "FM",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_nfm(self):
         config_dict = {
             "model": "NFM",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_deepfm(self):
         config_dict = {
             "model": "DeepFM",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_xdeepfm(self):
         config_dict = {
             "model": "xDeepFM",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_xdeepfm_with_direct(self):
         config_dict = {
             "model": "xDeepFM",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
             "direct": True,
         }
         quick_test(config_dict)
@@ -294,36 +283,28 @@ class TestContextRecommender(unittest.TestCase):
     def test_afm(self):
         config_dict = {
             "model": "AFM",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_fnn(self):
         config_dict = {
             "model": "FNN",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_pnn(self):
         config_dict = {
             "model": "PNN",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_pnn_with_use_inner_and_use_outer(self):
         config_dict = {
             "model": "PNN",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
             "use_inner": True,
             "use_outer": True,
         }
@@ -332,9 +313,7 @@ class TestContextRecommender(unittest.TestCase):
     def test_pnn_without_use_inner_and_use_outer(self):
         config_dict = {
             "model": "PNN",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
             "use_inner": False,
             "use_outer": False,
         }
@@ -343,72 +322,56 @@ class TestContextRecommender(unittest.TestCase):
     def test_dssm(self):
         config_dict = {
             "model": "DSSM",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_widedeep(self):
         config_dict = {
             "model": "WideDeep",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_autoint(self):
         config_dict = {
             "model": "AutoInt",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_ffm(self):
         config_dict = {
             "model": "FFM",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_fwfm(self):
         config_dict = {
             "model": "FwFM",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_dcn(self):
         config_dict = {
             "model": "DCN",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_dcnv2(self):
         config_dict = {
             "model": "DCNV2",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
     def test_xgboost(self):
         config_dict = {
             "model": "XGBoost",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
             "xgb_params": {
                 "booster": "gbtree",
                 "objective": "binary:logistic",
@@ -421,9 +384,7 @@ class TestContextRecommender(unittest.TestCase):
     def test_lightgbm(self):
         config_dict = {
             "model": "LightGBM",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
             "lgb_params": {
                 "boosting": "gbdt",
                 "objective": "binary",
@@ -436,15 +397,11 @@ class TestContextRecommender(unittest.TestCase):
     def test_fignn(self):
         config_dict = {
             "model": "FiGNN",
-            "threshold": {
-                "rating": 4
-            },
+            "threshold": {"rating": 4},
         }
         quick_test(config_dict)
 
-
 class TestSequentialRecommender(unittest.TestCase):
-
     def test_din(self):
         config_dict = {
             "model": "DIN",
@@ -784,7 +741,6 @@ class TestSequentialRecommender(unittest.TestCase):
 
 
 class TestKnowledgeRecommender(unittest.TestCase):
-
     def test_cke(self):
         config_dict = {
             "model": "CKE",
