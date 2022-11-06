@@ -53,7 +53,7 @@ class BERT4Rec(SequentialRecommender):
 
         # load dataset info
         self.mask_token = self.n_items
-        self.mask_item_length = int(self.mask_ratio * self.max_seq_length)
+        self.mask_item_length = int(self.mask_ratio * self.max_seq_length) + 1
 
         # define layers and loss
         self.item_embedding = nn.Embedding(
