@@ -15,93 +15,81 @@
 - **Best parameters**:
 
 ```
-  attention_size: 16
-  dropout_prob: 0.0
-  learning_rate: 0.001
+  attention_size: 32
+  learning_rate: 0.005
+  n_layers: 2
 ```
 
 - **Hyper-parameter logging** (hyper.result):
 
 ```yaml
-  attention_size:8, dropout_prob:0.0, learning_rate:0.001
+  attention_size:32, learning_rate:0.005, n_layers:2
   Valid result:
-  auc : 0.7934    logloss : 0.4516
+  auc : 0.7951    logloss : 0.4503
   Test result:
-  auc : 0.7953    logloss : 0.4509
+  auc : 0.7968    logloss : 0.4497
 
-  attention_size:32, dropout_prob:0.0, learning_rate:5e-05
+  attention_size:16, learning_rate:0.0005, n_layers:3
   Valid result:
-  auc : 0.7864    logloss : 0.458
+  auc : 0.7887    logloss : 0.4558
   Test result:
-  auc : 0.7884    logloss : 0.457
+  auc : 0.7909    logloss : 0.4547
 
-  attention_size:16, dropout_prob:0.1, learning_rate:5e-05
+  attention_size:16, learning_rate:0.001, n_layers:3
   Valid result:
-  auc : 0.7852    logloss : 0.4597
+  auc : 0.7916    logloss : 0.4533
   Test result:
-  auc : 0.7872    logloss : 0.4587
+  auc : 0.7937    logloss : 0.4524
 
-  attention_size:8, dropout_prob:0.1, learning_rate:0.001
+  attention_size:8, learning_rate:0.005, n_layers:2
   Valid result:
-  auc : 0.7934    logloss : 0.4516
+  auc : 0.792    logloss : 0.4529
   Test result:
-  auc : 0.7953    logloss : 0.4509
+  auc : 0.794    logloss : 0.4521
 
-  attention_size:32, dropout_prob:0.0, learning_rate:0.001
+  attention_size:32, learning_rate:0.001, n_layers:2
   Valid result:
-  auc : 0.7947    logloss : 0.4513
+  auc : 0.7918    logloss : 0.4531
   Test result:
-  auc : 0.7965    logloss : 0.4506
+  auc : 0.7937    logloss : 0.4524
 
-  attention_size:32, dropout_prob:0.1, learning_rate:5e-05
+  attention_size:16, learning_rate:0.005, n_layers:2
   Valid result:
-  auc : 0.7864    logloss : 0.458
+  auc : 0.7942    logloss : 0.4509
   Test result:
-  auc : 0.7884    logloss : 0.457
+  auc : 0.7958    logloss : 0.4504
 
-  attention_size:16, dropout_prob:0.0, learning_rate:5e-05
+  attention_size:32, learning_rate:0.001, n_layers:3
   Valid result:
-  auc : 0.7852    logloss : 0.4597
+  auc : 0.7912    logloss : 0.4535
   Test result:
-  auc : 0.7872    logloss : 0.4587
+  auc : 0.7932    logloss : 0.4527
 
-  attention_size:8, dropout_prob:0.1, learning_rate:5e-05
+  attention_size:8, learning_rate:0.001, n_layers:2
   Valid result:
-  auc : 0.786    logloss : 0.4587
+  auc : 0.7904    logloss : 0.4543
   Test result:
-  auc : 0.788    logloss : 0.4577
+  auc : 0.7927    logloss : 0.4532
 
-  attention_size:16, dropout_prob:0.0, learning_rate:0.001
+  attention_size:16, learning_rate:0.0005, n_layers:4
   Valid result:
-  auc : 0.7951    logloss : 0.4509
+  auc : 0.7893    logloss : 0.4554
   Test result:
-  auc : 0.7967    logloss : 0.4503
+  auc : 0.7913    logloss : 0.4545
 
-  attention_size:16, dropout_prob:0.1, learning_rate:0.001
+  attention_size:8, learning_rate:0.005, n_layers:4
   Valid result:
-  auc : 0.7951    logloss : 0.4509
+  auc : 0.7942    logloss : 0.4511
   Test result:
-  auc : 0.7967    logloss : 0.4503
-
-  attention_size:8, dropout_prob:0.0, learning_rate:5e-05
-  Valid result:
-  auc : 0.786    logloss : 0.4587
-  Test result:
-  auc : 0.788    logloss : 0.4577
-
-  attention_size:32, dropout_prob:0.1, learning_rate:0.001
-  Valid result:
-  auc : 0.7947    logloss : 0.4513
-  Test result:
-  auc : 0.7965    logloss : 0.4506
+  auc : 0.7961    logloss : 0.4504
 ```
 
 - **Logging Result**:
 
 ```yaml
-  100%|████████████████████████████████████████████████████████████████████████████████████████| 12/12 [3:29:27<00:00, 1047.32s/trial, best loss: -0.7951]
-  best params:  {'attention_size': 16, 'dropout_prob': 0.0, 'learning_rate': 0.001}
+  37% 10/27 [4:27:25<7:34:37, 1604.56s/trial, best loss: -0.7951]
+  best params:  {'attention_size': 32, 'learning_rate': 0.005, 'n_layers': 2}
   best result: 
-  {'model': 'FiGNN', 'best_valid_score': 0.7951, 'valid_score_bigger': True, 'best_valid_result': OrderedDict([('auc', 0.7951), ('logloss', 0.4509)]), 'test_result': OrderedDict([('auc', 0.7967), ('logloss', 0.4503)])}
+  {'model': 'FiGNN', 'best_valid_score': 0.7951, 'valid_score_bigger': True, 'best_valid_result': OrderedDict([('auc', 0.7951), ('logloss', 0.4503)]), 'test_result': OrderedDict([('auc', 0.7968), ('logloss', 0.4497)])}
 ```
 

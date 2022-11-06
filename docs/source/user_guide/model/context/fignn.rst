@@ -55,6 +55,7 @@ If you want to use ``HyperTuning`` to tune hyper parameters of this model, you c
    hidden_dropout_prob choice [0.0,0.1,0.2,0.3,0.4,0.5]
    attn_dropout_prob choice [0.0,0.1,0.2,0.3,0.4,0.5]
    attention_size choice [8,16,32]
+   n_layers choice [2,3,4]
 
 Note that we just provide these hyper parameter ranges for reference only, and we can not guarantee that they are the optimal range of this model.
 

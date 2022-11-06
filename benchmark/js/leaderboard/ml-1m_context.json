@@ -16,8 +16,7 @@
             "train_gpu_memory": "0.09",
             "eval_gpu_memory": "0.86",
             "contributor": "Zihan Lin",
-            "contributor_email": "linzihan.super@foxmail.com",
-            "tester": "Zhen Tian"
+            "contributor_email": "linzihan.super@foxmail.com"
         },
         {
             "year": "2018",
@@ -35,8 +34,7 @@
             "train_gpu_memory": "0.09",
             "eval_gpu_memory": "0.45",
             "contributor": "Shuqing Bian",
-            "contributor_email": "shuqingbian@gmail.com",
-            "tester": "Zhen Tian"
+            "contributor_email": "shuqingbian@gmail.com"
         },
         {
             "year": "2017",
@@ -54,8 +52,7 @@
             "train_gpu_memory": "0.14",
             "eval_gpu_memory": "0.74",
             "contributor": "Zhichao Feng",
-            "contributor_email": "fzcbupt@gmail.com",
-            "tester": "Zhen Tian"
+            "contributor_email": "fzcbupt@gmail.com"
         },
         {
             "year": "2021",
@@ -73,8 +70,7 @@
             "train_gpu_memory": "0.43",
             "eval_gpu_memory": "0.43",
             "contributor": "Yifan Li",
-            "contributor_email": "295435096@qq.com",
-            "tester": "Yifan Li"
+            "contributor_email": "295435096@qq.com"
         },
         {
             "year": "2017",
@@ -92,8 +88,7 @@
             "train_gpu_memory": "0.05",
             "eval_gpu_memory": "0.34",
             "contributor": "Shanlei Mu",
-            "contributor_email": "slmu@ruc.edu.cn",
-            "tester": "Zhen Tian"
+            "contributor_email": "slmu@ruc.edu.cn"
         },
         {
             "year": "2018",
@@ -111,8 +106,7 @@
             "train_gpu_memory": "1.47",
             "eval_gpu_memory": "1.47",
             "contributor": "Zhichao Feng",
-            "contributor_email": "fzcbupt@gmail.com",
-            "tester": "Zhen Tian"
+            "contributor_email": "fzcbupt@gmail.com"
         },
         {
             "year": "2019",
@@ -130,8 +124,7 @@
             "train_gpu_memory": "3.48",
             "eval_gpu_memory": "3.48",
             "contributor": "Zhichao Feng",
-            "contributor_email": "fzcbupt@gmail.com",
-            "tester": "Zhen Tian"
+            "contributor_email": "fzcbupt@gmail.com"
         },
         {
             "year": "2013",
@@ -149,8 +142,7 @@
             "train_gpu_memory": "0.12",
             "eval_gpu_memory": "0.59",
             "contributor": "Yingqian Min",
-            "contributor_email": "gmqszyq@qq.com",
-            "tester": "Zhen Tian"
+            "contributor_email": "gmqszyq@qq.com"
         },
         {
             "year": "2016",
@@ -168,8 +160,7 @@
             "train_gpu_memory": "0.07",
             "eval_gpu_memory": "0.69",
             "contributor": "Xinyan Fan",
-            "contributor_email": "xinyan.fan@ruc.edu.cn",
-            "tester": "Zhen Tian"
+            "contributor_email": "xinyan.fan@ruc.edu.cn"
         },
         {
             "year": "2010",
@@ -187,8 +178,7 @@
             "train_gpu_memory": "0.03",
             "eval_gpu_memory": "0.17",
             "contributor": "Shanlei Mu",
-            "contributor_email": "slmu@ruc.edu.cn",
-            "tester": "Zhen Tian"
+            "contributor_email": "slmu@ruc.edu.cn"
         },
         {
             "year": "2016",
@@ -206,8 +196,7 @@
             "train_gpu_memory": "0.05",
             "eval_gpu_memory": "0.41",
             "contributor": "Zihan Lin",
-            "contributor_email": "linzihan.super@foxmail.com",
-            "tester": "Zhen Tian"
+            "contributor_email": "linzihan.super@foxmail.com"
         },
         {
             "year": "2018",
@@ -225,8 +214,7 @@
             "train_gpu_memory": "0.08",
             "eval_gpu_memory": "0.54",
             "contributor": "Xinyan Fan",
-            "contributor_email": "xinyan.fan@ruc.edu.cn",
-            "tester": "Zhen Tian"
+            "contributor_email": "xinyan.fan@ruc.edu.cn"
         },
         {
             "year": "2007",
@@ -244,8 +232,7 @@
             "train_gpu_memory": "0.01",
             "eval_gpu_memory": "0.03",
             "contributor": "Xinyan Fan",
-            "contributor_email": "xinyan.fan@ruc.edu.cn",
-            "tester": "Zhen Tian"
+            "contributor_email": "xinyan.fan@ruc.edu.cn"
         },
         {
             "year": "2017",
@@ -263,8 +250,7 @@
             "train_gpu_memory": "0.04",
             "eval_gpu_memory": "0.18",
             "contributor": "Zihan Lin",
-            "contributor_email": "linzihan.super@foxmail.com",
-            "tester": "Zhen Tian"
+            "contributor_email": "linzihan.super@foxmail.com"
         },
         {
             "year": "2016",
@@ -282,8 +268,7 @@
             "train_gpu_memory": "0.07",
             "eval_gpu_memory": "0.49",
             "contributor": "Zihan Lin",
-            "contributor_email": "linzihan.super@foxmail.com",
-            "tester": "Zhen Tian"
+            "contributor_email": "linzihan.super@foxmail.com"
         },
         {
             "year": "2016",
@@ -301,8 +286,7 @@
             "train_gpu_memory": "0.05",
             "eval_gpu_memory": "0.34",
             "contributor": "Xinyan Fan",
-            "contributor_email": "xinyan.fan@ruc.edu.cn",
-            "tester": "Zhen Tian"
+            "contributor_email": "xinyan.fan@ruc.edu.cn"
         },
         {
             "year": "2018",
@@ -320,8 +304,7 @@
             "train_gpu_memory": "0.54",
             "eval_gpu_memory": "4.72",
             "contributor": "Zhichao Feng",
-            "contributor_email": "fzcbupt@gmail.com",
-            "tester": "Zhen Tian"
+            "contributor_email": "fzcbupt@gmail.com"
         },
         {
             "year": "2019",
@@ -330,8 +313,8 @@
             "model_link": "/docs/user_guide/model/context/fignn.html",
             "ref_code": "https://github.com/CRIPAC-DIG/GraphCTR",
             "hyper_md": "https://github.com/RUCAIBox/RecBole/benchmark/hyper/context/FiGNN-ml-1m_context.md",
-            "AUC": "0.8976",
-            "Log Loss": "0.3325",
+            "AUC": "0.8966",
+            "Log Loss": "0.3241",
             "parameters": "118,154",
             "flops": "17,032",
             "train_time": "2.24",
