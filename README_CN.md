@@ -54,6 +54,8 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 
 
 ## RecBole 新闻
+![new](/asset/new.gif) **11/06/2022**: 我们公开了[模型的最优超参数及其调参范围](https://recbole.io/hyperparameters/index.html).
+
 ![new](/asset/new.gif) **10/05/2022**: 我们发布了 [v1.1.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.1).
 
 ![new](/asset/new.gif) **06/28/2022**: 我们发布了包括 **8 个子包**和 **65 个新实现模型**的 [**RecBole2.0**](https://github.com/RUCAIBox/RecBole2.0).
