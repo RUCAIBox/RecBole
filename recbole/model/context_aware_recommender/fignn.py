@@ -22,6 +22,7 @@ import torch.nn.functional as F
 from torch.nn.init import xavier_uniform_, xavier_normal_, constant_
 from itertools import product
 
+from recbole.utils import InputType
 from recbole.model.abstract_recommender import ContextRecommender
 
 
