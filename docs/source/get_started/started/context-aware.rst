@@ -84,7 +84,7 @@ settings into the test.yaml.
      order: RO
      group_by: ~
      mode: labeled
-   neg_sampling: ~
+   train_neg_sample_args: ~
    metrics: ['AUC', 'LogLoss']
    valid_metric: AUC
 
@@ -219,7 +219,7 @@ test.yaml and set all the config as follow:
      order: RO
      group_by: ~
      mode: labeled
-   neg_sampling: ~
+   train_neg_sample_args: ~
    metrics: ['AUC', 'LogLoss']
    valid_metric: AUC
 
