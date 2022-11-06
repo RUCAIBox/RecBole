@@ -46,9 +46,10 @@ class GraphLayer(nn.Module):
 
 
 class FiGNN(ContextRecommender):
-    """ FiGNN is a pointwise CTR prediction model based on GGNN,
+    """ FiGNN is a CTR prediction model based on GGNN,
     which can model sophisticated interactions among feature fields on the graph-structured features.
     """
+    input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(FiGNN, self).__init__(config, dataset)
