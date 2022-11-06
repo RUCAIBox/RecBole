@@ -59,6 +59,8 @@ for testing and comparing recommendation algorithms.
 
 
 ## RecBole News
+![new](/asset/new.gif) **11/06/2022**: We release [the optimal hyperparameters of the model and their tuning ranges](https://recbole.io/hyperparameters/index.html).
+
 ![new](/asset/new.gif) **10/05/2022**: We release RecBole [v1.1.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.1).
 
 ![new](/asset/new.gif) **06/28/2022**: We release [**RecBole2.0**](https://github.com/RUCAIBox/RecBole2.0) with **8 packages** consisting of **65 newly implement models**. 
