@@ -1,0 +1,6 @@
+embedding_size: 10              # (int) The embedding size of features.
+attention_size: 16              # (int) The vector size in attention mechanism. 
+n_layers: 2                     # (int) The number of layers.
+num_heads: 2                    # (int) The number of attention heads.
+hidden_dropout_prob: 0.2        # (float) The dropout rate of hidden layer.
+attn_dropout_prob: 0.2          # (float) The dropout rate of multi-head self-attention layer.
