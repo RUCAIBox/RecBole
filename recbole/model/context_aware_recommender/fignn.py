@@ -33,8 +33,12 @@ class GraphLayer(nn.Module):
 
     def __init__(self, num_fields, embedding_size):
         super(GraphLayer, self).__init__()
-        self.W_in = nn.Parameter(torch.Tensor(num_fields, embedding_size, embedding_size))
-        self.W_out = nn.Parameter(torch.Tensor(num_fields, embedding_size, embedding_size))
+        self.W_in = nn.Parameter(
+            torch.Tensor(num_fields, embedding_size, embedding_size)
+        )
+        self.W_out = nn.Parameter(
+            torch.Tensor(num_fields, embedding_size, embedding_size)
+        )
         xavier_normal_(self.W_in)
         xavier_normal_(self.W_out)
         self.bias_p = nn.Parameter(torch.zeros(embedding_size))
@@ -47,40 +51,53 @@ class GraphLayer(nn.Module):
 
 
 class FiGNN(ContextRecommender):
-    """ FiGNN is a CTR prediction model based on GGNN,
+    """FiGNN is a CTR prediction model based on GGNN,
     which can model sophisticated interactions among feature fields on the graph-structured features.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
         super(FiGNN, self).__init__(config, dataset)
 
         # load parameters info
-        self.attention_size = config['attention_size']
-        self.n_layers = config['n_layers']
-        self.num_heads = config['num_heads']
-        self.hidden_dropout_prob = config['hidden_dropout_prob']
-        self.attn_dropout_prob = config['attn_dropout_prob']
+        self.attention_size = config["attention_size"]
+        self.n_layers = config["n_layers"]
+        self.num_heads = config["num_heads"]
+        self.hidden_dropout_prob = config["hidden_dropout_prob"]
+        self.attn_dropout_prob = config["attn_dropout_prob"]
 
         # define layers and loss
         self.dropout_layer = nn.Dropout(p=self.hidden_dropout_prob)
         self.att_embedding = nn.Linear(self.embedding_size, self.attention_size)
         # multi-head self-attention network
         self.self_attn = nn.MultiheadAttention(
-            self.attention_size, self.num_heads, dropout=self.attn_dropout_prob, batch_first=True
+            self.attention_size,
+            self.num_heads,
+            dropout=self.attn_dropout_prob,
+            batch_first=True,
         )
         self.v_res_embedding = torch.nn.Linear(self.embedding_size, self.attention_size)
         # FiGNN
-        self.src_nodes, self.dst_nodes = zip(*list(product(range(self.num_feature_field), repeat=2)))
-        self.gnn = nn.ModuleList([
-            GraphLayer(self.num_feature_field, self.attention_size) for _ in range(self.n_layers - 1)
-        ])
+        self.src_nodes, self.dst_nodes = zip(
+            *list(product(range(self.num_feature_field), repeat=2))
+        )
+        self.gnn = nn.ModuleList(
+            [
+                GraphLayer(self.num_feature_field, self.attention_size)
+                for _ in range(self.n_layers - 1)
+            ]
+        )
         self.leaky_relu = nn.LeakyReLU(negative_slope=0.01)
         self.W_attn = nn.Linear(self.attention_size * 2, 1, bias=False)
         self.gru_cell = nn.GRUCell(self.attention_size, self.attention_size)
         # Attentional Scoring Layer
         self.mlp1 = nn.Linear(self.attention_size, 1, bias=False)
-        self.mlp2 = nn.Linear(self.num_feature_field * self.attention_size, self.num_feature_field, bias=False)
+        self.mlp2 = nn.Linear(
+            self.num_feature_field * self.attention_size,
+            self.num_feature_field,
+            bias=False,
+        )
 
         self.sigmoid = nn.Sigmoid()
         self.loss = nn.BCEWithLogitsLoss()
@@ -92,7 +109,9 @@ class FiGNN(ContextRecommender):
         emb_feature = self.att_embedding(in_feature)
         emb_feature = self.dropout_layer(emb_feature)
         # multi-head self-attention network
-        att_feature, _ = self.self_attn(emb_feature, emb_feature, emb_feature)  # [batch_size, num_field, att_dim]
+        att_feature, _ = self.self_attn(
+            emb_feature, emb_feature, emb_feature
+        )  # [batch_size, num_field, att_dim]
         # Residual connection
         v_res = self.v_res_embedding(in_feature)
         att_feature += v_res
@@ -105,7 +124,7 @@ class FiGNN(ContextRecommender):
         alpha = self.leaky_relu(self.W_attn(concat_emb))
         alpha = alpha.view(-1, self.num_feature_field, self.num_feature_field)
         mask = torch.eye(self.num_feature_field).to(self.device)
-        alpha = alpha.masked_fill(mask.bool(), float('-inf'))
+        alpha = alpha.masked_fill(mask.bool(), float("-inf"))
         self.graph = F.softmax(alpha, dim=-1)
         # message passing
         if self.n_layers > 1:
@@ -137,7 +156,9 @@ class FiGNN(ContextRecommender):
             xavier_uniform_(module.weight_ih_l0)
 
     def forward(self, interaction):
-        fignn_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
+        fignn_all_embeddings = self.concat_embed_input_fields(
+            interaction
+        )  # [batch_size, num_field, embed_dim]
         output = self.fignn_layer(fignn_all_embeddings)
         return output.squeeze(1)
 

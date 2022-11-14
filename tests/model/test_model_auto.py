@@ -401,6 +401,7 @@ class TestContextRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+
 class TestSequentialRecommender(unittest.TestCase):
     def test_din(self):
         config_dict = {
