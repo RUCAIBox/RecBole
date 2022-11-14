@@ -91,7 +91,7 @@ class Collector(object):
         if self.register.need("data.count_items"):
             self.data_struct.set("data.count_items", train_data.dataset.item_counter)
         if self.register.need("data.count_users"):
-            self.data_struct.set("data.count_items", train_data.dataset.user_counter)
+            self.data_struct.set("data.count_users", train_data.dataset.user_counter)
 
     def _average_rank(self, scores):
         """Get the ranking of an ordered tensor, and take the average of the ranking for positions with equal values.
