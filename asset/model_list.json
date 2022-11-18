@@ -1037,6 +1037,20 @@
           "repo_link": "https://github.com/RUCAIBox/RecBole"
       },
       {
+            "category": "Context-aware Recommendation",
+            "cate_link": "/docs/user_guide/model_intro.html#context-aware-recommendation",
+            "year": "2019",
+            "pub": "CIKM' 19",
+            "model": "FiGNN",
+            "model_link": "/docs/user_guide/model/context/fignn.html",
+            "paper": "Fi-GNN: Modeling Feature Interactions via Graph Neural Networks for CTR Prediction",
+            "paper_link": "https://dl.acm.org/doi/10.1145/3357384.3357951",
+            "authors": "Zekun Li, Zeyu Cui, Shu Wu, Xiaoyu Zhang, Liang Wang",
+            "ref_code": "https://github.com/CRIPAC-DIG/GraphCTR, https://github.com/xue-pai/FuxiCTR",
+            "repository": "RecBole",
+            "repo_link": "https://github.com/RUCAIBox/RecBole"
+      },
+      {
           "category": "Data Augmentation",
           "cate_link": "https://github.com/RUCAIBox/RecBole2.0#recbole-da",
           "year": "2022",
