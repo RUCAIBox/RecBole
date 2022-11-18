@@ -110,10 +110,13 @@ class GeneralRecommender(AbstractRecommender):
 
 
 class AutoEncoderMixin(object):
+    """This is a common part of auto-encoders. All the auto-encoder models should inherit this class,
+    including CDAE, MacridVAE, MultiDAE, MultiVAE, RaCT and RecVAE.
+    The base AutoEncoderMixin class provides basic dataset information and rating matrix function.
+    """
+    
     def build_histroy_items(self, dataset):
         self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
-        self.history_item_id = self.history_item_id
-        self.history_item_value = self.history_item_value
 
     def get_rating_matrix(self, user):
         r"""Get a batch of user's feature with the user's id and history interaction matrix.
