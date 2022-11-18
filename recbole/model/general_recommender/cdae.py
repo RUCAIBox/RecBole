@@ -8,7 +8,7 @@ CDAE
 ################################################
 Reference:
     Yao Wu et al., Collaborative denoising auto-encoders for top-n recommender systems. In WSDM 2016.
-   
+
 Reference code:
     https://github.com/jasonyaw/CDAE
 """
@@ -16,12 +16,12 @@ Reference code:
 import torch
 import torch.nn as nn
 
-from recbole.model.abstract_recommender import GeneralRecommender
+from recbole.model.abstract_recommender import AutoEncoderMixin, GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
 from recbole.utils import InputType
 
 
-class CDAE(GeneralRecommender):
+class CDAE(GeneralRecommender, AutoEncoderMixin):
     r"""Collaborative Denoising Auto-Encoder (CDAE) is a recommendation model
     for top-N recommendation that utilizes the idea of Denoising Auto-Encoders.
     We implement the the CDAE model with only user dataloader.
@@ -39,9 +39,7 @@ class CDAE(GeneralRecommender):
         self.embedding_size = config["embedding_size"]
         self.corruption_ratio = config["corruption_ratio"]
 
-        self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
-        self.history_item_id = self.history_item_id.to(self.device)
-        self.history_item_value = self.history_item_value.to(self.device)
+        self.build_histroy_items(dataset)
 
         if self.hid_activation == "sigmoid":
             self.h_act = nn.Sigmoid()
@@ -76,30 +74,6 @@ class CDAE(GeneralRecommender):
         h = self.h_act(h)
         out = self.out_layer(h)
         return out
-
-    def get_rating_matrix(self, user):
-        r"""Get a batch of user's feature with the user's id and history interaction matrix.
-
-        Args:
-            user (torch.LongTensor): The input tensor that contains user's id, shape: [batch_size, ]
-
-        Returns:
-            torch.FloatTensor: The user's feature of a batch of user, shape: [batch_size, n_items]
-        """
-        # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
-        col_indices = self.history_item_id[user].flatten()
-        row_indices = (
-            torch.arange(user.shape[0])
-            .to(self.device)
-            .repeat_interleave(self.history_item_id.shape[1], dim=0)
-        )
-        rating_matrix = (
-            torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
-        )
-        rating_matrix.index_put_(
-            (row_indices, col_indices), self.history_item_value[user].flatten()
-        )
-        return rating_matrix
 
     def calculate_loss(self, interaction):
         x_users = interaction[self.USER_ID]

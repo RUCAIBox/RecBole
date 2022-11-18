@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from recbole.model.abstract_recommender import GeneralRecommender
+from recbole.model.abstract_recommender import GeneralRecommender, AutoEncoderMixin
 from recbole.model.init import xavier_normal_initialization
 from recbole.utils import InputType
 
@@ -104,7 +104,7 @@ class Encoder(nn.Module):
         return self.fc_mu(h5), self.fc_logvar(h5)
 
 
-class RecVAE(GeneralRecommender):
+class RecVAE(GeneralRecommender, AutoEncoderMixin):
     r"""Collaborative Denoising Auto-Encoder (RecVAE) is a recommendation model
     for top-N recommendation with implicit feedback.
 
@@ -122,9 +122,7 @@ class RecVAE(GeneralRecommender):
         self.mixture_weights = config["mixture_weights"]
         self.gamma = config["gamma"]
 
-        self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
-        self.history_item_id = self.history_item_id.to(self.device)
-        self.history_item_value = self.history_item_value.to(self.device)
+        self.build_histroy_items(dataset)
 
         self.encoder = Encoder(self.hidden_dim, self.latent_dim, self.n_items)
         self.prior = CompositePrior(
@@ -134,30 +132,6 @@ class RecVAE(GeneralRecommender):
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
-
-    def get_rating_matrix(self, user):
-        r"""Get a batch of user's feature with the user's id and history interaction matrix.
-
-        Args:
-            user (torch.LongTensor): The input tensor that contains user's id, shape: [batch_size, ]
-
-        Returns:
-            torch.FloatTensor: The user's feature of a batch of user, shape: [batch_size, n_items]
-        """
-        # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
-        col_indices = self.history_item_id[user].flatten()
-        row_indices = (
-            torch.arange(user.shape[0])
-            .to(self.device)
-            .repeat_interleave(self.history_item_id.shape[1], dim=0)
-        )
-        rating_matrix = (
-            torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
-        )
-        rating_matrix.index_put_(
-            (row_indices, col_indices), self.history_item_value[user].flatten()
-        )
-        return rating_matrix
 
     def reparameterize(self, mu, logvar):
         if self.training:
