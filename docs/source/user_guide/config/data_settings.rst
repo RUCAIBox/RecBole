@@ -63,6 +63,7 @@ Selectively Loading
 - ``unload_col (dict)`` : Keys are suffix of loaded atomic files, values are list of field names NOT to be loaded. Note that ``load_col`` and ``unload_col`` can not be set at the same time. Defaults to ``None``.
 - ``unused_col (dict)`` : Keys are suffix of loaded atomic files, values are list of field names which are loaded for data processing but will not be used in model. E.g. the ``time_field`` may be used for time ordering but model does not use this field. Defaults to ``None``.
 - ``additional_feat_suffix (list)``: Control loading additional atomic files. E.g. if you want to load features from ``ml-100k.hello``, just set this arg as ``additional_feat_suffix: [hello]``. Features of additional features will be stored in ``Dataset.feat_list``. Defaults to ``None``.
+- ``numerical_features (list)``: The numerical features to be embed for context-aware methods. Defaults to ``None``.
 
 Filtering
 -----------
