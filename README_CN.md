@@ -273,12 +273,18 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
   publisher = {{ACM}},
   year      = {2021}
 }
-
-@article{recbole2.0,
-  author    = {Wayne Xin Zhao and Yupeng Hou and Xingyu Pan and Chen Yang and Zeyu Zhang and Zihan Lin and Jingsen Zhang and Shuqing Bian and Jiakai Tang and Wenqi Sun and Yushuo Chen and Lanling Xu and Gaowei Zhang and Zhen Tian and Changxin Tian and Shanlei Mu and Xinyan Fan and Xu Chen and Ji{-}Rong Wen},
-  title     = {RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
-  journal   = {arXiv preprint arXiv:2206.07351},
-  year      = {2022}
+@inproceedings{recbole[2.0],
+  title={RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
+  author={Zhao, Wayne Xin and Hou, Yupeng and Pan, Xingyu and Yang, Chen and Zhang, Zeyu and Lin, Zihan and Zhang, Jingsen and Bian, Shuqing and Tang, Jiakai and Sun, Wenqi and others},
+  booktitle={Proceedings of the 31st ACM International Conference on Information \& Knowledge Management},
+  pages={4722--4726},
+  year={2022}
+}
+@misc{recbole[1.1.1],
+  author = {Xu, Lanling and Tian, Zhen and Zhang, Gaowei and Wang, Lei and Zhang, Junjie and Zheng, Bowen and Li, Yifan and Hou, Yupeng and Pan, Xingyu and Chen, Yushuo and Zhao, Wayne Xin and Chen, Xu and Wen, Ji-Rong},
+  title = {Recent Advances in RecBole: Extensions with more Practical Considerations},
+  journal   = {arXiv preprint arXiv:2211.15148},
+  year = {2022}
 }
 ```
 
@@ -292,7 +298,7 @@ RecBole由 [中国人民大学, 北京邮电大学, 华东师范大学](https://
 | :-------------------: | :--------------------: | :--------------------------------------------: | ---------------------------------------------- |
 | 2020年6月<br> ~<br> 2020年11月 |        v0.1.1         |  牟善磊 ([@ShanleiMu](https://github.com/ShanleiMu)), 侯宇蓬 ([@hyp1231](https://github.com/@hyp1231)),<br> 林子涵 ([@linzihan-backforward](https://github.com/linzihan-backforward)), 李凯元 ([@tsotfsk](https://github.com/tsotfsk))| [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) |
 |   2020年11月<br> ~ <br> 2022年10月   | v0.1.2 ~ v1.0.1 |      陈昱硕 ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), 潘星宇 ([@2017pxy](https://github.com/2017pxy))    | [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016)    |
-| 2022年10月<br/> ~ <br/> 现在 | v1.1.0 ~ v1.1.1 | 徐澜玲 ([@Sherry-XLL](https://github.com/Sherry-XLL)), 田震 ([@chenyuwuxin](https://github.com/chenyuwuxin)), 张高玮 ([@Wicknight](https://github.com/Wicknight)), 王磊 ([@Paitesanshi](https://github.com/Paitesanshi)), 张君杰 ([@leoleojie](https://github.com/leoleojie)) | 即将发布 |
+| 2022年10月<br/> ~ <br/> 现在 | v1.1.0 ~ v1.1.1 | 徐澜玲 ([@Sherry-XLL](https://github.com/Sherry-XLL)), 田震 ([@chenyuwuxin](https://github.com/chenyuwuxin)), 张高玮 ([@Wicknight](https://github.com/Wicknight)), 王磊 ([@Paitesanshi](https://github.com/Paitesanshi)), 张君杰 ([@leoleojie](https://github.com/leoleojie)) | [PDF](https://arxiv.org/abs/2211.15148) |
 
 
 ## 免责声明

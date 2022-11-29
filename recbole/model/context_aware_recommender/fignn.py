@@ -55,7 +55,7 @@ class FiGNN(ContextRecommender):
     which can model sophisticated interactions among feature fields on the graph-structured features.
     """
 
-    input_type = InputType.PAIRWISE
+    input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
         super(FiGNN, self).__init__(config, dataset)
