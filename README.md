@@ -265,10 +265,10 @@ We thank the nice contributions through PRs from [@rowedenny](https://github.com
 
 
 ## Cite
-If you find RecBole useful for your research or development, please cite the following papers: [RecBole](https://arxiv.org/abs/2011.01731) and [RecBole2.0](https://arxiv.org/pdf/2206.07351).
+If you find RecBole useful for your research or development, please cite the following papers: [RecBole[1.0]](https://arxiv.org/abs/2011.01731), [RecBole[2.0]](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) and [RecBole[1.1.1]](https://arxiv.org/abs/2211.15148).
 
 ```bibtex
-@inproceedings{recbole,
+@inproceedings{recbole[1.0],
   author    = {Wayne Xin Zhao and Shanlei Mu and Yupeng Hou and Zihan Lin and Yushuo Chen and Xingyu Pan and Kaiyuan Li and Yujie Lu and Hui Wang and Changxin Tian and Yingqian Min and Zhichao Feng and Xinyan Fan and Xu Chen and Pengfei Wang and Wendi Ji and Yaliang Li and Xiaoling Wang and Ji{-}Rong Wen},
   title     = {RecBole: Towards a Unified, Comprehensive and Efficient Framework for Recommendation Algorithms},
   booktitle = {{CIKM}},

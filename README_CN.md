@@ -262,10 +262,10 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 
 
 ## 引用
-如果你觉得 RecBole 对你的科研工作有帮助，请引用我们的论文：[RecBole](https://arxiv.org/abs/2011.01731) 和 [RecBole2.0](https://arxiv.org/pdf/2206.07351)。
+如果你觉得 RecBole 对你的科研工作有帮助，请引用我们的论文：[RecBole[1.0]](https://arxiv.org/abs/2011.01731)，[RecBole[2.0]](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) 和 [RecBole[1.1.1]](https://arxiv.org/abs/2211.15148)。
 
 ```bibtex
-@inproceedings{recbole,
+@inproceedings{recbole[1.0],
   author    = {Wayne Xin Zhao and Shanlei Mu and Yupeng Hou and Zihan Lin and Yushuo Chen and Xingyu Pan and Kaiyuan Li and Yujie Lu and Hui Wang and Changxin Tian and Yingqian Min and Zhichao Feng and Xinyan Fan and Xu Chen and Pengfei Wang and Wendi Ji and Yaliang Li and Xiaoling Wang and Ji{-}Rong Wen},
   title     = {RecBole: Towards a Unified, Comprehensive and Efficient Framework for Recommendation Algorithms},
   booktitle = {{CIKM}},
