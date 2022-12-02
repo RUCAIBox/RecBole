@@ -65,7 +65,7 @@ If you want to use ``HyperTuning`` to tune hyper parameters of this model, you c
 
    learning_rate choice [0.01,0.005,0.001,0.0005,0.0001]
    n_memory choice [4, 8. 16. 32]
-   neg_sampling choice [{'uniform':1}, {'uniform':2}, {'uniform':5}, {'uniform':10}]
+   train_neg_sample_args choice [{'uniform':1}, {'uniform':2}, {'uniform':5}, {'uniform':10}]
 
 Note that we just provide these hyper parameter ranges for reference only, and we can not guarantee that they are the optimal range of this model.
 
