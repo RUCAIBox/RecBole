@@ -49,7 +49,7 @@ And then:
 
    python run.py
 
-**Note**: Because this model is a non-sampling model, so you must set ``neg_sampling=None`` when you run this model.
+**Note**: Because this model is a non-sampling model, so you must set ``train_neg_sample_args=None`` when you run this model.
 
 Tuning Hyper Parameters
 -------------------------
