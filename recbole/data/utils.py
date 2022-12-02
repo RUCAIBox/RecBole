@@ -169,11 +169,12 @@ def data_preparation(config, dataset):
             n_folds = len(folds)
             print(n_folds)
             k = config["eval_args"]["fold"]
+            folds = folds[k:] + folds[:k]
 
             train_dataset = Dataset(config)
-            train_dataset.inter_feat = cat_interactions([fold.inter_feat for fold in folds[k: n_folds - 2 + k]])
-            valid_dataset = folds[n_folds - 2 + k]
-            test_dataset = folds[n_folds - 1 + k]
+            train_dataset.inter_feat = cat_interactions([fold.inter_feat for fold in folds[: n_folds - 2]])
+            valid_dataset = folds[n_folds - 2]
+            test_dataset = folds[n_folds - 1]
 
             built_datasets = [train_dataset, valid_dataset, test_dataset]
 
