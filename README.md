@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 # K-fold CV
 This branch contains an implementation of K-fold CV in RecBole. The implementation relies on
-RecBole's Dataset class and its methods `split_by_ratio` and `build` (`recbole/data/dataset/dataset.py`), on the function `data_preparation`)
+RecBole's Dataset class and its methods `split_by_ratio` and `build` (`recbole/data/dataset/dataset.py`), on the function `data_preparation`
 (`recbole/data/utils.py`), and on the general configuration file `overall.yaml` (`recbole/properties`).
 
 Running RecBole calls the `quick_start.py` (`recbole/quick_start`) script, which splits the data with `data_preparation(config, dataset)`.
@@ -15,7 +15,7 @@ The variable k stores which permutation of the folds is to be used in the curren
 the first three splits will be assigned to the train set, the fourth to the validation, and the last one to the test set.
 
 The function then initializes `train_dataset` as an empty Dataset(config) instance, and fills it with the interactions of the 
-corresponding folds. The remaining two folds are assigned to `valid_dataset`.
+corresponding folds. The remaining two folds are assigned to `valid_dataset` and `test_dataset`.
 
 For running an experiment on the first fold of a 5-fold CV, the `eval_args` in the `overall.yaml` file need to be set to:
 ```python
