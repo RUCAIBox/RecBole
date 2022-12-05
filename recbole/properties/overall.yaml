@@ -42,7 +42,7 @@ eval_args:                      # (dict) 4 keys: group_by, order, split, and mod
   # split: {'LS': 'valid_and_test'}   # (dict) The splitting strategy ranging in ['RS','LS'].
   # split: { 'RS': [0.6, 0.2, 0.2] }   # (dict) The splitting strategy ranging in ['RS','LS'].
   split: {'KF': [0.2, 0.2, 0.2, 0.2, 0.2]}
-  fold: 0
+  fold: 2
   group_by: none                # (str) The grouping strategy ranging in ['user', 'none'].
   order: RO                     # (str) The ordering strategy ranging in ['RO', 'TO'].
   mode: full                    # (str) The evaluation mode ranging in ['full','unixxx','popxxx','labeled'].
