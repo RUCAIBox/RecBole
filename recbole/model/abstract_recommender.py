@@ -264,7 +264,7 @@ class ContextRecommender(AbstractRecommender):
                 elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                     self.user_token_seq_field_num += 1
                 else:
-                    self.user_float_field_num += dataset.num(field_name)
+                    self.user_float_field_num += 1
             self.item_token_field_num = 0
             self.item_float_field_num = 0
             self.item_token_seq_field_num = 0
@@ -274,7 +274,7 @@ class ContextRecommender(AbstractRecommender):
                 elif dataset.field2type[field_name] == FeatureType.TOKEN_SEQ:
                     self.item_token_seq_field_num += 1
                 else:
-                    self.item_float_field_num += dataset.num(field_name)
+                    self.item_float_field_num += 1
 
         for field_name in self.field_names:
             if field_name == self.LABEL:
