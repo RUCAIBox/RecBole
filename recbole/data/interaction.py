@@ -342,9 +342,9 @@ class Interaction(object):
                 key = self.interaction[b]
             else:
                 key = self.interaction[b][..., 0]
-            index = np.argsort(key, kind="stable")
+            index = np.array(np.argsort(key, kind="stable"))
             if not a:
-                index = index[::-1]
+                index = index[::-1].copy()
             self._reindex(index)
 
     def add_prefix(self, prefix):
