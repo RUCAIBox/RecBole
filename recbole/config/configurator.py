@@ -614,4 +614,4 @@ class Config(object):
 
     def compatibility_settings(self):
         import numpy as np
-        np.float = np.float32
+        np.float = np.float64
