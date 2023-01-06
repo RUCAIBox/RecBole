@@ -76,6 +76,7 @@ class Config(object):
             config_file_list (list of str): the external config file, it allows multiple config files, default is None.
             config_dict (dict): the external parameter dictionaries, default is None.
         """
+        self.compatibility_settings()
         self._init_parameters_category()
         self.yaml_loader = self._build_yaml_loader()
         self.file_config_dict = self._load_config_files(config_file_list)
@@ -610,3 +611,7 @@ class Config(object):
 
     def __repr__(self):
         return self.__str__()
+
+    def compatibility_settings(self):
+        import numpy as np
+        np.float = np.float32
