@@ -614,6 +614,7 @@ class Config(object):
 
     def compatibility_settings(self):
         import numpy as np
+
         np.bool = np.bool_
         np.int = np.int_
         np.float = np.float_
