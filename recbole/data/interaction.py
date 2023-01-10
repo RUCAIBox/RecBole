@@ -342,9 +342,9 @@ class Interaction(object):
                 key = self.interaction[b]
             else:
                 key = self.interaction[b][..., 0]
-            index = np.array(np.argsort(key, kind="stable"))
+            index = np.argsort(key, kind="stable")
             if not a:
-                index = index[::-1].copy()
+                index = torch.tensor(np.array(index)[::-1])
             self._reindex(index)
 
     def add_prefix(self, prefix):
