@@ -72,6 +72,7 @@ are also support for these models. And evaluation is always conducted in the way
    model/context/autoint
    model/context/xgboost
    model/context/lightgbm
+   model/context/kd_dagfm
 
 
 Sequential Recommendation
