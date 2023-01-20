@@ -4,7 +4,7 @@ type: 'outer'                     # (str) The type of interaction learning funct
 embedding_size: 16                # (int) The embedding size of features.
 t_depth: 3                        # (int) The depth of teacher network.
 depth: 3                          # (int) The depth of student network.
-alpha: 0.1                        # (float) The hyperparameter of the weight of KD loss.
-beta: 921.6                       # (float) The hyperparameter of the weight of CTR loss.
+alpha: 1                          # (float) The hyperparameter of the weight of KD loss.
+beta: 92.16                       # (float) The hyperparameter of the weight of CTR loss.
 warm_up: ''                       # (str) The path of teacher model or student model.
 t_cin: [200, 200, 200]            # (list of int) The parameter for teacher network CIN.

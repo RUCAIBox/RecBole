@@ -1,5 +1,5 @@
 # _*_ coding: utf-8 _*_
-# @Time   : 2023/1/17
+# @Time   : 2023/1/20
 # @Author : Wanli Yang
 # @Email  : 2013774@mail.nankai.edu.cn
 
@@ -102,6 +102,7 @@ class KD_DAGFM(ContextRecommender):
 
 
 class DAGFM(nn.Module):
+
     def __init__(self, config):
         super(DAGFM, self).__init__()
         if torch.cuda.is_available():
@@ -120,6 +121,8 @@ class DAGFM(nn.Module):
             self.p = nn.ParameterList([
                 nn.Parameter(torch.randn(field_num, field_num, embedding_size)) for _ in range(self.depth)
             ])
+            for _ in range(self.depth):
+                xavier_normal_(self.p[_], gain=1.414)
         elif self.type == 'outer':
             self.p = nn.ParameterList([
                 nn.Parameter(torch.randn(field_num, field_num, embedding_size)) for _ in range(self.depth)
@@ -157,42 +160,35 @@ class DAGFM(nn.Module):
         return self.outputs
 
 
-class CrossNetComp(nn.Module):
-    def __init__(self, config):
-        super(CrossNetComp, self).__init__()
-        hiddenSize = config["feature_num"] * config["embedding_size"]
-        self.W = nn.Linear(hiddenSize, hiddenSize)
-        xavier_normal_(self.W.weight, gain=1.414)
-
-    def forward(self, base, cross):
-        result = base * self.W(cross) + cross
-        return result
-
-
 # teacher network CrossNet
 class CrossNet(nn.Module):
+
     def __init__(self, config):
         super(CrossNet, self).__init__()
 
         # load parameters info
         self.depth = config["depth"]
-        self.crossnet = nn.ModuleList([CrossNetComp(config) for _ in range(self.depth)])
-        self.linear = nn.Linear(config["feature_num"] * config["embedding_size"], 1)
+        self.embedding_size = config["embedding_size"]
+        self.feature_num = config["feature_num"]
+        self.in_feature_num = self.feature_num * self.embedding_size
+        self.cross_layer_w = nn.ParameterList(
+            nn.Parameter(torch.randn(self.in_feature_num, self.in_feature_num)) for _ in range(self.depth)
+        )
+        self.bias = nn.ParameterList(nn.Parameter(torch.zeros(self.in_feature_num, 1)) for _ in range(self.depth))
+        self.linear = nn.Linear(self.in_feature_num, 1)
         nn.init.normal_(self.linear.weight)
-        self.backbone = ['crossnet', 'linear', 'embedding_layer']
-        self.loss_fn = nn.BCELoss()
-        if torch.cuda.is_available():
-            self.device = torch.device('cuda')
-        else:
-            self.device = torch.device('cpu')
 
-    def FeatureInteraction(self, feature):
-        feature = feature.reshape(feature.shape[0], -1)
-        base = feature
-        cross = feature
+    def FeatureInteraction(self, x_0):
+        x_0 = x_0.reshape(x_0.shape[0], -1)
+        x_0 = x_0.unsqueeze(dim=2)
+        x_l = x_0  # (batch_size, in_feature_num, 1)
         for i in range(self.depth):
-            cross = self.crossnet[i](base, cross)
-        self.logits = self.linear(cross)
+            xl_w = torch.matmul(self.cross_layer_w[i], x_l)
+            xl_w = xl_w + self.bias[i]
+            xl_dot = torch.mul(x_0, xl_w)
+            x_l = xl_dot + x_l
+        x_l = x_l.squeeze(dim=2)
+        self.logits = self.linear(x_l)
         self.outputs = torch.sigmoid(self.logits)
         return self.outputs
 
@@ -201,6 +197,7 @@ class CrossNet(nn.Module):
 
 
 class CINComp(nn.Module):
+
     def __init__(self, indim, outdim, config):
         super(CINComp, self).__init__()
         basedim = config["feature_num"]
@@ -215,6 +212,7 @@ class CINComp(nn.Module):
 
 # teacher network CIN
 class CIN(nn.Module):
+
     def __init__(self, config):
         super().__init__()
         self.cinlist = [config["feature_num"]] + config["cin"]

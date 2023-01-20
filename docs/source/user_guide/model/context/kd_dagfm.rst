@@ -43,8 +43,8 @@ Quick Start with RecBole
 - ``embedding_size (int)`` : The embedding size of features. Defaults to ``16``.
 - ``t_depth (int)`` : The depth of teacher network. Defaults to ``3``.
 - ``depth (int)`` : The depth of student network. Defaults to ``3``.
-- ``alpha (float)`` : The hyperparameter of the weight of KD loss. Defaults to ``0.1``.
-- ``beta (float)`` : The hyperparameter of the weight of CTR loss. Defaults to ``921.6``.
+- ``alpha (float)`` : The hyperparameter of the weight of KD loss. Defaults to ``1``.
+- ``beta (float)`` : The hyperparameter of the weight of CTR loss. Defaults to ``92.16``.
 - ``warm_up (str)`` : The path of teacher model or student model. Defaults to ``''``.
 - ``t_cin (list of int)`` : The parameter for teacher network CIN. Defaults to ``[200, 200, 200]``.
 
