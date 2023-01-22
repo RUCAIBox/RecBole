@@ -1136,7 +1136,7 @@ class ContextSeqEmbAbstractLayer(nn.Module):
                 )
             if len(float_fields) > 0:
                 float_fields = torch.cat(
-                    float_fields, dim=-2
+                    float_fields, dim=-1
                 )  # [batch_size, max_item_length, num_float_field]
             else:
                 float_fields = None
