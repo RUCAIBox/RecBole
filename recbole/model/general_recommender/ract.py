@@ -103,7 +103,6 @@ class RaCT(GeneralRecommender, AutoEncoderMixin):
             return mu
 
     def forward(self, rating_matrix):
-
         t = F.normalize(rating_matrix)
 
         h = F.dropout(t, self.drop_out, training=self.training) * (1 - self.drop_out)
@@ -127,7 +126,6 @@ class RaCT(GeneralRecommender, AutoEncoderMixin):
         return z, mu, logvar
 
     def calculate_actor_loss(self, interaction):
-
         user = interaction[self.USER_ID]
         rating_matrix = self.get_rating_matrix(user)
 
@@ -211,7 +209,6 @@ class RaCT(GeneralRecommender, AutoEncoderMixin):
         return -1 * y
 
     def calculate_loss(self, interaction):
-
         # actor_pretrain
         if self.train_stage == "actor_pretrain":
             return self.calculate_actor_loss(interaction).mean()
@@ -223,7 +220,6 @@ class RaCT(GeneralRecommender, AutoEncoderMixin):
             return self.calculate_ac_loss(interaction).mean()
 
     def predict(self, interaction):
-
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
 

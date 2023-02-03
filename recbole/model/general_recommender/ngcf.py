@@ -146,7 +146,6 @@ class NGCF(GeneralRecommender):
         return ego_embeddings
 
     def forward(self):
-
         A_hat = (
             self.sparse_dropout(self.norm_adj_matrix)
             if self.node_dropout != 0
@@ -195,7 +194,6 @@ class NGCF(GeneralRecommender):
         return mf_loss + self.reg_weight * reg_loss
 
     def predict(self, interaction):
-
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
 
