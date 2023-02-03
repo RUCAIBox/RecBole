@@ -81,7 +81,6 @@ class NARM(SequentialRecommender):
                 constant_(module.bias.data, 0)
 
     def forward(self, item_seq, item_seq_len):
-
         item_seq_emb = self.item_embedding(item_seq)
         item_seq_emb_dropout = self.emb_dropout(item_seq_emb)
         gru_out, _ = self.gru(item_seq_emb_dropout)

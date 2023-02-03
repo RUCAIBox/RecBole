@@ -68,7 +68,6 @@ class MultiVAE(GeneralRecommender, AutoEncoderMixin):
             return mu
 
     def forward(self, rating_matrix):
-
         h = F.normalize(rating_matrix)
 
         h = F.dropout(h, self.drop_out, training=self.training)
@@ -83,7 +82,6 @@ class MultiVAE(GeneralRecommender, AutoEncoderMixin):
         return z, mu, logvar
 
     def calculate_loss(self, interaction):
-
         user = interaction[self.USER_ID]
         rating_matrix = self.get_rating_matrix(user)
 
@@ -108,7 +106,6 @@ class MultiVAE(GeneralRecommender, AutoEncoderMixin):
         return ce_loss + kl_loss
 
     def predict(self, interaction):
-
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
 

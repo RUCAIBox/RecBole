@@ -105,7 +105,6 @@ class FiGNN(ContextRecommender):
         self.apply(self._init_weights)
 
     def fignn_layer(self, in_feature):
-
         emb_feature = self.att_embedding(in_feature)
         emb_feature = self.dropout_layer(emb_feature)
         # multi-head self-attention network

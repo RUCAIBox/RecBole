@@ -55,7 +55,6 @@ class MultiDAE(GeneralRecommender, AutoEncoderMixin):
         return nn.Sequential(*mlp_modules)
 
     def forward(self, rating_matrix):
-
         h = F.normalize(rating_matrix)
 
         h = F.dropout(h, self.drop_out, training=self.training)
@@ -64,7 +63,6 @@ class MultiDAE(GeneralRecommender, AutoEncoderMixin):
         return self.decoder(h)
 
     def calculate_loss(self, interaction):
-
         user = interaction[self.USER_ID]
 
         rating_matrix = self.get_rating_matrix(user)
@@ -77,7 +75,6 @@ class MultiDAE(GeneralRecommender, AutoEncoderMixin):
         return ce_loss
 
     def predict(self, interaction):
-
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
 
@@ -88,7 +85,6 @@ class MultiDAE(GeneralRecommender, AutoEncoderMixin):
         return scores[[torch.arange(len(item)).to(self.device), item]]
 
     def full_sort_predict(self, interaction):
-
         user = interaction[self.USER_ID]
 
         rating_matrix = self.get_rating_matrix(user)

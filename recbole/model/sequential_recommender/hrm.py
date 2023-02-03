@@ -86,12 +86,10 @@ class HRM(SequentialRecommender):
         return seq_item
 
     def _init_weights(self, module):
-
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
 
     def forward(self, seq_item, user, seq_item_len):
-
         # seq_item=self.inverse_seq_item(seq_item)
         seq_item = self.inverse_seq_item(seq_item, seq_item_len)
 
@@ -141,7 +139,6 @@ class HRM(SequentialRecommender):
         return hybrid_user_embedding
 
     def calculate_loss(self, interaction):
-
         seq_item = interaction[self.ITEM_SEQ]
         seq_item_len = interaction[self.ITEM_SEQ_LEN]
         user = interaction[self.USER_ID]
@@ -163,7 +160,6 @@ class HRM(SequentialRecommender):
             return loss
 
     def predict(self, interaction):
-
         item_seq = interaction[self.ITEM_SEQ]
         seq_item_len = interaction[self.ITEM_SEQ_LEN]
         test_item = interaction[self.ITEM_ID]
@@ -175,7 +171,6 @@ class HRM(SequentialRecommender):
         return scores
 
     def full_sort_predict(self, interaction):
-
         item_seq = interaction[self.ITEM_SEQ]
         seq_item_len = interaction[self.ITEM_SEQ_LEN]
         user = interaction[self.USER_ID]
