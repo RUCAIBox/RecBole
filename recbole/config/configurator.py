@@ -198,7 +198,6 @@ class Config(object):
         self.external_config_dict = external_config_dict
 
     def _get_model_and_dataset(self, model, dataset):
-
         if model is None:
             try:
                 model = self.external_config_dict["model"]

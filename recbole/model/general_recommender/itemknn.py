@@ -82,7 +82,6 @@ class ComputeSimilarity:
 
         # Compute all similarities using vectorization
         while start_block < end_local:
-
             end_block = min(start_block + block_size, end_local)
             this_block_size = end_block - start_block
 

@@ -110,7 +110,6 @@ class DIN(SequentialRecommender):
                 constant_(module.bias.data, 0)
 
     def forward(self, user, item_seq, item_seq_len, next_items):
-
         max_length = item_seq.shape[1]
         # concatenate the history item seq with the target item to get embedding together
         item_seq_next_item = torch.cat((item_seq, next_items.unsqueeze(1)), dim=-1)

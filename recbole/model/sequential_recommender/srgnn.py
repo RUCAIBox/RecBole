@@ -199,7 +199,6 @@ class SRGNN(SequentialRecommender):
         return alias_inputs, A, items, mask
 
     def forward(self, item_seq, item_seq_len):
-
         alias_inputs, A, items, mask = self._get_slice(item_seq)
         hidden = self.item_embedding(items)
         hidden = self.gnn(A, hidden)

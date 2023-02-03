@@ -40,7 +40,6 @@ def new_transform(config_dict=None, config_file_list=None):
 
 class TestTransform:
     def test_mask_itemseq(self):
-
         # TODO: add new test version checkpoint
 
         return

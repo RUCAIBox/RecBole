@@ -130,7 +130,6 @@ class DMF(GeneralRecommender):
             normal_(module.weight.data, 0, 0.01)
 
     def forward(self, user, item):
-
         user = self.get_user_embedding(user)
 
         # Following lines construct tensor of shape [B,n_users] using the tensor of shape [B,H]

@@ -82,7 +82,6 @@ class MacridVAE(GeneralRecommender, AutoEncoderMixin):
             return mu
 
     def forward(self, rating_matrix):
-
         cores = F.normalize(self.k_embedding.weight, dim=1)
         items = F.normalize(self.item_embedding.weight, dim=1)
 
@@ -127,7 +126,6 @@ class MacridVAE(GeneralRecommender, AutoEncoderMixin):
         return logits, mulist, logvarlist
 
     def calculate_loss(self, interaction):
-
         user = interaction[self.USER_ID]
 
         rating_matrix = self.get_rating_matrix(user)
@@ -169,7 +167,6 @@ class MacridVAE(GeneralRecommender, AutoEncoderMixin):
         return loss_1 + loss_2 + loss_3
 
     def predict(self, interaction):
-
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
 

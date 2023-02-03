@@ -38,7 +38,6 @@ class Aggregator(nn.Module):
     def forward(
         self, entity_emb, user_emb, relation_emb, edge_index, edge_type, inter_matrix
     ):
-
         from torch_scatter import scatter_softmax, scatter_mean
 
         n_entities = entity_emb.shape[0]
@@ -169,7 +168,6 @@ class GraphConv(nn.Module):
         return edge_index[:, random_indices], edge_type[random_indices]
 
     def forward(self, user_emb, entity_emb):
-
         # node dropout
         if self.node_dropout_rate > 0.0:
             edge_index, edge_type = self.edge_sampling(
@@ -263,7 +261,6 @@ class GraphConv(nn.Module):
         return L_norm
 
     def _build_graph_separately(self, entity_emb):
-
         # node dropout
         if self.node_dropout_rate > 0.0:
             edge_index, edge_type = self.edge_sampling(
@@ -455,7 +452,6 @@ class MCCLK(KnowledgeRecommender):
         return index.to(self.device), type.to(self.device)
 
     def forward(self):
-
         user_emb = self.user_embedding.weight
         entity_emb = self.entity_embedding.weight
         # Construct a k-Nearest-Neighbor item-item semantic graph and Structural View Encoder
@@ -503,7 +499,6 @@ class MCCLK(KnowledgeRecommender):
         return torch.mm(z1, z2.t())
 
     def calculate_loss(self, interaction):
-
         if self.restore_user_e is not None or self.restore_item_e is not None:
             self.restore_user_e, self.restore_item_e = None, None
 
