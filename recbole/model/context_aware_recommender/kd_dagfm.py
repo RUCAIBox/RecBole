@@ -6,11 +6,9 @@
 r"""
 KD_DAGFM
 ################################################
-
 Reference:
     Zhen Tian et al. "Directed Acyclic Graph Factorization Machines for CTR Prediction via Knowledge Distillation."
     in WSDM 2023.
-
 Reference code:
     https://github.com/chenyuwuxin/DAGFM
 """
@@ -27,7 +25,6 @@ class KD_DAGFM(ContextRecommender):
     r"""KD_DAGFM is a context-based recommendation model. The model is based on directed acyclic graph and knowledge
     distillation. It can learn arbitrary feature interactions from the complex teacher networks and achieve
     approximately lossless model performance. It can also greatly reduce the computational resource costs.
-
     """
 
     def __init__(self, config, dataset):
@@ -77,6 +74,7 @@ class KD_DAGFM(ContextRecommender):
         if self.phase == 'teacher_training' or self.phase == 'finetuning':
             return self.FeatureInteraction(dagfm_all_embeddings)
         elif self.phase == 'distillation':
+            dagfm_all_embeddings = dagfm_all_embeddings.data
             if self.training:
                 self.t_pred = self.teacher_network(dagfm_all_embeddings)
             return self.FeatureInteraction(dagfm_all_embeddings)
