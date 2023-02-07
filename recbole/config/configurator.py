@@ -341,7 +341,7 @@ class Config(object):
             if self.final_config_dict["loss_type"] in ["CE"]:
                 if (
                     self.final_config_dict["MODEL_TYPE"] == ModelType.SEQUENTIAL
-                    and self.final_config_dict["train_neg_sample_args"] is not None
+                    and self.final_config_dict.get("train_neg_sample_args", None) is not None
                 ):
                     raise ValueError(
                         f"train_neg_sample_args [{self.final_config_dict['train_neg_sample_args']}] should be None "
@@ -423,7 +423,7 @@ class Config(object):
                 "please use 'train_neg_sample_args' instead and check the API documentation for proper usage."
             )
 
-        if self.final_config_dict["train_neg_sample_args"] is not None:
+        if self.final_config_dict.get("train_neg_sample_args", None) is not None:
             if not isinstance(self.final_config_dict["train_neg_sample_args"], dict):
                 raise ValueError(
                     f"train_neg_sample_args:[{self.final_config_dict['train_neg_sample_args']}] should be a dict."
@@ -501,7 +501,7 @@ class Config(object):
                 self.final_config_dict["verbose"] = False
 
     def _set_train_neg_sample_args(self):
-        train_neg_sample_args = self.final_config_dict["train_neg_sample_args"]
+        train_neg_sample_args = self.final_config_dict.get("train_neg_sample_args", None)
         if train_neg_sample_args is None or train_neg_sample_args == "None":
             self.final_config_dict["train_neg_sample_args"] = {
                 "distribution": "none",
