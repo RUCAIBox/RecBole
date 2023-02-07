@@ -341,7 +341,8 @@ class Config(object):
             if self.final_config_dict["loss_type"] in ["CE"]:
                 if (
                     self.final_config_dict["MODEL_TYPE"] == ModelType.SEQUENTIAL
-                    and self.final_config_dict.get("train_neg_sample_args", None) is not None
+                    and self.final_config_dict.get("train_neg_sample_args", None)
+                    is not None
                 ):
                     raise ValueError(
                         f"train_neg_sample_args [{self.final_config_dict['train_neg_sample_args']}] should be None "
@@ -501,7 +502,9 @@ class Config(object):
                 self.final_config_dict["verbose"] = False
 
     def _set_train_neg_sample_args(self):
-        train_neg_sample_args = self.final_config_dict.get("train_neg_sample_args", None)
+        train_neg_sample_args = self.final_config_dict.get(
+            "train_neg_sample_args", None
+        )
         if train_neg_sample_args is None or train_neg_sample_args == "None":
             self.final_config_dict["train_neg_sample_args"] = {
                 "distribution": "none",
