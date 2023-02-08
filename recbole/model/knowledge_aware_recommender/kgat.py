@@ -151,7 +151,7 @@ class KGAT(KnowledgeRecommender):
                 lambda edge: edge.data["relation_id"] == rel_type
             )
             sub_graph = (
-                dgl.edge_subgraph(self.ckg, edge_idxs, preserve_nodes=True)
+                dgl.edge_subgraph(self.ckg, edge_idxs, relabel_nodes=False)
                 .adjacency_matrix(transpose=False, scipy_fmt="coo")
                 .astype("float")
             )
