@@ -115,7 +115,7 @@ class MaskItemSequence:
         return ft_interaction
 
 
-    def __call__(self, dataset, interaction):
+    def __call__(self, dataset, interaction, enhance= True):
         item_seq = interaction[self.ITEM_SEQ]
         device = item_seq.device
         batch_size = item_seq.size(0)
@@ -129,7 +129,8 @@ class MaskItemSequence:
         neg_items = []
         masked_index = []
 
-        ft_interaction = self._append_mask_last(interaction, n_items, device)
+        if enhance:
+            ft_interaction = self._append_mask_last(interaction, n_items, device)
 
         for instance in sequence_instances:
             # WE MUST USE 'copy()' HERE!
@@ -178,8 +179,11 @@ class MaskItemSequence:
             self.MASK_INDEX: masked_index,
         }
         interaction.update(Interaction(new_dict))
-        final_interaction = cat_interactions([interaction, ft_interaction])
-        final_interaction.shuffle()
+        if enhance:
+            final_interaction = cat_interactions([interaction, ft_interaction])
+            final_interaction.shuffle()
+        else:
+            final_interaction = interaction
         return final_interaction
 
 
