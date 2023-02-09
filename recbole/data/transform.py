@@ -54,7 +54,7 @@ class MaskItemSequence:
         self.NEG_ITEMS = "Neg_" + config["ITEM_ID_FIELD"]
         self.max_seq_length = config["MAX_ITEM_LIST_LENGTH"]
         self.mask_ratio = config["mask_ratio"]
-        self.mask_item_length = int(self.mask_ratio * self.max_seq_length) + 1
+        self.mask_item_length = int(self.mask_ratio * self.max_seq_length)
         self.MASK_INDEX = "MASK_INDEX"
         config["MASK_INDEX"] = "MASK_INDEX"
         config["MASK_ITEM_SEQ"] = self.MASK_ITEM_SEQ
