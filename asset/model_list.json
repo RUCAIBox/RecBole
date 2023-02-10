@@ -1051,6 +1051,20 @@
             "repo_link": "https://github.com/RUCAIBox/RecBole"
       },
       {
+            "category": "Context-aware Recommendation",
+            "cate_link": "/docs/user_guide/model_intro.html#context-aware-recommendation",
+            "year": "2023",
+            "pub": "WSDM' 23",
+            "model": "KD_DAGFM",
+            "model_link": "/docs/user_guide/model/context/kd_dagfm.html",
+            "paper": "Directed Acyclic Graph Factorization Machines for CTR Prediction via Knowledge Distillation",
+            "paper_link": "https://arxiv.org/abs/2211.11159",
+            "authors": "Zhen Tian, Ting Bai, Zibin Zhang, Zhiyuan Xu, Kangyi Lin, Ji-Rong Wen, Wayne Xin Zhao",
+            "ref_code": "https://github.com/chenyuwuxin/DAGFM",
+            "repository": "RecBole",
+            "repo_link": "https://github.com/RUCAIBox/RecBole"
+      },
+      {
           "category": "Data Augmentation",
           "cate_link": "https://github.com/RUCAIBox/RecBole2.0#recbole-da",
           "year": "2022",
