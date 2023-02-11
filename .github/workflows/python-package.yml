@@ -36,7 +36,7 @@ jobs:
         pip install protobuf==3.19.0
         pip install hyperopt==0.2.5
         pip install pytest
-        pip install dgl
+        pip install dgl==0.9.1
         pip install xgboost
         pip install community
         pip install networkx

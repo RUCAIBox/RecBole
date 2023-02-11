@@ -1,6 +1,6 @@
 Model Introduction
 =====================
-We implement 83 recommendation models covering general recommendation, sequential recommendation,
+We implement 86 recommendation models covering general recommendation, sequential recommendation,
 context-aware recommendation and knowledge-based recommendation. A brief introduction to these models are as follows:
 
 
@@ -73,6 +73,7 @@ are also support for these models. And evaluation is always conducted in the way
    model/context/xgboost
    model/context/lightgbm
    model/context/kd_dagfm
+   model/context/fignn
 
 
 Sequential Recommendation
