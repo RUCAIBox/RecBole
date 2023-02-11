@@ -76,6 +76,7 @@ class Config(object):
             config_file_list (list of str): the external config file, it allows multiple config files, default is None.
             config_dict (dict): the external parameter dictionaries, default is None.
         """
+        self.compatibility_settings()
         self._init_parameters_category()
         self.yaml_loader = self._build_yaml_loader()
         self.file_config_dict = self._load_config_files(config_file_list)
@@ -197,7 +198,6 @@ class Config(object):
         self.external_config_dict = external_config_dict
 
     def _get_model_and_dataset(self, model, dataset):
-
         if model is None:
             try:
                 model = self.external_config_dict["model"]
@@ -341,7 +341,8 @@ class Config(object):
             if self.final_config_dict["loss_type"] in ["CE"]:
                 if (
                     self.final_config_dict["MODEL_TYPE"] == ModelType.SEQUENTIAL
-                    and self.final_config_dict["train_neg_sample_args"] is not None
+                    and self.final_config_dict.get("train_neg_sample_args", None)
+                    is not None
                 ):
                     raise ValueError(
                         f"train_neg_sample_args [{self.final_config_dict['train_neg_sample_args']}] should be None "
@@ -423,7 +424,7 @@ class Config(object):
                 "please use 'train_neg_sample_args' instead and check the API documentation for proper usage."
             )
 
-        if self.final_config_dict["train_neg_sample_args"] is not None:
+        if self.final_config_dict.get("train_neg_sample_args", None) is not None:
             if not isinstance(self.final_config_dict["train_neg_sample_args"], dict):
                 raise ValueError(
                     f"train_neg_sample_args:[{self.final_config_dict['train_neg_sample_args']}] should be a dict."
@@ -501,7 +502,9 @@ class Config(object):
                 self.final_config_dict["verbose"] = False
 
     def _set_train_neg_sample_args(self):
-        train_neg_sample_args = self.final_config_dict["train_neg_sample_args"]
+        train_neg_sample_args = self.final_config_dict.get(
+            "train_neg_sample_args", None
+        )
         if train_neg_sample_args is None or train_neg_sample_args == "None":
             self.final_config_dict["train_neg_sample_args"] = {
                 "distribution": "none",
@@ -610,3 +613,15 @@ class Config(object):
 
     def __repr__(self):
         return self.__str__()
+
+    def compatibility_settings(self):
+        import numpy as np
+
+        np.bool = np.bool_
+        np.int = np.int_
+        np.float = np.float_
+        np.complex = np.complex_
+        np.object = np.object_
+        np.str = np.str_
+        np.long = np.int_
+        np.unicode = np.unicode_

@@ -2,11 +2,12 @@ n_layers: 2                     # (int) The number of transformer layers in tran
 n_heads: 2                      # (int) The number of attention heads for multi-head attention layer.
 hidden_size: 64                 # (int) The number of features in the hidden state.
 inner_size: 256                 # (int) The inner hidden size in feed-forward layer.
-hidden_dropout_prob: 0.5        # (float) The probability of an element to be zeroed.
-attn_dropout_prob: 0.5          # (float) The probability of an attention score to be zeroed.
+hidden_dropout_prob: 0.2        # (float) The probability of an element to be zeroed.
+attn_dropout_prob: 0.2          # (float) The probability of an attention score to be zeroed.
 hidden_act: 'gelu'              # (str) The activation function in feed-forward layer.
 layer_norm_eps: 1e-12           # (float) A value added to the denominator for numerical stability.
 initializer_range: 0.02         # (float) The standard deviation for normal initialization.
 mask_ratio: 0.2                 # (float) The probability for a item replaced by MASK token.
 loss_type: 'CE'                 # (str) The type of loss function.
 transform: mask_itemseq         # (str) The transform operation for batch data process.
+ft_ratio: 0.5                   # (float) The probability of generating fine-tuning samples

@@ -54,6 +54,8 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 
 
 ## RecBole 新闻
+![new](/asset/new.gif) **11/06/2022**: 我们公开了[模型的最优超参数及其调参范围](https://recbole.io/hyperparameters/index.html).
+
 ![new](/asset/new.gif) **10/05/2022**: 我们发布了 [v1.1.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.1).
 
 ![new](/asset/new.gif) **06/28/2022**: 我们发布了包括 **8 个子包**和 **65 个新实现模型**的 [**RecBole2.0**](https://github.com/RUCAIBox/RecBole2.0).
@@ -260,10 +262,10 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 
 
 ## 引用
-如果你觉得 RecBole 对你的科研工作有帮助，请引用我们的论文：[RecBole](https://arxiv.org/abs/2011.01731) 和 [RecBole2.0](https://arxiv.org/pdf/2206.07351)。
+如果你觉得 RecBole 对你的科研工作有帮助，请引用我们的论文：[RecBole[1.0]](https://arxiv.org/abs/2011.01731)，[RecBole[2.0]](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) 和 [RecBole[1.1.1]](https://arxiv.org/abs/2211.15148)。
 
 ```bibtex
-@inproceedings{recbole,
+@inproceedings{recbole[1.0],
   author    = {Wayne Xin Zhao and Shanlei Mu and Yupeng Hou and Zihan Lin and Yushuo Chen and Xingyu Pan and Kaiyuan Li and Yujie Lu and Hui Wang and Changxin Tian and Yingqian Min and Zhichao Feng and Xinyan Fan and Xu Chen and Pengfei Wang and Wendi Ji and Yaliang Li and Xiaoling Wang and Ji{-}Rong Wen},
   title     = {RecBole: Towards a Unified, Comprehensive and Efficient Framework for Recommendation Algorithms},
   booktitle = {{CIKM}},
@@ -271,12 +273,18 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
   publisher = {{ACM}},
   year      = {2021}
 }
-
-@article{recbole2.0,
-  author    = {Wayne Xin Zhao and Yupeng Hou and Xingyu Pan and Chen Yang and Zeyu Zhang and Zihan Lin and Jingsen Zhang and Shuqing Bian and Jiakai Tang and Wenqi Sun and Yushuo Chen and Lanling Xu and Gaowei Zhang and Zhen Tian and Changxin Tian and Shanlei Mu and Xinyan Fan and Xu Chen and Ji{-}Rong Wen},
-  title     = {RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
-  journal   = {arXiv preprint arXiv:2206.07351},
-  year      = {2022}
+@inproceedings{recbole[2.0],
+  title={RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
+  author={Zhao, Wayne Xin and Hou, Yupeng and Pan, Xingyu and Yang, Chen and Zhang, Zeyu and Lin, Zihan and Zhang, Jingsen and Bian, Shuqing and Tang, Jiakai and Sun, Wenqi and others},
+  booktitle={Proceedings of the 31st ACM International Conference on Information \& Knowledge Management},
+  pages={4722--4726},
+  year={2022}
+}
+@misc{recbole[1.1.1],
+  author = {Xu, Lanling and Tian, Zhen and Zhang, Gaowei and Wang, Lei and Zhang, Junjie and Zheng, Bowen and Li, Yifan and Hou, Yupeng and Pan, Xingyu and Chen, Yushuo and Zhao, Wayne Xin and Chen, Xu and Wen, Ji-Rong},
+  title = {Recent Advances in RecBole: Extensions with more Practical Considerations},
+  journal   = {arXiv preprint arXiv:2211.15148},
+  year = {2022}
 }
 ```
 
@@ -290,7 +298,7 @@ RecBole由 [中国人民大学, 北京邮电大学, 华东师范大学](https://
 | :-------------------: | :--------------------: | :--------------------------------------------: | ---------------------------------------------- |
 | 2020年6月<br> ~<br> 2020年11月 |        v0.1.1         |  牟善磊 ([@ShanleiMu](https://github.com/ShanleiMu)), 侯宇蓬 ([@hyp1231](https://github.com/@hyp1231)),<br> 林子涵 ([@linzihan-backforward](https://github.com/linzihan-backforward)), 李凯元 ([@tsotfsk](https://github.com/tsotfsk))| [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) |
 |   2020年11月<br> ~ <br> 2022年10月   | v0.1.2 ~ v1.0.1 |      陈昱硕 ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), 潘星宇 ([@2017pxy](https://github.com/2017pxy))    | [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016)    |
-| 2022年10月<br/> ~ <br/> 现在 | v1.1.0 ~ v1.1.1 | 徐澜玲 ([@Sherry-XLL](https://github.com/Sherry-XLL)), 田震 ([@chenyuwuxin](https://github.com/chenyuwuxin)), 张高玮 ([@Wicknight](https://github.com/Wicknight)), 王磊 ([@Paitesanshi](https://github.com/Paitesanshi)), 张君杰 ([@leoleojie](https://github.com/leoleojie)) | 即将发布 |
+| 2022年10月<br/> ~ <br/> 现在 | v1.1.0 ~ v1.1.1 | 徐澜玲 ([@Sherry-XLL](https://github.com/Sherry-XLL)), 田震 ([@chenyuwuxin](https://github.com/chenyuwuxin)), 张高玮 ([@Wicknight](https://github.com/Wicknight)), 王磊 ([@Paitesanshi](https://github.com/Paitesanshi)), 张君杰 ([@leoleojie](https://github.com/leoleojie)) | [PDF](https://arxiv.org/abs/2211.15148) |
 
 
 ## 免责声明

@@ -60,7 +60,7 @@ class BERT4Rec(SequentialRecommender):
             self.n_items + 1, self.hidden_size, padding_idx=0
         )  # mask token add 1
         self.position_embedding = nn.Embedding(
-            self.max_seq_length + 1, self.hidden_size
+            self.max_seq_length, self.hidden_size
         )  # add mask_token at the last
         self.trm_encoder = TransformerEncoder(
             n_layers=self.n_layers,
@@ -107,6 +107,7 @@ class BERT4Rec(SequentialRecommender):
         item_seq = torch.cat((item_seq, padding.unsqueeze(-1)), dim=-1)  # [B max_len+1]
         for batch_id, last_position in enumerate(item_seq_len):
             item_seq[batch_id][last_position] = self.mask_token
+        item_seq = item_seq[:, 1:]
         return item_seq
 
     def forward(self, item_seq):
@@ -211,7 +212,7 @@ class BERT4Rec(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         item_seq = self.reconstruct_test_data(item_seq, item_seq_len)
         seq_output = self.forward(item_seq)
-        seq_output = self.gather_indexes(seq_output, item_seq_len)  # [B H]
+        seq_output = self.gather_indexes(seq_output, item_seq_len - 1)  # [B H]
         test_items_emb = self.item_embedding.weight[
             : self.n_items
         ]  # delete masked token

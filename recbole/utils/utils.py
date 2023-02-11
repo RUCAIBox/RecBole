@@ -350,7 +350,6 @@ def get_flops(model, dataset, device, logger, transform, verbose=False):
         total_ops, total_params = module.total_ops.item(), 0
         ret_dict = {}
         for n, m in module.named_children():
-
             next_dict = {}
             if m in handler_collection and not isinstance(
                 m, (nn.Sequential, nn.ModuleList)

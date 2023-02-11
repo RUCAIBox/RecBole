@@ -16,12 +16,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from recbole.model.abstract_recommender import GeneralRecommender
+from recbole.model.abstract_recommender import AutoEncoderMixin, GeneralRecommender
 from recbole.model.init import xavier_normal_initialization
 from recbole.utils import InputType
 
 
-class RaCT(GeneralRecommender):
+class RaCT(GeneralRecommender, AutoEncoderMixin):
     r"""RaCT is a collaborative filtering model which uses methods based on actor-critic reinforcement learning for training.
 
     We implement the RaCT model with only user dataloader.
@@ -37,9 +37,7 @@ class RaCT(GeneralRecommender):
         self.anneal_cap = config["anneal_cap"]
         self.total_anneal_steps = config["total_anneal_steps"]
 
-        self.history_item_id, self.history_item_value, _ = dataset.history_item_matrix()
-        self.history_item_id = self.history_item_id.to(self.device)
-        self.history_item_value = self.history_item_value.to(self.device)
+        self.build_histroy_items(dataset)
 
         self.update = 0
 
@@ -88,30 +86,6 @@ class RaCT(GeneralRecommender):
             for p in self.critic_net.parameters():
                 p.requires_grad = False
 
-    def get_rating_matrix(self, user):
-        r"""Get a batch of user's feature with the user's id and history interaction matrix.
-
-        Args:
-            user (torch.LongTensor): The input tensor that contains user's id, shape: [batch_size, ]
-
-        Returns:
-            torch.FloatTensor: The user's feature of a batch of user, shape: [batch_size, n_items]
-        """
-        # Following lines construct tensor of shape [B,n_items] using the tensor of shape [B,H]
-        col_indices = self.history_item_id[user].flatten()
-        row_indices = (
-            torch.arange(user.shape[0])
-            .to(self.device)
-            .repeat_interleave(self.history_item_id.shape[1], dim=0)
-        )
-        rating_matrix = (
-            torch.zeros(1).to(self.device).repeat(user.shape[0], self.n_items)
-        )
-        rating_matrix.index_put_(
-            (row_indices, col_indices), self.history_item_value[user].flatten()
-        )
-        return rating_matrix
-
     def mlp_layers(self, layer_dims):
         mlp_modules = []
         for i, (d_in, d_out) in enumerate(zip(layer_dims[:-1], layer_dims[1:])):
@@ -129,7 +103,6 @@ class RaCT(GeneralRecommender):
             return mu
 
     def forward(self, rating_matrix):
-
         t = F.normalize(rating_matrix)
 
         h = F.dropout(t, self.drop_out, training=self.training) * (1 - self.drop_out)
@@ -153,7 +126,6 @@ class RaCT(GeneralRecommender):
         return z, mu, logvar
 
     def calculate_actor_loss(self, interaction):
-
         user = interaction[self.USER_ID]
         rating_matrix = self.get_rating_matrix(user)
 
@@ -237,7 +209,6 @@ class RaCT(GeneralRecommender):
         return -1 * y
 
     def calculate_loss(self, interaction):
-
         # actor_pretrain
         if self.train_stage == "actor_pretrain":
             return self.calculate_actor_loss(interaction).mean()
@@ -249,7 +220,6 @@ class RaCT(GeneralRecommender):
             return self.calculate_ac_loss(interaction).mean()
 
     def predict(self, interaction):
-
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
 

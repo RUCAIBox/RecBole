@@ -79,7 +79,6 @@ class LINE(GeneralRecommender):
         return cur
 
     def sampler(self, key_ids):
-
         key_ids = np.array(key_ids.cpu())
         key_num = len(key_ids)
         total_num = key_num
@@ -121,14 +120,12 @@ class LINE(GeneralRecommender):
         return np.arange(1, self.n_users)
 
     def forward(self, h, t):
-
         h_embedding = self.user_embedding(h)
         t_embedding = self.item_embedding(t)
 
         return torch.sum(h_embedding.mul(t_embedding), dim=1)
 
     def context_forward(self, h, t, field):
-
         if field == "uu":
             h_embedding = self.user_embedding(h)
             t_embedding = self.item_context_embedding(t)
@@ -139,7 +136,6 @@ class LINE(GeneralRecommender):
         return torch.sum(h_embedding.mul(t_embedding), dim=1)
 
     def calculate_loss(self, interaction):
-
         user = interaction[self.USER_ID]
         pos_item = interaction[self.ITEM_ID]
         neg_item = interaction[self.NEG_ITEM_ID]
@@ -178,7 +174,6 @@ class LINE(GeneralRecommender):
             )
 
     def predict(self, interaction):
-
         user = interaction[self.USER_ID]
         item = interaction[self.ITEM_ID]
 

@@ -20,7 +20,6 @@ def quick_test(config_dict):
 
 
 class TestSequentialRecommender(unittest.TestCase):
-
     # def test_gru4reckg(self):
     #     config_dict = {
     #         'model': 'GRU4RecKG',

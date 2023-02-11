@@ -21,7 +21,6 @@ import math
 
 
 def hyperopt_tune(args):
-
     # plz set algo='exhaustive' to use exhaustive search, in this case, max_evals is auto set
     # in other case, max_evals needs to be set manually
     config_file_list = (
@@ -44,7 +43,6 @@ def hyperopt_tune(args):
 
 
 def ray_tune(args):
-
     config_file_list = (
         args.config_files.strip().split(" ") if args.config_files else None
     )
@@ -108,7 +106,6 @@ def ray_tune(args):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--config_files", type=str, default=None, help="fixed config files"

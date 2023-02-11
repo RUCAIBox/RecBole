@@ -180,7 +180,6 @@ class ResidualBlock_a(nn.Module):
         self.kernel_size = kernel_size
 
     def forward(self, x):  # x: [batch_size, seq_len, embed_size]
-
         out = F.relu(self.ln1(x))
         out = out.permute(0, 2, 1).unsqueeze(2)
         out = self.conv1(out).squeeze(2).permute(0, 2, 1)
