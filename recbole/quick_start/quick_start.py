@@ -97,15 +97,21 @@ def run_recbole(
     )
 
     environment_df = get_environment(device=config["device"])
-    result_df, result_tex = convert_run_latex(config=config, result_list=trainer.result_list)
+    result_df, result_tex = convert_run_latex(
+        config=config, result_list=trainer.result_list
+    )
 
     logger.info(set_color("best valid ", "yellow") + f": {best_valid_result}")
     logger.info(set_color("test result", "yellow") + f": {test_result}")
 
-    logger.info("The running environment of this training is as follows:\n" +
-                environment_df.to_string(index=False))
-    logger.info("The results of this training are as follows:\n" +
-                result_df.to_string(index=True))
+    logger.info(
+        "The running environment of this training is as follows:\n"
+        + environment_df.to_string(index=False)
+    )
+    logger.info(
+        "The results of this training are as follows:\n"
+        + result_df.to_string(index=True)
+    )
 
     return {
         "best_valid_score": best_valid_score,

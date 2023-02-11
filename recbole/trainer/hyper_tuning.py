@@ -328,7 +328,9 @@ class HyperTuning(object):
                     + dict2str(self.params2result[params]["best_valid_result"])
                     + "\n"
                 )
-                valid_result_list.append(self.params2result[params]["best_valid_result"])
+                valid_result_list.append(
+                    self.params2result[params]["best_valid_result"]
+                )
                 fp.write(
                     "Test result:\n"
                     + dict2str(self.params2result[params]["test_result"])
@@ -336,7 +338,9 @@ class HyperTuning(object):
                 )
                 test_result_list.append(self.params2result[params]["test_result"])
 
-        convert_hyper_latex(output_file, self.params_list, valid_result_list, test_result_list)
+        convert_hyper_latex(
+            output_file, self.params_list, valid_result_list, test_result_list
+        )
 
     def trial(self, params):
         r"""Given a set of parameters, return results and optimization status
