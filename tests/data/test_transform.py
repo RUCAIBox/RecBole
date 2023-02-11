@@ -54,7 +54,7 @@ class TestTransform:
         )
         transform = new_transform(config_dict=config_dict)
 
-        train_transform_interaction = transform(train_dataset, train_dataset.inter_feat, False)
+        train_transform_interaction = transform(train_dataset, train_dataset.inter_feat)
         assert (
             train_transform_interaction[transform.MASK_ITEM_SEQ][:, :5].numpy()
             == [
@@ -70,13 +70,13 @@ class TestTransform:
             ]
         ).all()
 
-        valid_transform_interaction = transform(valid_dataset, valid_dataset.inter_feat, False)
+        valid_transform_interaction = transform(valid_dataset, valid_dataset.inter_feat)
         assert (
             valid_transform_interaction[transform.MASK_ITEM_SEQ][:, :6].numpy()
             == [[9, 9, 9, 9, 9, 9], [9, 9, 9, 0, 0, 0]]
         ).all()
 
-        test_transform_interaction = transform(test_dataset, test_dataset.inter_feat, False)
+        test_transform_interaction = transform(test_dataset, test_dataset.inter_feat)
         assert (
             test_transform_interaction[transform.MASK_ITEM_SEQ][:, :7].numpy()
             == [[9, 9, 9, 9, 9, 9, 9], [9, 9, 9, 9, 0, 0, 0], [9, 9, 0, 0, 0, 0, 0]]
