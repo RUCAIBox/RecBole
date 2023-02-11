@@ -2,7 +2,7 @@ Significance Test
 =============
 
 Tests for statistical significance indicate whether observed differences between assessment results occur because of sampling error or chance. 
-Such "insignificant" results should be ignored because they do not reflect real differences. In RecBole, we implemented :meth:`~significance_test.py`
+Such "insignificant" results should be ignored because they do not reflect real differences. In RecBole, we implemented ``significance_test.py``
 for significance test. In this section, we will present a typical usage of this script.
 
 Create Config files
@@ -20,4 +20,4 @@ Run Command
 
 View Results
 -------------------------------------------------
-Finally, we can view the results of significant test from the terminal and :meth:`significant_test.txt`.
+Finally, we can view the results of significant test from the terminal and ``significant_test.txt``.
