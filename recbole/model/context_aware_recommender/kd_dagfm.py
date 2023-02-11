@@ -18,6 +18,7 @@ from torch import nn
 from torch.nn.init import xavier_normal_
 from copy import deepcopy
 
+from recbole.model.init import xavier_normal_initialization
 from recbole.model.abstract_recommender import ContextRecommender
 
 
@@ -54,6 +55,8 @@ class KD_DAGFM(ContextRecommender):
             else:
                 save_info = torch.load(config["warm_up"])
                 self.load_state_dict(save_info["state_dict"])
+        else:
+            self.apply(xavier_normal_initialization)
 
     # get config of teacher network from config
     def get_teacher_config(self, config):
