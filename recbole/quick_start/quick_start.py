@@ -3,7 +3,7 @@
 # @Email  : slmu@ruc.edu.cn, zxcptss@gmail.com
 
 # UPDATE:
-# @Time   : 2022/7/8, 2022/07/10, 2022/07/13
+# @Time   : 2022/7/8, 2022/07/10, 2022/07/13, 2023/2/11
 # @Author : Zhen Tian, Junjie Zhang, Gaowei Zhang
 # @Email  : chenyuwuxinn@gmail.com, zjj001128@163.com, zgw15630559577@163.com
 
@@ -35,6 +35,8 @@ from recbole.utils import (
     init_seed,
     set_color,
     get_flops,
+    get_environment,
+    convert_run_latex,
 )
 
 
@@ -94,8 +96,16 @@ def run_recbole(
         test_data, load_best_model=saved, show_progress=config["show_progress"]
     )
 
+    environment_df = get_environment(device=config["device"])
+    result_df, result_tex = convert_run_latex(config=config, result_list=trainer.result_list)
+
     logger.info(set_color("best valid ", "yellow") + f": {best_valid_result}")
     logger.info(set_color("test result", "yellow") + f": {test_result}")
+
+    logger.info("The running environment of this training is as follows:\n" +
+                environment_df.to_string(index=False))
+    logger.info("The results of this training are as follows:\n" +
+                result_df.to_string(index=True))
 
     return {
         "best_valid_score": best_valid_score,

@@ -5,7 +5,7 @@
 # @File   : hyper_tuning.py
 
 # UPDATE:
-# @Time   : 2022/7/7
+# @Time   : 2022/7/7, 2023/2/11
 # @Author : Gaowei Zhang
 # @Email  : zgw15630559577@163.com
 
@@ -18,7 +18,7 @@ from functools import partial
 
 import numpy as np
 
-from recbole.utils.utils import dict2str
+from recbole.utils.utils import dict2str, convert_hyper_latex
 
 
 def _recursiveFindNodes(root, node_type="switch"):
@@ -183,6 +183,7 @@ class HyperTuning(object):
         self.best_test_result = None
         self.params2result = {}
         self.params_list = []
+        self.params_str_list = []
         self.score_list = []
 
         self.objective_function = objective_function
@@ -317,6 +318,8 @@ class HyperTuning(object):
             output_file (str): the output file
 
         """
+        valid_result_list = []
+        test_result_list = []
         with open(output_file, "w") as fp:
             for params in self.params2result:
                 fp.write(params + "\n")
@@ -325,11 +328,15 @@ class HyperTuning(object):
                     + dict2str(self.params2result[params]["best_valid_result"])
                     + "\n"
                 )
+                valid_result_list.append(self.params2result[params]["best_valid_result"])
                 fp.write(
                     "Test result:\n"
                     + dict2str(self.params2result[params]["test_result"])
                     + "\n\n"
                 )
+                test_result_list.append(self.params2result[params]["test_result"])
+
+        convert_hyper_latex(output_file, self.params_list, valid_result_list, test_result_list)
 
     def trial(self, params):
         r"""Given a set of parameters, return results and optimization status
@@ -341,7 +348,8 @@ class HyperTuning(object):
 
         config_dict = params.copy()
         params_str = self.params2str(params)
-        self.params_list.append(params_str)
+        self.params_list.append(config_dict)
+        self.params_str_list.append(params_str)
         print("running parameters:", config_dict)
         result_dict = self.objective_function(config_dict, self.fixed_config_file_list)
         self.params2result[params_str] = result_dict
@@ -378,7 +386,7 @@ class HyperTuning(object):
         from plotly.offline import plot
         import pandas as pd
 
-        data_dict = {"valid_score": self.score_list, "params": self.params_list}
+        data_dict = {"valid_score": self.score_list, "params": self.params_str_list}
         trial_df = pd.DataFrame(data_dict)
         trial_df["trial_number"] = trial_df.index + 1
         trial_df["trial_number"] = trial_df["trial_number"].astype(dtype=np.str)

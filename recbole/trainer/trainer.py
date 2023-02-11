@@ -8,9 +8,9 @@
 # @Email  : chenyuwuxinn@gmail.com, zhlin@ruc.edu.cn, houyupeng@ruc.edu.cn, chenyushuo@ruc.edu.cn, slmu@ruc.edu.cn, panxy@ruc.edu.cn
 
 # UPDATE:
-# @Time   : 2020/10/8, 2020/10/15, 2020/11/20, 2021/2/20, 2021/3/3, 2021/3/5, 2021/7/18, 2022/7/11
-# @Author : Hui Wang, Xinyan Fan, Chen Yang, Yibo Li, Lanling Xu, Haoran Cheng, Zhichao Feng, Lei Wang
-# @Email  : hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com, 2018202152@ruc.edu.cn, xulanling_sherry@163.com, chenghaoran29@foxmail.com, fzcbupt@gmail.com, zxcptss@gmail.com
+# @Time   : 2020/10/8, 2020/10/15, 2020/11/20, 2021/2/20, 2021/3/3, 2021/3/5, 2021/7/18, 2022/7/11, 2023/2/11
+# @Author : Hui Wang, Xinyan Fan, Chen Yang, Yibo Li, Lanling Xu, Haoran Cheng, Zhichao Feng, Lei Wang, Gaowei Zhang
+# @Email  : hui.wang@ruc.edu.cn, xinyan.fan@ruc.edu.cn, 254170321@qq.com, 2018202152@ruc.edu.cn, xulanling_sherry@163.com, chenghaoran29@foxmail.com, fzcbupt@gmail.com, zxcptss@gmail.com, zgw2022101006@ruc.edu.cn
 
 r"""
 recbole.trainer.trainer
@@ -62,6 +62,7 @@ class AbstractTrainer(object):
             self.distributed_model = DistributedDataParallel(
                 self.model, device_ids=[config["local_rank"]]
             )
+        self.result_list = []
 
     def fit(self, train_data):
         r"""Train the model based on the train data."""
@@ -462,6 +463,9 @@ class Trainer(AbstractTrainer):
                 valid_score, valid_result = self._valid_epoch(
                     valid_data, show_progress=show_progress
                 )
+
+                self.result_list.append(valid_result)
+
                 (
                     self.best_valid_score,
                     self.cur_step,
@@ -1006,6 +1010,8 @@ class DecisionTreeTrainer(AbstractTrainer):
                 valid_start_time = time()
                 valid_score, valid_result = self._valid_epoch(valid_data)
 
+                self.result_list.append(valid_result)
+
                 (
                     self.best_valid_score,
                     self.cur_step,
@@ -1371,6 +1377,9 @@ class NCLTrainer(Trainer):
                 valid_score, valid_result = self._valid_epoch(
                     valid_data, show_progress=show_progress
                 )
+
+                self.result_list.append(valid_result)
+
                 (
                     self.best_valid_score,
                     self.cur_step,
