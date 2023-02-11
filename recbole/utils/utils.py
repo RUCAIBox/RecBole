@@ -395,7 +395,7 @@ def _list_to_latex(convert_list):
 
 
 def get_environment(device=None):
-    gpu_usage = get_gpu_usage(device)
+    gpu_usage = 0.0 if device == 'cpu' else get_gpu_usage(device)
     import psutil
     memory_used = psutil.virtual_memory()[3] / 1024**3
     memory_total = psutil.virtual_memory()[0] / 1024**3
