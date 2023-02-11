@@ -48,7 +48,7 @@ class TestTransform:
             "train_neg_sample_args": None,
             "transform": "mask_itemseq",
             "mask_ratio": 1.0,
-            "ft_ratio": 0.0
+            "ft_ratio": 0.0,
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(
             config_dict=config_dict
