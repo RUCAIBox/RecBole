@@ -10,4 +10,4 @@ initializer_range: 0.02         # (float) The standard deviation for normal init
 mask_ratio: 0.2                 # (float) The probability for a item replaced by MASK token.
 loss_type: 'CE'                 # (str) The type of loss function.
 transform: mask_itemseq         # (str) The transform operation for batch data process.
-ft_ratio: 0.0                   # (float) The probability of generating fine-tuning samples
+ft_ratio: 0.5                   # (float) The probability of generating fine-tuning samples
