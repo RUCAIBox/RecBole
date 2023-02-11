@@ -40,9 +40,6 @@ def new_transform(config_dict=None, config_file_list=None):
 
 class TestTransform:
     def test_mask_itemseq(self):
-        # TODO: add new test version checkpoint
-
-        return
         config_dict = {
             "model": "BERT4Rec",
             "dataset": "seq_dataset",
@@ -51,6 +48,7 @@ class TestTransform:
             "train_neg_sample_args": None,
             "transform": "mask_itemseq",
             "mask_ratio": 1.0,
+            "ft_ratio": 0.0,
         }
         train_dataset, valid_dataset, test_dataset = split_dataset(
             config_dict=config_dict
@@ -58,7 +56,6 @@ class TestTransform:
         transform = new_transform(config_dict=config_dict)
 
         train_transform_interaction = transform(train_dataset, train_dataset.inter_feat)
-
         assert (
             train_transform_interaction[transform.MASK_ITEM_SEQ][:, :5].numpy()
             == [
