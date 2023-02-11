@@ -24,6 +24,7 @@ from torch import nn
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.layers import TransformerEncoder
 
+
 class BERT4Rec(SequentialRecommender):
     def __init__(self, config, dataset):
         super(BERT4Rec, self).__init__(config, dataset)
@@ -106,7 +107,7 @@ class BERT4Rec(SequentialRecommender):
         item_seq = torch.cat((item_seq, padding.unsqueeze(-1)), dim=-1)  # [B max_len+1]
         for batch_id, last_position in enumerate(item_seq_len):
             item_seq[batch_id][last_position] = self.mask_token
-        item_seq = item_seq[:,1:]
+        item_seq = item_seq[:, 1:]
         return item_seq
 
     def forward(self, item_seq):

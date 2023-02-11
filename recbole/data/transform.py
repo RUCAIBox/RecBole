@@ -75,7 +75,7 @@ class MaskItemSequence:
         sequence = [0] * pad_len + sequence
         sequence = sequence[-max_length:]  # truncate according to the max_length
         return sequence
-    
+
     def _append_mask_last(self, interaction, n_items, device):
         batch_size = interaction[self.ITEM_SEQ].size(0)
         pos_items, neg_items, masked_index, masked_item_sequence = [], [], [], []
@@ -87,8 +87,14 @@ class MaskItemSequence:
             mask_seq[lens - 1] = n_items
             masked_item_sequence.append(mask_seq)
             pos_items.append(self._padding_sequence([ext], self.mask_item_length))
-            neg_items.append(self._padding_sequence([self._neg_sample(instance, n_items)], self.mask_item_length))
-            masked_index.append(self._padding_sequence([lens - 1], self.mask_item_length))
+            neg_items.append(
+                self._padding_sequence(
+                    [self._neg_sample(instance, n_items)], self.mask_item_length
+                )
+            )
+            masked_index.append(
+                self._padding_sequence([lens - 1], self.mask_item_length)
+            )
         # [B Len]
         masked_item_sequence = torch.tensor(
             masked_item_sequence, dtype=torch.long, device=device
@@ -114,7 +120,6 @@ class MaskItemSequence:
         ft_interaction = deepcopy(interaction)
         ft_interaction.update(Interaction(new_dict))
         return ft_interaction
-
 
     def __call__(self, dataset, interaction):
         item_seq = interaction[self.ITEM_SEQ]
@@ -151,8 +156,12 @@ class MaskItemSequence:
                         index_ids.append(index_id)
 
                 masked_item_sequence.append(masked_sequence)
-                pos_items.append(self._padding_sequence(pos_item, self.mask_item_length))
-                neg_items.append(self._padding_sequence(neg_item, self.mask_item_length))
+                pos_items.append(
+                    self._padding_sequence(pos_item, self.mask_item_length)
+                )
+                neg_items.append(
+                    self._padding_sequence(neg_item, self.mask_item_length)
+                )
                 masked_index.append(
                     self._padding_sequence(index_ids, self.mask_item_length)
                 )
@@ -170,9 +179,9 @@ class MaskItemSequence:
                 batch_size, -1
             )
             # [B mask_len]
-            masked_index = torch.tensor(masked_index, dtype=torch.long, device=device).view(
-                batch_size, -1
-            )
+            masked_index = torch.tensor(
+                masked_index, dtype=torch.long, device=device
+            ).view(batch_size, -1)
             new_dict = {
                 self.MASK_ITEM_SEQ: masked_item_sequence,
                 self.POS_ITEMS: pos_items,
@@ -181,6 +190,7 @@ class MaskItemSequence:
             }
             interaction.update(Interaction(new_dict))
         return interaction
+
 
 class InverseItemSequence:
     """
