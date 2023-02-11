@@ -96,7 +96,7 @@ def run_recbole(
         test_data, load_best_model=saved, show_progress=config["show_progress"]
     )
 
-    environment_df = get_environment(device=config["device"])
+    environment_df = get_environment(config)
     result_df, result_tex = convert_run_latex(
         config=config, result_list=trainer.result_list
     )
