@@ -394,8 +394,9 @@ def _list_to_latex(convert_list):
     return df, tex
 
 
-def get_environment(device=None):
-    gpu_usage = 0.0 if device == "cpu" else get_gpu_usage(device)
+def get_environment(config):
+    gpu_usage = get_gpu_usage(config["device"]) if torch.cuda.is_available() and config["use_gpu"] else 0.0
+    
     import psutil
 
     memory_used = psutil.virtual_memory()[3] / 1024**3
