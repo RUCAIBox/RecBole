@@ -20,4 +20,16 @@ Run Command
 
 View Results
 -------------------------------------------------
-Finally, we can view the results of significant test from the terminal and ``significant_test.txt``.
+Finally, we can view the results of significant test from the terminal and ``significant_test.txt``. For example, we can see the results of significance test as follows:
+
+.. code:: none
+
+    recall@10 = Ttest_relResult(statistic=-21.593406593406602, pvalue=0.014730543885695793)
+    mrr@10 = Ttest_relResult(statistic=-20.321888412017177, pvalue=0.01565077667413463)
+    ndcg@10 = Ttest_relResult(statistic=-26.763440860215045, pvalue=0.011887928803273138)
+    hit@10 = Ttest_relResult(statistic=-26.316239316239344, pvalue=0.012089752150296406)
+    precision@10 = Ttest_relResult(statistic=-186.79999999999984, pvalue=0.0017039981023832399)
+
+The meanings of statistic and pvalue can be referred to `link`__ .
+
+.. __: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_rel.html
