@@ -62,7 +62,6 @@ class AbstractTrainer(object):
             self.distributed_model = DistributedDataParallel(
                 self.model, device_ids=[config["local_rank"]]
             )
-        self.result_list = []
 
     def fit(self, train_data):
         r"""Train the model based on the train data."""
@@ -463,8 +462,6 @@ class Trainer(AbstractTrainer):
                 valid_score, valid_result = self._valid_epoch(
                     valid_data, show_progress=show_progress
                 )
-
-                self.result_list.append(valid_result)
 
                 (
                     self.best_valid_score,
@@ -1010,8 +1007,6 @@ class DecisionTreeTrainer(AbstractTrainer):
                 valid_start_time = time()
                 valid_score, valid_result = self._valid_epoch(valid_data)
 
-                self.result_list.append(valid_result)
-
                 (
                     self.best_valid_score,
                     self.cur_step,
@@ -1376,8 +1371,6 @@ class NCLTrainer(Trainer):
                 valid_score, valid_result = self._valid_epoch(
                     valid_data, show_progress=show_progress
                 )
-
-                self.result_list.append(valid_result)
 
                 (
                     self.best_valid_score,

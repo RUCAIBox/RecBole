@@ -12,8 +12,7 @@ from recbole.utils.utils import (
     get_tensorboard,
     get_gpu_usage,
     get_flops,
-    convert_run_latex,
-    convert_hyper_latex,
+    list_to_latex,
 )
 from recbole.utils.enum_type import *
 from recbole.utils.argument_list import *
@@ -45,8 +44,6 @@ __all__ = [
     "get_gpu_usage",
     "get_flops",
     "get_environment",
-    "_list_to_latex",
-    "convert_run_latex",
-    "convert_hyper_latex",
+    "list_to_latex",
     "WandbLogger",
 ]

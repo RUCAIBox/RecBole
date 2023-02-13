@@ -23,7 +23,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
-import hashlib
+from texttable import Texttable
 
 
 from recbole.utils.enum_type import ModelType
@@ -377,7 +377,8 @@ def get_flops(model, dataset, device, logger, transform, verbose=False):
     return total_ops
 
 
-def _list_to_latex(convert_list):
+def list_to_latex(convert_list, bigger_flag=True, subset_columns=[]):
+
     result = {}
     for d in convert_list:
         for key, value in d.items():
@@ -387,10 +388,21 @@ def _list_to_latex(convert_list):
                 result[key] = [value]
 
     df = pd.DataFrame.from_dict(result, orient="index").T
-    style = df.style
-    style = style.format("{:.4f}")
-    tex = style.to_latex(column_format="c")
 
+    if len(subset_columns) == 0:
+        tex = df.to_latex(index=False)
+        return df, tex
+
+    def bold_func(x, bigger_flag):
+        if bigger_flag:
+            return np.where(x == np.max(x.to_numpy()), 'font-weight:bold', None)
+        else:
+            return np.where(x == np.min(x.to_numpy()), 'font-weight:bold', None)
+
+    style = df.style
+    style.apply(bold_func, bigger_flag=bigger_flag, subset=subset_columns)
+    style.format(precision=4)
+    tex = style.to_latex(label="Result", convert_css=True)
     return df, tex
 
 
@@ -398,104 +410,30 @@ def get_environment(config):
     gpu_usage = (
         get_gpu_usage(config["device"])
         if torch.cuda.is_available() and config["use_gpu"]
-        else 0.0
+        else "0.0 / 0.0"
     )
 
     import psutil
 
-    memory_used = psutil.virtual_memory()[3] / 1024**3
+    memory_used = psutil.Process(os.getpid()).memory_info().rss / 1024**3
     memory_total = psutil.virtual_memory()[0] / 1024**3
     memory_usage = "{:.2f} G/{:.2f} G".format(memory_used, memory_total)
-    cpu_usage = psutil.cpu_percent(interval=1)
-    environment_dict = {
-        "CPU_usage": cpu_usage,
-        "GPU_usage": gpu_usage,
-        "Memory_usage": memory_usage,
-    }
-    environment_df = pd.DataFrame.from_dict(environment_dict, orient="index").T
-    return environment_df
+    cpu_usage = "{:.2f} %".format(psutil.cpu_percent(interval=1))
+    '''environment_data = [
+        {"Environment": "CPU", "Usage": cpu_usage,},
+        {"Environment": "GPU", "Usage": gpu_usage, },
+        {"Environment": "Memory", "Usage": memory_usage, },
+    ]'''
+
+    table = Texttable()
+    table.set_cols_align(["l", "c"])
+    table.set_cols_valign(["m", "m"])
+    table.add_rows([["Environment", "Usage"],
+                    ["CPU", cpu_usage],
+                    ["GPU", gpu_usage],
+                    ["Memory", memory_usage]])
+
+    return table
 
 
-def convert_run_latex(config, result_list):
-    LATEXROOT = "./latex/"
-    latex_dir_name = os.path.dirname(LATEXROOT)
-    ensure_dir(latex_dir_name)
-    model_name = os.path.join(latex_dir_name, config["model"])
-    ensure_dir(model_name)
-    config_str = "".join([str(key) for key in config.final_config_dict.values()])
-    md5 = hashlib.md5(config_str.encode(encoding="utf-8")).hexdigest()[:6]
-    latexfilename = "{}/{}-{}-{}-{}.tex".format(
-        config["model"], config["model"], config["dataset"], get_local_time(), md5
-    )
-    latexfilepath = os.path.join(LATEXROOT, latexfilename)
 
-    DFROOT = "./result/"
-    df_dir_name = os.path.dirname(DFROOT)
-    ensure_dir(df_dir_name)
-    model_name = os.path.join(df_dir_name, config["model"])
-    ensure_dir(model_name)
-    config_str = "".join([str(key) for key in config.final_config_dict.values()])
-    md5 = hashlib.md5(config_str.encode(encoding="utf-8")).hexdigest()[:6]
-    dffilename = "{}/{}-{}-{}-{}.csv".format(
-        config["model"], config["model"], config["dataset"], get_local_time(), md5
-    )
-    dffilepath = os.path.join(DFROOT, dffilename)
-
-    df, tex = _list_to_latex(result_list)
-
-    df.to_csv(dffilepath)
-
-    with open(latexfilepath, "w") as f:
-        f.write(tex)
-
-    return df, tex
-
-
-def convert_hyper_latex(output_file, para_list, valid_result_list, test_result_list):
-    para_df, para_tex = _list_to_latex(para_list)
-    valid_result_df, valid_result_tex = _list_to_latex(valid_result_list)
-    test_result_df, test_result_tex = _list_to_latex(test_result_list)
-
-    prefix = output_file.split(".")[0]
-
-    para_df_file = prefix + "_params_run.csv"
-    para_tex_file = prefix + "_params_run.tex"
-    para_df.to_csv(para_df_file)
-    with open(para_tex_file, "w") as f:
-        f.write(para_tex)
-
-    valid_df_file = prefix + "_valid.csv"
-    valid_tex_file = prefix + "_valid.tex"
-    valid_result_df.to_csv(valid_df_file)
-    with open(valid_tex_file, "w") as f:
-        f.write(valid_result_tex)
-
-    test_df_file = prefix + "_test.csv"
-    test_tex_file = prefix + "_test.tex"
-    test_result_df.to_csv(test_df_file)
-    with open(test_tex_file, "w") as f:
-        f.write(test_result_tex)
-
-    range_df_file = prefix + "_params_range.csv"
-    range_tex_file = prefix + "_params_range.tex"
-    para_range = {}
-    for d in para_list:
-        for key, value in d.items():
-            print("key", key)
-            print("value", value)
-            if key in para_range:
-                para_range[key].add(str(value))
-            else:
-                para_range[key] = {str(value)}
-    for key in para_range:
-        range_set = para_range[key]
-        para_range[key] = "{" + ",".join(list(range_set)) + "}"
-    df_dict = {
-        "Hyper-parameter": list(para_range.keys()),
-        "Range": list(para_range.values()),
-    }
-    range_df = pd.DataFrame.from_dict(df_dict, orient="index").T
-    range_tex = range_df.to_latex(index=False)
-    range_df.to_csv(range_df_file)
-    with open(range_tex_file, "w") as f:
-        f.write(range_tex)
