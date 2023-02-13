@@ -40,9 +40,11 @@ class KSR(SequentialRecommender):
         self.relation_embedding_matrix = dataset.get_preload_weight("rel_id")
 
         # load parameters info
-        self.embedding_size = config["embedding_size"] #later use "E" to represent
-        self.kg_embedding_size = config["kg_embedding_size"] #later use "K" to represent
-        self.hidden_size = config["hidden_size"] #later use "H" to represent
+        self.embedding_size = config["embedding_size"]  # later use "E" to represent
+        self.kg_embedding_size = config[
+            "kg_embedding_size"
+        ]  # later use "K" to represent
+        self.hidden_size = config["hidden_size"]  # later use "H" to represent
         self.loss_type = config["loss_type"]
         self.num_layers = config["num_layers"]
         self.dropout_prob = config["dropout_prob"]
@@ -69,8 +71,12 @@ class KSR(SequentialRecommender):
             batch_first=True,
         )
         self.dense = nn.Linear(self.hidden_size, self.kg_embedding_size)
-        self.dense_layer_u = nn.Linear(self.hidden_size + self.kg_embedding_size, self.embedding_size)
-        self.dense_layer_i = nn.Linear(self.embedding_size + self.kg_embedding_size, self.embedding_size)
+        self.dense_layer_u = nn.Linear(
+            self.hidden_size + self.kg_embedding_size, self.embedding_size
+        )
+        self.dense_layer_i = nn.Linear(
+            self.embedding_size + self.kg_embedding_size, self.embedding_size
+        )
         if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
         elif self.loss_type == "CE":
@@ -102,7 +108,9 @@ class KSR(SequentialRecommender):
         We generate the embeddings of the tail entities on every relations only for head due to the 1-N problems.
         """
         head_e = self.entity_embedding(head)  # [B K]
-        relation_Matrix = self.relation_Matrix.unsqueeze(0).repeat(head_e.size()[0], 1, 1)  # [B R K]
+        relation_Matrix = self.relation_Matrix.unsqueeze(0).repeat(
+            head_e.size()[0], 1, 1
+        )  # [B R K]
         head_Matrix = torch.unsqueeze(head_e, 1).repeat(
             1, self.n_relations, 1
         )  # [B R K]
@@ -155,19 +163,19 @@ class KSR(SequentialRecommender):
         seq_output = self.gather_indexes(gru_output, item_seq_len - 1)  # [B H]
 
         # attribute-based preference representation, m^u_t
-        user_memory = self.memory_update(item_seq, item_seq_len) # [B R K]
+        user_memory = self.memory_update(item_seq, item_seq_len)  # [B R K]
 
         # We need to make the same dimension (batch_size, kg_embedding_size).
-        seq_output_trans = self.dense(seq_output) # [B K]
-        u_m = self.memory_read(seq_output_trans, user_memory) # [B K]
+        seq_output_trans = self.dense(seq_output)  # [B K]
+        u_m = self.memory_read(seq_output_trans, user_memory)  # [B K]
 
         # combine them together
         p_u = self.dense_layer_u(torch.cat((seq_output, u_m), -1))  # [B E]
         return p_u
 
     def _get_item_comb_embedding(self, item):
-        h_e, _ = self._get_kg_embedding(item) # [B K]
-        i_e = self.item_embedding(item) # [B E]
+        h_e, _ = self._get_kg_embedding(item)  # [B K]
+        i_e = self.item_embedding(item)  # [B E]
         q_i = self.dense_layer_i(torch.cat((i_e, h_e), -1))  # [B E]
         return q_i
 
