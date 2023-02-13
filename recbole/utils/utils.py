@@ -378,7 +378,6 @@ def get_flops(model, dataset, device, logger, transform, verbose=False):
 
 
 def list_to_latex(convert_list, bigger_flag=True, subset_columns=[]):
-
     result = {}
     for d in convert_list:
         for key, value in d.items():
@@ -395,9 +394,9 @@ def list_to_latex(convert_list, bigger_flag=True, subset_columns=[]):
 
     def bold_func(x, bigger_flag):
         if bigger_flag:
-            return np.where(x == np.max(x.to_numpy()), 'font-weight:bold', None)
+            return np.where(x == np.max(x.to_numpy()), "font-weight:bold", None)
         else:
-            return np.where(x == np.min(x.to_numpy()), 'font-weight:bold', None)
+            return np.where(x == np.min(x.to_numpy()), "font-weight:bold", None)
 
     style = df.style
     style.apply(bold_func, bigger_flag=bigger_flag, subset=subset_columns)
@@ -419,21 +418,22 @@ def get_environment(config):
     memory_total = psutil.virtual_memory()[0] / 1024**3
     memory_usage = "{:.2f} G/{:.2f} G".format(memory_used, memory_total)
     cpu_usage = "{:.2f} %".format(psutil.cpu_percent(interval=1))
-    '''environment_data = [
+    """environment_data = [
         {"Environment": "CPU", "Usage": cpu_usage,},
         {"Environment": "GPU", "Usage": gpu_usage, },
         {"Environment": "Memory", "Usage": memory_usage, },
-    ]'''
+    ]"""
 
     table = Texttable()
     table.set_cols_align(["l", "c"])
     table.set_cols_valign(["m", "m"])
-    table.add_rows([["Environment", "Usage"],
-                    ["CPU", cpu_usage],
-                    ["GPU", gpu_usage],
-                    ["Memory", memory_usage]])
+    table.add_rows(
+        [
+            ["Environment", "Usage"],
+            ["CPU", cpu_usage],
+            ["GPU", gpu_usage],
+            ["Memory", memory_usage],
+        ]
+    )
 
     return table
-
-
-
