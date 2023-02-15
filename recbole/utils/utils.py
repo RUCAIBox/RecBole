@@ -401,7 +401,7 @@ def list_to_latex(convert_list, bigger_flag=True, subset_columns=[]):
     style = df.style
     style.apply(bold_func, bigger_flag=bigger_flag, subset=subset_columns)
     style.format(precision=4)
-    tex = style.to_latex(label="Result", convert_css=True)
+    tex = style.hide(axis='index').to_latex(label="Result", convert_css=True, hrules=True)
     return df, tex
 
 
