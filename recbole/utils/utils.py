@@ -403,9 +403,13 @@ def list_to_latex(convert_list, bigger_flag=True, subset_columns=[]):
     style.format(precision=4)
 
     num_column = len(df.columns)
-    column_format = 'c' * num_column
+    column_format = "c" * num_column
     tex = style.hide(axis="index").to_latex(
-        caption="Result Table", label="Result Table", convert_css=True, hrules=True, column_format=column_format
+        caption="Result Table",
+        label="Result Table",
+        convert_css=True,
+        hrules=True,
+        column_format=column_format,
     )
 
     return df, tex
