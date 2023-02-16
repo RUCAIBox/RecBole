@@ -4,9 +4,9 @@
 # @Email  : slmu@ruc.edu.cn
 
 # UPDATE
-# @Time   : 2021/3/8, 2022/7/12
-# @Author : Jiawei Guan, Lei Wang
-# @Email  : guanjw@ruc.edu.cn, zxcptss@gmail.com
+# @Time   : 2021/3/8, 2022/7/12, 2023/2/11
+# @Author : Jiawei Guan, Lei Wang, Gaowei Zhang
+# @Email  : guanjw@ruc.edu.cn, zxcptss@gmail.com, zgw2022101006@ruc.edu.cn
 
 """
 recbole.utils.utils
@@ -17,11 +17,13 @@ import datetime
 import importlib
 import os
 import random
+import pandas as pd
 
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
+from texttable import Texttable
 
 
 from recbole.utils.enum_type import ModelType
@@ -373,3 +375,75 @@ def get_flops(model, dataset, device, logger, transform, verbose=False):
         params_handles[i].remove()
 
     return total_ops
+
+
+def list_to_latex(convert_list, bigger_flag=True, subset_columns=[]):
+    result = {}
+    for d in convert_list:
+        for key, value in d.items():
+            if key in result:
+                result[key].append(value)
+            else:
+                result[key] = [value]
+
+    df = pd.DataFrame.from_dict(result, orient="index").T
+
+    if len(subset_columns) == 0:
+        tex = df.to_latex(index=False)
+        return df, tex
+
+    def bold_func(x, bigger_flag):
+        if bigger_flag:
+            return np.where(x == np.max(x.to_numpy()), "font-weight:bold", None)
+        else:
+            return np.where(x == np.min(x.to_numpy()), "font-weight:bold", None)
+
+    style = df.style
+    style.apply(bold_func, bigger_flag=bigger_flag, subset=subset_columns)
+    style.format(precision=4)
+
+    num_column = len(df.columns)
+    column_format = "c" * num_column
+    tex = style.hide(axis="index").to_latex(
+        caption="Result Table",
+        label="Result Table",
+        convert_css=True,
+        hrules=True,
+        column_format=column_format,
+    )
+
+    return df, tex
+
+
+def get_environment(config):
+    gpu_usage = (
+        get_gpu_usage(config["device"])
+        if torch.cuda.is_available() and config["use_gpu"]
+        else "0.0 / 0.0"
+    )
+
+    import psutil
+
+    memory_used = psutil.Process(os.getpid()).memory_info().rss / 1024**3
+    memory_total = psutil.virtual_memory()[0] / 1024**3
+    memory_usage = "{:.2f} G/{:.2f} G".format(memory_used, memory_total)
+    cpu_usage = "{:.2f} %".format(psutil.cpu_percent(interval=1))
+    """environment_data = [
+        {"Environment": "CPU", "Usage": cpu_usage,},
+        {"Environment": "GPU", "Usage": gpu_usage, },
+        {"Environment": "Memory", "Usage": memory_usage, },
+    ]"""
+
+    table = Texttable()
+    table.set_cols_align(["l", "c"])
+    table.set_cols_valign(["m", "m"])
+    table.add_rows(
+        [
+            ["Environment", "Usage"],
+            ["CPU", cpu_usage],
+            ["GPU", gpu_usage],
+            ["Memory", memory_usage],
+        ]
+    )
+
+    return table
