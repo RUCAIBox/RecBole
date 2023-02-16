@@ -596,7 +596,6 @@ class TransformerEncoder(nn.Module):
         hidden_act="gelu",
         layer_norm_eps=1e-12,
     ):
-
         super(TransformerEncoder, self).__init__()
         layer = TransformerLayer(
             n_heads,
@@ -825,7 +824,6 @@ class LightTransformerEncoder(nn.Module):
         hidden_act="gelu",
         layer_norm_eps=1e-12,
     ):
-
         super(LightTransformerEncoder, self).__init__()
         layer = LightTransformerLayer(
             n_heads,
@@ -1354,7 +1352,6 @@ class FMFirstOrderLinear(nn.Module):
     """
 
     def __init__(self, config, dataset, output_dim=1):
-
         super(FMFirstOrderLinear, self).__init__()
         self.field_names = dataset.fields(
             source=[

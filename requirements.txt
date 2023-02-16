@@ -2,7 +2,7 @@ torch>=1.10.0
 numpy>=1.17.2
 scipy>=1.6.0
 hyperopt==0.2.5
-pandas>=1.0.5
+pandas>=1.4.0
 tqdm>=4.48.2
 scikit_learn>=0.23.2
 pyyaml>=5.1.0
@@ -13,3 +13,4 @@ thop>=0.1.1.post2207130030
 ray>=1.13.0
 tabulate>=0.8.10 
 plotly>=4.0.0
+texttable>=0.9.0

@@ -725,7 +725,6 @@ class Dataset(torch.utils.data.Dataset):
         dis_info = {}
 
         if self.config["discretization"]:
-
             dis_info = self.config["discretization"]
 
             for field in dis_info.keys():

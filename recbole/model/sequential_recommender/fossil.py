@@ -92,7 +92,6 @@ class FOSSIL(SequentialRecommender):
         return short_item_embedding
 
     def reg_loss(self, user_embedding, item_embedding, seq_output):
-
         reg_1 = self.reg_weight
         loss_1 = (
             reg_1 * torch.norm(user_embedding, p=2)
@@ -103,12 +102,10 @@ class FOSSIL(SequentialRecommender):
         return loss_1
 
     def init_weights(self, module):
-
         if isinstance(module, nn.Embedding) or isinstance(module, nn.Linear):
             xavier_normal_(module.weight.data)
 
     def forward(self, seq_item, seq_item_len, user):
-
         seq_item_embedding = self.item_embedding(seq_item)
 
         high_order_seq_item_embedding = self.inverse_seq_item_embedding(
@@ -152,7 +149,6 @@ class FOSSIL(SequentialRecommender):
         return similarity
 
     def calculate_loss(self, interaction):
-
         seq_item = interaction[self.ITEM_SEQ]
         user = interaction[self.USER_ID]
         seq_item_len = interaction[self.ITEM_SEQ_LEN]
@@ -176,7 +172,6 @@ class FOSSIL(SequentialRecommender):
             return loss + self.reg_loss(user_lambda, pos_items_embedding, seq_output)
 
     def predict(self, interaction):
-
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         test_item = interaction[self.ITEM_ID]
@@ -187,7 +182,6 @@ class FOSSIL(SequentialRecommender):
         return scores
 
     def full_sort_predict(self, interaction):
-
         item_seq = interaction[self.ITEM_SEQ]
         user = interaction[self.USER_ID]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]

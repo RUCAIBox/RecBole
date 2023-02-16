@@ -30,7 +30,6 @@ class SHAN(SequentialRecommender):
     """
 
     def __init__(self, config, dataset):
-
         super(SHAN, self).__init__(config, dataset)
 
         # load the dataset information
@@ -87,7 +86,6 @@ class SHAN(SequentialRecommender):
         self.apply(self.init_weights)
 
     def reg_loss(self, user_embedding, item_embedding):
-
         reg_1, reg_2 = self.reg_weight
         loss_1 = reg_1 * torch.norm(self.long_w.weight, p=2) + reg_1 * torch.norm(
             self.long_short_w.weight, p=2
@@ -116,7 +114,6 @@ class SHAN(SequentialRecommender):
             print(module.data)
 
     def forward(self, seq_item, user):
-
         seq_item_embedding = self.item_embedding(seq_item)
         user_embedding = self.user_embedding(user)
 
@@ -150,7 +147,6 @@ class SHAN(SequentialRecommender):
         return long_short_item_embedding
 
     def calculate_loss(self, interaction):
-
         inverse_seq_item = interaction[self.INVERSE_ITEM_SEQ]
         user = interaction[self.USER_ID]
         user_embedding = self.user_embedding(user)
@@ -171,7 +167,6 @@ class SHAN(SequentialRecommender):
             return loss + self.reg_loss(user_embedding, pos_items_emb)
 
     def predict(self, interaction):
-
         inverse_item_seq = interaction[self.INVERSE_ITEM_SEQ]
         test_item = interaction[self.ITEM_ID]
         user = interaction[self.USER_ID]
@@ -181,7 +176,6 @@ class SHAN(SequentialRecommender):
         return scores
 
     def full_sort_predict(self, interaction):
-
         inverse_item_seq = interaction[self.ITEM_SEQ]
         user = interaction[self.USER_ID]
         seq_output = self.forward(inverse_item_seq, user)

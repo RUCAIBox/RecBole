@@ -27,7 +27,6 @@ class FM(ContextRecommender):
     """Factorization Machine considers the second-order interaction with features to predict the final score."""
 
     def __init__(self, config, dataset):
-
         super(FM, self).__init__(config, dataset)
 
         # define layers and loss

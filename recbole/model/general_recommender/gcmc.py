@@ -432,7 +432,7 @@ class GcEncoder(nn.Module):
         v_hidden = self.dropout(v_hidden)
 
         u_hidden = self.dense_layer_u(u_hidden)
-        v_hidden = self.dense_layer_u(v_hidden)
+        v_hidden = self.dense_layer_v(v_hidden)
 
         u_outputs = self.dense_activate(u_hidden)
         v_outputs = self.dense_activate(v_hidden)

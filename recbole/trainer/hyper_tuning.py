@@ -5,7 +5,7 @@
 # @File   : hyper_tuning.py
 
 # UPDATE:
-# @Time   : 2022/7/7
+# @Time   : 2022/7/7, 2023/2/11
 # @Author : Gaowei Zhang
 # @Email  : zgw15630559577@163.com
 
@@ -325,6 +325,7 @@ class HyperTuning(object):
                     + dict2str(self.params2result[params]["best_valid_result"])
                     + "\n"
                 )
+
                 fp.write(
                     "Test result:\n"
                     + dict2str(self.params2result[params]["test_result"])
