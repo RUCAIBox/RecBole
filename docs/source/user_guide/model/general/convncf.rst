@@ -28,23 +28,63 @@ Running with RecBole
 - ``cnn_strides (list)`` : The strides of convolution in each convolutional neural network layer. Defaults to ``[4, 4, 2, 2]``.
 - ``dropout_prob (float)`` : The dropout rate in the linear predict layer. Defaults to ``0.2``.
 - ``reg_weights (list)`` : The L2 regularization weights. Defaults to ``[0.1, 0.1]``.
+- ``train_method (list)`` : The training method. Defaults to ``'no_pretrain'``. Range in ``['after_pretrain', 'no_pretrain']``.
+- ``pre_model_path (str)`` : The path of pretrained model. Defaults to ``''``.
 
 
 **A Running Example:**
 
+ConvNCF may have better performance by pretraining the embedding layer with BPR-MF according to the original paper. If you want to use ConvNCF without pretrain, please set ``train_method`` to ``'no_pretrain'`` and just run.
 Write the following code to a python file, such as `run.py`
 
 .. code:: python
 
    from recbole.quick_start import run_recbole
 
-   run_recbole(model='ConvNCF', dataset='ml-100k')
+   config_dict = {
+        'train_method': 'no_pretrain',
+   }
+   run_recbole(model='ConvNCF', dataset='ml-100k', config_dict=config_dict)
 
 And then:
 
 .. code:: bash
 
    python run.py
+
+Otherwise, you should run BPR model first to pretrain the embedding layer.
+Write the following code to a python file, such as `run_pretrain.py`
+
+.. code:: python
+
+   from recbole.quick_start import run_recbole
+
+   run_recbole(model='BPR', dataset='ml-100k')
+
+And then:
+
+.. code:: bash
+
+   python run_pretrain.py
+
+Then you can get the saved checkpoint path, for example, ``'./saved/BPR-Feb-16-2023_19-23-29.pth'``. Set ``train_method`` to ``'no_pretrain'``.
+Write the following code to `run_train.py`
+
+.. code:: python
+
+   from recbole.quick_start import run_recbole
+
+   config_dict = {
+        'train_method': 'after_pretrain',
+        'pre_model_path': './saved/BPR-Feb-16-2023_19-23-29.pth',
+   }
+   run_recbole(model='ConvNCF', dataset='ml-100k', config_dict=config_dict)
+
+And then:
+
+.. code:: bash
+
+   python run_train.py
 
 Tuning Hyper Parameters
 -------------------------
