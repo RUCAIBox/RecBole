@@ -1795,6 +1795,24 @@ class Dataset(torch.utils.data.Dataset):
                 raise NotImplementedError(
                     f"The grouping method [{group_by}] has not been implemented."
                 )
+
+        elif split_mode == "KF":
+            """
+            Will return n_folds datasets
+            """
+            if not isinstance(split_args["KF"], list):
+                raise ValueError(f'The value of "KF" [{split_args}] should be a list.')
+            if group_by is None or group_by.lower() == "none":
+                datasets = self.split_by_ratio(split_args["KF"], group_by=None)
+            elif group_by == "user":
+                datasets = self.split_by_ratio(
+                    split_args["KF"], group_by=self.uid_field
+                )
+            else:
+                raise NotImplementedError(
+                    f"The grouping method [{group_by}] has not been implemented."
+                )
+
         elif split_mode == "LS":
             datasets = self.leave_one_out(
                 group_by=self.uid_field, leave_one_mode=split_args["LS"]

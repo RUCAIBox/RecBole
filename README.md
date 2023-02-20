@@ -1,6 +1,35 @@
 ![RecBole Logo](asset/logo.png)
 
 --------------------------------------------------------------------------------
+# K-fold CV
+This branch contains an implementation of K-fold CV in RecBole. The implementation relies on
+RecBole's Dataset class and its methods `split_by_ratio` and `build` (`recbole/data/dataset/dataset.py`), on the function `data_preparation`
+(`recbole/data/utils.py`), and on the general configuration file `overall.yaml` (`recbole/properties`).
+
+Running RecBole calls the `quick_start.py` (`recbole/quick_start`) script, which splits the data with `data_preparation(config, dataset)`.
+K-fold CV happens in this function. First, calling `dataset.build()` with the parameters stored in the 
+`config` dictionary, splits the dataset in folds of sizes defined in the `overall.yaml`. The percentage  of interactions to be assigned to
+each fold (e.g., [0.2, 0.2, 0.2, 0.2, 0.2] for 5 folds) is also stored in the variable `folds` as a list. 
+
+The variable k stores which permutation of the folds is to be used in the current experiment, e.g., for a 5-fold CV and $k=0$, 
+the first three splits will be assigned to the train set, the fourth to the validation, and the last one to the test set.
+
+The function then initializes `train_dataset` as an empty Dataset(config) instance, and fills it with the interactions of the 
+corresponding folds. The remaining two folds are assigned to `valid_dataset` and `test_dataset`.
+
+For running an experiment on the first fold of a 5-fold CV, the `eval_args` in the `overall.yaml` file need to be set to:
+```python
+# Evaluation Settings
+eval_args:                      # (dict) 4 keys: group_by, order, split, and mode
+  split: {'KF': [0.2, 0.2, 0.2, 0.2, 0.2]}
+  fold: 0
+  group_by: none                # (str) The grouping strategy ranging in ['user', 'none'].
+  order: RO                     # (str) The ordering strategy ranging in ['RO', 'TO'].
+  mode: full                    # (str) The evaluation mode ranging in ['full','unixxx','popxxx','labeled'].
+
+```
+
+
 
 # RecBole (伯乐)
 

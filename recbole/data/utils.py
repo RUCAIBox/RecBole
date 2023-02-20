@@ -22,6 +22,9 @@ from recbole.sampler import KGSampler, Sampler, RepeatableSampler
 from recbole.utils import ModelType, ensure_dir, get_local_time, set_color
 from recbole.utils.argument_list import dataset_arguments
 
+from recbole.data.interaction import cat_interactions
+from recbole.data.dataset.dataset import Dataset
+
 
 def create_dataset(config):
     """Create dataset according to :attr:`config['model']` and :attr:`config['MODEL_TYPE']`.
@@ -160,9 +163,25 @@ def data_preparation(config, dataset):
         train_data, valid_data, test_data = dataloaders
     else:
         model_type = config["MODEL_TYPE"]
-        built_datasets = dataset.build()
+        if list(config["eval_args"]["split"].keys())[0] == 'KF':
+            print("==KF")
+            folds = dataset.build()# data_preparation(config, dataset)
+            n_folds = len(folds)
+            print(n_folds)
+            k = config["eval_args"]["fold"]
+            folds = folds[k:] + folds[:k]
 
-        train_dataset, valid_dataset, test_dataset = built_datasets
+            train_dataset = Dataset(config)
+            train_dataset.inter_feat = cat_interactions([fold.inter_feat for fold in folds[: n_folds - 2]])
+            valid_dataset = folds[n_folds - 2]
+            test_dataset = folds[n_folds - 1]
+
+            built_datasets = [train_dataset, valid_dataset, test_dataset]
+
+        else:
+            built_datasets = dataset.build()
+            train_dataset, valid_dataset, test_dataset = built_datasets
+
         train_sampler, valid_sampler, test_sampler = create_samplers(
             config, dataset, built_datasets
         )
