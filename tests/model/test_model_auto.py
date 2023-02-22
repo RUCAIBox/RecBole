@@ -94,6 +94,12 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_fpsr(self):
+        config_dict = {
+            'model': 'FPSR',
+        }
+        quick_test(config_dict)
+
     def test_nais(self):
         config_dict = {
             "model": "NAIS",
