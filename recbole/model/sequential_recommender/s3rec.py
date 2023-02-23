@@ -281,7 +281,7 @@ class S3Rec(SequentialRecommender):
         batch_size = item_seq.size(0)
 
         # We don't need padding for features
-        item_feature_seq = self.item_feat[self.FEATURE_FIELD][item_seq] - 1
+        item_feature_seq = self.item_feat[self.FEATURE_FIELD][item_seq.cpu()] - 1
 
         end_index = item_seq_len.cpu().numpy().tolist()
         item_seq = item_seq.cpu().numpy().tolist()
