@@ -20,8 +20,10 @@ from recbole.quick_start import run_recbole, run_recboles
 def run(args, seed):
     if args.nproc == 1 and args.world_size <= 0:
         res = run_recbole(
-            model=args.model, dataset=args.dataset, config_file_list=config_file_list, config_dict={
-                "seed": seed}
+            model=args.model,
+            dataset=args.dataset,
+            config_file_list=config_file_list,
+            config_dict={"seed": seed},
         )
     else:
         if args.world_size == -1:
@@ -47,19 +49,27 @@ def run(args, seed):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_ours", type=str,
-                        default="BPR", help="name of our models")
-    parser.add_argument("--model_baseline", type=str,
-                        default="NeuMF", help="name of baseline models")
+    parser.add_argument(
+        "--model_ours", type=str, default="BPR", help="name of our models"
+    )
+    parser.add_argument(
+        "--model_baseline", type=str, default="NeuMF", help="name of baseline models"
+    )
     parser.add_argument(
         "--dataset", "-d", type=str, default="ml-100k", help="name of datasets"
     )
-    parser.add_argument("--config_files", type=str, default=None,
-                        help="config files: 1st is our model and 2ed is baseline")
-    parser.add_argument("--st_seed", type=int, default=2023,
-                        help="st_seed for generating random seeds")
-    parser.add_argument("--run_times", type=int, default=10,
-                        help="run times for each model")
+    parser.add_argument(
+        "--config_files",
+        type=str,
+        default=None,
+        help="config files: 1st is our model and 2ed is baseline",
+    )
+    parser.add_argument(
+        "--st_seed", type=int, default=2023, help="st_seed for generating random seeds"
+    )
+    parser.add_argument(
+        "--run_times", type=int, default=10, help="run times for each model"
+    )
     parser.add_argument(
         "--nproc", type=int, default=1, help="the number of process in this group"
     )
@@ -89,8 +99,7 @@ if __name__ == "__main__":
         raise ValueError("You have to specify 2 config files")
 
     random.seed(args.st_seed)
-    random_seeds = [random.randint(0, 2**32 - 1)
-                    for _ in range(args.run_times)]
+    random_seeds = [random.randint(0, 2**32 - 1) for _ in range(args.run_times)]
 
     result_ours = defaultdict(list)
     result_baseline = defaultdict(list)
@@ -122,5 +131,4 @@ if __name__ == "__main__":
     with open("significant_test.txt", "w") as f:
         for key, value in final_result.items():
             print(f"{key}: statistic={value.statistic}, pvalue={value.pvalue}\n")
-            f.write(
-                f"{key}: statistic={value.statistic}, pvalue={value.pvalue}\n")
+            f.write(f"{key}: statistic={value.statistic}, pvalue={value.pvalue}\n")
