@@ -83,6 +83,31 @@ for reference.
 
 **11/03/2020**: We release the first version of RecBole **v0.1.1**.
 
+### Latest Update for SIGIR 2023 Submission
+
+To better meet the user requirements and contribute to the research community, we present a significant update of RecBole in the latest version, making it more user-friendly and easy-to-use as a comprehensive benchmark library for recommendation. We summarize these updates in "**Towards a More User-Friendly and Easy-to-Use Benchmark Library for Recommender Systems**" and submit the paper to **SIGIR 2023**. The main contribution in this update is introduced below.
+
+Our extensions are made in three major aspects, namely the models/datasets, the framework, and the configurations. Furthermore, we provide more comprehensive documentation and well-organized FAQ for the usage of our library, which largely improves the user experience. More specifically, the highlights of this update are summarized as: 
+
+1. We introduce more operations and settings to help benchmarking the recommendation domain.
+
+2. We improve the user friendliness of our library by providing more detailed documentation and well-organized frequently asked questions. 
+3. We point out several development guidelines for the open-source library developers. 
+
+These extensions make it much easier to reproduce the benchmark results and stay up-to-date with the recent advances on recommender systems. The datailed comparison between this update and previous versions is listed below.
+
+|          Aspect           |            RecBole 1.0             |          RecBole 2.0           |                   This update                    |
+| :-----------------------: | :--------------------------------: | :----------------------------: | :----------------------------------------------: |
+|   Recommendation tasks    |            4 categories            |    3 topics and 5 packages     |                   4 categories                   |
+|    Models and datasets    |     73 models and 28 datasets      |  65 models and 8 new datasets  |            86 models and 41 datasets             |
+|      Data structure       | Implemented Dataset and Dataloader |         Task-oriented          |  Compatible data module inherited from PyTorch   |
+|    Continuous features    |          Field embedding           |        Field embedding         |        Field embedding and discretization        |
+| GPU-accelerated execution |       Single-GPU utilization       |     Single-GPU utilization     |      Multi-GPU and mixed precision training      |
+|  Hyper-parameter tuning   |       Serial gradient search       |     Serial gradient search     | Three search methods in both serial and parallel |
+|     Significance test     |                 -                  |               -                |               Available interface                |
+|     Benchmark results     |                 -                  | Partially public (GNN and CDR) |      Benchmark configurations on 82 models       |
+|      Friendly usage       |           Documentation            |         Documentation          |       Improved documentation and FAQ page        |
+
 
 ## Installation
 RecBole works with the following operating systems:
