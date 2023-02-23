@@ -47,6 +47,7 @@ def run(args, seed):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+<<<<<<< HEAD
     parser.add_argument("--model_ours", type=str,
                         default="BPR", help="name of our models")
     parser.add_argument("--model_baseline", type=str,
@@ -60,6 +61,29 @@ if __name__ == "__main__":
                         help="st_seed for generating random seeds")
     parser.add_argument("--run_times", type=int, default=10,
                         help="run times for each model")
+=======
+    parser.add_argument(
+        "--model_ours", type=str, default="BPR", help="name of our models"
+    )
+    parser.add_argument(
+        "--model_baseline", type=str, default="NeuMF", help="name of baseline models"
+    )
+    parser.add_argument(
+        "--dataset", "-d", type=str, default="ml-100k", help="name of datasets"
+    )
+    parser.add_argument(
+        "--config_files",
+        type=str,
+        default=None,
+        help="config files: 1st is our model and 2ed is baseline",
+    )
+    parser.add_argument(
+        "--st_seed", type=int, default=2023, help="st_seed for generating random seeds"
+    )
+    parser.add_argument(
+        "--run_times", type=int, default=10, help="run times for each model"
+    )
+>>>>>>> ffb0167a0571f856738ca8ad2d9dc688f10eeff5
     parser.add_argument(
         "--nproc", type=int, default=1, help="the number of process in this group"
     )
@@ -86,7 +110,7 @@ if __name__ == "__main__":
     )
 
     if len(config_file_list) != 2:
-        raise ValueError('You have to specify 2 config files')
+        raise ValueError("You have to specify 2 config files")
 
     random.seed(args.st_seed)
     random_seeds = [random.randint(0, 2**32 - 1)
@@ -101,14 +125,14 @@ if __name__ == "__main__":
     args.config_file_list = [result_ours]
     for seed in random_seeds:
         res = run(args, seed)
-        for key, value in res['test_result'].items():
+        for key, value in res["test_result"].items():
             result_ours[key].append(value)
 
     args.model = args.model_baseline
     args.config_file_list = [config_file_baseline]
     for seed in random_seeds:
         res = run(args, seed)
-        for key, value in res['test_result'].items():
+        for key, value in res["test_result"].items():
             result_baseline[key].append(value)
 
     final_result = {}
@@ -117,10 +141,14 @@ if __name__ == "__main__":
             continue
         ours = value
         baseline = result_baseline[key]
-        final_result[key] = stats.ttest_rel(ours, baseline, alternative='less')
+        final_result[key] = stats.ttest_rel(ours, baseline, alternative="less")
 
-    with open('significant_test.txt', 'w') as f:
+    with open("significant_test.txt", "w") as f:
         for key, value in final_result.items():
             print(f'{key}: statistic={value.statistic}, pvalue={value.pvalue}\n')
+<<<<<<< HEAD
             f.write(
                 f'{key}: statistic={value.statistic}, pvalue={value.pvalue}\n')
+=======
+            f.write(f'{key}: statistic={value.statistic}, pvalue={value.pvalue}\n')
+>>>>>>> ffb0167a0571f856738ca8ad2d9dc688f10eeff5
