@@ -47,7 +47,6 @@ def run(args, seed):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-<<<<<<< HEAD
     parser.add_argument("--model_ours", type=str,
                         default="BPR", help="name of our models")
     parser.add_argument("--model_baseline", type=str,
@@ -61,29 +60,6 @@ if __name__ == "__main__":
                         help="st_seed for generating random seeds")
     parser.add_argument("--run_times", type=int, default=10,
                         help="run times for each model")
-=======
-    parser.add_argument(
-        "--model_ours", type=str, default="BPR", help="name of our models"
-    )
-    parser.add_argument(
-        "--model_baseline", type=str, default="NeuMF", help="name of baseline models"
-    )
-    parser.add_argument(
-        "--dataset", "-d", type=str, default="ml-100k", help="name of datasets"
-    )
-    parser.add_argument(
-        "--config_files",
-        type=str,
-        default=None,
-        help="config files: 1st is our model and 2ed is baseline",
-    )
-    parser.add_argument(
-        "--st_seed", type=int, default=2023, help="st_seed for generating random seeds"
-    )
-    parser.add_argument(
-        "--run_times", type=int, default=10, help="run times for each model"
-    )
->>>>>>> ffb0167a0571f856738ca8ad2d9dc688f10eeff5
     parser.add_argument(
         "--nproc", type=int, default=1, help="the number of process in this group"
     )
@@ -146,9 +122,6 @@ if __name__ == "__main__":
     with open("significant_test.txt", "w") as f:
         for key, value in final_result.items():
             print(f'{key}: statistic={value.statistic}, pvalue={value.pvalue}\n')
-<<<<<<< HEAD
             f.write(
                 f'{key}: statistic={value.statistic}, pvalue={value.pvalue}\n')
-=======
-            f.write(f'{key}: statistic={value.statistic}, pvalue={value.pvalue}\n')
->>>>>>> ffb0167a0571f856738ca8ad2d9dc688f10eeff5
+
