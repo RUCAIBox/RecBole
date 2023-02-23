@@ -83,7 +83,7 @@ for reference.
 
 **11/03/2020**: We release the first version of RecBole **v0.1.1**.
 
-### Latest Update for SIGIR 2023
+### Latest Update for SIGIR 2023 Submission
 
 To better meet the user requirements and contribute to the research community, we present a significant update of RecBole in the latest version, making it more user-friendly and easy-to-use as a comprehensive benchmark library for recommendation. We summarize these updates in "**Towards a More User-Friendly and Easy-to-Use Benchmark Library for Recommender Systems**" and submit the paper to **SIGIR 2023**. The main contribution in this update is introduced below.
 
