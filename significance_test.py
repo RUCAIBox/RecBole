@@ -21,7 +21,7 @@ def run(args, seed):
     if args.nproc == 1 and args.world_size <= 0:
         res = run_recbole(
             model=args.model, dataset=args.dataset, config_file_list=config_file_list, config_dict={
-                'seed': seed}
+                "seed": seed}
         )
     else:
         if args.world_size == -1:
