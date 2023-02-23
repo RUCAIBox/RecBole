@@ -124,4 +124,3 @@ if __name__ == "__main__":
             print(f"{key}: statistic={value.statistic}, pvalue={value.pvalue}\n")
             f.write(
                 f"{key}: statistic={value.statistic}, pvalue={value.pvalue}\n")
-
