@@ -42,7 +42,10 @@ eval_args:                      # (dict) 4 keys: group_by, order, split, and mod
   split: {'RS':[0.8,0.1,0.1]}   # (dict) The splitting strategy ranging in ['RS','LS'].
   group_by: user                # (str) The grouping strategy ranging in ['user', 'none'].
   order: RO                     # (str) The ordering strategy ranging in ['RO', 'TO'].
-  mode: full                    # (str) The evaluation mode ranging in ['full','unixxx','popxxx','labeled'].
+  mode:                         # (str) The evaluation mode ranging in ['full','unixxx','popxxx','labeled'].
+    valid: full
+    test: full
+
 repeatable: False               # (bool) Whether to evaluate results with a repeatable recommendation scene. 
 metrics: ["Recall","MRR","NDCG","Hit","Precision"]  # (list or str) Evaluation metrics.
 topk: [10]                      # (list or int or None) The value of k for topk evaluation metrics.

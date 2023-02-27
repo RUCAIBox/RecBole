@@ -86,8 +86,9 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
 
     def __init__(self, config, dataset, sampler, shuffle=False):
         self.logger = getLogger()
+        phase = sampler.phase if sampler is not None else "test"
         self._set_neg_sample_args(
-            config, dataset, InputType.POINTWISE, config["eval_neg_sample_args"]
+            config, dataset, InputType.POINTWISE, config[f"{phase}_neg_sample_args"]
         )
         if (
             self.neg_sample_args["distribution"] != "none"
