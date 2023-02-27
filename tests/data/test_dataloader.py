@@ -12,6 +12,7 @@ import logging
 import os
 
 import pytest
+from recbole.data.dataloader.general_dataloader import NegSampleEvalDataLoader, FullSortEvalDataLoader
 
 from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
@@ -40,7 +41,7 @@ class TestGeneralDataloader:
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "TO",
-                "mode": "labeled",
+                "mode": {"valid": "labeled", "test": "labeled"},
             },
             "train_neg_sample_args": None,
             "train_batch_size": train_batch_size,
@@ -53,7 +54,7 @@ class TestGeneralDataloader:
             data.shuffle = False
             pr = 0
             for batch_data in data:
-                batch_item_list = item_list[pr : pr + batch_size]
+                batch_item_list = item_list[pr: pr + batch_size]
                 if train:
                     user_df = batch_data
                 else:
@@ -77,7 +78,7 @@ class TestGeneralDataloader:
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "TO",
-                "mode": "full",
+                "mode": {"valid": "full", "test": "full"},
             },
             "train_batch_size": train_batch_size,
             "eval_batch_size": eval_batch_size,
@@ -89,7 +90,7 @@ class TestGeneralDataloader:
         train_item_list = list(range(1, 41))
         pr = 0
         for batch_data in train_data:
-            batch_item_list = train_item_list[pr : pr + train_batch_size]
+            batch_item_list = train_item_list[pr: pr + train_batch_size]
             assert (batch_data["item_id"].numpy() == batch_item_list).all()
             assert (batch_data["item_id"] == batch_data["price"]).all()
             assert (40 < batch_data["neg_item_id"]).all()
@@ -109,7 +110,7 @@ class TestGeneralDataloader:
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "TO",
-                "mode": "full",
+                "mode": {"valid": "full", "test": "full"},
             },
             "train_batch_size": train_batch_size,
             "eval_batch_size": eval_batch_size,
@@ -122,7 +123,7 @@ class TestGeneralDataloader:
         pr = 0
         for batch_data in train_data:
             step = len(batch_data) // 2
-            batch_item_list = train_item_list[pr : pr + step]
+            batch_item_list = train_item_list[pr: pr + step]
             assert (batch_data["item_id"][:step].numpy() == batch_item_list).all()
             assert (40 < batch_data["item_id"][step:]).all()
             assert (batch_data["item_id"][step:] <= 100).all()
@@ -141,7 +142,7 @@ class TestGeneralDataloader:
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "TO",
-                "mode": "full",
+                "mode": {"valid": "full", "test": "full"},
             },
             "train_batch_size": train_batch_size,
             "eval_batch_size": eval_batch_size,
@@ -155,7 +156,7 @@ class TestGeneralDataloader:
                 history_row, history_col = history_index
                 assert len(user_df) == result[i]["len_user_df"]
                 assert (
-                    user_df["user_id"].numpy() == result[i]["user_df_user_id"]
+                        user_df["user_id"].numpy() == result[i]["user_df_user_id"]
                 ).all()
                 assert len(history_row) == len(history_col) == result[i]["history_len"]
                 assert (history_row.numpy() == result[i]["history_row"]).all()
@@ -237,7 +238,7 @@ class TestGeneralDataloader:
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "TO",
-                "mode": "uni100",
+                "mode": {"valid": "uni100", "test": "uni100"},
             },
             "train_batch_size": train_batch_size,
             "eval_batch_size": eval_batch_size,
@@ -257,8 +258,8 @@ class TestGeneralDataloader:
         valid_result = [
             {
                 "item_id_check": lambda data: data[0] == 9
-                and (8 < data[1:]).all()
-                and (data[1:] <= 100).all(),
+                                              and (8 < data[1:]).all()
+                                              and (data[1:] <= 100).all(),
                 "row_idx": [0] * 101,
                 "positive_u": [0],
                 "positive_i": [9],
@@ -271,8 +272,8 @@ class TestGeneralDataloader:
             },
             {
                 "item_id_check": lambda data: (data[0:2].numpy() == [17, 18]).all()
-                and (16 < data[2:]).all()
-                and (data[2:] <= 100).all(),
+                                              and (16 < data[2:]).all()
+                                              and (data[2:] <= 100).all(),
                 "row_idx": [0] * 202,
                 "positive_u": [0, 0],
                 "positive_i": [17, 18],
@@ -283,8 +284,8 @@ class TestGeneralDataloader:
         test_result = [
             {
                 "item_id_check": lambda data: data[0] == 10
-                and (9 < data[1:]).all()
-                and (data[1:] <= 100).all(),
+                                              and (9 < data[1:]).all()
+                                              and (data[1:] <= 100).all(),
                 "row_idx": [0] * 101,
                 "positive_u": [0],
                 "positive_i": [10],
@@ -297,8 +298,8 @@ class TestGeneralDataloader:
             },
             {
                 "item_id_check": lambda data: (data[0:2].numpy() == [19, 20]).all()
-                and (18 < data[2:]).all()
-                and (data[2:] <= 100).all(),
+                                              and (18 < data[2:]).all()
+                                              and (data[2:] <= 100).all(),
                 "row_idx": [0] * 202,
                 "positive_u": [0, 0],
                 "positive_i": [19, 20],
@@ -318,7 +319,7 @@ class TestGeneralDataloader:
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "TO",
-                "mode": "uni100",
+                "mode": {"valid": "uni100", "test": "uni100"},
             },
             "train_batch_size": train_batch_size,
             "eval_batch_size": eval_batch_size,
@@ -338,18 +339,18 @@ class TestGeneralDataloader:
         valid_result = [
             {
                 "item_id_check": lambda data: data[0] == 9
-                and (8 < data[1:101]).all()
-                and (data[1:101] <= 100).all()
-                and data[101] == 1
-                and (data[102:202] != 1).all(),
+                                              and (8 < data[1:101]).all()
+                                              and (data[1:101] <= 100).all()
+                                              and data[101] == 1
+                                              and (data[102:202] != 1).all(),
                 "row_idx": [0] * 101 + [1] * 101,
                 "positive_u": [0, 1],
                 "positive_i": [9, 1],
             },
             {
                 "item_id_check": lambda data: (data[0:2].numpy() == [17, 18]).all()
-                and (16 < data[2:]).all()
-                and (data[2:] <= 100).all(),
+                                              and (16 < data[2:]).all()
+                                              and (data[2:] <= 100).all(),
                 "row_idx": [0] * 202,
                 "positive_u": [0, 0],
                 "positive_i": [17, 18],
@@ -360,24 +361,72 @@ class TestGeneralDataloader:
         test_result = [
             {
                 "item_id_check": lambda data: data[0] == 10
-                and (9 < data[1:101]).all()
-                and (data[1:101] <= 100).all()
-                and data[101] == 1
-                and (data[102:202] != 1).all(),
+                                              and (9 < data[1:101]).all()
+                                              and (data[1:101] <= 100).all()
+                                              and data[101] == 1
+                                              and (data[102:202] != 1).all(),
                 "row_idx": [0] * 101 + [1] * 101,
                 "positive_u": [0, 1],
                 "positive_i": [10, 1],
             },
             {
                 "item_id_check": lambda data: (data[0:2].numpy() == [19, 20]).all()
-                and (18 < data[2:]).all()
-                and (data[2:] <= 100).all(),
+                                              and (18 < data[2:]).all()
+                                              and (data[2:] <= 100).all(),
                 "row_idx": [0] * 202,
                 "positive_u": [0, 0],
                 "positive_i": [19, 20],
             },
         ]
         check_result(test_data, test_result)
+
+    def test_general_diff_dataloaders_in_valid_test_phases(self):
+        train_batch_size = 6
+        eval_batch_size = 2
+        config_dict = {
+            "model": "BPR",
+            "dataset": "general_dataloader",
+            "data_path": current_path,
+            "load_col": None,
+            "eval_args": {
+                "split": {"RS": [0.8, 0.1, 0.1]},
+                "order": "TO",
+                "mode": {"valid": "uni100", "test": "full"},
+            },
+            "train_neg_sample_args": None,
+            "train_batch_size": train_batch_size,
+            "eval_batch_size": eval_batch_size,
+            "shuffle": False,
+        }
+        train_data, valid_data, test_data = new_dataloader(config_dict=config_dict)
+        assert isinstance(valid_data, NegSampleEvalDataLoader)
+        assert isinstance(test_data, FullSortEvalDataLoader)
+
+    def test_general_diff_eval_neg_sample_args_in_valid_test_phases(self):
+        train_batch_size = 6
+        eval_batch_size = 2
+        config_dict = {
+            "model": "BPR",
+            "dataset": "general_dataloader",
+            "data_path": current_path,
+            "load_col": None,
+            "eval_args": {
+                "split": {"RS": [0.8, 0.1, 0.1]},
+                "order": "TO",
+                "mode": {"valid": "uni100", "test": "pop200"},
+            },
+            "train_neg_sample_args": None,
+            "train_batch_size": train_batch_size,
+            "eval_batch_size": eval_batch_size,
+            "shuffle": False,
+        }
+        train_data, valid_data, test_data = new_dataloader(config_dict=config_dict)
+        assert isinstance(valid_data, NegSampleEvalDataLoader)
+        assert isinstance(test_data, NegSampleEvalDataLoader)
+        assert valid_data.neg_sample_args["distribution"] == "uniform"
+        assert valid_data.neg_sample_args["sample_num"] == 100
+        assert test_data.neg_sample_args["distribution"] == "popularity"
+        assert test_data.neg_sample_args["sample_num"] == 200
 
 
 if __name__ == "__main__":

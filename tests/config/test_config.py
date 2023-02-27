@@ -57,7 +57,8 @@ class TestConfigClass(unittest.TestCase):
 
         self.assertEqual(config["eval_args"]["split"], {"RS": [0.8, 0.1, 0.1]})
         self.assertEqual(config["eval_args"]["order"], "RO")
-        self.assertEqual(config["eval_args"]["mode"], "labeled")
+        self.assertEqual(config["eval_args"]["mode"]["valid"], "labeled")
+        self.assertEqual(config["eval_args"]["mode"]["test"], "labeled")
         self.assertEqual(config["eval_args"]["group_by"], None)
 
         self.assertEqual(config["metrics"], ["AUC", "LogLoss"])
@@ -78,7 +79,8 @@ class TestConfigClass(unittest.TestCase):
         config = Config(model="SASRec", dataset="ml-100k", config_dict=para_dict)
         self.assertEqual(config["eval_args"]["split"], {"LS": "valid_and_test"})
         self.assertEqual(config["eval_args"]["order"], "TO")
-        self.assertEqual(config["eval_args"]["mode"], "full")
+        self.assertEqual(config["eval_args"]["mode"]["valid"], "full")
+        self.assertEqual(config["eval_args"]["mode"]["test"], "full")
         self.assertEqual(config["eval_args"]["group_by"], "user")
 
     def test_config_file_list(self):
@@ -91,7 +93,8 @@ class TestConfigClass(unittest.TestCase):
         self.assertEqual(config["topk"], [5, 20])
         self.assertEqual(config["eval_args"]["split"], {"LS": "valid_and_test"})
         self.assertEqual(config["eval_args"]["order"], "TO")
-        self.assertEqual(config["eval_args"]["mode"], "full")
+        self.assertEqual(config["eval_args"]["mode"]["valid"], "uni100")
+        self.assertEqual(config["eval_args"]["mode"]["test"], "full")
         self.assertEqual(config["eval_args"]["group_by"], "user")
 
     def test_config_dict(self):
@@ -102,7 +105,8 @@ class TestConfigClass(unittest.TestCase):
         self.assertEqual(config["topk"], [50, 100])
         self.assertEqual(config["eval_args"]["split"], {"RS": [0.8, 0.1, 0.1]})
         self.assertEqual(config["eval_args"]["order"], "RO")
-        self.assertEqual(config["eval_args"]["mode"], "full")
+        self.assertEqual(config["eval_args"]["mode"]["valid"], "full")
+        self.assertEqual(config["eval_args"]["mode"]["test"], "full")
         self.assertEqual(config["eval_args"]["group_by"], "user")
 
     # todo: add command line test examples
@@ -118,7 +122,8 @@ class TestConfigClass(unittest.TestCase):
         self.assertEqual(config["topk"], [50, 100])  # default, file, dict
         self.assertEqual(config["eval_args"]["split"], {"LS": "valid_and_test"})
         self.assertEqual(config["eval_args"]["order"], "TO")
-        self.assertEqual(config["eval_args"]["mode"], "full")
+        self.assertEqual(config["eval_args"]["mode"]["valid"], "uni100")
+        self.assertEqual(config["eval_args"]["mode"]["test"], "full")
         self.assertEqual(config["eval_args"]["group_by"], "user")
         self.assertEqual(config["epochs"], 100)  # default, dict
 

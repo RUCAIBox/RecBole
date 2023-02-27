@@ -81,7 +81,7 @@ class TestOverallConfig(unittest.TestCase):
         )
 
     def test_transform(self):
-        self.assertTrue(run_parms({"transform": None}))
+        self.assertTrue(run_parms({"transform": [None]}))
 
     def test_eval_step(self):
         settings = {"epochs": 5}
@@ -111,7 +111,7 @@ class TestOverallConfig(unittest.TestCase):
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "RO",
-                "mode": "uni100",
+                "mode": {"valid": "uni100", "test": "uni100"},
             },
         }
         self.assertTrue(
