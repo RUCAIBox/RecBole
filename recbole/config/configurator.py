@@ -456,6 +456,11 @@ class Config(object):
         if isinstance(mode, str):
             default_eval_args['mode'] = {'valid': mode, 'test': mode}
 
+        # in case there is only one key in `mode`, e.g., mode: {'valid': 'uni100'} or mode: {'test': 'full'}
+        if isinstance(mode, dict):
+            default_mode = mode.get('valid', mode.get('test', 'full'))
+            default_eval_args['mode'] = {'valid': mode.get('valid', default_mode), 'test': mode.get('test', default_mode)}
+
         self.final_config_dict["eval_args"] = default_eval_args
         if (
                 self.final_config_dict["eval_type"] == EvaluatorType.VALUE
