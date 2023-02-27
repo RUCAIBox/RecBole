@@ -2,7 +2,7 @@ dataset: test
 model: BPR
 epochs: 1
 state: ERROR
-data_path: ../../tests/test_data/
+data_path: tests/test_data/
 
 # Atomic File Format
 field_separator: "\t"
