@@ -59,8 +59,8 @@ The parameters used to control the evaluation method are as follows:
     Range in ``[None, user]`` and defaults to ``user``.
   - ``order (str)``: Control the ordering of data and affect the splitting of data.
     Range in ``['RO', 'TO']`` and defaults to ``RO``.
-  - ``mode (str)``: Control different candidates of ranking.
-    Range in ``[labeled, full, unixxx, popxxx]`` and defaults to ``full``.
+  - ``mode (dict)``: Control different candidates of ranking.
+    Range in ``[labeled, full, unixxx, popxxx]`` and defaults to ``{'valid': 'full', 'test': 'full'}``.
  
 - ``repeatable (bool)``: Whether to evaluate the result with a repeatable recommendation scene. Note that it is disabled for sequential models as the recommendation is already repeatable. For other models, defaults to ``False``.
 

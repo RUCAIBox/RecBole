@@ -83,7 +83,7 @@ settings into the test.yaml.
      split: {'RS':[0.8,0.1,0.1]}
      order: RO
      group_by: ~
-     mode: labeled
+     mode: {'valid': 'labeled', 'test': 'labeled'}
    train_neg_sample_args: ~
    metrics: ['AUC', 'LogLoss']
    valid_metric: AUC
@@ -131,7 +131,7 @@ And you will obtain the output like:
    The sparsity of the dataset: 93.70575143257098%
    Remain Fields: ['user_id', 'item_id', 'timestamp', 'age', 'gender', 'occupation', 'release_year', 'class', 'label']
    16 Jul 20:12    INFO  [Training]: train_batch_size = [4096] negative sampling: [None]
-   16 Jul 20:12    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'RO', 'group_by': None, 'mode': 'labeled'}]
+   16 Jul 20:12    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'split': {'RS': [0.8, 0.1, 0.1]}, 'order': 'RO', 'group_by': None, 'mode': {'valid': 'labeled', 'test': 'labeled'}}]
    16 Jul 20:12    INFO  LR(
      (token_embedding_table): FMEmbedding(
        (embedding): Embedding(2788, 10)
@@ -218,7 +218,7 @@ test.yaml and set all the config as follow:
      split: {'RS':[0.8,0.1,0.1]}
      order: RO
      group_by: ~
-     mode: labeled
+     mode: {'valid': 'labeled', 'test': 'labeled'}
    train_neg_sample_args: ~
    metrics: ['AUC', 'LogLoss']
    valid_metric: AUC

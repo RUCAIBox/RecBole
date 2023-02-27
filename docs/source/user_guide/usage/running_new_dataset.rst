@@ -120,7 +120,7 @@ You can add the following config in your `ml-1m.yaml`:
         split: {'RS': [8,1,1]}
         group_by: user
         order: RO
-        mode: full
+        mode: {'valid': 'full', 'test': 'full'}
 
 
 .. code:: python

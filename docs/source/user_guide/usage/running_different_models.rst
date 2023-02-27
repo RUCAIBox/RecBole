@@ -75,7 +75,7 @@ If you want to apply context-aware recommendation models for CTR predictions, yo
 
     eval_args:
         group_by: None
-        mode: labeled
+        mode: {"valid": "labeled", "test": "labeled"}
     metrics: ['AUC', 'LogLoss']
     valid_metric: AUC
 
