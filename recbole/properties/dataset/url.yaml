@@ -100,6 +100,7 @@ ml-100k: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MovieLens
 ml-1m: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MovieLens/ml-1m.zip
 ml-10m: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MovieLens/ml-10m.zip
 ml-20m: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/MovieLens/ml-20m.zip
+music4all-onion: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Music4All-Onion/music4all-onion.zip
 netflix: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Netflix/netflix.zip
 phishing-website: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Phishing-websites/phishing-website.zip
 pinterest: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Pinterest/pinterest.zip
