@@ -86,7 +86,7 @@ This will perform the training and test of the BPR model on the ml-100k dataset,
     The sparsity of the dataset: 93.70575143257098%
     Remain Fields: ['user_id', 'item_id', 'rating', 'timestamp']
     05 Aug 02:16    INFO  [Training]: train_batch_size = [2048] negative sampling: [{'uniform': 1}]
-    05 Aug 02:16    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'split': {'RS': [0.8, 0.1, 0.1]}, 'group_by': 'user', 'order': 'RO', 'mode': {'valid': 'full', 'test': 'full'}}]
+    05 Aug 02:16    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'split': {'RS': [0.8, 0.1, 0.1]}, 'group_by': 'user', 'order': 'RO', 'mode': 'full'}]
     05 Aug 02:16    INFO  BPR(
     (user_embedding): Embedding(944, 64)
     (item_embedding): Embedding(1683, 64)

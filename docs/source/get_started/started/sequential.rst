@@ -118,7 +118,7 @@ so we can add the following settings into the test.yaml.
        group_by: user
        order: TO
        split: {'LS': 'valid_and_test'}
-       mode: {'valid': 'full', 'test': 'full'}
+       mode: full
    metrics: ['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']
    topk: 10
    valid_metric: MRR@10
@@ -163,7 +163,7 @@ And you will obtain the output like:
    The sparsity of the dataset: 93.70575143257098%
    Remain Fields: ['user_id', 'item_id', 'timestamp']
    16 Jul 21:12    INFO  [Training]: train_batch_size = [4096] negative sampling: [None]
-   16 Jul 21:12    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'group_by': 'user', 'order': 'TO', 'split': {'LS': 'valid_and_test'}, 'mode': {'valid': 'full', 'test': 'full'}}]
+   16 Jul 21:12    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'group_by': 'user', 'order': 'TO', 'split': {'LS': 'valid_and_test'}, 'mode': 'full'}]
    16 Jul 21:12    INFO  GRU4Rec(
      (item_embedding): Embedding(1683, 64, padding_idx=0)
      (emb_dropout): Dropout(p=0.3, inplace=False)
@@ -238,7 +238,7 @@ test.yaml and set all the config as follow:
        group_by: user
        order: TO
        split: {'LS': 'valid_and_test'}
-       mode: {'valid': 'full', 'test': 'full'}
+       mode: full
    metrics: ['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']
    topk: 10
    valid_metric: MRR@10

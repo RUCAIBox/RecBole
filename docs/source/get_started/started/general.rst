@@ -82,7 +82,7 @@ settings into the test.yaml.
        group_by: user
        order: RO
        split: {'RS': [0.8,0.1,0.1]}
-       mode: {"valid": "full", "test": "full"}
+       mode: full
    metrics: ['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']
    topk: 10
    valid_metric: MRR@10
@@ -128,7 +128,7 @@ And you will obtain the output like:
    The sparsity of the dataset: 93.70575143257098%
    Remain Fields: ['user_id', 'item_id']
    24 Aug 01:46    INFO  [Training]: train_batch_size = [4096] negative sampling: [{'uniform': 1}]
-   24 Aug 01:46    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'split': {'RS': [0.8, 0.1, 0.1]}, 'group_by': 'user', 'order': 'RO', 'mode': {'valid': 'full', 'test': 'full'}}]
+   24 Aug 01:46    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'split': {'RS': [0.8, 0.1, 0.1]}, 'group_by': 'user', 'order': 'RO', 'mode': 'full'}]
    24 Aug 01:46    INFO  BPR(
    (user_embedding): Embedding(944, 64)
    (item_embedding): Embedding(1683, 64)
@@ -195,7 +195,7 @@ You can create a `yaml` file called `test.yaml` and set all the config as follow
         group_by: user
         order: RO
         split: {'RS': [0.8,0.1,0.1]}
-        mode: {'valid': 'full', 'test': 'full'}
+        mode: full
     metrics: ['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']
     topk: 10 
     valid_metric: MRR@10

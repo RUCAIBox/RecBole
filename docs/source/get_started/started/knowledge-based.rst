@@ -109,7 +109,7 @@ settings into the test.yaml.
       split: {'RS': [0.8, 0.1, 0.1]}
       group_by: user 
       order: RO 
-      mode: {'valid': 'full', 'test': 'full'}
+      mode: full
    metrics: ['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']
    topk: 10
    valid_metric: MRR@10
@@ -158,7 +158,7 @@ And you will obtain the output like:
    The number of triples: 91631
    The number of items that have been linked to KG: 1598
    16 Jul 17:35    INFO  [Training]: train_batch_size = [2048] negative sampling: [{'uniform': 1}]
-   16 Jul 17:35    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'split': {'RS': [0.8, 0.1, 0.1]}, 'group_by': 'user', 'order': 'RO', 'mode': {'valid': 'full', 'test': 'full'}}]
+   16 Jul 17:35    INFO  [Evaluation]: eval_batch_size = [4096] eval_args: [{'split': {'RS': [0.8, 0.1, 0.1]}, 'group_by': 'user', 'order': 'RO', 'mode': 'full'}]
    16 Jul 17:35    INFO  CKE(
      (user_embedding): Embedding(944, 64)
      (item_embedding): Embedding(1683, 64)
@@ -231,7 +231,7 @@ test.yaml and set all the config as follow:
       split: {'RS': [0.8, 0.1, 0.1]}
       group_by: user
       order: RO
-      mode: {'valid': 'full', 'test': 'full'}
+      mode: full
    metrics: ['Recall', 'MRR', 'NDCG', 'Hit', 'Precision']
    topk: 10
    valid_metric: MRR@10
