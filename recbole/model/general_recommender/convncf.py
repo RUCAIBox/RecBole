@@ -15,9 +15,11 @@ Reference code:
 
 import torch
 import torch.nn as nn
+import copy
 
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.model.layers import MLPLayers, CNNLayers
+from recbole.model.general_recommender.bpr import BPR
 from recbole.utils import InputType
 
 
@@ -69,10 +71,22 @@ class ConvNCF(GeneralRecommender):
         self.cnn_strides = config["cnn_strides"]
         self.dropout_prob = config["dropout_prob"]
         self.regs = config["reg_weights"]
+        self.train_method = config["train_method"]
+        self.pre_model_path = config["pre_model_path"]
 
         # define layers and loss
-        self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
+        assert self.train_method in ["after_pretrain", "no_pretrain"]
+        if self.train_method == "after_pretrain":
+            assert self.pre_model_path != ""
+            pretrain_state = torch.load(self.pre_model_path)["state_dict"]
+            bpr = BPR(config=config, dataset=dataset)
+            bpr.load_state_dict(pretrain_state)
+            self.user_embedding = copy.deepcopy(bpr.user_embedding)
+            self.item_embedding = copy.deepcopy(bpr.item_embedding)
+        else:
+            self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
+            self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
+
         self.cnn_layers = CNNLayers(
             self.cnn_channels, self.cnn_kernels, self.cnn_strides, activation="relu"
         )

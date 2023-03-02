@@ -130,5 +130,5 @@ if __name__ == "__main__":
 
     with open("significant_test.txt", "w") as f:
         for key, value in final_result.items():
-            print(f"{key} = {str(value)}\n")
-            f.write(f"{key} = {str(value)}\n")
+            print(f"{key}: statistic={value.statistic}, pvalue={value.pvalue}\n")
+            f.write(f"{key}: statistic={value.statistic}, pvalue={value.pvalue}\n")

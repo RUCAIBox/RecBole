@@ -4,3 +4,5 @@ cnn_kernels: [4, 4, 2, 2]           # (list of int) The size of convolutional ke
 cnn_strides: [4, 4, 2, 2]           # (list of int) The strides of convolution in CNN layers.
 dropout_prob: 0.2                   # (float) The dropout rate in the linear predict layer.
 reg_weights: [0.1, 0.1]             # (list of float) The L2 regularization weights.
+train_method: 'no_pretrain'         # (str) The training method. Range in ['after_pretrain', 'no_pretrain'].
+pre_model_path: ''                  # (str) The path of pretrained model.
