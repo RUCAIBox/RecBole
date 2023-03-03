@@ -19,7 +19,7 @@ from recbole.evaluator import metrics_dict, Collector
 
 parameters_dict = {
     "model": "BPR",
-    "eval_args": {"split": {"RS": [0.8, 0.1, 0.1]}, "order": "RO", "mode": {"valid": "uni100", "test": "uni100"}},
+    "eval_args": {"split": {"RS": [0.8, 0.1, 0.1]}, "order": "RO", "mode": "uni100"},
     "metric_decimal_place": 4,
 }
 

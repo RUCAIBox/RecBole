@@ -22,7 +22,7 @@ class TestGeneralRecommender(unittest.TestCase):
             "eval_args": {
                 "split": {"LS": "valid_and_test"},
                 "order": "RO",
-                "mode": {"valid": "full", "test": "full"},
+                "mode": "full",
             },
             "model": "BPR",
         }
@@ -35,7 +35,7 @@ class TestGeneralRecommender(unittest.TestCase):
             "eval_args": {
                 "split": {"LS": "valid_and_test"},
                 "order": "TO",
-                "mode": {"valid": "full", "test": "full"},
+                "mode": "full",
             },
             "model": "BPR",
         }
@@ -48,7 +48,7 @@ class TestGeneralRecommender(unittest.TestCase):
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "RO",
-                "mode": {"valid": "full", "test": "full"},
+                "mode": "full",
             },
             "model": "BPR",
         }
@@ -61,7 +61,7 @@ class TestGeneralRecommender(unittest.TestCase):
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "RO",
-                "mode": {"valid": "uni100", "test": "uni100"},
+                "mode": "uni100",
             },
             "model": "BPR",
         }
@@ -75,7 +75,7 @@ class TestGeneralRecommender(unittest.TestCase):
             "eval_args": {
                 "split": {"LS": "valid_and_test"},
                 "order": "TO",
-                "mode": {"valid": "full", "test": "full"},
+                "mode": "full",
             },
             "model": "BPR",
         }
@@ -88,7 +88,7 @@ class TestGeneralRecommender(unittest.TestCase):
             "eval_args": {
                 "split": {"LS": "valid_and_test"},
                 "order": "RO",
-                "mode": {"valid": "uni100", "test": "uni100"},
+                "mode": "uni100",
             },
             "model": "BPR",
         }
@@ -101,7 +101,7 @@ class TestGeneralRecommender(unittest.TestCase):
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "TO",
-                "mode": {"valid": "uni100", "test": "uni100"},
+                "mode": "uni100",
             },
             "model": "BPR",
         }
@@ -116,7 +116,7 @@ class TestContextRecommender(unittest.TestCase):
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "TO",
-                "mode": {"valid": "labeled", "test": "labeled"},
+                "mode": "labeled",
             },
             "threshold": {"rating": 4},
             "model": "FM",
@@ -132,7 +132,7 @@ class TestSequentialRecommender(unittest.TestCase):
             "eval_args": {
                 "split": {"LS": "valid_and_test"},
                 "order": "TO",
-                "mode": {"valid": "uni100", "test": "uni100"},
+                "mode": "uni100",
             },
             "model": "FPMC",
         }

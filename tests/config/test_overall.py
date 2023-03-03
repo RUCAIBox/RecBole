@@ -111,7 +111,7 @@ class TestOverallConfig(unittest.TestCase):
             "eval_args": {
                 "split": {"RS": [0.8, 0.1, 0.1]},
                 "order": "RO",
-                "mode": {"valid": "uni100", "test": "uni100"},
+                "mode": "uni100",
             },
         }
         self.assertTrue(
