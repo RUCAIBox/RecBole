@@ -216,7 +216,7 @@ def data_preparation(config, dataset):
     return train_data, valid_data, test_data
 
 
-def get_dataloader(config, phase: Literal['train', 'valid', 'test', 'evaluation']):
+def get_dataloader(config, phase: Literal["train", "valid", "test", "evaluation"]):
     """Return a dataloader class according to :attr:`config` and :attr:`phase`.
 
     Args:
@@ -226,11 +226,16 @@ def get_dataloader(config, phase: Literal['train', 'valid', 'test', 'evaluation'
     Returns:
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`phase`.
     """
-    if phase not in ['train', 'valid', 'test', 'evaluation']:
-        raise ValueError("`phase` can only be 'train', 'valid', 'test' or 'evaluation'.")
-    if phase == 'evaluation':
-        phase = 'test'
-        warnings.warn("'evaluation' has been deprecated, please use 'valid' or 'test' instead.", DeprecationWarning)
+    if phase not in ["train", "valid", "test", "evaluation"]:
+        raise ValueError(
+            "`phase` can only be 'train', 'valid', 'test' or 'evaluation'."
+        )
+    if phase == "evaluation":
+        phase = "test"
+        warnings.warn(
+            "'evaluation' has been deprecated, please use 'valid' or 'test' instead.",
+            DeprecationWarning,
+        )
 
     register_table = {
         "MultiDAE": _get_AE_dataloader,
@@ -259,7 +264,7 @@ def get_dataloader(config, phase: Literal['train', 'valid', 'test', 'evaluation'
             return NegSampleEvalDataLoader
 
 
-def _get_AE_dataloader(config, phase: Literal['train', 'valid', 'test', 'evaluation']):
+def _get_AE_dataloader(config, phase: Literal["train", "valid", "test", "evaluation"]):
     """Customized function for VAE models to get correct dataloader class.
 
     Args:
@@ -270,11 +275,16 @@ def _get_AE_dataloader(config, phase: Literal['train', 'valid', 'test', 'evaluat
     Returns:
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`phase`.
     """
-    if phase not in ['train', 'valid', 'test', 'evaluation']:
-        raise ValueError("`phase` can only be 'train', 'valid', 'test' or 'evaluation'.")
-    if phase == 'evaluation':
-        phase = 'test'
-        warnings.warn("'evaluation' has been deprecated, please use 'valid' or 'test' instead.", DeprecationWarning)
+    if phase not in ["train", "valid", "test", "evaluation"]:
+        raise ValueError(
+            "`phase` can only be 'train', 'valid', 'test' or 'evaluation'."
+        )
+    if phase == "evaluation":
+        phase = "test"
+        warnings.warn(
+            "'evaluation' has been deprecated, please use 'valid' or 'test' instead.",
+            DeprecationWarning,
+        )
 
     if phase == "train":
         return UserDataLoader
@@ -286,7 +296,14 @@ def _get_AE_dataloader(config, phase: Literal['train', 'valid', 'test', 'evaluat
             return NegSampleEvalDataLoader
 
 
-def _create_sampler(dataset, built_datasets, distribution: str, repeatable: bool, alpha: float = 1.0, base_sampler=None):
+def _create_sampler(
+    dataset,
+    built_datasets,
+    distribution: str,
+    repeatable: bool,
+    alpha: float = 1.0,
+    base_sampler=None,
+):
     phases = ["train", "valid", "test"]
     sampler = None
     if distribution != "none":
@@ -329,12 +346,30 @@ def create_samplers(config, dataset, built_datasets):
     valid_neg_sample_args = config["valid_neg_sample_args"]
     test_neg_sample_args = config["test_neg_sample_args"]
     repeatable = config["repeatable"]
-    base_sampler = _create_sampler(dataset, built_datasets, train_neg_sample_args["distribution"], repeatable, train_neg_sample_args["alpha"])
-    train_sampler = base_sampler.set_phase('train') if base_sampler else None
+    base_sampler = _create_sampler(
+        dataset,
+        built_datasets,
+        train_neg_sample_args["distribution"],
+        repeatable,
+        train_neg_sample_args["alpha"],
+    )
+    train_sampler = base_sampler.set_phase("train") if base_sampler else None
 
-    valid_sampler = _create_sampler(dataset, built_datasets, valid_neg_sample_args["distribution"], repeatable, base_sampler=base_sampler)
+    valid_sampler = _create_sampler(
+        dataset,
+        built_datasets,
+        valid_neg_sample_args["distribution"],
+        repeatable,
+        base_sampler=base_sampler,
+    )
     valid_sampler = valid_sampler.set_phase("valid") if valid_sampler else None
 
-    test_sampler = _create_sampler(dataset, built_datasets, test_neg_sample_args["distribution"], repeatable, base_sampler=base_sampler)
+    test_sampler = _create_sampler(
+        dataset,
+        built_datasets,
+        test_neg_sample_args["distribution"],
+        repeatable,
+        base_sampler=base_sampler,
+    )
     test_sampler = test_sampler.set_phase("test") if test_sampler else None
     return train_sampler, valid_sampler, test_sampler

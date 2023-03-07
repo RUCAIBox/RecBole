@@ -12,7 +12,10 @@ import logging
 import os
 
 import pytest
-from recbole.data.dataloader.general_dataloader import NegSampleEvalDataLoader, FullSortEvalDataLoader
+from recbole.data.dataloader.general_dataloader import (
+    NegSampleEvalDataLoader,
+    FullSortEvalDataLoader,
+)
 
 from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
