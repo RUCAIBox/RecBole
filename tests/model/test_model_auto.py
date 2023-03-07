@@ -96,7 +96,7 @@ class TestGeneralRecommender(unittest.TestCase):
 
     def test_fpsr(self):
         config_dict = {
-            'model': 'FPSR',
+            "model": "FPSR",
         }
         quick_test(config_dict)
 

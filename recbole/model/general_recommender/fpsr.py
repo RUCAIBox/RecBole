@@ -111,7 +111,7 @@ class FPSR(GeneralRecommender):
         Returns:
             Tok-k eigenvectors.
         """
-        _, _, V = torch.svd_lowrank(mat, q=max(4 * k, 32), niter=10)
+        _, _, V = torch.svd_lowrank(mat, q=min(4 * k, mat.shape[-1]), niter=10)
         return V[:, :k]
 
     def _norm_adj(self, item_list=None) -> torch.Tensor:
