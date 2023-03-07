@@ -19,7 +19,7 @@ from logging import getLogger
 import torch
 
 from recbole.data.interaction import Interaction
-from recbole.utils import InputType, FeatureType, FeatureSource
+from recbole.utils import InputType, FeatureType, FeatureSource, ModelType
 from recbole.data.transform import construct_transform
 
 start_iter = False
@@ -55,6 +55,7 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
         self.generator = torch.Generator()
         self.generator.manual_seed(config["seed"])
         self.transform = construct_transform(config)
+        self.is_sequential = config["MODEL_TYPE"] == ModelType.SEQUENTIAL
         if not config["single_spec"]:
             index_sampler = torch.utils.data.distributed.DistributedSampler(
                 list(range(self.sample_size)), shuffle=shuffle, drop_last=False

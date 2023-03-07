@@ -16,6 +16,8 @@ import copy
 import importlib
 import os
 import pickle
+import warnings
+from typing import Literal
 
 from recbole.data.dataloader import *
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
@@ -140,7 +142,7 @@ def load_split_dataloaders(config):
 
 
 def data_preparation(config, dataset):
-    """Split the dataset by :attr:`config['eval_args']` and create training, validation and test dataloader.
+    """Split the dataset by :attr:`config['[valid|test]_eval_args']` and create training, validation and test dataloader.
 
     Note:
         If we can load split dataloaders by :meth:`load_split_dataloaders`, we will not create new split dataloaders.
@@ -181,10 +183,10 @@ def data_preparation(config, dataset):
                 config, train_dataset, train_sampler, kg_sampler, shuffle=True
             )
 
-        valid_data = get_dataloader(config, "evaluation")(
+        valid_data = get_dataloader(config, "valid")(
             config, valid_dataset, valid_sampler, shuffle=False
         )
-        test_data = get_dataloader(config, "evaluation")(
+        test_data = get_dataloader(config, "test")(
             config, test_dataset, test_sampler, shuffle=False
         )
         if config["save_dataloaders"]:
@@ -214,16 +216,22 @@ def data_preparation(config, dataset):
     return train_data, valid_data, test_data
 
 
-def get_dataloader(config, phase):
+def get_dataloader(config, phase: Literal['train', 'valid', 'test', 'evaluation']):
     """Return a dataloader class according to :attr:`config` and :attr:`phase`.
 
     Args:
         config (Config): An instance object of Config, used to record parameter information.
-        phase (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
-
+        phase (str): The stage of dataloader. It can only take 4 values: 'train', 'valid', 'test' or 'evaluation'.
+            Notes: 'evaluation' has been deprecated, please use 'valid' or 'test' instead.
     Returns:
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`phase`.
     """
+    if phase not in ['train', 'valid', 'test', 'evaluation']:
+        raise ValueError("`phase` can only be 'train', 'valid', 'test' or 'evaluation'.")
+    if phase == 'evaluation':
+        phase = 'test'
+        warnings.warn("'evaluation' has been deprecated, please use 'valid' or 'test' instead.", DeprecationWarning)
+
     register_table = {
         "MultiDAE": _get_AE_dataloader,
         "MultiVAE": _get_AE_dataloader,
@@ -244,31 +252,62 @@ def get_dataloader(config, phase):
         else:
             return KnowledgeBasedDataLoader
     else:
-        eval_mode = config["eval_args"]["mode"]
+        eval_mode = config["eval_args"]["mode"][phase]
         if eval_mode == "full":
             return FullSortEvalDataLoader
         else:
             return NegSampleEvalDataLoader
 
 
-def _get_AE_dataloader(config, phase):
+def _get_AE_dataloader(config, phase: Literal['train', 'valid', 'test', 'evaluation']):
     """Customized function for VAE models to get correct dataloader class.
 
     Args:
         config (Config): An instance object of Config, used to record parameter information.
-        phase (str): The stage of dataloader. It can only take two values: 'train' or 'evaluation'.
+        phase (str): The stage of dataloader. It can only take 4 values: 'train', 'valid', 'test' or 'evaluation'.
+            Notes: 'evaluation' has been deprecated, please use 'valid' or 'test' instead.
 
     Returns:
         type: The dataloader class that meets the requirements in :attr:`config` and :attr:`phase`.
     """
+    if phase not in ['train', 'valid', 'test', 'evaluation']:
+        raise ValueError("`phase` can only be 'train', 'valid', 'test' or 'evaluation'.")
+    if phase == 'evaluation':
+        phase = 'test'
+        warnings.warn("'evaluation' has been deprecated, please use 'valid' or 'test' instead.", DeprecationWarning)
+
     if phase == "train":
         return UserDataLoader
     else:
-        eval_mode = config["eval_args"]["mode"]
+        eval_mode = config["eval_args"]["mode"][phase]
         if eval_mode == "full":
             return FullSortEvalDataLoader
         else:
             return NegSampleEvalDataLoader
+
+
+def _create_sampler(dataset, built_datasets, distribution: str, repeatable: bool, alpha: float = 1.0, base_sampler=None):
+    phases = ["train", "valid", "test"]
+    sampler = None
+    if distribution != "none":
+        if base_sampler is not None:
+            base_sampler.set_distribution(distribution)
+            return base_sampler
+        if not repeatable:
+            sampler = Sampler(
+                phases,
+                built_datasets,
+                distribution,
+                alpha,
+            )
+        else:
+            sampler = RepeatableSampler(
+                phases,
+                dataset,
+                distribution,
+                alpha,
+            )
+    return sampler
 
 
 def create_samplers(config, dataset, built_datasets):
@@ -286,46 +325,16 @@ def create_samplers(config, dataset, built_datasets):
             - valid_sampler (AbstractSampler): The sampler for validation.
             - test_sampler (AbstractSampler): The sampler for testing.
     """
-    phases = ["train", "valid", "test"]
     train_neg_sample_args = config["train_neg_sample_args"]
-    eval_neg_sample_args = config["eval_neg_sample_args"]
-    sampler = None
-    train_sampler, valid_sampler, test_sampler = None, None, None
+    valid_neg_sample_args = config["valid_neg_sample_args"]
+    test_neg_sample_args = config["test_neg_sample_args"]
+    repeatable = config["repeatable"]
+    base_sampler = _create_sampler(dataset, built_datasets, train_neg_sample_args["distribution"], repeatable, train_neg_sample_args["alpha"])
+    train_sampler = base_sampler.set_phase('train') if base_sampler else None
 
-    if train_neg_sample_args["distribution"] != "none":
-        if not config["repeatable"]:
-            sampler = Sampler(
-                phases,
-                built_datasets,
-                train_neg_sample_args["distribution"],
-                train_neg_sample_args["alpha"],
-            )
-        else:
-            sampler = RepeatableSampler(
-                phases,
-                dataset,
-                train_neg_sample_args["distribution"],
-                train_neg_sample_args["alpha"],
-            )
-        train_sampler = sampler.set_phase("train")
+    valid_sampler = _create_sampler(dataset, built_datasets, valid_neg_sample_args["distribution"], repeatable, base_sampler=base_sampler)
+    valid_sampler = valid_sampler.set_phase("valid") if valid_sampler else None
 
-    if eval_neg_sample_args["distribution"] != "none":
-        if sampler is None:
-            if not config["repeatable"]:
-                sampler = Sampler(
-                    phases,
-                    built_datasets,
-                    eval_neg_sample_args["distribution"],
-                )
-            else:
-                sampler = RepeatableSampler(
-                    phases,
-                    dataset,
-                    eval_neg_sample_args["distribution"],
-                )
-        else:
-            sampler.set_distribution(eval_neg_sample_args["distribution"])
-        valid_sampler = sampler.set_phase("valid")
-        test_sampler = sampler.set_phase("test")
-
+    test_sampler = _create_sampler(dataset, built_datasets, test_neg_sample_args["distribution"], repeatable, base_sampler=base_sampler)
+    test_sampler = test_sampler.set_phase("test") if test_sampler else None
     return train_sampler, valid_sampler, test_sampler

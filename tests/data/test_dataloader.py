@@ -12,6 +12,7 @@ import logging
 import os
 
 import pytest
+from recbole.data.dataloader.general_dataloader import NegSampleEvalDataLoader, FullSortEvalDataLoader
 
 from recbole.config import Config
 from recbole.data import create_dataset, data_preparation
@@ -378,6 +379,54 @@ class TestGeneralDataloader:
             },
         ]
         check_result(test_data, test_result)
+
+    def test_general_diff_dataloaders_in_valid_test_phases(self):
+        train_batch_size = 6
+        eval_batch_size = 2
+        config_dict = {
+            "model": "BPR",
+            "dataset": "general_dataloader",
+            "data_path": current_path,
+            "load_col": None,
+            "eval_args": {
+                "split": {"RS": [0.8, 0.1, 0.1]},
+                "order": "TO",
+                "mode": {"valid": "uni100", "test": "full"},
+            },
+            "train_neg_sample_args": None,
+            "train_batch_size": train_batch_size,
+            "eval_batch_size": eval_batch_size,
+            "shuffle": False,
+        }
+        train_data, valid_data, test_data = new_dataloader(config_dict=config_dict)
+        assert isinstance(valid_data, NegSampleEvalDataLoader)
+        assert isinstance(test_data, FullSortEvalDataLoader)
+
+    def test_general_diff_eval_neg_sample_args_in_valid_test_phases(self):
+        train_batch_size = 6
+        eval_batch_size = 2
+        config_dict = {
+            "model": "BPR",
+            "dataset": "general_dataloader",
+            "data_path": current_path,
+            "load_col": None,
+            "eval_args": {
+                "split": {"RS": [0.8, 0.1, 0.1]},
+                "order": "TO",
+                "mode": {"valid": "uni100", "test": "pop200"},
+            },
+            "train_neg_sample_args": None,
+            "train_batch_size": train_batch_size,
+            "eval_batch_size": eval_batch_size,
+            "shuffle": False,
+        }
+        train_data, valid_data, test_data = new_dataloader(config_dict=config_dict)
+        assert isinstance(valid_data, NegSampleEvalDataLoader)
+        assert isinstance(test_data, NegSampleEvalDataLoader)
+        assert valid_data.neg_sample_args["distribution"] == "uniform"
+        assert valid_data.neg_sample_args["sample_num"] == 100
+        assert test_data.neg_sample_args["distribution"] == "popularity"
+        assert test_data.neg_sample_args["sample_num"] == 200
 
 
 if __name__ == "__main__":
