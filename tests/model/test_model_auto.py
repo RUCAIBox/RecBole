@@ -30,6 +30,12 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_random(self):
+        config_dict = {
+            "model": "Random",
+        }
+        quick_test(config_dict)
+
     def test_itemknn(self):
         config_dict = {
             "model": "ItemKNN",
