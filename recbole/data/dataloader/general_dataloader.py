@@ -137,9 +137,10 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
             self.step = batch_size
             self.set_batch_size(batch_size)
 
-    def update_config(self, config):
+    def update_config(self, config, phase='valid'):
+        eval_neg_sample_args = 'valid_neg_sample_args' if phase == 'valid' else 'test_neg_sample_args'
         self._set_neg_sample_args(
-            config, self._dataset, InputType.POINTWISE, config["eval_neg_sample_args"]
+            config, self._dataset, InputType.POINTWISE, config[eval_neg_sample_args]
         )
         super().update_config(config)
 

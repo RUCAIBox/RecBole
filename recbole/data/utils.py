@@ -131,8 +131,8 @@ def load_split_dataloaders(config):
         if config[arg] != train_data.config[arg]:
             return None
     train_data.update_config(config)
-    valid_data.update_config(config)
-    test_data.update_config(config)
+    valid_data.update_config(config, 'valid')
+    test_data.update_config(config, 'test')
     logger = getLogger()
     logger.info(
         set_color("Load split dataloaders from", "pink")
