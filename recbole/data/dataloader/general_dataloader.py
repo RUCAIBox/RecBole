@@ -248,6 +248,9 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         else:
             self.step = batch_size
             self.set_batch_size(batch_size)
+        
+    def update_config(self, config, phase='valid'):
+        super().update_config(config)
 
     def collate_fn(self, index):
         index = np.array(index)
