@@ -137,10 +137,13 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
             self.step = batch_size
             self.set_batch_size(batch_size)
 
-    def update_config(self, config, phase='valid'):
-        eval_neg_sample_args = 'valid_neg_sample_args' if phase == 'valid' else 'test_neg_sample_args'
+    def update_config(self, config):
+        phase = self._sampler.phase if self._sampler.phase is not None else "test"
         self._set_neg_sample_args(
-            config, self._dataset, InputType.POINTWISE, config[eval_neg_sample_args]
+            config,
+            self._dataset,
+            InputType.POINTWISE,
+            config[f"{phase}_neg_sample_args"],
         )
         super().update_config(config)
 
@@ -248,8 +251,8 @@ class FullSortEvalDataLoader(AbstractDataLoader):
         else:
             self.step = batch_size
             self.set_batch_size(batch_size)
-        
-    def update_config(self, config, phase='valid'):
+
+    def update_config(self, config):
         super().update_config(config)
 
     def collate_fn(self, index):
