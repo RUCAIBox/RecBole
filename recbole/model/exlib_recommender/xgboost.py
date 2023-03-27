@@ -12,10 +12,8 @@ import xgboost as xgb
 from recbole.utils import ModelType, InputType
 
 
-class xgboost(xgb.Booster):
-    r"""xgboost is inherited from xgb.Booster
-
-    """
+class XGBoost(xgb.Booster):
+    r"""XGBoost is inherited from xgb.Booster"""
     type = ModelType.DECISIONTREE
     input_type = InputType.POINTWISE
 
@@ -35,6 +33,5 @@ class xgboost(xgb.Booster):
         self.load_model(model_file)
 
     def load_other_parameter(self, other_parameter):
-        r"""Load other parameters
-        """
+        r"""Load other parameters"""
         pass

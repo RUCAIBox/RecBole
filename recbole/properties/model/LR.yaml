@@ -1,1 +1,1 @@
-embedding_size: 10
+embedding_size: 10              # (int) The embedding size of features.

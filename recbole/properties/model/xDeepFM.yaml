@@ -1,6 +1,6 @@
-embedding_size: 10
-mlp_hidden_size: [128,128,128]
-reg_weight: 5e-4
-dropout_prob: 0.2
-direct: False
-cin_layer_size: [100,100,100]
+embedding_size: 10              # (int) The embedding size of features.
+mlp_hidden_size: [128,128,128]  # (list of int) The hidden size of MLP layers.
+reg_weight: 5e-4                # (float) The L2 regularization weight.
+dropout_prob: 0.2               # (float) The dropout rate.
+direct: False                   # (bool) Whether or not to output the current layer directly.
+cin_layer_size: [100,100,100]   # (list of int) The size of CIN layers.

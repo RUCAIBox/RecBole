@@ -34,17 +34,21 @@ class FNN(ContextRecommender):
         super(FNN, self).__init__(config, dataset)
 
         # load parameters info
-        self.mlp_hidden_size = config['mlp_hidden_size']
-        self.dropout_prob = config['dropout_prob']
+        self.mlp_hidden_size = config["mlp_hidden_size"]
+        self.dropout_prob = config["dropout_prob"]
 
-        size_list = [self.embedding_size * self.num_feature_field] + self.mlp_hidden_size
+        size_list = [
+            self.embedding_size * self.num_feature_field
+        ] + self.mlp_hidden_size
 
         # define layers and loss
-        self.mlp_layers = MLPLayers(size_list, self.dropout_prob, activation='tanh', bn=False)  # use tanh as activation
+        self.mlp_layers = MLPLayers(
+            size_list, self.dropout_prob, activation="tanh", bn=False
+        )  # use tanh as activation
         self.predict_layer = nn.Linear(self.mlp_hidden_size[-1], 1, bias=True)
 
         self.sigmoid = nn.Sigmoid()
-        self.loss = nn.BCELoss()
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -58,11 +62,14 @@ class FNN(ContextRecommender):
                 constant_(module.bias.data, 0)
 
     def forward(self, interaction):
-        fnn_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
+        fnn_all_embeddings = self.concat_embed_input_fields(
+            interaction
+        )  # [batch_size, num_field, embed_dim]
         batch_size = fnn_all_embeddings.shape[0]
 
-        output = self.predict_layer(self.mlp_layers(fnn_all_embeddings.view(batch_size, -1)))
-        output = self.sigmoid(output)
+        output = self.predict_layer(
+            self.mlp_layers(fnn_all_embeddings.view(batch_size, -1))
+        )
         return output.squeeze(-1)
 
     def calculate_loss(self, interaction):
@@ -72,4 +79,4 @@ class FNN(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))

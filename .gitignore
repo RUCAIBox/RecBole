@@ -6,9 +6,10 @@
 .idea/
 *.pyc
 *.log
-log_tensorboard/*
+log_tensorboard
 saved/
 *.lprof
 *.egg-info/
 docs/build/
 wandb/*
+/ray_log*

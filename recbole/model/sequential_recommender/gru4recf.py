@@ -42,22 +42,28 @@ class GRU4RecF(SequentialRecommender):
         super(GRU4RecF, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.hidden_size = config['hidden_size']
-        self.num_layers = config['num_layers']
-        self.dropout_prob = config['dropout_prob']
+        self.embedding_size = config["embedding_size"]
+        self.hidden_size = config["hidden_size"]
+        self.num_layers = config["num_layers"]
+        self.dropout_prob = config["dropout_prob"]
 
-        self.selected_features = config['selected_features']
-        self.pooling_mode = config['pooling_mode']
-        self.device = config['device']
-        self.num_feature_field = len(config['selected_features'])
+        self.selected_features = config["selected_features"]
+        self.pooling_mode = config["pooling_mode"]
+        self.device = config["device"]
+        self.num_feature_field = len(config["selected_features"])
 
-        self.loss_type = config['loss_type']
+        self.loss_type = config["loss_type"]
 
         # define layers and loss
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
         self.feature_embed_layer = FeatureSeqEmbLayer(
-            dataset, self.embedding_size, self.selected_features, self.pooling_mode, self.device
+            dataset,
+            self.embedding_size,
+            self.selected_features,
+            self.pooling_mode,
+            self.device,
         )
         self.item_gru_layers = nn.GRU(
             input_size=self.embedding_size,
@@ -76,16 +82,16 @@ class GRU4RecF(SequentialRecommender):
         )
         self.dense_layer = nn.Linear(self.hidden_size * 2, self.embedding_size)
         self.dropout = nn.Dropout(self.dropout_prob)
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
         # parameters initialization
         self.apply(xavier_normal_initialization)
-        self.other_parameter_name = ['feature_embed_layer']
+        self.other_parameter_name = ["feature_embed_layer"]
 
     def forward(self, item_seq, item_seq_len):
         item_seq_emb = self.item_embedding(item_seq)
@@ -93,8 +99,8 @@ class GRU4RecF(SequentialRecommender):
         item_gru_output, _ = self.item_gru_layers(item_seq_emb_dropout)  # [B Len H]
 
         sparse_embedding, dense_embedding = self.feature_embed_layer(None, item_seq)
-        sparse_embedding = sparse_embedding['item']
-        dense_embedding = dense_embedding['item']
+        sparse_embedding = sparse_embedding["item"]
+        dense_embedding = dense_embedding["item"]
         # concat the sparse embedding and float embedding
         feature_table = []
         if sparse_embedding is not None:
@@ -107,10 +113,14 @@ class GRU4RecF(SequentialRecommender):
         table_shape = feature_table.shape
 
         feat_num, embedding_size = table_shape[-2], table_shape[-1]
-        feature_emb = feature_table.view(table_shape[:-2] + (feat_num * embedding_size,))
+        feature_emb = feature_table.view(
+            table_shape[:-2] + (feat_num * embedding_size,)
+        )
         feature_gru_output, _ = self.feature_gru_layers(feature_emb)  # [B Len H]
 
-        output_concat = torch.cat((item_gru_output, feature_gru_output), -1)  # [B Len 2*H]
+        output_concat = torch.cat(
+            (item_gru_output, feature_gru_output), -1
+        )  # [B Len 2*H]
         output = self.dense_layer(output_concat)
         output = self.gather_indexes(output, item_seq_len - 1)  # [B H]
         return output  # [B H]
@@ -120,7 +130,7 @@ class GRU4RecF(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
         pos_items = interaction[self.POS_ITEM_ID]
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             pos_items_emb = self.item_embedding(pos_items)  # [B H]
             neg_items_emb = self.item_embedding(neg_items)  # [B H]

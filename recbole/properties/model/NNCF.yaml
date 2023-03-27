@@ -1,14 +1,14 @@
-ui_embedding_size: 64
-neigh_embedding_size: 32
-num_conv_kernel: 128
-conv_kernel_size: 5
-pool_kernel_size: 5
-mlp_hidden_size: [128,64,32,16]
-neigh_num: 20
-dropout: 0.5
+ui_embedding_size: 64           # (int) The embedding size of user and item.
+neigh_embedding_size: 32        # (int) The embedding size of neighborhood information.
+num_conv_kernel: 128            # (int) The number of kernels in convolution layer.
+conv_kernel_size: 5             # (int) The size of kernel in convolution layer.
+pool_kernel_size: 5             # (int) The size of kernel in pooling layer.
+mlp_hidden_size: [128,64,32,16] # (list of int) The hidden size of each layer in MLP.
+neigh_num: 20                   # (int) The number of neighbors we choose.
+dropout: 0.5                    # (float) The dropout rate in MLP layers.
 
-# The method to use neighborhood information, you can choose random, knn or louvain algorithom 
+# The method to use neighborhood information, you can choose random, knn or louvain algorithm 
 # e.g. neigh_info_method: "knn" or neigh_info_method: "louvain"
 neigh_info_method: "random"
 
-resolution: 1
+resolution: 1                   # (float) The parameter in louvain algorithm.

@@ -42,6 +42,7 @@ Running with RecBole
 **Model Hyper-Parameters:**
 
 - ``embedding_size (int)`` : The embedding size of users and items. Defaults to ``64``.
+- ``loss_type (str)`` : The type of loss function. It is set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between the positive item and the negative one. In this way, negative sampling is necessary, such as setting ``--train_neg_sample_args="{'distribution': 'uniform', 'sample_num': 1}"``. Defaults to ``'BPR'``. Range in ``['BPR']``.
 
 
 **A Running Example:**
@@ -52,7 +53,10 @@ Write the following code to a python file, such as `run.py`
 
    from recbole.quick_start import run_recbole
 
-   run_recbole(model='FPMC', dataset='ml-100k')
+   parameter_dict = {
+      'train_neg_sample_args': None,
+   }
+   run_recbole(model='FPMC', dataset='ml-100k', config_dict=parameter_dict)
 
 And then:
 
@@ -62,7 +66,7 @@ And then:
 
 **Notes:**
 
-- Different from other sequential models, FPMC must be optimized in pair-wise way using negative sampling, so it needs ``neg_sampling="{'uniform': 1}"``.
+- Different from other sequential models, FPMC must be optimized in pair-wise way using negative sampling, so it needs ``train_neg_sample_args="{'distribution': 'uniform', 'sample_num': 1}"``.
 
 Tuning Hyper Parameters
 -------------------------

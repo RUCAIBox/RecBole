@@ -21,7 +21,7 @@ from recbole.model.abstract_recommender import ContextRecommender
 
 class FwFM(ContextRecommender):
     r"""FwFM is a context-based recommendation model. It aims to model the different feature interactions
-    between different fields in a much more memory-efficient way. It proposes a field pair weight matrix 
+    between different fields in a much more memory-efficient way. It proposes a field pair weight matrix
     :math:`r_{F(i),F(j)}`, to capture the heterogeneity of field pair interactions.
 
     The model defines as follows:
@@ -34,8 +34,8 @@ class FwFM(ContextRecommender):
         super(FwFM, self).__init__(config, dataset)
 
         # load parameters info
-        self.dropout_prob = config['dropout_prob']
-        self.fields = config['fields']  # a dict; key: field_id; value: feature_list
+        self.dropout_prob = config["dropout_prob"]
+        self.fields = config["fields"]  # a dict; key: field_id; value: feature_list
 
         self.num_features = self.num_feature_field
 
@@ -45,13 +45,23 @@ class FwFM(ContextRecommender):
         self.feature2id = {}
         self.feature2field = {}
 
-        self.feature_names = (self.token_field_names, self.token_seq_field_names, self.float_field_names)
-        self.feature_dims = (self.token_field_dims, self.token_seq_field_dims, self.float_field_dims)
+        self.feature_names = (
+            self.token_field_names,
+            self.token_seq_field_names,
+            self.float_field_names,
+        )
+        self.feature_dims = (
+            self.token_field_dims,
+            self.token_seq_field_dims,
+            self.float_field_dims,
+        )
         self._get_feature2field()
         self.num_fields = len(set(self.feature2field.values()))  # the number of fields
         self.num_pair = self.num_fields * self.num_fields
-
-        self.loss = nn.BCELoss()
+        self.weight = torch.randn(
+            self.num_fields, self.num_fields, 1, requires_grad=True, device=self.device
+        )
+        self.loss = nn.BCEWithLogitsLoss()
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -65,9 +75,7 @@ class FwFM(ContextRecommender):
                 constant_(module.bias.data, 0)
 
     def _get_feature2field(self):
-        r"""Create a mapping between features and fields.
-
-        """
+        r"""Create a mapping between features and fields."""
         fea_id = 0
         for names in self.feature_names:
             if names is not None:
@@ -89,7 +97,7 @@ class FwFM(ContextRecommender):
                         pass
 
     def fwfm_layer(self, infeature):
-        r"""Get the field pair weight matrix r_{F(i),F(j)}, and model the different interaction strengths of 
+        r"""Get the field pair weight matrix r_{F(i),F(j)}, and model the different interaction strengths of
         different field pairs :math:`\sum_{i=1}^{m}\sum_{j=i+1}^{m}x_{i}x_{j}<v_{i}, v_{j}>r_{F(i),F(j)}`.
 
         Args:
@@ -100,17 +108,13 @@ class FwFM(ContextRecommender):
         """
         # get r(Fi, Fj)
         batch_size = infeature.shape[0]
-        para = torch.randn(self.num_fields * self.num_fields * self.embedding_size).\
-            expand(batch_size, self.num_fields * self.num_fields * self.embedding_size).\
-            to(self.device)  # [batch_size*num_pairs*emb_dim]
-        para = para.reshape(batch_size, self.num_fields, self.num_fields, self.embedding_size)
-        r = nn.Parameter(para, requires_grad=True)  # [batch_size, num_fields, num_fields, emb_dim]
+        weight = self.weight.expand(batch_size, -1, -1, -1)
 
         fwfm_inter = list()  # [batch_size, num_fields, emb_dim]
         for i in range(self.num_features - 1):
             for j in range(i + 1, self.num_features):
                 Fi, Fj = self.feature2field[i], self.feature2field[j]
-                fwfm_inter.append(infeature[:, i] * infeature[:, j] * r[:, Fi, Fj])
+                fwfm_inter.append(infeature[:, i] * infeature[:, j] * weight[:, Fi, Fj])
         fwfm_inter = torch.stack(fwfm_inter, dim=1)
         fwfm_inter = torch.sum(fwfm_inter, dim=1)  # [batch_size, emb_dim]
         fwfm_inter = self.dropout_layer(fwfm_inter)
@@ -120,9 +124,13 @@ class FwFM(ContextRecommender):
         return fwfm_output
 
     def forward(self, interaction):
-        fwfm_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
+        fwfm_all_embeddings = self.concat_embed_input_fields(
+            interaction
+        )  # [batch_size, num_field, embed_dim]
 
-        output = self.sigmoid(self.first_order_linear(interaction) + self.fwfm_layer(fwfm_all_embeddings))
+        output = self.first_order_linear(interaction) + self.fwfm_layer(
+            fwfm_all_embeddings
+        )
 
         return output.squeeze(-1)
 
@@ -133,4 +141,4 @@ class FwFM(ContextRecommender):
         return self.loss(output, label)
 
     def predict(self, interaction):
-        return self.forward(interaction)
+        return self.sigmoid(self.forward(interaction))

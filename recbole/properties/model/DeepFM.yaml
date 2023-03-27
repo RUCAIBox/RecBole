@@ -1,3 +1,3 @@
-embedding_size: 10
-mlp_hidden_size: [128, 128, 128]
-dropout_prob: 0.2
+embedding_size: 10                # (int) The embedding size of features.
+mlp_hidden_size: [128, 128, 128]  # (list of int) The hidden size of MLP layers.  
+dropout_prob: 0.2                 # (float) The dropout rate.

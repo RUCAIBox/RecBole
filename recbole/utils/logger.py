@@ -8,6 +8,11 @@
 # @Author : Jiawei Guan
 # @Email  : guanjw@ruc.edu.cn
 
+# UPDATE:
+# @Time   : 2022/07/10
+# @Author : Junjie Zhang
+# @Email  : zjj001128@163.com
+
 """
 recbole.utils.logger
 ###############################
@@ -17,40 +22,39 @@ import logging
 import os
 import colorlog
 import re
-
+import hashlib
 from recbole.utils.utils import get_local_time, ensure_dir
 from colorama import init
 
 log_colors_config = {
-    'DEBUG': 'cyan',
-    'WARNING': 'yellow',
-    'ERROR': 'red',
-    'CRITICAL': 'red',
+    "DEBUG": "cyan",
+    "WARNING": "yellow",
+    "ERROR": "red",
+    "CRITICAL": "red",
 }
 
 
 class RemoveColorFilter(logging.Filter):
-
     def filter(self, record):
         if record:
-            ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-            record.msg = ansi_escape.sub('', str(record.msg))
+            ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+            record.msg = ansi_escape.sub("", str(record.msg))
         return True
 
 
 def set_color(log, color, highlight=True):
-    color_set = ['black', 'red', 'green', 'yellow', 'blue', 'pink', 'cyan', 'white']
+    color_set = ["black", "red", "green", "yellow", "blue", "pink", "cyan", "white"]
     try:
         index = color_set.index(color)
     except:
         index = len(color_set) - 1
-    prev_log = '\033['
+    prev_log = "\033["
     if highlight:
-        prev_log += '1;3'
+        prev_log += "1;3"
     else:
-        prev_log += '0;3'
-    prev_log += str(index) + 'm'
-    return prev_log + log + '\033[0m'
+        prev_log += "0;3"
+    prev_log += str(index) + "m"
+    return prev_log + log + "\033[0m"
 
 
 def init_logger(config):
@@ -68,12 +72,16 @@ def init_logger(config):
         >>> logger.info(train_result)
     """
     init(autoreset=True)
-    LOGROOT = './log/'
+    LOGROOT = "./log/"
     dir_name = os.path.dirname(LOGROOT)
     ensure_dir(dir_name)
-    model_name = os.path.join(dir_name, config['model'])
+    model_name = os.path.join(dir_name, config["model"])
     ensure_dir(model_name)
-    logfilename = '{}/{}.log'.format(config['model'], get_local_time())
+    config_str = "".join([str(key) for key in config.final_config_dict.values()])
+    md5 = hashlib.md5(config_str.encode(encoding="utf-8")).hexdigest()[:6]
+    logfilename = "{}/{}-{}-{}-{}.log".format(
+        config["model"], config["model"], config["dataset"], get_local_time(), md5
+    )
 
     logfilepath = os.path.join(LOGROOT, logfilename)
 
@@ -84,15 +92,15 @@ def init_logger(config):
     sfmt = "%(log_color)s%(asctime)-15s %(levelname)s  %(message)s"
     sdatefmt = "%d %b %H:%M"
     sformatter = colorlog.ColoredFormatter(sfmt, sdatefmt, log_colors=log_colors_config)
-    if config['state'] is None or config['state'].lower() == 'info':
+    if config["state"] is None or config["state"].lower() == "info":
         level = logging.INFO
-    elif config['state'].lower() == 'debug':
+    elif config["state"].lower() == "debug":
         level = logging.DEBUG
-    elif config['state'].lower() == 'error':
+    elif config["state"].lower() == "error":
         level = logging.ERROR
-    elif config['state'].lower() == 'warning':
+    elif config["state"].lower() == "warning":
         level = logging.WARNING
-    elif config['state'].lower() == 'critical':
+    elif config["state"].lower() == "critical":
         level = logging.CRITICAL
     else:
         level = logging.INFO

@@ -1,4 +1,4 @@
-embedding_size: 10
-mlp_hidden_size: [256, 256, 256]
-dropout_prob: 0.3
-double_tower: True
+embedding_size: 10                # (int) The embedding size of features.
+mlp_hidden_size: [256, 256, 256]  # (list of int) The hidden size of MLP layers.
+dropout_prob: 0.3                 # (float) The dropout rate of edge in the linear predict layer. 
+double_tower: True                # (bool) Whether or not to use the double-tower mode.

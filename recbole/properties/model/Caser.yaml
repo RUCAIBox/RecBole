@@ -1,6 +1,6 @@
-embedding_size: 64
-dropout_prob: 0.4
-reg_weight: 1e-4
-nv: 8
-nh: 16
-loss_type: 'CE'
+embedding_size: 64              # (int) The embedding size of users and items.
+dropout_prob: 0.4               # (float) The dropout rate. 
+reg_weight: 1e-4                # (float) The L2 regularization weight.
+nv: 4                           # (int) The number of vertical Convolutional filters.
+nh: 8                           # (int) The number of horizontal Convolutional filters.
+loss_type: 'CE'                 # (str) The type of loss function.

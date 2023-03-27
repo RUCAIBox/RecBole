@@ -1,5 +1,5 @@
-embedding_size: 64
-loss_type: "CE"
-hidden_size: 64
-joint_train: False
-dropout_prob: 0.5
+embedding_size: 64              # (int) The embedding size of users and items.
+hidden_size: 64                 # (int) The number of features in the hidden state.
+joint_train: False              # (bool) Whether the repeat_explore_loss is added to loss. 
+dropout_prob: 0.5               # (float) The dropout rate.
+loss_type: 'CE'                 # (str) The type of loss function. Range in ['BPR', 'CE'].

@@ -73,10 +73,10 @@ class FeatureType(Enum):
     - ``FLOAT_SEQ``: Float sequence features like pretrained vector.
     """
 
-    TOKEN = 'token'
-    FLOAT = 'float'
-    TOKEN_SEQ = 'token_seq'
-    FLOAT_SEQ = 'float_seq'
+    TOKEN = "token"
+    FLOAT = "float"
+    TOKEN_SEQ = "token_seq"
+    FLOAT_SEQ = "float_seq"
 
 
 class FeatureSource(Enum):
@@ -91,10 +91,10 @@ class FeatureSource(Enum):
     - ``NET``: Features from ``.net``.
     """
 
-    INTERACTION = 'inter'
-    USER = 'user'
-    ITEM = 'item'
-    USER_ID = 'user_id'
-    ITEM_ID = 'item_id'
-    KG = 'kg'
-    NET = 'net'
+    INTERACTION = "inter"
+    USER = "user"
+    ITEM = "item"
+    USER_ID = "user_id"
+    ITEM_ID = "item_id"
+    KG = "kg"
+    NET = "net"

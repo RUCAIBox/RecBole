@@ -48,8 +48,8 @@ Running with RecBole
 
 **Model Hyper-Parameters:**
 
-- ``embedding_size (int)`` : the embedding size of users and items. Defaults to ``64``.
-- ``n_layers (int)`` : The number of layers in lightGCN. Defaults to ``2``.
+- ``embedding_size (int)`` : The embedding size of users and items. Defaults to ``64``.
+- ``n_layers (int)`` : The number of layers in LightGCN. Defaults to ``2``.
 - ``reg_weight (float)`` : The L2 regularization weight. Defaults to ``1e-05``.
 
 

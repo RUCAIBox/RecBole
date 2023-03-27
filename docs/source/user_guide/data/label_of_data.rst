@@ -11,7 +11,7 @@ To supports both explicit feedback scene and implicit feedback scene, RecBole de
 1. Set label field
 -----------------------------
 If your data has already been labeled, you only need to set ``LABEL_FIELD`` to tell the model 
-which column represents the label of data, and then set `neg_sampling` as `None`.
+which column represents the label of data, and then set `train_neg_sample_args` as `None`.
 
 For example, if your `.inter` file is like:
 
@@ -31,7 +31,7 @@ Then, you can set the config like:
 .. code:: yaml
 
     LABEL_FIELD: label
-    neg_sampling: None
+    train_neg_sample_args: None
 
 Note that the value of your label column should only be 0 or 1 (0 represents the negative label and 
 1 represents the positive label). 
@@ -64,7 +64,7 @@ You can set the config like:
 
     threshold: 
         rating: 3
-    neg_sampling: None
+    train_neg_sample_args: None
 
 And then RecBole will automatically set label for interactions based on their rating column. 
     
@@ -79,7 +79,7 @@ You can set the config like:
 
 .. code:: yaml
 
-    neg_sampling: 
+    train_neg_sample_args: 
         uniform: 1
 
 And then, RecBole will automatically select one negative sample for each positive sample uniformly from the unobserved interactions.

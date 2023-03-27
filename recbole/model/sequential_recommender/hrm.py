@@ -26,10 +26,10 @@ from recbole.model.loss import BPRLoss
 
 class HRM(SequentialRecommender):
     r"""
-     HRM can well capture both sequential behavior and users’ general taste by involving transaction and
-     user representations in prediction.
+    HRM can well capture both sequential behavior and users’ general taste by involving transaction and
+    user representations in prediction.
 
-     HRM user max- & average- pooling as a good helper.
+    HRM user max- & average- pooling as a good helper.
     """
 
     def __init__(self, config, dataset):
@@ -44,19 +44,23 @@ class HRM(SequentialRecommender):
         self.pooling_type_layer_1 = config["pooling_type_layer_1"]
         self.pooling_type_layer_2 = config["pooling_type_layer_2"]
         self.high_order = config["high_order"]
-        assert self.high_order <= self.max_seq_length, "high_order can't longer than the max_seq_length"
+        assert (
+            self.high_order <= self.max_seq_length
+        ), "high_order can't longer than the max_seq_length"
         self.reg_weight = config["reg_weight"]
         self.dropout_prob = config["dropout_prob"]
 
         # define the layers and loss type
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
         self.user_embedding = nn.Embedding(self.n_user, self.embedding_size)
         self.dropout = nn.Dropout(self.dropout_prob)
 
-        self.loss_type = config['loss_type']
-        if self.loss_type == 'BPR':
+        self.loss_type = config["loss_type"]
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
@@ -82,19 +86,17 @@ class HRM(SequentialRecommender):
         return seq_item
 
     def _init_weights(self, module):
-
         if isinstance(module, nn.Embedding):
             xavier_normal_(module.weight.data)
 
     def forward(self, seq_item, user, seq_item_len):
-
         # seq_item=self.inverse_seq_item(seq_item)
         seq_item = self.inverse_seq_item(seq_item, seq_item_len)
 
         seq_item_embedding = self.item_embedding(seq_item)
         # batch_size * seq_len * embedding_size
 
-        high_order_item_embedding = seq_item_embedding[:, -self.high_order:, :]
+        high_order_item_embedding = seq_item_embedding[:, -self.high_order :, :]
         # batch_size * high_order * embedding_size
 
         user_embedding = self.dropout(self.user_embedding(user))
@@ -102,18 +104,27 @@ class HRM(SequentialRecommender):
 
         # layer 1
         if self.pooling_type_layer_1 == "max":
-            high_order_item_embedding = torch.max(high_order_item_embedding, dim=1).values
+            high_order_item_embedding = torch.max(
+                high_order_item_embedding, dim=1
+            ).values
             # batch_size * embedding_size
         else:
             for idx, len in enumerate(seq_item_len):
                 if len > self.high_order:
                     seq_item_len[idx] = self.high_order
             high_order_item_embedding = torch.sum(seq_item_embedding, dim=1)
-            high_order_item_embedding = torch.div(high_order_item_embedding, seq_item_len.unsqueeze(1).float())
+            high_order_item_embedding = torch.div(
+                high_order_item_embedding, seq_item_len.unsqueeze(1).float()
+            )
             # batch_size * embedding_size
         hybrid_user_embedding = self.dropout(
-            torch.cat([user_embedding.unsqueeze(dim=1),
-                       high_order_item_embedding.unsqueeze(dim=1)], dim=1)
+            torch.cat(
+                [
+                    user_embedding.unsqueeze(dim=1),
+                    high_order_item_embedding.unsqueeze(dim=1),
+                ],
+                dim=1,
+            )
         )
         # batch_size * 2_mul_embedding_size
 
@@ -128,14 +139,13 @@ class HRM(SequentialRecommender):
         return hybrid_user_embedding
 
     def calculate_loss(self, interaction):
-
         seq_item = interaction[self.ITEM_SEQ]
         seq_item_len = interaction[self.ITEM_SEQ_LEN]
         user = interaction[self.USER_ID]
         seq_output = self.forward(seq_item, user, seq_item_len)
         pos_items = interaction[self.POS_ITEM_ID]
         pos_items_emb = self.item_embedding(pos_items)
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             neg_items_emb = self.item_embedding(neg_items)
             pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)
@@ -150,7 +160,6 @@ class HRM(SequentialRecommender):
             return loss
 
     def predict(self, interaction):
-
         item_seq = interaction[self.ITEM_SEQ]
         seq_item_len = interaction[self.ITEM_SEQ_LEN]
         test_item = interaction[self.ITEM_ID]
@@ -162,7 +171,6 @@ class HRM(SequentialRecommender):
         return scores
 
     def full_sort_predict(self, interaction):
-
         item_seq = interaction[self.ITEM_SEQ]
         seq_item_len = interaction[self.ITEM_SEQ_LEN]
         user = interaction[self.USER_ID]

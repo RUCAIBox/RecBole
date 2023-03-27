@@ -3,6 +3,6 @@ eval_args:
   order: RO
   group_by: ~
   mode: labeled
-neg_sampling: ~
+train_neg_sample_args: ~
 metrics: ['AUC', 'LogLoss']
 valid_metric: AUC

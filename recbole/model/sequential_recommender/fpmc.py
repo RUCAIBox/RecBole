@@ -42,7 +42,8 @@ class FPMC(SequentialRecommender):
         super(FPMC, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
+        self.embedding_size = config["embedding_size"]
+        self.loss_type = config["loss_type"]
 
         # load dataset info
         self.n_users = dataset.user_num
@@ -56,7 +57,11 @@ class FPMC(SequentialRecommender):
         self.LI_emb = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
         # label embedding matrix
         self.IL_emb = nn.Embedding(self.n_items, self.embedding_size)
-        self.loss_fct = BPRLoss()
+
+        if self.loss_type == "BPR":
+            self.loss_fct = BPRLoss()
+        else:
+            raise NotImplementedError("Make sure 'loss_type' in ['BPR']!")
 
         # parameters initialization
         self.apply(self._init_weights)
@@ -67,7 +72,9 @@ class FPMC(SequentialRecommender):
 
     def forward(self, user, item_seq, item_seq_len, next_item):
         item_last_click_index = item_seq_len - 1
-        item_last_click = torch.gather(item_seq, dim=1, index=item_last_click_index.unsqueeze(1))
+        item_last_click = torch.gather(
+            item_seq, dim=1, index=item_last_click_index.unsqueeze(1)
+        )
         item_seq_emb = self.LI_emb(item_last_click)  # [b,1,emb]
 
         user_emb = self.UI_emb(user)
@@ -122,7 +129,9 @@ class FPMC(SequentialRecommender):
         all_il_emb = self.IL_emb.weight
 
         item_last_click_index = item_seq_len - 1
-        item_last_click = torch.gather(item_seq, dim=1, index=item_last_click_index.unsqueeze(1))
+        item_last_click = torch.gather(
+            item_seq, dim=1, index=item_last_click_index.unsqueeze(1)
+        )
         item_seq_emb = self.LI_emb(item_last_click)  # [b,1,emb]
         fmc = torch.matmul(item_seq_emb, all_il_emb.transpose(0, 1))
         fmc = torch.squeeze(fmc, dim=1)

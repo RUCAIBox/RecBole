@@ -30,9 +30,9 @@ Running with RecBole
 - ``hidden_dropout_prob (float)`` : The probability of an element to be zeroed. Defaults to ``0.5``.
 - ``attn_dropout_prob (float)`` : The probability of an attention score to be zeroed. Defaults to ``0.5``.
 - ``hidden_act (str)`` : The activation function in feed-forward layer. Defaults to ``'gelu'``. Range in ``['gelu', 'relu', 'swish', 'tanh', 'sigmoid']``.
-- ``layer_norm_eps (float)`` : A value added to the denominator for numerical stability, Defaults to ``1e-12``.
+- ``layer_norm_eps (float)`` : A value added to the denominator for numerical stability. Defaults to ``1e-12``.
 - ``initializer_range (float)`` : The standard deviation for normal initialization. Defaults to 0.02``.
-- ``loss_type (str)`` : The type of loss function. If it set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximize the difference between positive item and negative item. In this way, negative sampling is necessary, such as setting ``--neg_sampling="{'uniform': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
+- ``loss_type (str)`` : The type of loss function. If it is set to ``'CE'``, the training task is regarded as a multi-classification task and the target item is the ground truth. In this way, negative sampling is not needed. If it is set to ``'BPR'``, the training task will be optimized in the pair-wise way, which maximizes the difference between the positive item and the negative one. In this way, negative sampling is necessary, such as setting ``--train_neg_sample_args="{'distribution': 'uniform', 'sample_num': 1}"``. Defaults to ``'CE'``. Range in ``['BPR', 'CE']``.
 - ``dnn_type (str)`` : The type of DNN. If it set to ``'trm'``, CORE will leverage a Transformer encoder to learn weights. If it set to ``ave``, CORE will simply use mean pooling for session encoding. Defaults to ``'trm'``. Range in ``['trm', 'ave']``.
 - ``sess_dropout (float)`` : The probability of an element of item embeddings in a session to be zeroed. Defaults to ``0.2``.
 - ``item_dropout (float)`` : The probability of an element of candidate item embeddings to be zeroed. Defaults to ``0.2``.
@@ -44,10 +44,11 @@ Running with RecBole
 Write the following code to a python file, such as `run.py`
 
 .. code:: python
+
    from recbole.quick_start import run_recbole
 
    parameter_dict = {
-      'neg_sampling': None,
+      'train_neg_sample_args': None,
    }
    run_recbole(model='CORE', dataset='ml-100k', config_dict=parameter_dict)
 
@@ -63,6 +64,7 @@ Tuning Hyper Parameters
 If you want to use ``HyperTuning`` to tune hyper parameters of this model, you can copy the following settings and name it as ``hyper.test``.
 
 .. code:: bash
+  
    learning_rate choice [0.001, 0.0001]
    n_layers choice [1, 2]
    hidden_dropout_prob choice [0.2, 0.5]
@@ -73,7 +75,9 @@ Note that we just provide these hyper parameter ranges for reference only, and w
 Then, with the source code of RecBole (you can download it from GitHub), you can run the ``run_hyper.py`` to tuning:
 
 .. code:: bash
+
 	python run_hyper.py --model=[model_name] --dataset=[dataset_name] --config_files=[config_files_path] --params_file=hyper.test
+
 For more details about Parameter Tuning, refer to :doc:`../../../user_guide/usage/parameter_tuning`.
 
 

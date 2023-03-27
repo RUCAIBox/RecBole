@@ -41,8 +41,12 @@ class GNN(nn.Module):
         self.b_ih = Parameter(torch.Tensor(self.gate_size))
         self.b_hh = Parameter(torch.Tensor(self.gate_size))
 
-        self.linear_edge_in = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
-        self.linear_edge_out = nn.Linear(self.embedding_size, self.embedding_size, bias=True)
+        self.linear_edge_in = nn.Linear(
+            self.embedding_size, self.embedding_size, bias=True
+        )
+        self.linear_edge_out = nn.Linear(
+            self.embedding_size, self.embedding_size, bias=True
+        )
 
         # parameters initialization
         self._reset_parameters()
@@ -66,8 +70,10 @@ class GNN(nn.Module):
 
         """
 
-        input_in = torch.matmul(A[:, :, :A.size(1)], self.linear_edge_in(hidden))
-        input_out = torch.matmul(A[:, :, A.size(1):2 * A.size(1)], self.linear_edge_out(hidden))
+        input_in = torch.matmul(A[:, :, : A.size(1)], self.linear_edge_in(hidden))
+        input_out = torch.matmul(
+            A[:, :, A.size(1) : 2 * A.size(1)], self.linear_edge_out(hidden)
+        )
         # [batch_size, max_session_len, embedding_size * 2]
         inputs = torch.cat([input_in, input_out], 2)
 
@@ -92,7 +98,7 @@ class GNN(nn.Module):
 class GCSAN(SequentialRecommender):
     r"""GCSAN captures rich local dependencies via graph neural network,
      and learns long-range dependencies by applying the self-attention mechanism.
-     
+
     Note:
 
         In the original paper, the attention mechanism in the self-attention layer is a single head,
@@ -104,24 +110,28 @@ class GCSAN(SequentialRecommender):
         super(GCSAN, self).__init__(config, dataset)
 
         # load parameters info
-        self.n_layers = config['n_layers']
-        self.n_heads = config['n_heads']
-        self.hidden_size = config['hidden_size']  # same as embedding_size
-        self.inner_size = config['inner_size']  # the dimensionality in feed-forward layer
-        self.hidden_dropout_prob = config['hidden_dropout_prob']
-        self.attn_dropout_prob = config['attn_dropout_prob']
-        self.hidden_act = config['hidden_act']
-        self.layer_norm_eps = config['layer_norm_eps']
+        self.n_layers = config["n_layers"]
+        self.n_heads = config["n_heads"]
+        self.hidden_size = config["hidden_size"]  # same as embedding_size
+        self.inner_size = config[
+            "inner_size"
+        ]  # the dimensionality in feed-forward layer
+        self.hidden_dropout_prob = config["hidden_dropout_prob"]
+        self.attn_dropout_prob = config["attn_dropout_prob"]
+        self.hidden_act = config["hidden_act"]
+        self.layer_norm_eps = config["layer_norm_eps"]
 
-        self.step = config['step']
-        self.device = config['device']
-        self.weight = config['weight']
-        self.reg_weight = config['reg_weight']
-        self.loss_type = config['loss_type']
-        self.initializer_range = config['initializer_range']
+        self.step = config["step"]
+        self.device = config["device"]
+        self.weight = config["weight"]
+        self.reg_weight = config["reg_weight"]
+        self.loss_type = config["loss_type"]
+        self.initializer_range = config["initializer_range"]
 
         # define layers and loss
-        self.item_embedding = nn.Embedding(self.n_items, self.hidden_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.hidden_size, padding_idx=0
+        )
         self.gnn = GNN(self.hidden_size, self.step)
         self.self_attention = TransformerEncoder(
             n_layers=self.n_layers,
@@ -131,12 +141,12 @@ class GCSAN(SequentialRecommender):
             hidden_dropout_prob=self.hidden_dropout_prob,
             attn_dropout_prob=self.attn_dropout_prob,
             hidden_act=self.hidden_act,
-            layer_norm_eps=self.layer_norm_eps
+            layer_norm_eps=self.layer_norm_eps,
         )
         self.reg_loss = EmbLoss()
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
@@ -145,7 +155,7 @@ class GCSAN(SequentialRecommender):
         self.apply(self._init_weights)
 
     def _init_weights(self, module):
-        """ Initialize the weights """
+        """Initialize the weights"""
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization
             # cf https://github.com/pytorch/pytorch/pull/5617
@@ -184,7 +194,7 @@ class GCSAN(SequentialRecommender):
         # The relative coordinates of the item node, shape of [batch_size, max_session_len]
         alias_inputs = torch.LongTensor(alias_inputs).to(self.device)
         # The connecting matrix, shape of [batch_size, max_session_len, 2 * max_session_len]
-        A = torch.FloatTensor(A).to(self.device)
+        A = torch.FloatTensor(np.array(A)).to(self.device)
         # The unique item nodes, shape of [batch_size, max_session_len]
         items = torch.LongTensor(items).to(self.device)
 
@@ -195,7 +205,9 @@ class GCSAN(SequentialRecommender):
         alias_inputs, A, items = self._get_slice(item_seq)
         hidden = self.item_embedding(items)
         hidden = self.gnn(A, hidden)
-        alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(-1, -1, self.hidden_size)
+        alias_inputs = alias_inputs.view(-1, alias_inputs.size(1), 1).expand(
+            -1, -1, self.hidden_size
+        )
         seq_hidden = torch.gather(hidden, dim=1, index=alias_inputs)
         # fetch the last hidden state of last timestamp
         ht = self.gather_indexes(seq_hidden, item_seq_len - 1)
@@ -213,7 +225,7 @@ class GCSAN(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
         pos_items = interaction[self.POS_ITEM_ID]
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             pos_items_emb = self.item_embedding(pos_items)
             neg_items_emb = self.item_embedding(neg_items)
@@ -243,5 +255,7 @@ class GCSAN(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
         test_items_emb = self.item_embedding.weight
-        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))  # [B, n_items]
+        scores = torch.matmul(
+            seq_output, test_items_emb.transpose(0, 1)
+        )  # [B, n_items]
         return scores

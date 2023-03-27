@@ -44,27 +44,31 @@ class HGN(SequentialRecommender):
             raise NotImplementedError("Make sure 'loss_type' in ['max', 'average']!")
 
         # define the layers and loss function
-        self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
+        self.item_embedding = nn.Embedding(
+            self.n_items, self.embedding_size, padding_idx=0
+        )
         self.user_embedding = nn.Embedding(self.n_user, self.embedding_size)
 
         # define the module feature gating need
         self.w1 = nn.Linear(self.embedding_size, self.embedding_size)
         self.w2 = nn.Linear(self.embedding_size, self.embedding_size)
-        self.b = nn.Parameter(torch.zeros(self.embedding_size), requires_grad=True).to(self.device)
+        self.b = nn.Parameter(torch.zeros(self.embedding_size), requires_grad=True)
 
         # define the module instance gating need
         self.w3 = nn.Linear(self.embedding_size, 1, bias=False)
         self.w4 = nn.Linear(self.embedding_size, self.max_seq_length, bias=False)
 
         # define item_embedding for prediction
-        self.item_embedding_for_prediction = nn.Embedding(self.n_items, self.embedding_size)
+        self.item_embedding_for_prediction = nn.Embedding(
+            self.n_items, self.embedding_size
+        )
 
         self.sigmoid = nn.Sigmoid()
 
-        self.loss_type = config['loss_type']
-        if self.loss_type == 'BPR':
+        self.loss_type = config["loss_type"]
+        if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
-        elif self.loss_type == 'CE':
+        elif self.loss_type == "CE":
             self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
@@ -73,7 +77,6 @@ class HGN(SequentialRecommender):
         self.apply(self._init_weights)
 
     def reg_loss(self, user_embedding, item_embedding, seq_item_embedding):
-
         reg_1, reg_2 = self.reg_weight
         loss_1_part_1 = reg_1 * torch.norm(self.w1.weight, p=2)
         loss_1_part_2 = reg_1 * torch.norm(self.w2.weight, p=2)
@@ -90,7 +93,7 @@ class HGN(SequentialRecommender):
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
-            normal_(module.weight.data, 0., 1 / self.embedding_size)
+            normal_(module.weight.data, 0.0, 1 / self.embedding_size)
         elif isinstance(module, nn.Linear):
             xavier_uniform_(module.weight.data)
             if module.bias is not None:
@@ -140,7 +143,9 @@ class HGN(SequentialRecommender):
         # batch_size * seq_len * embedding_size
 
         if self.pool_type == "average":
-            output = torch.div(output.sum(dim=1), instance_score.sum(dim=1).unsqueeze(1))
+            output = torch.div(
+                output.sum(dim=1), instance_score.sum(dim=1).unsqueeze(1)
+            )
             # batch_size * embedding_size
         else:
             # for max_pooling
@@ -152,7 +157,6 @@ class HGN(SequentialRecommender):
         return output
 
     def forward(self, seq_item, user):
-
         seq_item_embedding = self.item_embedding(seq_item)
         user_embedding = self.user_embedding(user)
         feature_gating = self.feature_gating(seq_item_embedding, user_embedding)
@@ -164,7 +168,6 @@ class HGN(SequentialRecommender):
         return user_embedding + instance_gating + item_item
 
     def calculate_loss(self, interaction):
-
         seq_item = interaction[self.ITEM_SEQ]
         seq_item_embedding = self.item_embedding(seq_item)
         user = interaction[self.USER_ID]
@@ -172,21 +175,24 @@ class HGN(SequentialRecommender):
         seq_output = self.forward(seq_item, user)
         pos_items = interaction[self.POS_ITEM_ID]
         pos_items_emb = self.item_embedding_for_prediction(pos_items)
-        if self.loss_type == 'BPR':
+        if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
             neg_items_emb = self.item_embedding(neg_items)
             pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)
             neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)
             loss = self.loss_fct(pos_score, neg_score)
-            return loss + self.reg_loss(user_embedding, pos_items_emb, seq_item_embedding)
+            return loss + self.reg_loss(
+                user_embedding, pos_items_emb, seq_item_embedding
+            )
         else:  # self.loss_type = 'CE'
             test_item_emb = self.item_embedding_for_prediction.weight
             logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
             loss = self.loss_fct(logits, pos_items)
-            return loss + self.reg_loss(user_embedding, pos_items_emb, seq_item_embedding)
+            return loss + self.reg_loss(
+                user_embedding, pos_items_emb, seq_item_embedding
+            )
 
     def predict(self, interaction):
-
         item_seq = interaction[self.ITEM_SEQ]
         test_item = interaction[self.ITEM_ID]
         user = interaction[self.USER_ID]
@@ -196,7 +202,6 @@ class HGN(SequentialRecommender):
         return scores
 
     def full_sort_predict(self, interaction):
-
         item_seq = interaction[self.ITEM_SEQ]
         user = interaction[self.USER_ID]
         seq_output = self.forward(item_seq, user)
