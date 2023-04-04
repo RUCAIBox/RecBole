@@ -233,6 +233,12 @@ class TestGeneralRecommender(unittest.TestCase):
         config_dict = {"model": "NCL", "num_clusters": 100}
         quick_test(config_dict)
 
+    def test_LightGCL(self):
+        config_dict = {
+            "model": "LightGCL",
+        }
+        quick_test(config_dict)
+
 
 class TestContextRecommender(unittest.TestCase):
     # todo: more complex context information should be test, such as criteo dataset
