@@ -84,7 +84,8 @@ def run_recbole(
 
     # trainer loading and initialization
     trainer = get_trainer(config["MODEL_TYPE"], config["model"])(config, model)
-
+    if 'load_checkpoint' in config:
+        trainer.resume_checkpoint(config['load_checkpoint'])
     # model training
     best_valid_score, best_valid_result = trainer.fit(
         train_data, valid_data, saved=saved, show_progress=config["show_progress"]
