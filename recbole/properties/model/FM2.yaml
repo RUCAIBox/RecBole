@@ -1,3 +1,1 @@
-#fields: ~                       # (dict) key: field's id, value: features in this field.
-embedding_dim: 128
-embedding_size: 128               # (int) The embedding size of features.
+embedding_size: 10               # (int) The embedding size of features.
