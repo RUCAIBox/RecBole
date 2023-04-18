@@ -5,7 +5,7 @@
 # @File   : fm2.py
 
 r"""
-FmFM
+FM2
 #####################################################
 Reference:
     Sun Y, Pan J, Zhang A, et al. “FM2: Field-matrixed Factorization Machines for Recommender Systems.” in WWW 2021.
@@ -16,11 +16,13 @@ import torch.nn as nn
 from torch.nn.init import xavier_normal_, constant_
 from recbole.model.abstract_recommender import ContextRecommender
 
+
 class FM2(ContextRecommender):
     """
         Field-matrixed Factorization Machines (FmFM, or 𝐹M^2 ), propose a novel approach FmFM to model the
 interactions of field pairs as a matrix.
     """
+
     def __init__(self, config, dataset):
         super(FM2, self).__init__(config, dataset)
 
@@ -43,7 +45,7 @@ interactions of field pairs as a matrix.
 
     def _init_weights(self, module):
         if isinstance(module, nn.Embedding):
-           xavier_normal_(module.weight.data)
+            xavier_normal_(module.weight.data)
         elif isinstance(module, nn.Linear):
             xavier_normal_(module.weight.data)
             if module.bias is not None:
@@ -53,21 +55,17 @@ interactions of field pairs as a matrix.
         """
             FmFM interaction terms calculation
         """
-        left_emb = torch.index_select(infeature, 1, self.triu_index[:, 0]) # [batch_size, interact_dim, embed_dim]
+        left_emb = torch.index_select(infeature, 1, self.triu_index[:, 0])  # [batch_size, interact_dim, embed_dim]
         right_emb = torch.index_select(infeature, 1, self.triu_index[:, 1])
         left_emb = torch.matmul(left_emb.unsqueeze(2), self.weight).squeeze(2)
-        fm2_output = (left_emb * right_emb).sum(dim=-1).sum(dim=-1, keepdim=True) # [batch_size, 1]
+        fm2_output = (left_emb * right_emb).sum(dim=-1).sum(dim=-1, keepdim=True)  # [batch_size, 1]
 
         return fm2_output
 
     def forward(self, interaction):
-        fm2_all_embeddings = self.concat_embed_input_fields(
-           interaction
-        )  # [batch_size, num_field, embed_dim]
+        fm2_all_embeddings = self.concat_embed_input_fields(interaction)  # [batch_size, num_field, embed_dim]
 
-        output = self.first_order_linear(interaction) + self.fm2_matrix(
-           fm2_all_embeddings
-        )
+        output = self.first_order_linear(interaction) + self.fm2_matrix(fm2_all_embeddings)
 
         return output.squeeze(-1)
 
