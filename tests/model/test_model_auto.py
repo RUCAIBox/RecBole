@@ -408,6 +408,13 @@ class TestContextRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_fm2(self):
+        config_dict = {
+            "model": "FM2",
+            "threshold": {"rating": 4},
+        }
+        quick_test(config_dict)
+
 
 class TestSequentialRecommender(unittest.TestCase):
     def test_din(self):
