@@ -4,7 +4,7 @@ FM2
 Introduction
 ---------------------
 
-`[paper] <https://arxiv.org/pdf/2102.12994.pdf>`_
+`[paper] <https://dl.acm.org/doi/10.1145/3442381.3449930>`_
 
 **Title:** FM^2: Field-matrixed Factorization Machines for Recommender Systems
 
@@ -30,6 +30,10 @@ operations (FLOPs) to make a prediction. Our experiment results
 show that it can out-perform the FFM, which is more complex. The
 FmFM model’s performance is also comparable to DNN models
 which require much more FLOPs in runtime.
+
+.. image:: ../../../asset/fm2.png
+    :width: 600
+    :align: center
 
 Running with RecBole
 -------------------------
