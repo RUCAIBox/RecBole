@@ -335,7 +335,6 @@ class ContextRecommender(AbstractRecommender):
 
         Args:
             float_fields (torch.FloatTensor): The input dense tensor. shape of [batch_size, num_float_field]
-            embed (bool): Return the embedding of columns or just the columns itself. Defaults to ``True``.
 
         Returns:
             torch.FloatTensor: The result embedding tensor of float columns.
