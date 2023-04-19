@@ -74,6 +74,7 @@ are also support for these models. And evaluation is always conducted in the way
    model/context/lightgbm
    model/context/kd_dagfm
    model/context/fignn
+   model/context/fm2
 
 
 Sequential Recommendation
