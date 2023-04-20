@@ -32,7 +32,7 @@ FmFM model’s performance is also comparable to DNN models
 which require much more FLOPs in runtime.
 
 .. image:: ../../../asset/fm2.png
-    :width: 600
+    :width: 500
     :align: center
 
 Running with RecBole
