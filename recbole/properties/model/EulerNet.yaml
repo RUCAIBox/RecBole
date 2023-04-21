@@ -1,0 +1,5 @@
+embedding_size: 16              # (int) The embedding size of features.
+order_list: [30]
+drop_ex: 0.3
+drop_im: 0.3
+apply_norm: False
