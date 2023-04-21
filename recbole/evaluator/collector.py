@@ -84,14 +84,14 @@ class Collector(object):
         """
         if self.register.need("data.num_items"):
             item_id = self.config["ITEM_ID_FIELD"]
-            self.data_struct.set("data.num_items", train_data.dataset.num(item_id))
+            self.data_struct.set("data.num_items", train_data._dataset.num(item_id))
         if self.register.need("data.num_users"):
             user_id = self.config["USER_ID_FIELD"]
-            self.data_struct.set("data.num_users", train_data.dataset.num(user_id))
+            self.data_struct.set("data.num_users", train_data._dataset.num(user_id))
         if self.register.need("data.count_items"):
-            self.data_struct.set("data.count_items", train_data.dataset.item_counter)
+            self.data_struct.set("data.count_items", train_data._dataset.item_counter)
         if self.register.need("data.count_users"):
-            self.data_struct.set("data.count_users", train_data.dataset.user_counter)
+            self.data_struct.set("data.count_items", train_data._dataset.user_counter)
 
     def _average_rank(self, scores):
         """Get the ranking of an ordered tensor, and take the average of the ranking for positions with equal values.
@@ -115,6 +115,9 @@ class Collector(object):
         true_tensor = torch.full(
             (length, 1), True, dtype=torch.bool, device=self.device
         )
+
+        true_tensor = true_tensor.to(self.device)
+        scores = scores.to(self.device)
 
         obs = torch.cat([true_tensor, scores[:, 1:] != scores[:, :-1]], dim=1)
         # bias added to dense
@@ -149,6 +152,7 @@ class Collector(object):
             positive_i(Torch.Tensor): the positive item id for each user.
         """
         if self.register.need("rec.items"):
+
             # get topk
             _, topk_idx = torch.topk(
                 scores_tensor, max(self.topk), dim=-1
@@ -156,6 +160,7 @@ class Collector(object):
             self.data_struct.update_tensor("rec.items", topk_idx)
 
         if self.register.need("rec.topk"):
+
             _, topk_idx = torch.topk(
                 scores_tensor, max(self.topk), dim=-1
             )  # n_users x k
@@ -167,24 +172,26 @@ class Collector(object):
             self.data_struct.update_tensor("rec.topk", result)
 
         if self.register.need("rec.meanrank"):
+
             desc_scores, desc_index = torch.sort(scores_tensor, dim=-1, descending=True)
 
             # get the index of positive items in the ranking list
             pos_matrix = torch.zeros_like(scores_tensor)
             pos_matrix[positive_u, positive_i] = 1
-            pos_index = torch.gather(pos_matrix, dim=1, index=desc_index)
+            pos_index = torch.gather(pos_matrix, dim=1, index=desc_index).to(self.device)
 
-            avg_rank = self._average_rank(desc_scores)
+            avg_rank = self._average_rank(desc_scores).to(self.device)
             pos_rank_sum = torch.where(
-                pos_index == 1, avg_rank, torch.zeros_like(avg_rank)
-            ).sum(dim=-1, keepdim=True)
+                pos_index == 1, avg_rank, torch.zeros_like(avg_rank).to(self.device)
+            ).sum(dim=-1, keepdim=True).to(self.device)
 
-            pos_len_list = pos_matrix.sum(dim=1, keepdim=True)
-            user_len_list = desc_scores.argmin(dim=1, keepdim=True)
+            pos_len_list = pos_matrix.sum(dim=1, keepdim=True).to(self.device)
+            user_len_list = desc_scores.argmin(dim=1, keepdim=True).to(self.device)
             result = torch.cat((pos_rank_sum, user_len_list, pos_len_list), dim=1)
             self.data_struct.update_tensor("rec.meanrank", result)
 
         if self.register.need("rec.score"):
+
             self.data_struct.update_tensor("rec.score", scores_tensor)
 
         if self.register.need("data.label"):
