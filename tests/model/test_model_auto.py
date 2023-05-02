@@ -408,9 +408,17 @@ class TestContextRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+
     def test_fm2(self):
         config_dict = {
             "model": "FM2",
+            "threshold": {"rating": 4},
+        }
+        quick_test(config_dict)
+
+    def test_eulernet(self):
+        config_dict = {
+            "model": "EulerNet",
             "threshold": {"rating": 4},
         }
         quick_test(config_dict)
