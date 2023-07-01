@@ -35,10 +35,10 @@ class SURGE(SequentialRecommender):
         self.LABEL_FIELD = config["LABEL_FIELD"]
 
         # load parameter info
+        self.dropout_prob = config['dropout_prob']
         self.metric_heads = config['metric_heads']
         self.attention_heads = config['attention_heads']
         self.pool_layers = config['pool_layers']
-        self.max_seq_len = config['max_seq_len']
         self.pool_length = config['pool_length']
         self.relative_threshold = config['relative_threshold']
         self.device = config['device']
@@ -50,12 +50,15 @@ class SURGE(SequentialRecommender):
 
         # define layers and loss
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size, padding_idx=0)
-        self.att_fcn_layer = MLPLayers([4 * self.embedding_size, *self.att_fcn_layer_sizes],
-                                       activation=self.att_activation)
-        self.dnn_fcn_layer = MLPLayers([3 * self.embedding_size + 1, *self.layer_sizes, 1],
-                                       activation=self.att_activation)
-        self.dynamic_rnn = DynamicRNN(input_size=self.embedding_size, hidden_size=self.hidden_size,
-                                      gru="AUGRU").to(self.device)
+        self.att_fcn_layer = MLPLayers(
+            [4 * self.embedding_size, *self.att_fcn_layer_sizes], activation=self.att_activation, dropout=self.dropout_prob
+        )
+        self.dnn_fcn_layer = MLPLayers(
+            [3 * self.embedding_size + 1, *self.layer_sizes, 1], activation=self.att_activation, dropout=self.dropout_prob
+        )
+        self.dynamic_rnn = DynamicRNN(
+            input_size=self.embedding_size, hidden_size=self.hidden_size, gru="AUGRU"
+        ).to(self.device)
         self.loss_fct = nn.BCEWithLogitsLoss()
 
     def forward(self, item_seq, pos_item):
