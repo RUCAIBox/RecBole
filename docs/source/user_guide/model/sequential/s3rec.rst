@@ -6,13 +6,34 @@ Introduction
 
 `[paper] <https://dl.acm.org/doi/abs/10.1145/3340531.3411954>`_
 
-**Title:** Sequential Recommendation with Graph Neural Networks
+**Title:** S<sup>3</sup>-Rec: Self-Supervised Learning for Sequential
+Recommendation with Mutual Information Maximization
 
-**Authors:** Jianxin Chang, Chen Gao, Yu Zheng, Yiqun Hui, Yanan Niu, Yang Song, Depeng Jin, Yong Li
+**Authors:** Kun Zhou, Hui Wang, Wayne Xin Zhao, Yutao Zhu, Sirui Wang, Fuzheng Zhang, Zhongyuan Wang, Ji-Rong Wen
 
-**Abstract:**  Sequential recommendation aims to leverage users' historical behaviors to predict their next interaction. Existing works have not yet addressed two main challenges in sequential recommendation. First, user behaviors in their rich historical sequences are often implicit and noisy preference signals, they cannot sufficiently reflect users' actual preferences. In addition, users' dynamic preferences often change rapidly over time, and hence it is difficult to capture user patterns in their historical sequences. In this work, we propose a graph neural network model called SURGE (short forSeqUential Recommendation with Graph neural nEtworks) to address these two issues. Specifically, SURGE integrates different types of preferences in long-term user behaviors into clusters in the graph by re-constructing loose item sequences into tight item-item interest graphs based on metric learning. This helps explicitly distinguish users' core interests, by forming dense clusters in the interest graph. Then, we perform cluster-aware and query-aware graph convolutional propagation and graph pooling on the constructed graph. It dynamically fuses and extracts users' current activated core interests from noisy user behavior sequences. We conduct extensive experiments on both public and proprietary industrial datasets. Experimental results demonstrate significant performance gains of our proposed method compared to state-of-the-art methods. Further studies on sequence length confirm that our method can model long behavioral sequences effectively and efficiently.
+**Abstract:**  Recently, significant progress has been made in sequential recommendation with deep learning. Existing neural sequential recommendation models usually rely on the item prediction loss to learn
+model parameters or data representations. However, the model
+trained with this loss is prone to suffer from data sparsity problem.
+Since it overemphasizes the final performance, the association or
+fusion between context data and sequence data has not been well
+captured and utilized for sequential recommendation.
+To tackle this problem, we propose the model S<sup>3</sup>-Rec, which
+stands for Self-Supervised learning for Sequential Recommendation,
+based on the self-attentive neural architecture. The main idea of
+our approach is to utilize the intrinsic data correlation to derive
+self-supervision signals and enhance the data representations via
+pre-training methods for improving sequential recommendation.
+For our task, we devise four auxiliary self-supervised objectives
+to learn the correlations among attribute, item, subsequence, and
+sequence by utilizing the mutual information maximization (MIM)
+principle. MIM provides a unified way to characterize the correlation between different types of data, which is particularly suitable
+in our scenario. Extensive experiments conducted on six real-world
+datasets demonstrate the superiority of our proposed method over
+existing state-of-the-art methods, especially when only limited
+training data is available. Besides, we extend our self-supervised
+learning method to other recommendation models, which also improve their performance.
 
-.. image:: ../../../asset/surge.png
+.. image:: ../../../asset/s3rec.png
     :width: 600
     :align: center
 
