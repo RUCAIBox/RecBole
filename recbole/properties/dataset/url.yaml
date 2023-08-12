@@ -56,6 +56,7 @@ amazon-toys-games-18: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatas
 amazon-video-games-18: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Amazon_ratings/Amazon2018/Amazon_Video_Games.zip
 anime: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Anime/anime.zip
 avazu: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Avazu/avazu.zip
+amazon-m2: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Amazon_M2/amazon_m2.zip
 beeradvocate: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/BeerAdvocate/BeerAdvocate.zip
 behance: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Behance/Behance.zip
 book-crossing: https://recbole.s3-accelerate.amazonaws.com/ProcessedDatasets/Book-Crossing/book-crossing.zip
