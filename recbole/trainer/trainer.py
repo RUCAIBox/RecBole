@@ -1180,10 +1180,7 @@ class LightGBMTrainer(DecisionTreeTrainer):
         self.dvalid = self._interaction_to_lib_datatype(valid_data)
         self.evals = [self.dtrain, self.dvalid]
         self.model = self.lgb.train(
-            self.params,
-            self.dtrain,
-            self.num_boost_round,
-            self.evals
+            self.params, self.dtrain, self.num_boost_round, self.evals
         )
 
         self.model.save_model(self.temp_file)
