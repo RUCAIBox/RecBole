@@ -390,7 +390,7 @@ class KnowledgeBasedDataset(Dataset):
             reverse_kg_data = {
                 self.head_entity_field: original_tids,
                 self.relation_field: reverse_rels,
-                self.head_entity_field: original_hids,
+                self.tail_entity_field: original_hids,
             }
             reverse_kg_feat = pd.DataFrame(reverse_kg_data)
             self.kg_feat = pd.concat([self.kg_feat, reverse_kg_feat])

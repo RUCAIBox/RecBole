@@ -1151,7 +1151,6 @@ class LightGBMTrainer(DecisionTreeTrainer):
 
         self.lgb = __import__("lightgbm")
         self.boost_model = config["lgb_model"]
-        self.silent = config["lgb_silent"]
 
         # train params
         self.params = config["lgb_params"]
@@ -1174,7 +1173,7 @@ class LightGBMTrainer(DecisionTreeTrainer):
             dataset(lgb.Dataset): Data in the form of 'lgb.Dataset'.
         """
         data, label = self._interaction_to_sparse(dataloader)
-        return self.lgb.Dataset(data=data, label=label, silent=self.silent)
+        return self.lgb.Dataset(data=data, label=label)
 
     def _train_at_once(self, train_data, valid_data):
         r"""
