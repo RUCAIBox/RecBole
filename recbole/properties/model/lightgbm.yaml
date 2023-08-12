@@ -16,5 +16,4 @@ lgb_params:                     # (dict) Booster params.
     force_row_wise: True
 lgb_learning_rates: ~           # (list, callable or None) List of learning rates or a customized function.
 lgb_num_boost_round: 300        # (int) Number of boosting iterations.
-lgb_early_stopping_rounds: ~    # (int or None) Activates early stopping.
 lgb_verbose_eval: 100           # (bool or int) Requires at least one validation data to print evaluation metrics.

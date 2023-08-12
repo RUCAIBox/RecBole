@@ -1156,7 +1156,6 @@ class LightGBMTrainer(DecisionTreeTrainer):
         self.params = config["lgb_params"]
         self.num_boost_round = config["lgb_num_boost_round"]
         self.evals = ()
-        self.early_stopping_rounds = config["lgb_early_stopping_rounds"]
         self.evals_result = {}
         self.verbose_eval = config["lgb_verbose_eval"]
         self.learning_rates = config["lgb_learning_rates"]
@@ -1190,7 +1189,6 @@ class LightGBMTrainer(DecisionTreeTrainer):
             self.dtrain,
             self.num_boost_round,
             self.evals,
-            early_stopping_rounds=self.early_stopping_rounds,
             evals_result=self.evals_result,
             verbose_eval=self.verbose_eval,
             learning_rates=self.learning_rates,
