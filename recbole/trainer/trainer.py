@@ -1150,16 +1150,12 @@ class LightGBMTrainer(DecisionTreeTrainer):
         super(LightGBMTrainer, self).__init__(config, model)
 
         self.lgb = __import__("lightgbm")
-        self.boost_model = config["lgb_model"]
 
         # train params
         self.params = config["lgb_params"]
         self.num_boost_round = config["lgb_num_boost_round"]
         self.evals = ()
-        self.evals_result = {}
         self.verbose_eval = config["lgb_verbose_eval"]
-        self.learning_rates = config["lgb_learning_rates"]
-        self.callbacks = None
         self.deval_data = self.deval_label = None
         self.eval_pred = self.eval_true = None
 
@@ -1189,11 +1185,7 @@ class LightGBMTrainer(DecisionTreeTrainer):
             self.dtrain,
             self.num_boost_round,
             self.evals,
-            evals_result=self.evals_result,
-            verbose_eval=self.verbose_eval,
-            learning_rates=self.learning_rates,
-            init_model=self.boost_model,
-            callbacks=self.callbacks,
+            verbose_eval=self.verbose_eval
         )
 
         self.model.save_model(self.temp_file)
