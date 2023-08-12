@@ -14,4 +14,3 @@ lgb_params:                     # (dict) Booster params.
     metric: ['auc', 'binary_logloss']
     force_row_wise: True
 lgb_num_boost_round: 300        # (int) Number of boosting iterations.
-lgb_verbose_eval: 100           # (bool or int) Requires at least one validation data to print evaluation metrics.

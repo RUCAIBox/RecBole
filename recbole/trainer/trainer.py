@@ -1155,7 +1155,6 @@ class LightGBMTrainer(DecisionTreeTrainer):
         self.params = config["lgb_params"]
         self.num_boost_round = config["lgb_num_boost_round"]
         self.evals = ()
-        self.verbose_eval = config["lgb_verbose_eval"]
         self.deval_data = self.deval_label = None
         self.eval_pred = self.eval_true = None
 
@@ -1184,8 +1183,7 @@ class LightGBMTrainer(DecisionTreeTrainer):
             self.params,
             self.dtrain,
             self.num_boost_round,
-            self.evals,
-            verbose_eval=self.verbose_eval
+            self.evals
         )
 
         self.model.save_model(self.temp_file)
