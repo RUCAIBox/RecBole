@@ -1185,7 +1185,7 @@ class LightGBMTrainer(DecisionTreeTrainer):
             self.dtrain,
             self.num_boost_round,
             self.evals,
-            verbose_eval=self.verbose_eval
+            verbose_eval=self.verbose_eval,
         )
 
         self.model.save_model(self.temp_file)
