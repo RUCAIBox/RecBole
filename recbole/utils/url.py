@@ -99,7 +99,6 @@ def extract_zip(path, folder):
     with zipfile.ZipFile(path, "r") as f:
         f.extractall(folder)
 
-
 def rename_atomic_files(folder, old_name, new_name):
     """Rename all atomic files in a given folder.
 
@@ -108,16 +107,23 @@ def rename_atomic_files(folder, old_name, new_name):
         old_name (string): Old name for atomic files.
         new_name (string): New name for atomic files.
     """
-    files = os.listdir(folder)
-    for f in files:
-        base, suf = os.path.splitext(f)
-        if not old_name in base:
+    sub_files = os.listdir(folder)
+    sub_files = [f for f in sub_files if f not in ('.DS_Store',)]
+    if len(sub_files) == 1:
+        sub_dir = os.path.join(folder, sub_files[0])
+        if os.path.isdir(sub_dir):
+            for sub_file in os.listdir(sub_dir):
+                shutil.move(os.path.join(sub_dir, sub_file), os.path.join(folder, sub_file))
+            os.rmdir(sub_dir)
+    for file in os.listdir(folder):
+        base, suf = os.path.splitext(file)
+        if old_name not in base:
             continue
         if suf not in {".inter", ".user", ".item"}:
             logger = getLogger()
             logger.warning(f"Moving downloaded file with suffix [{suf}].")
         os.rename(
-            os.path.join(folder, f),
+            os.path.join(folder, file),
             os.path.join(folder, base.replace(old_name, new_name) + suf),
         )
 
