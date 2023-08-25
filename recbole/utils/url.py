@@ -99,6 +99,7 @@ def extract_zip(path, folder):
     with zipfile.ZipFile(path, "r") as f:
         f.extractall(folder)
 
+
 def rename_atomic_files(folder, old_name, new_name):
     """Rename all atomic files in a given folder.
 
