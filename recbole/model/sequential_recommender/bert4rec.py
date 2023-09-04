@@ -3,6 +3,11 @@
 # @Author  : Hui Wang
 # @Email   : hui.wang@ruc.edu.cn
 
+# UPDATE
+# @Time   : 2023/9/4
+# @Author : Enze Liu
+# @Email  : enzeeliu@foxmail.com
+
 r"""
 BERT4Rec
 ################################################
