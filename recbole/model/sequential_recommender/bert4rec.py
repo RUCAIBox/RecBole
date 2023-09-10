@@ -75,6 +75,7 @@ class BERT4Rec(SequentialRecommender):
 
         self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
         self.dropout = nn.Dropout(self.hidden_dropout_prob)
+        self.output_ffn = nn.Linear(self.hidden_size, self.hidden_size)
         self.output_gelu = nn.GELU()
         self.output_bias = nn.Parameter(torch.zeros(self.n_items))
 
@@ -120,7 +121,8 @@ class BERT4Rec(SequentialRecommender):
         input_emb = self.dropout(input_emb)
         extended_attention_mask = self.get_attention_mask(item_seq, bidirectional=True)
         trm_output = self.trm_encoder(input_emb, extended_attention_mask, output_all_encoded_layers=True)
-        output = self.output_gelu(trm_output[-1])
+        ffn_output = self.output_ffn(trm_output[-1])
+        output = self.output_gelu(ffn_output)
         return output  # [B L H]
 
     def multi_hot_embed(self, masked_index, max_length):
