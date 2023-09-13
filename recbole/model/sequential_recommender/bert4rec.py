@@ -82,6 +82,7 @@ class BERT4Rec(SequentialRecommender):
         self.dropout = nn.Dropout(self.hidden_dropout_prob)
         self.output_ffn = nn.Linear(self.hidden_size, self.hidden_size)
         self.output_gelu = nn.GELU()
+        self.output_ln = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
         self.output_bias = nn.Parameter(torch.zeros(self.n_items))
 
         # we only need compute the loss at the masked position
@@ -133,6 +134,7 @@ class BERT4Rec(SequentialRecommender):
             input_emb, extended_attention_mask, output_all_encoded_layers=True
         )
         ffn_output = self.output_ffn(trm_output[-1])
+        ffn_output = self.output_ln(ffn_output)
         output = self.output_gelu(ffn_output)
         return output  # [B L H]
 
