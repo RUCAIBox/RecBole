@@ -134,8 +134,8 @@ class BERT4Rec(SequentialRecommender):
             input_emb, extended_attention_mask, output_all_encoded_layers=True
         )
         ffn_output = self.output_ffn(trm_output[-1])
-        ffn_output = self.output_ln(ffn_output)
-        output = self.output_gelu(ffn_output)
+        ffn_output = self.output_gelu(ffn_output)
+        output = self.output_ln(ffn_output)
         return output  # [B L H]
 
     def multi_hot_embed(self, masked_index, max_length):
