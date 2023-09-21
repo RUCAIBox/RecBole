@@ -608,9 +608,7 @@ class Trainer(AbstractTrainer):
             else eval_data
         )
 
-        num_sample = 0
         for batch_idx, batched_data in enumerate(iter_data):
-            num_sample += len(batched_data)
             interaction, scores, positive_u, positive_i = eval_func(batched_data)
             if self.gpu_available and show_progress:
                 iter_data.set_postfix_str(
