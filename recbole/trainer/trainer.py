@@ -623,22 +623,16 @@ class Trainer(AbstractTrainer):
         struct = self.eval_collector.get_data_struct()
         result = self.evaluator.evaluate(struct)
         if not self.config["single_spec"]:
-            result = self._map_reduce(result, num_sample)
+            num_samples = eval_data.sampler.num_samples
+            total_size = eval_data.sampler.total_size
+            result = self._map_reduce(result, num_samples, total_size)
         self.wandblogger.log_eval_metrics(result, head="eval")
         return result
 
-    def _map_reduce(self, result, num_sample):
+    def _map_reduce(self, result, num_samples, total_size):
         gather_result = {}
-        total_sample = [
-            torch.zeros(1).to(self.device) for _ in range(self.config["world_size"])
-        ]
-        torch.distributed.all_gather(
-            total_sample, torch.Tensor([num_sample]).to(self.device)
-        )
-        total_sample = torch.cat(total_sample, 0)
-        total_sample = torch.sum(total_sample).item()
         for key, value in result.items():
-            result[key] = torch.Tensor([value * num_sample]).to(self.device)
+            result[key] = torch.Tensor([value * num_samples]).to(self.device)
             gather_result[key] = [
                 torch.zeros_like(result[key]).to(self.device)
                 for _ in range(self.config["world_size"])
@@ -646,7 +640,7 @@ class Trainer(AbstractTrainer):
             torch.distributed.all_gather(gather_result[key], result[key])
             gather_result[key] = torch.cat(gather_result[key], dim=0)
             gather_result[key] = round(
-                torch.sum(gather_result[key]).item() / total_sample,
+                torch.sum(gather_result[key]).item() / total_size,
                 self.config["metric_decimal_place"],
             )
         return gather_result

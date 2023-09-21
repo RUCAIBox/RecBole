@@ -25,6 +25,20 @@ from recbole.data.transform import construct_transform
 start_iter = False
 
 
+class NoDuplicateDistributedSampler(torch.utils.data.DistributedSampler):
+    """
+    A distributed sampler that doesn't add duplicates.
+    Arguments are the same as DistributedSampler
+    Refer to https://github.com/pytorch/pytorch/issues/25162#issuecomment-1227647626
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.drop_last and len(self.dataset) % self.num_replicas != 0:
+            # Some ranks may have fewer samples, that's fine
+            if self.rank >= len(self.dataset) % self.num_replicas:
+                self.num_samples -= 1
+            self.total_size = len(self.dataset)
+
 class AbstractDataLoader(torch.utils.data.DataLoader):
     """:class:`AbstractDataLoader` is an abstract object which would return a batch of data which is loaded by
     :class:`~recbole.data.interaction.Interaction` when it is iterated.
@@ -57,7 +71,7 @@ class AbstractDataLoader(torch.utils.data.DataLoader):
         self.transform = construct_transform(config)
         self.is_sequential = config["MODEL_TYPE"] == ModelType.SEQUENTIAL
         if not config["single_spec"]:
-            index_sampler = torch.utils.data.distributed.DistributedSampler(
+            index_sampler = NoDuplicateDistributedSampler(
                 list(range(self.sample_size)), shuffle=shuffle, drop_last=False
             )
             self.step = max(1, self.step // config["world_size"])
