@@ -19,7 +19,6 @@ recbole.trainer.trainer
 
 import os
 
-
 from logging import getLogger
 from time import time
 
@@ -1153,11 +1152,18 @@ class LightGBMTrainer(DecisionTreeTrainer):
         super(LightGBMTrainer, self).__init__(config, model)
 
         self.lgb = __import__("lightgbm")
+        self.boost_model = config["lgb_model"]
+        self.silent = config["lgb_silent"]
 
         # train params
         self.params = config["lgb_params"]
         self.num_boost_round = config["lgb_num_boost_round"]
         self.evals = ()
+        self.early_stopping_rounds = config["lgb_early_stopping_rounds"]
+        self.evals_result = {}
+        self.verbose_eval = config["lgb_verbose_eval"]
+        self.learning_rates = config["lgb_learning_rates"]
+        self.callbacks = None
         self.deval_data = self.deval_label = None
         self.eval_pred = self.eval_true = None
 
@@ -1170,7 +1176,7 @@ class LightGBMTrainer(DecisionTreeTrainer):
             dataset(lgb.Dataset): Data in the form of 'lgb.Dataset'.
         """
         data, label = self._interaction_to_sparse(dataloader)
-        return self.lgb.Dataset(data=data, label=label)
+        return self.lgb.Dataset(data=data, label=label, silent=self.silent)
 
     def _train_at_once(self, train_data, valid_data):
         r"""
@@ -1183,7 +1189,16 @@ class LightGBMTrainer(DecisionTreeTrainer):
         self.dvalid = self._interaction_to_lib_datatype(valid_data)
         self.evals = [self.dtrain, self.dvalid]
         self.model = self.lgb.train(
-            self.params, self.dtrain, self.num_boost_round, self.evals
+            self.params,
+            self.dtrain,
+            self.num_boost_round,
+            self.evals,
+            early_stopping_rounds=self.early_stopping_rounds,
+            evals_result=self.evals_result,
+            verbose_eval=self.verbose_eval,
+            learning_rates=self.learning_rates,
+            init_model=self.boost_model,
+            callbacks=self.callbacks,
         )
 
         self.model.save_model(self.temp_file)
