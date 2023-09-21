@@ -257,7 +257,7 @@ class Trainer(AbstractTrainer):
                 )
             self._check_nan(loss)
             if isinstance(loss, torch.Tensor):
-                loss = loss.to(self.device)    #fixed
+                loss = loss.to(self.device)    
             scaler.scale(loss + sync_loss).backward()
             if self.clip_grad_norm:
                 clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
