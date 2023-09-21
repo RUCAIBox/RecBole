@@ -256,8 +256,6 @@ class Trainer(AbstractTrainer):
                     losses.item() if total_loss is None else total_loss + losses.item()
                 )
             self._check_nan(loss)
-            if isinstance(loss, torch.Tensor):
-                loss = loss.to(self.device)    
             scaler.scale(loss + sync_loss).backward()
             if self.clip_grad_norm:
                 clip_grad_norm_(self.model.parameters(), **self.clip_grad_norm)
