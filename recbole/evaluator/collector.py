@@ -14,12 +14,13 @@ recbole.evaluator.collector
 
 from recbole.evaluator.register import Register
 import torch
-import copy
 
 
 class DataStruct(object):
-    def __init__(self):
+    def __init__(self, init=None):
         self._data_dict = {}
+        if init is not None:
+            self._data_dict.update(init)
 
     def __getitem__(self, name: str):
         return self._data_dict[name]
@@ -40,6 +41,9 @@ class DataStruct(object):
 
     def set(self, name: str, value):
         self._data_dict[name] = value
+
+    def __iter__(self):
+        return iter(self._data_dict.items())
 
     def update_tensor(self, name: str, value: torch.Tensor):
         if name not in self._data_dict:
@@ -190,7 +194,7 @@ class Collector(object):
         if self.register.need("data.label"):
             self.label_field = self.config["LABEL_FIELD"]
             self.data_struct.update_tensor(
-                "data.label", interaction[self.label_field].to(self.device)
+                "data.label", interaction[self.label_field]
             )
 
     def model_collect(self, model: torch.nn.Module):
@@ -213,13 +217,13 @@ class Collector(object):
 
         if self.register.need("data.label"):
             self.label_field = self.config["LABEL_FIELD"]
-            self.data_struct.update_tensor("data.label", data_label.to(self.device))
+            self.data_struct.update_tensor("data.label", data_label)
 
     def get_data_struct(self):
         """Get all the evaluation resource that been collected.
         And reset some of outdated resource.
         """
-        returned_struct = copy.deepcopy(self.data_struct)
+        returned_struct = DataStruct(self.data_struct)
         for key in ["rec.topk", "rec.meanrank", "rec.score", "rec.items", "data.label"]:
             if key in self.data_struct:
                 del self.data_struct[key]
