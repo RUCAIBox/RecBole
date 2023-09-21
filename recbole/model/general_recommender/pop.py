@@ -43,7 +43,7 @@ class Pop(GeneralRecommender):
 
         self.max_cnt = torch.max(self.item_cnt, dim=0)[0]
 
-        return torch.nn.Parameter(torch.zeros(1))
+        return torch.nn.Parameter(torch.zeros(1)).to(self.device)
 
     def predict(self, interaction):
         item = interaction[self.ITEM_ID]
