@@ -31,7 +31,7 @@ import torch.cuda.amp as amp
 
 from recbole.data.interaction import Interaction
 from recbole.data.dataloader import FullSortEvalDataLoader
-from recbole.evaluator import Evaluator, Collector
+from recbole.evaluator import Evaluator, Collector, DataStruct
 from recbole.utils import (
     ensure_dir,
     get_local_time,
@@ -46,6 +46,7 @@ from recbole.utils import (
     WandbLogger,
 )
 from torch.nn.parallel import DistributedDataParallel
+import torch.distributed as dist
 
 
 class AbstractTrainer(object):
@@ -619,29 +620,31 @@ class Trainer(AbstractTrainer):
             )
         self.eval_collector.model_collect(self.model)
         struct = self.eval_collector.get_data_struct()
-        result = self.evaluator.evaluate(struct)
         if not self.config["single_spec"]:
-            num_samples = eval_data.sampler.num_samples
-            total_size = eval_data.sampler.total_size
-            result = self._map_reduce(result, num_samples, total_size)
+            struct = self._gather_evaluation_resources(struct)
+        result = self.evaluator.evaluate(struct)
         self.wandblogger.log_eval_metrics(result, head="eval")
         return result
 
-    def _map_reduce(self, result, num_samples, total_size):
-        gather_result = {}
-        for key, value in result.items():
-            result[key] = torch.Tensor([value * num_samples]).to(self.device)
-            gather_result[key] = [
-                torch.zeros_like(result[key]).to(self.device)
-                for _ in range(self.config["world_size"])
-            ]
-            torch.distributed.all_gather(gather_result[key], result[key])
-            gather_result[key] = torch.cat(gather_result[key], dim=0)
-            gather_result[key] = round(
-                torch.sum(gather_result[key]).item() / total_size,
-                self.config["metric_decimal_place"],
-            )
-        return gather_result
+    def _gather_evaluation_resources(self, struct: DataStruct) -> DataStruct:
+        """
+        Gather the evaluation resources from all ranks, e.g., 'rec.items', 'rec.score', 'data.label'
+        Only 'rec.*' and 'data.label' are gathered, because they are distributed into different ranks.
+        Args:
+            struct: data struct collected from all ranks
+    
+        Returns: gathered data struct
+    
+        """
+        gather_struct = DataStruct(struct)
+        for key, value in struct:
+            # Adjust the condition according to
+            # [the key definition in evaluator](/docs/source/developer_guide/customize_metrics.rst#set-metric_need)
+            if key.startswith("rec.") or key == "data.label":
+                gather_struct[key] = [None for _ in range(self.config["world_size"])]
+                dist.all_gather_object(gather_struct[key], value)
+                gather_struct[key] = torch.cat(gather_struct[key], dim=0)
+        return gather_struct
 
     def _spilt_predict(self, interaction, batch_size):
         spilt_interaction = dict()
