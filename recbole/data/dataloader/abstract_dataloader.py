@@ -137,7 +137,7 @@ class NegSampleDataLoader(AbstractDataLoader):
         self.times = 1
         if (
             self.neg_sample_args["distribution"] == "uniform"
-            or "popularity"
+            or self.neg_sample_args["distribution"] == "popularity"
             and self.neg_sample_args["sample_num"] != "none"
         ):
             self.neg_sample_num = self.neg_sample_args["sample_num"]
