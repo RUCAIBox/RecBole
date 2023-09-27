@@ -173,18 +173,12 @@ def run_recbole(
 
 
 def run_recboles(rank, *args):
-    ip, port, world_size, nproc, offset = args[3:]
-    args = args[:3]
+    kwargs = args[-1]
+    kwargs["config_dict"] = kwargs.get("config_dict", {})
+    kwargs["config_dict"]["local_rank"] = rank
     run_recbole(
-        *args,
-        config_dict={
-            "local_rank": rank,
-            "world_size": world_size,
-            "ip": ip,
-            "port": port,
-            "nproc": nproc,
-            "offset": offset,
-        },
+        *args[:3],
+        **kwargs,
     )
 
 
