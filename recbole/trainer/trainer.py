@@ -578,8 +578,11 @@ class Trainer(AbstractTrainer):
             return
 
         if load_best_model:
+            # Refer to: https://pytorch.org/tutorials/intermediate/ddp_tutorial.html#save-and-load-checkpoints
+            dist.barrier()
             checkpoint_file = model_file or self.saved_model_file
-            checkpoint = torch.load(checkpoint_file, map_location=self.device)
+            map_location = {"cuda:%d" % 0: "cuda:%d" % self.config["local_rank"]}
+            checkpoint = torch.load(checkpoint_file, map_location=map_location)
             self.model.load_state_dict(checkpoint["state_dict"])
             self.model.load_other_parameter(checkpoint.get("other_parameter"))
             message_output = "Loading model structure and parameters from {}".format(
@@ -781,7 +784,7 @@ class PretrainTrainer(Trainer):
                 self.logger.info(train_loss_output)
             self._add_train_loss_to_tensorboard(epoch_idx, train_loss)
 
-            if (epoch_idx + 1) % self.save_step == 0:
+            if (epoch_idx + 1) % self.save_step == 0 and self.config["local_rank"] == 0:
                 saved_model_file = os.path.join(
                     self.checkpoint_dir,
                     "{}-{}-{}.pth".format(
@@ -981,6 +984,8 @@ class DecisionTreeTrainer(AbstractTrainer):
             epoch (int): the current epoch id
 
         """
+        if not self.config["single_spec"] and self.config["local_rank"] != 0:
+            return
         state = {
             "config": self.config,
             "epoch": epoch,
