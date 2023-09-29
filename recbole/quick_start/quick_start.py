@@ -13,6 +13,7 @@ recbole.quick_start
 """
 import logging
 import sys
+import torch.distributed as dist
 from collections.abc import MutableMapping
 from logging import getLogger
 
@@ -168,6 +169,9 @@ def run_recbole(
         "best_valid_result": best_valid_result,
         "test_result": test_result,
     }
+
+    if not config["single_spec"]:
+        dist.destroy_process_group()
 
     if config["local_rank"] == 0 and queue is not None:
         queue.put(result)  # for multiprocessing, e.g., mp.spawn
