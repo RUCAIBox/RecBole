@@ -579,7 +579,8 @@ class Trainer(AbstractTrainer):
 
         if load_best_model:
             # Refer to: https://pytorch.org/tutorials/intermediate/ddp_tutorial.html#save-and-load-checkpoints
-            dist.barrier()
+            if not self.config["single_spec"]:
+                dist.barrier()
             checkpoint_file = model_file or self.saved_model_file
             map_location = {"cuda:%d" % 0: "cuda:%d" % self.config["local_rank"]}
             checkpoint = torch.load(checkpoint_file, map_location=map_location)
