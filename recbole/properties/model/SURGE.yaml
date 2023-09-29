@@ -1,0 +1,11 @@
+embedding_size: 32                # (int) the embedding dimension of items
+hidden_size: 32                   # (int) the shape of hidden size used in RNN
+layer_sizes: [100, 64]            # (list) layers' size of DNN.
+att_activation: relu              # (str) activation function
+att_fcn_layer_sizes: [80, 40]     # (list) layers' size of attention fcn layers
+relative_threshold: 0.50          # (float) rate for keeping edges
+pool_length: 30                   # (int) keep length for graph pooling layers
+pool_layers: 1                    # (int) the number of graph pooling layer
+attention_heads: 1                # (int) the number of attention head
+metric_heads: 1                   # (int) the number of head for metric learning
+dropout_prob: 0.0                 # (float) The dropout rate
