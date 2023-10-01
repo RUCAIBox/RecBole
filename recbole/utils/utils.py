@@ -48,8 +48,7 @@ def ensure_dir(dir_path):
         dir_path (str): directory path
 
     """
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+    os.makedirs(dir_path, exist_ok=True)
 
 
 def get_model(model_name):
