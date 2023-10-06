@@ -175,6 +175,8 @@ class Trainer(AbstractTrainer):
 
         if learner.lower() == "adam":
             optimizer = optim.Adam(params, lr=learning_rate, weight_decay=weight_decay)
+        elif learner.lower() == "adamw":
+            optimizer = optim.AdamW(params, lr=learning_rate, weight_decay=weight_decay)
         elif learner.lower() == "sgd":
             optimizer = optim.SGD(params, lr=learning_rate, weight_decay=weight_decay)
         elif learner.lower() == "adagrad":
