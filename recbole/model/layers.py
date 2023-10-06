@@ -52,7 +52,13 @@ class MLPLayers(nn.Module):
     """
 
     def __init__(
-        self, layers, dropout=0.0, activation="relu", bn=False, init_method=None, last_activation=True
+        self,
+        layers,
+        dropout=0.0,
+        activation="relu",
+        bn=False,
+        init_method=None,
+        last_activation=True,
     ):
         super(MLPLayers, self).__init__()
         self.layers = layers

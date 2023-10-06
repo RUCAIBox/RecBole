@@ -20,14 +20,31 @@ import torch.nn.functional as F
 import torch.nn as nn
 from recbole.model.init import xavier_normal_initialization
 from recbole.model.layers import MLPLayers
-from recbole.model.general_recommender.diffrec import DiffRec, DNN, ModelMeanType, mean_flat 
+from recbole.model.general_recommender.diffrec import (
+    DiffRec,
+    DNN,
+    ModelMeanType,
+    mean_flat,
+)
 from kmeans_pytorch import kmeans
+
 
 class AutoEncoder(nn.Module):
     """
     Guassian Diffusion for large-scale recommendation.
     """
-    def __init__(self, item_emb, n_cate, in_dims, out_dims, device, act_func, reparam=True, dropout=0.1):
+
+    def __init__(
+        self,
+        item_emb,
+        n_cate,
+        in_dims,
+        out_dims,
+        device,
+        act_func,
+        reparam=True,
+        dropout=0.1,
+    ):
         super(AutoEncoder, self).__init__()
 
         self.item_emb = item_emb
@@ -40,14 +57,20 @@ class AutoEncoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         if n_cate == 1:  # no clustering
-            in_dims_temp = [self.n_item + 1] + self.in_dims[:-1] + [self.in_dims[-1] * 2]
+            in_dims_temp = (
+                [self.n_item + 1] + self.in_dims[:-1] + [self.in_dims[-1] * 2]
+            )
             out_dims_temp = [self.in_dims[-1]] + self.out_dims + [self.n_item + 1]
 
             self.encoder = MLPLayers(in_dims_temp, activation=self.act_func)
-            self.decoder = MLPLayers(out_dims_temp, activation=self.act_func, last_activation=False)
-        
+            self.decoder = MLPLayers(
+                out_dims_temp, activation=self.act_func, last_activation=False
+            )
+
         else:
-            self.cluster_ids, _ = kmeans(X=item_emb, num_clusters=n_cate, distance='euclidean', device=device)
+            self.cluster_ids, _ = kmeans(
+                X=item_emb, num_clusters=n_cate, distance="euclidean", device=device
+            )
             # cluster_ids(labels): [0, 1, 2, 2, 1, 0, 0, ...]
             category_idx = []
             for i in range(n_cate):
@@ -55,7 +78,9 @@ class AutoEncoder(nn.Module):
                 category_idx.append(torch.tensor(idx, dtype=int) + 1)
             self.category_idx = category_idx  # [cate1: [iid1, iid2, ...], cate2: [iid3, iid4, ...], cate3: [iid5, iid6, ...]]
             self.category_map = torch.cat(tuple(category_idx), dim=-1)  # map
-            self.category_len = [len(self.category_idx[i]) for i in range(n_cate)]  # item num in each category
+            self.category_len = [
+                len(self.category_idx[i]) for i in range(n_cate)
+            ]  # item num in each category
             print("category length: ", self.category_len)
             assert sum(self.category_len) == self.n_item
 
@@ -66,9 +91,17 @@ class AutoEncoder(nn.Module):
                 if i == n_cate - 1:
                     latent_dims = list(self.in_dims - np.array(decode_dim).sum(axis=0))
                 else:
-                    latent_dims = [int(self.category_len[i] / self.n_item * self.in_dims[j]) for j in range(len(self.in_dims))]
-                    latent_dims = [latent_dims[j] if latent_dims[j] != 0 else 1 for j in range(len(self.in_dims))]
-                in_dims_temp = [self.category_len[i]] + latent_dims[:-1] + [latent_dims[-1] * 2]
+                    latent_dims = [
+                        int(self.category_len[i] / self.n_item * self.in_dims[j])
+                        for j in range(len(self.in_dims))
+                    ]
+                    latent_dims = [
+                        latent_dims[j] if latent_dims[j] != 0 else 1
+                        for j in range(len(self.in_dims))
+                    ]
+                in_dims_temp = (
+                    [self.category_len[i]] + latent_dims[:-1] + [latent_dims[-1] * 2]
+                )
                 encoders.append(MLPLayers(in_dims_temp, activation=self.act_func))
                 decode_dim.append(latent_dims)
 
@@ -85,28 +118,36 @@ class AutoEncoder(nn.Module):
                 decoders = []
                 for i in range(n_cate):
                     out_dims_temp = self.decode_dim[i] + [self.category_len[i]]
-                    decoders.append(MLPLayers(out_dims_temp, activation=self.act_func, last_activation=False))
+                    decoders.append(
+                        MLPLayers(
+                            out_dims_temp,
+                            activation=self.act_func,
+                            last_activation=False,
+                        )
+                    )
                 self.decoder = nn.ModuleList(decoders)
-            
+
         self.apply(xavier_normal_initialization)
-        
+
     def Encode(self, batch):
         batch = self.dropout(batch)
         if self.n_cate == 1:
             hidden = self.encoder(batch)
-            mu = hidden[:, :self.in_dims[-1]]
-            logvar = hidden[:, self.in_dims[-1]:]
+            mu = hidden[:, : self.in_dims[-1]]
+            logvar = hidden[:, self.in_dims[-1] :]
 
             if self.training and self.reparam:
                 latent = self.reparamterization(mu, logvar)
             else:
                 latent = mu
-            
-            kl_divergence = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+
+            kl_divergence = -0.5 * torch.mean(
+                torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
+            )
 
             return batch, latent, kl_divergence
 
-        else: 
+        else:
             batch_cate = []
             for i in range(self.n_cate):
                 batch_cate.append(batch[:, self.category_idx[i]])
@@ -115,8 +156,8 @@ class AutoEncoder(nn.Module):
             latent_logvar = []
             for i in range(self.n_cate):
                 hidden = self.encoder[i](batch_cate[i])
-                latent_mu.append(hidden[:, :self.decode_dim[i][0]])
-                latent_logvar.append(hidden[:, self.decode_dim[i][0]:])
+                latent_mu.append(hidden[:, : self.decode_dim[i][0]])
+                latent_logvar.append(hidden[:, self.decode_dim[i][0] :])
             # latent: [[batch_size, latent_size1], [batch_size, latent_size2], [batch_size, latent_size3]]
 
             mu = torch.cat(tuple(latent_mu), dim=-1)
@@ -126,21 +167,23 @@ class AutoEncoder(nn.Module):
             else:
                 latent = mu
 
-            kl_divergence = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+            kl_divergence = -0.5 * torch.mean(
+                torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
+            )
 
             return torch.cat(tuple(batch_cate), dim=-1), latent, kl_divergence
-    
+
     def reparamterization(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return eps.mul(std).add_(mu)
-    
+
     def Decode(self, batch):
         if len(self.out_dims) == 0 or self.n_cate == 1:  # one-layer decoder
             return self.decoder(batch)
         else:
             batch_cate = []
-            start=0
+            start = 0
             for i in range(self.n_cate):
                 end = start + self.decode_dim[i][0]
                 batch_cate.append(batch[:, start:end])
@@ -176,15 +219,31 @@ class LDiffRec(DiffRec):
         emb_path = os.path.join(dataset.dataset_path, f"item_emb.npy")
         if self.n_cate > 1:
             if not os.path.exists(emb_path):
-                self.logger.exception("The item embedding file must be given when n_cate>1.")
+                self.logger.exception(
+                    "The item embedding file must be given when n_cate>1."
+                )
             item_emb = torch.from_numpy(np.load(emb_path, allow_pickle=True))
         else:
-            item_emb = torch.zeros((self.n_items-1, 64))
-        self.autoencoder = AutoEncoder(item_emb, self.n_cate, in_dims, out_dims, self.device, self.ae_act_func, self.reparam).to(self.device)
-        
+            item_emb = torch.zeros((self.n_items - 1, 64))
+        self.autoencoder = AutoEncoder(
+            item_emb,
+            self.n_cate,
+            in_dims,
+            out_dims,
+            self.device,
+            self.ae_act_func,
+            self.reparam,
+        ).to(self.device)
+
         self.latent_size = in_dims[-1]
         dims = [self.latent_size] + config["dims_dnn"] + [self.latent_size]
-        self.mlp = DNN(dims=dims, emb_size=self.emb_size, time_type="cat", norm=self.norm, act_func=self.mlp_act_func).to(self.device)
+        self.mlp = DNN(
+            dims=dims,
+            emb_size=self.emb_size,
+            time_type="cat",
+            norm=self.norm,
+            act_func=self.mlp_act_func,
+        ).to(self.device)
 
     def calculate_loss(self, interaction):
         user = interaction[self.USER_ID]
@@ -194,9 +253,9 @@ class LDiffRec(DiffRec):
 
         # calculate loss in diffusion
         batch_size, device = batch_latent.size(0), batch_latent.device
-        ts, pt = self.sample_timesteps(batch_size, device, 'importance')
+        ts, pt = self.sample_timesteps(batch_size, device, "importance")
         noise = torch.randn_like(batch_latent)
-        if self.noise_scale != 0.:
+        if self.noise_scale != 0.0:
             x_t = self.q_sample(batch_latent, ts, noise)
         else:
             x_t = batch_latent
@@ -211,26 +270,33 @@ class LDiffRec(DiffRec):
 
         mse = mean_flat((target - model_output) ** 2)
 
-        reloss = self.reweight_loss(batch_latent, x_t, mse, ts, target, model_output, device)
+        reloss = self.reweight_loss(
+            batch_latent, x_t, mse, ts, target, model_output, device
+        )
 
         if self.mean_type == ModelMeanType.START_X:
             batch_latent_recon = model_output
         else:
             batch_latent_recon = self._predict_xstart_from_eps(x_t, ts, model_output)
-        
+
         self.update_Lt_history(ts, reloss)
 
-        diff_loss =  (reloss / pt).mean()
+        diff_loss = (reloss / pt).mean()
 
         batch_recon = self.autoencoder.Decode(batch_latent_recon)
 
         if self.anneal_steps > 0:
-            lamda = max((1. - self.update_count / self.anneal_steps) * self.lamda, self.anneal_cap)
+            lamda = max(
+                (1.0 - self.update_count / self.anneal_steps) * self.lamda,
+                self.anneal_cap,
+            )
         else:
             lamda = max(self.lamda, self.anneal_cap)
-        
+
         if self.vae_anneal_steps > 0:
-            anneal = min(self.vae_anneal_cap, 1. * self.update_count_vae / self.vae_anneal_steps)
+            anneal = min(
+                self.vae_anneal_cap, 1.0 * self.update_count_vae / self.vae_anneal_steps
+            )
         else:
             anneal = self.vae_anneal_cap
 
@@ -247,14 +313,18 @@ class LDiffRec(DiffRec):
         batch = self.get_rating_matrix(user)
         _, batch_latent, _ = self.autoencoder.Encode(batch)
         batch_latent_recon = super(LDiffRec, self).p_sample(batch_latent)
-        prediction = self.autoencoder.Decode(batch_latent_recon)  # [batch_size, n1_items + n2_items + n3_items]
-        if self.n_cate>1:
-            transform = torch.zeros((prediction.shape[0], prediction.shape[1]+1)).to(prediction.device)
-            transform[:,self.autoencoder.category_map] = prediction
+        prediction = self.autoencoder.Decode(
+            batch_latent_recon
+        )  # [batch_size, n1_items + n2_items + n3_items]
+        if self.n_cate > 1:
+            transform = torch.zeros((prediction.shape[0], prediction.shape[1] + 1)).to(
+                prediction.device
+            )
+            transform[:, self.autoencoder.category_map] = prediction
         else:
             transform = prediction
         return transform
-    
+
     def predict(self, interaction):
         item = interaction[self.ITEM_ID]
         x_t = self.full_sort_predict(interaction)
@@ -263,4 +333,6 @@ class LDiffRec(DiffRec):
 
 
 def compute_loss(recon_x, x):
-    return -torch.mean(torch.sum(F.log_softmax(recon_x, 1) * x, -1))  # multinomial log likelihood in MultVAE
+    return -torch.mean(
+        torch.sum(F.log_softmax(recon_x, 1) * x, -1)
+    )  # multinomial log likelihood in MultVAE
