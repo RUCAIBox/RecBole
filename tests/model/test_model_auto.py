@@ -11,6 +11,8 @@
 import os
 import unittest
 
+from flask import config
+
 from recbole.quick_start import objective_function
 
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -231,6 +233,22 @@ class TestGeneralRecommender(unittest.TestCase):
 
     def test_NCL(self):
         config_dict = {"model": "NCL", "num_clusters": 100}
+        quick_test(config_dict)
+
+    def test_DiffRec(self):
+        config_dict = {"model": "DiffRec"}
+        quick_test(config_dict)
+
+    def test_TDiffRec(self):
+        config_dict = {"model": "DiffRec", "time-aware": True}
+        quick_test(config_dict)
+
+    def test_LDiffRec(self):
+        config_dict = {"model": "LDiffRec"}
+        quick_test(config_dict)
+
+    def test_LTDiffRec(self):
+        config_dict = {"model": "LDiffRec", "time-aware": True}
         quick_test(config_dict)
 
 
