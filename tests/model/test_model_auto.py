@@ -11,8 +11,6 @@
 import os
 import unittest
 
-from flask import config
-
 from recbole.quick_start import objective_function
 
 current_path = os.path.dirname(os.path.realpath(__file__))
