@@ -202,6 +202,7 @@ class LDiffRec(DiffRec):
     low-dimensional latent vector via a group-specific VAE, and conducts the forward and reverse
     diffusion processes in the latent space.
     """
+
     def __init__(self, config, dataset):
         super(LDiffRec, self).__init__(config, dataset)
         self.n_cate = config["n_cate"]
