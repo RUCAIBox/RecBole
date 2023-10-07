@@ -21,18 +21,18 @@ Running with RecBole
 
 **Model Hyper-Parameters:**
 
-- ``noise_schedule (str)`` : The schedule for noise generating: ['linear', 'linear-var', 'cosine', 'binomial']. Defaults to ``'linear-var'``.
-- ``noise_scale (int)`` : The scale for noise generating. Defaults to ``0.1``.
-- ``noise_min (int)`` : Noise lower bound for noise generating. Defaults to ``0.001``.
+- ``noise_schedule (str)`` : The schedule for noise generating: ['linear', 'linear-var', 'cosine', 'binomial']. Defaults to ``'linear'``.
+- ``noise_scale (int)`` : The scale for noise generating. Defaults to ``0.001``.
+- ``noise_min (int)`` : Noise lower bound for noise generating. Defaults to ``0.0005``.
 - ``noise_max (int)`` : 0.005 Noise upper bound for noise generating. Defaults to ``0.005``.
 - ``sampling_noise (bool)`` : Whether to use sampling noise. Defaults to ``False``.
 - ``sampling_steps (int)`` : Steps of the forward process during inference. Defaults to ``0``.
 - ``reweight (bool)`` : Assign different weight to different timestep or not. Defaults to ``True``.
 - ``mean_type (str)`` : MeanType for diffusion: ['x0', 'eps']. Defaults to ``'x0'``.
-- ``steps (int)`` : Diffusion steps. Defaults to ``10``.
+- ``steps (int)`` : Diffusion steps. Defaults to ``5``.
 - ``history_num_per_term (int)`` : The number of history items needed to calculate loss weight. Defaults to ``10``.
 - ``beta_fixed (bool)`` : Whether to fix the variance of the first step to prevent overfitting. Defaults to ``True``.
-- ``dims_dnn (list of int)`` : The dims for the DNN. Defaults to ``[1000]``.
+- ``dims_dnn (list of int)`` : The dims for the DNN. Defaults to ``[300]``.
 - ``embedding_size (int)`` : Timestep embedding size. Defaults to ``10``.
 - ``mlp_act_func (str)`` : Activation function for MLP. Defaults to ``'tanh'``.
 - ``time-aware (bool)`` : T-DiffRec or not. Defaults to ``False``.
