@@ -33,7 +33,7 @@ class ModelMeanType(enum.Enum):
 
 
 class DNN(nn.Module):
-    """
+    r"""
     A deep neural network for the reverse diffusion preocess.
     """
 
@@ -81,6 +81,11 @@ class DNN(nn.Module):
 
 
 class DiffRec(GeneralRecommender, AutoEncoderMixin):
+    r"""
+    DiffRec is a generative recommender model which infers users' interaction probabilities in a denoising manner.
+    Note that DiffRec simultaneously ranks all items for each user.
+    We implement the the DiffRec model with only user dataloader.
+    """
     input_type = InputType.LISTWISE
 
     def __init__(self, config, dataset):
@@ -149,6 +154,9 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
         self.calculate_for_diffusion()
 
     def build_histroy_items(self, dataset):
+        r"""
+        Add time-aware reweighting to the original user-item interaction matrix when config['time-aware'] is True.
+        """
         if not self.time_aware:
             super().build_histroy_items(dataset)
         else:
@@ -196,7 +204,7 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
             self.history_item_value = self.history_item_value.to(self.device)
 
     def get_betas(self):
-        """
+        r"""
         Given the schedule name, create the betas for the diffusion process.
         """
         if self.noise_schedule == "linear" or self.noise_schedule == "linear-var":
@@ -221,6 +229,9 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
             raise NotImplementedError(f"unknown beta schedule: {self.noise_schedule}!")
 
     def calculate_for_diffusion(self):
+        r"""
+        Calculate the coefficients for the diffusion process.
+        """
         alphas = 1.0 - self.betas
         # [alpha_{1}, ..., alpha_{1}*...*alpha_{T}] shape (steps,)
         self.alphas_cumprod = torch.cumprod(alphas, axis=0).to(self.device)
@@ -263,6 +274,13 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
         )
 
     def p_sample(self, x_start):
+        r"""
+        Generate users' interaction probabilities in a denoising manner.
+        Args:
+            x_start (torch.FloatTensor): the input tensor that contains user's history interaction matrix, shape: [batch_size, n_items]
+        Returns:
+            torch.FloatTensor: the interaction probabilities, shape: [batch_size, n_items]
+        """
         steps = self.sampling_steps
         if steps == 0:
             x_t = x_start
@@ -420,7 +438,7 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
         )
 
     def q_posterior_mean_variance(self, x_start, x_t, t):
-        """
+        r"""
         Compute the mean and variance of the diffusion posterior:
             q(x_{t-1} | x_t, x_0)
         """
@@ -444,7 +462,7 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
 
     def p_mean_variance(self, x, t):
-        """
+        r"""
         Apply the model to get p(x_{t-1} | x_t), as well as a prediction of
         the initial x, x_0.
         """
@@ -490,14 +508,14 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
         )
 
     def SNR(self, t):
-        """
+        r"""
         Compute the signal-to-noise ratio for a single timestep.
         """
         self.alphas_cumprod = self.alphas_cumprod.to(t.device)
         return self.alphas_cumprod[t] / (1 - self.alphas_cumprod[t])
 
     def _extract_into_tensor(self, arr, timesteps, broadcast_shape):
-        """
+        r"""
         Extract values from a 1-D numpy array for a batch of indices.
 
         :param arr: the 1-D numpy array.
@@ -524,7 +542,7 @@ def betas_from_linear_variance(steps, variance, max_beta=0.999):
 
 
 def betas_for_alpha_bar(num_diffusion_timesteps, alpha_bar, max_beta=0.999):
-    """
+    r"""
     Create a beta schedule that discretizes the given alpha_t_bar function,
     which defines the cumulative product of (1-beta) over time from t = [0,1].
 
@@ -544,7 +562,7 @@ def betas_for_alpha_bar(num_diffusion_timesteps, alpha_bar, max_beta=0.999):
 
 
 def normal_kl(mean1, logvar1, mean2, logvar2):
-    """
+    r"""
     Compute the KL divergence between two gaussians.
 
     Shapes are automatically broadcasted, so batches can be compared to
@@ -574,14 +592,14 @@ def normal_kl(mean1, logvar1, mean2, logvar2):
 
 
 def mean_flat(tensor):
-    """
+    r"""
     Take the mean over all non-batch dimensions.
     """
     return tensor.mean(dim=list(range(1, len(tensor.shape))))
 
 
 def timestep_embedding(timesteps, dim, max_period=10000):
-    """
+    r"""
     Create sinusoidal timestep embeddings.
 
     :param timesteps: a 1-D Tensor of N indices, one per batch element.

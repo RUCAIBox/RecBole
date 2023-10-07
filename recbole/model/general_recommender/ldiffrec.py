@@ -30,7 +30,7 @@ from kmeans_pytorch import kmeans
 
 
 class AutoEncoder(nn.Module):
-    """
+    r"""
     Guassian Diffusion for large-scale recommendation.
     """
 
@@ -197,6 +197,11 @@ class AutoEncoder(nn.Module):
 
 
 class LDiffRec(DiffRec):
+    r"""
+    L-DiffRec clusters items into groups, compresses the interaction vector over each group into a
+    low-dimensional latent vector via a group-specific VAE, and conducts the forward and reverse
+    diffusion processes in the latent space.
+    """
     def __init__(self, config, dataset):
         super(LDiffRec, self).__init__(config, dataset)
         self.n_cate = config["n_cate"]
