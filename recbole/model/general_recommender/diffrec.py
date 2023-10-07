@@ -277,9 +277,13 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
         r"""
         Generate users' interaction probabilities in a denoising manner.
         Args:
-            x_start (torch.FloatTensor): the input tensor that contains user's history interaction matrix, shape: [batch_size, n_items]
+            x_start (torch.FloatTensor): the input tensor that contains user's history interaction matrix,
+                                         for DiffRec shape: [batch_size, n_items]
+                                         for LDiffRec shape: [batch_size, hidden_size]
         Returns:
-            torch.FloatTensor: the interaction probabilities, shape: [batch_size, n_items]
+            torch.FloatTensor: the interaction probabilities,
+                               for DiffRec shape: [batch_size, n_items]
+                               for LDiffRec shape: [batch_size, hidden_size]
         """
         steps = self.sampling_steps
         if steps == 0:
@@ -516,13 +520,15 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
 
     def _extract_into_tensor(self, arr, timesteps, broadcast_shape):
         r"""
-        Extract values from a 1-D numpy array for a batch of indices.
+        Extract values from a 1-D torch tensor for a batch of indices.
 
-        :param arr: the 1-D numpy array.
-        :param timesteps: a tensor of indices into the array to extract.
-        :param broadcast_shape: a larger shape of K dimensions with the batch
+        Args:
+            arr (torch.Tensor): the 1-D torch tensor.
+            timesteps (torch.Tensor): a tensor of indices into the array to extract.
+            broadcast_shape (torch.Size): a larger shape of K dimensions with the batch
                                 dimension equal to the length of timesteps.
-        :return: a tensor of shape [batch_size, 1, ...] where the shape has K dims.
+        Returns:
+            torch.Tensor: a tensor of shape [batch_size, 1, ...] where the shape has K dims.
         """
         # res = torch.from_numpy(arr).to(device=timesteps.device)[timesteps].float()
         arr = arr.to(timesteps.device)
@@ -546,12 +552,15 @@ def betas_for_alpha_bar(num_diffusion_timesteps, alpha_bar, max_beta=0.999):
     Create a beta schedule that discretizes the given alpha_t_bar function,
     which defines the cumulative product of (1-beta) over time from t = [0,1].
 
-    :param num_diffusion_timesteps: the number of betas to produce.
-    :param alpha_bar: a lambda that takes an argument t from 0 to 1 and
-                      produces the cumulative product of (1-beta) up to that
-                      part of the diffusion process.
-    :param max_beta: the maximum beta to use; use values lower than 1 to
-                     prevent singularities.
+    Args:
+        num_diffusion_timesteps (int): the number of betas to produce.
+        alpha_bar (Callable): a lambda that takes an argument t from 0 to 1 and
+                   produces the cumulative product of (1-beta) up to that
+                   part of the diffusion process.
+        max_beta (int): the maximum beta to use; use values lower than 1 to
+                  prevent singularities.
+    Returns:
+        np.ndarray: a 1-D array of beta values.
     """
     betas = []
     for i in range(num_diffusion_timesteps):
