@@ -6,6 +6,7 @@ from recbole.model.context_aware_recommender.deepfm import DeepFM
 from recbole.model.context_aware_recommender.dssm import DSSM
 from recbole.model.context_aware_recommender.ffm import FFM
 from recbole.model.context_aware_recommender.fm import FM
+from recbole.model.context_aware_recommender.fm2 import FM2
 from recbole.model.context_aware_recommender.fnn import FNN
 from recbole.model.context_aware_recommender.fwfm import FwFM
 from recbole.model.context_aware_recommender.lr import LR
