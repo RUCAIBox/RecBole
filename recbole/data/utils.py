@@ -246,6 +246,8 @@ def get_dataloader(config, phase: Literal["train", "valid", "test", "evaluation"
         "ENMF": _get_AE_dataloader,
         "RaCT": _get_AE_dataloader,
         "RecVAE": _get_AE_dataloader,
+        "DiffRec": _get_AE_dataloader,
+        "LDiffRec": _get_AE_dataloader,
     }
 
     if config["model"] in register_table:
