@@ -160,6 +160,7 @@ def data_preparation(config, dataset):
     dataloaders = load_split_dataloaders(config)
     if dataloaders is not None:
         train_data, valid_data, test_data = dataloaders
+        dataset._change_feat_format()
     else:
         model_type = config["MODEL_TYPE"]
         built_datasets = dataset.build()
@@ -245,6 +246,8 @@ def get_dataloader(config, phase: Literal["train", "valid", "test", "evaluation"
         "ENMF": _get_AE_dataloader,
         "RaCT": _get_AE_dataloader,
         "RecVAE": _get_AE_dataloader,
+        "DiffRec": _get_AE_dataloader,
+        "LDiffRec": _get_AE_dataloader,
     }
 
     if config["model"] in register_table:

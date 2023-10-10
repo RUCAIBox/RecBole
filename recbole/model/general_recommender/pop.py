@@ -6,6 +6,10 @@
 # @Time   : 2020/11/9
 # @Author : Zihan Lin
 # @Email  : zhlin@ruc.edu.cn
+# UPDATE
+# @Time   :2023/9/21
+# @Author : Kesha Ou
+# @Email  :1582706091@qq.com
 
 r"""
 Pop
@@ -43,7 +47,7 @@ class Pop(GeneralRecommender):
 
         self.max_cnt = torch.max(self.item_cnt, dim=0)[0]
 
-        return torch.nn.Parameter(torch.zeros(1))
+        return torch.nn.Parameter(torch.zeros(1)).to(self.device)
 
     def predict(self, interaction):
         item = interaction[self.ITEM_ID]

@@ -8,7 +8,7 @@
           "inter_num": "-",
           "sparsity": "-",
           "type": "Rating",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/MovieLens.md"
       },
       {
@@ -19,7 +19,7 @@
           "inter_num": "7,813,737",
           "sparsity": "99.05%",
           "type": "Rating [-1, 1-10]",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Anime.md"
       },
       { 
@@ -30,7 +30,7 @@
           "inter_num": "188,478",
           "sparsity": "99.99%",
           "type": "Rating [1-5]",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Epinions.md"
       },
       { 
@@ -41,7 +41,7 @@
           "inter_num": "-",
           "sparsity": "-",
           "type": "Rating",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Yelp.md"
       },
       { 
@@ -52,7 +52,7 @@
           "inter_num": "100,480,507",
           "sparsity": "98.82%",
           "type": "Rating [1-5]",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Netflix.md"
       },
       { 
@@ -63,7 +63,7 @@
           "inter_num": "1,149,780",
           "sparsity": "99.99%",
           "type": "Rating [0-10]",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Book-Crossing.md"
       },
       { 
@@ -74,7 +74,7 @@
           "inter_num": "4,136,360",
           "sparsity": "44.22%",
           "type": "Rating [-10, 10]",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Jester.md"
       },
       { 
@@ -85,7 +85,7 @@
           "inter_num": "2,125,056",
           "sparsity": "89.73%",
           "type": "Rating [0, 5]",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Douban.md"
       },
       { 
@@ -93,10 +93,10 @@
           "dataset_link": "",
           "user_num": "1,948,882",
           "item_num": "98,211",
-          "inter_num": "11,557,943",
+          "inter_num": "111,557,943",
           "sparsity": "99.99%",
           "type": "Rating [0, 100]",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/YahooMusic.md"
       },
       { 
@@ -107,7 +107,7 @@
           "inter_num": "-",
           "sparsity": "-",
           "type": "Rating",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/KDD2010.md"
       },
       { 
@@ -118,7 +118,7 @@
           "inter_num": "-",
           "sparsity": "-",
           "type": "Rating [0, 5]",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Amazon.md"
       },
       { 
@@ -129,7 +129,7 @@
           "inter_num": "1,445,622",
           "sparsity": "99.74%",
           "type": "-",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Pinterest.md"
       },
       { 
@@ -140,7 +140,7 @@
           "inter_num": "6,442,892",
           "sparsity": "99.99%",
           "type": "Check-in",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Gowalla.md"
       },
       { 
@@ -151,7 +151,7 @@
           "inter_num": "92,834",
           "sparsity": "99.72%",
           "type": "Click",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/LastFM.md"
       },
       { 
@@ -162,7 +162,7 @@
           "inter_num": "993,483",
           "sparsity": "99.99%",
           "type": "Click",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/DIGINETICA.md"
       },
       { 
@@ -173,7 +173,7 @@
           "inter_num": "7,793,069",
           "sparsity": "99.99%",
           "type": "Buy",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Steam.md"
       },
       { 
@@ -184,7 +184,7 @@
           "inter_num": "817,741",
           "sparsity": "99.89%",
           "type": "Click",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/TaFeng.md"
       },
       { 
@@ -195,7 +195,7 @@
           "inter_num": "-",
           "sparsity": "-",
           "type": "Check-in",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Foursquare.md"
       },
       { 
@@ -206,7 +206,7 @@
           "inter_num": "44,528,127",
           "sparsity": "99.99%",
           "type": "Click/Buy",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Tmall.md"
       },
       { 
@@ -217,7 +217,7 @@
           "inter_num": "34,154,697",
           "sparsity": "99.99%",
           "type": "Click/Buy",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/YOOCHOOSE.md"
       },
       { 
@@ -228,7 +228,7 @@
           "inter_num": "2,756,101",
           "sparsity": "99.99%",
           "type": "View/Addtocart/Transaction",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/Retailrocket.md"
       },
       { 
@@ -239,7 +239,7 @@
           "inter_num": "1,088,161,692",
           "sparsity": "99.71%",
           "type": "Click",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/LFM-1b.md"
       },
       { 
@@ -250,7 +250,7 @@
           "inter_num": "-",
           "sparsity": "-",
           "type": "Click",
-          "link_name": "scipt",
+          "link_name": "script",
           "link_url": "https://github.com/RUCAIBox/RecDatasets/blob/master/conversion_tools/usage/MIND.md"
       },
       { 

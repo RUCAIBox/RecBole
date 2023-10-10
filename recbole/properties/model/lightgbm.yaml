@@ -1,10 +1,8 @@
 # Dataset
 convert_token_to_onehot: False  # (bool) Whether to convert token type features into one-hot form.
 token_num_threhold: 10000       # (int) The threshold of one-hot conversion.
-lgb_silent: False               # (bool) Whether to print messages during construction.
 
 # Train
-lgb_model: ~                    # (file name of stored lgb model or 'Booster' instance)
 lgb_params:                     # (dict) Booster params.
     boosting: gbdt
     num_leaves: 90  
@@ -15,7 +13,4 @@ lgb_params:                     # (dict) Booster params.
     lambda_l1: 0.1
     metric: ['auc', 'binary_logloss']
     force_row_wise: True
-lgb_learning_rates: ~           # (list, callable or None) List of learning rates or a customized function.
 lgb_num_boost_round: 300        # (int) Number of boosting iterations.
-lgb_early_stopping_rounds: ~    # (int or None) Activates early stopping.
-lgb_verbose_eval: 100           # (bool or int) Requires at least one validation data to print evaluation metrics.
