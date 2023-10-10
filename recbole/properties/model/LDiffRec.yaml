@@ -1,0 +1,32 @@
+# params for autoencoder
+n_cate: 1                       # (int) Category num of items
+reparam: True                   # (bool) Autoencoder with variational inference or not
+in_dims: [300]                  # (list of int) The dims for the encoder
+out_dims: []                    # (list of int) The hidden dims for the decoder
+ae_act_func: 'tanh'             # (str) Activation function for AutoEncoder
+lamda: 0.03                     # (float) Hyper-parameter of multinomial log-likelihood for AE
+anneal_cap: 0.005               # (float) The upper bound of the annealing weight
+anneal_steps: 1000              # (int) The steps of annealing
+vae_anneal_cap: 0.3             # (float) The upper bound of the VAE annealing weight
+vae_anneal_steps: 200           # (int) The steps of VAE annealing
+
+# params for the diffusion
+noise_schedule: 'linear'        # (str) The schedule for noise generating: [linear, linear-var, cosine, binomial]
+noise_scale: 0.1                # (int) The scale for noise generating
+noise_min: 0.001                # (int) Noise lower bound for noise generating
+noise_max: 0.005                # (int) Noise upper bound for noise generating
+sampling_noise: False           # (bool) Whether to use sampling noise
+sampling_steps: 0               # (int) Steps of the forward process during inference
+reweight: True                  # (bool) Assign different weight to different timestep or not
+mean_type: 'x0'                 # (str) MeanType for diffusion: [x0, eps]
+steps: 5                        # (int) Diffusion steps
+history_num_per_term: 10        # (int) The number of history items needed to calculate loss weight
+beta_fixed: True                # (bool) Whether to fix the variance of the first step to prevent overfitting
+
+# params for the model
+dims_dnn: [300]                 # (list of int) The dims for the DNN
+embedding_size: 10              # (int) Timestep embedding size
+mlp_act_func: 'tanh'            # (str) Activation function for MLP
+time-aware: False               # (bool) T-DiffRec or not
+w_max: 1                        # (int) The upper bound of the time-aware interaction weight
+w_min: 0.1                      # (int) The lower bound of the time-aware interaction weight

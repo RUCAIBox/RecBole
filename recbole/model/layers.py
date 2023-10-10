@@ -52,7 +52,13 @@ class MLPLayers(nn.Module):
     """
 
     def __init__(
-        self, layers, dropout=0.0, activation="relu", bn=False, init_method=None
+        self,
+        layers,
+        dropout=0.0,
+        activation="relu",
+        bn=False,
+        init_method=None,
+        last_activation=True,
     ):
         super(MLPLayers, self).__init__()
         self.layers = layers
@@ -72,7 +78,8 @@ class MLPLayers(nn.Module):
             activation_func = activation_layer(self.activation, output_size)
             if activation_func is not None:
                 mlp_modules.append(activation_func)
-
+        if self.activation is not None and not last_activation:
+            mlp_modules.pop()
         self.mlp_layers = nn.Sequential(*mlp_modules)
         if self.init_method is not None:
             self.apply(self.init_weights)
