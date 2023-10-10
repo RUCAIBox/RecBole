@@ -35,7 +35,7 @@ class Random(GeneralRecommender):
         return torch.nn.Parameter(torch.zeros(1))
 
     def predict(self, interaction):
-        return torch.rand(1).squeeze(-1)
+        return torch.rand(len(interaction)).squeeze(-1)
 
     def full_sort_predict(self, interaction):
         batch_user_num = interaction[self.USER_ID].shape[0]
