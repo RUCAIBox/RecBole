@@ -8,43 +8,41 @@
 # @Email  :
 
 import argparse
-from ast import arg
 import random
-import sys
 from collections import defaultdict
+
 from scipy import stats
 
-from recbole.quick_start import run_recbole, run_recboles
+from recbole.quick_start import run
 
 
-def run(args, seed):
-    if args.nproc == 1 and args.world_size <= 0:
-        res = run_recbole(
-            model=args.model,
-            dataset=args.dataset,
-            config_file_list=config_file_list,
+def run_test(
+    model,
+    dataset,
+    config_files,
+    seeds,
+    nproc,
+    world_size,
+    ip,
+    port,
+    group_offset,
+):
+    results = defaultdict(list)
+    for seed in seeds:
+        res = run(
+            model,
+            dataset,
+            config_files,
             config_dict={"seed": seed},
+            nproc=nproc,
+            world_size=world_size,
+            ip=ip,
+            port=port,
+            group_offset=group_offset,
         )
-    else:
-        if args.world_size == -1:
-            args.world_size = args.nproc
-        import torch.multiprocessing as mp
-
-        res = mp.spawn(
-            run_recboles,
-            args=(
-                args.model,
-                args.dataset,
-                config_file_list,
-                args.ip,
-                args.port,
-                args.world_size,
-                args.nproc,
-                args.group_offset,
-            ),
-            nprocs=args.nproc,
-        )
-    return res
+        for _key, _value in res["test_result"].items():
+            results[_key].append(_value)
+    return results
 
 
 if __name__ == "__main__":
@@ -101,24 +99,30 @@ if __name__ == "__main__":
     random.seed(args.st_seed)
     random_seeds = [random.randint(0, 2**32 - 1) for _ in range(args.run_times)]
 
-    result_ours = defaultdict(list)
-    result_baseline = defaultdict(list)
-
     config_file_ours, config_file_baseline = config_file_list
 
-    args.model = args.model_ours
-    args.config_file_list = [result_ours]
-    for seed in random_seeds:
-        res = run(args, seed)
-        for key, value in res["test_result"].items():
-            result_ours[key].append(value)
-
-    args.model = args.model_baseline
-    args.config_file_list = [config_file_baseline]
-    for seed in random_seeds:
-        res = run(args, seed)
-        for key, value in res["test_result"].items():
-            result_baseline[key].append(value)
+    result_ours = run_test(
+        args.model_ours,
+        args.dataset,
+        [config_file_ours],
+        random_seeds,
+        args.nproc,
+        args.world_size,
+        args.ip,
+        args.port,
+        args.group_offset,
+    )
+    result_baseline = run_test(
+        args.model_baseline,
+        args.dataset,
+        [config_file_baseline],
+        random_seeds,
+        args.nproc,
+        args.world_size,
+        args.ip,
+        args.port,
+        args.group_offset,
+    )
 
     final_result = {}
     for key, value in result_ours.items():

@@ -121,20 +121,32 @@ In above example, you can create a new python file (e.g., `run_a.py`) on node A,
         nproc = 4,
         group_offset = 0
     )
+
+    # Optional, only needed if you want to get the result of each process.
+    queue = mp.get_context('spawn').SimpleQueue()
+
+    config_dict = config_dict or {}
+    config_dict.update({
+        "world_size": args.world_size,
+        "ip": args.ip,
+        "port": args.port,
+        "nproc": args.nproc,
+        "offset": args.group_offset,
+    })
+    kwargs = {
+        "config_dict": config_dict,
+        "queue": queue, # Optional
+    }
+
     mp.spawn(
         run_recboles,
-        args=(
-            args.model,
-            args.dataset,
-            config_file_list,
-            args.ip,
-            args.port,
-            args.world_size,
-            args.nproc,
-            args.group_offset,
-        ),
-        nprocs=args.nproc,
+        args=(args.model, args.dataset, args.config_file_list, kwargs),
+        nprocs=nproc,
+        join=True,
     )
+
+    # Normally, there should be only one item in the queue
+    res = None if queue.empty() else queue.get()
 
 
 Then run the following command:
@@ -159,20 +171,32 @@ Similarly, you can create a new python file (e.g., `run_b.py`) on node B, and wr
         nproc = 4,
         group_offset = 4
     )
+
+    # Optional, only needed if you want to get the result of each process.
+    queue = mp.get_context('spawn').SimpleQueue()
+
+    config_dict = config_dict or {}
+    config_dict.update({
+        "world_size": args.world_size,
+        "ip": args.ip,
+        "port": args.port,
+        "nproc": args.nproc,
+        "offset": args.group_offset,
+    })
+    kwargs = {
+        "config_dict": config_dict,
+        "queue": queue, # Optional
+    }
+
     mp.spawn(
         run_recboles,
-        args=(
-            args.model,
-            args.dataset,
-            config_file_list,
-            args.ip,
-            args.port,
-            args.world_size,
-            args.nproc,
-            args.group_offset,
-        ),
-        nprocs=args.nproc,
+        args=(args.model, args.dataset, args.config_file_list, kwargs),
+        nprocs=nproc,
+        join=True,
     )
+
+    # Normally, there should be only one item in the queue
+    res = None if queue.empty() else queue.get()
 
 
 Then run the following command:

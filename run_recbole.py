@@ -8,9 +8,8 @@
 # @Email  : chenyuwuxinn@gmail.com, houyupeng@ruc.edu.cn, zhlin@ruc.edu.cn
 
 import argparse
-from ast import arg
 
-from recbole.quick_start import run_recbole, run_recboles
+from recbole.quick_start import run
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -44,26 +43,13 @@ if __name__ == "__main__":
         args.config_files.strip().split(" ") if args.config_files else None
     )
 
-    if args.nproc == 1 and args.world_size <= 0:
-        run_recbole(
-            model=args.model, dataset=args.dataset, config_file_list=config_file_list
-        )
-    else:
-        if args.world_size == -1:
-            args.world_size = args.nproc
-        import torch.multiprocessing as mp
-
-        mp.spawn(
-            run_recboles,
-            args=(
-                args.model,
-                args.dataset,
-                config_file_list,
-                args.ip,
-                args.port,
-                args.world_size,
-                args.nproc,
-                args.group_offset,
-            ),
-            nprocs=args.nproc,
-        )
+    run(
+        args.model,
+        args.dataset,
+        config_file_list=config_file_list,
+        nproc=args.nproc,
+        world_size=args.world_size,
+        ip=args.ip,
+        port=args.port,
+        group_offset=args.group_offset,
+    )

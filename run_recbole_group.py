@@ -4,40 +4,9 @@
 
 
 import argparse
-from ast import arg
 
-from recbole.quick_start import run_recbole, run_recboles
+from recbole.quick_start import run
 from recbole.utils import list_to_latex
-
-
-def run(args, model, config_file_list):
-    if args.nproc == 1 and args.world_size <= 0:
-        res = run_recbole(
-            model=model,
-            dataset=args.dataset,
-            config_file_list=config_file_list,
-        )
-    else:
-        if args.world_size == -1:
-            args.world_size = args.nproc
-        import torch.multiprocessing as mp
-
-        res = mp.spawn(
-            run_recboles,
-            args=(
-                args.model,
-                args.dataset,
-                config_file_list,
-                args.ip,
-                args.port,
-                args.world_size,
-                args.nproc,
-                args.group_offset,
-            ),
-            nprocs=args.nproc,
-        )
-    return res
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -92,7 +61,16 @@ if __name__ == "__main__":
 
         valid_res_dict = {"Model": model}
         test_res_dict = {"Model": model}
-        result = run(args, model, config_file_list)
+        result = run(
+            model,
+            args.dataset,
+            config_file_list=config_file_list,
+            nproc=args.nproc,
+            world_size=args.world_size,
+            ip=args.ip,
+            port=args.port,
+            group_offset=args.group_offset,
+        )
         valid_res_dict.update(result["best_valid_result"])
         test_res_dict.update(result["test_result"])
         bigger_flag = result["valid_score_bigger"]

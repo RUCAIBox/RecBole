@@ -12,20 +12,17 @@ recbole.quick_start
 ########################
 """
 import logging
+import sys
+import torch.distributed as dist
+from collections.abc import MutableMapping
 from logging import getLogger
 
-import sys
-
-
-import pickle
 from ray import tune
 
 from recbole.config import Config
 from recbole.data import (
     create_dataset,
     data_preparation,
-    save_split_dataloaders,
-    load_split_dataloaders,
 )
 from recbole.data.transform import construct_transform
 from recbole.utils import (
@@ -39,8 +36,69 @@ from recbole.utils import (
 )
 
 
+def run(
+    model,
+    dataset,
+    config_file_list=None,
+    config_dict=None,
+    saved=True,
+    nproc=1,
+    world_size=-1,
+    ip="localhost",
+    port="5678",
+    group_offset=0,
+):
+    if nproc == 1 and world_size <= 0:
+        res = run_recbole(
+            model=model,
+            dataset=dataset,
+            config_file_list=config_file_list,
+            config_dict=config_dict,
+            saved=saved,
+        )
+    else:
+        if world_size == -1:
+            world_size = nproc
+        import torch.multiprocessing as mp
+
+        # Refer to https://discuss.pytorch.org/t/problems-with-torch-multiprocess-spawn-and-simplequeue/69674/2
+        # https://discuss.pytorch.org/t/return-from-mp-spawn/94302/2
+        queue = mp.get_context('spawn').SimpleQueue()
+
+        config_dict = config_dict or {}
+        config_dict.update(
+            {
+                "world_size": world_size,
+                "ip": ip,
+                "port": port,
+                "nproc": nproc,
+                "offset": group_offset,
+            }
+        )
+        kwargs = {
+            "config_dict": config_dict,
+            "queue": queue,
+        }
+
+        mp.spawn(
+            run_recboles,
+            args=(model, dataset, config_file_list, kwargs),
+            nprocs=nproc,
+            join=True,
+        )
+
+        # Normally, there should be only one item in the queue
+        res = None if queue.empty() else queue.get()
+    return res
+
+
 def run_recbole(
-    model=None, dataset=None, config_file_list=None, config_dict=None, saved=True
+    model=None,
+    dataset=None,
+    config_file_list=None,
+    config_dict=None,
+    saved=True,
+    queue=None,
 ):
     r"""A fast running api, which includes the complete process of
     training and testing a model on a specified dataset
@@ -51,6 +109,7 @@ def run_recbole(
         config_file_list (list, optional): Config files used to modify experiment parameters. Defaults to ``None``.
         config_dict (dict, optional): Parameters dictionary used to modify experiment parameters. Defaults to ``None``.
         saved (bool, optional): Whether to save the model. Defaults to ``True``.
+        queue (torch.multiprocessing.Queue, optional): The queue used to pass the result to the main process. Defaults to ``None``.
     """
     # configurations initialization
     config = Config(
@@ -104,27 +163,33 @@ def run_recbole(
     logger.info(set_color("best valid ", "yellow") + f": {best_valid_result}")
     logger.info(set_color("test result", "yellow") + f": {test_result}")
 
-    return {
+    result = {
         "best_valid_score": best_valid_score,
         "valid_score_bigger": config["valid_metric_bigger"],
         "best_valid_result": best_valid_result,
         "test_result": test_result,
     }
 
+    if not config["single_spec"]:
+        dist.destroy_process_group()
+
+    if config["local_rank"] == 0 and queue is not None:
+        queue.put(result)  # for multiprocessing, e.g., mp.spawn
+
+    return result  # for the single process
+
 
 def run_recboles(rank, *args):
-    ip, port, world_size, nproc, offset = args[3:]
-    args = args[:3]
+    kwargs = args[-1]
+    if not isinstance(kwargs, MutableMapping):
+        raise ValueError(
+            f"The last argument of run_recboles should be a dict, but got {type(kwargs)}"
+        )
+    kwargs["config_dict"] = kwargs.get("config_dict", {})
+    kwargs["config_dict"]["local_rank"] = rank
     run_recbole(
-        *args,
-        config_dict={
-            "local_rank": rank,
-            "world_size": world_size,
-            "ip": ip,
-            "port": port,
-            "nproc": nproc,
-            "offset": offset,
-        },
+        *args[:3],
+        **kwargs,
     )
 
 
