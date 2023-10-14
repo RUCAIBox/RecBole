@@ -63,7 +63,7 @@ def run(
 
         # Refer to https://discuss.pytorch.org/t/problems-with-torch-multiprocess-spawn-and-simplequeue/69674/2
         # https://discuss.pytorch.org/t/return-from-mp-spawn/94302/2
-        queue = mp.get_context('spawn').SimpleQueue()
+        queue = mp.get_context("spawn").SimpleQueue()
 
         config_dict = config_dict or {}
         config_dict.update(
