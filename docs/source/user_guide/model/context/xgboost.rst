@@ -34,7 +34,7 @@ Write the following code to a python file, such as `run.py`
 
    from recbole.quick_start import run_recbole
 
-   run_recbole(model='xgboost', dataset='ml-100k')
+   run_recbole(model='XGBoost', dataset='ml-100k')
 
 And then:
 
