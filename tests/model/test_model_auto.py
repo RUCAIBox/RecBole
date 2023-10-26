@@ -754,7 +754,7 @@ class TestSequentialRecommender(unittest.TestCase):
             "dnn_type": "ave",
         }
         quick_test(config_dict)
-    
+
     def test_fea_rec(self):
         config_dict = {
             "model": "FEARec",
