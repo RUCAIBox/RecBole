@@ -1,6 +1,6 @@
 Model Introduction
 =====================
-We implement 88 recommendation models covering general recommendation, sequential recommendation,
+We implement 90 recommendation models covering general recommendation, sequential recommendation,
 context-aware recommendation and knowledge-based recommendation. A brief introduction to these models are as follows:
 
 

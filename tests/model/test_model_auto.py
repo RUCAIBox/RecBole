@@ -754,6 +754,13 @@ class TestSequentialRecommender(unittest.TestCase):
             "dnn_type": "ave",
         }
         quick_test(config_dict)
+    
+    def test_fea_rec(self):
+        config_dict = {
+            "model": "FEARec",
+            "train_neg_sample_args": None,
+        }
+        quick_test(config_dict)
 
     # def test_gru4reckg(self):
     #     config_dict = {
