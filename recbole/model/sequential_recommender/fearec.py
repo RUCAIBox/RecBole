@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2023/10/27 
+# @Time    : 2023/10/27
 # @Author  : Kesha Ou
 # @Email   : keishaou@gmail.com
 
@@ -181,7 +181,9 @@ class FEARec(SequentialRecommender):
         extended_attention_mask = self.get_attention_mask(item_seq)
         # extended_attention_mask = self.get_bi_attention_mask(item_seq)
 
-        trm_output = self.item_encoder(input_emb, extended_attention_mask, output_all_encoded_layers=True)
+        trm_output = self.item_encoder(
+            input_emb, extended_attention_mask, output_all_encoded_layers=True
+        )
         output = trm_output[-1]
         output = self.gather_indexes(output, item_seq_len - 1)
 
@@ -212,9 +214,9 @@ class FEARec(SequentialRecommender):
                 print("error")
             while True:
                 sample_index = random.choice(targets_index)
-                cur_item_list = interaction[self.ITEM_SEQ][i].to('cpu')
+                cur_item_list = interaction[self.ITEM_SEQ][i].to("cpu")
                 sample_item_list = dataset.inter_feat[self.ITEM_SEQ][sample_index]
-                are_equal = torch.equal(cur_item_list,sample_item_list)
+                are_equal = torch.equal(cur_item_list, sample_item_list)
                 sample_item_length = dataset.inter_feat[self.ITEM_SEQ_LEN][sample_index]
                 if not are_equal or lens == 1:
                     sem_pos_lengths.append(sample_item_length)
@@ -292,7 +294,7 @@ class FEARec(SequentialRecommender):
             )
 
             loss += self.lmd_sem * self.aug_nce_fct(sem_nce_logits, sem_nce_labels)
- 
+
             # frequency domain loss
             if self.fredom:
                 seq_output_f = torch.fft.rfft(seq_output, dim=1, norm="ortho")
@@ -509,9 +511,12 @@ class HybridAttention(nn.Module):
             self.spatial_ratio = self.config["spatial_ratio"]
 
     def transpose_for_scores(self, x):
-        new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
-        x = x.view(*new_x_shape)  
-        # return x.permute(0, 2, 1, 3)  
+        new_x_shape = x.size()[:-1] + (
+            self.num_attention_heads,
+            self.attention_head_size,
+        )
+        x = x.view(*new_x_shape)
+        # return x.permute(0, 2, 1, 3)
         return x
 
     def time_delay_agg_training(self, values, corr):
@@ -609,9 +614,10 @@ class HybridAttention(nn.Module):
         q_fft = torch.fft.rfft(queries.permute(0, 2, 3, 1).contiguous(), dim=-1)
         k_fft = torch.fft.rfft(keys.permute(0, 2, 3, 1).contiguous(), dim=-1)
 
-
         # put into an empty box for sampling
-        q_fft_box = torch.zeros(B, H, E, len(self.q_index), device=q_fft.device, dtype=torch.cfloat)
+        q_fft_box = torch.zeros(
+            B, H, E, len(self.q_index), device=q_fft.device, dtype=torch.cfloat
+        )
         q_fft_box = q_fft[:, :, :, self.q_index]
 
         k_fft_box = torch.zeros(
@@ -670,7 +676,9 @@ class HybridAttention(nn.Module):
             # v
             v_fft = torch.fft.rfft(values.permute(0, 2, 3, 1).contiguous(), dim=-1)
             # put into an empty box for sampling
-            v_fft_box = torch.zeros(B, H, E, len(self.time_v_index), device=v_fft.device, dtype=torch.cfloat)
+            v_fft_box = torch.zeros(
+                B, H, E, len(self.time_v_index), device=v_fft.device, dtype=torch.cfloat
+            )
             v_fft_box = v_fft[:, :, :, self.time_v_index]
             spatial_v = torch.zeros(
                 B, H, E, L // 2 + 1, device=v_fft.device, dtype=torch.cfloat
@@ -691,7 +699,7 @@ class HybridAttention(nn.Module):
             attention_scores = attention_scores + attention_mask
             attention_probs = nn.Softmax(dim=-1)(attention_scores)
             attention_probs = self.attn_dropout(attention_probs)
-            qkv = torch.matmul(attention_probs, values)  
+            qkv = torch.matmul(attention_probs, values)
             context_layer_spatial = qkv.permute(0, 2, 1, 3).contiguous()
             new_context_layer_shape = context_layer_spatial.size()[:-2] + (
                 self.all_head_size,
