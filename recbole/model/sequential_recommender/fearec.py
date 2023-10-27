@@ -1,4 +1,22 @@
-import pickle
+# -*- coding: utf-8 -*-
+# @Time    : 2023/10/27 
+# @Author  : Kesha Ou
+# @Email   : keishaou@gmail.com
+
+r"""
+FEARec
+################################################
+
+Reference:
+    Xinyu Du et al. "Frequency Enhanced Hybrid Attention Network for Sequential Recommendation."
+    In SIGIR 2023.
+
+Reference code:
+    https://github.com/sudaada/FEARec
+
+"""
+
+
 import random
 
 import numpy as np
@@ -11,7 +29,6 @@ import torch.nn.functional as fn
 
 
 from recbole.model.abstract_recommender import SequentialRecommender
-# from recbole.model.layers import FEAEncoder #考虑把encoder放进来
 from recbole.model.loss import BPRLoss
 from recbole.data.interaction import Interaction
 
@@ -80,29 +97,13 @@ class FEARec(SequentialRecommender):
 
     def get_same_item_index(self,dataset):
         same_target_index = {}
-        aug_path = dataset.config['data_path'] + '/semantic_augmentationindex.pkl'
-        import os
-        if os.path.exists(aug_path):
-            with open(aug_path, 'rb') as file:
-                same_target_index = pickle.load(file)
-                file.close()
-        else:
-            target_item = dataset.inter_feat[self.ITEM_ID].numpy()
+        target_item = dataset.inter_feat[self.ITEM_ID].numpy()
+        count = 0
 
-            count = 0
-            # print(dataset.inter_feat[self.ITEM_ID][2911])
-            # print("is 2895 fou")
-            # print(dataset.inter_feat[self.ITEM_ID][9867])
-            for index, item_id in enumerate(target_item):
-                print("{:1}".format(count / len(target_item) * 100) + "%")
-                all_index_same_id = np.where(target_item == item_id)[0]
-                same_target_index[item_id] = all_index_same_id
-                count += 1
-                # print(item_id,"index is",same_target_index[item_id])
-
-            with open(aug_path, 'wb')  as file:
-                pickle.dump(same_target_index,file)
-                file.close()
+        for index, item_id in enumerate(target_item):
+            all_index_same_id = np.where(target_item == item_id)[0]
+            same_target_index[item_id] = all_index_same_id
+            count += 1
 
         return same_target_index
 
@@ -131,8 +132,6 @@ class FEARec(SequentialRecommender):
 
     def get_attention_mask(self, item_seq):
         """Generate left-to-right uni-directional attention mask for multi-head attention."""
-        """ 最终，这个方法返回一个用于多头注意力的 attention mask，确保了在每个位置上，
-         只能注意到该位置之前的位置。这有助于模型按照时间顺序逐步生成输出,过滤掉未来的信息 """
         attention_mask = (item_seq > 0).long()
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)  # torch.int64
         # mask for left-to-right unidirectional
@@ -170,8 +169,6 @@ class FEARec(SequentialRecommender):
         extended_attention_mask = self.get_attention_mask(item_seq)
         # extended_attention_mask = self.get_bi_attention_mask(item_seq)
 
-
-
         trm_output = self.item_encoder(input_emb, extended_attention_mask, output_all_encoded_layers=True)
         output = trm_output[-1]
         output = self.gather_indexes(output, item_seq_len - 1)
@@ -190,7 +187,6 @@ class FEARec(SequentialRecommender):
         return torch.pdist(x, p=2).pow(2).mul(-2).exp().mean().log()
 
 
-
     def calculate_loss(self, interaction):
 
         same_item_index = self.same_item_index
@@ -207,9 +203,9 @@ class FEARec(SequentialRecommender):
             while True:
                 sample_index = random.choice(targets_index)
                 cur_item_list = interaction[self.ITEM_SEQ][i].to('cpu')
-                sample_item_list = dataset.inter_feat['item_id_list'][sample_index]
+                sample_item_list = dataset.inter_feat[self.ITEM_SEQ][sample_index]
                 are_equal = torch.equal(cur_item_list,sample_item_list)
-                sample_item_length = dataset.inter_feat['item_length'][sample_index]
+                sample_item_length = dataset.inter_feat[self.ITEM_SEQ_LEN][sample_index]
                 if not are_equal or lens == 1:
                     sem_pos_lengths.append(sample_item_length)
                     sem_pos_seqs.append(sample_item_list)
@@ -244,14 +240,6 @@ class FEARec(SequentialRecommender):
             nce_logits, nce_labels = self.info_nce(seq_output, aug_seq_output, temp=self.tau,
                                                    batch_size=item_seq_len.shape[0], sim=self.sim)
 
-            # nce_logits = torch.mm(seq_output, aug_seq_output.T)
-            # nce_labels = torch.tensor(list(range(nce_logits.shape[0])), dtype=torch.long, device=item_seq.device)
-
-            # if self.ssl == 'un':
-            #     with torch.no_grad():
-            #         alignment, uniformity = self.decompose(seq_output, aug_seq_output, seq_output,
-            #                                                batch_size=item_seq_len.shape[0])
-
             loss += self.lmd * self.aug_nce_fct(nce_logits, nce_labels)
 
         # Supervised NCE
@@ -261,13 +249,6 @@ class FEARec(SequentialRecommender):
 
             sem_nce_logits, sem_nce_labels = self.info_nce(seq_output, sem_aug_seq_output, temp=self.tau,
                                                            batch_size=item_seq_len.shape[0], sim=self.sim)
-
-            # sem_nce_logits = torch.mm(seq_output, sem_aug_seq_output.T) / self.tau
-            # sem_nce_labels = torch.tensor(list(range(sem_nce_logits.shape[0])), dtype=torch.long, device=item_seq.device)
-
-            # with torch.no_grad():
-            #     alignment, uniformity = self.decompose(seq_output, sem_aug_seq_output, seq_output,
-            #                                            batch_size=item_seq_len.shape[0])
 
             loss += self.lmd_sem * self.aug_nce_fct(sem_nce_logits, sem_nce_labels)
 
@@ -280,10 +261,7 @@ class FEARec(SequentialRecommender):
                                                            batch_size=item_seq_len.shape[0], sim=self.sim)
 
             loss += self.lmd_sem * self.aug_nce_fct(sem_nce_logits, sem_nce_labels)
-            # with torch.no_grad():
-            #     alignment, uniformity = self.decompose(aug_seq_output, sem_aug_seq_output, seq_output,
-            #                                            batch_size=item_seq_len.shape[0])
-
+ 
             # frequency domain loss
             if self.fredom:
                 seq_output_f = torch.fft.rfft(seq_output, dim=1, norm='ortho')
@@ -444,11 +422,6 @@ class HybridAttention(nn.Module):
         self.left = int(((self.max_item_list_length // 2 + 1) * (1 - self.w)) - (i * self.s))
         self.right = int((self.max_item_list_length // 2 + 1) - i * self.s)
 
-        # random:
-        # self.q_index = get_frequency_modes(50, 2, 'random')
-        # self.k_index = get_frequency_modes(50, 2, 'random')
-        # self.v_index = get_frequency_modes(50, 2, 'random')
-
         self.q_index = list(range(self.left, self.right))
         self.k_index = list(range(self.left, self.right))
         self.v_index = list(range(self.left, self.right))
@@ -472,8 +445,8 @@ class HybridAttention(nn.Module):
 
     def transpose_for_scores(self, x):
         new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
-        x = x.view(*new_x_shape)  # [256, 50, 2, 32]
-        # return x.permute(0, 2, 1, 3)  # [256, 2, 50, 32]
+        x = x.view(*new_x_shape)  
+        # return x.permute(0, 2, 1, 3)  
         return x
 
     def time_delay_agg_training(self, values, corr):
@@ -533,17 +506,13 @@ class HybridAttention(nn.Module):
         mixed_key_layer = self.key_layer(input_tensor)
         mixed_value_layer = self.value_layer(input_tensor)
 
-
-        #trans挺快,query
         queries = self.transpose_for_scores(mixed_query_layer)
         keys = self.transpose_for_scores(mixed_key_layer)
         values = self.transpose_for_scores(mixed_value_layer)
 
-        #这段代码是注意力机制中的一部分，涉及到对查询（queries）和键（keys）进行频域变换（FFT），以应用频域注意力
         # B, H, L, E = query_layer.shape
         # AutoFormer
         B, L, H, E = queries.shape
-        # print("qqqq", queries.shape) [256,50,2,32,]
         _, S, _, D = values.shape
         if L > S:
             zeros = torch.zeros_like(queries[:, :(L - S), :]).float()
@@ -558,7 +527,7 @@ class HybridAttention(nn.Module):
         k_fft = torch.fft.rfft(keys.permute(0, 2, 3, 1).contiguous(), dim=-1)
 
 
-        # 装到采样的空盒子里
+        # put into an empty box for sampling
         q_fft_box = torch.zeros(B, H, E, len(self.q_index), device=q_fft.device, dtype=torch.cfloat)
         q_fft_box = q_fft[:, :, :, self.q_index]
 
@@ -584,12 +553,11 @@ class HybridAttention(nn.Module):
             V = self.time_delay_agg_inference(values.permute(0, 2, 3, 1).contiguous(), corr).permute(0, 3, 1, 2)
 
 
-        # print(V.shape)
         new_context_layer_shape = V.size()[:-2] + (self.all_head_size,)
         context_layer = V.view(*new_context_layer_shape)
 
         if self.dual_domain:
-            # 装到采样的空盒子里
+            # put into an empty box for sampling
             # q
             q_fft_box = torch.zeros(B, H, E, len(self.time_q_index), device=q_fft.device, dtype=torch.cfloat)
             q_fft_box = q_fft[:, :, :, self.time_q_index]
@@ -605,12 +573,11 @@ class HybridAttention(nn.Module):
 
             # v
             v_fft = torch.fft.rfft(values.permute(0, 2, 3, 1).contiguous(), dim=-1)
-            # 装到采样的空盒子里
+            # put into an empty box for sampling
             v_fft_box = torch.zeros(B, H, E, len(self.time_v_index), device=v_fft.device, dtype=torch.cfloat)
             v_fft_box = v_fft[:, :, :, self.time_v_index]
             spatial_v = torch.zeros(B, H, E, L // 2 + 1, device=v_fft.device, dtype=torch.cfloat)
             spatial_v[:, :, :, self.time_v_index] = v_fft_box
-
 
 
             queries = torch.fft.irfft(spatial_q, dim=-1)
@@ -627,7 +594,7 @@ class HybridAttention(nn.Module):
             attention_scores = attention_scores + attention_mask
             attention_probs = nn.Softmax(dim=-1)(attention_scores)
             attention_probs = self.attn_dropout(attention_probs)
-            qkv = torch.matmul(attention_probs, values)  # [256, 2, index, 32]
+            qkv = torch.matmul(attention_probs, values)  
             context_layer_spatial = qkv.permute(0, 2, 1, 3).contiguous()
             new_context_layer_shape = context_layer_spatial.size()[:-2] + (self.all_head_size,)
             context_layer_spatial = context_layer_spatial.view(*new_context_layer_shape)
