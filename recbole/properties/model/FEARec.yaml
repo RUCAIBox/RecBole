@@ -1,0 +1,20 @@
+n_layers: 2                      # (int) The number of transformer layers in transformer encoder.
+n_heads: 2                       # (int) The number of attention heads for multi-head attention layer.
+hidden_size: 64                  # (int) The number of features in the hidden state
+inner_size: 256                  # (int) The inner hidden size in feed-forward layer.
+hidden_dropout_prob: 0.5         # (float) The probability of an element to be zeroed.
+attn_dropout_prob: 0.5           # (float) The probability of an attention score to be zeroed.
+hidden_act: 'gelu'               # (str) The activation function in feed-forward layer.
+layer_norm_eps: 1e-12            # (float) A value added to the denominator for numerical stability.
+initializer_range: 0.02          # (float) The standard deviation for normal initialization.
+loss_type: 'CE'                  # (str) The type of loss function.
+lmd: 0.1                         # (float) The weight of unsupervised normalized CE loss.
+lmd_sem: 0.1                     # (float) The weight of supervised normalized CE loss.
+
+global_ratio: 1                  # (float) The ratio of frequency components
+dual_domain: False               # (bool) Frequency domain processing or not
+std: False                       # (bool) Use the specific time index or not
+spatial_ratio: 0                 # (float) The ratio of the spatial domain and frequency domain
+fredom: False                    # (bool)  Regularization in the frequency domain or not
+fredom_type: None                # (str)  The type of loss in different scenarios
+topk_factor: 1                   # (int)  To aggregate time delayed sequences with high autocorrelation
