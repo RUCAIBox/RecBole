@@ -169,7 +169,7 @@ class LightGCN(GeneralRecommender):
         neg_scores = torch.mul(u_embeddings, neg_embeddings).sum(dim=1)
         mf_loss = self.mf_loss(pos_scores, neg_scores)
 
-        # calculate BPR Loss
+        # calculate regularization Loss
         u_ego_embeddings = self.user_embedding(user)
         pos_ego_embeddings = self.item_embedding(pos_item)
         neg_ego_embeddings = self.item_embedding(neg_item)
