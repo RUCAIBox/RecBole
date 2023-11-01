@@ -68,6 +68,7 @@ class AutoEncoder(nn.Module):
 
         else:
             from kmeans_pytorch import kmeans
+
             self.cluster_ids, _ = kmeans(
                 X=item_emb, num_clusters=n_cate, distance="euclidean", device=device
             )
