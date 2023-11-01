@@ -1,5 +1,5 @@
 .. RecBole documentation master file.
-.. title:: RecBole v1.1.1
+.. title:: RecBole v1.2.0
 .. image:: asset/logo.png
 
 =========================================================

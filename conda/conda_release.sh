@@ -6,3 +6,7 @@ conda-build --python 3.8 .
 printf "python 3.8 version is released \n"
 conda-build --python 3.9 .
 printf "python 3.9 version is released \n"
+conda-build --python 3.10 .
+printf "python 3.10 version is released \n"
+conda-build --python 3.11 .
+printf "python 3.11 version is released \n"
