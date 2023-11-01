@@ -17,6 +17,8 @@ import torch.distributed as dist
 from collections.abc import MutableMapping
 from logging import getLogger
 
+from ray import tune
+
 from recbole.config import Config
 from recbole.data import (
     create_dataset,
@@ -218,7 +220,6 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     )
     test_result = trainer.evaluate(test_data, load_best_model=saved)
     
-    from ray import tune
     tune.report(**test_result)
     return {
         "model": model_name,

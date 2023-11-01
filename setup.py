@@ -22,11 +22,12 @@ install_requires = [
     "plotly>=4.0.0",
     "texttable>=0.9.0",
     "psutil>=5.9.0",
+    "ray>=1.13.0, <=2.6.3",
 ]
 
 setup_requires = []
 
-extras_require = {"hyperopt": ["hyperopt==0.2.5"], "ray": ["ray>=1.13.0, <=2.6.3"]}
+extras_require = {"hyperopt": ["hyperopt==0.2.5"]}
 
 classifiers = ["License :: OSI Approved :: MIT License"]
 
