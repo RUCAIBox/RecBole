@@ -29,3 +29,4 @@ recbole.model.sequential\_recommender
    recbole.model.sequential_recommender.srgnn
    recbole.model.sequential_recommender.stamp
    recbole.model.sequential_recommender.transrec
+   recbole.model.sequential_recommender.fearec

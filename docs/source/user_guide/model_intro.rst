@@ -1,6 +1,6 @@
 Model Introduction
 =====================
-We implement 90 recommendation models covering general recommendation, sequential recommendation,
+We implement 91 recommendation models covering general recommendation, sequential recommendation,
 context-aware recommendation and knowledge-based recommendation. A brief introduction to these models are as follows:
 
 
@@ -77,6 +77,7 @@ are also support for these models. And evaluation is always conducted in the way
    model/context/lightgbm
    model/context/kd_dagfm
    model/context/fignn
+   model/context/eulernet
 
 
 Sequential Recommendation
@@ -114,6 +115,7 @@ the sequential data. The models of session-based recommendation are also include
    model/sequential/lightsans
    model/sequential/sine
    model/sequential/core
+   model/sequential/fearec
 
 
 Knowledge-based Recommendation

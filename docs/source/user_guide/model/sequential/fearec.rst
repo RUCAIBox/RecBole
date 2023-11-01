@@ -4,7 +4,7 @@ FEARec
 Introduction
 ---------------------
 
-`[paper] <https://arxiv.org/pdf/2304.09184.pdf>`_
+`[paper] <https://dl.acm.org/doi/10.1145/3539618.3591689>`_
 
 **Title:** FEARec: Frequency Enhanced Hybrid Attention Network for Sequential Recommendation
 
@@ -49,6 +49,10 @@ Write the following code to a python file, such as `run.py`
 .. code:: python
 
    from recbole.quick_start import run_recbole
+
+   parameter_dict = {
+      'train_neg_sample_args': None,
+   }
 
    run_recbole(model='FEARec', dataset='ml-100k')
 
