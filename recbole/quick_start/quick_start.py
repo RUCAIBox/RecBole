@@ -217,8 +217,9 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
         train_data, valid_data, verbose=False, saved=saved
     )
     test_result = trainer.evaluate(test_data, load_best_model=saved)
-    
+
     from ray import tune
+
     tune.report(**test_result)
     return {
         "model": model_name,
