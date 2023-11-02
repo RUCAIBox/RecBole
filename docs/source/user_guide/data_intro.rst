@@ -1,7 +1,7 @@
 Data Module Introduction
 =========================
 
-RecBole not only implements lots of popular recommender models, but also collects and releases 41 commonly-used publiced datasets.
+RecBole not only implements lots of popular recommender models, but also collects and releases 43 commonly-used publiced datasets.
 You can freely download these datasets following our docs :doc:`data/dataset_download`.
 
 For extensibility and reusability, Recbole has a flexible and extensible data module.  

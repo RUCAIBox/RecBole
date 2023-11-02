@@ -7,12 +7,16 @@ recbole.model.context\_aware\_recommender
    recbole.model.context_aware_recommender.afm
    recbole.model.context_aware_recommender.autoint
    recbole.model.context_aware_recommender.dcn
+   recbole.model.context_aware_recommender.dcnv2
    recbole.model.context_aware_recommender.deepfm
    recbole.model.context_aware_recommender.dssm
+   recbole.model.context_aware_recommender.eulernet
    recbole.model.context_aware_recommender.ffm
+   recbole.model.context_aware_recommender.fignn
    recbole.model.context_aware_recommender.fm
    recbole.model.context_aware_recommender.fnn
    recbole.model.context_aware_recommender.fwfm
+   recbole.model.context_aware_recommender.kd_dagfm
    recbole.model.context_aware_recommender.lr
    recbole.model.context_aware_recommender.nfm
    recbole.model.context_aware_recommender.pnn

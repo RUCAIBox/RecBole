@@ -1,24 +1,24 @@
 .. RecBole documentation master file.
-.. title:: RecBole v1.1.1
+.. title:: RecBole v1.2.0
 .. image:: asset/logo.png
 
 =========================================================
 
-`HomePage <https://recbole.io/>`_ | `Docs <https://recbole.io/docs/>`_ | `GitHub <https://github.com/RUCAIBox/RecBole>`_ | `Datasets <https://github.com/RUCAIBox/RecDatasets>`_ | `v0.1.2 </docs/v0.1.2/>`_ | `v0.2.0 </docs/v0.2.0/>`_ | `v1.0.0 </docs/v1.0.0/>`_ | `v1.0.1 </docs/v1.0.1/>`_
+`HomePage <https://recbole.io/>`_ | `Docs <https://recbole.io/docs/>`_ | `GitHub <https://github.com/RUCAIBox/RecBole>`_ | `Datasets <https://github.com/RUCAIBox/RecDatasets>`_ | `v0.1.2 </docs/v0.1.2/>`_ | `v0.2.0 </docs/v0.2.0/>`_ | `v1.0.0 </docs/v1.0.0/>`_ | `v1.0.1 </docs/v1.0.1/>`_ | `v1.2.0 </docs/v1.2.0/>`_
 
 Introduction
 -------------------------
 RecBole is a unified, comprehensive and efficient framework developed based on PyTorch.
 It aims to help the researchers to reproduce and develop recommendation models.
 
-In the lastest release, our library includes 90 recommendation algorithms `[Model List]`_, covering four major categories:
+In the lastest release, our library includes 91 recommendation algorithms `[Model List]`_, covering four major categories:
 
 - General Recommendation
 - Sequential Recommendation
 - Context-aware Recommendation
 - Knowledge-based Recommendation
 
-We design a unified and flexible data file format, and provide the support for 41 benchmark recommendation datasets `[Collected Datasets]`_. A user can apply the provided script to process the original data copy, or simply download the processed datasets by our team.
+We design a unified and flexible data file format, and provide the support for 43 benchmark recommendation datasets `[Collected Datasets]`_. A user can apply the provided script to process the original data copy, or simply download the processed datasets by our team.
 
 .. image:: asset/framework.png
     :width: 600
@@ -29,7 +29,7 @@ Features:
 - General and extensible data structure
     We deign general and extensible data structures to unify the formatting and usage of various recommendation datasets.
 - Comprehensive benchmark models and datasets
-    We implement 86 commonly used recommendation algorithms, and provide the formatted copies of 41 recommendation datasets.
+    We implement 91 commonly used recommendation algorithms, and provide the formatted copies of 43 recommendation datasets.
 - Efficient GPU-accelerated execution
     We design many tailored strategies in the GPU environment to enhance the efficiency of our library.
 - Extensive and standard evaluation protocols

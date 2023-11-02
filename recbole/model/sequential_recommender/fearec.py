@@ -101,12 +101,10 @@ class FEARec(SequentialRecommender):
     def get_same_item_index(self, dataset):
         same_target_index = {}
         target_item = dataset.inter_feat[self.ITEM_ID].numpy()
-        count = 0
 
         for index, item_id in enumerate(target_item):
             all_index_same_id = np.where(target_item == item_id)[0]
             same_target_index[item_id] = all_index_same_id
-            count += 1
 
         return same_target_index
 
