@@ -59,6 +59,8 @@ for testing and comparing recommendation algorithms.
 
 
 ## RecBole News
+![new](/asset/new.gif) **11/01/2023**: We release RecBole [v1.2.0](https://github.com/RUCAIBox/RecBole/releases/tag/v1.2.0).
+
 ![new](/asset/new.gif) **11/06/2022**: We release [the optimal hyperparameters of the model and their tuning ranges](https://recbole.io/hyperparameters/index.html).
 
 ![new](/asset/new.gif) **10/05/2022**: We release RecBole [v1.1.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.1).
@@ -247,6 +249,7 @@ We will keep improving our implementations, and update these test results.
 ## RecBole Major Releases
 | Releases | Date       |
 |----------|------------|
+| v1.2.0   | 11/01/2023 |
 | v1.1.1   | 10/05/2022 |
 | v1.0.0   | 09/17/2021 |
 | v0.2.0   | 01/15/2021 |
@@ -290,7 +293,7 @@ We thank the nice contributions through PRs from [@rowedenny](https://github.com
 
 
 ## Cite
-If you find RecBole useful for your research or development, please cite the following papers: [RecBole[1.0]](https://arxiv.org/abs/2011.01731), [RecBole[2.0]](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) and [RecBole[1.1.1]](https://arxiv.org/abs/2211.15148).
+If you find RecBole useful for your research or development, please cite the following papers: [RecBole[1.0]](https://arxiv.org/abs/2011.01731), [RecBole[2.0]](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) and [RecBole[1.2.0]](https://dl.acm.org/doi/10.1145/3539618.3591889).
 
 ```bibtex
 @inproceedings{recbole[1.0],
@@ -308,11 +311,11 @@ If you find RecBole useful for your research or development, please cite the fol
   pages={4722--4726},
   year={2022}
 }
-@misc{recbole[1.1.1],
-  author = {Xu, Lanling and Tian, Zhen and Zhang, Gaowei and Wang, Lei and Zhang, Junjie and Zheng, Bowen and Li, Yifan and Hou, Yupeng and Pan, Xingyu and Chen, Yushuo and Zhao, Wayne Xin and Chen, Xu and Wen, Ji-Rong},
-  title = {Recent Advances in RecBole: Extensions with more Practical Considerations},
-  journal   = {arXiv preprint arXiv:2211.15148},
-  year = {2022}
+@inproceedings{recbole[1.2.0],
+author = {Xu, Lanling and Tian, Zhen and Zhang, Gaowei and Zhang, Junjie and Wang, Lei and Zheng, Bowen and Li, Yifan and Tang, Jiakai and Zhang, Zeyu and Hou, Yupeng and Pan, Xingyu and Zhao, Wayne Xin and Chen, Xu and Wen, Ji-Rong},
+title = {Towards a More User-Friendly and Easy-to-Use Benchmark Library for Recommender Systems},
+pages = {2837–2847},
+year = {2023}
 }
 ```
 
@@ -326,8 +329,9 @@ Here is the list of our lead developers in each development phase. They are the 
 |         Time          |        Version         |                Lead Developers                 |                Paper            |
 | :-------------------: | :--------------------: | :--------------------------------------------: | ---------------------------------------------- |
 | June 2020<br> ~<br> Nov. 2020 |        v0.1.1         |  Shanlei Mu ([@ShanleiMu](https://github.com/ShanleiMu)), Yupeng Hou ([@hyp1231](https://github.com/hyp1231)),<br> Zihan Lin ([@linzihan-backforward](https://github.com/linzihan-backforward)), Kaiyuan Li ([@tsotfsk](https://github.com/tsotfsk))| [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) |
-|    Nov. 2020<br> ~ <br> Oct. 2022    | v0.1.2 ~ v1.0.1 |      Yushuo Chen ([@chenyushuo](https://github.com/chenyushuo)), Xingyu Pan ([@2017pxy](https://github.com/2017pxy))    | [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016)  |
-| Oct. 2022<br/> ~ <br/> now | v1.1.0 ~ v1.1.1 | Lanling Xu ([@Sherry-XLL](https://github.com/Sherry-XLL)), Zhen Tian ([@chenyuwuxin](https://github.com/chenyuwuxin)), Gaowei Zhang ([@Wicknight](https://github.com/Wicknight)), Lei Wang ([@Paitesanshi](https://github.com/Paitesanshi)), Junjie Zhang ([@leoleojie](https://github.com/leoleojie)) | [PDF](https://arxiv.org/abs/2211.15148) |
+|    Nov. 2020<br> ~ <br> Jul. 2022    | v0.1.2 ~ v1.0.1 |      Yushuo Chen ([@chenyushuo](https://github.com/chenyushuo)), Xingyu Pan ([@2017pxy](https://github.com/2017pxy))    | [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016)  |
+| Jul. 2022<br/> ~ <br/> Nov. 2023 | v1.1.0 ~ v1.1.1 | Lanling Xu ([@Sherry-XLL](https://github.com/Sherry-XLL)), Zhen Tian ([@chenyuwuxin](https://github.com/chenyuwuxin)), Gaowei Zhang ([@Wicknight](https://github.com/Wicknight)), Lei Wang ([@Paitesanshi](https://github.com/Paitesanshi)), Junjie Zhang ([@leoleojie](https://github.com/leoleojie)) | [PDF](https://dl.acm.org/doi/10.1145/3539618.3591889) |
+| Nov. 2023<br/> ~ <br/> now | v1.2.0 | Bowen Zheng ([@zhengbw0324](https://github.com/zhengbw0324)), Chen Ma ([@Yilu114](https://github.com/Yilu114)) | [PDF](https://dl.acm.org/doi/10.1145/3539618.3591889) |
 
 
 ## License

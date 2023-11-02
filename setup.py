@@ -10,7 +10,7 @@ install_requires = [
     "torch>=1.10.0",
     "numpy>=1.17.2",
     "scipy>=1.6.0",
-    "pandas>=1.0.5",
+    "pandas>=1.3.0",
     "tqdm>=4.48.2",
     "colorlog==4.7.2",
     "colorama==0.4.4",
@@ -20,11 +20,14 @@ install_requires = [
     "thop>=0.1.1.post2207130030",
     "tabulate>=0.8.10",
     "plotly>=4.0.0",
+    "texttable>=0.9.0",
+    "psutil>=5.9.0",
+    "ray>=1.13.0, <=2.6.3",
 ]
 
 setup_requires = []
 
-extras_require = {"hyperopt": ["hyperopt==0.2.5"], "ray": ["ray>=1.13.0"]}
+extras_require = {"hyperopt": ["hyperopt==0.2.5"]}
 
 classifiers = ["License :: OSI Approved :: MIT License"]
 
@@ -48,7 +51,7 @@ if on_rtd:
 
 setup(
     name="recbole",
-    version="1.1.1",  # please remember to edit recbole/__init__.py in response, once updating the version
+    version="1.2.0",  # please remember to edit recbole/__init__.py in response, once updating the version
     description="A unified, comprehensive and efficient recommendation library",
     long_description=long_description,
     long_description_content_type="text/markdown",
