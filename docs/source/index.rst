@@ -4,7 +4,7 @@
 
 =========================================================
 
-`HomePage <https://recbole.io/>`_ | `Docs <https://recbole.io/docs/>`_ | `GitHub <https://github.com/RUCAIBox/RecBole>`_ | `Datasets <https://github.com/RUCAIBox/RecDatasets>`_ | `v0.1.2 </docs/v0.1.2/>`_ | `v0.2.0 </docs/v0.2.0/>`_ | `v1.0.0 </docs/v1.0.0/>`_ | `v1.0.1 </docs/v1.0.1/>`_ | `v1.2.0 </docs/v1.2.0/>`_
+`HomePage <https://recbole.io/>`_ | `Docs <https://recbole.io/docs/>`_ | `GitHub <https://github.com/RUCAIBox/RecBole>`_ | `Datasets <https://github.com/RUCAIBox/RecDatasets>`_ | `v0.1.2 </docs/v0.1.2/>`_ | `v0.2.0 </docs/v0.2.0/>`_ | `v1.0.0 </docs/v1.0.0/>`_ | `v1.0.1 </docs/v1.0.1/>`_ | `v1.1.1 </docs/v1.1.1/>`_
 
 Introduction
 -------------------------
@@ -101,7 +101,8 @@ Time                     Version 	        Lead Developers
 ======================   ===============   =============================================
 June 2020 ~ Nov. 2020    v0.1.1            `Shanlei Mu <https://github.com/ShanleiMu>`_, `Yupeng Hou <https://github.com/hyp1231>`_, `Zihan Lin <https://github.com/linzihan-backforward>`_, `Kaiyuan Li <https://github.com/tsotfsk>`_
 Nov. 2020 ~ Oct. 2022    v0.1.2 ~ v1.0.1   `Yushuo Chen <https://github.com/chenyushuo>`_, `Xingyu Pan <https://github.com/2017pxy>`_
-Oct. 2022 ~ Now          v1.1.0 ~ v1.1.1   `Lanling Xu <https://github.com/Sherry-XLL>`_, `Zhen Tian <https://github.com/chenyuwuxin>`_, `Gaowei Zhang <https://github.com/Wicknight>`_, `Lei Wang <https://github.com/Paitesanshi>`_, `Junjie Zhang <https://github.com/leoleojie>`_
+Oct. 2022 ~ Nov. 2023    v1.1.0 ~ v1.1.1   `Lanling Xu <https://github.com/Sherry-XLL>`_, `Zhen Tian <https://github.com/chenyuwuxin>`_, `Gaowei Zhang <https://github.com/Wicknight>`_, `Lei Wang <https://github.com/Paitesanshi>`_, `Junjie Zhang <https://github.com/leoleojie>`_
+Nov. 2023 ~ now          v1.2.0            `Bowen Zheng <https://github.com/zhengbw0324>`_, `Chen Ma <https://github.com/Yilu114>`_
 ======================   ===============   =============================================
 
 License

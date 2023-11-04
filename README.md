@@ -24,14 +24,14 @@
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
-Our library includes 78 recommendation algorithms, covering four major categories:
+Our library includes 91 recommendation algorithms, covering four major categories:
 
 + General Recommendation
 + Sequential Recommendation
 + Context-aware Recommendation
 + Knowledge-based Recommendation
 
-We design a unified and flexible data file format, and provide the support for 28 benchmark recommendation datasets.
+We design a unified and flexible data file format, and provide the support for 43 benchmark recommendation datasets.
 A user can apply the provided script to process the original data copy, or simply download the processed datasets
 by our team.
 
@@ -101,7 +101,7 @@ These extensions make it much easier to reproduce the benchmark results and stay
 |          Aspect           |            RecBole 1.0             |          RecBole 2.0           |                   This update                    |
 | :-----------------------: | :--------------------------------: | :----------------------------: | :----------------------------------------------: |
 |   Recommendation tasks    |            4 categories            |    3 topics and 5 packages     |                   4 categories                   |
-|    Models and datasets    |     73 models and 28 datasets      |  65 models and 8 new datasets  |            86 models and 41 datasets             |
+|    Models and datasets    |     73 models and 28 datasets      |  65 models and 8 new datasets  |            91 models and 43 datasets             |
 |      Data structure       | Implemented Dataset and Dataloader |         Task-oriented          |  Compatible data module inherited from PyTorch   |
 |    Continuous features    |          Field embedding           |        Field embedding         |        Field embedding and discretization        |
 | GPU-accelerated execution |       Single-GPU utilization       |     Single-GPU utilization     |      Multi-GPU and mixed precision training      |
