@@ -63,9 +63,9 @@ for testing and comparing recommendation algorithms.
 
 ![new](/asset/new.gif) **11/06/2022**: We release [the optimal hyperparameters of the model and their tuning ranges](https://recbole.io/hyperparameters/index.html).
 
-![new](/asset/new.gif) **10/05/2022**: We release RecBole [v1.1.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.1).
+**10/05/2022**: We release RecBole [v1.1.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.1).
 
-![new](/asset/new.gif) **06/28/2022**: We release [**RecBole2.0**](https://github.com/RUCAIBox/RecBole2.0) with **8 packages** consisting of **65 newly implement models**. 
+**06/28/2022**: We release [**RecBole2.0**](https://github.com/RUCAIBox/RecBole2.0) with **8 packages** consisting of **65 newly implement models**. 
 
 **02/25/2022**: We release RecBole [v1.0.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.0.1).
 
@@ -312,10 +312,10 @@ If you find RecBole useful for your research or development, please cite the fol
   year={2022}
 }
 @inproceedings{recbole[1.2.0],
-author = {Xu, Lanling and Tian, Zhen and Zhang, Gaowei and Zhang, Junjie and Wang, Lei and Zheng, Bowen and Li, Yifan and Tang, Jiakai and Zhang, Zeyu and Hou, Yupeng and Pan, Xingyu and Zhao, Wayne Xin and Chen, Xu and Wen, Ji-Rong},
-title = {Towards a More User-Friendly and Easy-to-Use Benchmark Library for Recommender Systems},
-pages = {2837–2847},
-year = {2023}
+  author = {Xu, Lanling and Tian, Zhen and Zhang, Gaowei and Zhang, Junjie and Wang, Lei and Zheng, Bowen and Li, Yifan and Tang, Jiakai and Zhang, Zeyu and Hou, Yupeng and Pan, Xingyu and Zhao, Wayne Xin and Chen, Xu and Wen, Ji-Rong},
+  title = {Towards a More User-Friendly and Easy-to-Use Benchmark Library for Recommender Systems},
+  pages = {2837–2847},
+  year = {2023}
 }
 ```
 

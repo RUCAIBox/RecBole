@@ -58,9 +58,9 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 
 ![new](/asset/new.gif) **11/06/2022**: 我们公开了[模型的最优超参数及其调参范围](https://recbole.io/hyperparameters/index.html).
 
-![new](/asset/new.gif) **10/05/2022**: 我们发布了 [v1.1.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.1).
+**10/05/2022**: 我们发布了 [v1.1.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.1).
 
-![new](/asset/new.gif) **06/28/2022**: 我们发布了包括 **8 个子包**和 **65 个新实现模型**的 [**RecBole2.0**](https://github.com/RUCAIBox/RecBole2.0).
+**06/28/2022**: 我们发布了包括 **8 个子包**和 **65 个新实现模型**的 [**RecBole2.0**](https://github.com/RUCAIBox/RecBole2.0).
 
 **02/25/2022**: 我们发布了 [v1.0.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.0.1).
 
@@ -284,10 +284,10 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
   year={2022}
 }
 @inproceedings{recbole[1.2.0],
-author = {Xu, Lanling and Tian, Zhen and Zhang, Gaowei and Zhang, Junjie and Wang, Lei and Zheng, Bowen and Li, Yifan and Tang, Jiakai and Zhang, Zeyu and Hou, Yupeng and Pan, Xingyu and Zhao, Wayne Xin and Chen, Xu and Wen, Ji-Rong},
-title = {Towards a More User-Friendly and Easy-to-Use Benchmark Library for Recommender Systems},
-pages = {2837–2847},
-year = {2023}
+  author = {Xu, Lanling and Tian, Zhen and Zhang, Gaowei and Zhang, Junjie and Wang, Lei and Zheng, Bowen and Li, Yifan and Tang, Jiakai and Zhang, Zeyu and Hou, Yupeng and Pan, Xingyu and Zhao, Wayne Xin and Chen, Xu and Wen, Ji-Rong},
+  title = {Towards a More User-Friendly and Easy-to-Use Benchmark Library for Recommender Systems},
+  pages = {2837–2847},
+  year = {2023}
 }
 ```
 
