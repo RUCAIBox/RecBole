@@ -1,0 +1,26 @@
+n_layers: 2                     # (int) The number of transformer layers in transformer encoder.
+n_heads: 2                      # (int) The number of attention heads for multi-head attention layer.
+hidden_size: 64                 # (int) The number of features in the hidden state.
+inner_size: 256                 # (int) The inner hidden size in feed-forward layer.
+hidden_dropout_prob: 0          # (float) The probability of an element to be zeroed.
+attn_dropout_prob: 0.1          # (float) The probability of an attention score to be zeroed.
+hidden_act: 'gelu'              # (str) The activation function in feed-forward layer.
+layer_norm_eps: 1e-12           # (float) A value added to the denominator for numerical stability. 
+initializer_range: 0.02         # (float) The standard deviation for normal initialization.
+loss_type: 'CE'                 # (str) The type of loss function. This value can only be 'CE'. 
+
+n_facet: 1
+n_facet_all: 5
+n_facet_hidden: 2
+n_facet_window: -2
+n_facet_MLP: -1
+n_facet_context: 1
+n_facet_reranker: 1
+n_facet_emb: 2
+weight_mode: ''
+context_norm: 1
+post_remove_context: 0
+partition_merging_mode: 'replace'
+reranker_merging_mode: 'replace'
+reranker_CAN_NUM: 100
+use_proj_bias: 1
