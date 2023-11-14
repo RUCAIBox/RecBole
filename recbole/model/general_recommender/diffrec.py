@@ -111,7 +111,7 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
         self.emb_size = config["embedding_size"]
         self.norm = config["norm"]  # True or False
         self.reweight = config["reweight"]  # reweight the loss for different timesteps
-        if self.noise_scale == 0.:
+        if self.noise_scale == 0.0:
             self.reweight = False
         self.sampling_noise = config[
             "sampling_noise"
