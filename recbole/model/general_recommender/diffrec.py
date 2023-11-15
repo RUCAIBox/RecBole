@@ -111,6 +111,8 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
         self.emb_size = config["embedding_size"]
         self.norm = config["norm"]  # True or False
         self.reweight = config["reweight"]  # reweight the loss for different timesteps
+        if self.noise_scale == 0.0:
+            self.reweight = False
         self.sampling_noise = config[
             "sampling_noise"
         ]  # whether sample noise during predict
@@ -151,7 +153,7 @@ class DiffRec(GeneralRecommender, AutoEncoderMixin):
                 self.betas <= 1
             ).all(), "betas out of range"
 
-        self.calculate_for_diffusion()
+            self.calculate_for_diffusion()
 
     def build_histroy_items(self, dataset):
         r"""
