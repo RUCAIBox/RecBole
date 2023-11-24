@@ -458,6 +458,10 @@ class TestSequentialRecommender(unittest.TestCase):
     def test_gru4rec(self):
         config_dict = {"model": "GRU4Rec", "train_neg_sample_args": None}
         quick_test(config_dict)
+    
+    def test_gru4reccpr(self):
+        config_dict = {"model": "GRU4RecCPR", "train_neg_sample_args": None}
+        quick_test(config_dict)
 
     def test_gru4rec_with_BPR_loss(self):
         config_dict = {
@@ -530,6 +534,10 @@ class TestSequentialRecommender(unittest.TestCase):
 
     def test_sasrec(self):
         config_dict = {"model": "SASRec", "train_neg_sample_args": None}
+        quick_test(config_dict)
+    
+    def test_sasreccpr(self):
+        config_dict = {"model": "SASRecCPR", "train_neg_sample_args": None}
         quick_test(config_dict)
 
     def test_sasrec_with_BPR_loss_and_relu(self):

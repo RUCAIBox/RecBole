@@ -8,6 +8,11 @@
 # @Author : Yupeng Hou, Yujie Lu
 # @Email  : houyupeng@ruc.edu.cn, yujielu1998@gmail.com
 
+# UPDATE:
+# @Time   : 2023/11/24
+# @Author : Haw-Shiuan Chang
+# @Email  : ken77921@gmail.com
+
 r"""
 GRU4Rec + Softmax-CPR
 ################################################
@@ -27,6 +32,7 @@ import torch.nn.functional as F
 import math
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.loss import BPRLoss
+import sys
 
 def gelu(x):
     return 0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
@@ -64,26 +70,13 @@ class GRU4RecCPR(SequentialRecommender):
         self.n_facet_window = - self.n_facet_window
         self.n_facet_MLP = - self.n_facet_MLP
         self.softmax_nonlinear='None' #added for mfs
-        self.use_att = config['use_att'] #added for mfs
         self.use_out_emb = config['use_out_emb'] #added for mfs
         self.only_compute_loss = True #added for mfs
-        if self.use_att:
-            assert self.use_out_emb
-            self.dropout = nn.Dropout(self.dropout_prob)
-            self.We = nn.Linear(self.hidden_size, self.hidden_size)
-            self.Ue = nn.Linear(self.hidden_size, self.hidden_size)
-            self.tanh = nn.Tanh()
-            self.Ve = nn.Linear(self.hidden_size, 1)
-            out_size = 2*self.hidden_size
-        else:
-            self.dense = nn.Linear(self.hidden_size, self.embedding_size)
-            out_size = self.embedding_size
+        
+        self.dense = nn.Linear(self.hidden_size, self.embedding_size)
+        out_size = self.embedding_size
         
         self.n_embd = out_size
-        #if self.use_att:
-        #    self.n_embd = 2* self.hidden_size #added for mfs
-        #else:
-        #    self.n_embd = self.hidden_size #added for mfs
 
         self.use_proj_bias = config['use_proj_bias'] #added for mfs
         self.weight_mode = config['weight_mode'] #added for mfs
@@ -103,12 +96,8 @@ class GRU4RecCPR(SequentialRecommender):
         assert self.n_facet_emb == 0 or self.n_facet_emb == 2
 
 
-        if self.n_facet_MLP > 0:
-            hidden_state_input_ratio = 1 + self.n_facet_MLP #1 + 1
-            #print(self.n_embd, self.n_facet_hidden, self.n_facet_window, self.n_facet_MLP)
-            self.MLP_linear = nn.Linear(self.n_embd * (self.n_facet_hidden * (self.n_facet_window+1) ), self.n_embd * self.n_facet_MLP) # (hid_dim*2) -> (hid_dim)
-        else:            
-            hidden_state_input_ratio = self.n_facet_hidden * (self.n_facet_window+1) #1 * (0+1)
+        hidden_state_input_ratio = 1 + self.n_facet_MLP #1 + 1
+        self.MLP_linear = nn.Linear(self.n_embd * (self.n_facet_hidden * (self.n_facet_window+1) ), self.n_embd * self.n_facet_MLP) # (hid_dim*2) -> (hid_dim)
         total_lin_dim = self.n_embd * hidden_state_input_ratio
         self.project_arr = nn.ModuleList([nn.Linear(total_lin_dim, self.n_embd, bias=self.use_proj_bias) for i in range(self.n_facet_all)])
         
@@ -159,33 +148,7 @@ class GRU4RecCPR(SequentialRecommender):
         item_seq_emb = self.item_embedding(item_seq)
         item_seq_emb_dropout = self.emb_dropout(item_seq_emb)
         gru_output, _ = self.gru_layers(item_seq_emb_dropout)
-        if self.use_att:
-            all_memory = gru_output
-            all_memory_values = all_memory
-            bsz, seq_len, hsz = all_memory.size()
-
-            all_memory_U = self.dropout(self.Ue(all_memory))
-            all_memory_U = all_memory_U.unsqueeze(2)
-            all_memory_U = all_memory_U.expand(bsz, seq_len, all_memory.size(1), hsz)
-
-            all_memory_W = self.dropout(self.We(all_memory))
-            all_memory_W = all_memory_U.unsqueeze(1)
-            all_memory_W = all_memory_U.expand(bsz, all_memory.size(1), seq_len, hsz)
-
-            output_ee = self.tanh(all_memory_U + all_memory_W)
-            output_ee = self.Ve(output_ee).squeeze(-1)
-
-            timeline_mask = (item_seq == 0)
-            output_ee.masked_fill_(timeline_mask.unsqueeze(2).expand(bsz, seq_len, all_memory.size(1)), -1e9)
-
-            output_ee = output_ee.unsqueeze(-1)
-
-            alpha_e = nn.Softmax(dim=1)(output_ee)
-            alpha_e = alpha_e.expand(bsz, seq_len, seq_len, self.hidden_size)
-            output_e = (alpha_e * all_memory_values.unsqueeze(2).expand(bsz, seq_len, all_memory.size(1), hsz)).sum(dim=1)
-            gru_output = torch.cat([output_e, all_memory_values], dim=-1)
-        else:
-            gru_output = self.dense(gru_output)
+        gru_output = self.dense(gru_output)
         return gru_output
 
     def get_facet_emb(self,input_emb, i):
@@ -287,7 +250,7 @@ class GRU4RecCPR(SequentialRecommender):
                 bsz, seq_len_2 = item_seq.size()
                 logit_hidden_context = (projected_emb_arr[self.n_facet + self.n_facet_reranker*len(self.reranker_CAN_NUM) + i].unsqueeze(dim=2).expand(-1,-1,seq_len_2,-1) * test_item_emb[item_seq, :].unsqueeze(dim=1).expand(-1,seq_len_1,-1,-1)  ).sum(dim=-1)
                 if test_item_bias is not None:
-                    logit_hidden_reranker_topn += test_item_bias[item_seq].unsqueeze(dim=1).expand(-1,seq_len_1,-1)
+                    logit_hidden_context += test_item_bias[item_seq].unsqueeze(dim=1).expand(-1,seq_len_1,-1)
                 logit_hidden_pointer = 0
                 if self.n_facet_emb == 2:
                     logit_hidden_pointer = ( projected_emb_arr[-2][:,-1,:].unsqueeze(dim=1).unsqueeze(dim=1).expand(-1,seq_len_1,seq_len_2,-1) * projected_emb_arr[-1].unsqueeze(dim=1).expand(-1,seq_len_1,-1,-1) ).sum(dim=-1)

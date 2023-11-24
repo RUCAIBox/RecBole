@@ -3,6 +3,11 @@
 # @Author  : Hui Wang
 # @Email   : hui.wang@ruc.edu.cn
 
+# UPDATE:
+# @Time   : 2023/11/24
+# @Author : Haw-Shiuan Chang
+# @Email  : ken77921@gmail.com
+
 """
 SASRec + Softmax-CPR
 ################################################
@@ -81,11 +86,8 @@ class SASRecCPR(SequentialRecommender):
         self.n_facet_MLP = - self.n_facet_MLP
         self.softmax_nonlinear='None' #added for mfs
         self.use_proj_bias = config['use_proj_bias'] #added for mfs
-        if self.n_facet_MLP > 0:
-            hidden_state_input_ratio = 1 + self.n_facet_MLP #1 + 1
-            self.MLP_linear = nn.Linear(self.hidden_size * (self.n_facet_hidden * (self.n_facet_window+1) ), self.hidden_size * self.n_facet_MLP) # (hid_dim*2) -> (hid_dim)
-        else:            
-            hidden_state_input_ratio = self.n_facet_hidden * (self.n_facet_window+1) #1 * (0+1)
+        hidden_state_input_ratio = 1 + self.n_facet_MLP #1 + 1
+        self.MLP_linear = nn.Linear(self.hidden_size * (self.n_facet_hidden * (self.n_facet_window+1) ), self.hidden_size * self.n_facet_MLP) # (hid_dim*2) -> (hid_dim)
         total_lin_dim = self.hidden_size * hidden_state_input_ratio
         self.project_arr = nn.ModuleList([nn.Linear(total_lin_dim, self.hidden_size, bias=self.use_proj_bias) for i in range(self.n_facet_all)])
 
