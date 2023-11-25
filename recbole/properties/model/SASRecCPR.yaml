@@ -1,0 +1,32 @@
+n_layers: 2                       # (int) The number of transformer layers in transformer encoder.
+n_heads: 2                        # (int) The number of attention heads for multi-head attention layer.
+hidden_size: 64                   # (int) The number of features in the hidden state.
+inner_size: 256                   # (int) The inner hidden size in feed-forward layer.
+hidden_dropout_prob: 0            # (float) The probability of an element to be zeroed.
+attn_dropout_prob: 0.1            # (float) The probability of an attention score to be zeroed.
+hidden_act: 'gelu'                # (str) The activation function in feed-forward layer.
+layer_norm_eps: 1e-12             # (float) A value added to the denominator for numerical stability. 
+initializer_range: 0.02           # (float) The standard deviation for normal initialization.
+loss_type: 'CE'                   # (str) The type of loss function. This value can only be 'CE'. 
+
+#Please see https://github.com/iesl/softmax_CPR_recommend/blob/master/run_hyper_loop.sh and [1] to see some common configuration of the following hyperparameters
+n_facet_all: 5                    # (int) Number of linear layers for context partition, reranker partition, pointer network, and most items in the vocabulary. Notice that n_facet_all = n_facet + n_facet_context + n_facet_reranker*len(reranker_CAN_NUM_arr) + n_facet_emb
+n_facet: 1                        # (int) Number of the output hidden states for most items in the vocabulary. If n_facet > 1, we will use mixture of softmax (MoS)
+n_facet_context: 1                # (int) Number of the output hidden states for the context partition. This number should be either 0, 1 or n_facet (If you use MoS).
+n_facet_reranker: 1               # (int) Number of the output hidden states for a single reranker partition. This number should be either 0, 1 or n_facet (If you use MoS).
+reranker_CAN_NUM: 100             # (str) The size of reranker partitions. If you want to use 3 reranker partitions with size 500, 100, and 20, set "500,100,20". Notice that the number should have a descent order (e.g., setting it to 20,100,500 is incorrect).
+n_facet_emb: 2                    # (int) Number of the output hidden states for pointer network. This number should be either 0 or 2.
+n_facet_hidden: 2                 # (int) min(n_facet_hidden, n_layers) = H hyperparameter in multiple input hidden states (Mi) [3]. If not using Mi, set this number to 1.
+n_facet_window: -2                # (int) -n_facet_window + 1 is the W hyperparameter in multiple input hidden states [3]. If not using Mi, set this number to 0.
+n_facet_MLP: -1                   # (int) The dimension of q_ct in [3] is (-n_facet_MLP + 1)*embedding_size. If not using Mi, set this number to 0.
+weight_mode: ''                   # (str) The method of merging probability distribution in MoS. The value could be "dynamic" [4], "static", and "max_logits" [1].
+context_norm: 1                   # (int) If setting 0, we remove the denominator in Equation (5) of [1].
+partition_merging_mode: 'replace' # (str) If "replace", the logit from context partition and pointer network would overwrite the logit from reranker partition and original softmax. Otherwise, the logit would be added.
+reranker_merging_mode: 'replace'  # (str) If "add", the logit from reranker partition would be added with the original softmax. Otherwise, the softmax logit would be replaced by the logit from reranker partition.
+use_proj_bias: 1                  # (bool) In linear layers for all output hidden states, if we want to use the bias term.
+post_remove_context: 0            # (int) Setting the probability of all the items in the history to be 0 [2].
+
+#[1] Haw-Shiuan Chang, Nikhil Agarwal, and Andrew McCallum. "To Copy, or not to Copy; That is a Critical Issue of the Output Softmax Layer in Neural Sequential Recommenders." In Proceedings of The 17th ACM Inernational Conference on Web Search and Data Mining (WSDM 24)
+#[2] Ming Li, Ali Vardasbi, Andrew Yates, and Maarten de Rijke. 2023. Repetition and Exploration in Sequential Recommendation. In SIGIR 2023: 46th international ACM SIGIR Conference on Research and Development in Information Retrieval. ACM, 2532–2541.
+#[3] Haw-Shiuan Chang and Andrew McCallum. 2022. Softmax bottleneck makes language models unable to represent multi-mode word distributions. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 8048–8073
+#[4] Zhilin Yang, Zihang Dai, Ruslan Salakhutdinov, and William W. Cohen. "Breaking the Softmax Bottleneck: A High-Rank RNN Language Model." In International Conference on Learning Representations. 2018.
