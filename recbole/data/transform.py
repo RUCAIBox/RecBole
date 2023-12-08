@@ -3,6 +3,11 @@
 # @Author : Gaowei Zhang
 # @Email  : zgw15630559577@163.com
 
+# UPDATE
+# @Time    : 2023/12/8
+# @Author  : Bingqian Li
+# @email   : lizibing666@gmail.com
+
 import math
 import numpy as np
 import random
@@ -24,6 +29,7 @@ def construct_transform(config):
             "crop_itemseq": CropItemSequence,
             "reorder_itemseq": ReorderItemSequence,
             "user_defined": UserDefinedTransform,
+            "random_itemseq": RandomAugmentationSequence
         }
         if config["transform"] not in str2transform:
             raise NotImplementedError(
@@ -220,6 +226,89 @@ class InverseItemSequence:
         new_dict = {self.INVERSE_ITEM_SEQ: inverse_item_seq}
         interaction.update(Interaction(new_dict))
         return interaction
+
+class RandomAugmentationSequence:
+    def __init__(self, config):
+        self.ITEM_SEQ = config["ITEM_ID_FIELD"] + config["LIST_SUFFIX"]
+        self.RANDOM_ITEM_SEQ = "Random_" + self.ITEM_SEQ
+        self.ITEM_SEQ_LEN = config["ITEM_LIST_LENGTH_FIELD"]        
+        self.ITEM_ID = config["ITEM_ID_FIELD"]
+        config["RANDOM_ITEM_SEQ"] = self.RANDOM_ITEM_SEQ
+
+    
+    def __call__(self, dataset, interaction):
+        item_seq = interaction[self.ITEM_SEQ]
+        item_seq_len = interaction[self.ITEM_SEQ_LEN]
+        device = item_seq.device
+        n_items = dataset.num(self.ITEM_ID)
+
+        aug_seq1 = []
+        aug_len1 = []
+        aug_seq2 = []
+        aug_len2 = []
+
+        for seq, length in zip(item_seq, item_seq_len):
+            if length > 1:
+                switch = random.sample(range(3), k=2)
+            else:
+                switch = [3, 3]
+                aug_seq = seq
+                aug_len = length
+            if switch[0] == 0:
+                aug_seq, aug_len = self.item_crop(seq, length)
+            elif switch[0] == 1:
+                aug_seq, aug_len = self.item_mask(seq, n_items, length)
+            elif switch[0] == 2:
+                aug_seq, aug_len = self.item_reorder(seq, length)
+            
+            aug_seq1.append(aug_seq)
+            aug_len1.append(aug_len)
+            
+            if switch[1] == 0:
+                aug_seq, aug_len = self.item_crop(seq, length)
+            elif switch[1] == 1:
+                aug_seq, aug_len = self.item_mask(seq, n_items, length)
+            elif switch[1] == 2:
+                aug_seq, aug_len = self.item_reorder(seq, length)
+
+            aug_seq2.append(aug_seq)
+            aug_len2.append(aug_len)
+        
+        new_dict = {
+            "aug1" : torch.stack(aug_seq1),
+            "aug1_len" : torch.stack(aug_len1),
+            "aug2" : torch.stack(aug_seq2),
+            "aug2_len" : torch.stack(aug_len2)
+        }
+        interaction.update(Interaction(new_dict))
+        return interaction
+        
+    def item_crop(self, item_seq, item_seq_len, eta=0.6):
+        num_left = math.floor(item_seq_len * eta)
+        crop_begin = random.randint(0, item_seq_len - num_left)
+        croped_item_seq = np.zeros(item_seq.shape[0])
+        if crop_begin + num_left < item_seq.shape[0]:
+            croped_item_seq[:num_left] = item_seq.cpu().detach().numpy()[crop_begin:crop_begin + num_left]
+        else:
+            croped_item_seq[:num_left] = item_seq.cpu().detach().numpy()[crop_begin:]
+        return torch.tensor(croped_item_seq, dtype=torch.long, device=item_seq.device),\
+               torch.tensor(num_left, dtype=torch.long, device=item_seq.device)
+
+    def item_mask(self, item_seq, n_items, item_seq_len, gamma=0.3):
+        num_mask = math.floor(item_seq_len * gamma)
+        mask_index = random.sample(range(item_seq_len), k=num_mask)
+        masked_item_seq = item_seq.cpu().detach().numpy().copy()
+        masked_item_seq[mask_index] = n_items - 1 # token 0 has been used for semantic masking
+        return torch.tensor(masked_item_seq, dtype=torch.long, device=item_seq.device), item_seq_len
+
+    def item_reorder(self, item_seq, item_seq_len, beta=0.6):
+        num_reorder = math.floor(item_seq_len * beta)
+        reorder_begin = random.randint(0, item_seq_len - num_reorder)
+        reordered_item_seq = item_seq.cpu().detach().numpy().copy()
+        shuffle_index = list(range(reorder_begin, reorder_begin + num_reorder))
+        random.shuffle(shuffle_index)
+        reordered_item_seq[reorder_begin:reorder_begin + num_reorder] = reordered_item_seq[shuffle_index]
+        return torch.tensor(reordered_item_seq, dtype=torch.long, device=item_seq.device), item_seq_len
 
 
 class CropItemSequence:
