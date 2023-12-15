@@ -56,6 +56,7 @@ class NGCF(GeneralRecommender):
         self.sparse_dropout = SparseDropout(self.node_dropout)
         self.user_embedding = nn.Embedding(self.n_users, self.embedding_size)
         self.item_embedding = nn.Embedding(self.n_items, self.embedding_size)
+        self.emb_dropout = nn.Dropout(self.message_dropout)
         self.GNNlayers = torch.nn.ModuleList()
         for idx, (input_size, output_size) in enumerate(
             zip(self.hidden_size_list[:-1], self.hidden_size_list[1:])
@@ -156,7 +157,7 @@ class NGCF(GeneralRecommender):
         for gnn in self.GNNlayers:
             all_embeddings = gnn(A_hat, self.eye_matrix, all_embeddings)
             all_embeddings = nn.LeakyReLU(negative_slope=0.2)(all_embeddings)
-            all_embeddings = nn.Dropout(self.message_dropout)(all_embeddings)
+            all_embeddings = self.emb_dropout(all_embeddings)
             all_embeddings = F.normalize(all_embeddings, p=2, dim=1)
             embeddings_list += [
                 all_embeddings
