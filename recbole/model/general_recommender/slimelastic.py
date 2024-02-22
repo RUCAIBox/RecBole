@@ -99,7 +99,7 @@ class SLIMElastic(GeneralRecommender):
             (self.interaction_matrix[user, :].multiply(self.item_similarity[:, item].T))
             .sum(axis=1)
             .getA1()
-        )
+        ).to(self.device)
 
         return r
 
