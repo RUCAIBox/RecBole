@@ -35,6 +35,7 @@ class KGNNLS(KnowledgeRecommender):
     labels/scores. Label smoothness provides regularization over the edge weights and it is equivalent  to a label
     propagation scheme on a graph.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
@@ -81,9 +82,11 @@ class KGNNLS(KnowledgeRecommender):
         for i in range(self.n_iter):
             self.linear_layers.append(
                 nn.Linear(
-                    self.embedding_size
-                    if not self.aggregator_class == "concat"
-                    else self.embedding_size * 2,
+                    (
+                        self.embedding_size
+                        if not self.aggregator_class == "concat"
+                        else self.embedding_size * 2
+                    ),
                     self.embedding_size,
                 )
             )

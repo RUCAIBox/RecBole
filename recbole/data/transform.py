@@ -289,9 +289,9 @@ class ReorderItemSequence:
 
             shuffle_index = list(range(reorder_begin, reorder_begin + reorder_len))
             random.shuffle(shuffle_index)
-            reorder_item_seq[
-                reorder_begin : reorder_begin + reorder_len
-            ] = reorder_item_seq[shuffle_index]
+            reorder_item_seq[reorder_begin : reorder_begin + reorder_len] = (
+                reorder_item_seq[shuffle_index]
+            )
 
             reorder_seq_list.append(
                 torch.tensor(reorder_item_seq, dtype=torch.long, device=device)

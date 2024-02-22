@@ -37,6 +37,7 @@ class LINE(GeneralRecommender):
 
     We implement the model to train users and items embedding for recommendation.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):

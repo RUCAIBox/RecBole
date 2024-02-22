@@ -25,6 +25,7 @@ from recbole.utils import InputType, ModelType
 
 class Pop(GeneralRecommender):
     r"""Pop is an fundamental model that always recommend the most popular item."""
+
     input_type = InputType.POINTWISE
     type = ModelType.TRADITIONAL
 

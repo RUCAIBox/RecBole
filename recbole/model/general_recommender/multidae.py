@@ -26,6 +26,7 @@ class MultiDAE(GeneralRecommender, AutoEncoderMixin):
 
     We implement the the MultiDAE model with only user dataloader.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):

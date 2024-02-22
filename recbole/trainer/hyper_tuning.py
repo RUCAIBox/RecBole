@@ -69,6 +69,7 @@ def _spacesize(space):
 
 class ExhaustiveSearchError(Exception):
     r"""ExhaustiveSearchError"""
+
     pass
 
 

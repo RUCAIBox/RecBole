@@ -26,6 +26,7 @@ class SLIMElastic(GeneralRecommender):
     regularized optimization problem.
 
     """
+
     input_type = InputType.POINTWISE
     type = ModelType.TRADITIONAL
 

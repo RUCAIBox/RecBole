@@ -18,6 +18,7 @@ class EASE(GeneralRecommender):
     strengths of auto-encoders and neighborhood-based approaches.
 
     """
+
     input_type = InputType.POINTWISE
     type = ModelType.TRADITIONAL
 

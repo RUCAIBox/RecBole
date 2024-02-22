@@ -59,6 +59,7 @@ class DGCF(GeneralRecommender):
     we carefully design the data interface and use sparse tensor to train and test efficiently.
     We implement the model following the original author with a pairwise training mode.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):

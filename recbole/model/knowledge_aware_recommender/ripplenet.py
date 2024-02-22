@@ -30,6 +30,7 @@ class RippleNet(KnowledgeRecommender):
     we carefully design the data interface and use ripple set to train and test efficiently.
     We just implement the model following the original author with a pointwise training mode.
     """
+
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):

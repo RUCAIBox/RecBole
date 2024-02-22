@@ -253,6 +253,7 @@ class GAUC(AbstractMetric):
 
     :math:`rank_i` is the descending rank of the i-th items in :math:`R(u)`.
     """
+
     metric_type = EvaluatorType.RANKING
     metric_need = ["rec.meanrank"]
 
@@ -393,6 +394,7 @@ class MAE(LossMetric):
 
     :math:`|S|` represents the number of pairs in :math:`S`.
     """
+
     smaller = True
 
     def __init__(self, config):
@@ -413,6 +415,7 @@ class RMSE(LossMetric):
     .. math::
        \mathrm{RMSE} = \sqrt{\frac{1}{|{S}|} \sum_{(u, i) \in {S}}(\hat{r}_{u i}-r_{u i})^{2}}
     """
+
     smaller = True
 
     def __init__(self, config):
@@ -434,6 +437,7 @@ class LogLoss(LossMetric):
     .. math::
         LogLoss = \frac{1}{|S|} \sum_{(u,i) \in S}(-((r_{u i} \ \log{\hat{r}_{u i}}) + {(1 - r_{u i})}\ \log{(1 - \hat{r}_{u i})}))
     """
+
     smaller = True
 
     def __init__(self, config):
@@ -461,6 +465,7 @@ class ItemCoverage(AbstractMetric):
     .. math::
        \mathrm{Coverage@K}=\frac{\left| \bigcup_{u \in U} \hat{R}(u) \right|}{|I|}
     """
+
     metric_type = EvaluatorType.RANKING
     metric_need = ["rec.items", "data.num_items"]
 
@@ -509,6 +514,7 @@ class AveragePopularity(AbstractMetric):
 
     :math:`\phi(i)` is the number of interaction of item i in training data.
     """
+
     metric_type = EvaluatorType.RANKING
     smaller = True
     metric_need = ["rec.items", "data.count_items"]
@@ -582,6 +588,7 @@ class ShannonEntropy(AbstractMetric):
     :math:`p(i)` is the probability of recommending item i
     which is the number of item i in recommended list over all items.
     """
+
     metric_type = EvaluatorType.RANKING
     metric_need = ["rec.items"]
 
@@ -637,6 +644,7 @@ class GiniIndex(AbstractMetric):
     :math:`P{(i)}` represents the number of times all items appearing in the recommended list,
     which is indexed in non-decreasing order (P_{(i)} \leq P_{(i+1)}).
     """
+
     metric_type = EvaluatorType.RANKING
     smaller = True
     metric_need = ["rec.items", "data.num_items"]
@@ -699,6 +707,7 @@ class TailPercentage(AbstractMetric):
         If you want to use this metric, please set the parameter 'tail_ratio' in the config
         which can be an integer or a float in (0,1]. Otherwise it will default to 0.1.
     """
+
     metric_type = EvaluatorType.RANKING
     metric_need = ["rec.items", "data.count_items"]
 

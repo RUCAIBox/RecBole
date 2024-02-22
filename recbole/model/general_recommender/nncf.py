@@ -30,6 +30,7 @@ class NNCF(GeneralRecommender):
     r"""NNCF is an neural network enhanced matrix factorization model which also captures neighborhood information.
     We implement the NNCF model with three ways to process neighborhood information.
     """
+
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):

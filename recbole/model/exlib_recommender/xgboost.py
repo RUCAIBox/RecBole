@@ -14,6 +14,7 @@ from recbole.utils import ModelType, InputType
 
 class XGBoost(xgb.Booster):
     r"""XGBoost is inherited from xgb.Booster"""
+
     type = ModelType.DECISIONTREE
     input_type = InputType.POINTWISE
 

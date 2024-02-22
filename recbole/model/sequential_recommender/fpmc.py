@@ -36,6 +36,7 @@ class FPMC(SequentialRecommender):
         For comparison with other models, the loss function used is BPR.
 
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):

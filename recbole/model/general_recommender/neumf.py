@@ -33,6 +33,7 @@ class NeuMF(GeneralRecommender):
         Our implementation only contains a rough pretraining function.
 
     """
+
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):

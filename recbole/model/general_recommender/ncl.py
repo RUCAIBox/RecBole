@@ -23,6 +23,7 @@ class NCL(GeneralRecommender):
     r"""NCL is a neighborhood-enriched contrastive learning paradigm for graph collaborative filtering.
     Both structural and semantic neighbors are explicitly captured as contrastive learning objects.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
