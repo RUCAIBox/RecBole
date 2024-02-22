@@ -31,6 +31,7 @@ class KGCN(KnowledgeRecommender):
     as their receptive field, then combine neighborhood information with bias when calculating the representation of a
     given entity.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):
@@ -64,9 +65,11 @@ class KGCN(KnowledgeRecommender):
         for i in range(self.n_iter):
             self.linear_layers.append(
                 nn.Linear(
-                    self.embedding_size
-                    if not self.aggregator_class == "concat"
-                    else self.embedding_size * 2,
+                    (
+                        self.embedding_size
+                        if not self.aggregator_class == "concat"
+                        else self.embedding_size * 2
+                    ),
                     self.embedding_size,
                 )
             )

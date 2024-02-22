@@ -146,9 +146,9 @@ class DIENDataset(SequentialDataset):
                     for i, (index, length) in enumerate(
                         zip(item_list_index, item_list_length)
                     ):
-                        new_dict[self.neg_item_list_field][i][
-                            :length
-                        ] = self.neg_item_list[index]
+                        new_dict[self.neg_item_list_field][i][:length] = (
+                            self.neg_item_list[index]
+                        )
 
         new_data.update(Interaction(new_dict))
         self.inter_feat = new_data

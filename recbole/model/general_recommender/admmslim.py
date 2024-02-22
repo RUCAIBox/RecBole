@@ -111,7 +111,7 @@ class ADMMSLIM(GeneralRecommender):
                 .flatten()
             )
 
-        return add_noise(torch.from_numpy(r))
+        return add_noise(torch.from_numpy(r)).to(self.device)
 
     def full_sort_predict(self, interaction):
         user = interaction[self.USER_ID].cpu().numpy()

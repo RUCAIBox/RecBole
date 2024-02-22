@@ -433,9 +433,9 @@ class Config(object):
                 )
             for op_args in default_train_neg_sample_args:
                 if op_args not in self.final_config_dict["train_neg_sample_args"]:
-                    self.final_config_dict["train_neg_sample_args"][
-                        op_args
-                    ] = default_train_neg_sample_args[op_args]
+                    self.final_config_dict["train_neg_sample_args"][op_args] = (
+                        default_train_neg_sample_args[op_args]
+                    )
 
         # eval_args checking
         default_eval_args = {

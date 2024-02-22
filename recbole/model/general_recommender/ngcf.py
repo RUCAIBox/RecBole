@@ -36,6 +36,7 @@ class NGCF(GeneralRecommender):
     r"""NGCF is a model that incorporate GNN for recommendation.
     We implement the model following the original author with a pairwise training mode.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):

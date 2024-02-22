@@ -41,9 +41,11 @@ class SASRecF(SequentialRecommender):
         self.pooling_mode = config["pooling_mode"]
         self.device = config["device"]
         self.num_feature_field = sum(
-            1
-            if dataset.field2type[field] != FeatureType.FLOAT_SEQ
-            else dataset.num(field)
+            (
+                1
+                if dataset.field2type[field] != FeatureType.FLOAT_SEQ
+                else dataset.num(field)
+            )
             for field in config["selected_features"]
         )
 

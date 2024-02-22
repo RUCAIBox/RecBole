@@ -26,6 +26,7 @@ from recbole.utils import InputType
 
 class BPR(GeneralRecommender):
     r"""BPR is a basic matrix factorization model that be trained in the pairwise way."""
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):

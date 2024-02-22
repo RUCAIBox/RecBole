@@ -26,6 +26,7 @@ class SLIMElastic(GeneralRecommender):
     regularized optimization problem.
 
     """
+
     input_type = InputType.POINTWISE
     type = ModelType.TRADITIONAL
 
@@ -99,7 +100,7 @@ class SLIMElastic(GeneralRecommender):
             (self.interaction_matrix[user, :].multiply(self.item_similarity[:, item].T))
             .sum(axis=1)
             .getA1()
-        )
+        ).to(self.device)
 
         return r
 

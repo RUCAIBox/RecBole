@@ -46,6 +46,7 @@ class SpectralCF(GeneralRecommender):
         For a better stability, we replace :math:`U U^T` with identity matrix :math:`I` and
         replace :math:`U \Lambda U^T` with laplace matrix :math:`L`.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):

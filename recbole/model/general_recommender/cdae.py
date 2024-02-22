@@ -26,6 +26,7 @@ class CDAE(GeneralRecommender, AutoEncoderMixin):
     for top-N recommendation that utilizes the idea of Denoising Auto-Encoders.
     We implement the the CDAE model with only user dataloader.
     """
+
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):

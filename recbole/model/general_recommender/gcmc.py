@@ -48,6 +48,7 @@ class GCMC(GeneralRecommender):
 
     We implement the model following the original author with a pairwise training mode.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):

@@ -14,6 +14,7 @@ from recbole.utils import ModelType, InputType
 
 class LightGBM(lgb.Booster):
     r"""LightGBM is inherited from lgb.Booster"""
+
     type = ModelType.DECISIONTREE
     input_type = InputType.POINTWISE
 

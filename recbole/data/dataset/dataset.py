@@ -651,9 +651,9 @@ class Dataset(torch.utils.data.Dataset):
                 else:
                     dtype = np.int64 if ftype == FeatureType.TOKEN_SEQ else np.float
                     feat[field] = feat[field].apply(
-                        lambda x: np.array([], dtype=dtype)
-                        if isinstance(x, float)
-                        else x
+                        lambda x: (
+                            np.array([], dtype=dtype) if isinstance(x, float) else x
+                        )
                     )
 
     def _normalize(self):

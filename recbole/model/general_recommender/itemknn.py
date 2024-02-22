@@ -161,6 +161,7 @@ class ComputeSimilarity:
 
 class ItemKNN(GeneralRecommender):
     r"""ItemKNN is a basic model that compute item similarity with the interaction matrix."""
+
     input_type = InputType.POINTWISE
     type = ModelType.TRADITIONAL
 

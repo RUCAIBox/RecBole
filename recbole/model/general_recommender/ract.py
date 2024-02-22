@@ -26,6 +26,7 @@ class RaCT(GeneralRecommender, AutoEncoderMixin):
 
     We implement the RaCT model with only user dataloader.
     """
+
     input_type = InputType.PAIRWISE
 
     def __init__(self, config, dataset):

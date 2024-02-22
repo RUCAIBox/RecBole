@@ -37,6 +37,7 @@ class DMF(GeneralRecommender):
         For a better performance and stability, we replace cosine similarity to inner-product when calculate
         final score of user's and item's embedding.
     """
+
     input_type = InputType.POINTWISE
 
     def __init__(self, config, dataset):
