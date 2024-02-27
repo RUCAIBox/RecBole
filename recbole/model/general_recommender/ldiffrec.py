@@ -335,7 +335,7 @@ class LDiffRec(DiffRec):
     def predict(self, interaction):
         item = interaction[self.ITEM_ID]
         x_t = self.full_sort_predict(interaction)
-        scores = x_t[:, item]
+        scores = x_t[torch.arange(len(item)).to(self.device), item]
         return scores
 
 
