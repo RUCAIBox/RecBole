@@ -113,7 +113,7 @@ class NegSampleEvalDataLoader(NegSampleDataLoader):
         else:
             self.sample_size = len(dataset)
         if shuffle:
-            self.logger.warnning("NegSampleEvalDataLoader can't shuffle")
+            self.logger.warning("NegSampleEvalDataLoader can't shuffle")
             shuffle = False
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
@@ -227,7 +227,7 @@ class FullSortEvalDataLoader(AbstractDataLoader):
 
         self.sample_size = len(self.user_df) if not self.is_sequential else len(dataset)
         if shuffle:
-            self.logger.warnning("FullSortEvalDataLoader can't shuffle")
+            self.logger.warning("FullSortEvalDataLoader can't shuffle")
             shuffle = False
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
