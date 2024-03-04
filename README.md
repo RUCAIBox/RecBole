@@ -336,3 +336,7 @@ Here is the list of our lead developers in each development phase. They are the 
 
 ## License
 RecBole uses [MIT License](./LICENSE). All data and code in this project can only be used for academic purposes.
+
+## Acknowledgments
+
+This project was supported by National Natural Science Foundation of China (No. 61832017).
