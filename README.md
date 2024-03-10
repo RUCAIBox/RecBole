@@ -304,7 +304,6 @@ If you find RecBole useful for your research or development, please cite the fol
   publisher = {{ACM}},
   year      = {2021}
 }
-
 @inproceedings{recbole[2.0],
   author    = {Wayne Xin Zhao and Yupeng Hou and Xingyu Pan and Chen Yang and Zeyu Zhang and Zihan Lin and Jingsen Zhang and Shuqing Bian and Jiakai Tang and Wenqi Sun and Yushuo Chen and Lanling Xu and Gaowei Zhang and Zhen Tian and Changxin Tian and Shanlei Mu and Xinyan Fan and Xu Chen and Ji{-}Rong Wen},
   title     = {RecBole 2.0: Towards a More Up-to-Date Recommendation Library},
@@ -313,11 +312,9 @@ If you find RecBole useful for your research or development, please cite the fol
   publisher = {{ACM}},
   year      = {2022}
 }
-
 @inproceedings{recbole[1.2.0],
   author    = {Lanling Xu and Zhen Tian and Gaowei Zhang and Junjie Zhang and Lei Wang and Bowen Zheng and Yifan Li and Jiakai Tang and Zeyu Zhang and Yupeng Hou and Xingyu Pan and Wayne Xin Zhao and Xu Chen and Ji{-}Rong Wen},
-  title     = {Towards a More User-Friendly and Easy-to-Use Benchmark Library for
-                  Recommender Systems},
+  title     = {Towards a More User-Friendly and Easy-to-Use Benchmark Library for Recommender Systems},
   booktitle = {{SIGIR}},
   pages     = {2837--2847},
   publisher = {{ACM}},
