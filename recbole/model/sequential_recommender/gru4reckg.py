@@ -47,6 +47,8 @@ class GRU4RecKG(SequentialRecommender):
         self.entity_embedding = nn.Embedding(
             self.n_items, self.embedding_size, padding_idx=0
         )
+        self.item_emb_dropout = nn.Dropout(self.dropout)
+        self.entity_emb_dropout = nn.Dropout(self.dropout)
         self.entity_embedding.weight.requires_grad = not self.freeze_kg
         self.item_gru_layers = nn.GRU(
             input_size=self.embedding_size,
@@ -79,8 +81,8 @@ class GRU4RecKG(SequentialRecommender):
     def forward(self, item_seq, item_seq_len):
         item_emb = self.item_embedding(item_seq)
         entity_emb = self.entity_embedding(item_seq)
-        item_emb = nn.Dropout(self.dropout)(item_emb)
-        entity_emb = nn.Dropout(self.dropout)(entity_emb)
+        item_emb = self.item_emb_dropout(item_emb)
+        entity_emb = self.entity_emb_dropout(entity_emb)
 
         item_gru_output, _ = self.item_gru_layers(item_emb)  # [B Len H]
         entity_gru_output, _ = self.entity_gru_layers(entity_emb)
