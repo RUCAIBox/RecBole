@@ -213,13 +213,13 @@ class FEARec(SequentialRecommender):
             remaining_indices = targets_index.copy()
             while len(remaining_indices) > 0:
                 sample_index = random.choice(remaining_indices)
-                remaining_indices = remaining_indices[remaining_indices != sample_index]  
+                remaining_indices = remaining_indices[remaining_indices != sample_index]
                 cur_item_list = interaction[self.ITEM_SEQ][i].to("cpu")
                 sample_item_list = dataset.inter_feat[self.ITEM_SEQ][sample_index]
                 are_equal = torch.equal(cur_item_list, sample_item_list)
                 sample_item_length = dataset.inter_feat[self.ITEM_SEQ_LEN][sample_index]
-                
-                if not are_equal or len(remaining_indices) == 0:  
+
+                if not are_equal or len(remaining_indices) == 0:
                     sem_pos_lengths.append(sample_item_length)
                     sem_pos_seqs.append(sample_item_list)
                     break
