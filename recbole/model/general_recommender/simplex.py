@@ -74,7 +74,7 @@ class SimpleX(GeneralRecommender):
             if self.aggregator == "self_attention":
                 self.W_q = nn.Linear(self.embedding_size, 1, bias=False)
         # dropout
-        self.dropout = nn.Dropout(0.1)
+        self.dropout_prob = nn.Dropout(config["dropout_prob"])
         self.require_pow = config["require_pow"]
         # l2 regularization loss
         self.reg_loss = EmbLoss()
