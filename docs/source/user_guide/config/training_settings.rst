@@ -22,6 +22,8 @@ Training settings are designed to set parameters about model training.
   evaluated on the valid dataset. Defaults to ``1``.
 - ``stopping_step (int)`` : The threshold for validation-based early stopping.
   Defaults to ``10``.
+- ``min_delta (float)`` : any change in the evaluation measure, no matter how fractional, will be considered an improvement. This parameter allows you to set the minimum amount of difference between the best value obtained and the new value that represents an improvement.
+  Defaults to ``0.001``.
 - ``clip_grad_norm (dict)`` : The args of `clip_grad_norm_ <https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html>`_
   which will clip gradient norm of model. Defaults to ``None``.
 - ``loss_decimal_place(int)``: The decimal place of training loss. Defaults to ``4``.
