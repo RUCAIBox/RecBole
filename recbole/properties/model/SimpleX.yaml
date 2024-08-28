@@ -5,3 +5,4 @@ gamma: 0.5                      # (float) Weight for fusion of user' and interac
 aggregator: 'mean'              # (str) The item aggregator ranging in ['mean', 'user_attention', 'self_attention'].
 history_len: 50                 # (int) The length of the user's historical interaction items.
 reg_weight: 1e-05               # (float) The L2 regularization weights.
+dropout_prob: 0.1               # (float) Dropout probability for fusion of user' and interacted items' representations.

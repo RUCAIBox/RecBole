@@ -73,7 +73,7 @@ class MKR(KnowledgeRecommender):
         self.kge_pred_mlp = MLPLayers(
             [self.embedding_size * 2, self.embedding_size], self.dropout_prob, "sigmoid"
         )
-        if self.use_inner_product == False:
+        if not self.use_inner_product:
             self.rs_pred_mlp = MLPLayers(
                 [self.embedding_size * 2, 1], self.dropout_prob, "sigmoid"
             )
