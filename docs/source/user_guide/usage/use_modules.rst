@@ -127,7 +127,7 @@ trainer class through the model name.
         ...
 
         # model loading and initialization
-        model = get_model(config['model'])(config, train_data).to(config['device'])
+        model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
 
         # trainer loading and initialization
         trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
