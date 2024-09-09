@@ -1729,6 +1729,44 @@ class Dataset(torch.utils.data.Dataset):
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
+    def split_by_loaded_splits(self):
+        next_df = []
+        for split in ["train", "validation", "test"]:
+            filename = os.path.join(
+                self.dataset_path,
+                f"{self.dataset_name}.{split}"
+            )
+            if not os.path.isfile(filename):
+                if split in ["train", "test"]:
+                    raise NotImplementedError(
+                        f"The load-ready-splits (LRS) splitting method needs at least train and test."
+                    )
+            else:
+                with open(filename, "rb") as split_file:
+                    split_data: dict = pickle.load(split_file)
+
+                split_keys = list(split_data.keys())
+                if self.uid_field not in split_keys or self.iid_field not in split_keys or len(split_keys) != 2:
+                    raise ValueError(
+                        f"The load-ready-splits (LRS) splitting method must contain only the fields "
+                        f"[{self.uid_field}] and [{self.iid_field}]."
+                    )
+
+                for field in [self.uid_field, self.iid_field]:
+                    data = split_data[field]
+                    data = data.numpy() if isinstance(data, torch.Tensor) else data
+                    split_data[field] = torch.LongTensor(
+                        [self.field2token_id[field][val] for val in data.astype(str)]
+                    )
+
+                next_df.append(
+                    Interaction(split_data)
+                )
+
+        self._drop_unused_col()
+        next_ds = [self.copy(_) for _ in next_df]
+        return next_ds
+
     def shuffle(self):
         """Shuffle the interaction records inplace."""
         self.inter_feat.shuffle()
@@ -1799,6 +1837,8 @@ class Dataset(torch.utils.data.Dataset):
             datasets = self.leave_one_out(
                 group_by=self.uid_field, leave_one_mode=split_args["LS"]
             )
+        elif split_mode == "LRS":  # Load Ready Splits
+            datasets = self.split_by_loaded_splits()
         else:
             raise NotImplementedError(
                 f"The splitting_method [{split_mode}] has not been implemented."
