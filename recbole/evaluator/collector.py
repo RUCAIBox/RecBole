@@ -163,7 +163,9 @@ class Collector(object):
             )  # n_users x k
             pos_matrix = torch.zeros_like(scores_tensor, dtype=torch.int)
             pos_matrix[positive_u, positive_i] = 1
-            result = torch.cat((torch.gather(pos_matrix, dim=1, index=topk_idx), pos_matrix.sum(dim=1, keepdim=True)), dim=1)
+            pos_len_list = pos_matrix.sum(dim=1, keepdim=True)
+            pos_idx = torch.gather(pos_matrix, dim=1, index=topk_idx)
+            result = torch.cat((pos_idx, pos_len_list), dim=1)
             self.data_struct.update_tensor("rec.topk", result)
 
         if self.register.need("rec.topk_repeat"):
@@ -174,7 +176,9 @@ class Collector(object):
             repeat_mask = (interaction[self.config["ITEM_ID_FIELD"] + "_list"] == positive_i[..., None]).sum(dim=1) > 0
             pos_matrix = torch.zeros_like(scores_tensor, dtype=torch.int)
             pos_matrix[positive_u[repeat_mask], positive_i[repeat_mask]] = 1
-            result = torch.cat((torch.gather(pos_matrix, dim=1, index=topk_idx), pos_matrix.sum(dim=1, keepdim=True)), dim=1)
+            pos_len_list = pos_matrix.sum(dim=1, keepdim=True)
+            pos_idx = torch.gather(pos_matrix, dim=1, index=topk_idx)
+            result = torch.cat((pos_idx, pos_len_list), dim=1)
             self.data_struct.update_tensor("rec.topk_repeat", result)
 
         if self.register.need("rec.topk_explore"):
@@ -185,10 +189,13 @@ class Collector(object):
             explore_mask = (interaction[self.config["ITEM_ID_FIELD"] + "_list"] == positive_i[..., None]).sum(dim=1) < 1
             pos_matrix = torch.zeros_like(scores_tensor, dtype=torch.int)
             pos_matrix[positive_u[explore_mask], positive_i[explore_mask]] = 1
-            result = torch.cat((torch.gather(pos_matrix, dim=1, index=topk_idx), pos_matrix.sum(dim=1, keepdim=True)), dim=1)
+            pos_len_list = pos_matrix.sum(dim=1, keepdim=True)
+            pos_idx = torch.gather(pos_matrix, dim=1, index=topk_idx)
+            result = torch.cat((pos_idx, pos_len_list), dim=1)
             self.data_struct.update_tensor("rec.topk_explore", result)
 
         if self.register.need("rec.meanrank"):
+
             desc_scores, desc_index = torch.sort(scores_tensor, dim=-1, descending=True)
 
             # get the index of positive items in the ranking list
@@ -207,6 +214,7 @@ class Collector(object):
             self.data_struct.update_tensor("rec.meanrank", result)
 
         if self.register.need("rec.score"):
+
             self.data_struct.update_tensor("rec.score", scores_tensor)
 
         if self.register.need("data.label"):
