@@ -21,10 +21,11 @@ set of user(u)-item(i) pairs, :math:`\hat r_{u i}` represents the score predicte
 :math:`{r}_{u i}` represents the ground-truth labels.
 
 """
-
 from logging import getLogger
 
 import numpy as np
+import torch
+
 from collections import Counter
 from sklearn.metrics import auc as sk_auc
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -32,6 +33,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from recbole.evaluator.utils import _binary_clf_curve
 from recbole.evaluator.base_metric import AbstractMetric, TopkMetric, LossMetric
 from recbole.utils import EvaluatorType
+
 
 # TopK Metrics
 
@@ -157,7 +159,68 @@ class Recall(TopkMetric):
         return metric_dict
 
     def metric_info(self, pos_index, pos_len):
-        return np.cumsum(pos_index, axis=1) / pos_len.reshape(-1, 1)
+        result = np.cumsum(pos_index, axis=1) / pos_len.reshape(-1, 1)
+        result[(np.isnan(result)) | (result == np.inf) | (result == -np.inf)] = 0
+
+        return result
+
+
+class RepeatRecall(Recall):
+    """
+    RepeatRecall calculates the contribution of repeat item (item that exist in the user's history) to the recall
+
+    .. _repeat_recall:
+        https://arxiv.org/abs/2109.14233 described in section 5.4 as relative contribution of repetition and exploration
+
+    .. math::
+       \mathrm {Recall@K} = \frac{1}{|U|}\sum_{u \in U} \frac{|\hat{R}(u) \cap R(u)^{repeat}|}{|R(u)|}
+
+    :math:`|R(u)|` represents the item count of :math:`R(u)`
+            `\hat{R}^{repeat}`  represents the set of predicted repeat items
+    """
+    metric_need = ["rec.topk_repeat"]
+
+    def used_info(self, dataobject):
+        """Get the bool matrix indicating whether the corresponding item is positive and a repeat item
+        and number of positive items for each user.
+        """
+        rec_mat = dataobject.get("rec.topk_repeat")
+        topk_idx, pos_len_list = torch.split(rec_mat, [max(self.topk), 1], dim=1)
+        return topk_idx.to(torch.bool).numpy(), pos_len_list.squeeze(-1).numpy()
+
+    def calculate_metric(self, dataobject):
+        pos_index, pos_len = self.used_info(dataobject)
+        result = self.metric_info(pos_index, pos_len)
+        metric_dict = self.topk_result("repeat_recall", result)
+        return metric_dict
+
+
+class ExploreRecall(Recall):
+    """
+    ExploreRecall calculates the contribution of explore item (item that don't exist in the user's history) to the recall
+
+    .. _explore_recall:
+        https://arxiv.org/abs/2109.14233 described in section 5.4 as relative contribution of repetition and exploration
+
+    .. math::
+       \mathrm {Recall@K} = \frac{1}{|U|}\sum_{u \in U} \frac{|\hat{R}(u) \cap R(u)^{explore}|}{|R(u)|}
+
+    :math:`|R(u)|` represents the item count of :math:`R(u)`
+            `R^{explore}`  represents the set of predicted explore items
+    """
+
+    metric_need = ["rec.topk_explore"]
+
+    def used_info(self, dataobject):
+        rec_mat = dataobject.get("rec.topk_explore")
+        topk_idx, pos_len_list = torch.split(rec_mat, [max(self.topk), 1], dim=1)
+        return topk_idx.to(torch.bool).numpy(), pos_len_list.squeeze(-1).numpy()
+
+    def calculate_metric(self, dataobject):
+        pos_index, pos_len = self.used_info(dataobject)
+        result = self.metric_info(pos_index, pos_len)
+        metric_dict = self.topk_result("explore_recall", result)
+        return metric_dict
 
 
 class NDCG(TopkMetric):
@@ -202,6 +265,63 @@ class NDCG(TopkMetric):
         return result
 
 
+class RepeatNDCG(NDCG):
+    r"""RepeatNDCG_ measure the performance contribution of repeat item to the NDCG metric
+
+    .. _repeat_NDCG:
+        https://arxiv.org/abs/2109.14233 described in section 5.4 as relative contribution of repetition and exploration
+
+    .. math::
+        \mathrm {NDCG@K} = \frac{1}{|U|}\sum_{u \in U} (\frac{1}{\sum_{i=1}^{\min (|R(u)^{repeat}|, K)}
+        \frac{1}{\log _{2}(i+1)}} \sum_{i=1}^{K} \delta(i \in R(u)^{repeat}) \frac{1}{\log _{2}(i+1)})
+
+    :math:`\delta(·)` is an indicator function.
+    """
+    metric_need = ["rec.topk_repeat"]
+
+
+    def used_info(self, dataobject):
+        rec_mat = dataobject.get("rec.topk_repeat")
+        topk_idx, pos_len_list = torch.split(rec_mat, [max(self.topk), 1], dim=1)
+        return topk_idx.to(torch.bool).numpy(), pos_len_list.squeeze(-1).numpy()
+
+    def calculate_metric(self, dataobject):
+        pos_index, pos_len = self.used_info(dataobject)
+        result = self.metric_info(pos_index, pos_len)
+        metric_dict = self.topk_result("repeat_ndcg", result)
+        return metric_dict
+
+
+class ExploreNDCG(NDCG):
+    r"""ExploreNDCG_ measure the performance contribution of explore item (item that weren't in the user's history) to
+    the NDCG metric
+
+    .. _repeat_NDCG:
+        https://arxiv.org/abs/2109.14233 described in section 5.4 as relative contribution of repetition and exploration
+
+    .. math::
+        \mathrm {NDCG@K} = \frac{1}{|U|}\sum_{u \in U} (\frac{1}{\sum_{i=1}^{\min (|R(u)^{explore}|, K)}
+        \frac{1}{\log _{2}(i+1)}} \sum_{i=1}^{K} \delta(i \in R(u)^{explore}) \frac{1}{\log _{2}(i+1)})
+
+    :math:`\delta(·)` is an indicator function.
+    """
+    metric_need = ["rec.topk_explore"]
+
+
+    def used_info(self, dataobject):
+        rec_mat = dataobject.get("rec.topk_explore")
+        topk_idx, pos_len_list = torch.split(rec_mat, [max(self.topk), 1], dim=1)
+        return topk_idx.to(torch.bool).numpy(), pos_len_list.squeeze(-1).numpy()
+
+    def calculate_metric(self, dataobject):
+        pos_index, pos_len = self.used_info(dataobject)
+        result = self.metric_info(pos_index, pos_len)
+        metric_dict = self.topk_result("explore_ndcg", result)
+        return metric_dict
+
+
+
+
 class Precision(TopkMetric):
     r"""Precision_ (also called positive predictive value) is a measure for computing the fraction of relevant items
     out of all the recommended items. We average the metric for each user :math:`u` get the final result.
@@ -224,7 +344,63 @@ class Precision(TopkMetric):
         return metric_dict
 
     def metric_info(self, pos_index):
-        return pos_index.cumsum(axis=1) / np.arange(1, pos_index.shape[1] + 1)
+        result = pos_index.cumsum(axis=1) / np.arange(1, pos_index.shape[1] + 1)
+        result[(np.isnan(result)) | (result == np.inf) | (result == -np.inf)] = 0
+        return result
+
+
+class RepeatPrecision(Precision):
+    r"""RepeatPrecision_ measure the performance contribution of repeat item (item that were in the user's history) to
+    the precision
+
+    .. _repeat_precision:
+        https://arxiv.org/abs/2109.14233 described in section 5.4 as relative contribution of repetition and exploration
+
+    .. math::
+        \mathrm {Precision@K} =  \frac{1}{|U|}\sum_{u \in U} \frac{|\hat{R}(u) \cap R(u)^{repeat}|}{|\hat {R}(u)|}
+
+    :math:`|\hat R(u)|` represents the item count of :math:`\hat R(u)`.
+    """
+
+    metric_need = ["rec.topk_repeat"]
+
+    def used_info(self, dataobject):
+        rec_mat = dataobject.get("rec.topk_repeat")
+        topk_idx, pos_len_list = torch.split(rec_mat, [max(self.topk), 1], dim=1)
+        return topk_idx.to(torch.bool).numpy(), pos_len_list.squeeze(-1).numpy()
+
+    def calculate_metric(self, dataobject):
+        pos_index, _ = self.used_info(dataobject)
+        result = self.metric_info(pos_index)
+        metric_dict = self.topk_result("repeat_precision", result)
+        return metric_dict
+
+
+class ExplorePrecision(Precision):
+    r"""ExplorePrecision_ measure the performance contribution of explore item (item that weren't in the user's history)
+    to the precision
+
+    .. _repeat_precision:
+        https://arxiv.org/abs/2109.14233 described in section 5.4 as relative contribution of repetition and exploration
+
+    .. math::
+        \mathrm {Precision@K} =  \frac{1}{|U|}\sum_{u \in U} \frac{|\hat{R}(u) \cap R(u)^{repeat}|}{|\hat {R}(u)|}
+
+    :math:`|\hat R(u)|` represents the item count of :math:`\hat R(u)`.
+    """
+
+    metric_need = ["rec.topk_explore"]
+
+    def used_info(self, dataobject):
+        rec_mat = dataobject.get("rec.topk_explore")
+        topk_idx, pos_len_list = torch.split(rec_mat, [max(self.topk), 1], dim=1)
+        return topk_idx.to(torch.bool).numpy(), pos_len_list.squeeze(-1).numpy()
+
+    def calculate_metric(self, dataobject):
+        pos_index, _ = self.used_info(dataobject)
+        result = self.metric_info(pos_index)
+        metric_dict = self.topk_result("explore_precision", result)
+        return metric_dict
 
 
 # CTR Metrics
