@@ -26,6 +26,7 @@ config_file_list = [os.path.join(current_path, "test_config_example.yaml")]
 
 class TestConfigClass(unittest.TestCase):
     def test_default_settings(self):
+
         config = Config(model="BPR", dataset="ml-100k")
 
         self.assertEqual(config["model"], "BPR")
@@ -44,6 +45,7 @@ class TestConfigClass(unittest.TestCase):
         self.assertIsInstance(config["train_neg_sample_args"], dict)
         self.assertIsInstance(config["eval_step"], int)
         self.assertIsInstance(config["stopping_step"], int)
+        self.assertIsInstance(config['min_delta'], float)
         self.assertIsInstance(config["checkpoint_dir"], str)
 
         self.assertIsInstance(config["eval_args"], dict)
