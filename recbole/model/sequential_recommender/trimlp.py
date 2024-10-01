@@ -16,10 +16,8 @@ Reference code:
 
 import torch
 from torch import nn
-from torch.nn.init import xavier_uniform_, xavier_normal_, constant_
 
 from recbole.model.abstract_recommender import SequentialRecommender
-from recbole.model.loss import BPRLoss
 
 def global_kernel(seq_len):
     mask = torch.triu(torch.ones([seq_len, seq_len]))
@@ -84,7 +82,7 @@ class TriMLP(SequentialRecommender):
             self.act_fct = None
 
         self.dropout_prob = config["dropout_prob"]
-
+        self.final_softmax = config["final_softmax"]
         self.num_session = config["num_session"]
 
         # define layers and loss
@@ -93,25 +91,9 @@ class TriMLP(SequentialRecommender):
         )
         self.emb_dropout = nn.Dropout(self.dropout_prob)
         self.mixer = TriMixer(self.max_seq_length, self.num_session, act=self.act_fct)
-        self.final_layer = nn.Linear(self.embedding_size, self.embedding_size)
+        self.final_layer = nn.Linear(self.embedding_size, self.n_items)
 
-        if self.loss_type == "BPR":
-            self.loss_fct = BPRLoss()
-        elif self.loss_type == "CE":
-            self.loss_fct = nn.CrossEntropyLoss()
-        else:
-            raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
-
-        # parameters initialization
-        self.apply(self._init_weights)
-
-    def _init_weights(self, module):
-        if isinstance(module, nn.Embedding):
-            xavier_normal_(module.weight.data)
-        elif isinstance(module, nn.Linear):
-            xavier_normal_(module.weight.data)
-            if module.bias is not None:
-                constant_(module.bias.data, 0)
+        self.loss_fct = nn.CrossEntropyLoss(ignore_index=0)
 
     def forward(self, item_seq, item_seq_len):
         item_seq_emb = self.item_embedding(item_seq)
@@ -126,37 +108,21 @@ class TriMLP(SequentialRecommender):
     def calculate_loss(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
-        seq_output = self.forward(item_seq, item_seq_len)
+        scores = self.forward(item_seq, item_seq_len)
         pos_items = interaction[self.POS_ITEM_ID]
-        if self.loss_type == "BPR":
-            neg_items = interaction[self.NEG_ITEM_ID]
-            pos_items_emb = self.item_embedding(pos_items)
-            neg_items_emb = self.item_embedding(neg_items)
-            pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)  # [B]
-            neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)  # [B]
-            loss = self.loss_fct(pos_score, neg_score)
-            return loss
-        else:  # self.loss_type = 'CE'
-            test_item_emb = self.item_embedding.weight
-            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
-            loss = self.loss_fct(logits, pos_items)
-            return loss
+        loss = self.loss_fct(scores, pos_items)
+        return loss
 
     def predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         test_item = interaction[self.ITEM_ID]
-        seq_output = self.forward(item_seq, item_seq_len)
-        test_item_emb = self.item_embedding(test_item)
-        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)  # [B]
+        scores = self.forward(item_seq, item_seq_len).unsqueeze(-1)
+        scores = self.gather_indexes(scores, test_item).squeeze(-1)
         return scores
 
     def full_sort_predict(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
-        seq_output = self.forward(item_seq, item_seq_len)
-        test_items_emb = self.item_embedding.weight
-        scores = torch.matmul(
-            seq_output, test_items_emb.transpose(0, 1)
-        )  # [B, n_items]
+        scores = self.forward(item_seq, item_seq_len)
         return scores

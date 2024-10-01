@@ -1,5 +1,5 @@
 embedding_size: 64
-act_fct: sigmoid # None or sigmoid or tanh
+act_fct: None # None or sigmoid or tanh
 num_session: 2
 dropout_prob: 0.5
 loss_type: 'CE'
