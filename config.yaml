@@ -1,6 +1,0 @@
-model: GRU4Rec
-eval_args:
-    split: {'TS': [0.8, 0.1, 0.1]}
-    #split: {'RS': [0.8, 0.1, 0.1]}
-    mode: full
-    order: TO
