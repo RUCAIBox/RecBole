@@ -42,6 +42,7 @@ items or a sampled-based ranking.
   RO                        Random Ordering
   TO                        Temporal Ordering
   LS                        Leave-one-out Splitting
+  LK                        Leave-k-out Splitting
   RS                        Ratio-based Splitting
   full                      full ranking with all item candidates
   uniN                      sample-based ranking: each positive item is paired with N sampled negative items in uniform distribution
@@ -54,7 +55,7 @@ The parameters used to control the evaluation method are as follows:
   including ``split``, ``group_by``, ``order`` and ``mode``.
 
   - ``split (dict)``:  Control the splitting of dataset and the split ratio. The key is splitting method
-    and value is the list of split ratio. The range of key is ``[RS,LS]``. Defaults to ``{'RS':[0.8, 0.1, 0.1]}``
+    and value is the list of split ratio. The range of key is ``[RS,LS,LK]``. Defaults to ``{'RS':[0.8, 0.1, 0.1]}``
   - ``group_by (str)``: Whether to split dataset with the group of user.
     Range in ``[None, user]`` and defaults to ``user``.
   - ``order (str)``: Control the ordering of data and affect the splitting of data.
