@@ -1729,6 +1729,74 @@ class Dataset(torch.utils.data.Dataset):
         next_ds = [self.copy(_) for _ in next_df]
         return next_ds
 
+    def _split_index_by_leave_k_out(self, grouped_index, leave_k_num, k):
+        """Split indexes by strategy leave one out.
+
+        Args:
+            grouped_index (list of list of int): Index to be split.
+            leave_k_num (int): Number of parts whose length is expected to be ``1``.
+
+        Returns:
+            list: List of index that has been split.
+        """
+        #print(list(grouped_index)[0])
+        next_index = [[] for _ in range(leave_k_num + 1)]
+        for index in grouped_index:
+            index = list(index)
+            tot_cnt = len(index)
+            legal_leave_k_num = min(leave_k_num, tot_cnt - 1)
+            pr = tot_cnt - k
+            next_index[0].extend(index[:pr])
+            for i in range(legal_leave_k_num):
+                next_index[-legal_leave_k_num + i].extend(index[pr:])
+                pr += 1
+        #print(next_index[0][:len(list(grouped_index)[0])])
+        return next_index
+
+    def leave_k_out(self, group_by, leave_k_mode, k):
+        """Split interaction records by leave k out strategy.
+
+        Args:
+            group_by (str): Field name that interaction records should grouped by before splitting.
+            leave_k_mode (str): The way to leave one out. It can only take three values:
+                'valid_and_test', 'valid_only' and 'test_only'.
+
+        Returns:
+            list: List of :class:`~Dataset`, whose interaction features has been split.
+        """
+        self.logger.debug(
+            f"leave k out, group_by=[{group_by}], leave_k_mode=[{leave_k_mode}]"
+        )
+        if group_by is None:
+            raise ValueError("leave one out strategy require a group field")
+
+        grouped_inter_feat_index = self._grouped_index(
+            self.inter_feat[group_by].numpy()
+        )
+        if leave_k_mode == "valid_and_test":
+            next_index = self._split_index_by_leave_k_out(
+                grouped_inter_feat_index, leave_k_num=2, k=k
+            )
+        elif leave_k_mode == "valid_only":
+            next_index = self._split_index_by_leave_k_out(
+                grouped_inter_feat_index, leave_k_num=1, k=k
+            )
+            next_index.append([])
+        elif leave_k_mode == "test_only":
+            next_index = self._split_index_by_leave_k_out(
+                grouped_inter_feat_index, leave_k_num=1, k=k
+            )
+            next_index = [next_index[0], [], next_index[1]]
+        else:
+            raise NotImplementedError(
+                f"The leave_one_mode [{leave_k_mode}] has not been implemented."
+            )
+
+        self._drop_unused_col()
+        next_df = [self.inter_feat[index] for index in next_index]
+        next_ds = [self.copy(_) for _ in next_df]
+        return next_ds
+
     def shuffle(self):
         """Shuffle the interaction records inplace."""
         self.inter_feat.shuffle()
@@ -1798,6 +1866,10 @@ class Dataset(torch.utils.data.Dataset):
         elif split_mode == "LS":
             datasets = self.leave_one_out(
                 group_by=self.uid_field, leave_one_mode=split_args["LS"]
+            )
+        elif split_mode == "LK":
+            datasets = self.leave_k_out(
+                group_by=self.uid_field, leave_k_mode=split_args["LK"][0], k=split_args["LK"][1]
             )
         else:
             raise NotImplementedError(
