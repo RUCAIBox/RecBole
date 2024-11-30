@@ -39,6 +39,14 @@ class TestGeneralRecommender(unittest.TestCase):
     def test_itemknn(self):
         config_dict = {
             "model": "ItemKNN",
+            "knn_method": "item"
+        }
+        quick_test(config_dict)
+
+    def test_userknn(self):
+        config_dict = {
+            "model": "ItemKNN",
+            "knn_method": "user"
         }
         quick_test(config_dict)
 

@@ -20,7 +20,7 @@ from recbole.utils import InputType, ModelType
 
 
 class ComputeSimilarity:
-    def __init__(self, dataMatrix, topk=100, shrink=0, normalize=True):
+    def __init__(self, dataMatrix, topk=100, shrink=0, method='item', normalize=True):
         r"""Computes the cosine similarity of dataMatrix
 
         If it is computed on :math:`URM=|users| \times |items|`, pass the URM.
@@ -31,6 +31,7 @@ class ComputeSimilarity:
             dataMatrix (scipy.sparse.csr_matrix): The sparse data matrix.
             topk (int) : The k value in KNN.
             shrink (int) :  hyper-parameter in calculate cosine distance.
+            method (str) : Calculate the similarity of users if method is 'user', otherwise, calculate the similarity of items.
             normalize (bool):   If True divide the dot product by the product of the norms.
         """
 
@@ -38,17 +39,21 @@ class ComputeSimilarity:
 
         self.shrink = shrink
         self.normalize = normalize
+        self.method = method
 
         self.n_rows, self.n_columns = dataMatrix.shape
-        self.TopK = min(topk, self.n_columns)
+
+        if self.method == 'user':
+            self.TopK = min(topk, self.n_rows)
+        else:
+            self.TopK = min(topk, self.n_columns)
 
         self.dataMatrix = dataMatrix.copy()
 
-    def compute_similarity(self, method, block_size=100):
+    def compute_similarity(self, block_size=100):
         r"""Compute the similarity for the given dataset
 
         Args:
-            method (str) : Caculate the similarity of users if method is 'user', otherwise, calculate the similarity of items.
             block_size (int): divide matrix to :math:`n\_rows \div block\_size` to calculate cosine_distance if method is 'user',
                  otherwise, divide matrix to :math:`n\_columns \div block\_size`.
 
@@ -68,10 +73,10 @@ class ComputeSimilarity:
         self.dataMatrix = self.dataMatrix.astype(np.float32)
 
         # Compute sum of squared values to be used in normalization
-        if method == "user":
+        if self.method == "user":
             sumOfSquared = np.array(self.dataMatrix.power(2).sum(axis=1)).ravel()
             end_local = self.n_rows
-        elif method == "item":
+        elif self.method == "item":
             sumOfSquared = np.array(self.dataMatrix.power(2).sum(axis=0)).ravel()
             end_local = self.n_columns
         else:
@@ -86,7 +91,7 @@ class ComputeSimilarity:
             this_block_size = end_block - start_block
 
             # All data points for a given user or item
-            if method == "user":
+            if self.method == "user":
                 data = self.dataMatrix[start_block:end_block, :]
             else:
                 data = self.dataMatrix[:, start_block:end_block]
@@ -94,7 +99,7 @@ class ComputeSimilarity:
 
             # Compute similarities
 
-            if method == "user":
+            if self.method == "user":
                 this_block_weights = self.dataMatrix.dot(data.T)
             else:
                 this_block_weights = self.dataMatrix.T.dot(data)
@@ -134,7 +139,7 @@ class ComputeSimilarity:
                 numNotZeros = np.sum(notZerosMask)
 
                 values.extend(this_line_weights[top_k_idx][notZerosMask])
-                if method == "user":
+                if self.method == "user":
                     rows.extend(np.ones(numNotZeros) * Index)
                     cols.extend(top_k_idx[notZerosMask])
                 else:
@@ -144,7 +149,7 @@ class ComputeSimilarity:
             start_block += block_size
 
         # End while
-        if method == "user":
+        if self.method == "user":
             W_sparse = sp.csr_matrix(
                 (values, (rows, cols)),
                 shape=(self.n_rows, self.n_rows),
@@ -160,7 +165,9 @@ class ComputeSimilarity:
 
 
 class ItemKNN(GeneralRecommender):
-    r"""ItemKNN is a basic model that compute item similarity with the interaction matrix."""
+    r"""ItemKNN is a basic model that compute item similarity with the interaction matrix.
+    Adjusting the value of 'knn_method' in the config file sets the method to either ItemKNN or UserKNN, respectively.
+    """
 
     input_type = InputType.POINTWISE
     type = ModelType.TRADITIONAL
@@ -170,15 +177,20 @@ class ItemKNN(GeneralRecommender):
 
         # load parameters info
         self.k = config["k"]
+        self.method = config["knn_method"]
         self.shrink = config["shrink"] if "shrink" in config else 0.0
 
         self.interaction_matrix = dataset.inter_matrix(form="csr").astype(np.float32)
         shape = self.interaction_matrix.shape
         assert self.n_users == shape[0] and self.n_items == shape[1]
         _, self.w = ComputeSimilarity(
-            self.interaction_matrix, topk=self.k, shrink=self.shrink
-        ).compute_similarity("item")
-        self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
+            self.interaction_matrix, topk=self.k, shrink=self.shrink, method=self.method
+        ).compute_similarity()
+
+        if self.method == "user":
+            self.pred_mat = self.w.dot(self.interaction_matrix).tolil()
+        else:
+            self.pred_mat = self.interaction_matrix.dot(self.w).tolil()
 
         self.fake_loss = torch.nn.Parameter(torch.zeros(1))
         self.other_parameter_name = ["w", "pred_mat"]
