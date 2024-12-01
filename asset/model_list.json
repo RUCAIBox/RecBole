@@ -157,6 +157,20 @@
       {
           "category": "General Recommendation",
           "cate_link": "/docs/user_guide/model_intro.html#general-recommendation",
+          "year": "2013",
+          "pub": "RecSys'13",
+          "model": "AsymKNN",
+          "model_link": "/docs/user_guide/model/general/asymknn.html",
+          "paper": "Efficient Top-N Recommendation for Very Large Scale Binary Rated Datasets",
+          "paper_link": "https://doi.org/10.1145/2507157.2507189",
+          "authors": "Fabio Aiolli",
+          "ref_code": "",
+          "repository": "RecBole",
+          "repo_link": "https://github.com/RUCAIBox/RecBole"
+      },
+      {
+          "category": "General Recommendation",
+          "cate_link": "/docs/user_guide/model_intro.html#general-recommendation",
           "year": "2020",
           "pub": "SIGIR'20",
           "model": "LightGCN",
