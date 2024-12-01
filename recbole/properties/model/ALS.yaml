@@ -1,0 +1,3 @@
+regularization: 0.01
+embedding_size: 64
+alpha: 1.0
