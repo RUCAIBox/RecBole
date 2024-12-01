@@ -50,6 +50,20 @@ class TestGeneralRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_asymitemknn(self):
+        config_dict = {
+            "model": "AsymKNN",
+            "knn_method": "item"
+        }
+        quick_test(config_dict)
+
+    def test_asymuserknn(self):
+        config_dict = {
+            "model": "AsymKNN",
+            "knn_method": "user"
+        }
+        quick_test(config_dict)
+
     def test_bpr(self):
         config_dict = {
             "model": "BPR",
