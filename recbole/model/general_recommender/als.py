@@ -45,10 +45,10 @@ class ALS(GeneralRecommender):
             factors=self.embedding_size,
             regularization=self.regularization,
             alpha=self.alpha,
-            iterations=1, # iterations are done by the trainer via epochs
+            iterations=1,               # iterations are done by the ALSTrainer via 'epochs'
             use_cg=True,
             calculate_training_loss=True,
-            num_threads=24,
+            num_threads=0,
             random_state=42
         )
 
