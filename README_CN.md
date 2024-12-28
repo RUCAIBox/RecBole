@@ -111,6 +111,10 @@ git clone https://github.com/RUCAIBox/RecBole.git && cd RecBole
 pip install -e . --verbose
 ```
 
+## colab 一键运行
+
+https://colab.research.google.com/drive/1yMS-Cpf8kTzpKy2D9OlJXm6su4kXsz8A?usp=sharing
+
 ## 快速上手
 如果你从GitHub下载了RecBole的源码，你可以使用提供的脚本进行简单的使用：
 
