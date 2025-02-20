@@ -20,7 +20,7 @@ from recbole.utils import InputType, ModelType
 
 
 class ComputeSimilarity:
-    def __init__(self, dataMatrix, topk=100, shrink=0, method='item', normalize=True):
+    def __init__(self, dataMatrix, topk=100, shrink=0, method="item", normalize=True):
         r"""Computes the cosine similarity of dataMatrix
 
         If it is computed on :math:`URM=|users| \times |items|`, pass the URM.
@@ -43,7 +43,7 @@ class ComputeSimilarity:
 
         self.n_rows, self.n_columns = dataMatrix.shape
 
-        if self.method == 'user':
+        if self.method == "user":
             self.TopK = min(topk, self.n_rows)
         else:
             self.TopK = min(topk, self.n_columns)

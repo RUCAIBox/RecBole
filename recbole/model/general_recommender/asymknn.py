@@ -4,8 +4,9 @@ import torch
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.utils import InputType, ModelType
 
+
 class ComputeSimilarity:
-    def __init__(self, dataMatrix, topk=100, alpha=0.5, method='item'):
+    def __init__(self, dataMatrix, topk=100, alpha=0.5, method="item"):
         r"""Computes the asymmetric cosine similarity of dataMatrix with alpha parameter.
 
         Args:
@@ -22,7 +23,7 @@ class ComputeSimilarity:
 
         self.n_rows, self.n_columns = dataMatrix.shape
 
-        if self.method == 'user':
+        if self.method == "user":
             self.TopK = min(topk, self.n_rows)
         else:
             self.TopK = min(topk, self.n_columns)
@@ -85,15 +86,18 @@ class ComputeSimilarity:
                 this_line_weights[Index] = 0.0
 
                 # Apply asymmetric cosine normalization
-                denominator = (
-                        (sumOfMatrix[Index] ** self.alpha) *
-                        (sumOfMatrix ** (1 - self.alpha)) + 1e-6
-                )
+                denominator = (sumOfMatrix[Index] ** self.alpha) * (
+                    sumOfMatrix ** (1 - self.alpha)
+                ) + 1e-6
                 this_line_weights = np.multiply(this_line_weights, 1 / denominator)
 
                 # Sort indices and select TopK
-                relevant_partition = (-this_line_weights).argpartition(self.TopK - 1)[0:self.TopK]
-                relevant_partition_sorting = np.argsort(-this_line_weights[relevant_partition])
+                relevant_partition = (-this_line_weights).argpartition(self.TopK - 1)[
+                    0 : self.TopK
+                ]
+                relevant_partition_sorting = np.argsort(
+                    -this_line_weights[relevant_partition]
+                )
                 top_k_idx = relevant_partition[relevant_partition_sorting]
                 neigh.append(top_k_idx)
 
@@ -157,16 +161,30 @@ class AsymKNN(GeneralRecommender):
         super(AsymKNN, self).__init__(config, dataset)
 
         # load parameters info
-        self.k = config["k"]                                        # Size of neighborhood for cosine
-        self.method = config["knn_method"]                          # Caculate the similarity of users if method is 'user', otherwise, calculate the similarity of items.
-        self.alpha = config['alpha'] if 'alpha' in config else 0.5  # Asymmetric cosine parameter
-        self.q = config['q'] if 'q' in config else 1.0              # Weight adjustment exponent
-        self.beta = config['beta'] if 'beta' in config else 0.5     # Beta for final score normalization
+        self.k = config["k"]  # Size of neighborhood for cosine
+        self.method = config[
+            "knn_method"
+        ]  # Caculate the similarity of users if method is 'user', otherwise, calculate the similarity of items.
+        self.alpha = (
+            config["alpha"] if "alpha" in config else 0.5
+        )  # Asymmetric cosine parameter
+        self.q = config["q"] if "q" in config else 1.0  # Weight adjustment exponent
+        self.beta = (
+            config["beta"] if "beta" in config else 0.5
+        )  # Beta for final score normalization
 
-        assert 0 <= self.alpha <= 1, f"The asymmetric parameter 'alpha' must be value between in [0,1], but got {self.alpha}"
-        assert 0 <= self.beta <= 1, f"The asymmetric parameter 'beta' must be value between [0,1], but got {self.beta}"
-        assert isinstance(self.k, int), f"The neighborhood parameter 'k' must be an integer, but got {self.k}"
-        assert isinstance(self.q, int), f"The exponent parameter 'q' must be an integer, but got {self.q}"
+        assert (
+            0 <= self.alpha <= 1
+        ), f"The asymmetric parameter 'alpha' must be value between in [0,1], but got {self.alpha}"
+        assert (
+            0 <= self.beta <= 1
+        ), f"The asymmetric parameter 'beta' must be value between [0,1], but got {self.beta}"
+        assert isinstance(
+            self.k, int
+        ), f"The neighborhood parameter 'k' must be an integer, but got {self.k}"
+        assert isinstance(
+            self.q, int
+        ), f"The exponent parameter 'q' must be an integer, but got {self.q}"
 
         self.interaction_matrix = dataset.inter_matrix(form="csr").astype(np.float32)
         shape = self.interaction_matrix.shape
@@ -177,13 +195,20 @@ class AsymKNN(GeneralRecommender):
 
         if self.method == "user":
             nominator = self.w.dot(self.interaction_matrix)
-            factor1 = np.power(np.sqrt(self.w.power(2).sum(axis=1)),2*self.beta)
-            factor2 = np.power(np.sqrt(self.interaction_matrix.power(2).sum(axis=0)),2*(1-self.beta))
+            factor1 = np.power(np.sqrt(self.w.power(2).sum(axis=1)), 2 * self.beta)
+            factor2 = np.power(
+                np.sqrt(self.interaction_matrix.power(2).sum(axis=0)),
+                2 * (1 - self.beta),
+            )
             denominator = factor1.dot(factor2) + 1e-6
         else:
             nominator = self.interaction_matrix.dot(self.w)
-            factor1 = np.power(np.sqrt(self.interaction_matrix.power(2).sum(axis=1)),2*self.beta)
-            factor2 = np.power(np.sqrt(self.w.power(2).sum(axis=1)),2*(1-self.beta))
+            factor1 = np.power(
+                np.sqrt(self.interaction_matrix.power(2).sum(axis=1)), 2 * self.beta
+            )
+            factor2 = np.power(
+                np.sqrt(self.w.power(2).sum(axis=1)), 2 * (1 - self.beta)
+            )
             denominator = factor1.dot(factor2.T) + 1e-6
 
         self.pred_mat = (nominator / denominator).tolil()

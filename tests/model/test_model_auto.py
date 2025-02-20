@@ -37,31 +37,19 @@ class TestGeneralRecommender(unittest.TestCase):
         quick_test(config_dict)
 
     def test_itemknn(self):
-        config_dict = {
-            "model": "ItemKNN",
-            "knn_method": "item"
-        }
+        config_dict = {"model": "ItemKNN", "knn_method": "item"}
         quick_test(config_dict)
 
     def test_userknn(self):
-        config_dict = {
-            "model": "ItemKNN",
-            "knn_method": "user"
-        }
+        config_dict = {"model": "ItemKNN", "knn_method": "user"}
         quick_test(config_dict)
 
     def test_asymitemknn(self):
-        config_dict = {
-            "model": "AsymKNN",
-            "knn_method": "item"
-        }
+        config_dict = {"model": "AsymKNN", "knn_method": "item"}
         quick_test(config_dict)
 
     def test_asymuserknn(self):
-        config_dict = {
-            "model": "AsymKNN",
-            "knn_method": "user"
-        }
+        config_dict = {"model": "AsymKNN", "knn_method": "user"}
         quick_test(config_dict)
 
     def test_bpr(self):
