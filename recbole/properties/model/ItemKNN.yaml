@@ -1,2 +1,3 @@
 k: 100                          # (int) The neighborhood size.
 shrink: 0.0                     # (float) A normalization parameter to calculate cosine distance.
+knn_method: 'item'              # (string) The method to calculate the similarity matrix ['item','user']

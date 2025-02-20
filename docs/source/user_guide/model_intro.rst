@@ -13,6 +13,7 @@ task of top-n recommendation. All the collaborative filter(CF) based models are 
 .. toctree::
    :maxdepth: 1
 
+   model/general/asymknn
    model/general/pop
    model/general/itemknn
    model/general/bpr
