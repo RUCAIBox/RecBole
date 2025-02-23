@@ -1,7 +1,6 @@
 import numpy as np
 import scipy.sparse as sp
 import torch
-from scipy.sparse import csr_matrix
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.utils import InputType, ModelType
 from scipy.sparse import csr_matrix
