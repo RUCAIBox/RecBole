@@ -19,7 +19,11 @@ import torch
 from implicit.als import AlternatingLeastSquares
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.utils import InputType, ModelType
-threadpoolctl.threadpool_limits(1, "blas") # Due to a warning that occurred while running the ALS algorithm
+
+threadpoolctl.threadpool_limits(
+    1, "blas"
+)  # Due to a warning that occurred while running the ALS algorithm
+
 
 class ALS(GeneralRecommender):
     r"""
@@ -35,21 +39,21 @@ class ALS(GeneralRecommender):
         super(ALS, self).__init__(config, dataset)
 
         # load parameters info
-        self.embedding_size = config['embedding_size']
-        self.regularization = config['regularization']
-        self.alpha = config['alpha']
-        self.iterations = config['epochs']
+        self.embedding_size = config["embedding_size"]
+        self.regularization = config["regularization"]
+        self.alpha = config["alpha"]
+        self.iterations = config["epochs"]
 
         # define model
         self.model = AlternatingLeastSquares(
             factors=self.embedding_size,
             regularization=self.regularization,
             alpha=self.alpha,
-            iterations=1,               # iterations are done by the ALSTrainer via 'epochs'
+            iterations=1,  # iterations are done by the ALSTrainer via 'epochs'
             use_cg=True,
             calculate_training_loss=True,
             num_threads=0,
-            random_state=42
+            random_state=42,
         )
 
         # initialize embeddings

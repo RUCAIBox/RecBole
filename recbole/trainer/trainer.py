@@ -93,6 +93,7 @@ class AbstractTrainer(object):
             sync_loss += torch.sum(params) * 0
         return sync_loss
 
+
 class Trainer(AbstractTrainer):
     r"""The basic Trainer for basic training and evaluation strategies in recommender systems. This class defines common
     functions for training and evaluation processes of most recommender system models, including fit(), evaluate(),
@@ -671,6 +672,7 @@ class Trainer(AbstractTrainer):
             result_list.append(result)
         return torch.cat(result_list, dim=0)
 
+
 class ALSTrainer(Trainer):
     r"""ALSTrainer is designed for the ALS model of the implicit library: https://benfred.github.io/implicit"""
 
@@ -713,7 +715,9 @@ class ALSTrainer(Trainer):
             # train
             training_start_time = time()
             # pass entire dataset as sparse csr, as required in https://benfred.github.io/implicit
-            train_loss = self.model.calculate_loss(train_data._dataset.inter_matrix(form='csr'))
+            train_loss = self.model.calculate_loss(
+                train_data._dataset.inter_matrix(form="csr")
+            )
             self.train_loss_dict[epoch_idx] = (
                 sum(train_loss) if isinstance(train_loss, tuple) else train_loss
             )
@@ -792,6 +796,7 @@ class ALSTrainer(Trainer):
 
         self._add_hparam_to_tensorboard(self.best_valid_score)
         return self.best_valid_score, self.best_valid_result
+
 
 class KGTrainer(Trainer):
     r"""KGTrainer is designed for Knowledge-aware recommendation methods. Some of these models need to train the

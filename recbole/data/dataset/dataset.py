@@ -1746,7 +1746,9 @@ class Dataset(torch.utils.data.Dataset):
         if self.time_field not in self.inter_feat:
             raise ValueError(f"Field [{self.time_field}] is not in inter_feat.")
 
-        self.logger.debug(f"time-based split with ratios [{ratios}], group_by=[{group_by}]")
+        self.logger.debug(
+            f"time-based split with ratios [{ratios}], group_by=[{group_by}]"
+        )
         tot_ratio = sum(ratios)
         ratios = [_ / tot_ratio for _ in ratios]
 
@@ -1755,7 +1757,9 @@ class Dataset(torch.utils.data.Dataset):
         global_temporal_boundary = np.percentile(all_times, 100 * (1 - ratios[-1]))
 
         train_index, valid_index, test_index = [], [], []
-        grouped_inter_feat_index = self._grouped_index(self.inter_feat[group_by].numpy())
+        grouped_inter_feat_index = self._grouped_index(
+            self.inter_feat[group_by].numpy()
+        )
 
         for grouped_index in grouped_inter_feat_index:
             grouped_index = np.array(grouped_index)
@@ -1859,8 +1863,7 @@ class Dataset(torch.utils.data.Dataset):
             if not isinstance(split_args["TS"], list):
                 raise ValueError(f'The value of "TS" [{split_args}] should be a list.')
             datasets = self.time_based_split(
-                ratios=split_args["TS"],
-                group_by=self.uid_field
+                ratios=split_args["TS"], group_by=self.uid_field
             )
         else:
             raise NotImplementedError(
