@@ -2186,6 +2186,34 @@
         "ref_code": "https://github.com/YiyanXu/DiffRec",
         "repository": "RecBole",
         "repo_link": "https://github.com/RUCAIBox/RecBole"
-    }
+    },
+    {
+        "category": "Sequential Recommendation",
+        "cate_link":  "/docs/user_guide/model_intro.html#sequential-recommendation",
+        "year": "2024",
+        "pub": "WSDM'24",
+        "model": "GRU4RecCPR",
+        "model_link": "/docs/user_guide/model/sequential/gru4reccpr.html",
+        "paper": "To Copy, or not to Copy; That is a Critical Issue of the Output Softmax Layer in Neural Sequential Recommenders",
+        "paper_link": "https://dl.acm.org/doi/10.1145/3616855.3635755",
+        "authors": "Haw-Shiuan Chang, Nikhil Agarwal, Andrew McCallum",
+        "ref_code": "https://github.com/iesl/softmax_CPR_recommend",
+        "repository": "RecBole",
+        "repo_link": "https://github.com/RUCAIBox/RecBole"
+      },
+      {
+        "category": "Sequential Recommendation",
+        "cate_link":  "/docs/user_guide/model_intro.html#sequential-recommendation",
+        "year": "2024",
+        "pub": "WSDM'24",
+        "model": "SASRecCPR",
+        "model_link": "/docs/user_guide/model/sequential/sasreccpr.html",
+        "paper": "To Copy, or not to Copy; That is a Critical Issue of the Output Softmax Layer in Neural Sequential Recommenders",
+        "paper_link": "https://dl.acm.org/doi/10.1145/3616855.3635755",
+        "authors": "Haw-Shiuan Chang, Nikhil Agarwal, Andrew McCallum",
+        "ref_code": "https://github.com/iesl/softmax_CPR_recommend",
+        "repository": "RecBole",
+        "repo_link": "https://github.com/RUCAIBox/RecBole"
+      }
   ]
 }
