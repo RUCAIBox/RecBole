@@ -24,7 +24,7 @@
 
 RecBole is developed based on Python and PyTorch for reproducing and developing recommendation algorithms in a unified,
 comprehensive and efficient framework for research purpose.
-Our library includes 91 recommendation algorithms, covering four major categories:
+Our library includes 94 recommendation algorithms, covering four major categories:
 
 + General Recommendation
 + Sequential Recommendation
@@ -48,8 +48,8 @@ In order to support the study of recent advances in recommender systems, we cons
 + **General and extensible data structure.** We design general and extensible data structures to unify the formatting and
 usage of various recommendation datasets.
 
-+ **Comprehensive benchmark models and datasets.** We implement 78 commonly used recommendation algorithms, and provide
-the formatted copies of 28 recommendation datasets.
++ **Comprehensive benchmark models and datasets.** We implement 94 commonly used recommendation algorithms, and provide
+the formatted copies of 43 recommendation datasets.
 
 + **Efficient GPU-accelerated execution.** We optimize the efficiency of our library with a number of improved techniques
 oriented to the GPU environment.
@@ -101,13 +101,13 @@ These extensions make it much easier to reproduce the benchmark results and stay
 |          Aspect           |            RecBole 1.0             |          RecBole 2.0           |                   This update                    |
 | :-----------------------: | :--------------------------------: | :----------------------------: | :----------------------------------------------: |
 |   Recommendation tasks    |            4 categories            |    3 topics and 5 packages     |                   4 categories                   |
-|    Models and datasets    |     73 models and 28 datasets      |  65 models and 8 new datasets  |            91 models and 43 datasets             |
+|    Models and datasets    |     73 models and 28 datasets      |  65 models and 8 new datasets  |            94 models and 43 datasets             |
 |      Data structure       | Implemented Dataset and Dataloader |         Task-oriented          |  Compatible data module inherited from PyTorch   |
 |    Continuous features    |          Field embedding           |        Field embedding         |        Field embedding and discretization        |
 | GPU-accelerated execution |       Single-GPU utilization       |     Single-GPU utilization     |      Multi-GPU and mixed precision training      |
 |  Hyper-parameter tuning   |       Serial gradient search       |     Serial gradient search     | Three search methods in both serial and parallel |
 |     Significance test     |                 -                  |               -                |               Available interface                |
-|     Benchmark results     |                 -                  | Partially public (GNN and CDR) |      Benchmark configurations on 82 models       |
+|     Benchmark results     |                 -                  | Partially public (GNN and CDR) |      Benchmark configurations on 94 models       |
 |      Friendly usage       |           Documentation            |         Documentation          |       Improved documentation and FAQ page        |
 
 
