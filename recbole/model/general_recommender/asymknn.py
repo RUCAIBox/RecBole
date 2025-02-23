@@ -3,7 +3,7 @@ import scipy.sparse as sp
 import torch
 from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.utils import InputType, ModelType
-
+from scipy.sparse import csr_matrix
 
 class ComputeSimilarity:
     def __init__(self, dataMatrix, topk=100, alpha=0.5, method="item"):
@@ -211,7 +211,7 @@ class AsymKNN(GeneralRecommender):
             )
             denominator = factor1.dot(factor2.T) + 1e-6
 
-        self.pred_mat = (nominator / denominator).tolil()
+        self.pred_mat = csr_matrix(nominator / denominator).tolil()
 
         # Apply 'locality of scoring function' via q: f(w) = w^q
         self.pred_mat = self.pred_mat.power(self.q)

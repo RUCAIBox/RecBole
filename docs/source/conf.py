@@ -20,11 +20,11 @@ sys.path.insert(0, os.path.abspath("../.."))
 # -- Project information -----------------------------------------------------
 
 project = "RecBole"
-copyright = "2020-2023, RecBole Contributors"
+copyright = "2020-2025, RecBole Contributors"
 author = "AIBox RecBole group"
 
 # The full version, including alpha/beta/rc tags
-release = "1.2.0"
+release = "1.2.1"
 
 
 # -- General configuration ---------------------------------------------------
