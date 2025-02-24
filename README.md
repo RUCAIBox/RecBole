@@ -31,7 +31,7 @@ Our library includes 94 recommendation algorithms, covering four major categorie
 + Context-aware Recommendation
 + Knowledge-based Recommendation
 
-We design a unified and flexible data file format, and provide the support for 43 benchmark recommendation datasets.
+We design a unified and flexible data file format, and provide the support for 44 benchmark recommendation datasets.
 A user can apply the provided script to process the original data copy, or simply download the processed datasets
 by our team.
 
@@ -49,7 +49,7 @@ In order to support the study of recent advances in recommender systems, we cons
 usage of various recommendation datasets.
 
 + **Comprehensive benchmark models and datasets.** We implement 94 commonly used recommendation algorithms, and provide
-the formatted copies of 43 recommendation datasets.
+the formatted copies of 44 recommendation datasets.
 
 + **Efficient GPU-accelerated execution.** We optimize the efficiency of our library with a number of improved techniques
 oriented to the GPU environment.
