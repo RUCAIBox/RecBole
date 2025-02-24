@@ -5,6 +5,7 @@ from recbole.model.abstract_recommender import GeneralRecommender
 from recbole.utils import InputType, ModelType
 from scipy.sparse import csr_matrix
 
+
 class ComputeSimilarity:
     def __init__(self, dataMatrix, topk=100, alpha=0.5, method="item"):
         r"""Computes the asymmetric cosine similarity of dataMatrix with alpha parameter.
