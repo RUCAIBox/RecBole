@@ -114,6 +114,7 @@ class Trainer(AbstractTrainer):
         self.logger = getLogger()
         self.tensorboard = get_tensorboard(self.logger)
         self.wandblogger = WandbLogger(config)
+        
         self.learner = config["learner"]
         self.learning_rate = config["learning_rate"]
         self.epochs = config["epochs"]
@@ -122,12 +123,14 @@ class Trainer(AbstractTrainer):
         self.clip_grad_norm = config["clip_grad_norm"]
         self.valid_metric = config["valid_metric"].lower()
         self.valid_metric_bigger = config["valid_metric_bigger"]
+        self.min_delta = config['min_delta']
         self.test_batch_size = config["eval_batch_size"]
         self.gpu_available = torch.cuda.is_available() and config["use_gpu"]
         self.device = config["device"]
         self.checkpoint_dir = config["checkpoint_dir"]
         self.enable_amp = config["enable_amp"]
         self.enable_scaler = torch.cuda.is_available() and config["enable_scaler"]
+
         ensure_dir(self.checkpoint_dir)
         saved_model_file = "{}-{}.pth".format(self.config["model"], get_local_time())
         self.saved_model_file = os.path.join(self.checkpoint_dir, saved_model_file)
@@ -476,6 +479,8 @@ class Trainer(AbstractTrainer):
                     self.cur_step,
                     max_step=self.stopping_step,
                     bigger=self.valid_metric_bigger,
+                    min_delta=self.min_delta
+
                 )
                 valid_end_time = time()
                 valid_score_output = (
@@ -912,6 +917,8 @@ class DecisionTreeTrainer(AbstractTrainer):
 
         self.stopping_step = config["stopping_step"]
         self.valid_metric_bigger = config["valid_metric_bigger"]
+        self.min_delta = config['min_delta']
+
         self.cur_step = 0
         self.best_valid_score = -np.inf if self.valid_metric_bigger else np.inf
         self.best_valid_result = None
@@ -1020,6 +1027,8 @@ class DecisionTreeTrainer(AbstractTrainer):
                     self.cur_step,
                     max_step=self.stopping_step,
                     bigger=self.valid_metric_bigger,
+                    min_delta=self.min_delta
+
                 )
 
                 valid_end_time = time()
@@ -1369,6 +1378,8 @@ class NCLTrainer(Trainer):
                     self.cur_step,
                     max_step=self.stopping_step,
                     bigger=self.valid_metric_bigger,
+                    min_delta=self.min_delta
+
                 )
                 valid_end_time = time()
                 valid_score_output = (
