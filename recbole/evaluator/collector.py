@@ -168,6 +168,32 @@ class Collector(object):
             result = torch.cat((pos_idx, pos_len_list), dim=1)
             self.data_struct.update_tensor("rec.topk", result)
 
+        if self.register.need("rec.topk_repeat"):
+            _, topk_idx = torch.topk(
+                scores_tensor, max(self.topk), dim=-1
+            )  # n_users x k
+
+            repeat_mask = (interaction[self.config["ITEM_ID_FIELD"] + "_list"] == positive_i[..., None]).sum(dim=1) > 0
+            pos_matrix = torch.zeros_like(scores_tensor, dtype=torch.int)
+            pos_matrix[positive_u[repeat_mask], positive_i[repeat_mask]] = 1
+            pos_len_list = pos_matrix.sum(dim=1, keepdim=True)
+            pos_idx = torch.gather(pos_matrix, dim=1, index=topk_idx)
+            result = torch.cat((pos_idx, pos_len_list), dim=1)
+            self.data_struct.update_tensor("rec.topk_repeat", result)
+
+        if self.register.need("rec.topk_explore"):
+            _, topk_idx = torch.topk(
+                scores_tensor, max(self.topk), dim=-1
+            )  # n_users x k
+
+            explore_mask = (interaction[self.config["ITEM_ID_FIELD"] + "_list"] == positive_i[..., None]).sum(dim=1) < 1
+            pos_matrix = torch.zeros_like(scores_tensor, dtype=torch.int)
+            pos_matrix[positive_u[explore_mask], positive_i[explore_mask]] = 1
+            pos_len_list = pos_matrix.sum(dim=1, keepdim=True)
+            pos_idx = torch.gather(pos_matrix, dim=1, index=topk_idx)
+            result = torch.cat((pos_idx, pos_len_list), dim=1)
+            self.data_struct.update_tensor("rec.topk_explore", result)
+
         if self.register.need("rec.meanrank"):
 
             desc_scores, desc_index = torch.sort(scores_tensor, dim=-1, descending=True)
@@ -196,6 +222,8 @@ class Collector(object):
             self.data_struct.update_tensor(
                 "data.label", interaction[self.label_field].to(self.device)
             )
+        if self.register.need("data.item_list"):
+            self.data_struct.update_tensor("data.item_list", interaction[self.config["ITEM_ID_FIELD"] + "_list"])
 
     def model_collect(self, model: torch.nn.Module):
         """Collect the evaluation resource from model.
@@ -226,7 +254,7 @@ class Collector(object):
         for key in self.data_struct._data_dict:
             self.data_struct._data_dict[key] = self.data_struct._data_dict[key].cpu()
         returned_struct = copy.deepcopy(self.data_struct)
-        for key in ["rec.topk", "rec.meanrank", "rec.score", "rec.items", "data.label"]:
+        for key in ["rec.topk", "rec.meanrank", "rec.score", "rec.items", "data.label", "rec.topk_repeat", "rec.topk_explore"]:
             if key in self.data_struct:
                 del self.data_struct[key]
         return returned_struct
