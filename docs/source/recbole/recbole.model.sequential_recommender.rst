@@ -32,3 +32,4 @@ recbole.model.sequential\_recommender
    recbole.model.sequential_recommender.fearec
    recbole.model.sequential_recommender.gru4reccpr
    recbole.model.sequential_recommender.sasreccpr
+   recbole.model.sequential_recommender.trimlp
