@@ -82,7 +82,6 @@ class TriMLP(SequentialRecommender):
             self.act_fct = None
 
         self.dropout_prob = config["dropout_prob"]
-        self.final_softmax = config["final_softmax"]
         self.num_session = config["num_session"]
 
         # define layers and loss
