@@ -1,0 +1,5 @@
+k: 100                       # Number of neighbors to consider in the similarity calculation.
+q: 1                         # Exponent for adjusting the 'locality of scoring function' after similarity computation.
+beta: 1.0                       # Parameter for controlling the balance between factors in the final score normalization.
+alpha: 0.5                   # Weight parameter for asymmetric cosine similarity
+knn_method: 'item'           # Calculate the similarity of users if method is 'user', otherwise, calculate the similarity of items.

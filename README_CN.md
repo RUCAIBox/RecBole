@@ -24,7 +24,7 @@
 
 
 RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与复现的，统一、全面、高效的推荐系统代码库。
-我们实现了91个推荐系统模型，包含常见的推荐系统类别，如:
+我们实现了94个推荐系统模型，包含常见的推荐系统类别，如:
 
 + General Recommendation
 + Sequential Recommendation
@@ -32,7 +32,7 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 + Knowledge-based Recommendation
 
 
-我们约定了一个统一、易用的数据文件格式，并已支持 43 个 benchmark dataset。
+我们约定了一个统一、易用的数据文件格式，并已支持 44 个 benchmark dataset。
 用户可以选择使用我们的数据集预处理脚本，或直接下载已被处理好的数据集文件。
 
 
@@ -46,7 +46,7 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 ## 特色
 + **通用和可扩展的数据结构** 我们设计了通用和可扩展的数据结构来支持各种推荐数据集统一化格式和使用。
 
-+ **全面的基准模型和数据集** 我们实现了91个常用的推荐算法，并提供了43个推荐数据集的格式化副本。
++ **全面的基准模型和数据集** 我们实现了94个常用的推荐算法，并提供了44个推荐数据集的格式化副本。
 
 + **高效的 GPU 加速实现** 我们针对GPU环境使用了一系列的优化技术来提升代码库的效率。
 
@@ -54,9 +54,11 @@ RecBole 是一个基于 PyTorch 实现的，面向研究者的，易于开发与
 
 
 ## RecBole 新闻
+![new](/asset/new.gif) **02/23/2025**: 我们发布了 [v1.2.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.2.1).
+
 ![new](/asset/new.gif) **11/01/2023**: 我们发布了 [v1.2.0](https://github.com/RUCAIBox/RecBole/releases/tag/v1.2.0).
 
-![new](/asset/new.gif) **11/06/2022**: 我们公开了[模型的最优超参数及其调参范围](https://recbole.io/hyperparameters/index.html).
+**11/06/2022**: 我们公开了[模型的最优超参数及其调参范围](https://recbole.io/hyperparameters/index.html).
 
 **10/05/2022**: 我们发布了 [v1.1.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.1.1).
 
@@ -110,6 +112,10 @@ pip install recbole
 git clone https://github.com/RUCAIBox/RecBole.git && cd RecBole
 pip install -e . --verbose
 ```
+
+## colab 一键运行
+
+https://colab.research.google.com/drive/1yMS-Cpf8kTzpKy2D9OlJXm6su4kXsz8A?usp=sharing
 
 ## 快速上手
 如果你从GitHub下载了RecBole的源码，你可以使用提供的脚本进行简单的使用：
@@ -221,6 +227,7 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 ## RecBole 重要发布
 | Releases | Date       |
 |----------|------------|
+| v1.2.1   | 02/23/2025 |
 | v1.2.0   | 11/01/2023 |
 | v1.1.1   | 10/05/2022 |
 | v1.0.0   | 09/17/2021 |
@@ -265,7 +272,7 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
 
 
 ## 引用
-如果你觉得 RecBole 对你的科研工作有帮助，请引用我们的论文：[RecBole[1.0]](https://arxiv.org/abs/2011.01731)，[RecBole[2.0]](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) 和 [RecBole[1.2.0]](https://dl.acm.org/doi/10.1145/3539618.3591889)。
+如果你觉得 RecBole 对你的科研工作有帮助，请引用我们的论文：[RecBole[1.0]](https://arxiv.org/abs/2011.01731)，[RecBole[2.0]](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) 和 [RecBole[1.2.1]](https://dl.acm.org/doi/10.1145/3539618.3591889)。
 
 ```bibtex
 @inproceedings{recbole[1.0],
@@ -284,7 +291,7 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
   publisher = {{ACM}},
   year      = {2022}
 }
-@inproceedings{recbole[1.2.0],
+@inproceedings{recbole[1.2.1],
   author    = {Lanling Xu and Zhen Tian and Gaowei Zhang and Junjie Zhang and Lei Wang and Bowen Zheng and Yifan Li and Jiakai Tang and Zeyu Zhang and Yupeng Hou and Xingyu Pan and Wayne Xin Zhao and Xu Chen and Ji{-}Rong Wen},
   title     = {Towards a More User-Friendly and Easy-to-Use Benchmark Library for Recommender Systems},
   booktitle = {{SIGIR}},
@@ -292,6 +299,7 @@ NOTE: 我们的测试结果只给出了RecBole库中实现模型的大致时间�
   publisher = {{ACM}},
   year      = {2023}
 }
+
 ```
 
 
@@ -305,7 +313,10 @@ RecBole由 [中国人民大学, 北京邮电大学, 华东师范大学](https://
 | 2020年6月<br> ~<br> 2020年11月 |        v0.1.1         |  牟善磊 ([@ShanleiMu](https://github.com/ShanleiMu)), 侯宇蓬 ([@hyp1231](https://github.com/@hyp1231)),<br> 林子涵 ([@linzihan-backforward](https://github.com/linzihan-backforward)), 李凯元 ([@tsotfsk](https://github.com/tsotfsk))| [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016) |
 |   2020年11月<br> ~ <br> 2022年7月   | v0.1.2 ~ v1.0.1 |      陈昱硕 ([@chenyushuo](https://github.com/https://github.com/chenyushuo)), 潘星宇 ([@2017pxy](https://github.com/2017pxy))    | [PDF](https://dl.acm.org/doi/abs/10.1145/3459637.3482016)    |
 | 2022年7月<br/> ~ <br/> 2023年11月 | v1.1.0 ~ v1.1.1 | 徐澜玲 ([@Sherry-XLL](https://github.com/Sherry-XLL)), 田震 ([@chenyuwuxin](https://github.com/chenyuwuxin)), 张高玮 ([@Wicknight](https://github.com/Wicknight)), 王磊 ([@Paitesanshi](https://github.com/Paitesanshi)), 张君杰 ([@leoleojie](https://github.com/leoleojie)) | [PDF](https://dl.acm.org/doi/10.1145/3539618.3591889) |
-| 2023年11月<br/> ~ <br/> 现在 | v1.2.0 | 郑博文 ([@zhengbw0324](https://github.com/zhengbw0324)), 马辰 ([@Yilu114](https://github.com/Yilu114)) | [PDF](https://dl.acm.org/doi/10.1145/3539618.3591889) |
+| 2023年11月<br/> ~ <br/> 2025年2月 | v1.2.0 | 郑博文 ([@zhengbw0324](https://github.com/zhengbw0324)), 马辰 ([@Yilu114](https://github.com/Yilu114)) | [PDF](https://dl.acm.org/doi/10.1145/3539618.3591889) |
+| 2025年2月<br/> ~ <br/> 现在 | v1.2.1 | 刘恩泽 ([@BishopLiu](https://github.com/BishopLiu)), 欧柯杉 ([@TayTroye](https://github.com/TayTroye)), 李炳黔 ([@Fotiligner](https://github.com/Fotiligner)) | [PDF](https://dl.acm.org/doi/10.1145/3539618.3591889) |
+
+
 
 ## 免责声明
 RecBole 基于 [MIT License](./LICENSE) 进行开发，本项目的所有数据和代码只能被用于学术目的。

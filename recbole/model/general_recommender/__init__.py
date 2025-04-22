@@ -1,3 +1,4 @@
+from recbole.model.general_recommender.asymknn import AsymKNN
 from recbole.model.general_recommender.bpr import BPR
 from recbole.model.general_recommender.cdae import CDAE
 from recbole.model.general_recommender.convncf import ConvNCF

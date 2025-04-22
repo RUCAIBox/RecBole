@@ -4,6 +4,7 @@ recbole.model.general\_recommender
 .. toctree::
    :maxdepth: 4
 
+   recbole.model.general_recommender.asymknn
    recbole.model.general_recommender.admmslim
    recbole.model.general_recommender.bpr
    recbole.model.general_recommender.cdae
