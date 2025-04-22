@@ -119,6 +119,7 @@ the sequential data. The models of session-based recommendation are also include
    model/sequential/fearec
    model/sequential/sasreccpr
    model/sequential/gru4reccpr
+   model/sequential/trimlp
 
 
 Knowledge-based Recommendation
