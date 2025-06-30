@@ -74,7 +74,7 @@ Here, we suppose the NewModel encode the users and items, where we use :func:`~r
         self.apply(xavier_normal_initialization)
 
 
-Implement calcualte_loss()
+Implement calculate_loss()
 ----------------------------------------
 Then we define the :meth:`calculate_loss` method, :meth:`calculate_loss` is used to compute the loss,
 the input parameters are :class:`~recbole.data.interaction.Interaction`, at last the method return a :class:`torch.Tensor` for computing the BP information.
