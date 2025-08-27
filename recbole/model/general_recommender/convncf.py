@@ -79,7 +79,8 @@ class ConvNCF(GeneralRecommender):
         assert self.train_method in ["after_pretrain", "no_pretrain"]
         if self.train_method == "after_pretrain":
             assert self.pre_model_path != ""
-            pretrain_state = torch.load(self.pre_model_path)["state_dict"]
+            # PyTorch 2.6 兼容性：設置 weights_only=False 以支持完整的模型檢查點
+            pretrain_state = torch.load(self.pre_model_path, weights_only=False)["state_dict"]
             bpr = BPR(config=config, dataset=dataset)
             bpr.load_state_dict(pretrain_state)
             self.user_embedding = copy.deepcopy(bpr.user_embedding)

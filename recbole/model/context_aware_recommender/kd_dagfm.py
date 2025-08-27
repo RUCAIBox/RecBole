@@ -53,7 +53,8 @@ class KD_DAGFM(ContextRecommender):
             if "warm_up" not in config:
                 raise ValueError("Must have warm up!")
             else:
-                save_info = torch.load(config["warm_up"])
+                # PyTorch 2.6 兼容性：設置 weights_only=False 以支持完整的模型檢查點
+                save_info = torch.load(config["warm_up"], weights_only=False)
                 self.load_state_dict(save_info["state_dict"])
         else:
             self.apply(xavier_normal_initialization)

@@ -13,3 +13,18 @@ saved/
 docs/build/
 wandb/*
 /ray_log*
+
+# Docker 相關文件
+Dockerfile
+docker-compose.yml
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# 測試腳本
+test_script.py
+demo_difference.py
+test_environment.py
+your_test_code.py
+start_docker.sh
+DOCKER_README.md

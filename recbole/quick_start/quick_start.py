@@ -17,8 +17,6 @@ import torch.distributed as dist
 from collections.abc import MutableMapping
 from logging import getLogger
 
-from ray import tune
-
 from recbole.config import Config
 from recbole.data import (
     create_dataset,
@@ -220,7 +218,16 @@ def objective_function(config_dict=None, config_file_list=None, saved=True):
     )
     test_result = trainer.evaluate(test_data, load_best_model=saved)
 
-    tune.report(**test_result)
+    # 延遲導入 ray tune，只在需要時才導入
+    try:
+        from ray import tune
+        tune.report(**test_result)
+    except ImportError as e:
+        logger.warning(f"Ray not available or incompatible: {e}")
+        logger.warning("Skipping tune.report() - this is only needed for hyperparameter tuning")
+    except Exception as e:
+        logger.warning(f"Ray tune.report() failed: {e}")
+        logger.warning("This may be due to version compatibility issues with ray and numpy")
     return {
         "model": model_name,
         "best_valid_score": best_valid_score,
@@ -247,7 +254,8 @@ def load_data_and_model(model_file):
     """
     import torch
 
-    checkpoint = torch.load(model_file)
+    # PyTorch 2.6 兼容性：設置 weights_only=False 以支持完整的模型檢查點
+    checkpoint = torch.load(model_file, weights_only=False)
     config = checkpoint["config"]
     init_seed(config["seed"], config["reproducibility"])
     init_logger(config)
