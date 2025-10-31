@@ -1,4 +1,6 @@
 from recbole.model.sequential_recommender.bert4rec import BERT4Rec
+from recbole.model.sequential_recommender.bert4rec_align import BERT4RecAlign
+from recbole.model.sequential_recommender.sasrec_align import SASRecAlign
 from recbole.model.sequential_recommender.caser import Caser
 from recbole.model.sequential_recommender.core import CORE
 from recbole.model.sequential_recommender.dien import DIEN
