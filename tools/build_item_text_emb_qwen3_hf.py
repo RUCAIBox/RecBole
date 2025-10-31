@@ -36,6 +36,8 @@ import pandas as pd
 import torch
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, AutoConfig
 from tqdm import tqdm
+from sklearn.decomposition import TruncatedSVD
+from sklearn.preprocessing import normalize as l2_normalize
 
 
 def parse_args() -> argparse.Namespace:
@@ -72,6 +74,18 @@ def parse_args() -> argparse.Namespace:
         "--pad_placeholder_text",
         default="[PAD]",
         help="Placeholder for PAD row to avoid empty input during encoding.",
+    )
+    p.add_argument(
+        "--project_dim",
+        type=int,
+        default=None,
+        help="Optional: reduce embedding dim via TruncatedSVD to this size, then L2-normalize.",
+    )
+    p.add_argument(
+        "--svd_random_state",
+        type=int,
+        default=42,
+        help="Random state for TruncatedSVD when --project_dim is set.",
     )
     return p.parse_args()
 
@@ -253,6 +267,40 @@ def main():
     if mat.shape[0] > 0:
         mat[0, :] = 0.0
 
+    # Optional dimensionality reduction to a target size
+    if args.project_dim is not None:
+        orig_dim = mat.shape[1]
+        target_dim = int(args.project_dim)
+
+        if target_dim <= 0:
+            raise ValueError("--project_dim must be > 0")
+
+        if target_dim == orig_dim:
+            # Just L2-normalize (non-PAD rows)
+            if mat.shape[0] > 1:
+                mat[1:, :] = l2_normalize(mat[1:, :], norm="l2", axis=1, copy=False)
+        elif target_dim < orig_dim:
+            # Fit SVD on non-PAD rows to avoid trivial all-zero row
+            nonpad = mat[1:, :].astype(np.float32, copy=False)
+            # Guard tiny feature dims
+            svd_k = max(1, min(target_dim, nonpad.shape[1] - 1 if nonpad.shape[1] > 1 else 1))
+            svd = TruncatedSVD(n_components=svd_k, random_state=args.svd_random_state)
+            reduced = svd.fit_transform(nonpad)
+            # If svd_k < target_dim, right-pad zeros
+            if svd_k < target_dim:
+                pad = np.zeros((reduced.shape[0], target_dim - svd_k), dtype=reduced.dtype)
+                reduced = np.concatenate([reduced, pad], axis=1)
+            reduced = l2_normalize(reduced, norm="l2", axis=1, copy=False)
+            mat_proj = np.zeros((mat.shape[0], target_dim), dtype=np.float32)
+            mat_proj[1:, :] = reduced
+            mat = mat_proj
+        else:  # target_dim > orig_dim → pad zeros
+            mat_pad = np.zeros((mat.shape[0], target_dim), dtype=np.float32)
+            mat_pad[:, :orig_dim] = mat
+            if mat.shape[0] > 1:
+                mat_pad[1:, :] = l2_normalize(mat_pad[1:, :], norm="l2", axis=1, copy=False)
+            mat = mat_pad
+
     # Save
     if args.dtype == "float16":
         mat = mat.astype(np.float16)
@@ -264,7 +312,10 @@ def main():
 
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
     np.save(args.output, mat)
-    print(f"Saved Qwen3 embeddings to: {os.path.abspath(args.output)}  shape={mat.shape}  dtype={mat.dtype}")
+    print(
+        f"Saved Qwen3 embeddings to: {os.path.abspath(args.output)}  "
+        f"shape={mat.shape}  dtype={mat.dtype}  (original_dim={all_emb[0].shape[1] if len(all_emb)>0 else 'NA'}, project_dim={args.project_dim})"
+    )
 
 
 if __name__ == "__main__":
