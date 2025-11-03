@@ -47,6 +47,7 @@ echo ""
 echo "--- 开始生成Embeddings ---"
 echo "这可能需要一些时间，取决于数据集大小和GPU性能"
 
+mkdir -p logs
 nohup python tools/build_item_text_emb_qwen3_hf.py \
   --mapping dataset/Amazon_Beauty/item_index_mapping.csv \
   --model_name_or_path ${QWEN_MODEL_PATH} \
@@ -56,7 +57,7 @@ nohup python tools/build_item_text_emb_qwen3_hf.py \
   --dtype float16 \
   --project_dim 256 \
   --dataset Amazon_Beauty \
-  --config recbole/properties/model/SASRecAlign.yaml \
+  --config sasrec_base_plain.yaml \
   --prompt_template "[TITLE] {text}" \
   --device_map auto \
   > logs/generate_qwen3_$(date +%Y%m%d_%H%M%S).log 2>&1 &

@@ -7,7 +7,7 @@ cd $BASE_DIR
 echo "=== Step 1: 生成item索引映射文件 ==="
 python tools/export_internal_item_mapping.py \
   --dataset Amazon_Beauty \
-  --config recbole/properties/model/SASRecAlign.yaml \
+  --config sasrec_base_plain.yaml \
   --output dataset/Amazon_Beauty/item_index_mapping.csv
 
 if [ $? -eq 0 ]; then
