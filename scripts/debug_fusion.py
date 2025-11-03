@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """调试脚本：验证文本融合是否真的在工作"""
 
+import sys
+import os
+# 添加 RecBole 到 Python 路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import torch
 from recbole.config import Config
 from recbole.data.utils import create_dataset
