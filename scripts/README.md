@@ -108,7 +108,7 @@ nohup python tools/build_item_text_emb_qwen3_hf.py \
 bash scripts/02_exp_baseline.sh
 ```
 
-运行标准SASRec模型（无文本特征）作为基线。
+运行标准SASRec模型（无文本特征）作为基线，内部使用 `sasrec_baseline.yaml`（已设置 `loss_type: CE` 和 `train_neg_sample_args: null`，避免负采样冲突）。
 
 #### 2.2 Base embeddings实验
 

@@ -7,7 +7,7 @@ cd $BASE_DIR
 EXP_NAME="exp2_sasrec_base"
 MODEL="SASRecAlign"
 DATASET="Amazon_Beauty"
-CONFIG_FILE="sasrec_align_base.yaml"
+CONFIG_FILE="sasrec_base_plain.yaml"
 
 LOG_DIR="results/sasrec_experiments"
 mkdir -p $LOG_DIR
@@ -24,7 +24,6 @@ python run_recbole.py \
     --model $MODEL \
     --dataset $DATASET \
     --config_files $CONFIG_FILE \
-    --config_dict 'use_llm=False,use_cross=False,use_align=False,alignment_weight=0.0' \
     > ${LOG_DIR}/${EXP_NAME}.log 2>&1
 
 if [ $? -eq 0 ]; then

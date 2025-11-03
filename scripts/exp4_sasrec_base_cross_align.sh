@@ -24,7 +24,6 @@ python run_recbole.py \
     --model $MODEL \
     --dataset $DATASET \
     --config_files $CONFIG_FILE \
-    --config_dict 'use_llm=False,use_cross=True,use_align=True,alignment_weight=0.1' \
     > ${LOG_DIR}/${EXP_NAME}.log 2>&1
 
 if [ $? -eq 0 ]; then

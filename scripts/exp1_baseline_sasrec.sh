@@ -8,6 +8,7 @@ cd $BASE_DIR
 EXP_NAME="exp1_baseline_sasrec"
 MODEL="SASRec"
 DATASET="Amazon_Beauty"
+CONFIG_FILE="sasrec_baseline.yaml"
 
 # 输出目录
 LOG_DIR="results/sasrec_experiments"
@@ -17,6 +18,7 @@ echo "=========================================="
 echo "实验: $EXP_NAME"
 echo "模型: $MODEL"
 echo "数据集: $DATASET"
+echo "配置文件: $CONFIG_FILE"
 echo "开始时间: $(date)"
 echo "=========================================="
 
@@ -24,10 +26,7 @@ echo "=========================================="
 python run_recbole.py \
     --model $MODEL \
     --dataset $DATASET \
-    --config_dict "
-        hidden_size=256,
-        eval_args.mode.test='full'
-    " \
+    --config_files $CONFIG_FILE \
     > ${LOG_DIR}/${EXP_NAME}.log 2>&1
 
 # 检查结果
