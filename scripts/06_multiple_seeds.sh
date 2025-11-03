@@ -1,7 +1,7 @@
 #!/bin/bash
 # 06_multiple_seeds.sh - 多随机种子实验用于计算方差
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 LOG_DIR="results/sasrec_experiments/seeds"

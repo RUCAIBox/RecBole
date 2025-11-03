@@ -53,7 +53,7 @@ scripts/
 首先确保环境配置正确：
 
 ```bash
-cd /home/charlie/project/recbole
+cd /home/charlie/project/RecBole
 bash scripts/00_quick_test.sh
 ```
 

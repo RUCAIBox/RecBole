@@ -1,7 +1,7 @@
 #!/bin/bash
 # 02_exp_baseline.sh - 运行基线SASRec实验
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 # 创建结果目录

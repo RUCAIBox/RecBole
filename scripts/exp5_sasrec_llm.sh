@@ -1,7 +1,7 @@
 #!/bin/bash
 # 实验5: SASRec + LLM (无Cross/Align)
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 EXP_NAME="exp5_sasrec_llm"

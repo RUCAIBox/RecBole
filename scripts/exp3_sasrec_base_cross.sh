@@ -1,7 +1,7 @@
 #!/bin/bash
 # 实验3: SASRec + Base + Cross (无Align)
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 EXP_NAME="exp3_sasrec_base_cross"

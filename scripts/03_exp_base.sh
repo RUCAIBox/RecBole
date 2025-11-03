@@ -1,7 +1,7 @@
 #!/bin/bash
 # 03_exp_base.sh - Base embeddings相关实验
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 LOG_DIR="results/sasrec_experiments"

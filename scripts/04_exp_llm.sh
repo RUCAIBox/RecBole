@@ -1,7 +1,7 @@
 #!/bin/bash
 # 04_exp_llm.sh - LLM (Qwen3) embeddings相关实验
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 LOG_DIR="results/sasrec_experiments"

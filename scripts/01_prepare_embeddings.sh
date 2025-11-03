@@ -1,7 +1,7 @@
 #!/bin/bash
 # 01_prepare_embeddings.sh - 准备item映射和Base embeddings
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 echo "=== Step 1: 生成item索引映射文件 ==="

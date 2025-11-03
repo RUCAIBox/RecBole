@@ -1,7 +1,7 @@
 #!/bin/bash
 # 实验1: Baseline SASRec (无文本特征)
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 # 实验配置

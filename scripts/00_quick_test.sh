@@ -1,7 +1,7 @@
 #!/bin/bash
 # 00_quick_test.sh - 快速测试环境和配置是否正确
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 echo "=== RecBole SASRec 环境测试 ==="

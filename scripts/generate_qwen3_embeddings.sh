@@ -2,7 +2,7 @@
 # generate_qwen3_embeddings.sh - 在GPU机器上生成Qwen3 embeddings
 # 这个脚本应该在有GPU的机器上运行
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 echo "=== 生成Qwen3 Embeddings ==="

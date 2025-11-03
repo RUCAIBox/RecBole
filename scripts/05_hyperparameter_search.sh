@@ -1,7 +1,7 @@
 #!/bin/bash
 # 05_hyperparameter_search.sh - 对齐损失的超参数网格搜索
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 LOG_DIR="results/sasrec_experiments/hyperparam"

@@ -1,7 +1,7 @@
 #!/bin/bash
 # 实验7: SASRec + LLM + Cross + Align
 
-BASE_DIR="/home/charlie/project/recbole"
+BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 EXP_NAME="exp7_sasrec_llm_cross_align"
