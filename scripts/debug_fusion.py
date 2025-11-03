@@ -22,13 +22,13 @@ def check_fusion_modules(config_file):
     
     # 打印配置中的路径
     print(f"\n配置路径检查:")
-    print(f"- item_text_emb_path_base: {config.get('item_text_emb_path_base', 'NOT SET')}")
-    print(f"- item_text_emb_path_llm: {config.get('item_text_emb_path_llm', 'NOT SET')}")
-    print(f"- item_text_emb_path: {config.get('item_text_emb_path', 'NOT SET')}")
+    print(f"- item_text_emb_path_base: {getattr(config, 'item_text_emb_path_base', 'NOT SET')}")
+    print(f"- item_text_emb_path_llm: {getattr(config, 'item_text_emb_path_llm', 'NOT SET')}")
+    print(f"- item_text_emb_path: {getattr(config, 'item_text_emb_path', 'NOT SET')}")
     
     # 检查文件是否存在
     import os
-    base_path = config.get('item_text_emb_path_base')
+    base_path = getattr(config, 'item_text_emb_path_base', None)
     if base_path:
         exists = os.path.exists(base_path)
         print(f"- Base文件存在: {exists}")
