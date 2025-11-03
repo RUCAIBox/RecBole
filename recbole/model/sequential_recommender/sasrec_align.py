@@ -147,16 +147,32 @@ class SASRecAlign(SequentialRecommender):
         self.text_deep = None
         self.text_predictor = None
         self.item_text_proj = None
+        
+        # Item-side fusion modules for integrating text into scoring
+        self.item_fusion_cross = None
+        self.item_fusion_deep = None
+        self.item_fusion_predictor = None
+        
         if text_in_dim > 0:
             if self.use_cross:
                 self.text_cross = CrossNetV2(text_in_dim, num_layers=self.text_cross_layer_num)
                 # Simple deep tower to the model hidden size
                 self.text_deep = MLPLayers([text_in_dim, self.hidden_size], dropout=0.0, bn=False)
                 self.text_predictor = nn.Linear(text_in_dim + self.hidden_size, self.hidden_size)
+                
+                # Item-side fusion: combine item embedding with text features
+                # Input: [item_emb(hidden_size), text_features(text_in_dim)]
+                fusion_input_dim = self.hidden_size + text_in_dim
+                self.item_fusion_cross = CrossNetV2(fusion_input_dim, num_layers=self.text_cross_layer_num)
+                self.item_fusion_deep = MLPLayers([fusion_input_dim, self.hidden_size], dropout=0.0, bn=False)
+                self.item_fusion_predictor = nn.Linear(fusion_input_dim + self.hidden_size, self.hidden_size)
             else:
                 self.item_text_proj = nn.Linear(text_in_dim, self.hidden_size)
 
         self._align_debug_logged = False
+        
+        # Cache for fused item embeddings to improve efficiency
+        self._fused_item_emb_cache = None
 
         # Logging for alignment availability
         if self.alignment_weight > 0.0:
@@ -261,6 +277,46 @@ class SASRecAlign(SequentialRecommender):
         logits = torch.matmul(a, b.t()) / self.temperature
         labels = torch.arange(a.size(0), device=a.device)
         return nn.CrossEntropyLoss()(logits, labels)
+    
+    def _get_fused_item_embeddings(self, item_ids: torch.Tensor = None) -> torch.Tensor:
+        """Get item embeddings fused with text features.
+        
+        Args:
+            item_ids: Specific item IDs to get embeddings for. If None, returns all items.
+            
+        Returns:
+            Fused item embeddings of shape [n_items, hidden_size] or [batch_size, hidden_size]
+        """
+        if item_ids is None:
+            # Get all item embeddings
+            all_ids = torch.arange(self.n_items, device=self.item_embedding.weight.device)
+            item_emb = self.item_embedding.weight  # [n_items, hidden_size]
+        else:
+            all_ids = item_ids
+            item_emb = self.item_embedding(item_ids)
+        
+        # If no text features or fusion modules, return original embeddings
+        if not self._has_item_text() or (self.use_cross and self.item_fusion_predictor is None):
+            return item_emb
+            
+        # Get text features for items
+        text_raw = self._gather_text_raw(all_ids)
+        if self.detach_text_emb:
+            text_raw = text_raw.detach()
+        
+        if self.use_cross and self.item_fusion_predictor is not None:
+            # Fuse item embeddings with text features using cross network
+            fusion_input = torch.cat([item_emb, text_raw], dim=1)
+            cross_out = self.item_fusion_cross(fusion_input)
+            deep_out = self.item_fusion_deep(fusion_input)
+            fused = torch.cat([cross_out, deep_out], dim=1)
+            fused_emb = self.item_fusion_predictor(fused)
+        else:
+            # Simple fusion: add projected text features to item embeddings
+            text_proj = self._project_text(text_raw)
+            fused_emb = item_emb + text_proj
+            
+        return fused_emb
 
     def forward(self, item_seq, item_seq_len):
         position_ids = torch.arange(
@@ -290,13 +346,15 @@ class SASRecAlign(SequentialRecommender):
         pos_items = interaction[self.POS_ITEM_ID]
         if self.loss_type == "BPR":
             neg_items = interaction[self.NEG_ITEM_ID]
-            pos_items_emb = self.item_embedding(pos_items)
-            neg_items_emb = self.item_embedding(neg_items)
+            # Use fused embeddings for positive and negative items
+            pos_items_emb = self._get_fused_item_embeddings(pos_items)
+            neg_items_emb = self._get_fused_item_embeddings(neg_items)
             pos_score = torch.sum(seq_output * pos_items_emb, dim=-1)
             neg_score = torch.sum(seq_output * neg_items_emb, dim=-1)
             loss = self.loss_fct(pos_score, neg_score)
         else:  # CE
-            test_item_emb = self.item_embedding.weight
+            # Use fused embeddings for all items
+            test_item_emb = self._get_fused_item_embeddings()
             logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
             loss = self.loss_fct(logits, pos_items)
 
@@ -335,7 +393,8 @@ class SASRecAlign(SequentialRecommender):
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         test_item = interaction[self.ITEM_ID]
         seq_output = self.forward(item_seq, item_seq_len)
-        test_item_emb = self.item_embedding(test_item)
+        # Use fused embeddings for test items
+        test_item_emb = self._get_fused_item_embeddings(test_item)
         scores = torch.mul(seq_output, test_item_emb).sum(dim=1)
         return scores
 
@@ -343,7 +402,8 @@ class SASRecAlign(SequentialRecommender):
         item_seq = interaction[self.ITEM_SEQ]
         item_seq_len = interaction[self.ITEM_SEQ_LEN]
         seq_output = self.forward(item_seq, item_seq_len)
-        test_items_emb = self.item_embedding.weight
+        # Use fused embeddings for all items
+        test_items_emb = self._get_fused_item_embeddings()
         scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))
         return scores
 

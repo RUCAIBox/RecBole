@@ -1,6 +1,9 @@
 ---
 model: SASRecAlign
 
+# Model parameters - unified to 256
+hidden_size: 256
+
 # Dataset
 dataset: Amazon_Beauty
 field_separator: "\t"
@@ -31,7 +34,7 @@ eval_args:
   group_by: user
   order: TO
   split: {'LS': 'valid_and_test'}
-  mode:  {'valid': 'uni100','test':'uni100'}
+  mode:  {'valid': 'uni100','test':'full'}
 eval_neg_sample_args: {'distribution': 'uniform', 'sample_num': 100}
 topk: [5, 10, 20]
 metrics: [Recall, MRR, NDCG, Hit, Precision]
