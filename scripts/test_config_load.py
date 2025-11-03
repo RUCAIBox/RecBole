@@ -16,13 +16,14 @@ config = Config(
 )
 
 print("=== 配置内容 ===")
-print(f"item_text_emb_path_base: {config.get('item_text_emb_path_base', 'NOT SET')}")
-print(f"item_text_emb_path_llm: {config.get('item_text_emb_path_llm', 'NOT SET')}")
-print(f"use_cross: {config.get('use_cross', 'NOT SET')}")
-print(f"use_llm: {config.get('use_llm', 'NOT SET')}")
+# Config对象使用属性访问，不是字典
+print(f"item_text_emb_path_base: {getattr(config, 'item_text_emb_path_base', 'NOT SET')}")
+print(f"item_text_emb_path_llm: {getattr(config, 'item_text_emb_path_llm', 'NOT SET')}")
+print(f"use_cross: {getattr(config, 'use_cross', 'NOT SET')}")
+print(f"use_llm: {getattr(config, 'use_llm', 'NOT SET')}")
 
 # 检查文件
-base_path = config.get('item_text_emb_path_base')
+base_path = getattr(config, 'item_text_emb_path_base', None)
 if base_path:
     print(f"\nBase路径: {base_path}")
     print(f"当前目录: {os.getcwd()}")
