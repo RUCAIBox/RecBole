@@ -21,7 +21,7 @@ echo ""
 echo "=== Step 2: 生成Base (TF-IDF+SVD) embeddings ==="
 python tools/build_item_text_emb_base.py \
   --dataset Amazon_Beauty \
-  --config recbole/properties/model/SASRecAlign.yaml \
+  --config sasrec_base_plain.yaml \
   --output dataset/Amazon_Beauty/item_text_emb.base.npy \
   --svd_dim 256 \
   --ngram_min 1 \
