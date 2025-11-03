@@ -40,7 +40,12 @@ loss_type: CE
 train_neg_sample_args: null
 
 # Align-only baseline (Qwen3 embeddings)
-item_text_emb_path: dataset/Amazon_Beauty/item_text_emb.qwen3.npy
+# New flags for reproducible ablations
+item_text_emb_path_llm: dataset/Amazon_Beauty/item_text_emb.qwen3.npy
+use_llm: true           # B: LLM only; set base path too for A+B
+use_align: true
+use_cross: true
+text_cross_layer_num: 3
 alignment_weight: 0.1
 temperature: 0.07
 detach_text_emb: true

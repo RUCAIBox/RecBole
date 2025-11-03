@@ -40,7 +40,12 @@ loss_type: CE
 train_neg_sample_args: null
 
 # Align-only baseline (Base TF-IDF+SVD embeddings)
-item_text_emb_path: dataset/Amazon_Beauty/item_text_emb.base.npy
+# New flags for reproducible ablations
+item_text_emb_path_base: dataset/Amazon_Beauty/item_text_emb.base.npy
+use_llm: false          # A: Base only
+use_align: true         # enable alignment loss
+use_cross: true         # enable DCN-V2 style cross for text features
+text_cross_layer_num: 3
 alignment_weight: 0.1
 temperature: 0.07
 detach_text_emb: true

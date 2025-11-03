@@ -12,3 +12,13 @@ initializer_range: 0.02
 
 # loss_type is controlled in external yaml; default left unspecified here
 
+# Text alignment & fusion defaults
+alignment_weight: 0.0
+temperature: 0.07
+detach_text_emb: true
+normalize_text: true
+use_align: true
+use_llm: false
+use_cross: false
+text_cross_layer_num: 3
+

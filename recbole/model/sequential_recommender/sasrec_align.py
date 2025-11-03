@@ -8,8 +8,37 @@ from torch import nn
 import torch.nn.functional as F
 
 from recbole.model.abstract_recommender import SequentialRecommender
-from recbole.model.layers import TransformerEncoder
+from recbole.model.layers import TransformerEncoder, MLPLayers
 from recbole.model.loss import BPRLoss
+
+
+class CrossNetV2(nn.Module):
+    """A lightweight DCN-V2 style cross network over dense features.
+
+    x_{l+1} = x_l + x_0 * (x_l @ W_l + b_l)
+    """
+
+    def __init__(self, input_dim: int, num_layers: int = 3):
+        super().__init__()
+        self.input_dim = int(input_dim)
+        self.num_layers = int(max(0, num_layers))
+        self.ws = nn.ParameterList([
+            nn.Parameter(torch.randn(self.input_dim, self.input_dim))
+            for _ in range(self.num_layers)
+        ])
+        self.bs = nn.ParameterList([
+            nn.Parameter(torch.zeros(self.input_dim)) for _ in range(self.num_layers)
+        ])
+
+    def forward(self, x0: torch.Tensor) -> torch.Tensor:
+        if self.num_layers == 0:
+            return x0
+        x = x0
+        for i in range(self.num_layers):
+            xlw = x @ self.ws[i]
+            xlw = xlw + self.bs[i]
+            x = x + x0 * xlw
+        return x
 
 
 class SASRecAlign(SequentialRecommender):
@@ -53,48 +82,107 @@ class SASRecAlign(SequentialRecommender):
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
-        # --- text-alignment settings ---
+        # --- text-alignment settings & feature fusion ---
         self.alignment_weight = config["alignment_weight"] if "alignment_weight" in config else 0.0
         self.temperature = config["temperature"] if "temperature" in config else 0.07
         self.normalize_text = config["normalize_text"] if "normalize_text" in config else True
         self.detach_text_emb = config["detach_text_emb"] if "detach_text_emb" in config else True
-        self.item_text_emb_path = config["item_text_emb_path"] if "item_text_emb_path" in config else None
-
-        item_text_emb = self._load_text_embeddings(self.item_text_emb_path, self.n_items)
-        if item_text_emb is not None and self.normalize_text:
-            with torch.no_grad():
-                norms = torch.norm(item_text_emb, p=2, dim=1, keepdim=True)
-                zero_mask = norms.squeeze(1) <= 0
-                # avoid divide-by-zero; sanitize NaNs
-                item_text_emb = item_text_emb / norms.clamp_min(1e-8)
-                item_text_emb[torch.isnan(item_text_emb)] = 0.0
-        self.register_buffer(
-            "item_text_emb", item_text_emb if item_text_emb is not None else None
+        self.use_llm = config["use_llm"] if "use_llm" in config else False
+        self.use_cross = config["use_cross"] if "use_cross" in config else False
+        self.use_align = config["use_align"] if "use_align" in config else True
+        self.text_cross_layer_num = config["text_cross_layer_num"] if "text_cross_layer_num" in config else 3
+        # For backward compatibility: accept single path as base
+        item_text_emb_path_base = (
+            config["item_text_emb_path_base"] if "item_text_emb_path_base" in config else None
         )
-        if self._has_item_text():
-            item_text_dim = self.item_text_emb.shape[1]
-            self.item_text_proj = nn.Linear(item_text_dim, self.hidden_size)
+        item_text_emb_path_llm = (
+            config["item_text_emb_path_llm"] if "item_text_emb_path_llm" in config else None
+        )
+        if item_text_emb_path_base is None and item_text_emb_path_llm is None:
+            # Fallback to legacy key
+            item_text_emb_path_base = config["item_text_emb_path"] if "item_text_emb_path" in config else None
+
+        emb_base = self._load_text_embeddings(item_text_emb_path_base, self.n_items)
+        emb_llm = self._load_text_embeddings(item_text_emb_path_llm, self.n_items)
+
+        if self.normalize_text:
+            with torch.no_grad():
+                if emb_base is not None:
+                    norms = torch.norm(emb_base, p=2, dim=1, keepdim=True)
+                    emb_base = emb_base / norms.clamp_min(1e-8)
+                    emb_base[torch.isnan(emb_base)] = 0.0
+                if emb_llm is not None:
+                    norms = torch.norm(emb_llm, p=2, dim=1, keepdim=True)
+                    emb_llm = emb_llm / norms.clamp_min(1e-8)
+                    emb_llm[torch.isnan(emb_llm)] = 0.0
+
+        self.register_buffer("item_text_emb_base", emb_base if emb_base is not None else None)
+        self.register_buffer("item_text_emb_llm", emb_llm if emb_llm is not None else None)
+
+        # Determine text input formation according to flags and availability
+        base_dim = int(self.item_text_emb_base.shape[1]) if self.item_text_emb_base is not None else 0
+        llm_dim = int(self.item_text_emb_llm.shape[1]) if self.item_text_emb_llm is not None else 0
+        self._text_mode = "none"
+        if self.use_llm:
+            if base_dim > 0 and llm_dim > 0:
+                self._text_mode = "both"
+                text_in_dim = base_dim + llm_dim
+            elif llm_dim > 0:
+                self._text_mode = "llm"
+                text_in_dim = llm_dim
+            elif base_dim > 0:
+                self._text_mode = "base"
+                text_in_dim = base_dim
+            else:
+                text_in_dim = 0
         else:
-            self.item_text_proj = None
+            if base_dim > 0:
+                self._text_mode = "base"
+                text_in_dim = base_dim
+            else:
+                text_in_dim = 0
+
+        # Build text projection/fusion modules
+        self.text_cross = None
+        self.text_deep = None
+        self.text_predictor = None
+        self.item_text_proj = None
+        if text_in_dim > 0:
+            if self.use_cross:
+                self.text_cross = CrossNetV2(text_in_dim, num_layers=self.text_cross_layer_num)
+                # Simple deep tower to the model hidden size
+                self.text_deep = MLPLayers([text_in_dim, self.hidden_size], dropout=0.0, bn=False)
+                self.text_predictor = nn.Linear(text_in_dim + self.hidden_size, self.hidden_size)
+            else:
+                self.item_text_proj = nn.Linear(text_in_dim, self.hidden_size)
 
         self._align_debug_logged = False
 
         # Logging for alignment availability
         if self.alignment_weight > 0.0:
-            if not self._has_item_text() or self.item_text_proj is None:
+            if not self._has_item_text() or (
+                (self.use_cross and (self.text_cross is None or self.text_deep is None or self.text_predictor is None))
+                or (not self.use_cross and self.item_text_proj is None)
+            ):
                 self.logger.warning(
-                    "SASRecAlign: alignment_weight>0 but no valid item_text_emb loaded from '%s' (expected rows=%d). Alignment will be disabled.",
-                    str(self.item_text_emb_path), self.n_items,
+                    "SASRecAlign: alignment_weight>0 but no valid text modules/embeddings (expected rows=%d). Alignment will be disabled.",
+                    self.n_items,
                 )
             else:
                 try:
-                    nan_rows = int(torch.isnan(self.item_text_emb).any(dim=1).sum().item())
-                    zero_rows = int((torch.norm(self.item_text_emb, p=2, dim=1) == 0).sum().item())
+                    # Prefer to check the union emb if both are available
+                    check_emb = None
+                    if self.item_text_emb_llm is not None:
+                        check_emb = self.item_text_emb_llm
+                    elif self.item_text_emb_base is not None:
+                        check_emb = self.item_text_emb_base
+                    nan_rows = int(torch.isnan(check_emb).any(dim=1).sum().item()) if check_emb is not None else -1
+                    zero_rows = int((torch.norm(check_emb, p=2, dim=1) == 0).sum().item()) if check_emb is not None else -1
                 except Exception:
                     nan_rows = zero_rows = -1
                 self.logger.info(
-                    "SASRecAlign: loaded item_text_emb shape=%s; projecting to hidden_size=%d. sanitized_nan_rows=%d zero_rows=%d",
-                    tuple(self.item_text_emb.shape), self.hidden_size, nan_rows, zero_rows,
+                    "SASRecAlign: text mode=%s base_dim=%d llm_dim=%d -> hidden_size=%d; sanitized_nan_rows=%d zero_rows=%d",
+                    self._text_mode, base_dim, llm_dim, self.hidden_size, nan_rows, zero_rows,
                 )
 
         # parameters initialization
@@ -136,7 +224,34 @@ class SASRecAlign(SequentialRecommender):
         return emb
 
     def _has_item_text(self) -> bool:
-        return hasattr(self, "item_text_emb") and self.item_text_emb is not None
+        return (
+            hasattr(self, "item_text_emb_base")
+            and hasattr(self, "item_text_emb_llm")
+            and (self.item_text_emb_base is not None or self.item_text_emb_llm is not None)
+        )
+
+    def _gather_text_raw(self, ids_flat: torch.Tensor) -> torch.Tensor:
+        parts = []
+        if self._text_mode in ("base", "both") and self.item_text_emb_base is not None:
+            parts.append(self.item_text_emb_base[ids_flat])
+        if self._text_mode in ("llm", "both") and self.item_text_emb_llm is not None:
+            parts.append(self.item_text_emb_llm[ids_flat])
+        if len(parts) == 0:
+            return torch.zeros((ids_flat.size(0), 0), device=ids_flat.device)
+        return torch.cat(parts, dim=1) if len(parts) > 1 else parts[0]
+
+    def _project_text(self, raw: torch.Tensor) -> torch.Tensor:
+        if raw.size(1) == 0:
+            return torch.zeros((raw.size(0), self.hidden_size), device=raw.device)
+        if self.use_cross and self.text_cross is not None and self.text_deep is not None and self.text_predictor is not None:
+            cross_out = self.text_cross(raw)
+            deep_out = self.text_deep(raw)
+            fused = torch.cat([cross_out, deep_out], dim=1)
+            return self.text_predictor(fused)
+        elif (not self.use_cross) and self.item_text_proj is not None:
+            return self.item_text_proj(raw)
+        else:
+            return torch.zeros((raw.size(0), self.hidden_size), device=raw.device)
 
     def _info_nce_align(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         if a.size(0) == 0 or b.size(0) == 0:
@@ -187,16 +302,17 @@ class SASRecAlign(SequentialRecommender):
 
         # optional alignment loss (align ID item embeddings with text embeddings)
         if (
-            self.alignment_weight > 0.0
+            self.use_align
+            and self.alignment_weight > 0.0
             and self._has_item_text()
-            and self.item_text_proj is not None
+            and ((self.use_cross and self.text_predictor is not None) or ((not self.use_cross) and self.item_text_proj is not None))
         ):
             pos_ids_flat = pos_items.view(-1)
             id_item_e = self.item_embedding(pos_ids_flat)
-            txt_emb = self.item_text_emb[pos_ids_flat]
+            txt_raw = self._gather_text_raw(pos_ids_flat)
             if self.detach_text_emb:
-                txt_emb = txt_emb.detach()
-            txt_item_e = self.item_text_proj(txt_emb)
+                txt_raw = txt_raw.detach()
+            txt_item_e = self._project_text(txt_raw)
             align_loss = self._info_nce_align(id_item_e, txt_item_e)
             loss = loss + self.alignment_weight * align_loss
 
@@ -204,7 +320,9 @@ class SASRecAlign(SequentialRecommender):
                 try:
                     self.logger.info(
                         "SASRecAlign: first-step align_loss=%.6f, batch_pos=%d, proj_norm=%.6f",
-                        align_loss.item(), int(pos_ids_flat.numel()), float(self.item_text_proj.weight.norm().item()),
+                        align_loss.item(), int(pos_ids_flat.numel()), float(
+                            (self.text_predictor.weight if (self.use_cross and self.text_predictor is not None) else self.item_text_proj.weight).norm().item()
+                        ),
                     )
                 except Exception:
                     pass

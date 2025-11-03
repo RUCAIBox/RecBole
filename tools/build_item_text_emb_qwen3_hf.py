@@ -39,6 +39,14 @@ from tqdm import tqdm
 from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import normalize as l2_normalize
 
+# Make local project importable when running from repo root
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from recbole.config.configurator import Config
+from recbole.data.utils import create_dataset, data_preparation
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Build Qwen3 HF-based item text embeddings")
@@ -78,14 +86,25 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--project_dim",
         type=int,
-        default=None,
-        help="Optional: reduce embedding dim via TruncatedSVD to this size, then L2-normalize.",
+        default=256,
+        help="Reduce embedding dim via TruncatedSVD to this size, then L2-normalize (default: 256).",
     )
     p.add_argument(
         "--svd_random_state",
         type=int,
         default=42,
         help="Random state for TruncatedSVD when --project_dim is set.",
+    )
+    p.add_argument(
+        "--dataset",
+        default=None,
+        help="Optional: RecBole dataset name (e.g., Amazon_Beauty) to derive train-only ids for SVD fitting.",
+    )
+    p.add_argument(
+        "--config",
+        nargs="+",
+        default=[],
+        help="Optional: YAML config files to customize dataset/model params when deriving train/valid/test splits.",
     )
     return p.parse_args()
 
@@ -280,12 +299,39 @@ def main():
             if mat.shape[0] > 1:
                 mat[1:, :] = l2_normalize(mat[1:, :], norm="l2", axis=1, copy=False)
         elif target_dim < orig_dim:
-            # Fit SVD on non-PAD rows to avoid trivial all-zero row
-            nonpad = mat[1:, :].astype(np.float32, copy=False)
+            # Fit SVD on train-only rows to avoid leakage, then transform all non-PAD rows
+            # Determine train internal ids if dataset/config provided
+            train_ids = None
+            if args.dataset is not None and len(args.dataset) > 0:
+                try:
+                    cfg = Config(model="BPR", dataset=args.dataset, config_file_list=args.config)
+                    ds = create_dataset(cfg)
+                    train_data, valid_data, test_data = data_preparation(cfg, ds)
+                    iid_field = cfg["ITEM_ID_FIELD"]
+                    train_ids_raw = train_data.dataset.inter_feat[iid_field].numpy()
+                    train_ids = np.unique(train_ids_raw).astype(np.int64)
+                    # Exclude PAD id 0
+                    train_ids = train_ids[train_ids > 0]
+                except Exception:
+                    train_ids = None
+
+            nonpad_all = mat[1:, :].astype(np.float32, copy=False)
+            if train_ids is None or len(train_ids) == 0:
+                train_subset = nonpad_all
+            else:
+                # Intersect with existing rows (mat is aligned by internal_item_id)
+                max_row = mat.shape[0] - 1
+                train_ids = train_ids[(train_ids >= 1) & (train_ids <= max_row)]
+                if len(train_ids) == 0:
+                    train_subset = nonpad_all
+                else:
+                    train_subset = mat[train_ids, :].astype(np.float32, copy=False)
+
             # Guard tiny feature dims
-            svd_k = max(1, min(target_dim, nonpad.shape[1] - 1 if nonpad.shape[1] > 1 else 1))
+            svd_k = max(1, min(target_dim, train_subset.shape[1] - 1 if train_subset.shape[1] > 1 else 1))
             svd = TruncatedSVD(n_components=svd_k, random_state=args.svd_random_state)
-            reduced = svd.fit_transform(nonpad)
+            svd.fit(train_subset)
+            reduced = svd.transform(nonpad_all)
             # If svd_k < target_dim, right-pad zeros
             if svd_k < target_dim:
                 pad = np.zeros((reduced.shape[0], target_dim - svd_k), dtype=reduced.dtype)
