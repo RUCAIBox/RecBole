@@ -20,7 +20,27 @@ def check_fusion_modules(config_file):
         config_dict={"device": "cpu"}
     )
     
+    # 打印配置中的路径
+    print(f"\n配置路径检查:")
+    print(f"- item_text_emb_path_base: {config.get('item_text_emb_path_base', 'NOT SET')}")
+    print(f"- item_text_emb_path_llm: {config.get('item_text_emb_path_llm', 'NOT SET')}")
+    print(f"- item_text_emb_path: {config.get('item_text_emb_path', 'NOT SET')}")
+    
+    # 检查文件是否存在
+    import os
+    base_path = config.get('item_text_emb_path_base')
+    if base_path:
+        exists = os.path.exists(base_path)
+        print(f"- Base文件存在: {exists}")
+        if exists:
+            import numpy as np
+            arr = np.load(base_path)
+            print(f"  形状: {arr.shape}")
+    
     dataset = create_dataset(config)
+    print(f"\n数据集信息:")
+    print(f"- n_items: {dataset.num(dataset.iid_field)}")
+    
     model = SASRecAlign(config, dataset)
     
     print(f"\n=== 配置文件: {config_file} ===")
