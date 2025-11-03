@@ -26,6 +26,19 @@ def check_fusion_modules(config_file):
     print(f"\n=== 配置文件: {config_file} ===")
     print(f"use_cross: {model.use_cross}")
     print(f"use_align: {model.use_align}")
+    print(f"use_llm: {model.use_llm}")
+    
+    # 检查文本embeddings
+    print(f"\n文本embedding状态:")
+    print(f"- item_text_emb_base: {'已加载' if hasattr(model, 'item_text_emb_base') and model.item_text_emb_base is not None else '未加载'}")
+    print(f"- item_text_emb_llm: {'已加载' if hasattr(model, 'item_text_emb_llm') and model.item_text_emb_llm is not None else '未加载'}")
+    print(f"- _text_mode: {model._text_mode if hasattr(model, '_text_mode') else 'N/A'}")
+    
+    # 检查维度
+    base_dim = model.item_text_emb_base.shape[1] if hasattr(model, 'item_text_emb_base') and model.item_text_emb_base is not None else 0
+    llm_dim = model.item_text_emb_llm.shape[1] if hasattr(model, 'item_text_emb_llm') and model.item_text_emb_llm is not None else 0
+    print(f"- base维度: {base_dim}")
+    print(f"- llm维度: {llm_dim}")
     
     # 检查融合模块
     print(f"\n融合模块状态:")
