@@ -145,6 +145,29 @@ class Trainer(AbstractTrainer):
         self.item_tensor = None
         self.tot_item_num = None
 
+    def _load_torch_checkpoint(self, checkpoint_file):
+        """Load checkpoint compatible with PyTorch 2.6 (weights_only default True).
+
+        Tries default torch.load first; on failure retries with weights_only=False.
+        """
+        try:
+            return torch.load(checkpoint_file, map_location=self.device)
+        except Exception as e:
+            # Retry with weights_only=False (PyTorch >=2.6)
+            try:
+                ckpt = torch.load(checkpoint_file, map_location=self.device, weights_only=False)
+                if hasattr(self, "logger"):
+                    self.logger.warning(
+                        "torch.load failed with default weights_only; retried with weights_only=False and succeeded."
+                    )
+                return ckpt
+            except TypeError:
+                # weights_only arg not supported in older torch, re-raise original
+                raise e
+            except Exception:
+                # Still failed; re-raise original for visibility
+                raise e
+
     def _build_optimizer(self, **kwargs):
         r"""Init the Optimizer
 
@@ -320,7 +343,7 @@ class Trainer(AbstractTrainer):
         """
         resume_file = str(resume_file)
         self.saved_model_file = resume_file
-        checkpoint = torch.load(resume_file, map_location=self.device)
+        checkpoint = self._load_torch_checkpoint(resume_file)
         self.start_epoch = checkpoint["epoch"] + 1
         self.cur_step = checkpoint["cur_step"]
         self.best_valid_score = checkpoint["best_valid_score"]
@@ -580,7 +603,7 @@ class Trainer(AbstractTrainer):
 
         if load_best_model:
             checkpoint_file = model_file or self.saved_model_file
-            checkpoint = torch.load(checkpoint_file, map_location=self.device)
+            checkpoint = self._load_torch_checkpoint(checkpoint_file)
             self.model.load_state_dict(checkpoint["state_dict"])
             self.model.load_other_parameter(checkpoint.get("other_parameter"))
             message_output = "Loading model structure and parameters from {}".format(
