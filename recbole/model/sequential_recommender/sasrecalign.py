@@ -91,9 +91,6 @@ class SASRecAlign(SequentialRecommender):
         self.use_cross = config["use_cross"] if "use_cross" in config else False
         self.use_align = config["use_align"] if "use_align" in config else True
         self.text_cross_layer_num = config["text_cross_layer_num"] if "text_cross_layer_num" in config else 3
-        # New: simple non-cross enhancements
-        self.text_weight = float(config["text_weight"]) if "text_weight" in config else 1.0
-        self.text_tail_threshold = int(config["text_tail_threshold"]) if "text_tail_threshold" in config else 0
         # For backward compatibility: accept single path as base
         item_text_emb_path_base = (
             config["item_text_emb_path_base"] if "item_text_emb_path_base" in config else None
@@ -121,21 +118,6 @@ class SASRecAlign(SequentialRecommender):
 
         self.register_buffer("item_text_emb_base", emb_base if emb_base is not None else None)
         self.register_buffer("item_text_emb_llm", emb_llm if emb_llm is not None else None)
-
-        # Precompute item popularity for optional tail gating (no extra IO during training)
-        pop_counts = None
-        try:
-            inter_iids = dataset.inter_feat[dataset.iid_field].numpy()
-            pop_counts = np.bincount(inter_iids, minlength=self.n_items)
-        except Exception:
-            pop_counts = np.zeros((self.n_items,), dtype=np.int64)
-        self.register_buffer("item_popularity", torch.from_numpy(pop_counts).long())
-        if self.text_tail_threshold > 0:
-            gate = (self.item_popularity <= int(self.text_tail_threshold)).float()
-        else:
-            gate = None
-        # shape [n_items], 1.0 means enable text for that item
-        self.register_buffer("text_item_gate_all", gate)
 
         # Determine text input formation according to flags and availability
         base_dim = int(self.item_text_emb_base.shape[1]) if self.item_text_emb_base is not None else 0
@@ -165,7 +147,6 @@ class SASRecAlign(SequentialRecommender):
         self.text_deep = None
         self.text_predictor = None
         self.item_text_proj = None
-        self.item_concat_predictor = None
         
         # Item-side fusion modules for integrating text into scoring
         self.item_fusion_cross = None
@@ -187,8 +168,6 @@ class SASRecAlign(SequentialRecommender):
                 self.item_fusion_predictor = nn.Linear(fusion_input_dim + self.hidden_size, self.hidden_size)
             else:
                 self.item_text_proj = nn.Linear(text_in_dim, self.hidden_size)
-                # Concatenation-based fusion (no-cross): [item_emb, text_proj] -> hidden_size
-                self.item_concat_predictor = nn.Linear(self.hidden_size * 2, self.hidden_size)
 
         self._align_debug_logged = False
         
@@ -317,11 +296,7 @@ class SASRecAlign(SequentialRecommender):
             item_emb = self.item_embedding(item_ids)
         
         # If no text features or fusion modules, return original embeddings
-        if (
-            (not self._has_item_text())
-            or (self.use_cross and self.item_fusion_predictor is None)
-            or ((not self.use_cross) and (self.item_text_proj is None or self.item_concat_predictor is None))
-        ):
+        if not self._has_item_text() or (self.use_cross and self.item_fusion_predictor is None):
             return item_emb
             
         # Get text features for items
@@ -337,19 +312,9 @@ class SASRecAlign(SequentialRecommender):
             fused = torch.cat([cross_out, deep_out], dim=1)
             fused_emb = self.item_fusion_predictor(fused)
         else:
-            # Concatenation fusion (no-cross): [item_emb, scaled text_proj] -> predictor -> hidden_size
+            # Simple fusion: add projected text features to item embeddings
             text_proj = self._project_text(text_raw)
-            if self.text_item_gate_all is not None:
-                if item_ids is None:
-                    gate = self.text_item_gate_all
-                else:
-                    gate = self.text_item_gate_all[all_ids]
-                gate = gate.to(item_emb.device).unsqueeze(1)
-                scaled_text = (self.text_weight * gate) * text_proj
-            else:
-                scaled_text = self.text_weight * text_proj
-            concat = torch.cat([item_emb, scaled_text], dim=1)
-            fused_emb = self.item_concat_predictor(concat)
+            fused_emb = item_emb + text_proj
             
         return fused_emb
 
