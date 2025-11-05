@@ -89,6 +89,8 @@ def _choose_title_field(df: pd.DataFrame, preferred: Optional[str]) -> Optional[
         "item_name",
         "product_title",
         "product_name",
+        "categories",
+        "category",
     ]
     return _find_col_by_base(df, candidates)
 
