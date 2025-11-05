@@ -2,7 +2,7 @@
 model: SASRec
 
 # Dataset
-dataset: Yelp
+dataset: yelp2018
 field_separator: "\t"
 seq_separator: " "
 USER_ID_FIELD: user_id

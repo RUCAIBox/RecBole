@@ -5,7 +5,7 @@ model: SASRecAlign
 hidden_size: 256
 
 # Dataset
-dataset: Yelp
+dataset: yelp2018
 field_separator: "\t"
 seq_separator: " "
 USER_ID_FIELD: user_id
@@ -43,7 +43,7 @@ loss_type: CE
 train_neg_sample_args: null
 
 # Align-only baseline (Base TF-IDF+SVD embeddings)
-item_text_emb_path_base: dataset/Yelp/item_text_emb.base.npy
+item_text_emb_path_base: dataset/yelp2018/item_text_emb.base.npy
 use_llm: false
 use_align: true
 use_cross: true

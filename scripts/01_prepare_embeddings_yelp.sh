@@ -4,11 +4,11 @@
 BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
-echo "=== Step 1: 生成Yelp item索引映射文件 ==="
+echo "=== Step 1: 生成yelp2018 item索引映射文件 ==="
 python tools/export_internal_item_mapping.py \
-  --dataset Yelp \
+  --dataset yelp2018 \
   --config yelp_sasrec_base_plain.yaml \
-  --output dataset/Yelp/item_index_mapping.csv
+  --output dataset/yelp2018/item_index_mapping.csv
 
 if [ $? -eq 0 ]; then
     echo "✓ Yelp Item索引映射文件生成成功"
@@ -18,19 +18,19 @@ else
 fi
 
 echo ""
-echo "=== Step 2: 生成Yelp Base (TF-IDF+SVD) embeddings ==="
+echo "=== Step 2: 生成yelp2018 Base (TF-IDF+SVD) embeddings ==="
 python tools/build_item_text_emb_base.py \
-  --dataset Yelp \
+  --dataset yelp2018 \
   --config yelp_sasrec_base_plain.yaml \
-  --output dataset/Yelp/item_text_emb.base.npy \
+  --output dataset/yelp2018/item_text_emb.base.npy \
   --svd_dim 256 \
   --ngram_min 1 \
   --ngram_max 2 \
   --dtype float16
 
 if [ $? -eq 0 ]; then
-    echo "✓ Yelp Base embeddings生成成功"
-    echo "文件位置: dataset/Yelp/item_text_emb.base.npy"
+    echo "✓ yelp2018 Base embeddings生成成功"
+    echo "文件位置: dataset/yelp2018/item_text_emb.base.npy"
 else
     echo "✗ Yelp Base embeddings生成失败"
     exit 1
