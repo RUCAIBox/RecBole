@@ -5,7 +5,7 @@ BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 EXP_NAME="exp7_sasrec_llm_cross_align"
-MODEL="SASRecAlign"
+MODEL="SASRec_Align"
 DATASET="Amazon_Beauty"
 CONFIG_FILE="sasrec_align_qwen3.yaml"
 

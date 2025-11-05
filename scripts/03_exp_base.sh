@@ -14,7 +14,7 @@ echo "开始时间: $(date)"
 echo ""
 echo "--- 实验2: SASRec + Base ---"
 python run_recbole.py \
-    --model SASRecAlign \
+    --model SASRec_Align \
     --dataset Amazon_Beauty \
     --config_files sasrec_align_base.yaml \
     --config_dict "use_llm=False,use_cross=False,use_align=False" \
@@ -26,7 +26,7 @@ echo "状态: $([[ $? -eq 0 ]] && echo '✓ 完成' || echo '✗ 失败')"
 echo ""
 echo "--- 实验3: SASRec + Base + Cross ---"
 python run_recbole.py \
-    --model SASRecAlign \
+    --model SASRec_Align \
     --dataset Amazon_Beauty \
     --config_files sasrec_align_base.yaml \
     --config_dict "use_llm=False,use_cross=True,use_align=False" \
@@ -38,7 +38,7 @@ echo "状态: $([[ $? -eq 0 ]] && echo '✓ 完成' || echo '✗ 失败')"
 echo ""
 echo "--- 实验4: SASRec + Base + Cross + Align ---"
 python run_recbole.py \
-    --model SASRecAlign \
+    --model SASRec_Align \
     --dataset Amazon_Beauty \
     --config_files sasrec_align_base.yaml \
     > ${LOG_DIR}/exp4_sasrec_base_cross_align.log 2>&1

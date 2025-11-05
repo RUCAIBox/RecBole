@@ -22,7 +22,7 @@ fi
 echo ""
 echo "--- 实验5: SASRec + LLM ---"
 python run_recbole.py \
-    --model SASRecAlign \
+    --model SASRec_Align \
     --dataset Amazon_Beauty \
     --config_files sasrec_align_qwen3.yaml \
     --config_dict "use_llm=True,use_cross=False,use_align=False" \
@@ -34,7 +34,7 @@ echo "状态: $([[ $? -eq 0 ]] && echo '✓ 完成' || echo '✗ 失败')"
 echo ""
 echo "--- 实验6: SASRec + LLM + Cross ---"
 python run_recbole.py \
-    --model SASRecAlign \
+    --model SASRec_Align \
     --dataset Amazon_Beauty \
     --config_files sasrec_align_qwen3.yaml \
     --config_dict "use_llm=True,use_cross=True,use_align=False" \
@@ -46,7 +46,7 @@ echo "状态: $([[ $? -eq 0 ]] && echo '✓ 完成' || echo '✗ 失败')"
 echo ""
 echo "--- 实验7: SASRec + LLM + Cross + Align ---"
 python run_recbole.py \
-    --model SASRecAlign \
+    --model SASRec_Align \
     --dataset Amazon_Beauty \
     --config_files sasrec_align_qwen3.yaml \
     > ${LOG_DIR}/exp7_sasrec_llm_cross_align.log 2>&1

@@ -32,7 +32,7 @@ for align_weight in "${ALIGN_WEIGHTS[@]}"; do
         # Base + Cross + Align 配置
         echo "运行 Base 配置..."
         python run_recbole.py \
-            --model SASRecAlign \
+            --model SASRec_Align \
             --dataset Amazon_Beauty \
             --config_files sasrec_align_base.yaml \
             --config_dict "alignment_weight=${align_weight},temperature=${temp}" \
@@ -48,7 +48,7 @@ for align_weight in "${ALIGN_WEIGHTS[@]}"; do
         # LLM + Cross + Align 配置  
         echo "运行 LLM 配置..."
         python run_recbole.py \
-            --model SASRecAlign \
+            --model SASRec_Align \
             --dataset Amazon_Beauty \
             --config_files sasrec_align_qwen3.yaml \
             --config_dict "alignment_weight=${align_weight},temperature=${temp}" \

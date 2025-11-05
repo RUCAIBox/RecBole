@@ -5,7 +5,7 @@ BASE_DIR="/home/charlie/project/RecBole"
 cd $BASE_DIR
 
 EXP_NAME="yelp_exp6_sasrec_llm_cross"
-MODEL="SASRecAlign"
+MODEL="SASRec_Align"
 DATASET="yelp2018_example"
 CONFIG_FILE="yelp2018_sasrec_llm_cross.yaml"
 

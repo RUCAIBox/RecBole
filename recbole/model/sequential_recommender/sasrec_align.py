@@ -443,3 +443,6 @@ class SASRecAlign(SequentialRecommender):
         return scores
 
 
+
+ # Alias to enable model name 'SASRec_Align' to load this module
+SASRec_Align = SASRecAlign

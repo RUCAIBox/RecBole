@@ -76,21 +76,21 @@ if [ $? -eq 0 ]; then
     
     # 测试SASRecAlign
     echo ""
-    echo "测试SASRecAlign模型..."
+    echo "测试SASRec_Align模型..."
     python run_recbole.py \
-        --model SASRecAlign \
+        --model SASRec_Align \
         --dataset Amazon_Beauty \
         --config_files sasrec_align_base.yaml \
         --config_dict "epochs=1,eval_step=1,stopping_step=1" \
         > results/test/quick_test_align.log 2>&1
     
     if [ $? -eq 0 ]; then
-        echo "✓ SASRecAlign测试通过"
+        echo "✓ SASRec_Align测试通过"
         echo ""
         echo "=== 所有测试通过 ✓ ==="
         echo "环境配置正确，可以开始正式实验"
     else
-        echo "✗ SASRecAlign测试失败"
+        echo "✗ SASRec_Align测试失败"
         echo "查看日志: results/test/quick_test_align.log"
         tail -20 results/test/quick_test_align.log
     fi

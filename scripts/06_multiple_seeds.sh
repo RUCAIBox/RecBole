@@ -26,7 +26,7 @@ for seed in "${SEEDS[@]}"; do
     echo "--- 种子 ${seed} ---"
     
     python run_recbole.py \
-        --model SASRecAlign \
+        --model SASRec_Align \
         --dataset Amazon_Beauty \
         --config_files ${CONFIG} \
         --config_dict "seed=${seed}" \
