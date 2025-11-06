@@ -12,33 +12,41 @@ from recbole.model.layers import TransformerEncoder, MLPLayers
 from recbole.model.loss import BPRLoss
 
 
-class CrossNetV2(nn.Module):
-    """A lightweight DCN-V2 style cross network over dense features.
+class DCNV2Cross(nn.Module):
+    """DCN-V2 cross network (non-mix) over dense features.
 
-    x_{l+1} = x_l + x_0 * (x_l @ W_l + b_l)
+    Follows the original implementation in recbole.model.context_aware_recommender.dcnv2
+    with the update rule: x_{l+1} = x_l + x_0 ⊙ (W_l x_l + b_l).
     """
 
     def __init__(self, input_dim: int, num_layers: int = 3):
         super().__init__()
         self.input_dim = int(input_dim)
         self.num_layers = int(max(0, num_layers))
-        self.ws = nn.ParameterList([
+        # W: (in_feature_num, in_feature_num) per layer
+        self.cross_layer_w = nn.ParameterList(
             nn.Parameter(torch.randn(self.input_dim, self.input_dim))
             for _ in range(self.num_layers)
-        ])
-        self.bs = nn.ParameterList([
-            nn.Parameter(torch.zeros(self.input_dim)) for _ in range(self.num_layers)
-        ])
+        )
+        # b: (in_feature_num, 1) per layer
+        self.bias = nn.ParameterList(
+            nn.Parameter(torch.zeros(self.input_dim, 1))
+            for _ in range(self.num_layers)
+        )
 
     def forward(self, x0: torch.Tensor) -> torch.Tensor:
         if self.num_layers == 0:
             return x0
-        x = x0
+        # x0: [batch, in_feature_num]
+        x0_u = x0.unsqueeze(dim=2)  # [B, D, 1]
+        xl = x0_u
         for i in range(self.num_layers):
-            xlw = x @ self.ws[i]
-            xlw = xlw + self.bs[i]
-            x = x + x0 * xlw
-        return x
+            xl_w = torch.matmul(self.cross_layer_w[i], xl)  # [B, D, 1]
+            xl_w = xl_w + self.bias[i]
+            xl_dot = torch.mul(x0_u, xl_w)
+            xl = xl_dot + xl
+        xl = xl.squeeze(dim=2)  # [B, D]
+        return xl
 
 
 class SASRecAlign(SequentialRecommender):
@@ -174,7 +182,7 @@ class SASRecAlign(SequentialRecommender):
         
         if text_in_dim > 0:
             if self.use_cross:
-                self.text_cross = CrossNetV2(text_in_dim, num_layers=self.text_cross_layer_num)
+                self.text_cross = DCNV2Cross(text_in_dim, num_layers=self.text_cross_layer_num)
                 # Simple deep tower to the model hidden size
                 self.text_deep = MLPLayers([text_in_dim, self.hidden_size], dropout=0.0, bn=False)
                 self.text_predictor = nn.Linear(text_in_dim + self.hidden_size, self.hidden_size)
@@ -182,7 +190,7 @@ class SASRecAlign(SequentialRecommender):
                 # Item-side fusion: combine item embedding with text features
                 # Input: [item_emb(hidden_size), text_features(text_in_dim)]
                 fusion_input_dim = self.hidden_size + text_in_dim
-                self.item_fusion_cross = CrossNetV2(fusion_input_dim, num_layers=self.text_cross_layer_num)
+                self.item_fusion_cross = DCNV2Cross(fusion_input_dim, num_layers=self.text_cross_layer_num)
                 self.item_fusion_deep = MLPLayers([fusion_input_dim, self.hidden_size], dropout=0.0, bn=False)
                 self.item_fusion_predictor = nn.Linear(fusion_input_dim + self.hidden_size, self.hidden_size)
             else:
@@ -330,8 +338,19 @@ class SASRecAlign(SequentialRecommender):
             text_raw = text_raw.detach()
         
         if self.use_cross and self.item_fusion_predictor is not None:
-            # Fuse item embeddings with text features using cross network
-            fusion_input = torch.cat([item_emb, text_raw], dim=1)
+            # Apply gating/weighting to text features before cross fusion for stability
+            if self.text_item_gate_all is not None:
+                if item_ids is None:
+                    gate = self.text_item_gate_all
+                else:
+                    gate = self.text_item_gate_all[all_ids]
+                gate = gate.to(item_emb.device).unsqueeze(1)
+                scaled_text = (self.text_weight * gate) * text_raw
+            else:
+                scaled_text = self.text_weight * text_raw
+
+            # Fuse item embeddings with scaled text features using cross network
+            fusion_input = torch.cat([item_emb, scaled_text], dim=1)
             cross_out = self.item_fusion_cross(fusion_input)
             deep_out = self.item_fusion_deep(fusion_input)
             fused = torch.cat([cross_out, deep_out], dim=1)
