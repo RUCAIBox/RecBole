@@ -83,10 +83,21 @@ class SASRecAlign(SequentialRecommender):
         self.LayerNorm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
         self.dropout = nn.Dropout(self.hidden_dropout_prob)
 
+        # additional regularization / scoring configs
+        self.label_smoothing = float(config["label_smoothing"]) if "label_smoothing" in config else 0.0
+        self.cosine_score = bool(config["cosine_score"]) if "cosine_score" in config else False
+        self.cosine_scale = float(config["cosine_scale"]) if "cosine_scale" in config else 10.0
+        self.token_dropout_prob = float(config["token_dropout_prob"]) if "token_dropout_prob" in config else 0.0
+
         if self.loss_type == "BPR":
             self.loss_fct = BPRLoss()
         elif self.loss_type == "CE":
-            self.loss_fct = nn.CrossEntropyLoss()
+            # label smoothing supported in torch>=1.10
+            try:
+                self.loss_fct = nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
+            except TypeError:
+                # fallback if torch version doesn't support label_smoothing
+                self.loss_fct = nn.CrossEntropyLoss()
         else:
             raise NotImplementedError("Make sure 'loss_type' in ['BPR', 'CE']!")
 
@@ -102,6 +113,12 @@ class SASRecAlign(SequentialRecommender):
         # New: simple non-cross enhancements
         self.text_weight = float(config["text_weight"]) if "text_weight" in config else 1.0
         self.text_tail_threshold = int(config["text_tail_threshold"]) if "text_tail_threshold" in config else 0
+        # Text MLP regularization
+        self.text_mlp_dropout = float(config["text_mlp_dropout"]) if "text_mlp_dropout" in config else 0.0
+        self.text_mlp_bn = bool(config["text_mlp_bn"]) if "text_mlp_bn" in config else False
+        # Normalization toggles for projections and fused item embeddings
+        self.text_proj_norm_flag = bool(config["text_proj_norm"]) if "text_proj_norm" in config else True
+        self.fused_item_norm_flag = bool(config["fused_item_norm"]) if "fused_item_norm" in config else True
         # For backward compatibility: accept single path as base
         item_text_emb_path_base = (
             config["item_text_emb_path_base"] if "item_text_emb_path_base" in config else None
@@ -174,6 +191,8 @@ class SASRecAlign(SequentialRecommender):
         self.text_predictor = None
         self.item_text_proj = None
         self.item_concat_predictor = None
+        self.text_proj_norm = None
+        self.fused_item_norm = None
         
         # Item-side fusion modules for integrating text into scoring
         self.item_fusion_cross = None
@@ -184,19 +203,25 @@ class SASRecAlign(SequentialRecommender):
             if self.use_cross:
                 self.text_cross = DCNV2Cross(text_in_dim, num_layers=self.text_cross_layer_num)
                 # Simple deep tower to the model hidden size
-                self.text_deep = MLPLayers([text_in_dim, self.hidden_size], dropout=0.0, bn=False)
+                self.text_deep = MLPLayers([text_in_dim, self.hidden_size], dropout=self.text_mlp_dropout, bn=self.text_mlp_bn)
                 self.text_predictor = nn.Linear(text_in_dim + self.hidden_size, self.hidden_size)
                 
                 # Item-side fusion: combine item embedding with text features
                 # Input: [item_emb(hidden_size), text_features(text_in_dim)]
                 fusion_input_dim = self.hidden_size + text_in_dim
                 self.item_fusion_cross = DCNV2Cross(fusion_input_dim, num_layers=self.text_cross_layer_num)
-                self.item_fusion_deep = MLPLayers([fusion_input_dim, self.hidden_size], dropout=0.0, bn=False)
+                self.item_fusion_deep = MLPLayers([fusion_input_dim, self.hidden_size], dropout=self.text_mlp_dropout, bn=self.text_mlp_bn)
                 self.item_fusion_predictor = nn.Linear(fusion_input_dim + self.hidden_size, self.hidden_size)
             else:
                 self.item_text_proj = nn.Linear(text_in_dim, self.hidden_size)
                 # Concatenation-based fusion (no-cross): [item_emb, text_proj] -> hidden_size
                 self.item_concat_predictor = nn.Linear(self.hidden_size * 2, self.hidden_size)
+
+            if self.text_proj_norm_flag:
+                self.text_proj_norm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
+
+            if self.fused_item_norm_flag:
+                self.fused_item_norm = nn.LayerNorm(self.hidden_size, eps=self.layer_norm_eps)
 
         self._align_debug_logged = False
         
@@ -292,11 +317,14 @@ class SASRecAlign(SequentialRecommender):
             cross_out = self.text_cross(raw)
             deep_out = self.text_deep(raw)
             fused = torch.cat([cross_out, deep_out], dim=1)
-            return self.text_predictor(fused)
+            proj = self.text_predictor(fused)
         elif (not self.use_cross) and self.item_text_proj is not None:
-            return self.item_text_proj(raw)
+            proj = self.item_text_proj(raw)
         else:
-            return torch.zeros((raw.size(0), self.hidden_size), device=raw.device)
+            proj = torch.zeros((raw.size(0), self.hidden_size), device=raw.device)
+        if self.text_proj_norm is not None:
+            proj = self.text_proj_norm(proj)
+        return proj
 
     def _info_nce_align(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         if a.size(0) == 0 or b.size(0) == 0:
@@ -369,10 +397,27 @@ class SASRecAlign(SequentialRecommender):
                 scaled_text = self.text_weight * text_proj
             concat = torch.cat([item_emb, scaled_text], dim=1)
             fused_emb = self.item_concat_predictor(concat)
-            
+        if self.fused_item_norm is not None:
+            fused_emb = self.fused_item_norm(fused_emb)
         return fused_emb
 
     def forward(self, item_seq, item_seq_len):
+        # Token Dropout for sequence augmentation (training only)
+        if self.training and self.token_dropout_prob > 0.0:
+            # mask of real tokens (non-padding)
+            real_token_mask = item_seq.ne(0)
+            if real_token_mask.any():
+                # random dropout mask
+                dropout_mask = torch.rand_like(item_seq, dtype=torch.float) < float(self.token_dropout_prob)
+                dropout_mask = dropout_mask & real_token_mask
+                # keep the last valid token for each sequence
+                try:
+                    batch_index = torch.arange(item_seq.size(0), device=item_seq.device)
+                    last_pos = (item_seq_len - 1).clamp(min=0)
+                    dropout_mask[batch_index, last_pos] = False
+                except Exception:
+                    pass
+                item_seq = item_seq.masked_fill(dropout_mask, 0)
         position_ids = torch.arange(
             item_seq.size(1), dtype=torch.long, device=item_seq.device
         )
@@ -409,7 +454,12 @@ class SASRecAlign(SequentialRecommender):
         else:  # CE
             # Use fused embeddings for all items
             test_item_emb = self._get_fused_item_embeddings()
-            logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
+            if self.cosine_score:
+                seq_n = F.normalize(seq_output, dim=1)
+                item_n = F.normalize(test_item_emb, dim=1)
+                logits = self.cosine_scale * torch.matmul(seq_n, item_n.transpose(0, 1))
+            else:
+                logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))
             loss = self.loss_fct(logits, pos_items)
 
         # optional alignment loss (align ID item embeddings with text embeddings)
@@ -449,7 +499,12 @@ class SASRecAlign(SequentialRecommender):
         seq_output = self.forward(item_seq, item_seq_len)
         # Use fused embeddings for test items
         test_item_emb = self._get_fused_item_embeddings(test_item)
-        scores = torch.mul(seq_output, test_item_emb).sum(dim=1)
+        if self.cosine_score:
+            seq_n = F.normalize(seq_output, dim=1)
+            item_n = F.normalize(test_item_emb, dim=1)
+            scores = self.cosine_scale * torch.mul(seq_n, item_n).sum(dim=1)
+        else:
+            scores = torch.mul(seq_output, test_item_emb).sum(dim=1)
         return scores
 
     def full_sort_predict(self, interaction):
@@ -458,7 +513,12 @@ class SASRecAlign(SequentialRecommender):
         seq_output = self.forward(item_seq, item_seq_len)
         # Use fused embeddings for all items
         test_items_emb = self._get_fused_item_embeddings()
-        scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))
+        if self.cosine_score:
+            seq_n = F.normalize(seq_output, dim=1)
+            item_n = F.normalize(test_items_emb, dim=1)
+            scores = self.cosine_scale * torch.matmul(seq_n, item_n.transpose(0, 1))
+        else:
+            scores = torch.matmul(seq_output, test_items_emb.transpose(0, 1))
         return scores
 
 
