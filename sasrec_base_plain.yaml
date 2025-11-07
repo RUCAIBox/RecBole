@@ -46,8 +46,8 @@ train_neg_sample_args: null
 item_text_emb_path_base: dataset/Amazon_Beauty/item_text_emb.base.npy
 use_llm: false
 use_cross: false
-use_align: false
-alignment_weight: 0.0
+use_align: true 
+alignment_weight: 0.1
 temperature: 0.07
 detach_text_emb: true
 normalize_text: true
