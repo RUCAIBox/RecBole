@@ -6,8 +6,8 @@ cd $BASE_DIR
 
 EXP_NAME="yelp_exp4_sasrec_base_cross_align"
 MODEL="SASRec_Align"
-DATASET="yelp2018_example"
-CONFIG_FILE="yelp2018_sasrec_align_base.yaml"
+DATASET="yelp2018"
+CONFIG_FILE="yelp_sasrec_align_base.yaml"
 
 LOG_DIR="results/yelp_experiments"
 mkdir -p $LOG_DIR

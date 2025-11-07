@@ -7,7 +7,7 @@ cd $BASE_DIR
 EXP_NAME="yelp_exp1_baseline_sasrec"
 MODEL="SASRec"
 DATASET="yelp2018"
-CONFIG_FILE="yelp2018_sasrec_baseline.yaml"
+CONFIG_FILE="yelp_sasrec_baseline.yaml"
 
 LOG_DIR="results/yelp_experiments"
 mkdir -p $LOG_DIR
