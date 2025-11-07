@@ -1,0 +1,8 @@
+---
+# Override: conservative concat fusion (soft text + tail-only)
+# Usage: --config_files "sasrec_base_plain.yaml overrides/sasrec_text_conservative.yaml"
+
+text_weight: 0.2
+text_tail_threshold: 5
+
+

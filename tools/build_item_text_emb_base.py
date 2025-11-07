@@ -45,7 +45,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from recbole.config.configurator import Config
-from recbole.data.utils import create_dataset
+from recbole.data.utils import create_dataset, data_preparation
 
 
 def _detect_item_file(dataset) -> Optional[str]:
@@ -89,6 +89,8 @@ def _choose_title_field(df: pd.DataFrame, preferred: Optional[str]) -> Optional[
         "item_name",
         "product_title",
         "product_name",
+        "categories",
+        "category",
     ]
     return _find_col_by_base(df, candidates)
 
@@ -174,6 +176,49 @@ def _fit_tfidf_svd(
     return reduced.astype(np.float32)
 
 
+def _fit_on_train_transform_all(
+    train_texts: List[str],
+    all_texts: List[str],
+    n_components: int,
+    analyzer: str = "char",
+    ngram_range: Tuple[int, int] = (1, 2),
+    min_df: int = 2,
+    max_features: Optional[int] = None,
+    random_state: int = 42,
+) -> np.ndarray:
+    """Fit TF-IDF and SVD on train_texts only, then transform all_texts.
+
+    Returns dense array of shape [len(all_texts), n_components].
+    """
+    vectorizer = TfidfVectorizer(
+        analyzer=analyzer,
+        ngram_range=ngram_range,
+        min_df=min_df,
+        max_features=max_features,
+        norm=None,
+        dtype=np.float32,
+    )
+    # Fit only on training texts
+    tfidf_train = vectorizer.fit_transform(train_texts)
+    tfidf_all = vectorizer.transform(all_texts)
+
+    # Handle edge cases where vocabulary is tiny
+    svd_k = max(1, min(n_components, tfidf_train.shape[1] - 1 if tfidf_train.shape[1] > 1 else 1))
+    svd = TruncatedSVD(n_components=svd_k, random_state=random_state)
+    svd.fit(tfidf_train)
+    reduced = svd.transform(tfidf_all)
+
+    # If reduced dim < requested, pad zeros to target dim
+    if svd_k < n_components:
+        pad = np.zeros((reduced.shape[0], n_components - svd_k), dtype=reduced.dtype)
+        reduced = np.concatenate([reduced, pad], axis=1)
+
+    # L2 normalize; keep PAD row (index 0) as zeros afterwards
+    reduced = l2_normalize(reduced, norm="l2", axis=1, copy=False)
+    reduced[0, :] = 0.0
+    return reduced.astype(np.float32)
+
+
 def build_item_text_emb(
     dataset_name: str,
     config_files: List[str],
@@ -208,16 +253,40 @@ def build_item_text_emb(
     chosen_title = _choose_title_field(item_df, title_field)
     token_to_title = _build_token_to_title_map(item_df, item_id_col, chosen_title)
     internal_tokens = _get_internal_item_tokens(dataset)
-    texts = _build_texts_in_internal_order(internal_tokens, token_to_title)
+    texts_all = _build_texts_in_internal_order(internal_tokens, token_to_title)
 
-    emb = _fit_tfidf_svd(
-        texts,
-        n_components=svd_dim,
-        analyzer=analyzer,
-        ngram_range=(ngram_min, ngram_max),
-        min_df=min_df,
-        max_features=max_features,
-    )
+    # Build split and collect train-only item ids to avoid leakage
+    train_data, valid_data, test_data = data_preparation(cfg, dataset)
+    iid_field = cfg["ITEM_ID_FIELD"]
+    try:
+        train_iids = train_data.dataset.inter_feat[iid_field].numpy()
+    except Exception:
+        # Fallback: no split info available → treat all non-PAD as train (kept for robustness)
+        train_iids = np.arange(1, len(internal_tokens), dtype=np.int64)
+    train_iids_set = set([int(x) for x in np.unique(train_iids).tolist() if int(x) > 0])
+    # Assemble train texts by internal id index (exclude PAD=0)
+    train_texts = [texts_all[i] for i in range(1, len(texts_all)) if i in train_iids_set]
+    # Guard: if train_texts ends up empty, fall back to all (rare/corrupt case)
+    if len(train_texts) == 0:
+        print("[WARN] train_texts is empty; falling back to fitting on all_texts (may risk leakage).")
+        emb = _fit_tfidf_svd(
+            texts_all,
+            n_components=svd_dim,
+            analyzer=analyzer,
+            ngram_range=(ngram_min, ngram_max),
+            min_df=min_df,
+            max_features=max_features,
+        )
+    else:
+        emb = _fit_on_train_transform_all(
+            train_texts=train_texts,
+            all_texts=texts_all,
+            n_components=svd_dim,
+            analyzer=analyzer,
+            ngram_range=(ngram_min, ngram_max),
+            min_df=min_df,
+            max_features=max_features,
+        )
 
     # Cast dtype if requested
     if dtype == "float16":

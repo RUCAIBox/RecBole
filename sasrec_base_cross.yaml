@@ -42,17 +42,32 @@ valid_metric: MRR@10
 loss_type: CE
 train_neg_sample_args: null
 
-# Align-only baseline (Qwen3 embeddings)
-# New flags for reproducible ablations
-item_text_emb_path_llm: dataset/Amazon_Beauty/item_text_emb.qwen3.npy
-use_llm: true           # B: LLM only; set base path too for A+B
-use_align: true
+# Base text embeddings with cross fusion only
+item_text_emb_path_base: dataset/Amazon_Beauty/item_text_emb.base.npy
+use_llm: false
 use_cross: true
-text_cross_layer_num: 3
+use_align: true
+text_cross_layer_num: 2
 alignment_weight: 0.1
 temperature: 0.07
 detach_text_emb: true
 normalize_text: true
-use_fusion: false
 
+
+# Regularization & scoring
+weight_decay: 1e-5
+label_smoothing: 0.1
+token_dropout_prob: 0.1
+cosine_score: true
+cosine_scale: 10.0
+
+# Text fusion stabilizers
+text_proj_norm: true
+fused_item_norm: true
+text_weight: 0.4
+text_tail_threshold: 5
+
+# Text MLP regularization (only used when use_cross=true)
+text_mlp_dropout: 0.2
+text_mlp_bn: true
 

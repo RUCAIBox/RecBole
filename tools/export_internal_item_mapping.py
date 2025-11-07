@@ -57,7 +57,20 @@ def _find_col_by_base(df: pd.DataFrame, base_names):
 
 
 def _choose_title_field(df: pd.DataFrame) -> Optional[str]:
-    return _find_col_by_base(df, ["title", "item_title", "name", "item_name", "product_title", "product_name"])
+    # Try common textual fields across datasets (Amazon, Yelp, etc.)
+    return _find_col_by_base(
+        df,
+        [
+            "title",
+            "item_title",
+            "name",
+            "item_name",
+            "product_title",
+            "product_name",
+            "categories",
+            "category",
+        ],
+    )
 
 
 def export_mapping(dataset_name: str, config_files, output_csv, check_emb: Optional[str] = None) -> None:

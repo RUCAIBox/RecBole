@@ -5,7 +5,7 @@ model: SASRecAlign
 hidden_size: 256
 
 # Dataset
-dataset: Amazon_Beauty
+dataset: yelp2018
 field_separator: "\t"
 seq_separator: " "
 USER_ID_FIELD: user_id
@@ -42,10 +42,9 @@ valid_metric: MRR@10
 loss_type: CE
 train_neg_sample_args: null
 
-# Align-only baseline (Qwen3 embeddings)
-# New flags for reproducible ablations
-item_text_emb_path_llm: dataset/Amazon_Beauty/item_text_emb.qwen3.npy
-use_llm: true           # B: LLM only; set base path too for A+B
+# Align-only baseline (Base TF-IDF+SVD embeddings)
+item_text_emb_path_base: dataset/yelp2018/item_text_emb.base.npy
+use_llm: false
 use_align: true
 use_cross: true
 text_cross_layer_num: 3

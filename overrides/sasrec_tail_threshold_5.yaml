@@ -1,0 +1,7 @@
+---
+# Override: enable text only for tail items (popularity <= threshold)
+# Usage: --config_files "sasrec_base_plain.yaml overrides/sasrec_tail_threshold_5.yaml"
+
+text_tail_threshold: 5
+
+
