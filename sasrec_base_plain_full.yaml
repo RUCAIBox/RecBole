@@ -42,11 +42,11 @@ valid_metric: MRR@10
 loss_type: CE
 train_neg_sample_args: null
 
-# LLM text embeddings without cross / align
-item_text_emb_path_llm: dataset/Amazon_Beauty/item_text_emb.qwen3.npy
-use_llm: true
+# Base text embeddings without cross / align
+item_text_emb_path_base: dataset/Amazon_Beauty/item_text_emb.base.npy
+use_llm: false
 use_cross: false
-use_align: true
+use_align: true 
 alignment_weight: 0.1
 temperature: 0.07
 detach_text_emb: true
