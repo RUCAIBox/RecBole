@@ -1,0 +1,2 @@
+python3 scripts/extract_metrics_to_csv.py \
+  --from-string "INFO  test result: OrderedDict({'recall@5': np.float64(0.0347), 'recall@10': np.float64(0.0469), 'recall@20': np.float64(0.0627), 'mrr@5': np.float64(0.0216), 'mrr@10': np.float64(0.0232), 'mrr@20': np.float64(0.0243), 'ndcg@5': np.float64(0.0249), 'ndcg@10': np.float64(0.0288), 'ndcg@20': np.float64(0.0328), 'hit@5': np.float64(0.0347), 'hit@10': np.float64(0.0469), 'hit@20': np.float64(0.0627), 'precision@5': np.float64(0.0069), 'precision@10': np.float64(0.0047), 'precision@20': np.float64(0.0031)})"
