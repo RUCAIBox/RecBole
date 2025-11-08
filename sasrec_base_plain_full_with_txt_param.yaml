@@ -46,23 +46,23 @@ train_neg_sample_args: null
 item_text_emb_path_base: dataset/Amazon_Beauty/item_text_emb.base.npy
 use_llm: false
 use_cross: false
-use_align: true
+use_align: true 
 alignment_weight: 0.1
 temperature: 0.07
 detach_text_emb: true
 normalize_text: true
 
 # Regularization & scoring
-#weight_decay: 1e-5
-#label_smoothing: 0.1
-#token_dropout_prob: 0.1
-#cosine_score: true
-#cosine_scale: 10.0
+weight_decay: 1e-5
+label_smoothing: 0.1
+token_dropout_prob: 0.1
+cosine_score: true
+cosine_scale: 10.0
 
 # Text fusion stabilizers
-#text_proj_norm: true
-#fused_item_norm: true
-#text_weight: 0.4
-#text_tail_threshold: 5
+text_proj_norm: true
+fused_item_norm: true
+text_weight: 0.4
+text_tail_threshold: 5
 
 
