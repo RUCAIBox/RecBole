@@ -9,7 +9,7 @@
 # - disable_text_feature: True ensures no text embeddings are loaded; all text/cross/align paths are disabled.
 # - Other knobs below are set to neutral to match SASRec baseline behavior.
 
-model: SASRecAlign
+model: SASRec_Align
 
 # Dataset
 dataset: Amazon_Beauty

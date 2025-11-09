@@ -12,6 +12,13 @@ import glob
 import os
 from datetime import datetime
 
+# Ensure project root is on sys.path when running this script directly
+import sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from recbole.quick_start import run_recbole, load_data_and_model
 from recbole.utils import get_trainer
 
@@ -50,7 +57,7 @@ def main():
 
         # Common config overrides
         common_cfg = {
-            "model": "SASRecAlign",
+            "model": "SASRec_Align",
             "dataset": args.dataset,
             "eval_args": {
                 "group_by": "user",
@@ -85,7 +92,7 @@ def main():
         )
         print(f"[Stage1] {tag}  tau={tau}  align_w={align_w}  freeze_backbone=True  epochs={args.stage1_epochs}")
         res1 = run_recbole(
-            model="SASRecAlign",
+            model="SASRec_Align",
             dataset=args.dataset,
             config_dict=stage1_cfg,
             saved=True,
@@ -100,7 +107,8 @@ def main():
 
         # ---------------- Stage 2: Unfreeze & small LR ----------------
         config2, model2, dataset2, train_data2, valid_data2, test_data2 = load_data_and_model(model_file=model_file)
-        # make sure freeze is lifted
+        # make sure model name is correct and freeze is lifted
+        config2["model"] = "SASRec_Align"
         if hasattr(model2, "set_freeze"):
             model2.set_freeze(False)
         # small LR & stage2 epochs
