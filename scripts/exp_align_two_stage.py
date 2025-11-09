@@ -22,8 +22,8 @@ if PROJECT_ROOT not in sys.path:
 from recbole.quick_start import run_recbole, load_data_and_model
 from recbole.utils import get_trainer
 import shutil
-# Reduce CUDA fragmentation issues
-os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+# Reduce CUDA fragmentation issues (use new env var; old one deprecated)
+os.environ.setdefault("PYTORCH_ALLOC_CONF", "cuda_malloc_backend:expandable_segments")
 
 
 def ensure_timestamp_dataset(dataset_name: str, data_root: str = "dataset") -> str:
@@ -119,6 +119,7 @@ def main():
             "dataset": dataset_to_use,
             "field_separator": "\t",
             "TIME_FIELD": "timestamp",
+            "seq_separator": " ",
             "load_col": {
                 "inter": ["user_id", "item_id", "timestamp"],
                 "item": ["item_id"],
