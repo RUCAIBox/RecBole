@@ -119,6 +119,10 @@ class SASRecAlign(SequentialRecommender):
         self.text_gate_param = nn.Parameter(torch.tensor(self.text_gate_init, dtype=torch.float32))
         # Explicit switch to fully disable text features and mimic pure SASRec
         self.disable_text_feature = bool(config["disable_text_feature"]) if "disable_text_feature" in config else False
+        # Training utilities
+        self.freeze_backbone = bool(config["freeze_backbone"]) if "freeze_backbone" in config else False
+        # Exclude Top-K nearest neighbors in InfoNCE negatives to mitigate false negatives
+        self.align_exclude_topk = int(config["align_exclude_topk"]) if "align_exclude_topk" in config else 0
         # New: simple non-cross enhancements
         self.text_weight = float(config["text_weight"]) if "text_weight" in config else 1.0
         self.text_tail_threshold = int(config["text_tail_threshold"]) if "text_tail_threshold" in config else 0
@@ -276,6 +280,19 @@ class SASRecAlign(SequentialRecommender):
 
         # parameters initialization
         self.apply(self._init_weights)
+        # apply freezing if needed
+        self.set_freeze(self.freeze_backbone)
+
+    def set_freeze(self, freeze: bool) -> None:
+        """Freeze or unfreeze backbone (ID/position embeddings + transformer encoder + layer norms)."""
+        # item & position embeddings
+        self.item_embedding.weight.requires_grad_(not freeze)
+        self.position_embedding.weight.requires_grad_(not freeze)
+        # encoder and input LayerNorm
+        for p in self.trm_encoder.parameters():
+            p.requires_grad_(not freeze)
+        for p in self.LayerNorm.parameters():
+            p.requires_grad_(not freeze)
 
     def _init_weights(self, module):
         if isinstance(module, (nn.Linear, nn.Embedding)):
@@ -352,7 +369,19 @@ class SASRecAlign(SequentialRecommender):
             return torch.zeros(1, device=a.device)
         a = F.normalize(a, dim=1)
         b = F.normalize(b, dim=1)
-        logits = torch.matmul(a, b.t()) / self.temperature
+        sim = torch.matmul(a, b.t())
+        # optional exclusion of Top-K nearest neighbors (except diagonal)
+        if getattr(self, "align_exclude_topk", 0) and self.align_exclude_topk > 0:
+            with torch.no_grad():
+                sim_for_topk = sim.clone()
+                sim_for_topk.fill_diagonal_(-1e9)
+                # top-k indices to exclude per row
+                _, topk_idx = torch.topk(sim_for_topk, k=min(self.align_exclude_topk, sim_for_topk.size(1) - 1), dim=1, largest=True)
+                exclude_mask = torch.zeros_like(sim, dtype=torch.bool)
+                exclude_mask.scatter_(1, topk_idx, True)
+                exclude_mask.fill_diagonal_(False)
+            sim = sim.masked_fill(exclude_mask, -1e9)
+        logits = sim / self.temperature
         labels = torch.arange(a.size(0), device=a.device)
         return nn.CrossEntropyLoss()(logits, labels)
     
