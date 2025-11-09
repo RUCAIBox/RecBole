@@ -7,7 +7,7 @@ cd $BASE_DIR
 EXP_NAME="exp0_sasrecalign_text_off"
 MODEL="SASRec_Align"
 DATASET="Amazon_Beauty"
-CONFIG_FILES="sasrec_baseline.yaml,sasrec_text_off.yaml"
+CONFIG_FILES="sasrec_align_text_off.yaml"
 
 LOG_DIR="results/sasrec_experiments"
 mkdir -p $LOG_DIR

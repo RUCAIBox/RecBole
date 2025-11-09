@@ -2,7 +2,7 @@
 ## This YAML is intended to be combined with sasrec_baseline.yaml
 ## Usage example:
 ##   python run_recbole.py --model SASRec_Align --dataset Amazon_Beauty \
-##     --config_files sasrec_baseline.yaml,sasrec_text_off.yaml
+##     --config_files sasrec_baseline.yaml sasrec_text_off.yaml
 
 disable_text_feature: True
 
