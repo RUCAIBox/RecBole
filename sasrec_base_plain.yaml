@@ -51,6 +51,14 @@ alignment_weight: 0.1
 temperature: 0.07
 detach_text_emb: true
 normalize_text: true
+disable_text_feature: false
+text_cross_layer_num: 3
+cross_dropout_prob: 0.0
+
+# Text gating and regularization (neutral defaults)
+text_gate_init: 0.5
+text_gate_reg_l2: 0.0
+text_gate_reg_entropy: 0.0
 
 # Regularization & scoring
 #weight_decay: 1e-5
@@ -60,8 +68,8 @@ normalize_text: true
 #cosine_scale: 10.0
 
 # Text fusion stabilizers
-#text_proj_norm: true
-#fused_item_norm: true
+#text_proj_norm: true        # enable LayerNorm after text projection/fusion
+#fused_item_norm: true       # enable LayerNorm on fused item embeddings
 #text_weight: 0.4
 #text_tail_threshold: 5
 

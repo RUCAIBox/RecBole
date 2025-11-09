@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Extract metric names and values from a log line or text blob containing a (Ordered)Dict
-like: "INFO test result: OrderedDict({'recall@5': np.float64(0.0347), ...})"
+like either:
+- "INFO test result: OrderedDict({'recall@5': np.float64(0.0347), ...})"
+- "INFO test result: OrderedDict([('recall@5', 0.0347), ('recall@10', 0.05), ...])"
 and output two CSV lines: a header row of names and a data row of values.
 
 Usage examples:
@@ -96,6 +98,29 @@ def regex_parse_kv(text: str) -> Tuple[List[str], List[str]]:
     return keys, vals
 
 
+def try_parse_ordereddict_tuple_list(text: str) -> Union[Tuple[List[str], List[str]], None]:
+    """
+    Handle logs in the form:
+      "OrderedDict([('recall@5', 0.0333), ('recall@10', 0.0458), ...])"
+    Returns keys and raw string values if detected, else None.
+    """
+    # Find the content inside OrderedDict([...])
+    m = re.search(r"OrderedDict\(\s*\[([\s\S]*?)\]\s*\)", text)
+    if not m:
+        return None
+    content = m.group(1)
+    # Now capture each tuple ('key', value)
+    pair_re = re.compile(r"""\(\s*(['"])(.*?)\1\s*,\s*([^)]+?)\s*\)""")
+    keys: List[str] = []
+    vals: List[str] = []
+    for pm in pair_re.finditer(content):
+        keys.append(pm.group(2))
+        vals.append(pm.group(3).strip())
+    if not keys:
+        return None
+    return keys, vals
+
+
 def coerce_to_number(value: Union[int, float, str]) -> Union[int, float, str]:
     if isinstance(value, (int, float)):
         return value
@@ -142,8 +167,13 @@ def main(argv: Iterable[str] | None = None) -> int:
 
     mapping = try_literal_eval_dict(sanitized)
     if mapping is None:
-        # Fallback: regex parse
-        keys, raw_vals = regex_parse_kv(sanitized)
+        # Try OrderedDict with list-of-tuples format
+        od_result = try_parse_ordereddict_tuple_list(sanitized)
+        if od_result is not None:
+            keys, raw_vals = od_result
+        else:
+            # Fallback: regex parse of dict-like "'key': value" pairs
+            keys, raw_vals = regex_parse_kv(sanitized)
         values = [format_value_for_csv(coerce_to_number(v)) for v in raw_vals]
     else:
         keys, values = to_csv_rows(mapping)

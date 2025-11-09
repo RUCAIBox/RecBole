@@ -13,6 +13,7 @@ cross_dropout_prob: 0.0
 use_align: False
 alignment_weight: 0.0
 temperature: 0.07
+text_cross_layer_num: 3
 
 # Keep other optional knobs neutral
 text_weight: 1.0
