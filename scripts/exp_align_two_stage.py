@@ -115,6 +115,12 @@ def main():
         common_cfg = {
             "model": "SASRec_Align",
             "dataset": dataset_to_use,
+            "field_separator": "\t",
+            "TIME_FIELD": "timestamp",
+            "load_col": {
+                "inter": ["user_id", "item_id", "timestamp"],
+                "item": ["item_id"],
+            },
             "eval_args": {
                 "group_by": "user",
                 "order": "TO",
