@@ -145,9 +145,7 @@ class SASRecAlign(SequentialRecommender):
         if self.disable_text_feature:
             emb_base = None
             emb_llm = None
-        else:
-        emb_base = self._load_text_embeddings(item_text_emb_path_base, self.n_items)
-        emb_llm = self._load_text_embeddings(item_text_emb_path_llm, self.n_items)
+        else: emb_base = self._load_text_embeddings(item_text_emb_path_base, self.n_items); emb_llm = self._load_text_embeddings(item_text_emb_path_llm, self.n_items)
 
         if self.normalize_text:
             with torch.no_grad():
