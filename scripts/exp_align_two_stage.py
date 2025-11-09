@@ -22,6 +22,8 @@ if PROJECT_ROOT not in sys.path:
 from recbole.quick_start import run_recbole, load_data_and_model
 from recbole.utils import get_trainer
 import shutil
+# Reduce CUDA fragmentation issues
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 
 def ensure_timestamp_dataset(dataset_name: str, data_root: str = "dataset") -> str:
@@ -121,6 +123,11 @@ def main():
                 "inter": ["user_id", "item_id", "timestamp"],
                 "item": ["item_id"],
             },
+            # memory-friendly evaluation/training batch sizes for large item catalogs
+            "train_batch_size": 256,
+            "eval_batch_size": 16,
+            "topk": [10],
+            "metrics": ["Hit", "Recall", "NDCG", "MRR"],
             "eval_args": {
                 "group_by": "user",
                 "order": "TO",
@@ -176,6 +183,10 @@ def main():
         # small LR & stage2 epochs
         config2["learning_rate"] = float(args.stage2_lr)
         config2["epochs"] = int(args.stage2_epochs)
+        # keep memory-friendly eval settings
+        config2["eval_batch_size"] = 16
+        config2["topk"] = [10]
+        config2["metrics"] = ["Hit", "Recall", "NDCG", "MRR"]
         # keep alignment settings
         config2["alignment_weight"] = float(align_w)
         config2["temperature"] = float(tau)
