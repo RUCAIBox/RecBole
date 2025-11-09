@@ -21,6 +21,59 @@ if PROJECT_ROOT not in sys.path:
 
 from recbole.quick_start import run_recbole, load_data_and_model
 from recbole.utils import get_trainer
+import shutil
+
+
+def ensure_timestamp_dataset(dataset_name: str, data_root: str = "dataset") -> str:
+    """Ensure the .inter file of the dataset has a 'timestamp' field.
+    If missing, create a derived dataset '<name>_tsfix' with synthetic per-user timestamps
+    assigned in original row order.
+    Returns the dataset name to use (original or derived).
+    """
+    src_dir = os.path.join(data_root, dataset_name)
+    inter_src = os.path.join(src_dir, f"{dataset_name}.inter")
+    if not os.path.exists(inter_src):
+        # no file to inspect; just return original
+        return dataset_name
+    with open(inter_src, "r", encoding="utf-8") as f:
+        header = f.readline().rstrip("\n")
+    cols = header.split("\t")
+    if "timestamp" in cols:
+        return dataset_name
+
+    # build derived dataset with synthetic timestamps
+    derived_name = f"{dataset_name}_tsfix"
+    dst_dir = os.path.join(data_root, derived_name)
+    os.makedirs(dst_dir, exist_ok=True)
+
+    # copy auxiliary files if exist
+    for ext in (".item", ".user"):
+        src_file = os.path.join(src_dir, f"{dataset_name}{ext}")
+        if os.path.exists(src_file):
+            dst_file = os.path.join(dst_dir, f"{derived_name}{ext}")
+            shutil.copy2(src_file, dst_file)
+
+    # rewrite inter with timestamp
+    inter_dst = os.path.join(dst_dir, f"{derived_name}.inter")
+    uid_idx = cols.index("user_id") if "user_id" in cols else None
+    if uid_idx is None:
+        # cannot synthesize without user_id; fallback to original
+        return dataset_name
+    new_header = header + "\ttimestamp"
+    user_counter = {}
+    with open(inter_src, "r", encoding="utf-8") as fin, open(inter_dst, "w", encoding="utf-8") as fout:
+        fout.write(new_header + "\n")
+        _ = fin.readline()  # skip original header already read
+        for line in fin:
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            parts = line.split("\t")
+            uid = parts[uid_idx]
+            cnt = user_counter.get(uid, 0) + 1
+            user_counter[uid] = cnt
+            fout.write(f"{line}\t{cnt}\n")
+    return derived_name
 
 
 def latest_checkpoint(path_dir: str) -> str:
@@ -49,16 +102,19 @@ def main():
 
     os.makedirs(args.checkpoint_root, exist_ok=True)
 
+    # Ensure dataset has timestamp; if not, synthesize a derived dataset with timestamps
+    dataset_to_use = ensure_timestamp_dataset(args.dataset, data_root="dataset")
+
     combos = [(t, w) for t in args.temperatures for w in args.weights]
     for tau, align_w in combos:
-        tag = f"{args.dataset}-{args.mode}-tau{tau}-w{align_w}-{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        tag = f"{dataset_to_use}-{args.mode}-tau{tau}-w{align_w}-{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         ckpt_dir = os.path.join(args.checkpoint_root, tag)
         os.makedirs(ckpt_dir, exist_ok=True)
 
         # Common config overrides
         common_cfg = {
             "model": "SASRec_Align",
-            "dataset": args.dataset,
+            "dataset": dataset_to_use,
             "eval_args": {
                 "group_by": "user",
                 "order": "TO",
@@ -93,7 +149,7 @@ def main():
         print(f"[Stage1] {tag}  tau={tau}  align_w={align_w}  freeze_backbone=True  epochs={args.stage1_epochs}")
         res1 = run_recbole(
             model="SASRec_Align",
-            dataset=args.dataset,
+            dataset=dataset_to_use,
             config_dict=stage1_cfg,
             saved=True,
         )
