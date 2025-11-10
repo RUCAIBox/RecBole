@@ -1,0 +1,35 @@
+## SASRecAlign in pure SASRec mode (no text features)
+## This YAML is intended to be combined with sasrec_baseline.yaml
+## Usage example:
+##   python run_recbole.py --model SASRec_Align --dataset Amazon_Beauty \
+##     --config_files sasrec_baseline.yaml sasrec_text_off.yaml
+
+disable_text_feature: True
+
+# Ensure all text-related branches are neutralized
+use_llm: False
+use_cross: False
+cross_dropout_prob: 0.0
+use_align: False
+alignment_weight: 0.0
+temperature: 0.07
+text_cross_layer_num: 3
+
+# Keep other optional knobs neutral
+text_weight: 1.0
+text_tail_threshold: 0
+text_mlp_bn: False
+text_proj_norm: False
+fused_item_norm: False
+normalize_text: True
+detach_text_emb: True
+
+# Scoring / training augmentations neutral
+cosine_score: False
+cosine_scale: 10.0
+token_dropout_prob: 0.0
+text_gate_init: 0.5
+text_gate_reg_l2: 0.0
+text_gate_reg_entropy: 0.0
+
+

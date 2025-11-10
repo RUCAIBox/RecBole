@@ -1,4 +1,10 @@
 from recbole.model.sequential_recommender.bert4rec import BERT4Rec
+from recbole.model.sequential_recommender.bert4rec_align import BERT4RecAlign
+from recbole.model.sequential_recommender.sasrec_align import SASRecAlign
+try:
+    from recbole.model.sequential_recommender.sasrecalign import SASRecAlign as SASRecAlignCompat
+except ImportError:
+    pass  # 如果sasrecalign.py不存在，忽略
 from recbole.model.sequential_recommender.caser import Caser
 from recbole.model.sequential_recommender.core import CORE
 from recbole.model.sequential_recommender.dien import DIEN
