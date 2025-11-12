@@ -44,7 +44,9 @@ class Pop(GeneralRecommender):
 
     def calculate_loss(self, interaction):
         item = interaction[self.ITEM_ID]
-        self.item_cnt[item, :] = self.item_cnt[item, :] + 1
+        # Use scatter_add_ for proper accumulation of duplicate items in batch
+        ones = torch.ones_like(item).unsqueeze(1).to(dtype=self.item_cnt.dtype)
+        self.item_cnt.scatter_add_(0, item.unsqueeze(1), ones)
 
         self.max_cnt = torch.max(self.item_cnt, dim=0)[0]
 
