@@ -9,7 +9,6 @@ import urllib.request as ur
 import zipfile
 import os
 import os.path as osp
-import errno
 from logging import getLogger
 
 from tqdm import tqdm
@@ -34,11 +33,7 @@ def decide_download(url):
 
 
 def makedirs(path):
-    try:
-        os.makedirs(osp.expanduser(osp.normpath(path)))
-    except OSError as e:
-        if e.errno != errno.EEXIST and osp.isdir(path):
-            raise e
+    os.makedirs(osp.expanduser(osp.normpath(path)), exist_ok=True)
 
 
 def download_url(url, folder):
@@ -62,27 +57,32 @@ def download_url(url, folder):
     makedirs(folder)
     data = ur.urlopen(url)
 
-    size = int(data.info()["Content-Length"])
-
-    chunk_size = 1024 * 1024
-    num_iter = int(size / chunk_size) + 2
-
-    downloaded_size = 0
-
     try:
-        with open(path, "wb") as f:
-            pbar = tqdm(range(num_iter))
-            for i in pbar:
-                chunk = data.read(chunk_size)
-                downloaded_size += len(chunk)
-                pbar.set_description(
-                    "Downloaded {:.2f} GB".format(float(downloaded_size) / GBFACTOR)
-                )
-                f.write(chunk)
-    except:
-        if os.path.exists(path):
-            os.remove(path)
-        raise RuntimeError("Stopped downloading due to interruption.")
+        size = int(data.info()["Content-Length"])
+
+        chunk_size = 1024 * 1024
+        num_iter = int(size / chunk_size) + 2
+
+        downloaded_size = 0
+
+        try:
+            with open(path, "wb") as f:
+                pbar = tqdm(range(num_iter))
+                for i in pbar:
+                    chunk = data.read(chunk_size)
+                    downloaded_size += len(chunk)
+                    pbar.set_description(
+                        "Downloaded {:.2f} GB".format(
+                            float(downloaded_size) / GBFACTOR
+                        )
+                    )
+                    f.write(chunk)
+        except Exception:
+            if os.path.exists(path):
+                os.remove(path)
+            raise
+    finally:
+        data.close()
 
     return path
 
