@@ -377,7 +377,7 @@ def get_flops(model, dataset, device, logger, transform, verbose=False):
     return total_ops
 
 
-def list_to_latex(convert_list, bigger_flag=True, subset_columns=[]):
+def list_to_latex(convert_list, bigger_flag=True, subset_columns=None):
     result = {}
     for d in convert_list:
         for key, value in d.items():
@@ -388,6 +388,8 @@ def list_to_latex(convert_list, bigger_flag=True, subset_columns=[]):
 
     df = pd.DataFrame.from_dict(result, orient="index").T
 
+    if subset_columns is None:
+        subset_columns = []
     if len(subset_columns) == 0:
         tex = df.to_latex(index=False)
         return df, tex

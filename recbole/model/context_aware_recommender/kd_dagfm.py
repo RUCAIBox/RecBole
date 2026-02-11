@@ -72,7 +72,7 @@ class KD_DAGFM(ContextRecommender):
         elif self.phase == "distillation" or self.phase == "finetuning":
             return self.student_network.FeatureInteraction(feature)
         else:
-            return ValueError("Phase invalid!")
+            raise ValueError("Phase invalid!")
 
     def forward(self, interaction):
         dagfm_all_embeddings = self.concat_embed_input_fields(
