@@ -224,7 +224,9 @@ class Collector(object):
         And reset some of outdated resource.
         """
         for key in self.data_struct._data_dict:
-            self.data_struct._data_dict[key] = self.data_struct._data_dict[key].cpu()
+            value = self.data_struct._data_dict[key]
+            if isinstance(value, torch.Tensor):
+                self.data_struct._data_dict[key] = value.cpu()
         returned_struct = copy.deepcopy(self.data_struct)
         for key in ["rec.topk", "rec.meanrank", "rec.score", "rec.items", "data.label"]:
             if key in self.data_struct:
