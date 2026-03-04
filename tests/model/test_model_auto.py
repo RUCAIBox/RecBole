@@ -780,6 +780,22 @@ class TestSequentialRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_difsasrec(self):
+        config_dict = {"model": "DIFSASRec", "train_neg_sample_args": None}
+        quick_test(config_dict)
+
+    def test_difsasrec_with_BPR_loss(self):
+        config_dict = {"model": "DIFSASRec", "loss_type": "BPR"}
+        quick_test(config_dict)
+
+    def test_difsasrec_with_concat_fusion(self):
+        config_dict = {
+            "model": "DIFSASRec",
+            "dif_fusion_type": "concat",
+            "train_neg_sample_args": None,
+        }
+        quick_test(config_dict)
+
     # def test_gru4reckg(self):
     #     config_dict = {
     #         'model': 'GRU4RecKG',

@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# @Time    : 2026/03/04
+# @Author  : Tal Cordova
+# @Email   : talcordova56@gmail.com
+
 r"""
 DIF-SASRec
 ################################################
@@ -7,8 +12,7 @@ Reference:
     In SIGIR 2022.
 
 Reference code:
-    The original implementation https://github.com/AIM-SE/DIF-SR
-    Adapted via LLM_CARS (https://github.com/talcordova/LLM_CARS)
+    https://github.com/AIM-SE/DIF-SR
 """
 
 import copy
