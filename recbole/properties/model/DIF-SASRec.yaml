@@ -1,0 +1,31 @@
+# @Time   : 2025
+# @Author : LLM_CARS contribution
+# DIF-SASRec: Decoupled Side Information Fusion for Sequential Recommendation
+# Reference: Xie et al., SIGIR 2022  https://arxiv.org/abs/2204.11046
+
+# Transformer architecture
+n_layers: 2
+n_heads: 2
+hidden_size: 64
+inner_size: 256
+hidden_dropout_prob: 0.5
+attn_dropout_prob: 0.5
+hidden_act: 'gelu'
+layer_norm_eps: 1.0e-12
+initializer_range: 0.02
+
+# DIF-specific
+# Attention score fusion strategy: 'sum' | 'concat' | 'gate'
+#   sum    - element-wise sum (fastest, usually sufficient)
+#   concat - concat along seq axis then linear-project back
+#   gate   - VanillaAttention weighting over sources
+dif_fusion_type: 'sum'
+
+# Context integration (optional)
+# List FLOAT or FLOAT_SEQ item feature fields to use as additional attention towers.
+# Leave empty to run DIF-SASRec without any side information.
+context_fields: []
+context_compression_ratio: 0.5
+
+# Training
+loss_type: 'CE'      # 'BPR' or 'CE'
