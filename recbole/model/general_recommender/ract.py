@@ -72,7 +72,7 @@ class RaCT(GeneralRecommender, AutoEncoderMixin):
                 p.requires_grad = False
         elif self.train_stage == "critic_pretrain":
             # load pretrained model for finetune
-            pretrained = torch.load(self.pre_model_path)
+            pretrained = torch.load(self.pre_model_path, weights_only=False)
             self.logger.info("Load pretrained model from", self.pre_model_path)
             self.load_state_dict(pretrained["state_dict"])
             for p in self.encoder.parameters():
@@ -81,7 +81,7 @@ class RaCT(GeneralRecommender, AutoEncoderMixin):
                 p.requires_grad = False
         else:
             # load pretrained model for finetune
-            pretrained = torch.load(self.pre_model_path)
+            pretrained = torch.load(self.pre_model_path, weights_only=False)
             self.logger.info("Load pretrained model from", self.pre_model_path)
             self.load_state_dict(pretrained["state_dict"])
             for p in self.critic_net.parameters():

@@ -353,7 +353,7 @@ class KGIN(KnowledgeRecommender):
                 )
             )
         )
-        A._update(data_dict)
+        A.update(data_dict)
         # norm adj matrix
         if mode == "bi":
             L = _bi_norm_lap(A)
