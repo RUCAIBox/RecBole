@@ -6,6 +6,10 @@ set -euo pipefail
 echo "Installing torch-scatter..."
 pip install torch-scatter -f https://data.pyg.org/whl/torch-2.12.0+cu130.html
 
+# ── dgl (only 0.1.3 available on PyPI) ──────────────────────────────────────
+echo "Installing dgl..."
+pip install dgl -f https://data.dgl.ai/wheels/repo.html
+
 # ── Patch dgl 0.1.3: collections.abc imports removed in Python 3.10+ ────────
 echo "Patching dgl collections imports..."
 DGL_DIR="$(python -c 'import importlib.util, pathlib; print(pathlib.Path(importlib.util.find_spec("dgl").origin).parent)')"
