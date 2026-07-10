@@ -623,11 +623,15 @@ class ShannonEntropy(AbstractMetric):
 
         item_count = dict(Counter(item_matrix.flatten()))
         total_num = item_matrix.shape[0] * item_matrix.shape[1]
-        result = 0.0
-        for cnt in item_count.values():
-            p = cnt / total_num
-            result += -p * np.log(p)
-        return result / len(item_count)
+        item_count = np.asarray(list(item_count.values()))
+        item_probability = item_count / total_num
+        entropy = -np.sum(item_probability * np.log(item_probability))
+        return entropy
+        # result = 0.0
+        # for cnt in item_count.values():
+        #     p = cnt / total_num
+        #     result += -p * np.log(p)
+        # return result 
 
 
 class GiniIndex(AbstractMetric):

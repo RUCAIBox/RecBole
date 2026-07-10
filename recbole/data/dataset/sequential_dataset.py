@@ -162,7 +162,7 @@ class SequentialDataset(Dataset):
         )
         self.inter_feat[self.item_list_length_field] = self.inter_feat[
             self.item_id_list_field
-        ].agg(len)
+        ].apply(len)
 
     def inter_matrix(self, form="coo", value_field=None):
         """Get sparse matrix that describe interactions between user_id and item_id.
