@@ -1,0 +1,3 @@
+# Best by valid ndcg@10 = 0.2175 (written by tune.py)
+k: 50
+shrink: 10.0

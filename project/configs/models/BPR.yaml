@@ -1,0 +1,11 @@
+# Matrix factorisation trained with the Bayesian Personalized Ranking (pairwise) loss.
+# score(u, i) = <p_u, q_i>
+model: BPR
+embedding_size: 64
+learning_rate: 0.001
+weight_decay: 0.0
+epochs: 300
+stopping_step: 10               # early stopping on valid NDCG@10
+train_neg_sample_args:
+  distribution: uniform
+  sample_num: 1

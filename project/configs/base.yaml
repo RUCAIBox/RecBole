@@ -1,0 +1,30 @@
+# Shared settings for every experiment in the project.
+# Every model is run with this file first, so all models see the SAME
+# train/valid/test split and are evaluated the same way.
+
+dataset: ml-100k
+load_col:
+  inter: [user_id, item_id, rating, timestamp]
+normalize_all: False            # keep raw ratings/timestamps in the exported split
+
+# Group decision: only ratings of 3 stars or more count as positive feedback.
+# Lower ratings are dropped before splitting.
+val_interval:
+  rating: "[3,inf)"
+
+# Reproducibility: same seed -> same split for every model.
+seed: 2020
+reproducibility: True
+
+# Ranking task: every remaining (>= 3 star) rating is a positive interaction.
+eval_args:
+  split: {'RS': [0.8, 0.1, 0.1]}
+  group_by: user
+  order: RO
+  mode: full
+metrics: ["Recall", "MRR", "NDCG", "Hit", "Precision"]
+topk: [10]
+valid_metric: NDCG@10
+
+use_gpu: True                   # falls back to CPU automatically if no CUDA
+show_progress: False

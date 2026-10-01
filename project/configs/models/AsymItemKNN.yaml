@@ -1,0 +1,7 @@
+# Item-based KNN with asymmetric cosine similarity.
+model: AsymKNN
+knn_method: item
+k: 100
+alpha: 0.5
+q: 1
+beta: 1.0

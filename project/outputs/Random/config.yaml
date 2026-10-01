@@ -1,0 +1,3 @@
+epochs: 1
+model: Random
+seed: 2020

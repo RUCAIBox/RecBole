@@ -1,0 +1,5 @@
+k: 50
+knn_method: user
+model: ItemKNN
+seed: 2020
+shrink: 10.0

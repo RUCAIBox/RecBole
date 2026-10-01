@@ -1,0 +1,6 @@
+# Item-based neighbourhood CF.
+# score(u, i) = sum over items j the user interacted with of sim(i, j), keeping the k most similar items per item
+model: ItemKNN
+knn_method: item
+k: 100                          # neighbourhood size
+shrink: 0.0                     # shrinkage added to the cosine denominator

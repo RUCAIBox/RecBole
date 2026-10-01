@@ -1,0 +1,8 @@
+model: TrainPop
+seed: 2020
+train_neg_sample_args:
+  distribution: none
+  sample_num: none
+  alpha: none
+  dynamic: false
+  candidate_num: 0

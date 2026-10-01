@@ -1,0 +1,13 @@
+embedding_size: 128
+epochs: 300
+learning_rate: 0.001
+model: BPR
+seed: 2020
+stopping_step: 10
+train_neg_sample_args:
+  distribution: uniform
+  sample_num: 1
+  alpha: 1.0
+  dynamic: false
+  candidate_num: 0
+weight_decay: 1.0e-05

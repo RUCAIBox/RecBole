@@ -1,0 +1,7 @@
+alpha: 0.5
+beta: 1.0
+k: 100
+knn_method: user
+model: AsymKNN
+q: 1
+seed: 2020

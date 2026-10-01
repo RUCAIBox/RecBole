@@ -1,0 +1,6 @@
+# User-based neighbourhood CF (RecBole's ItemKNN with knn_method=user).
+# score(u, i) = sum over the k most similar users v of sim(u, v) * r(v, i)
+model: ItemKNN
+knn_method: user
+k: 100                          # neighbourhood size
+shrink: 0.0                     # shrinkage added to the cosine denominator

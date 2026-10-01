@@ -1,0 +1,5 @@
+log/
+log_tensorboard/
+__pycache__/
+outputs/_checkpoints/
+.venv/

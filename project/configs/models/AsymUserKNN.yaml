@@ -1,0 +1,7 @@
+# User-based KNN with asymmetric cosine similarity.
+model: AsymKNN
+knn_method: user
+k: 100
+alpha: 0.5                      # 0.5 = ordinary cosine; other values weight the two users' norms differently
+q: 1                            # exponent applied to similarities (locality)
+beta: 1.0                       # score normalisation

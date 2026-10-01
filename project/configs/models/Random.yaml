@@ -1,0 +1,3 @@
+# Naive baseline: random scores.
+model: Random
+epochs: 1

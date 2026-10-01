@@ -1,0 +1,4 @@
+# Best by valid ndcg@10 = 0.2370 (written by tune.py)
+embedding_size: 128
+learning_rate: 0.001
+weight_decay: 1.0e-05
