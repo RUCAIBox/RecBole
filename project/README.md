@@ -96,7 +96,118 @@ recs = load_recs("ItemKNN", "test")                   # DataFrame: user_id, item
 
 Scores are on different scales for different models (KNN: sums of similarities; BPR: dot
 products; Pop: count / max count), so normalise them (e.g. per-user min-max or z-score) before
-combining them in a hybrid.
+combining them in a *weighted / regression* hybrid.
+
+## Mixed Hybrid (list mixing)
+
+The Mixed Hybrid is a **separate** approach from the Logistic Regression weighted hybrid.
+It does **not** combine raw scores. It interleaves already-ranked recommendation lists,
+deduplicates per user, and keeps the first `K` unique items.
+
+Preferred sources (different paradigms):
+
+| Source | Paradigm |
+|--------|----------|
+| `ItemKNN` | neighbourhood collaborative filtering |
+| `BPR` | matrix factorisation / personalized ranking |
+| `ContentBased` | content similarity (`CB` model, run through `run_model.py`) |
+
+### Strategy
+
+Two mixers are implemented in `mixed_hybrid.py`:
+
+1. **RoundRobin** — take rank 1 from each model, then rank 2, … skipping duplicates.
+2. **Quota round-robin** — in each round take up to `quotas[model]` unseen items from that
+   model's list, then repeat until `top_k` unique items are filled.
+
+Example quotas `ItemKNN=2 BPR=1 ContentBased=1`:
+
+```text
+Round 1: ItemKNN, ItemKNN, BPR, ContentBased
+Round 2: ItemKNN, ItemKNN, BPR, ContentBased
+...
+```
+
+Deduplication is **per user**. If one source runs out of candidates, the others continue.
+
+### Regenerate the inputs
+
+Generated files under `outputs/` are gitignored and may be absent. Recreate them with:
+
+```bash
+python run_model.py ItemKNN BPR ContentBased
+```
+
+`configs/models/ContentBased.yaml` runs the teammates' `CB` model unchanged (its defaults from
+`recbole/properties/model/CB.yaml`, with the ML-100K content fields `movie_title` and `class`)
+through the same pipeline as the other models. It therefore uses the same split and the same
+seen-item filtering (valid: train hidden; test: train + valid hidden). Rank is derived from the
+CB similarity scores; its `filter_interacted` setting does not matter because the export masks
+seen items itself.
+
+CB downloads `distilbert-base-uncased` from Hugging Face on the first run. If that fails with
+`CERTIFICATE_VERIFY_FAILED` (HTTPS interception by antivirus/proxy), download it once through the
+Windows certificate store and then run offline:
+
+```bash
+pip install truststore
+python -c "import truststore; truststore.inject_into_ssl(); from huggingface_hub import snapshot_download; snapshot_download('distilbert-base-uncased', allow_patterns=['*.json','*.txt','*.safetensors'])"
+$env:HF_HUB_OFFLINE = "1"     # PowerShell; export HF_HUB_OFFLINE=1 on bash
+```
+
+### Tune on validation, evaluate once on test
+
+Primary selection metric: **NDCG@10** (same as `configs/base.yaml`).
+
+```bash
+python tune_mixed_hybrid.py
+python run_mixed_hybrid.py
+```
+
+`tune_mixed_hybrid.py` never reads the test set for selection. It writes:
+
+- `configs/mixed_hybrid_best.yaml` — frozen best quotas
+- `outputs/MixedHybrid/tuning_valid.csv` — all validation configurations
+- `outputs/MixedHybrid/recs_valid.tsv`
+
+`run_mixed_hybrid.py` loads that frozen config, builds test recommendations, reports standalone
+vs Mixed Hybrid metrics on the **same** test split, and writes:
+
+- `outputs/MixedHybrid/recs_test.tsv` (`user_id, item_id, rank, source, score`)
+- `outputs/MixedHybrid/test_metrics.json`
+
+### Results (seed 2020, ML-100K, ratings >= 3)
+
+Validation (selection by NDCG@10, full table in `outputs/MixedHybrid/tuning_valid.csv`):
+
+| Configuration | Recall@10 | MRR@10 | NDCG@10 |
+|---|---|---|---|
+| RoundRobin | 0.2030 | 0.3715 | 0.2076 |
+| ItemKNN=5 BPR=3 CB=2 | 0.2179 | 0.3803 | 0.2223 |
+| **ItemKNN=4 BPR=4 CB=2** | 0.2161 | 0.3798 | **0.2226** |
+| ItemKNN=3 BPR=5 CB=2 | 0.2156 | 0.3815 | 0.2221 |
+| ItemKNN=4 BPR=3 CB=3 | 0.2017 | 0.3769 | 0.2133 |
+| ItemKNN=2 BPR=3 CB=5 | 0.1677 | 0.3694 | 0.1909 |
+
+Test (frozen config, evaluated once):
+
+| Model | Recall@10 | MRR@10 | NDCG@10 | Hit@10 | Precision@10 |
+|---|---|---|---|---|---|
+| ItemKNN | 0.2266 | 0.3966 | 0.2389 | 0.6903 | 0.1524 |
+| BPR | 0.2434 | 0.4277 | 0.2578 | 0.7190 | 0.1628 |
+| ContentBased | 0.0280 | 0.0651 | 0.0291 | 0.1866 | 0.0223 |
+| Mixed Hybrid (4:4:2) | 0.2168 | 0.3966 | 0.2356 | 0.6797 | 0.1468 |
+
+The Mixed Hybrid does not beat BPR. On validation, every extra slot given to ContentBased lowers
+NDCG@10, because CB alone is roughly 8x weaker than the collaborative models, so the slots it gets
+mostly replace hits from ItemKNN/BPR. The best mix gives CB the smallest share in the grid.
+
+### Tests
+
+```bash
+cd project
+python -m unittest discover -s tests -v
+```
 
 ## Notes on RecBole
 

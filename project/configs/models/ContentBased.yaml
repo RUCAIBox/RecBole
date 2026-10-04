@@ -1,0 +1,9 @@
+# Content-based recommender (recbole/model/content_based_recommender/cb.py), unchanged.
+# Items are embedded from their title + genres with DistilBERT; a user is the average of
+# the embeddings of their training items; score(u, i) = <user embedding, item embedding>.
+model: CB
+load_col:
+  inter: [user_id, item_id, rating, timestamp]   # same as base.yaml, so the split is identical
+  item: [item_id, movie_title, class]
+content: [movie_title, class]
+epochs: 1                       # nothing to train: embeddings are fixed

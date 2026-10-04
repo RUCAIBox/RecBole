@@ -1,0 +1,16 @@
+# Best by valid NDCG@10 = 0.2226 (written by tune_mixed_hybrid.py)
+models:
+- ItemKNN
+- BPR
+- ContentBased
+quotas:
+  ItemKNN: 4
+  BPR: 4
+  ContentBased: 2
+primary_metric: NDCG@10
+valid_metrics:
+  Recall@10: 0.21607425119550322
+  MRR@10: 0.379765271255197
+  NDCG@10: 0.2225844382583548
+  Hit@10: 0.6882290562036055
+  Precision@10: 0.12948038176033935
