@@ -391,7 +391,7 @@ class InterestEvolvingLayer(nn.Module):
 
 
 class AGRUCell(nn.Module):
-    """Attention based GRU (AGRU). AGRU uses the attention score to replace the update gate of GRU, and changes the
+    r"""Attention based GRU (AGRU). AGRU uses the attention score to replace the update gate of GRU, and changes the
     hidden state directly.
 
     Formally:
@@ -436,7 +436,7 @@ class AGRUCell(nn.Module):
 
 
 class AUGRUCell(nn.Module):
-    """ Effect of GRU with attentional update gate (AUGRU). AUGRU combines attention mechanism and GRU seamlessly.
+    r""" Effect of GRU with attentional update gate (AUGRU). AUGRU combines attention mechanism and GRU seamlessly.
 
     Formally:
         ..math: \tilde{{u}}_{t}^{\prime}=a_{t} * {u}_{t}^{\prime} \\
