@@ -65,6 +65,22 @@ class MaskItemSequence:
         self.config = config
 
     def _neg_sample(self, item_set, n_items):
+        """Sample a negative item that is not in the given item_set.
+
+        When the item_set covers all possible items (1 to n_items - 1),
+        negative sampling is impossible. In this case, return 0 (padding
+        index) to avoid an infinite loop.
+
+        Args:
+            item_set: Collection of item ids that should be excluded.
+            n_items: Total number of items (including padding item 0).
+
+        Returns:
+            A sampled negative item id, or 0 if no valid negative item exists.
+        """
+        item_set = set(item_set)
+        if len(item_set) >= n_items - 1:
+            return 0
         item = random.randint(1, n_items - 1)
         while item in item_set:
             item = random.randint(1, n_items - 1)
