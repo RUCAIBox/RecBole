@@ -11,6 +11,7 @@
 recbole.quick_start
 ########################
 """
+
 import logging
 import sys
 import torch.distributed as dist

@@ -15,6 +15,7 @@ Reference code:
     - https://github.com/initlisk/nextitnet_pytorch
 
 """
+
 import numpy as np
 import torch
 from torch import nn

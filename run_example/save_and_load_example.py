@@ -10,7 +10,6 @@ Here is the sample code for the save and load in RecBole.
 The path to saved data or model can be found in the output of RecBole.
 """
 
-
 from recbole.quick_start import run_recbole, load_data_and_model
 
 

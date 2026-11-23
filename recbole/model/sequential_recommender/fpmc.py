@@ -16,6 +16,7 @@ Reference:
     Steffen Rendle et al. "Factorizing Personalized Markov Chains for Next-Basket Recommendation." in WWW 2010.
 
 """
+
 import torch
 from torch import nn
 from torch.nn.init import xavier_normal_

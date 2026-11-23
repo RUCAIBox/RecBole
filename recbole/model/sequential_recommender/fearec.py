@@ -16,7 +16,6 @@ Reference code:
 
 """
 
-
 import random
 
 import numpy as np

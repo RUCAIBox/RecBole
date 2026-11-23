@@ -14,6 +14,7 @@ Reference code:
     https://github.com/CRIPAC-DIG/SR-GNN
 
 """
+
 import math
 
 import numpy as np

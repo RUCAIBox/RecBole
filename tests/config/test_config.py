@@ -12,7 +12,6 @@ import unittest
 
 from recbole.config import Config
 
-
 parameters_dict = {
     "model": "SASRec",
     "learning_rate": 0.2,

@@ -10,7 +10,6 @@
 
 from recbole.config import Config
 
-
 if __name__ == "__main__":
     config = Config(model="BPR", dataset="ml-100k")
 

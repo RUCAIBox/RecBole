@@ -9,11 +9,9 @@ Case study example
 Here is the sample code for the case study in RecBole.
 """
 
-
 import torch
 from recbole.utils.case_study import full_sort_topk, full_sort_scores
 from recbole.quick_start import load_data_and_model
-
 
 if __name__ == "__main__":
     config, model, dataset, train_data, valid_data, test_data = load_data_and_model(
