@@ -120,7 +120,7 @@ class SpectralCF(GeneralRecommender):
                 )
             )
         )
-        A._update(data_dict)
+        A.update(data_dict)
 
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)

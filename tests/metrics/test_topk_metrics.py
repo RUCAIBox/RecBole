@@ -147,9 +147,9 @@ class TestTopKMetrics(unittest.TestCase):
     def test_shannonentropy(self):
         name = "shannonentropy"
         Metric = metrics_dict[name](config)
-        self.assertEqual(
+        self.assertAlmostEqual(
             Metric.get_entropy(item_matrix),
-            -np.mean(
+            -np.sum(
                 [
                     1 / 15 * np.log(1 / 15),
                     2 / 15 * np.log(2 / 15),
@@ -160,6 +160,7 @@ class TestTopKMetrics(unittest.TestCase):
                     2 / 15 * np.log(2 / 15),
                 ]
             ),
+            delta=1e-15,
         )
 
     def test_tailpercentage(self):

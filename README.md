@@ -4,6 +4,10 @@
 
 # RecBole (伯乐)
 
+This is a fork aiming at updating RecBole dependencies. Currently, it works with Python 3.14 and Pytorch 2.12.
+Currently,General Recommendation, Sequential Recommendation, and Context-aware Recommendation are working.
+Knowledge-based Recommendation are still missing as PyG currently does not support Pytorch 2.12.
+
 *“世有伯乐，然后有千里马。千里马常有，而伯乐不常有。”——韩愈《马说》*
 
 [![PyPi Latest Release](https://img.shields.io/pypi/v/recbole)](https://pypi.org/project/recbole/)
@@ -59,6 +63,8 @@ for testing and comparing recommendation algorithms.
 
 
 ## RecBole News
+![new](/asset/new.gif) **06/03/2026**: Full compatibility update for **Python 3.14**, NumPy 2.x, pandas 3.x, PyTorch 2.6+, scipy 1.14+, and hyperopt 0.2.7. See [CHANGELOG.md](./CHANGELOG.md) for details.
+
 ![new](/asset/new.gif) **02/23/2025**: We release RecBole [v1.2.1](https://github.com/RUCAIBox/RecBole/releases/tag/v1.2.1).
 
 ![new](/asset/new.gif) **11/01/2023**: We release RecBole [v1.2.0](https://github.com/RUCAIBox/RecBole/releases/tag/v1.2.0).
@@ -120,7 +126,8 @@ RecBole works with the following operating systems:
 * Windows 10
 * macOS X
 
-RecBole requires Python version 3.7 or later.
+RecBole requires Python 3.7 or later. **Python 3.14 is supported** as of the
+June 2026 compatibility update.
 
 RecBole requires torch version 1.7.0 or later. If you want to use RecBole with GPU,
 please ensure that CUDA or cudatoolkit version is 9.2 or later.
@@ -142,7 +149,25 @@ pip install recbole
 ```bash
 git clone https://github.com/RUCAIBox/RecBole.git && cd RecBole
 pip install -e . --verbose
+pip install -r requirements.txt
 ```
+
+### Optional dependencies for graph-based models
+
+Models that rely on [DGL](https://www.dgl.ai/) (KGAT, MCCLK) or
+[torch-scatter](https://github.com/rusty1s/pytorch_scatter) (KGIN, MCCLK)
+require extra setup steps not covered by `requirements.txt`, because the
+available packages need platform-specific wheels and Python 3.14 patches.
+Run the provided helper script after the main install:
+
+```bash
+bash setup_extras.sh
+```
+
+This script:
+- Installs `torch-scatter` from the PyG wheel index for your PyTorch + CUDA version
+- Patches the installed `dgl` package to use `collections.abc` imports
+  (required for Python 3.10+)
 
 ## Quick-Start
 With the source code, you can use the provided script for initial usage of our library:

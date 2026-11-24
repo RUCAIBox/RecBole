@@ -81,8 +81,8 @@ class NeuMF(GeneralRecommender):
 
     def load_pretrain(self):
         r"""A simple implementation of loading pretrained parameters."""
-        mf = torch.load(self.mf_pretrain_path, map_location="cpu")
-        mlp = torch.load(self.mlp_pretrain_path, map_location="cpu")
+        mf = torch.load(self.mf_pretrain_path, map_location="cpu", weights_only=False)
+        mlp = torch.load(self.mlp_pretrain_path, map_location="cpu", weights_only=False)
         mf = mf if "state_dict" not in mf else mf["state_dict"]
         mlp = mlp if "state_dict" not in mlp else mlp["state_dict"]
         self.user_mf_embedding.weight.data.copy_(mf["user_mf_embedding.weight"])
