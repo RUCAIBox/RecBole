@@ -124,7 +124,8 @@ class NAIS(GeneralRecommender):
 
     def _load_pretrain(self):
         """A simple implementation of loading pretrained parameters."""
-        fism = torch.load(self.pretrain_path)["state_dict"]
+        # PyTorch 2.6 兼容性：設置 weights_only=False 以支持完整的模型檢查點
+        fism = torch.load(self.pretrain_path, weights_only=False)["state_dict"]
         self.item_src_embedding.weight.data.copy_(fism["item_src_embedding.weight"])
         self.item_dst_embedding.weight.data.copy_(fism["item_dst_embedding.weight"])
         for name, parm in self.mlp_layers.named_parameters():

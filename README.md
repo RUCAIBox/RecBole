@@ -11,6 +11,68 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![arXiv](https://img.shields.io/badge/arXiv-RecBole-%23B21B1B)](https://arxiv.org/abs/2011.01731)
 
+![Python 3.10 Compatible](https://img.shields.io/badge/Python-3.10%20Compatible-green)
+![Modern Libraries](https://img.shields.io/badge/Libraries-Modern%20Versions-blue)
+![Docker Ready](https://img.shields.io/badge/Docker-Ready-lightblue)
+
+## 🔧 Compatibility Updates (Forked Version)
+
+> **Note**: This is a modernized fork of RecBole with Python 3.10 compatibility fixes and Docker environment setup.
+
+**Key Improvements:**
+- ✅ **numpy 2.0 compatibility** - Fixed deprecated type aliases (`np.float_`, `np.int_`, etc.)
+- ✅ **scipy compatibility** - Fixed removed `dok_matrix._update()` method (affects 7 graph models)
+- ✅ **PyTorch 2.6 compatibility** - Fixed `torch.load()` weights_only parameter (affects 8 files)
+- ✅ **ray tune import optimization** - Implemented lazy import to avoid dependency conflicts
+- ✅ **Docker environment** - Added complete containerized development setup with Python 3.10
+- ✅ **Full testing verified** - All core functionalities (training, inference, evaluation) working
+
+**Quick Start with Docker:**
+```bash
+# Clone and enter directory
+git clone <your-repo-url>
+cd RecBole
+
+# Start Docker environment
+docker-compose up -d
+docker-compose exec recbole bash
+
+# Test the environment
+python test_environment.py
+python your_test_code.py
+```
+
+**Installation Options:**
+
+Option 1 - **Direct from GitHub (Recommended for compatibility):**
+```bash
+# Install this modernized fork directly
+pip install git+https://github.com/tamio0800/RecBole.git
+
+# Or clone and install in development mode
+git clone https://github.com/tamio0800/RecBole.git
+cd RecBole
+pip install -e .
+```
+
+Option 2 - **Docker Environment (Recommended for consistency):**
+```bash
+# Clone and use Docker for isolated environment
+git clone https://github.com/tamio0800/RecBole.git
+cd RecBole
+docker-compose up -d
+docker-compose exec recbole bash
+```
+
+Option 3 - **Original version (may have compatibility issues):**
+```bash
+# Original RecBole (Python 3.10 compatibility not guaranteed)
+pip install recbole
+```
+
+📖 **See [Troubleshooting Guide](troubleshooting_guide.md) for detailed compatibility fixes and best practices.**
+
+---
 
 [HomePage] | [Docs] | [Datasets] | [Paper] | [Blogs] | [Models] | [中文版]
 

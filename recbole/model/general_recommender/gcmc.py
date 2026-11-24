@@ -171,7 +171,14 @@ class GCMC(GeneralRecommender):
                 )
             )
         )
-        A._update(data_dict)
+        # scipy 兼容性修復：_update 方法在新版本中被移除
+        # 使用現代的方法來更新稀疏矩陣
+        if hasattr(A, '_update'):
+            A._update(data_dict)
+        else:
+            # 使用現代方法設置稀疏矩陣的值
+            for (row, col), value in data_dict.items():
+                A[row, col] = value
         # norm adj matrix
         sumArr = (A > 0).sum(axis=1)
         # add epsilon to avoid divide by zero Warning

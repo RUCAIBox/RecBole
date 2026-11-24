@@ -928,8 +928,9 @@ class ContextSeqEmbAbstractLayer(nn.Module):
         """get embedding of all features."""
         for type in self.types:
             if len(self.token_field_dims[type]) > 0:
+                # numpy 2.0 兼容性：使用 np.int64 而不是 np.long
                 self.token_field_offsets[type] = np.array(
-                    (0, *np.cumsum(self.token_field_dims[type])[:-1]), dtype=np.long
+                    (0, *np.cumsum(self.token_field_dims[type])[:-1]), dtype=np.int64
                 )
                 self.token_embedding_table[type] = FMEmbedding(
                     self.token_field_dims[type],
@@ -937,8 +938,9 @@ class ContextSeqEmbAbstractLayer(nn.Module):
                     self.embedding_size,
                 ).to(self.device)
             if len(self.float_field_dims[type]) > 0:
+                # numpy 2.0 兼容性：使用 np.int64 而不是 np.long
                 self.float_field_offsets[type] = np.array(
-                    (0, *np.cumsum(self.float_field_dims[type])[:-1]), dtype=np.long
+                    (0, *np.cumsum(self.float_field_dims[type])[:-1]), dtype=np.int64
                 )
                 self.float_embedding_table[type] = FLEmbedding(
                     self.float_field_dims[type],
@@ -1404,15 +1406,17 @@ class FMFirstOrderLinear(nn.Module):
                 self.float_seq_field_dims.append(dataset.num(field_name))
 
         if len(self.token_field_dims) > 0:
+            # numpy 2.0 兼容性：使用 np.int64 而不是 np.long
             self.token_field_offsets = np.array(
-                (0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.long
+                (0, *np.cumsum(self.token_field_dims)[:-1]), dtype=np.int64
             )
             self.token_embedding_table = FMEmbedding(
                 self.token_field_dims, self.token_field_offsets, output_dim
             )
         if len(self.float_field_dims) > 0:
+            # numpy 2.0 兼容性：使用 np.int64 而不是 np.long
             self.float_field_offsets = np.array(
-                (0, *np.cumsum(self.float_field_dims)[:-1]), dtype=np.long
+                (0, *np.cumsum(self.float_field_dims)[:-1]), dtype=np.int64
             )
             self.float_embedding_table = FLEmbedding(
                 self.float_field_dims, self.float_field_offsets, output_dim
