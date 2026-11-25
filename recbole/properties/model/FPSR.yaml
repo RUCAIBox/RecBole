@@ -1,0 +1,8 @@
+eigenvectors: 256               # (int) The number of top eigenvectors of item-item adjacency matrix.
+lambda: 0.5                     # (float) Control the relative weights of global-level information and partition-aware item similarities.
+rho: 5000                       # (float) The penalty parameter that applies to the squared difference between primal variables.
+theta_1: 0.1                    # (float) L1-norm regularization parameter.
+theta_2: 1.0                    # (float) L2-norm regularization parameter.
+eta: 1.0                        # (float) The weight for intra-partition data augmentation.
+tol: 5e-3                       # (float) The threshold to filter out values in the learned partition-aware similarity matrix.
+tau: 0.2                        # (float) The size ratio of the item-item graph partitioning.
