@@ -16,6 +16,7 @@ log_wandb: False                # (bool) Whether or not to use Weights & Biases(
 wandb_project: 'recbole'        # (str) The project to conduct experiments in W&B.
 shuffle: True                   # (bool) Whether or not to shuffle the training data before each epoch.
 
+=======
 # Training Settings
 epochs: 300                     # (int) The number of training epochs.
 train_batch_size: 2048          # (int) The training batch size.
@@ -29,6 +30,7 @@ train_neg_sample_args:          # (dict) Negative sampling configuration for mod
   candidate_num: 0              # (int) The number of candidate negative items when dynamic negative sampling.
 eval_step: 1                    # (int) The number of training epochs before an evaluation on the valid dataset.
 stopping_step: 10               # (int) The threshold for validation-based early stopping.
+min_delta: 0.001                # (float) The min value change in the evaluation measure, no matter how fractional, will be considered an improvement.
 clip_grad_norm: ~               # (dict) The args of clip_grad_norm_ which will clip gradient norm of model. 
 weight_decay: 0.0               # (float) The weight decay value (L2 penalty) for optimizers.
 loss_decimal_place: 4           # (int) The decimal place of training loss.

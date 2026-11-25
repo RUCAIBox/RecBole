@@ -91,6 +91,12 @@ class TestOverallConfig(unittest.TestCase):
         settings = {"epochs": 100}
         self.assertTrue(run_parms({"stopping_step": [0, 1, 2]}))
 
+    def test_min_delta(self):
+        settings = {
+            'epochs': 100
+        }
+        self.assertTrue(run_parms({'min_delta': [0.01, 0.001, 0.0001]}))
+
     def test_checkpoint_dir(self):
         self.assertTrue(run_parms({"checkpoint_dir": ["saved_1/", "./saved_2"]}))
 
