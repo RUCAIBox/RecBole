@@ -36,6 +36,8 @@ Running with RecBole
 
 - ``shrink (float)`` : A normalization hyper parameter in calculate cosine distance. Defaults to ``0.0``.
 
+- ``'knn_method (str)``: Switch to user-based collaborative filtering by setting ``'knn_method': 'user'``
+
 
 **A Running Example:**
 
