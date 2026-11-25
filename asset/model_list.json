@@ -2214,6 +2214,20 @@
         "ref_code": "https://github.com/iesl/softmax_CPR_recommend",
         "repository": "RecBole",
         "repo_link": "https://github.com/RUCAIBox/RecBole"
+      },
+      {
+          "category": "Sequential Recommendation",
+            "cate_link":  "/docs/user_guide/model_intro.html#sequential-recommendation",
+            "year": "2024",
+            "pub": "TOIS'24",
+            "model": "TriMLP",
+            "model_link": "/docs/user_guide/model/sequential/trimlp.html",
+            "paper": "TriMLP: A Foundational MLP-Like Architecture for Sequential Recommendation",
+            "paper_link": "https://dl.acm.org/doi/10.1145/3670995",
+            "authors": "Yiheng Jiang, Yuanbo Xu, Yongjian Yang, Funing Yang, Pengyang Wang, Chaozhuo Li, Fuzhen Zhuang, Hui Xiong",
+            "ref_code": "https://github.com/jiangyiheng1/TriMLP",
+            "repository": "RecBole",
+            "repo_link": "https://github.com/RUCAIBox/RecBole"
       }
   ]
 }

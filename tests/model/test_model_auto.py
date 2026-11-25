@@ -780,6 +780,13 @@ class TestSequentialRecommender(unittest.TestCase):
         }
         quick_test(config_dict)
 
+    def test_trimlp(self):
+        config_dict = {
+            "model": "TriMLP",
+            "train_neg_sample_args": None,
+        }
+        quick_test(config_dict)
+
     # def test_gru4reckg(self):
     #     config_dict = {
     #         'model': 'GRU4RecKG',
