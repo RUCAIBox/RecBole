@@ -1,0 +1,13 @@
+n_layers: 2                         # (int) The number of transformer layers in transformer encoder.
+n_heads: 2                          # (int) The number of attention heads for multi-head attention layer.
+hidden_size: 64                     # (int) The number of features in the hidden state.
+inner_size: 256                     # (int) The inner hidden size in feed-forward layer.
+hidden_dropout_prob: 0.5            # (float) The probability of an element to be zeroed.
+attn_dropout_prob: 0.5              # (float) The probability of an attention score to be zeroed.
+hidden_act: 'gelu'                  # (str) The activation function in feed-forward layer.
+layer_norm_eps: 1e-12               # (float) A value added to the denominator for numerical stability.
+initializer_range: 0.02             # (float) The standard deviation for normal initialization.
+dif_fusion_type: 'sum'              # (str) Attention score fusion strategy. Range in ['sum', 'concat', 'gate'].
+context_fields: []                  # (list of str) FLOAT or FLOAT_SEQ item feature fields used as extra attention towers.
+context_compression_ratio: 0.5      # (float) Compression ratio applied to each context tower's feature dimension.
+loss_type: 'CE'                     # (str) The type of loss function. Range in ['BPR', 'CE'].
