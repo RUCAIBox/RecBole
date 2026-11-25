@@ -1,0 +1,7 @@
+---
+# Override: soften text branch strength in concat fusion
+# Usage: --config_files "sasrec_base_plain.yaml overrides/sasrec_text_weight_0.2.yaml"
+
+text_weight: 0.2
+
+

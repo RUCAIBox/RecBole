@@ -1,0 +1,21 @@
+# Default hyper-parameters for BERT4RecAlign (mirrors BERT4Rec defaults)
+
+n_layers: 2
+n_heads: 2
+hidden_size: 64
+inner_size: 256
+hidden_dropout_prob: 0.5
+attn_dropout_prob: 0.5
+hidden_act: gelu
+layer_norm_eps: 1e-12
+initializer_range: 0.02
+
+# BERT4Rec task-specific
+mask_ratio: 0.2
+MASK_ITEM_SEQ: masked_item_seq
+POS_ITEMS: pos_items
+NEG_ITEMS: neg_items
+MASK_INDEX: masked_index
+
+# loss_type set externally in task yaml
+

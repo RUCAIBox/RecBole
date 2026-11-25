@@ -1,0 +1,78 @@
+---
+model: SASRecAlign
+
+# Model parameters - unified to 256
+hidden_size: 256
+
+# Dataset
+dataset: Amazon_Beauty
+field_separator: "\t"
+seq_separator: " "
+USER_ID_FIELD: user_id
+ITEM_ID_FIELD: item_id
+LABEL_FIELD: label
+NEG_PREFIX: neg_
+RATING_FIELD: rating
+TIME_FIELD: timestamp
+ITEM_LIST_LENGTH_FIELD: item_length
+LIST_SUFFIX: _list
+MAX_ITEM_LIST_LENGTH: 50
+POSITION_FIELD: position_id
+load_col:
+  inter: [user_id, item_id, rating, timestamp]
+  item: [item_id]
+
+# Training / Evaluation
+epochs: 200
+train_batch_size: 512
+eval_batch_size: 512
+learning_rate: 0.0001
+eval_step: 5
+stopping_step: 20
+clip_grad_norm: { max_norm: 5 }
+eval_args:
+  group_by: user
+  order: TO
+  split: {'LS': 'valid_and_test'}
+  mode:  {'valid': 'full','test':'full'}
+eval_neg_sample_args: {'distribution': 'uniform', 'sample_num': 100}
+topk: [5, 10, 20]
+metrics: [Recall, MRR, NDCG, Hit, Precision]
+valid_metric: MRR@10
+loss_type: CE
+train_neg_sample_args: null
+
+# LLM text embeddings without cross / align
+item_text_emb_path_llm: dataset/Amazon_Beauty/item_text_emb.qwen3.npy
+use_llm: true
+use_cross: false
+use_align: true
+alignment_weight: 0.1
+temperature: 0.07
+detach_text_emb: true
+normalize_text: true
+
+# Regularization & scoring
+weight_decay: 1e-5
+label_smoothing: 0.1
+token_dropout_prob: 0.1
+cosine_score: true
+cosine_scale: 10.0
+
+# Text fusion stabilizers
+text_proj_norm: true
+fused_item_norm: true
+text_weight: 0.4
+text_tail_threshold: 5
+
+
+
+# New switches (neutral defaults)
+disable_text_feature: false
+text_cross_layer_num: 3
+cross_dropout_prob: 0.0
+text_gate_init: 0.5
+text_gate_reg_l2: 0.0
+text_gate_reg_entropy: 0.0
+
+

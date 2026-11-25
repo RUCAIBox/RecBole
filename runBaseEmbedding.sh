@@ -1,0 +1,1 @@
+python tools/export_internal_item_mapping.py   --dataset Amazon_Beauty   --config /home/charlie/project/recbole/sasrec_align_base.yaml   --output /home/charlie/project/recbole/dataset/Amazon_Beauty/item_index_mapping.csv   --check_emb /home/charlie/project/recbole/dataset/Amazon_Beauty/item_text_emb.base.npy
