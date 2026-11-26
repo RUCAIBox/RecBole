@@ -18,7 +18,7 @@ import copy
 import numpy as np
 from numpy.random import sample
 import torch
-from collections import Counter
+from collections import Counter, deque
 
 
 class AbstractSampler(object):
@@ -73,8 +73,8 @@ class AbstractSampler(object):
         candidates_list = self._get_candidates_list()
         self.prob = dict(Counter(candidates_list))
         self.alias = self.prob.copy()
-        large_q = []
-        small_q = []
+        large_q = deque()
+        small_q = deque()
         for i in self.prob:
             self.alias[i] = -1
             self.prob[i] = self.prob[i] / len(candidates_list)
@@ -87,8 +87,8 @@ class AbstractSampler(object):
             elif self.prob[i] < 1:
                 small_q.append(i)
         while len(large_q) != 0 and len(small_q) != 0:
-            l = large_q.pop(0)
-            s = small_q.pop(0)
+            l = large_q.popleft()
+            s = small_q.popleft()
             self.alias[s] = l
             self.prob[l] = self.prob[l] - (1 - self.prob[s])
             if self.prob[l] < 1:
